@@ -1,0 +1,38 @@
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/diff2html/bundles/js/diff2html.min.js"></script>
+<style>
+    .d2h-tag {
+        display: none;
+    }
+    .d2h-file-collapse {
+        display:none;
+    } 
+</style>
+{% if config_type == "sotagg"%}
+    <h1>Aggregate Data - {{ device_name }}</h1>
+{% elif config_type == "compliance"%}
+    <h1>Compliance Details - {{ device_name }}</h1>
+{% elif config_type == "backup"%}
+    <h1>Backup Configuration Details - {{ device_name }}</h1>
+{% else %}
+    <h1>Intended Configuration Details - {{ device_name }}</h1>
+{% endif %}
+    <div>
+        {% if  config_type == "compliance" %}
+            <div id="output", value="{{ output }}"></div>
+            <div id="diff"></div>
+        {% else %}
+            <pre>{{ output }}</pre>
+        {% endif %}
+    </div>
+<script type="text/javascript">
+        var str_input = document.getElementById("output").getAttribute("value");
+        var diffHtml = Diff2Html.html(str_input, {
+            drawFileList: true,
+            matching: 'lines',
+            outputFormat: 'line_by_line',
+            }
+        )
+        document.getElementById('diff').innerHTML = diffHtml;
+</script>
+

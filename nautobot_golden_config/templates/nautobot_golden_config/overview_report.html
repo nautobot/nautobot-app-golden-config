@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load buttons %}
+{% load static %}
+{% load helpers %}
+
+
+{% block content %}
+<div class="pull-right noprint">
+{% if request.user.is_authenticated and table_config_form %}
+    <button type="button" class="btn btn-default" data-toggle="modal" data-target="#ObjectTable_config" title="Configure table"><i class="mdi mdi-cog"></i>Configure</button>
+{% endif %}
+{% if request.user.is_authenticated and 'export' in action_buttons %}
+    {% export_button content_type %}
+{% endif %}
+</div>
+    <h1>{% block title %}Overview Reports{% endblock %}</h1>
+    <div class="row">
+        <div class="col-md-9">
+            <!-- VISUAL BLOCK -->
+            {% if bar_chart is not None %}
+                {% block graphic  %}
+                    <div id="content">
+                        <img src= "data:image/png;base64,{{ bar_chart|safe }}" >
+                    </div>
+                {% endblock %}
+            {% else %}
+                    <span class=" text-center alert-danger p-4 m-4 ">-- Oops, no config compliances found, visual not made! --</span>
+            {% endif %}
+            <!-- END VISUAL BLOCK -->
+            <h3 class="text-center m-2 p-3">Executive Summary</h3>
+            <table class="table table-hover table-headings">
+                <thead>
+                    <tr>
+                        <th><a>Type</a></th>
+                        <th><a>Total</a></th>
+                        <th><a >Compliant</a></th>
+                        <th ><a>Non-Compliant</a></th>
+                        <th ><a>Compliance (%)</a></th>
+                        <th ><a>Summary</a></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="even">
+                        <td>Devices</td>
+                        <td>{% if device_aggr.total is not None %} {{ device_aggr.total }} {% else %} -- {% endif %}</td>
+                        <td>{% if device_aggr.compliants is not None %} {{ device_aggr.compliants }} {% else %} -- {% endif %}</td>
+                        <td>{% if device_aggr.non_compliants is not None %} {{ device_aggr.non_compliants }} {% else %} -- {% endif %}</td>
+                        <td>{% if device_aggr.comp_percents is not None %} {{ device_aggr.comp_percents }} % {% else %} -- {% endif %}</td>
+                        <td><img style="width:120px;" src= "data:image/png;base64,{{ device_visual|safe }}" ></td>
+                    </tr>
+                        <tr class="even">
+                        <td>Features</td>
+                        <td>{% if feature_aggr.total is not None %} {{ feature_aggr.total }} {% else %} -- {% endif %}</td>
+                        <td>{% if feature_aggr.compliants is not None %} {{ feature_aggr.compliants }} {% else %} -- {% endif %}</td>
+                        <td>{% if feature_aggr.non_compliants is not None %} {{ feature_aggr.non_compliants }} {% else %} -- {% endif %}</td>
+                        <td>{% if feature_aggr.comp_percents is not None %} {{ feature_aggr.comp_percents }} % {% else %} -- {% endif %}</td>
+                        <td ><img style="width:120px;" src= "data:image/png;base64,{{ feature_visual|safe }}" ></td>
+                    </tr>
+                </tbody>
+            </table>
+            <h3 class="text-center m-2 p-3">Feature Summary</h3>
+            {% include 'utilities/obj_table.html' %}
+            </div>
+        <div class="col-md-3 noprint">
+        {% include 'inc/search_panel.html' %}
+    </div>
+</div>
+{% table_config_form table table_name="ObjectTable" %}
+{% endblock %}
+{% block javascript %}
+<script src="{% static 'js/tableconfig.js' %}"></script>
+{% endblock %}

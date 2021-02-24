@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% load buttons %}
+{% load static %}
+{% load helpers %}
+
+{% block content %}
+<div class="pull-right noprint">
+{% block buttons %}
+<div class="btn-group">
+    <button type="button" class="btn btn-warning dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <span class="mdi mdi-book-open-variant" aria-hidden="true"></span> Report <span class="caret"></span>
+    </button>
+    <ul class="dropdown-menu">
+        {% if compliance %}
+            <li><a href="{% url 'plugins:nautobot_golden_config:compliance_overview_report' %}">Compliance</a></li>
+        {% endif %}
+    </ul>
+</div>
+<div class="btn-group">
+    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <span class="mdi mdi-plus-thick" aria-hidden="true"></span> Execute <span class="caret"></span>
+    </button>
+    <ul class="dropdown-menu">
+        {% if compliance %}
+            <li><a href="{% url 'extras:job' class_path='plugins/nautobot_golden_config.jobs/ComplianceJob' %}">Compliance</a></li>
+        {% endif %}
+    </ul>
+</div>
+{% endblock %}
+    {% if request.user.is_authenticated and table_config_form %}
+        <button type="button" class="btn btn-default" data-toggle="modal" data-target="#ObjectTable_config" title="Configure table"><i class="mdi mdi-cog"></i> Configure</button>
+    {% endif %}
+    {% if request.user.is_authenticated and 'export' in action_buttons %}
+        {% export_button content_type %}
+    {% endif %}
+</div>
+<h1>{% block title %}Configuration Compliance{% endblock %}</h1>
+<div class="row">
+	<div class="col-md-9">
+        {% include 'utilities/obj_table.html' with bulk_delete_url="plugins:nautobot_golden_config:compliance_bulk_delete" %}
+    </div>
+	<div class="col-md-3 noprint">
+		{% include 'inc/search_panel.html' %}
+	</div>
+</div>
+{% table_config_form table table_name="ObjectTable" %}
+{% endblock %}
+{% block javascript %}
+<script src="{% static 'js/tableconfig.js' %}"></script>
+{% endblock %}

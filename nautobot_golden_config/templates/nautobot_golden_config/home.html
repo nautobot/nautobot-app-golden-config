@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% load buttons %}
+{% load static %}
+{% load helpers %}
+
+{% block content %}
+<div class="pull-right noprint">
+{% block buttons %}
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<div class="btn-group">
+    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <span class="mdi mdi-plus-thick" aria-hidden="true"></span> Execute <span class="caret"></span>
+    </button>
+    <ul class="dropdown-menu">
+        {% if compliance %}
+            <li><a href="{% url 'extras:job' class_path='plugins/nautobot_golden_config.jobs/ComplianceJob' %}">Compliance</a></li>
+        {% endif %}
+        {% if intended %}
+            <li><a href="{% url 'extras:job' class_path='plugins/nautobot_golden_config.jobs/IntendedJob' %}">Intended</a></li>
+        {% endif %}
+        {% if backup %}
+            <li><a href="{% url 'extras:job' class_path='plugins/nautobot_golden_config.jobs/BackupJob' %}">Backup</a></li>
+        {% endif %}
+    </ul>
+</div>
+{% endblock %}
+    {% if request.user.is_authenticated and table_config_form %}
+        <button type="button" class="btn btn-default" data-toggle="modal" data-target="#ObjectTable_config" title="Configure table"><i class="mdi mdi-cog"></i> Configure</button>
+    {% endif %}
+    {% if request.user.is_authenticated and 'export' in action_buttons %}
+        {% export_button content_type %}
+    {% endif %}
+</div>
+<h1>{% block title %}Configuration Overview{% endblock %}</h1>
+<div class="row">
+	<div class="col-md-9">
+        {% include 'utilities/obj_table.html' with bulk_delete_url="plugins:nautobot_golden_config:home_bulk_delete" %}
+    </div>
+	<div class="col-md-3 noprint">
+		{% include 'inc/search_panel.html' %}
+	</div>
+</div>
+<div class="modal fade" id="myModal" role="dialog">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title">Golden Configuration</h4>
+            </div>
+            <div class="modal-body">
+            </div>
+            <div class="modal-footer">
+                <a id="detail_view" class="btn btn-primary">Detailed View</a>
+                <button id="close" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    #actions {
+      position: relative;
+      display: inline-block;
+      text-align: center;
+      vertical-align: left;
+    }
+    #actions #actiontext {
+      visibility: hidden;
+      background-color: LightSlateGray;
+      color: #ffffff;
+      text-align: center;
+      border-radius: 6px;
+      width:175px;
+      position:absolute;
+      z-index: 1;
+      top: -5px;
+      right: 110%;
+    }
+    #actions:hover #actiontext {
+      visibility: visible;
+    }
+    </style>
+{% table_config_form table table_name="ObjectTable" %}
+{% endblock %}
+{% block javascript %}
+<script src="{% static 'js/tableconfig.js' %}"></script>
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/diff2html/bundles/js/diff2html.min.js"></script>
+<script>
+    $( document ).ready(function(){
+        $('.openBtn').on('click',function(){
+            var ref = $(this).attr('value');
+            $('#detail_view').attr("href", ref);
+            $('#detail_view').attr("target", "_blank");
+            var dataURL = $(this).attr('data-href');
+            $('.modal-body').load(dataURL,function(){
+                $('#myModal').modal({show:true});
+            });
+        });
+    });
+</script>
+{% endblock %}

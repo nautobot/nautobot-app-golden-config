@@ -1,0 +1,61 @@
+---
+stages:
+  - name: "lint"
+  - name: "test"
+  - name: "deploy-github"
+    if: "tag IS present"
+    # - name: "deploy-pypi"
+    #   if: "tag IS present"
+
+language: "python"
+python:
+  - 3.6
+  - 3.7
+  - 3.8
+
+services:
+  - "docker"
+
+# --------------------------------------------------------------------------
+# Tests
+# --------------------------------------------------------------------------
+before_script:
+  - "pip install invoke toml docker-compose poetry"
+script:
+  - "invoke build --python-ver $TRAVIS_PYTHON_VERSION"
+  - "invoke unittest"
+
+jobs:
+  include:
+    - stage: "lint"
+      before_script:
+        - "pip install invoke toml docker-compose"
+        - "invoke build"
+      script:
+        - "invoke black"
+        - "invoke bandit"
+        - "invoke pydocstyle"
+        - "invoke pylint"
+
+    - stage: "deploy-github"
+      before_script:
+        - "pip install poetry"
+      script:
+        - "poetry version $TRAVIS_TAG"
+        - "poetry build"
+      deploy:
+        provider: "releases"
+        api_key: "$GITHUB_AUTH_TOKEN"
+        file_glob: true
+        file: "dist/*"
+        skip_cleanup: true
+        "on":
+          all_branches: true
+
+      # - stage: "deploy-pypi"
+      #   before_script:
+      #     - "pip install poetry"
+      #   script:
+      #     - "poetry version $TRAVIS_TAG"
+      #     - "poetry config pypi-token.pypi $PYPI_TOKEN"
+      #     - "poetry publish --build"

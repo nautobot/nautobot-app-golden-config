@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+{% load buttons %}
+{% load helpers %}
+{% load static %}
+
+{% block content %}
+<style>
+    pre {
+        font-size: 10px;
+        display: inline-block;
+    }
+    #content table, th, td {
+        border: 1px solid lightgray;
+        border-collapse: collapse;
+    }
+    #content th, td {
+        min-width: 200px;
+        width: 100%;
+        padding: 15px;
+        height:max-content;
+    }
+    span.config_hover_button {
+        vertical-align: center;
+        display: none;
+    }
+
+    td.config_hover:hover span.config_hover_button {
+        display: inline;
+    }
+    #navigation table {
+        border: 3px solid white;
+        border-collapse: collapse;
+    }
+    #navigation td {
+        color: white;
+        border:3px solid white;
+        width:400px;
+        height:20px;
+        padding:10px;
+        transition: transform 0.5s;
+    }
+    #navigation tr:first-child {
+        border-radius: 0.6em 0 0 0;
+    }
+    a, a:hover{
+        text-decoration: none;
+        color: white;
+    }
+    td a {
+        text-align: center;
+        display:block;
+        width:100%;
+    }
+    #navigation td:hover{
+        transform: scale(1.1);
+    }
+</style>
+<h1>{% block title %}Configuration Compliance - {{ device_name }}{% endblock %}</h1>
+{% block navigation %}
+<div class="panel panel-default" style="width:100%">
+        <div class="panel-heading"><strong>Feature Navigation</strong> 
+            <a href="{% url 'plugins:nautobot_golden_config:device_filter_report' device_name=device_name compliance='compliant' %}" class="btn btn-success">Compliant</a> 
+            <a href="{% url 'plugins:nautobot_golden_config:device_filter_report' device_name=device_name compliance='non-compliant' %}" class="btn btn-danger">Non-Compliant</a>
+            <a href="{% url 'plugins:nautobot_golden_config:device_report' device_name=device_name %}" class="btn btn-info">Clear</a>  
+        </div>
+    <div id="navigation">
+        <table>
+            <tr>
+            {% for item in compliance_details %}
+                {% if item.compliance %}
+                    <td style="background-color: #5cb85c;">
+                {% else %}
+                    <td style="background-color: #d9534f;">
+                {% endif %}
+                    <a href="#{{ item.feature }}">
+                        {{ item.feature }}
+                    </a>
+                </td>
+                {% if forloop.counter|divisibleby:"5" %}
+                    </tr>
+                    <tr>
+                {% endif %}
+            {% endfor %}
+            </tr>
+        </table>
+    </div>
+</div>
+{% endblock %}
+{% for item in compliance_details %}
+    <div id="{{ item.feature }}" class="panel panel-default" style="width:100%">
+        <div class="panel-heading"><strong>{{ item.feature|upper }}</strong></div>
+        <table id="content">
+        <tr>
+            <td style="width:250px">Status</td>
+            {% if item.ordered %}
+                {% if item.compliance %}
+                    <td><span class="label label-success">Compliant</span> <span><i class="mdi mdi-sort" title="Ordered Configuration Test"></i></span></td>
+                {% else %}
+                    <td><span class="label label-danger">Non-Compliant</span> <span><i class="mdi mdi-sort" title="Ordered Configuration Test"></i></span></td>
+                {% endif %}
+            {% else %}
+                {% if item.compliance %}
+                    <td><span class="label label-success">Compliant</span> <span><i class="mdi mdi-swap-vertical" title="Unordered Configuration Test"></i></span></td>
+                {% else %}
+                    <td><span class="label label-danger">Non-Compliant</span> <span><i class="mdi mdi-swap-vertical" title="Unordered Configuration Test"></i></span></td>
+                {% endif %}
+            {% endif %}
+
+        </tr>
+        {% if item.compliance and not item.ordered %}
+            <tr>
+                <td style="width:250px">Intended Configuration</td>
+                <td class="config_hover">
+                    {% if item.intended %}
+                    <pre>{{ item.intended }}</pre>
+                    <span class="config_hover_button"><button class="btn btn-link btn-xs" value="{{ item.intended }}" title="Copy to Clipboard"
+                            aria-hidden="true" type="button" onclick="copyToClipboard(this.value)">Copy</button>
+                    </span>
+                    {% else %}
+                        <span>___</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td style="width:250px">Actual Configuration</td>
+                <td class="config_hover">
+                    {% if item.actual %}
+                    <pre>{{ item.actual }}</pre>
+                    <span class="config_hover_button"><button class="btn btn-link btn-xs" value="{{ item.actual }}" title="Copy to Clipboard"
+                            aria-hidden="true" type="button" onclick="copyToClipboard(this.value)">Copy</button>
+                    </span>
+                    {% else %}
+                        <span>___</span>
+                    {% endif %}
+                </td>
+            </tr>
+        {% elif item.compliance %}
+            <tr>
+                <td style="width:250px">Configuration</td>
+                <td class="config_hover">
+                    {% if item.actual %}
+                    <pre>{{ item.actual }}</pre>
+                    <span class="config_hover_button"><button class="btn btn-link btn-xs" value="{{ item.actual }}" title="Copy to Clipboard"
+                            aria-hidden="true" type="button" onclick="copyToClipboard(this.value)">Copy</button>
+                    </span>
+                    {% else %}
+                        <span>___</span>
+                    {% endif %}
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td style="width:250px">Intended Configuration</td>
+                <td class="config_hover">
+                    {% if item.intended %}
+                    <pre>{{ item.intended }}</pre>
+                    <span class="config_hover_button"><button class="btn btn-link btn-xs" value="{{ item.intended }}" title="Copy to Clipboard"
+                            aria-hidden="true" type="button" onclick="copyToClipboard(this.value)">Copy</button>
+                    </span>
+                    {% else %}
+                        <span>___</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td style="width:250px">Actual Configuration</td>
+                <td class="config_hover">
+                    {% if item.actual %}
+                        <pre>{{ item.actual }}</pre>
+                        <span class="config_hover_button"><button class="btn btn-link btn-xs" value="{{ item.actual }}" title="Copy to Clipboard"
+                                aria-hidden="true" type="button" onclick="copyToClipboard(this.value)">Copy</button>
+                        </span>
+                    {% else %}
+                        <span>___</span>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endif %}
+        {% if item.missing != "" %}
+            <tr>
+                <td style="color:red;width:250px">Missing Configuration</td>
+                <td class="config_hover">
+                    <pre>{{ item.missing }}</pre>
+                    <span class="config_hover_button">
+                        <button class="btn btn-link btn-xs" value="{{ item.missing }}" title="Copy to Clipboard"
+                            aria-hidden="true" type="button" onclick="copyToClipboard(this.value)">Copy</button>
+                    </span>
+                </td>
+            </tr>
+        {% endif %}
+        {% if item.extra != "" %}
+            <tr>
+                <td style="color:red;width:250px">Extra Configuration</td>
+                <td class="config_hover">
+                    <pre>{{ item.extra }}<span class="config_hover_button"></pre>
+                    <span class="config_hover_button">
+                        <button class="btn btn-link btn-xs" value="{{ item.extra }}" title="Copy to Clipboard"
+                            aria-hidden="true" type="button" onclick="copyToClipboard(this.value)">Copy</button>
+                    </span>
+                </td>
+            </tr>
+        {% endif %}
+    </table>
+    </div>
+{% endfor %}
+<script type="text/javascript">
+    function copyToClipboard(config_value) {
+        var $temp = $("<input>");
+        $("body").append($temp);
+        $temp.val(config_value).select();
+        document.execCommand("copy");
+        $temp.remove();
+    }
+</script>
+{% endblock %}

@@ -24,9 +24,9 @@ TODO: Document when ideally it is in the UI and not in config context, for now, 
 
 Backup configurations rely on a Git Repo, and the plugin registers an additional repository for Git source this access. Within the Nautobot Git repositories, there will be a `backup config` option, which there must be one and only one configured for the process to work.
 
-The first step is to go to Nautobot and navigate to the Data Sources Git integration. `Extensibility -> Git Repositories`.
+In order to setup this repository, go to Nautobot and navigate to the Data Sources Git integration. `Extensibility -> Git Repositories`.
 
-![Backup Git Navigation](./img/backup-git-step1.png)
+![Backup Git Navigation](./img/git-step1.png)
 
 From the Git Repositories page we an add the **Backup** repository.
 
@@ -48,14 +48,13 @@ Parameters:
 
 ![Example Git Backups](./img/backup-git-step2.png)
 
-Select `backup configs`. and click on `[Create]`.
+Select `backup configs` and click on `[Create]`.
 
 Once you click `[Create]` and the repository syncs, the main page will now show the repo along with its status.
 ![Git Backup Repo Status](./img/backup-git-step3.png)
 
 
-The `backup_path_template` provides the ability to dynamically state per device where the configurations should end up in the file structure. Every device 
-there is a Django ORM object, tied to the model instance of a `Device` model, and that is represented as `obj`. That means that any valid Device model method is available. This is then compiled via Jinja. This may seem complicated, but the equivalent of `obj` by example would be:
+The `backup_path_template` provides the ability to dynamically state per device where the configurations should end up in the file structure. Every device is a Django ORM object, tied to the model instance of a `Device` model, and that is represented as `obj`. That means that any valid Device model method is available. This is then compiled via Jinja. This may seem complicated, but the equivalent of `obj` by example would be:
 
 ```python
 obj = Device.objects.get(name="nyc-rt01")
@@ -67,3 +66,5 @@ backup_path_template = "{{obj.site.slug}}/{{obj.name}}.cfg"
 ```
 
 The backup process will automatically create folders as required based on the path definition. 
+
+The `backup_path_template` can be set in the UI.  For details [see](./golden-config-settings.md#Backup-Path)

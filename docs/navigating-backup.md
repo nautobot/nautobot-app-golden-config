@@ -24,7 +24,35 @@ TODO: Document when ideally it is in the UI and not in config context, for now, 
 
 Backup configurations rely on a Git Repo, and the plugin registers an additional repository for Git source this access. Within the Nautobot Git repositories, there will be a `backup config` option, which there must be one and only one configured for the process to work.
 
-TODO: insert screenshot
+The first step is to go to Nautobot and navigate to the Data Sources Git integration. `Extensibility -> Git Repositories`.
+
+![Backup Git Navigation](./img/backup-git-step1.png)
+
+From the Git Repositories page we an add the **Backup** repository.
+
+Click on `[+ADD]`.
+
+You will now be presented with a page to fill in the repository details.
+
+Parameters:
+|Field|Explanation|
+|:--|:--|
+|Name|User friendly name for the backup repo.|
+|Slug|Auto-generated based on the `name` provided.|
+|Remote URL|The URL pointing to the Git repo that stores the backup configuration files. Current git url usage is limited to `http` or `https`.|
+|Branch|The branch in the Git repo to use. Defaults to `main`.|
+|Token|The token is a personal access token for the `username` provided.  For more information on generating a personal access token. [Github Personal Access Token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token)
+|Username|The Git username that corresponds with the personal access token above.|
+|Provides|Valid providers for Git Repo.|
+<br>
+
+![Example Git Backups](./img/backup-git-step2.png)
+
+Select `backup configs`. and click on `[Create]`.
+
+Once you click `[Create]` and the repository syncs, the main page will now show the repo along with its status.
+![Git Backup Repo Status](./img/backup-git-step3.png)
+
 
 The `backup_path_template` provides the ability to dynamically state per device where the configurations should end up in the file structure. Every device 
 there is a Django ORM object, tied to the model instance of a `Device` model, and that is represented as `obj`. That means that any valid Device model method is available. This is then compiled via Jinja. This may seem complicated, but the equivalent of `obj` by example would be:
@@ -39,5 +67,3 @@ backup_path_template = "{{obj.site.slug}}/{{obj.name}}.cfg"
 ```
 
 The backup process will automatically create folders as required based on the path definition. 
-
-## 

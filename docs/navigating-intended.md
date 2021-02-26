@@ -1,5 +1,31 @@
 # Configuration Generation
 
+The Golden Config plugin provides the ability to generate configurations. The process is a Nornir play that points to a single Jinja template per 
+device that generates the configurations. Data is provided via the Source of Truth aggregation and is currently a hard requirement to be turned on if 
+generating configuration via the Golden Config plugin. Whatever data is returned by the Source of Truth Aggregation is available to the Jinja template.
+
+As previous stated, there can only be a single template per device. It is often advantageous to break configurations into smaller snippets. A common pattern 
+to overcome is:
+
+```jinja
+!
+{% include os ~ '/services.j2' %}
+!
+{% include os ~ '/hostname.j2' %}
+!
+{% include os ~ '/ntp.j2' %}
+!
+```
+or 
+
+```jinja
+!
+{% set features = ['services', 'hostname', 'ntp'] %}
+{% for feature in features %}
+{% include os ~ '/' ~ feature ~ '.j2' %}
+!
+{% endfor %}
+```
 
 ## Installation Instructions
 
@@ -9,6 +35,8 @@ In order to generate the intended configurations two repositories are needed.
 
 1. A repo to save intended configurations to once generated. [See](#Configs-Repository)
 2. A repo that stores Jinja2 templates used to generate intended configurations. [See](#Templates-Repository)
+3. The [intended_path_template](./golden-config-settings.md#Intended-Path) configuration parameter.
+4. The [jinja_path_template](./golden-config-settings.md#Template-Path) configuration parameter.
 
 ### Configs Repository
 The first step is to go to Nautobot and navigate to the Data Sources Git integration. `Extensibility -> Git Repositories`.
@@ -45,5 +73,3 @@ Navigate back to Git Repositories and click `[+ADD]`.  Fill out the form with th
 ![Example Git Templates](./img/templates-git-step2.png)
 
 Select `jinja templates` and click on `[Create]`.
-
-Next, it is necessary to configure the settings for the [intended path](./golden-config-settings.md#Intended-Path), and [template path](./golden-config-settings.md#Template-Path).

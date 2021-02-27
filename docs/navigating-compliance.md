@@ -19,7 +19,7 @@ The tool makes no assumptions to determine what an engineer may want to do, but 
 
 # Configuration Compliance Parsing Engine
 
-Configuration compliance is different then a simple unix diff. While the UI provides both, the compliance metrics are not influenced by the unix diff 
+Configuration compliance is different then a simple UNIX diff. While the UI provides both, the compliance metrics are not influenced by the UNIX diff 
 capabilities. One of the challenges of getting a device into compliance is the ramp up it takes to model and generate configurations for an entire 
 configuration. The compliance engine has several features to better build out this process.
 
@@ -111,7 +111,27 @@ The Name is a unique identifier, that should consider the following best practic
 The "Configs to Match" section represents the configuration root elements. This would be the parent most key only. Additionally, the match is based on
 what a line starts with only. Meaning, there is an implicit greediness to the matching. All matches must start form the beginning of the line.
 
-> Note: if accidentally the data is "currupted" with a bad tested match, simply delete the devices an re-run the compliance process.
+> Note: if accidentally the data is "corrupted" with a bad tested match, simply delete the devices an re-run the compliance process.
+
+# Compliance View
+
+The compliance overview will provide a per device and feature overview on the compliance of your network devices. From here you can navigate to the details view.
+![Compliance Overview](./img/compliance-overview.png)
+
+# Compliance Details View
+
+Drilling into a specific device and feature, you can get an immediate detailed understanding of your device.
+
+![Compliance Device](./img/compliance-device.png)
+
+![Compliance Feature](./img/compliance-feature.png)
+
+Please note the following about the compliance details page.
+
+* The device Intended and Actual configuration will become a single cell configuration if there is an exact match.
+* The device Intended and Actual configuration will both show if the configuration is matched, but not ordered the same.
+* The icon next to the status will indicate whether or not the configuration is ordered.
+* The icons on top of the page can be used to help navigate the page easier.
 
 # Supported Platforms
 

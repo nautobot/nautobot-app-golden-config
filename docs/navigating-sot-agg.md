@@ -1,6 +1,6 @@
 # SoT Aggregation Overview 
 
-The Source of Truth Aggregation Overview is driven by a few key compenents.
+The Source of Truth Aggregation Overview is driven by a few key components.
 
 * The ability to have a single GraphQL query to aggregate information.
 * The ability to modify data with a "transposer" function.
@@ -35,7 +35,7 @@ def transposer(data):
     return data
 ```
 
-While the example transposer is silly and untestted, it provides the structure for which a transposer can be use. The possiblities are obviously endless,
+While the example transposer is silly and untested, it provides the structure for which a transposer can be use. The possibilities are obviously endless,
 such as reaching out to an external system but operators should use caution not to overload complexity into the transposer. 
 
 The configuration required in the Plugin configuration is as described below.
@@ -47,7 +47,7 @@ The path described must obviously be within the Python path of your worker. It i
 
 # Config Context
 
-Outside of the scope of this document, but it is worth mentioning the power that configuraiton context's with integration to Git can provide in this
+Outside of the scope of this document, but it is worth mentioning the power that configuration context's with integration to Git can provide in this
 solution.
 
 # Performance

@@ -39,7 +39,7 @@ The compliance report provides a high-level overview on the compliance of your n
 The compliance overview will provide a per device and feature overview on the compliance of your network devices.
 ![Compliance Overview](./docs/img/compliance-overview.png)
 
-Drilling into a specfic device and feature, you can get an immediate detailed understanding of your device.
+Drilling into a specific device and feature, you can get an immediate detailed understanding of your device.
 ![Compliance Device](./docs/img/compliance-device.png)
 
 ![Compliance Feature](./docs/img/compliance-feature.png)

@@ -39,5 +39,25 @@ operate as they intend it, without burdening the plugins goals.
 
 _Why not predefine the configuration feature map?_
 
-The process is based on an opinion on what defines a feature, for one organization bgp may include the prefix configuration and another it would not.
+The process is based on an opinion on what defines a feature, for one organization BGP may include the prefix configuration and another it would not.
 Understanding that there will never be consensus on what should go into a feature it becomes obvious why the users must maintain such configuration.
+
+_What are the supported platforms?_
+
+* arista_eos
+* cisco_ios
+* cisco_nxos
+* cisco_aireos
+* linux
+* bigip_f5
+* juniper_junos
+
+_Why not provide the corrective configurations?_
+
+Configuration enforcement is a difficult problem to attack. While potentially could integrate with a system to provide the enforcement, this is currently 
+out-of-scope for the plugin.
+
+_Why does the compliance section scroll so much?_
+
+The real estate optimizations is not the best for the configuration compliance overview right now. Users are suggested to review the best practices
+described in the configuration compliance section. Over time, the hope is to optimize this

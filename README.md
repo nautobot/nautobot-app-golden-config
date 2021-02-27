@@ -8,7 +8,7 @@ In addition to this overview, documentation can be found for:
 - [Navigating Backup](./docs/navigating-backup.md)
 - [Navigating Compliance](./docs/navigating-compliance.md)
 - [Navigating Intended](./docs/navigating-intended.md)
-- [Navigating SoTAgg](./docs/navigating-sotagg.md)
+- [Navigating SoTAgg](./docs/navigating-sot-agg.md)
 - [FAQ](./docs/FAQ.md)
 
 # Overview

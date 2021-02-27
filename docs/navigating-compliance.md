@@ -17,11 +17,20 @@ There is no magic to determine the state of configuration. You still must define
 configuration may be as a network engineer wants it, but the tool correctly considers it non-compliant, since the tool is only comparing two configurations.
 The tool makes no assumptions to determine what an engineer may want to do, but did not document via the configuration generation process.
 
+# Compliance Configuration Settings
+
+In order to generate the intended configurations two repositories are needed.
+
+1. A repo to save intended configurations to once generated. [See]](./navigating-golden.md#git-settings)
+2. A repo that stores Backups used to as the actual configurations. [See]](./navigating-golden.md#git-settings)
+3. The [intended_path_template](./navigating-golden.md#application-settings) configuration parameter.
+4. The [backup_path_template](./navigating-golden.md#application-settings) configuration parameter.
+
 # Configuration Compliance Parsing Engine
 
-Configuration compliance is different then a simple UNIX diff. While the UI provides both, the compliance metrics are not influenced by the UNIX diff 
+Configuration compliance is different than a simple UNIX diff. While the UI provides both, the compliance metrics are not influenced by the UNIX diff 
 capabilities. One of the challenges of getting a device into compliance is the ramp up it takes to model and generate configurations for an entire 
-configuration. The compliance engine has several features to better build out this process.
+configuration. The compliance engine has several features to better build work through this process.
 
 1. The ability to parse into smaller sections, given a list of root configuration elements.
 2. The ability to consider ordered and non-ordered configurations.
@@ -101,7 +110,7 @@ Each configuration can be added and edits from this table. When editing/adding t
 ![Configuration Feature Edit](./img/compliance-feature-edit.png)
 
 The platform must refer to a platform with a valid slug supported by the configuration compliance engine. While there is no enforcement of this data from
-a database perspective, the job will never run, rendering the additional configuration ineffective. 
+a database perspective, the job will never run successfully, rendering the additional configuration ineffective. 
 
 The Name is a unique identifier, that should consider the following best practices.
 
@@ -111,7 +120,7 @@ The Name is a unique identifier, that should consider the following best practic
 The "Configs to Match" section represents the configuration root elements. This would be the parent most key only. Additionally, the match is based on
 what a line starts with only. Meaning, there is an implicit greediness to the matching. All matches must start form the beginning of the line.
 
-> Note: if accidentally the data is "corrupted" with a bad tested match, simply delete the devices an re-run the compliance process.
+> Note: If accidentally the data is "corrupted" with a bad tested match, simply delete the devices an re-run the compliance process.
 
 # Compliance View
 
@@ -145,14 +154,14 @@ There is a global overview or executive summary that provides a high level snaps
 * Features - This is the total number of features for all devices, and how many are compliant, and how many are non-compliant.
 * Per Feature - This is a breakdown of that feature and how many within that feature are compliant of not.
 
-## Detail Report
+# Detail Report
 
 This can be accessed via the Plugins drop-down via `Compliance` details button. From there you can filter the devices via the form on the right side, limit the columns with the `Configure` button, or 
 bulk delete with the `Delete` button. Additionally each device is click-able to view the details of that individual device. 
 
 You can configure the columns to limit how much is showing on one screen.
 
-## Device Details
+# Device Details
 
 You can get to the device details form either the Compliance details page, or there is a `content_template` on the device model page is Nautobot's core instance.
 

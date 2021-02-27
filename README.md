@@ -22,7 +22,7 @@ later in the readme.
 * Configuration Compliance - Is a Nornir process to run comparison of the actual (via backups) and intended (via Jinja file creation) cli configurations.
 
 The operator's of their own Nautobot instance are welcome to use any combination of these features. Though the appearance may seem like they are tightly 
-coupled, they are not actually. As an example, once can obtain backup configurations from their current RANCID/Oxidized process and simply provide a Git Repo
+coupled, they are not actually. As an example, one can obtain backup configurations from their current RANCID/Oxidized process and simply provide a Git Repo
 of the location of the backup configurations and the compliance process would work the same way. Another user may only want to generate configurations.
 
 ## Screenshots
@@ -50,13 +50,13 @@ There are three primary controls to determine the inclusion of a device within o
 
 * The `allowed_os` will allow list the specific operating systems that can be included.
 * The `enable_backup`, `enable_compliance`, `enable_intended`, and `enable_sotagg` will toggle inclusion of the entire component.
-* There is the ability to manage on a per device element TODO: Needs to be updated after more correctly implemented.
+* Coming Soon: There is the ability to manage on a per device.
 
 # Installation
 
 > The plugin is compatible with Nautobot 1.0.0 and higher
 
-Once installed, the plugin needs to be enabled in your `configuration.py` for both plugins
+The plugin relies on `nautobot_plugin_nornir` to be installed and both plugins to be enabled in your `configuration.py` settings.
 
 ```python
 PLUGINS = ["nautobot_plugin_nornir", "nautobot_golden_config"]

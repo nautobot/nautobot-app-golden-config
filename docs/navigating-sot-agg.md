@@ -9,7 +9,7 @@ The Source of Truth Aggregation Overview is driven by a few key components.
 # GraphQL
 
 There is currently support to make an arbitrary GraphQL query that has "device" as a variable. It is likely best to use the GraphiQL interface to model
-your data, and then save it to the configuration. The configuration ensures the following two components.
+your data, and then save that query to the configuration. The application configuration ensures the following two components.
 
 * The query is a valid GraphQL query.
 * The query starts with exactly "query ($device: String!)". This is to help fail fast and help with overall user experience of clear expectations.
@@ -43,7 +43,7 @@ The configuration required in the Plugin configuration is as described below.
 ```python
 PLUGINS_CONFIG["nautobot_golden_config"]["sot_agg_transposer"] = "nautobot_golden_config.transposer.transposer"
 ```
-The path described must obviously be within the Python path of your worker. It is up to the operator to ensure that happens.
+The path described must be within the Python path of your worker. It is up to the operator to ensure that happens.
 
 # Config Context
 
@@ -53,4 +53,4 @@ solution.
 # Performance
 
 The GraphQL and transposer functionality could seriously impact the performance of the server. There are no restrictions imposed as it is up to the
-operator to way the pro's and con's of the solution.
+operator to weigh the pro's and con's of the solution.

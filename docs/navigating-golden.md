@@ -11,7 +11,7 @@ The Home view is a portal to understand what the status of the devices are.
 Some of the information descibed in this view, may not be immediately obvious.
 
 * The Backup/Intended/Compliance status will always show the last time the job was successfully ran for that device, but there are several conditions it may be in.
-  * Green with a date states that the ran was successful, which was the last time the job ran. 
+  * Green with a date indicates that the ran was successful, which was the last time the job ran. 
   * Red with a data indicates the last time the job ran successfully, with the last time the job was attempted in be shown when you mouse over the date.
   * A red double-dashed icon indicated the job has never been successful
 * The icons are provided in the following order, that largely matches the status.
@@ -55,6 +55,41 @@ Lines to Substitute|Uses a regex pattern with replacement config three pipes (\|
 <br>
 > Note: Each of these will be further detailed in their respective sections.
 
+# Git Settings
+
+The plugin makes heavy use of the nautobot git data sources feature. There are up to three repositories used in the application. This set of instructions will walk an operator throush setting up the backup repository. The steps are the same, except for the "Provides" field name chosen.
+
+In order to setup this repository, go to Nautobot and navigate to the Data Sources Git integration. `Extensibility -> Git Repositories`.
+
+![Backup Git Navigation](./img/git-step1.png)
+
+From the Git Repositories page we an add the **Backup** repository.
+
+Click on `[+ADD]`.
+
+You will now be presented with a page to fill in the repository details.
+
+Parameters:
+|Field|Explanation|
+|:--|:--|
+|Name|User friendly name for the backup repo.|
+|Slug|Auto-generated based on the `name` provided.|
+|Remote URL|The URL pointing to the Git repo that stores the backup configuration files. Current git url usage is limited to `http` or `https`.|
+|Branch|The branch in the Git repo to use. Defaults to `main`.|
+|Token|The token is a personal access token for the `username` provided.  For more information on generating a personal access token. [Github Personal Access Token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token)
+|Username|The Git username that corresponds with the personal access token above.|
+|Provides|Valid providers for Git Repo.|
+<br>
+
+![Example Git Backups](./img/backup-git-step2.png)
+
+Select `backup configs` and click on `[Create]`.
+
+Once you click `[Create]` and the repository syncs, the main page will now show the repo along with its status.
+![Git Backup Repo Status](./img/backup-git-step3.png)
+
+For their respective features, the "Provides" field could be backup intended configs and jinja templates.
+
 # Plugins Buttons
 
 The plugins buttons provides you the ability to navigate to Run the script, overview report, and detailed report.
@@ -72,6 +107,11 @@ The plugin makes use of template content `right_page` in order to use display in
 
 The plugin makes use of template content `right_page` in order to use display in-line the status of that entire site in the traditional Nautobot view. 
 
-## API
+# API
 
 There is no way to currently run the script via an API, this would be helpful to use in the configuration compliance workflow, and will be a future feature.
+
+# Feature Enablement
+
+Enabling features such as backup or compliance, will render those parts of the UI visible. It is worth noting that disabling features does not provide any
+garbage collection and it is up to the operator to remove such data.

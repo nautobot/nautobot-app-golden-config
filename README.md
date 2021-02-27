@@ -104,11 +104,6 @@ The plugin behavior can be controlled with the following list of settings.
 
 > Note: Over time the intention is to make the compliance report more dynamic, but for now allow users to configure in a way that fits best for them.
 
-
-## API
-
-There is no way to currently run the script via an API, this would be helpful to use in the configuration compliance workflow, and will be a future feature.
-
 # Contributing
 
 Pull requests are welcomed and automatically built and tested against multiple version of Python and multiple version of Nautobot through TravisCI.

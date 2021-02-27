@@ -9,9 +9,7 @@ and save the configuration. The high-level process to run backups is:
 * Store the backup configurations locally.
 * Push configurations to the remote Git repository.
 
-## Installation Instructions
-
-## Configuration Backup Settings
+# Configuration Backup Settings
 
 Backup configurations often need some amount of parsing to stay sane. The two obvious use cases are the ability to remove lines such as the "Last 
 Configuration" changed date, as this will cause unnecessary changes the second is to strip out secrets from the configuration. In an effort to support these 
@@ -68,3 +66,23 @@ backup_path_template = "{{obj.site.slug}}/{{obj.name}}.cfg"
 The backup process will automatically create folders as required based on the path definition. 
 
 The `backup_path_template` can be set in the UI.  For details [see](./golden-config-settings.md#Backup-Path)
+
+# Remove Settings
+
+The remove settings is a series of regex patterns to identify lines that should be removed. This is helpful as there are usually parts of the
+configurations that will change each time. A match simply means to remove.
+
+```re
+^Building\s+configuration.*\n
+^Current\s+configuration.*\n
+^!\s+Last\s+configuration.*
+```
+
+# Substitute Lines
+
+This is a replacement config with a regex pattern with a single capture group to replace. This is helpful to strip out secrets. The two are currently
+split by 3 "pipes" `|||`. This is not an ideal configuration, but useful until a long term solution can be put in place.
+
+```re
+<redacted_config>|||username\s+\S+\spassword\s+5\s+(\S+)\s+role\s+\S+
+```

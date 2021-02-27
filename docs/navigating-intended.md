@@ -27,8 +27,6 @@ or
 {% endfor %}
 ```
 
-## Installation Instructions
-
 ## Intended Configuration Settings
 
 In order to generate the intended configurations two repositories are needed.

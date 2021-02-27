@@ -17,11 +17,7 @@ There is no magic to determine the state of configuration. You still must define
 configuration may be as a network engineer wants it, but the tool correctly considers it non-compliant, since the tool is only comparing two configurations.
 The tool makes no assumptions to determine what an engineer may want to do, but did not document via the configuration generation process.
 
-## Installation Instructions
-
-
-
-## Configuration Compliance Parsing Engine
+# Configuration Compliance Parsing Engine
 
 Configuration compliance is different then a simple unix diff. While the UI provides both, the compliance metrics are not influenced by the unix diff 
 capabilities. One of the challenges of getting a device into compliance is the ramp up it takes to model and generate configurations for an entire 
@@ -44,7 +40,12 @@ snmp-server community secure group network-admin
 snmp-server community networktocode group network-operator
 ```
 
-The above configurations are rendered based on the order in which they were entered, not based on the a deterministic way. The comparison process takes this into consideration. 
+The above configurations are rendered based on the order in which they were entered, not based on the a deterministic way. The comparison process takes this into consideration, to ensure that the following is not non-compliant when ordering option is not considered.
+
+```
+snmp-server community networktocode group network-operator
+snmp-server community secure group network-admin
+```
 
 In regards to `3`, consider the following example of BGP configuration. 
 ```
@@ -84,27 +85,45 @@ router bgp 65250
   router-id 10.0.10.6
 ```
 
-### Configuration Compliance Settings
+> Note: A platform will not run successfully against a device unless at least one compliance feature is set. 
 
-Configuration compliance requires the Git Repo settings for `config backups` and `intended configs`--which are covered in their respective sections--regardless if they are actually managed via the plugin or not.
+# Configuration Compliance Settings
 
-The Configuration compliance feature map must be created per the operator. 
+Configuration compliance requires the Git Repo settings for `config backups` and `intended configs`--which are covered in their respective sections--regardless if they are actually managed via the plugin or not. The same is true for the `Backup Path` and `Intended Path`.
 
-TODO: Once move the UI, document for now an example can be found [here](https://github.com/networktocode-llc/nautobot-gc-data/blob/be82d7f686a573ad33f85b2313e632d9bc2e7910/config_contexts/all.yml#L7-L196)
+The Configuration compliance feature map must be created per the operator/user. You can find these configurations via `Plugins -> Compliance Rules`
+links, which brings up the specific configurations.
 
+![Configuration Features](./img/compliance-features.png)
 
-# Usage
+Each configuration can be added and edits from this table. When editing/adding the configurations, the following should be noted.
 
-There is a single process and several views that the plugin provides.
+![Configuration Feature Edit](./img/compliance-feature-edit.png)
 
-## Plugins Buttons
+The platform must refer to a platform with a valid slug supported by the configuration compliance engine. While there is no enforcement of this data from
+a database perspective, the job will never run, rendering the additional configuration ineffective. 
 
-The plugins buttons provides you the ability to navigate to Run the script, overview report, and detailed report.
+The Name is a unique identifier, that should consider the following best practices.
 
-## Run Script
+* Prefer shorter names, as this effects the width of the compliance overview and thus it's readability.
+* Prefer reusing the same names between vendors for similar features, to both limit the number of columns and provide more concise reporting. 
 
-This can be accessed via the Plugins drop-down via `Run Script` button, it will immediately run the script once the it starts.
+The "Configs to Match" section represents the configuration root elements. This would be the parent most key only. Additionally, the match is based on
+what a line starts with only. Meaning, there is an implicit greediness to the matching. All matches must start form the beginning of the line.
 
+> Note: if accidentally the data is "currupted" with a bad tested match, simply delete the devices an re-run the compliance process.
+
+# Supported Platforms
+
+Platforms support technically come from the options provided by nornir_nautobot. However, for reference, the valid slug's of the platforms are provided in the [FAQ](./FAQ.md).
+
+# Overview Report
+
+There is a global overview or executive summary that provides a high level snapshot of the compliance. There are 3 points of data captured.
+
+* Devices - This is only compliant if there is not a single non-compliant feature on the device. So if there is 10 features, and 1 feature is not compliant, the device is considered non-compliant.
+* Features - This is the total number of features for all devices, and how many are compliant, and how many are non-compliant.
+* Per Feature - This is a breakdown of that feature and how many within that feature are compliant of not.
 
 ## Detail Report
 
@@ -115,23 +134,6 @@ You can configure the columns to limit how much is showing on one screen.
 
 ## Device Details
 
-You can get to the device details form either the Compliance details page, or there is a `content_template` on the device model page is Nautobot's core instance (more details later.)
+You can get to the device details form either the Compliance details page, or there is a `content_template` on the device model page is Nautobot's core instance.
 
-
-## Overview Report
-
-There is a global overview or executive summary that provides a high level snapshot of the compliance. There are 3 points of data captured.
-
-* Devices - This is only compliant if there is not a single non-compliant feature on the device. So if there is 10 features, and 1 feature is not compliant, the device is considered non-compliant.
-* Features - This is the total number of features for all devices, and how many are compliant, and how many are non-compliant.
-* Per Feature - This is a breakdown of that feature and how many within that feature are compliant of not.
-
-## Device Template Content
-
-The plugin makes use of template content `right_page` in order to use display in-line the status of that device in the traditional Nautobot view. From here you can click the link to see the
-detail compliance view.
-
-
-## Site Template Content
-
-The plugin makes use of template content `right_page` in order to use display in-line the status of that entire site in the traditional Nautobot view. 
+![Configuration Features](./img/device-compliance.png)

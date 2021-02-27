@@ -41,3 +41,13 @@ _Why not predefine the configuration feature map?_
 
 The process is based on an opinion on what defines a feature, for one organization bgp may include the prefix configuration and another it would not.
 Understanding that there will never be consensus on what should go into a feature it becomes obvious why the users must maintain such configuration.
+
+_What are the supported platforms?_
+
+* arista_eos
+* cisco_ios
+* cisco_nxos
+* cisco_aireos
+* linux
+* bigip_f5
+* juniper_junos

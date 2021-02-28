@@ -37,6 +37,10 @@ The backup process will automatically create folders as required based on the pa
 
 The `backup_path_template` can be set in the UI.  For navigation details [see](./navigating-golden.md#application-settings).
 
+The credentials/secrets management is further described within the [nautbot-plugin-nornir](https://github.com/nautobot/nautobot-plugin-nornir)
+repo. For the simplist use case you can set environment variables for `NAPALM_USERNAME`, `NAPALM_PASSWORD`, and `DEVICE_SECRET`. For more
+complicated use cases, please refer to the plugin documentation linked above.
+
 # Remove Settings
 
 The remove settings is a series of regex patterns to identify lines that should be removed. This is helpful as there are usually parts of the

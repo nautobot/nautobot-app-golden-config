@@ -10,7 +10,7 @@ from nautobot.users.models import Token
 User = get_user_model()
 
 
-class PlaceholderAPITest(TestCase):
+class GoldenConfigAPITest(TestCase):
     """Test the ConfigCompliance API."""
 
     def setUp(self):
@@ -20,7 +20,7 @@ class PlaceholderAPITest(TestCase):
         self.client = APIClient()
         self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
 
-    def test_placeholder(self):
+    def test_device_list(self):
         """Verify that devices can be listed."""
         url = reverse("dcim-api:device-list")
         response = self.client.get(url)

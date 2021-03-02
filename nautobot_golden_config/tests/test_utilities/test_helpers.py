@@ -14,11 +14,15 @@ limitations under the License.
 from unittest.mock import patch
 from django.test import TestCase
 
-from nautobot_golden_config.utilities.helper import null_to_empty
+from nautobot_golden_config.utilities.helper import get_allowed_os, null_to_empty
 
 class HelpersTest(TestCase):
     """Test Helper Functions."""
 
+    def test_get_allowed_os(self):
+        result = get_allowed_os(data=None)
+        print(result)
+        
     def test_null_to_empty_null(self):
         """Ensure None returns with empty string."""
         result = null_to_empty(None)

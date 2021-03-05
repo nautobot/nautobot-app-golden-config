@@ -80,6 +80,7 @@ def check_jinja_template(obj, logger, template):
     except TemplateSyntaxError as error:
         logger.log_failure(obj, f"Jinja `{template}` has an error of `{error}`.")
         raise NornirNautobotException()
+    #Not sure this can ever be hit.
     except TemplateError as error:
         logger.log_failure(obj, f"Jinja `{template}` has an error of `{error}`.")
         raise NornirNautobotException()

@@ -13,9 +13,10 @@ limitations under the License.
 """
 from django.test import TestCase
 
+
 class ProcessorTest(TestCase):
     """Test Nornir Processor."""
 
     def test_success(self):
         """Temporary pass."""
-        self.assertEqual(1,1)
+        self.assertEqual(1, 1)

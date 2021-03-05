@@ -11,18 +11,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from unittest.mock import patch
-from django.test import TestCase
+import unittest
+from unittest.mock import patch, Mock
+from nornir_nautobot.exceptions import NornirNautobotException
+from jinja2.exceptions import TemplateError
+from nautobot_golden_config.utilities.helper import get_allowed_os, null_to_empty, check_jinja_template
+from nautobot.dcim.filters import DeviceFilterSet
 
-from nautobot_golden_config.utilities.helper import get_allowed_os, null_to_empty
 
-class HelpersTest(TestCase):
+class HelpersTest(unittest.TestCase):
     """Test Helper Functions."""
 
-    def test_get_allowed_os(self):
-        result = get_allowed_os(data=None)
-        print(result)
-        
+#dir ['DeviceFilterSet', 'Mock', 'NornirNautobotException', 'StrictUndefined', 'Template', 'TemplateError', 'TemplateSyntaxError', 'UndefinedError', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__spec__', 'check_jinja_template', 'get_allowed_os', 'null_to_empty', 'patch', 'unittest']
     def test_null_to_empty_null(self):
         """Ensure None returns with empty string."""
         result = null_to_empty(None)
@@ -32,3 +32,33 @@ class HelpersTest(TestCase):
         """Ensure if not None input is returned."""
         result = null_to_empty("test")
         self.assertEqual(result, "test")
+
+    def test_check_jinja_template_success(self):
+        """Simple success test to return template."""
+        worker = check_jinja_template('obj', 'logger', 'fake-template-name')
+        self.assertEqual(worker, 'fake-template-name')
+
+    def test_check_jinja_template_exceptions_undefined(self):
+        """Use fake obj key to cause UndefinedError from Jinja2 Template."""
+        log_mock = Mock()
+        with self.assertRaises(NornirNautobotException):
+            check_jinja_template('test-obj', log_mock, '{{ obj.fake }}')
+
+    def test_check_jinja_template_exceptions_syntaxerror(self):
+        """Use invalid templating to cause TemplateSyntaxError from Jinja2 Template."""
+        log_mock = Mock()
+        with self.assertRaises(NornirNautobotException):
+            check_jinja_template('test-obj', log_mock, '{{ obj.fake }')
+
+
+    def test_check_jinja_template_exceptions_templateerror(self):
+        """Cause issue to cause TemplateError form Jinja2 Template."""
+        log_mock = Mock()
+        #can't figure out how to mock Template() to return TemplateError.
+        with self.assertRaises(NornirNautobotException):
+            temp = check_jinja_template('test-obj', log_mock, 'temp')
+        print(dir(temp))
+        print(dir(log_mock))
+        print(vars(log_mock))
+        print(log_mock.method_calls)
+

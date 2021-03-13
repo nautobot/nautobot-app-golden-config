@@ -56,7 +56,7 @@ There are three primary controls to determine the inclusion of a device within o
 
 > The plugin is compatible with Nautobot 1.0.0 and higher
 
-The plugin relies on `nautobot_plugin_nornir` to be installed and both plugins to be enabled in your `configuration.py` settings.
+The plugin relies on `nautobot_plugin_nornir` to be installed and both plugins to be enabled in your configuration settings.
 
 ```python
 PLUGINS = ["nautobot_plugin_nornir", "nautobot_golden_config"]
@@ -74,15 +74,15 @@ PLUGINS_CONFIG = {
         },
     },
     "nautobot_golden_config": {
-        "allowed_os": os.environ.get("ALLOWED_OS", "all").split(","),
-        "per_feature_bar_width": float(os.environ.get("PER_FEATURE_BAR_WIDTH", 0.15)),
-        "per_feature_width": int(os.environ.get("PER_FEATURE_WIDTH", 13)),
-        "per_feature_height": int(os.environ.get("PER_FEATURE_HEIGHT", 4)),
-        "enable_backup": is_truthy(os.environ.get("ENABLE_BACKUP", True)),
-        "enable_compliance": is_truthy(os.environ.get("ENABLE_COMPLIANCE", True)),
-        "enable_intended": is_truthy(os.environ.get("ENABLE_INTENDED", True)),
-        "enable_sotagg": is_truthy(os.environ.get("ENABLE_SOTAGG", True)),
-        "sot_agg_transposer": os.environ.get("SOT_AGG_TRANSPOSER"),
+        "allowed_os": ["all"], # Should be limited to list of supported network operating systems
+        "per_feature_bar_width": 0.15,
+        "per_feature_width": 13,
+        "per_feature_height": 4,
+        "enable_backup": True,
+        "enable_compliance": True,
+        "enable_intended": True,
+        "enable_sotagg": True,
+        "sot_agg_transposer": None,
     },
 }
 

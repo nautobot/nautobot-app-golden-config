@@ -50,15 +50,12 @@ class HelpersTest(unittest.TestCase):
         with self.assertRaises(NornirNautobotException):
             check_jinja_template('test-obj', log_mock, '{{ obj.fake }')
 
-
-    def test_check_jinja_template_exceptions_templateerror(self):
+    @patch("nautobot_golden_config.utilities.helper.Template")
+    def test_check_jinja_template_exceptions_templateerror(self, template_mock):
         """Cause issue to cause TemplateError form Jinja2 Template."""
         log_mock = Mock()
-        #can't figure out how to mock Template() to return TemplateError.
         with self.assertRaises(NornirNautobotException):
-            temp = check_jinja_template('test-obj', log_mock, 'temp')
-        print(dir(temp))
-        print(dir(log_mock))
-        print(vars(log_mock))
-        print(log_mock.method_calls)
-
+            template_mock.side_effect = TemplateError
+            template_render = check_jinja_template('test-obj', log_mock, 'template')
+            self.assertEqual(template_render, TemplateError)
+            template_mock.assert_called_once

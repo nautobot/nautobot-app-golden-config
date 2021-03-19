@@ -18,7 +18,7 @@ from nautobot_golden_config.models import GoldenConfigSettings
 
 
 class GoldenConfigSettingsModelTestCase(TestCase):
-    """ Test GoldenConfigSettings Model."""
+    """Test GoldenConfigSettings Model."""
 
     def setUp(self):
         """Get the golden config settings with the only allowed id."""

@@ -11,9 +11,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from unittest.mock import patch, Mock
+from unittest.mock import patch
 from django.test import TestCase
-from graphql.error import GraphQLSyntaxError
 
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 

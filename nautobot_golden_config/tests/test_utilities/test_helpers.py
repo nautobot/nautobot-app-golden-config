@@ -12,17 +12,73 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import unittest
+from django.conf import settings
 from unittest.mock import patch, Mock
+from nautobot.dcim.models.devices import Platform
 from nornir_nautobot.exceptions import NornirNautobotException
 from jinja2.exceptions import TemplateError
-from nautobot_golden_config.utilities.helper import get_allowed_os, null_to_empty, check_jinja_template
-from nautobot.dcim.filters import DeviceFilterSet
+from nautobot_golden_config.utilities.helper import get_allowed_os, get_allowed_os_from_nested, null_to_empty, verify_global_settings, check_jinja_template
 
 
 class HelpersTest(unittest.TestCase):
     """Test Helper Functions."""
 
-#dir ['DeviceFilterSet', 'Mock', 'NornirNautobotException', 'StrictUndefined', 'Template', 'TemplateError', 'TemplateSyntaxError', 'UndefinedError', '__builtins__', '__cached__', '__doc__', '__file__', '__loader__', '__name__', '__package__', '__spec__', 'check_jinja_template', 'get_allowed_os', 'null_to_empty', 'patch', 'unittest']
+    def setUp(self):
+        """Setup default settings for each test."""
+        settings.PLUGINS_CONFIG["nautobot_golden_config"]["allowed_os"] = ["all"]
+
+    @patch("nautobot_golden_config.utilities.helper.Platform")
+    def test_get_allowed_os_data_null_os_all(self, mock_platform):
+        """Test Platform called when os is "all"."""
+        get_allowed_os(data=None)
+        mock_platform.objects.values_list.assert_called_once()
+
+    @patch("nautobot_golden_config.utilities.helper.ALLOWED_OS")
+    @patch("nautobot_golden_config.utilities.helper.Platform")
+    def test_get_allowed_os_data_null_os_not_all(self, mock_platform, mock_allowed):
+        """Test Platform called when os is NOT "all"."""
+        mock_allowed.return_value = ["cisco_ios"]
+        get_allowed_os(data=None)
+        mock_platform.objects.values_list.assert_not_called()
+
+    @patch("nautobot_golden_config.utilities.helper.Device")
+    @patch("nautobot_golden_config.utilities.helper.DeviceFilterSet")
+    def test_get_allowed_os_data_null_return(self, mock_return, mock_device):
+        """Test Return value when no data provided."""
+        get_allowed_os(data=None)
+        mock_return.assert_called_once()
+        mock_device.objects.filter.assert_called_once()
+
+    @patch("nautobot_golden_config.utilities.helper.Device")
+    @patch("nautobot_golden_config.utilities.helper.DeviceFilterSet")
+    def test_get_allowed_os_with_data_return(self, mock_return, mock_device):
+        """Test Return value when data is provided."""
+        get_allowed_os(data={"test-key": "test"})
+        mock_return.assert_called_once()
+        mock_device.objects.filter.assert_called_once()
+
+    @patch("nautobot_golden_config.utilities.helper.Platform")
+    def test_get_allowed_os_nested_allowed_os_all(self, mock_platform):
+        """Test Platform not called when os is "all"."""
+        get_allowed_os_from_nested()
+        mock_platform.objects.values_list.assert_called_once()
+
+    @patch("nautobot_golden_config.utilities.helper.ALLOWED_OS")
+    @patch("nautobot_golden_config.utilities.helper.Platform")
+    def test_get_allowed_os_nested_allowed_os_not_all(self, mock_platform, mock_allowed):
+        """Test Platform is called with os is NOT "all"."""
+        mock_allowed.return_value = ["cisco_ios"]
+        get_allowed_os_from_nested()
+        mock_platform.objects.values_list.assert_not_called()
+
+    @patch("nautobot_golden_config.utilities.helper.getattr")
+    def test_verify_global_settings_exception(self, mock_getattr):
+        """Validate exception if not getattr()."""
+        log_mock = Mock()
+        with self.assertRaises(NornirNautobotException):
+            mock_getattr.return_value = None
+            verify_global_settings(log_mock, Mock(), 'test-attr')
+
     def test_null_to_empty_null(self):
         """Ensure None returns with empty string."""
         result = null_to_empty(None)

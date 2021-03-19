@@ -11,12 +11,25 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from django.test import TestCase
+import unittest
+from unittest.mock import patch, Mock
+from nautobot_golden_config.nornir_plays.config_compliance import get_features
 
 
-class ConfigComplianceTest(TestCase):
+class ConfigComplianceTest(unittest.TestCase):
     """Test Nornir Compliance Task."""
 
-    def test_success(self):
-        """Temporary pass."""
-        self.assertEqual(1, 1)
+    @patch("nautobot_golden_config.nornir_plays.config_compliance.ComplianceFeature", autospec=True)
+    def test_get_features(self, mock_compliance_feature):
+        """Test proper return when Features are returned."""
+        features = {
+            "config_ordered": "test_ordered",
+            "match_config": "aaa\nsnmp\n"
+        }
+        mock_obj = Mock(**features)
+        mock_obj.name = "test_name"
+        mock_obj.platform = Mock(slug="test_slug")
+        mock_compliance_feature.objects.all.return_value = [mock_obj]
+        features = get_features()
+        mock_compliance_feature.objects.all.assert_called_once()
+        self.assertEqual(features, {"test_slug": [{'name': 'test_name', 'ordered': 'test_ordered', 'section': ['aaa', 'snmp']}]})

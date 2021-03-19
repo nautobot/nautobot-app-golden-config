@@ -11,12 +11,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from django.test import TestCase
+import unittest
+from nautobot_golden_config.nornir_plays.config_backup import get_substitute_lines
 
 
-class ConfigBackupTest(TestCase):
+class ConfigBackupTest(unittest.TestCase):
     """Test Nornir Backup Task."""
 
-    def test_success(self):
-        """Temporary pass."""
-        self.assertEqual(1, 1)
+    def test_get_substitute_lines_single(self):
+        """Validate sub lines works."""
+        sub_lines = get_substitute_lines("<<redacted>>|||fake_regex.+")
+        self.assertEqual(sub_lines, [{"regex_replacement": "<<redacted>>", "regex_search": "fake_regex.+"}])
+
+    def test_get_substitute_lines_multiple(self):
+        """Validate sub lines works."""
+        sub_lines = get_substitute_lines("<<redacted>>|||fake_regex.+\n<<removed>>|||user.+")
+        self.assertEqual(sub_lines, [{"regex_replacement": "<<redacted>>", "regex_search": "fake_regex.+"}, {"regex_replacement": "<<removed>>", "regex_search": "user.+"}])

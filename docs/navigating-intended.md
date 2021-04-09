@@ -31,8 +31,8 @@ or
 
 In order to generate the intended configurations two repositories are needed.
 
-1. A repo to save intended configurations to once generated. [See]](./navigating-golden.md#git-settings)
-2. A repo that stores Jinja2 templates used to generate intended configurations. [See]](./navigating-golden.md#git-settings)
+1. A repo to save intended configurations to once generated. [See](./navigating-golden.md#git-settings)
+2. A repo that stores Jinja2 templates used to generate intended configurations. [See](./navigating-golden.md#git-settings)
 3. The [intended_path_template](./navigating-golden.md#application-settings) configuration parameter.
 4. The [jinja_path_template](./navigating-golden.md#application-settings) configuration parameter.
 

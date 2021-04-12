@@ -1,9 +1,10 @@
 """Unit tests for nautobot_golden_config utilities graphql."""
 
 from unittest.mock import patch
-from django.test import TestCase
 
+from nautobot.utilities.testing import TestCase
 from nautobot_golden_config.utilities.graphql import graph_ql_query
+
 
 # pylint: disable=no-self-use
 

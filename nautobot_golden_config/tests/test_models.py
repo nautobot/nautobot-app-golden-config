@@ -1,12 +1,12 @@
 """Unit tests for nautobot_golden_config models."""
 
-from django.test import TestCase
+import unittest
 from django.core.exceptions import ValidationError
 
 from nautobot_golden_config.models import GoldenConfigSettings
 
 
-class GoldenConfigSettingsModelTestCase(TestCase):
+class GoldenConfigSettingsModelTestCase(unittest.TestCase):
     """Test GoldenConfigSettings Model."""
 
     def setUp(self):

@@ -1,28 +1,22 @@
 """Unit tests for nautobot_golden_config."""
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APIClient
 
-from nautobot.users.models import Token
+from nautobot.utilities.testing import APITestCase
+
 
 User = get_user_model()
 
 
-class GoldenConfigAPITest(TestCase):
+class GoldenConfigAPITest(APITestCase):  # pylint: disable=too-many-ancestors
     """Test the ConfigCompliance API."""
-
-    def setUp(self):
-        """Create a superuser and token for API calls."""
-        self.user = User.objects.create(username="testuser", is_superuser=True)
-        self.token = Token.objects.create(user=self.user)
-        self.client = APIClient()
-        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
 
     def test_device_list(self):
         """Verify that devices can be listed."""
         url = reverse("dcim-api:device-list")
-        response = self.client.get(url)
+        self.add_permissions("dcim.view_device")
+        response = self.client.get(url, **self.header)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["count"], 0)

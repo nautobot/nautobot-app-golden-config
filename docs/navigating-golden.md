@@ -1,6 +1,6 @@
 # Golden Configuration 
 
-An navigation overview of the entire plugin.
+A navigation overview of the entire plugin.
 
 # Home
 
@@ -8,7 +8,7 @@ The Home view is a portal to understand what the status of the devices are.
 
 ![Home Overview](./img/golden-overview.png)
 
-Some of the information descibed in this view, may not be immediately obvious.
+Some of the information described in this view, may not be immediately obvious.
 
 * The Backup/Intended/Compliance status will always show the last time the job was successfully ran for that device, but there are several conditions it may be in.
   * Green with a date indicates that the ran was successful, which was the last time the job ran. 
@@ -22,11 +22,11 @@ Some of the information descibed in this view, may not be immediately obvious.
   * Run job
 
 The first four bring up a "modal" or "dialogue box" which has a detailed view for a dedicated page. The run job brings the user to a job to run all three 
-componets against all of the devices.
+components against all of the devices.
 
 # Jobs
 
-There are a series of Jobs that are registed via the Plugin. They can be viewed from the standard Jobs view.
+There are a series of Jobs that are registered via the Plugin. They can be viewed from the standard Jobs view.
 
 ![Job Overview](./img/job-overview.png)
 
@@ -46,7 +46,7 @@ Next fill out the Settings.
 
 |Setting|Explanation|
 |:--|:--|
-|Backup Path|This represents the Jinja path where the backup files will be found.  The variable `obj` is availiable as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.site.slug}}/{{obj.name}}.cfg`|
+|Backup Path|This represents the Jinja path where the backup files will be found.  The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.site.slug}}/{{obj.name}}.cfg`|
 |Intended Path|The Jinja path representation of where the generated file will be places. e.g. `{{obj.site.slug}}/{{obj.name}}.cfg`|
 |Template Path|The Jinja path representation of where the Jinja temaplte can be found. e.g. `{{obj.platform.slug}}.j2`|
 |GraphQL Query|A query that is evaluated and used to render the config. The query must start with `query ($device: String!)`.|
@@ -57,13 +57,13 @@ Lines to Substitute|Uses a regex pattern with replacement config three pipes (\|
 
 # Git Settings
 
-The plugin makes heavy use of the nautobot git data sources feature. There are up to three repositories used in the application. This set of instructions will walk an operator throush setting up the backup repository. The steps are the same, except for the "Provides" field name chosen.
+The plugin makes heavy use of the nautobot git data sources feature. There are up to three repositories used in the application. This set of instructions will walk an operator through setting up the backup repository. The steps are the same, except for the "Provides" field name chosen.
 
 In order to setup this repository, go to Nautobot and navigate to the Data Sources Git integration. `Extensibility -> Git Repositories`.
 
 ![Backup Git Navigation](./img/git-step1.png)
 
-From the Git Repositories page we an add the **Backup** repository.
+From the Git Repositories page we can add the **Backup** repository.
 
 Click on `[+ADD]`.
 
@@ -92,7 +92,7 @@ For their respective features, the "Provides" field could be backup intended con
 
 # Plugins Buttons
 
-The plugins buttons provides you the ability to navigate to Run the script, overview report, and detailed report.
+The plugins buttons provides you with the ability to navigate to Run the script, overview report, and detailed report.
 
 # Run Script
 

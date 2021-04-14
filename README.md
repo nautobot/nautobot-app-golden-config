@@ -24,7 +24,7 @@ of the location of the backup configurations, and the compliance process would w
 
 ## Screenshots
 
-The plugin provides features and capabilities to integrate more workflows closely into the Nautobot ecosystem. The following screenshots are intended to provide a quick visual overview of some of these features.
+There are many features and capabilities the plugin provides into the Nautobot ecosystem. The following screenshots are intended to provide a quick visual overview of some of these features.
 
 The golden configuration is driven by jobs that run a series of tasks and the result is captured in this overview.
 

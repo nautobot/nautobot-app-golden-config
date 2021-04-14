@@ -215,3 +215,56 @@ class GoldenConfigSettings(BaseModel):
             graphql_start = "query ($device: String!)"
             if not str(self.sot_agg_query).startswith(graphql_start):
                 raise ValidationError(f"The GraphQL query must start with exactly `{graphql_start}`")
+
+
+class BackupConfigLineRemove(BaseModel):
+    name = models.CharField(max_length=255, null=False, blank=False)
+    platform = models.ForeignKey(
+        to="dcim.Platform",
+        on_delete=models.CASCADE,
+        related_name="backup_line_remove",
+        null=False,
+        blank=False,
+    )
+    description = models.CharField(
+        max_length=200,
+        blank=True,
+    )
+    regex_line = models.CharField(
+        max_length=200,
+        verbose_name="Regex Pattern",
+        help_text="Regex pattern used to remove a line from the backup configuration.",
+    )
+
+    def __str__(self):
+        """Return a simple string if model is called."""
+        return "Backup Config Line Removal"
+
+
+class BackupConfigLineReplace(BaseModel):
+    name = models.CharField(max_length=255, null=False, blank=False)
+    platform = models.ForeignKey(
+        to="dcim.Platform",
+        on_delete=models.CASCADE,
+        related_name="backup_line_replace",
+        null=False,
+        blank=False,
+    )
+    description = models.CharField(
+        max_length=200,
+        blank=True,
+    )
+    substitute_text = models.CharField(
+        max_length=200,
+        verbose_name="Regex Pattern to Substitute",
+        help_text="Regex pattern that will be found and replaced with 'replaced text'.",
+    )
+    replaced_text = models.CharField(
+        max_length=200,
+        verbose_name="Replaced Text",
+        help_text="Text that will be inserted in place of Regex pattern match.",
+    )
+
+    def __str__(self):
+        """Return a simple string if model is called."""
+        return "Backup Config Line Replace"

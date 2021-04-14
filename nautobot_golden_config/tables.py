@@ -6,7 +6,13 @@ from django_tables2 import Column, TemplateColumn
 
 from nautobot.utilities.tables import BaseTable, ToggleColumn
 
-from .models import ConfigCompliance, ComplianceFeature, GoldenConfiguration
+from .models import (
+    ConfigCompliance,
+    ComplianceFeature,
+    GoldenConfiguration,
+    BackupConfigLineRemove,
+    BackupConfigLineReplace,
+)
 from .utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED, CONFIG_FEATURES
 
 
@@ -249,3 +255,29 @@ class ComplianceFeatureTable(BaseTable):
         model = ComplianceFeature
         fields = ("pk", "name", "slug", "platform", "description", "config_ordered", "match_config")
         default_columns = ("pk", "name", "slug", "platform", "description", "config_ordered", "match_config")
+
+
+class BackupConfigLineRemoveTable(BaseTable):
+    """Table to display Compliance Features."""
+
+    pk = ToggleColumn()
+
+    class Meta(BaseTable.Meta):
+        """Table to display Compliance Features Meta Data."""
+
+        model = BackupConfigLineRemove
+        fields = ("pk", "name", "platform", "description", "regex_line")
+        default_columns = ("pk", "name", "platform", "description", "regex_line")
+
+
+class BackupConfigLineReplaceTable(BaseTable):
+    """Table to display Compliance Features."""
+
+    pk = ToggleColumn()
+
+    class Meta(BaseTable.Meta):
+        """Table to display Compliance Features Meta Data."""
+
+        model = BackupConfigLineReplace
+        fields = ("pk", "name", "platform", "description", "substitute_text", "replaced_text")
+        default_columns = ("pk", "name", "platform", "description", "substitute_text", "replaced_text")

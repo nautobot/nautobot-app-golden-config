@@ -37,5 +37,37 @@ if ENABLE_COMPLIANCE:
             ),
         )
     )
+    plugin_items.append(
+        PluginMenuItem(
+            link="plugins:nautobot_golden_config:backuplineremoval",
+            link_text="Line Removals",
+            # permissions=["nautobot_golden_config.view_compliancefeature"],
+            buttons=(
+                PluginMenuButton(
+                    link="plugins:nautobot_golden_config:backuplineremoval_add",
+                    title="Line Removals",
+                    icon_class="mdi mdi-plus-thick",
+                    color=ButtonColorChoices.GREEN,
+                    # permissions=["nautobot_golden_config.add_compliancefeature"],
+                ),
+            ),
+        )
+    )
+    plugin_items.append(
+        PluginMenuItem(
+            link="plugins:nautobot_golden_config:backuplinereplace",
+            link_text="Line Replacements",
+            # permissions=["nautobot_golden_config.view_compliancefeature"],
+            buttons=(
+                PluginMenuButton(
+                    link="plugins:nautobot_golden_config:backuplinereplace_add",
+                    title="Line Replacements",
+                    icon_class="mdi mdi-plus-thick",
+                    color=ButtonColorChoices.GREEN,
+                    # permissions=["nautobot_golden_config.add_compliancefeature"],
+                ),
+            ),
+        )
+    )
 
 menu_items = tuple(plugin_items)

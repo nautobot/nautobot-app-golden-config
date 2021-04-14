@@ -23,19 +23,30 @@ from nautobot.utilities.views import ContentTypePermissionRequiredMixin
 
 from .filters import ComplianceFeatureFilter, ConfigComplianceFilter, GoldenConfigurationFilter
 from .forms import (
+    BackupLineReplaceForm,
     ComplianceFeatureForm,
     ComplianceFeatureFilterForm,
     ConfigComplianceFilterForm,
     GoldenConfigSettingsFeatureForm,
     GoldenConfigurationFilterForm,
+    BackupLineRemovalForm,
 )
-from .models import ComplianceFeature, ConfigCompliance, GoldenConfigSettings, GoldenConfiguration
+from .models import (
+    ComplianceFeature,
+    ConfigCompliance,
+    GoldenConfigSettings,
+    GoldenConfiguration,
+    BackupConfigLineRemove,
+    BackupConfigLineReplace,
+)
 from .tables import (
     ComplianceFeatureTable,
     ConfigComplianceGlobalFeatureTable,
     ConfigComplianceTable,
     ConfigComplianceDeleteTable,
     GoldenConfigurationTable,
+    BackupConfigLineRemoveTable,
+    BackupConfigLineReplaceTable,
 )
 from .utilities.constant import PLUGIN_CFG, ENABLE_COMPLIANCE, CONFIG_FEATURES
 from .utilities.helper import get_allowed_os_from_nested
@@ -548,3 +559,45 @@ class GoldenConfigSettingsEditView(generic.ObjectEditView):
 
     queryset = GoldenConfigSettings.objects.filter(id="aaaaaaaa-0000-0000-0000-000000000001")
     model_form = GoldenConfigSettingsFeatureForm
+
+
+class BackupConfigLineRemovalView(generic.ObjectListView):
+    """View for displaying the current Line Removals."""
+
+    queryset = BackupConfigLineRemove.objects.all()
+    table = BackupConfigLineRemoveTable
+    template_name = "nautobot_golden_config/line_removal.html"
+
+
+class BackupConfigLineRemovalEditView(generic.ObjectEditView):
+    """View for editing the current Line Removals."""
+
+    queryset = BackupConfigLineRemove.objects.all()
+    model_form = BackupLineRemovalForm
+
+
+class BackupConfigLineRemovalBulkDeleteView(generic.BulkDeleteView):
+    """View for bulk deleting Line Removals."""
+
+    queryset = BackupConfigLineRemove.objects.all()
+
+
+class BackupConfigLineReplaceView(generic.ObjectListView):
+    """View for displaying the current Line Replacements."""
+
+    queryset = BackupConfigLineReplace.objects.all()
+    table = BackupConfigLineReplaceTable
+    template_name = "nautobot_golden_config/line_replace.html"
+
+
+class BackupConfigLineReplaceEditView(generic.ObjectEditView):
+    """View for editing the current Line Replacements."""
+
+    queryset = BackupConfigLineReplace.objects.all()
+    model_form = BackupLineReplaceForm
+
+
+class BackupConfigLineReplaceBulkDeleteView(generic.BulkDeleteView):
+    """View for bulk deleting Line Replacements."""
+
+    queryset = BackupConfigLineReplace.objects.all()

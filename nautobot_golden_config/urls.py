@@ -34,4 +34,24 @@ urlpatterns = [
         name="compliancefeature_delete",
     ),
     path("settings/<uuid:pk>/edit/", views.GoldenConfigSettingsEditView.as_view(), name="goldenconfigsettings_edit"),
+    path("line-removal/", views.BackupConfigLineRemovalView.as_view(), name="backuplineremoval"),
+    path("line-removal/add/", views.BackupConfigLineRemovalEditView.as_view(), name="backuplineremoval_add"),
+    path(
+        "line-removal/<str:name>/edit/", views.BackupConfigLineRemovalEditView.as_view(), name="backuplineremoval_edit"
+    ),
+    path(
+        "line-removal/delete/",
+        views.BackupConfigLineRemovalBulkDeleteView.as_view(),
+        name="backuplineremoval_bulk_delete",
+    ),
+    path("line-replace/", views.BackupConfigLineReplaceView.as_view(), name="backuplinereplace"),
+    path("line-replace/add/", views.BackupConfigLineReplaceEditView.as_view(), name="backuplinereplace_add"),
+    path(
+        "line-replace/<str:name>/edit/", views.BackupConfigLineReplaceEditView.as_view(), name="backuplinereplace_edit"
+    ),
+    path(
+        "line-replace/delete/",
+        views.BackupConfigLineReplaceBulkDeleteView.as_view(),
+        name="backuplinereplace_bulk_delete",
+    ),
 ]

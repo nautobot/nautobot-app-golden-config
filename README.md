@@ -2,32 +2,29 @@
 
 A plugin for [Nautobot](https://github.com/nautobot/nautobot) that intends to provide context around golden configuration.
 
-In addition to this overview, documentation can be found for:
-
-- [Navigating Overview](./docs/navigating-golden.md)
-- [Navigating Backup](./docs/navigating-backup.md)
-- [Navigating Compliance](./docs/navigating-compliance.md)
-- [Navigating Intended](./docs/navigating-intended.md)
-- [Navigating SoTAgg](./docs/navigating-sot-agg.md)
-- [FAQ](./docs/FAQ.md)
-
 # Overview
+
+You may see the [Navigating Overview](./docs/navigating-golden.md) documentation for an overview of navigating through the different areas of this plugin. You may also see the [FAQ](./docs/FAQ.md) for commonly asked questions.
 
 The golden configuration plugin performs four primary actions, each of which can be toggled on with a respective `enable_*` setting, covered in detail 
 later in the readme. 
 
 * Configuration Backup - Is a Nornir process to connect to devices, optionally parse out lines/secrets, backup the configuration, and save to a Git repository.
+    * see [Navigating Backup](./docs/navigating-backup.md) for more information
 * Configuration Intended - Is a Nornir process to generate configuration based on a Git repo of Jinja files and a Git repo to store the intended configuration.
+    * see [Navigating Intended](./docs/navigating-intended.md) for more information
 * Source of Truth Aggregation - Is a GraphQL query per device with that creates a data structure used in the generation of configuration.
-* Configuration Compliance - Is a Nornir process to run comparison of the actual (via backups) and intended (via Jinja file creation) cli configurations.
+    * see [Navigating SoTAgg](./docs/navigating-sot-agg.md) for more information
+* Configuration Compliance - Is a Nornir process to run comparison of the actual (via backups) and intended (via Jinja file creation) CLI configurations.
+    * see [Navigating Compliance](./docs/navigating-compliance.md) for more information
 
 The operator's of their own Nautobot instance are welcome to use any combination of these features. Though the appearance may seem like they are tightly 
-coupled, they are not actually. As an example, one can obtain backup configurations from their current RANCID/Oxidized process and simply provide a Git Repo
-of the location of the backup configurations and the compliance process would work the same way. Another user may only want to generate configurations.
+coupled, this isn't actually the case. For example, one can obtain backup configurations from their current RANCID/Oxidized process and simply provide a Git Repo
+of the location of the backup configurations, and the compliance process would work the same way. Also, another user may only want to generate configurations, but not want to use other features, which is perfectly fine to do so.
 
 ## Screenshots
 
-There are many features and capabilities the plugin provides, the following is intended to provide a quick visual overview of some of those features.
+There are many features and capabilities the plugin provides into the Nautobot ecosystem. The following screenshots are intended to provide a quick visual overview of some of these features.
 
 The golden configuration is driven by jobs that run a series of tasks and the result is captured in this overview.
 
@@ -54,9 +51,15 @@ There are three primary controls to determine the inclusion of a device within o
 
 # Installation
 
+Plugins can be installed manually or use Python's `pip`. See the [nautobot documentation](https://nautobot.readthedocs.io/en/latest/plugins/#install-the-package) for more details. The pip package name for this plugin is [`nautobot-golden-config`](https://pypi.org/project/nautobot-golden-config/)
+
 > The plugin is compatible with Nautobot 1.0.0 and higher
 
-The plugin relies on `nautobot_plugin_nornir` to be installed and both plugins to be enabled in your configuration settings.
+**Prerequisite:** The plugin relies on [`nautobot_plugin_nornir`](https://pypi.org/project/nautobot-plugin-nornir/) to be installed and both plugins to be enabled in your configuration settings.
+
+**Required:** The following block of code below shows the additional configuration required to be added to your `nautobot_config.py` file:
+- append `"nautobot_golden_config"` to the `PLUGINS` list
+- append the `"nautobot_golden_config"` dictionary to the `PLUGINS_CONFIG` dictionary
 
 ```python
 PLUGINS = ["nautobot_plugin_nornir", "nautobot_golden_config"]
@@ -106,17 +109,20 @@ The plugin behavior can be controlled with the following list of settings.
 
 # Contributing
 
-Pull requests are welcomed and automatically built and tested against multiple version of Python and multiple version of Nautobot through TravisCI.
+Pull requests are welcomed and automatically built and tested against multiple versions of Python and Nautobot through TravisCI.
 
-The project is packaged with a light development environment based on `docker-compose` to help with the local development of the project and to run the tests within TravisCI.
+The project is packaged with a light development environment based on `docker-compose` to help with the local development of the project and to run tests within TravisCI.
 
-The project is following Network to Code software development guideline and is leveraging:
+The project is following Network to Code software development guidelines and are leveraging the following:
 - Black, Pylint, Bandit, flake8, and pydocstyle for Python linting and formatting.
 - Django unit test to ensure the plugin is working properly.
 
 ## CLI Helper Commands
 
-The project is coming with a CLI helper based on [invoke](http://www.pyinvoke.org/) to help setup the development environment. The commands are listed below in 3 categories `dev environment`, `utility` and `testing`. 
+The project features a CLI helper based on [invoke](http://www.pyinvoke.org/) to help setup the development environment. The commands are listed below in 3 categories:
+- `dev environment`
+- `utility`
+- `testing`. 
 
 Each command can be executed with `invoke <command>`. All commands support the arguments `--nautobot-ver` and `--python-ver` if you want to manually define the version of Python and Nautobot to use. Each command also has its own help `invoke <command> --help`
 

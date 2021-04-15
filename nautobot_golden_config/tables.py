@@ -1,15 +1,18 @@
 """Django Tables2 classes for golden_config plugin."""
 import copy
+from django.db.models.expressions import RowRange
+from django.forms.fields import FilePathField
 
 from django.utils.html import format_html
 from django_tables2 import Column, TemplateColumn
 
-from nautobot.utilities.tables import BaseTable, ToggleColumn
+from nautobot.utilities.tables import BaseTable, BooleanColumn, ChoiceFieldColumn, ColorColumn, ContentTypesColumn, ToggleColumn
 
 from .models import (
     ConfigCompliance,
     ComplianceFeature,
     GoldenConfiguration,
+    GoldenConfigSettings,
     BackupConfigLineRemove,
     BackupConfigLineReplace,
 )
@@ -255,6 +258,24 @@ class ComplianceFeatureTable(BaseTable):
         model = ComplianceFeature
         fields = ("pk", "name", "slug", "platform", "description", "config_ordered", "match_config")
         default_columns = ("pk", "name", "slug", "platform", "description", "config_ordered", "match_config")
+
+
+class GoldenConfigSettingsTable(BaseTable):
+    """Table to display Golden Config Settings."""
+
+    query = Column(accessor="sot_agg_query", verbose_name="Query")
+    backup = Column(accessor="backup_path_template", verbose_name="Backup Path")
+    intended = Column(accessor="intended_path_template", verbose_name="Intended Path")
+    template = Column(accessor="jinja_path_template", verbose_name="Template Path")
+    connectivity_test = BooleanColumn(accessor="backup_test_connectivity", verbose_name="Backup Connectivity Test")
+    shorten = BooleanColumn(accessor="shorten_sot_query", verbose_name="Shorten")
+    
+    class Meta(BaseTable.Meta):
+        """Table to display Golden Config Settings Meta Data."""
+
+        model = GoldenConfigSettings
+        fields = ("query", "backup", "intended", "template", "connectivity_test", "shorten")
+        default_columns = ("query", "backup", "intended", "template", "connectivity_test", "shorten")
 
 
 class BackupConfigLineRemoveTable(BaseTable):

@@ -1,4 +1,4 @@
-"""Data source plugin extenstion to register additional git repo types."""
+"""Data source plugin extension to register additional git repo types."""
 from nautobot.extras.choices import LogLevelChoices
 from nautobot.extras.registry import DatasourceContent
 

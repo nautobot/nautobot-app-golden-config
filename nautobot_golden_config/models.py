@@ -148,7 +148,7 @@ class GoldenConfigSettings(BaseModel):
         null=False,
         blank=True,
         verbose_name="Backup Path in Jinja Template Form",
-        help_text="The Jinja path representation of where the backup file will be found. The variable `obj` is availiable as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.site.slug}}/{{obj.name}}.cfg`",
+        help_text="The Jinja path representation of where the backup file will be found. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.site.slug}}/{{obj.name}}.cfg`",
     )
     intended_path_template = models.CharField(
         max_length=255,
@@ -162,7 +162,7 @@ class GoldenConfigSettings(BaseModel):
         null=False,
         blank=True,
         verbose_name="Template Path in Jinja Template Form",
-        help_text="The Jinja path representation of where the Jinja temaplte can be found. e.g. `{{obj.platform.slug}}.j2`",
+        help_text="The Jinja path representation of where the Jinja template can be found. e.g. `{{obj.platform.slug}}.j2`",
     )
     backup_test_connectivity = models.BooleanField(
         null=False,
@@ -238,7 +238,7 @@ class BackupConfigLineRemove(BaseModel):
 
     def __str__(self):
         """Return a simple string if model is called."""
-        return "Backup Config Line Removal"
+        return self.name
 
 
 class BackupConfigLineReplace(BaseModel):
@@ -267,4 +267,4 @@ class BackupConfigLineReplace(BaseModel):
 
     def __str__(self):
         """Return a simple string if model is called."""
-        return "Backup Config Line Replace"
+        return self.name

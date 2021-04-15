@@ -33,6 +33,7 @@ urlpatterns = [
         views.ComplianceFeatureDeleteView.as_view(),
         name="compliancefeature_delete",
     ),
+    path("settings/", views.GoldenConfigSettingsView.as_view(), name="goldenconfigsettings"),
     path("settings/<uuid:pk>/edit/", views.GoldenConfigSettingsEditView.as_view(), name="goldenconfigsettings_edit"),
     path("line-removal/", views.BackupConfigLineRemovalView.as_view(), name="backuplineremoval"),
     path("line-removal/add/", views.BackupConfigLineRemovalEditView.as_view(), name="backuplineremoval_add"),

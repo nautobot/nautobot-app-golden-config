@@ -45,6 +45,7 @@ from .tables import (
     ConfigComplianceTable,
     ConfigComplianceDeleteTable,
     GoldenConfigurationTable,
+    GoldenConfigSettingsTable,
     BackupConfigLineRemoveTable,
     BackupConfigLineReplaceTable,
 )
@@ -554,11 +555,20 @@ class ComplianceFeatureBulkDeleteView(generic.BulkDeleteView):
     table = ComplianceFeatureTable
 
 
+class GoldenConfigSettingsView(generic.ObjectListView):
+    """View for viewing the Global configurations."""
+
+    queryset = GoldenConfigSettings.objects.filter(id="aaaaaaaa-0000-0000-0000-000000000001")
+    table = GoldenConfigSettingsTable
+    template_name = "nautobot_golden_config/goldenconfigsettings.html"
+
+
 class GoldenConfigSettingsEditView(generic.ObjectEditView):
     """View for editing the Global configurations."""
 
     queryset = GoldenConfigSettings.objects.filter(id="aaaaaaaa-0000-0000-0000-000000000001")
     model_form = GoldenConfigSettingsFeatureForm
+    default_return_url = "plugins:nautobot_golden_config:goldenconfigsettings"
 
 
 class BackupConfigLineRemovalView(generic.ObjectListView):
@@ -574,12 +584,14 @@ class BackupConfigLineRemovalEditView(generic.ObjectEditView):
 
     queryset = BackupConfigLineRemove.objects.all()
     model_form = BackupLineRemovalForm
+    default_return_url = "plugins:nautobot_golden_config:backuplineremoval"
 
 
 class BackupConfigLineRemovalBulkDeleteView(generic.BulkDeleteView):
     """View for bulk deleting Line Removals."""
 
     queryset = BackupConfigLineRemove.objects.all()
+    default_return_url = "plugins:nautobot_golden_config:backuplinereplace"
 
 
 class BackupConfigLineReplaceView(generic.ObjectListView):
@@ -595,9 +607,11 @@ class BackupConfigLineReplaceEditView(generic.ObjectEditView):
 
     queryset = BackupConfigLineReplace.objects.all()
     model_form = BackupLineReplaceForm
+    default_return_url = "plugins:nautobot_golden_config:backuplinereplace"
 
 
 class BackupConfigLineReplaceBulkDeleteView(generic.BulkDeleteView):
     """View for bulk deleting Line Replacements."""
 
     queryset = BackupConfigLineReplace.objects.all()
+    default_return_url = "plugins:nautobot_golden_config:backuplinereplace"

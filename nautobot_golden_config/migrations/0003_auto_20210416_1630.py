@@ -8,44 +8,68 @@ import uuid
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('dcim', '0004_initial_part_4'),
-        ('nautobot_golden_config', '0002_custom_data'),
+        ("dcim", "0004_initial_part_4"),
+        ("nautobot_golden_config", "0002_custom_data"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='goldenconfigsettings',
-            name='remove_lines',
+            model_name="goldenconfigsettings",
+            name="remove_lines",
         ),
         migrations.RemoveField(
-            model_name='goldenconfigsettings',
-            name='substitute_lines',
+            model_name="goldenconfigsettings",
+            name="substitute_lines",
         ),
         migrations.CreateModel(
-            name='BackupConfigLineReplace',
+            name="BackupConfigLineReplace",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False, unique=True)),
-                ('name', models.CharField(max_length=255)),
-                ('description', models.CharField(blank=True, max_length=200)),
-                ('substitute_text', models.CharField(max_length=200)),
-                ('replaced_text', models.CharField(max_length=200)),
-                ('platform', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='backup_line_replace', to='dcim.platform')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False, unique=True
+                    ),
+                ),
+                ("name", models.CharField(max_length=255)),
+                ("description", models.CharField(blank=True, max_length=200)),
+                ("substitute_text", models.CharField(max_length=200)),
+                ("replaced_text", models.CharField(max_length=200)),
+                (
+                    "platform",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="backup_line_replace",
+                        to="dcim.platform",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
         migrations.CreateModel(
-            name='BackupConfigLineRemove',
+            name="BackupConfigLineRemove",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False, unique=True)),
-                ('name', models.CharField(max_length=255)),
-                ('description', models.CharField(blank=True, max_length=200)),
-                ('regex_line', models.CharField(max_length=200)),
-                ('platform', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='backup_line_remove', to='dcim.platform')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False, unique=True
+                    ),
+                ),
+                ("name", models.CharField(max_length=255)),
+                ("description", models.CharField(blank=True, max_length=200)),
+                ("regex_line", models.CharField(max_length=200)),
+                (
+                    "platform",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="backup_line_remove",
+                        to="dcim.platform",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
     ]

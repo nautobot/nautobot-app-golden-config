@@ -117,7 +117,8 @@ def config_backup(job_result, data, backup_root_folder):
         name="BACKUP CONFIG",
         logger=logger,
         global_settings=global_settings,
-        regex_dict=remove_regex_dict,
+        remove_regex_dict=remove_regex_dict,
+        replace_regex_dict=replace_regex_dict,
         backup_root_folder=backup_root_folder,
     )
 

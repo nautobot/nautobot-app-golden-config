@@ -19,6 +19,13 @@ from .models import (
 )
 
 
+class SettingsFeatureFilterForm(BootstrapMixin, forms.Form):
+    """Form for ComplianceFeature instances."""
+
+    platform = DynamicModelChoiceField(queryset=Platform.objects.all(), required=False)
+    name = forms.CharField(required=False)
+
+
 class GoldenConfigurationFilterForm(BootstrapMixin, CustomFieldFilterForm):
     """Filter Form for GoldenConfiguration instances."""
 
@@ -114,12 +121,10 @@ class ConfigComplianceFilterForm(GoldenConfigurationFilterForm):
     )
 
 
-class ComplianceFeatureFilterForm(BootstrapMixin, forms.Form):
+class ComplianceFeatureFilterForm(SettingsFeatureFilterForm):
     """Form for ComplianceFeature instances."""
 
     model = ComplianceFeature
-    platform = DynamicModelChoiceField(queryset=Platform.objects.all(), required=False)
-    name = forms.CharField(required=False)
 
 
 class ComplianceFeatureForm(BootstrapMixin, forms.ModelForm):
@@ -192,3 +197,15 @@ class BackupLineReplaceForm(BootstrapMixin, forms.ModelForm):
             "substitute_text",
             "replaced_text",
         )
+
+
+class LineRemoveFeatureFilterForm(SettingsFeatureFilterForm):
+    """Filter Form for Line Removal."""
+
+    model = BackupConfigLineRemove
+
+
+class LineReplaceFeatureFilterForm(SettingsFeatureFilterForm):
+    """Filter Form for Line Replacement."""
+
+    model = BackupConfigLineReplace

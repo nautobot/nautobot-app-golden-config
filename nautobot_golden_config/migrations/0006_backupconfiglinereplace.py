@@ -8,23 +8,35 @@ import uuid
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('dcim', '0004_initial_part_4'),
-        ('nautobot_golden_config', '0005_delete_backupconfiglinereplace'),
+        ("dcim", "0004_initial_part_4"),
+        ("nautobot_golden_config", "0005_delete_backupconfiglinereplace"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='BackupConfigLineReplace',
+            name="BackupConfigLineReplace",
             fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False, unique=True)),
-                ('name', models.CharField(max_length=255)),
-                ('description', models.CharField(blank=True, max_length=200)),
-                ('substitute_text', models.CharField(max_length=200)),
-                ('replaced_text', models.CharField(max_length=200)),
-                ('platform', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='backup_line_replace', to='dcim.platform')),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False, unique=True
+                    ),
+                ),
+                ("name", models.CharField(max_length=255)),
+                ("description", models.CharField(blank=True, max_length=200)),
+                ("substitute_text", models.CharField(max_length=200)),
+                ("replaced_text", models.CharField(max_length=200)),
+                (
+                    "platform",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="backup_line_replace",
+                        to="dcim.platform",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
     ]

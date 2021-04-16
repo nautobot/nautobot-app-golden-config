@@ -30,6 +30,8 @@ from .forms import (
     GoldenConfigSettingsFeatureForm,
     GoldenConfigurationFilterForm,
     BackupLineRemovalForm,
+    LineRemoveFeatureFilterForm,
+    LineReplaceFeatureFilterForm,
 )
 from .models import (
     ComplianceFeature,
@@ -572,10 +574,12 @@ class GoldenConfigSettingsEditView(generic.ObjectEditView):
 
 
 class BackupConfigLineRemovalView(generic.ObjectListView):
-    """View for displaying the current Line Removals."""
+    """View to display the current Line Removals."""
 
     queryset = BackupConfigLineRemove.objects.all()
     table = BackupConfigLineRemoveTable
+    filterset = ComplianceFeatureFilter
+    filterset_form = LineRemoveFeatureFilterForm
     template_name = "nautobot_golden_config/line_removal.html"
 
 
@@ -592,6 +596,7 @@ class BackupConfigLineRemovalBulkDeleteView(generic.BulkDeleteView):
 
     queryset = BackupConfigLineRemove.objects.all()
     default_return_url = "plugins:nautobot_golden_config:backuplinereplace"
+    table = BackupConfigLineRemoveTable
 
 
 class BackupConfigLineReplaceView(generic.ObjectListView):
@@ -599,6 +604,8 @@ class BackupConfigLineReplaceView(generic.ObjectListView):
 
     queryset = BackupConfigLineReplace.objects.all()
     table = BackupConfigLineReplaceTable
+    filterset = ComplianceFeatureFilter
+    filterset_form = LineReplaceFeatureFilterForm
     template_name = "nautobot_golden_config/line_replace.html"
 
 
@@ -615,3 +622,4 @@ class BackupConfigLineReplaceBulkDeleteView(generic.BulkDeleteView):
 
     queryset = BackupConfigLineReplace.objects.all()
     default_return_url = "plugins:nautobot_golden_config:backuplinereplace"
+    table = BackupConfigLineReplaceTable

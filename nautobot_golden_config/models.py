@@ -182,22 +182,10 @@ class GoldenConfigSettings(BaseModel):
         verbose_name="GraphQL Query",
         help_text="A query that is evaluated and used to render the config. The query must start with `query ($device: String!)`.",
     )
-    remove_lines = models.TextField(
-        null=False,
-        blank=True,
-        verbose_name="Lines to remove from backup config",
-        help_text="Configuration lines to remove that match these patterns, one pattern per line.",
-    )
-    substitute_lines = models.TextField(
-        null=False,
-        blank=True,
-        verbose_name="Lines to substitute from backup config",
-        help_text="Lines substitute, using a regex pattern with replacement config three pipes (|||) and a regex pattern with a capture group. e.g. `redacted_config|||username\s+\S+\spassword\s+5\s+(\S+)\s+role\s+\S+`",  # pylint: disable=anomalous-backslash-in-string
-    )
 
     def __str__(self):
         """Return a simple string if model is called."""
-        return "Settings"
+        return "Golden Config Settings"
 
     def clean(self):
         """Validate there is only one model and if there is a GraphQL query, that it is valid."""
@@ -218,6 +206,8 @@ class GoldenConfigSettings(BaseModel):
 
 
 class BackupConfigLineRemove(BaseModel):
+    """GoldenConfigSettings for Regex Line Removals from Backup Configuration Model defintion."""
+
     name = models.CharField(max_length=255, null=False, blank=False)
     platform = models.ForeignKey(
         to="dcim.Platform",
@@ -242,6 +232,8 @@ class BackupConfigLineRemove(BaseModel):
 
 
 class BackupConfigLineReplace(BaseModel):
+    """GoldenConfigSettings for Regex Line Replacements from Backup Configuration Model defintion."""
+
     name = models.CharField(max_length=255, null=False, blank=False)
     platform = models.ForeignKey(
         to="dcim.Platform",

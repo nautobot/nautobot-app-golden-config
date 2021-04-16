@@ -1,7 +1,5 @@
 """Add the configuration compliance buttons to the Plugins Navigation."""
 
-from django.urls import reverse
-
 from nautobot.extras.plugins import PluginMenuItem, PluginMenuButton
 from nautobot.utilities.choices import ButtonColorChoices
 from .utilities.constant import ENABLE_COMPLIANCE
@@ -76,7 +74,7 @@ if ENABLE_COMPLIANCE:
             link="plugins:nautobot_golden_config:goldenconfigsettings",
             link_text="Settings",
             # permissions=["nautobot_golden_config.view_compliancefeature"],
-            ),
-        )
+        ),
+    )
 
 menu_items = tuple(plugin_items)

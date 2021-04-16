@@ -209,7 +209,7 @@ class ConfigComplianceFilter(GoldenConfigurationFilter):
         ]
 
 
-class ComplianceFeatureFilter(django_filters.FilterSet):
+class SettingsFeatureFilter(django_filters.FilterSet):
     """Boilerplate filter for compliance feature."""
 
     q = django_filters.CharFilter(
@@ -222,3 +222,7 @@ class ComplianceFeatureFilter(django_filters.FilterSet):
 
         model = ComplianceFeature
         fields = ["name", "platform"]
+
+
+class ComplianceFeatureFilter(SettingsFeatureFilter):
+    """Inherits Base Class SettingsFeatureFilter."""

@@ -6,11 +6,11 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('nautobot_golden_config', '0004_auto_20210414_1757'),
+        ("nautobot_golden_config", "0004_auto_20210414_1757"),
     ]
 
     operations = [
         migrations.DeleteModel(
-            name='BackupConfigLineReplace',
+            name="BackupConfigLineReplace",
         ),
     ]

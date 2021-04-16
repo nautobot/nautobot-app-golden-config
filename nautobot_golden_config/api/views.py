@@ -26,13 +26,15 @@ class SOTAggDeviceDetailView(APIView):
         data = json.loads(json.dumps(data))
         return Response(GraphQLSerializer(data=data).initial_data, status=status_code)
 
-class BackupConfigLineRemovalViewSet(ModelViewSet):
+
+class BackupConfigLineRemovalViewSet(ModelViewSet):  # pylint:disable=too-many-ancestors
     """API viewset for interacting with BackupConfigLineRemove objects."""
 
     queryset = BackupConfigLineRemove.objects.all()
     serializer_class = LineRemoveSerializer
 
-class BackupConfigLineReplaceViewSet(ModelViewSet):
+
+class BackupConfigLineReplaceViewSet(ModelViewSet):  # pylint:disable=too-many-ancestors
     """API viewset for interacting with BackupConfigLineReplace objects."""
 
     queryset = BackupConfigLineReplace.objects.all()

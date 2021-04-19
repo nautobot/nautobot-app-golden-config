@@ -21,8 +21,8 @@ The tool makes no assumptions to determine what an engineer may want to do, but 
 
 In order to generate the intended configurations two repositories are needed.
 
-1. A repo to save intended configurations to once generated. [See]](./navigating-golden.md#git-settings)
-2. A repo that stores Backups used to as the actual configurations. [See]](./navigating-golden.md#git-settings)
+1. A repo to save [intended configurations](./navigating-golden.md#git-settings) to once generated.
+2. A repo that stores [Backups](./navigating-golden.md#git-settings) used to as the actual configurations.
 3. The [intended_path_template](./navigating-golden.md#application-settings) configuration parameter.
 4. The [backup_path_template](./navigating-golden.md#application-settings) configuration parameter.
 
@@ -87,7 +87,7 @@ router bgp 65250
     remote-as 65250
     address-family ipv4 unicast
 ```
-Would result in the identfying the missing configurations as:
+Would result in the identifying the missing configurations as:
 
 ```
 router bgp 65250

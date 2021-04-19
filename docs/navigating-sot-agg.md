@@ -4,7 +4,7 @@ The Source of Truth Aggregation Overview is driven by a few key components.
 
 * The ability to have a single GraphQL query to aggregate information.
 * The ability to modify data with a "transposer" function.
-* The usage of config contexts and the nautobot's native git platform.
+* The usage of config contexts and the Nautobot's native git platform.
 
 # GraphQL
 

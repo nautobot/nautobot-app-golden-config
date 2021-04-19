@@ -1,15 +1,14 @@
 """Unit tests for nautobot_golden_config models."""
 
-# from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 
 from nautobot.dcim.models import Platform
 
 from nautobot_golden_config.models import (
-    ConfigCompliance,
-    GoldenConfiguration,
-    ComplianceFeature,
+    # ConfigCompliance,
+    # GoldenConfiguration,
+    # ComplianceFeature,
     GoldenConfigSettings,
     BackupConfigLineRemove,
     BackupConfigLineReplace,
@@ -19,19 +18,13 @@ from nautobot_golden_config.models import (
 class ConfigComplianceModelTestCase(TestCase):
     """Test ConfigCompliance Model."""
 
-    pass
-
 
 class GoldenConfigurationTestCase(TestCase):
     """Test GoldenConfiguration Model."""
 
-    pass
-
 
 class ComplianceFeatureTestCase(TestCase):
     """Test ComplianceFeature Model."""
-
-    pass
 
 
 class GoldenConfigSettingsModelTestCase(TestCase):
@@ -72,7 +65,9 @@ class BackupConfigLineRemoveModelTestCase(TestCase):
     def setUp(self):
         """Setup Object."""
         self.platform = Platform.objects.create(slug="cisco_ios")
-        self.line_removal = BackupConfigLineRemove.objects.create(name="foo", platform=self.platform, description="foo bar", regex_line="^Back.*")
+        self.line_removal = BackupConfigLineRemove.objects.create(
+            name="foo", platform=self.platform, description="foo bar", regex_line="^Back.*"
+        )
 
     def test_add_line_removal_entry(self):
         """Test Add Object."""
@@ -101,7 +96,13 @@ class BackupConfigLineReplaceModelTestCase(TestCase):
     def setUp(self):
         """Setup Object."""
         self.platform = Platform.objects.create(slug="cisco_ios")
-        self.line_replace = BackupConfigLineReplace.objects.create(name="foo", platform=self.platform, description="foo bar", substitute_text="username(\S+)", replaced_text="<redacted>")
+        self.line_replace = BackupConfigLineReplace.objects.create(
+            name="foo",
+            platform=self.platform,
+            description="foo bar",
+            substitute_text=r"username(\S+)",
+            replaced_text="<redacted>",
+        )
 
     def test_add_line_replace_entry(self):
         """Test Add Object."""

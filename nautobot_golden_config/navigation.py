@@ -41,14 +41,14 @@ if ENABLE_COMPLIANCE:
         PluginMenuItem(
             link="plugins:nautobot_golden_config:backuplineremoval",
             link_text="Line Removals",
-            # permissions=["nautobot_golden_config.view_compliancefeature"],
+            permissions=["nautobot_golden_config.view_compliancefeature"],
             buttons=(
                 PluginMenuButton(
                     link="plugins:nautobot_golden_config:backuplineremoval_add",
                     title="Line Removals",
                     icon_class="mdi mdi-plus-thick",
                     color=ButtonColorChoices.GREEN,
-                    # permissions=["nautobot_golden_config.add_compliancefeature"],
+                    permissions=["nautobot_golden_config.add_compliancefeature"],
                 ),
             ),
         )
@@ -57,14 +57,14 @@ if ENABLE_COMPLIANCE:
         PluginMenuItem(
             link="plugins:nautobot_golden_config:backuplinereplace",
             link_text="Line Replacements",
-            # permissions=["nautobot_golden_config.view_compliancefeature"],
+            permissions=["nautobot_golden_config.view_compliancefeature"],
             buttons=(
                 PluginMenuButton(
                     link="plugins:nautobot_golden_config:backuplinereplace_add",
                     title="Line Replacements",
                     icon_class="mdi mdi-plus-thick",
                     color=ButtonColorChoices.GREEN,
-                    # permissions=["nautobot_golden_config.add_compliancefeature"],
+                    permissions=["nautobot_golden_config.add_compliancefeature"],
                 ),
             ),
         )
@@ -73,7 +73,7 @@ if ENABLE_COMPLIANCE:
         PluginMenuItem(
             link="plugins:nautobot_golden_config:goldenconfigsettings",
             link_text="Settings",
-            # permissions=["nautobot_golden_config.view_compliancefeature"],
+            permissions=["nautobot_golden_config.view_compliancefeature"],
         ),
     )
 

@@ -28,10 +28,12 @@ InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 def run_backup(  # pylint: disable=too-many-arguments
     task: Task, logger, global_settings, remove_regex_dict, replace_regex_dict, backup_root_folder
 ) -> Result:
-    """Backup configurations to disk.
+    r"""Backup configurations to disk.
 
     Args:
         task (Task): Nornir task individual object
+        remove_regex_dict (dict): {'cisco_ios': ['^Building\\s+configuration.*\\n', '^Current\\s+configuration.*\\n', '^!\\s+Last\\s+configuration.*'], 'arista_eos': ['.s*']}
+        replace_regex_dict (dict): {'cisco_ios': [{'regex_replacement': '<redacted_config>', 'regex_search': 'username\\s+\\S+\\spassword\\s+5\\s+(\\S+)\\s+role\\s+\\S+'}]}
 
     Returns:
         result (Result): Result from Nornir task
@@ -87,7 +89,6 @@ def config_backup(job_result, data, backup_root_folder):
         if not remove_regex_dict.get(regex.platform.slug):
             remove_regex_dict[regex.platform.slug] = []
         remove_regex_dict[regex.platform.slug].append(regex.regex_line)
-    # Example: {'cisco_ios': ['^Building\\s+configuration.*\\n', '^Current\\s+configuration.*\\n', '^!\\s+Last\\s+configuration.*'], 'arista_eos': ['.s*']}
     replace_regex_dict = {}
     for regex in BackupConfigLineReplace.objects.all():
         if not replace_regex_dict.get(regex.platform.slug):
@@ -95,7 +96,6 @@ def config_backup(job_result, data, backup_root_folder):
         replace_regex_dict[regex.platform.slug].append(
             {"regex_replacement": regex.replaced_text, "regex_search": regex.substitute_text}
         )
-    # Example: {'cisco_ios': [{'regex_replacement': '<redacted_config>', 'regex_search': 'username\\s+\\S+\\spassword\\s+5\\s+(\\S+)\\s+role\\s+\\S+'}]}
     nornir_obj = InitNornir(
         runner=NORNIR_SETTINGS.get("runner"),
         logging={"enabled": False},

@@ -6,9 +6,6 @@ from django.core.exceptions import ValidationError
 from nautobot.dcim.models import Platform
 
 from nautobot_golden_config.models import (
-    # ConfigCompliance,
-    # GoldenConfiguration,
-    # ComplianceFeature,
     GoldenConfigSettings,
     BackupConfigLineRemove,
     BackupConfigLineReplace,

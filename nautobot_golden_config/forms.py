@@ -159,8 +159,6 @@ class GoldenConfigSettingsFeatureForm(BootstrapMixin, forms.ModelForm):
             "backup_test_connectivity",
             "shorten_sot_query",
             "sot_agg_query",
-            # "remove_lines",
-            # "substitute_lines",
         )
 
 

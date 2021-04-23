@@ -23,19 +23,33 @@ from nautobot.utilities.views import ContentTypePermissionRequiredMixin
 
 from .filters import ComplianceFeatureFilter, ConfigComplianceFilter, GoldenConfigurationFilter
 from .forms import (
+    BackupLineReplaceForm,
     ComplianceFeatureForm,
     ComplianceFeatureFilterForm,
     ConfigComplianceFilterForm,
     GoldenConfigSettingsFeatureForm,
     GoldenConfigurationFilterForm,
+    BackupLineRemovalForm,
+    LineRemoveFeatureFilterForm,
+    LineReplaceFeatureFilterForm,
 )
-from .models import ComplianceFeature, ConfigCompliance, GoldenConfigSettings, GoldenConfiguration
+from .models import (
+    ComplianceFeature,
+    ConfigCompliance,
+    GoldenConfigSettings,
+    GoldenConfiguration,
+    BackupConfigLineRemove,
+    BackupConfigLineReplace,
+)
 from .tables import (
     ComplianceFeatureTable,
     ConfigComplianceGlobalFeatureTable,
     ConfigComplianceTable,
     ConfigComplianceDeleteTable,
     GoldenConfigurationTable,
+    GoldenConfigSettingsTable,
+    BackupConfigLineRemoveTable,
+    BackupConfigLineReplaceTable,
 )
 from .utilities.constant import PLUGIN_CFG, ENABLE_COMPLIANCE, CONFIG_FEATURES
 from .utilities.helper import get_allowed_os_from_nested
@@ -543,8 +557,69 @@ class ComplianceFeatureBulkDeleteView(generic.BulkDeleteView):
     table = ComplianceFeatureTable
 
 
+class GoldenConfigSettingsView(generic.ObjectListView):
+    """View for viewing the Global configurations."""
+
+    queryset = GoldenConfigSettings.objects.filter(id="aaaaaaaa-0000-0000-0000-000000000001")
+    table = GoldenConfigSettingsTable
+    template_name = "nautobot_golden_config/goldenconfigsettings.html"
+
+
 class GoldenConfigSettingsEditView(generic.ObjectEditView):
     """View for editing the Global configurations."""
 
     queryset = GoldenConfigSettings.objects.filter(id="aaaaaaaa-0000-0000-0000-000000000001")
     model_form = GoldenConfigSettingsFeatureForm
+    default_return_url = "plugins:nautobot_golden_config:goldenconfigsettings"
+
+
+class BackupConfigLineRemovalView(generic.ObjectListView):
+    """View to display the current Line Removals."""
+
+    queryset = BackupConfigLineRemove.objects.all()
+    table = BackupConfigLineRemoveTable
+    filterset = ComplianceFeatureFilter
+    filterset_form = LineRemoveFeatureFilterForm
+    template_name = "nautobot_golden_config/line_removal.html"
+
+
+class BackupConfigLineRemovalEditView(generic.ObjectEditView):
+    """View for editing the current Line Removals."""
+
+    queryset = BackupConfigLineRemove.objects.all()
+    model_form = BackupLineRemovalForm
+    default_return_url = "plugins:nautobot_golden_config:backuplineremoval"
+
+
+class BackupConfigLineRemovalBulkDeleteView(generic.BulkDeleteView):
+    """View for bulk deleting Line Removals."""
+
+    queryset = BackupConfigLineRemove.objects.all()
+    default_return_url = "plugins:nautobot_golden_config:backuplinereplace"
+    table = BackupConfigLineRemoveTable
+
+
+class BackupConfigLineReplaceView(generic.ObjectListView):
+    """View for displaying the current Line Replacements."""
+
+    queryset = BackupConfigLineReplace.objects.all()
+    table = BackupConfigLineReplaceTable
+    filterset = ComplianceFeatureFilter
+    filterset_form = LineReplaceFeatureFilterForm
+    template_name = "nautobot_golden_config/line_replace.html"
+
+
+class BackupConfigLineReplaceEditView(generic.ObjectEditView):
+    """View for editing the current Line Replacements."""
+
+    queryset = BackupConfigLineReplace.objects.all()
+    model_form = BackupLineReplaceForm
+    default_return_url = "plugins:nautobot_golden_config:backuplinereplace"
+
+
+class BackupConfigLineReplaceBulkDeleteView(generic.BulkDeleteView):
+    """View for bulk deleting Line Replacements."""
+
+    queryset = BackupConfigLineReplace.objects.all()
+    default_return_url = "plugins:nautobot_golden_config:backuplinereplace"
+    table = BackupConfigLineReplaceTable

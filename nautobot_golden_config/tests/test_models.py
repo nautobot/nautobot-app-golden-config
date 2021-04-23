@@ -1,12 +1,30 @@
 """Unit tests for nautobot_golden_config models."""
 
-import unittest
+from django.test import TestCase
 from django.core.exceptions import ValidationError
 
-from nautobot_golden_config.models import GoldenConfigSettings
+from nautobot.dcim.models import Platform
+
+from nautobot_golden_config.models import (
+    GoldenConfigSettings,
+    BackupConfigLineRemove,
+    BackupConfigLineReplace,
+)
 
 
-class GoldenConfigSettingsModelTestCase(unittest.TestCase):
+class ConfigComplianceModelTestCase(TestCase):
+    """Test ConfigCompliance Model."""
+
+
+class GoldenConfigurationTestCase(TestCase):
+    """Test GoldenConfiguration Model."""
+
+
+class ComplianceFeatureTestCase(TestCase):
+    """Test ComplianceFeature Model."""
+
+
+class GoldenConfigSettingsModelTestCase(TestCase):
     """Test GoldenConfigSettings Model."""
 
     def setUp(self):
@@ -36,3 +54,71 @@ class GoldenConfigSettingsModelTestCase(unittest.TestCase):
         """Ensure clean() method returns None when valid query is sent through."""
         self.global_settings.sot_agg_query = "query ($device: String!) {devices(name:$device) {id}}"
         self.assertEqual(self.global_settings.clean(), None)
+
+
+class BackupConfigLineRemoveModelTestCase(TestCase):
+    """Test BackupConfigLineRemove Model."""
+
+    def setUp(self):
+        """Setup Object."""
+        self.platform = Platform.objects.create(slug="cisco_ios")
+        self.line_removal = BackupConfigLineRemove.objects.create(
+            name="foo", platform=self.platform, description="foo bar", regex_line="^Back.*"
+        )
+
+    def test_add_line_removal_entry(self):
+        """Test Add Object."""
+        self.assertEqual(self.line_removal.name, "foo")
+        self.assertEqual(self.line_removal.description, "foo bar")
+        self.assertEqual(self.line_removal.regex_line, "^Back.*")
+
+    def test_edit_line_removal_entry(self):
+        """Test Edit Object."""
+        new_name = "Line Remove"
+        new_desc = "Testing Remove Running Config Line"
+        new_regex = "^Running.*"
+        self.line_removal.name = new_name
+        self.line_removal.description = new_desc
+        self.line_removal.regex_line = new_regex
+        self.line_removal.save()
+
+        self.assertEqual(self.line_removal.name, new_name)
+        self.assertEqual(self.line_removal.description, new_desc)
+        self.assertEqual(self.line_removal.regex_line, new_regex)
+
+
+class BackupConfigLineReplaceModelTestCase(TestCase):
+    """Test BackupConfigLineReplace Model."""
+
+    def setUp(self):
+        """Setup Object."""
+        self.platform = Platform.objects.create(slug="cisco_ios")
+        self.line_replace = BackupConfigLineReplace.objects.create(
+            name="foo",
+            platform=self.platform,
+            description="foo bar",
+            substitute_text=r"username(\S+)",
+            replaced_text="<redacted>",
+        )
+
+    def test_add_line_replace_entry(self):
+        """Test Add Object."""
+        self.assertEqual(self.line_replace.name, "foo")
+        self.assertEqual(self.line_replace.description, "foo bar")
+        self.assertEqual(self.line_replace.substitute_text, r"username(\S+)")
+        self.assertEqual(self.line_replace.replaced_text, "<redacted>")
+
+    def test_edit_line_replace_entry(self):
+        """Test Edit Object."""
+        new_name = "Line Replacement"
+        new_desc = "Testing Replacing Config Line"
+        new_regex = r"password(\S+)"
+        self.line_replace.name = new_name
+        self.line_replace.description = new_desc
+        self.line_replace.substitute_text = new_regex
+        self.line_replace.save()
+
+        self.assertEqual(self.line_replace.name, new_name)
+        self.assertEqual(self.line_replace.description, new_desc)
+        self.assertEqual(self.line_replace.substitute_text, new_regex)
+        self.assertEqual(self.line_replace.replaced_text, "<redacted>")

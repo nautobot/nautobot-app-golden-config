@@ -36,11 +36,11 @@ Each Job attempts to provide sane error handling, and respects the `debug` flag 
 
 # Application Settings
 
-The golden configuration plugin settings can be found by navigating to `Plugins -> Compliance Rules -> Settings` button..
+The golden configuration plugin settings can be found by navigating to `Plugins -> Settings` button. Under the `Golden Configuration` section.
 
 ![Navigate to Compliance Rules](./img/navigate-compliance-rules.png)
 
-To configure the settings click `Settings`.
+To configure or update the settings click `Edit`.
 
 Next fill out the Settings.
 
@@ -50,14 +50,12 @@ Next fill out the Settings.
 |Intended Path|The Jinja path representation of where the generated file will be places. e.g. `{{obj.site.slug}}/{{obj.name}}.cfg`|
 |Template Path|The Jinja path representation of where the Jinja temaplte can be found. e.g. `{{obj.platform.slug}}.j2`|
 |GraphQL Query|A query that is evaluated and used to render the config. The query must start with `query ($device: String!)`.|
-|Lines to Remove|Configuration lines to remove that match these patterns, one pattern per line.|
-Lines to Substitute|Uses a regex pattern with replacement config three pipes (\|\|\|) and a regex pattern with a capture group. e.g. `redacted_config\|\|\|username\s+\S+\spassword\s+5\s+(\S+)\s+role\s+\S+`|
-<br>
+
 > Note: Each of these will be further detailed in their respective sections.
 
 # Git Settings
 
-The plugin makes heavy use of the nautobot git data sources feature. There are up to three repositories used in the application. This set of instructions will walk an operator through setting up the backup repository. The steps are the same, except for the "Provides" field name chosen.
+The plugin makes heavy use of the Nautobot git data sources feature. There are up to three repositories used in the application. This set of instructions will walk an operator through setting up the backup repository. The steps are the same, except for the "Provides" field name chosen.
 
 In order to setup this repository, go to Nautobot and navigate to the Data Sources Git integration. `Extensibility -> Git Repositories`.
 
@@ -65,7 +63,7 @@ In order to setup this repository, go to Nautobot and navigate to the Data Sourc
 
 From the Git Repositories page we can add the **Backup** repository.
 
-Click on `[+ADD]`.
+Click on `Add`.
 
 You will now be presented with a page to fill in the repository details.
 
@@ -83,9 +81,9 @@ Parameters:
 
 ![Example Git Backups](./img/backup-git-step2.png)
 
-Select `backup configs` and click on `[Create]`.
+Select `backup configs` and click on `Create`.
 
-Once you click `[Create]` and the repository syncs, the main page will now show the repo along with its status.
+Once you click `Create` and the repository syncs, the main page will now show the repo along with its status.
 ![Git Backup Repo Status](./img/backup-git-step3.png)
 
 For their respective features, the "Provides" field could be backup intended configs and jinja templates.

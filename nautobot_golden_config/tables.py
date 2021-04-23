@@ -4,9 +4,20 @@ import copy
 from django.utils.html import format_html
 from django_tables2 import Column, TemplateColumn
 
-from nautobot.utilities.tables import BaseTable, ToggleColumn
+from nautobot.utilities.tables import (
+    BaseTable,
+    BooleanColumn,
+    ToggleColumn,
+)
 
-from .models import ConfigCompliance, ComplianceFeature, GoldenConfiguration
+from .models import (
+    ConfigCompliance,
+    ComplianceFeature,
+    GoldenConfiguration,
+    GoldenConfigSettings,
+    BackupConfigLineRemove,
+    BackupConfigLineReplace,
+)
 from .utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED, CONFIG_FEATURES
 
 
@@ -101,6 +112,14 @@ COMPLIANCE_FEATURE_NAME = (
 )
 
 MATCH_CONFIG = """{{ record.match_config|linebreaksbr }}"""
+
+BACKUP_LINE_REMOVAL = (
+    """<a href="{% url 'plugins:nautobot_golden_config:backuplineremoval_edit' pk=record.pk %}">{{ record.name }}</a>"""
+)
+
+BACKUP_LINE_REPLACE = (
+    """<a href="{% url 'plugins:nautobot_golden_config:backuplinereplace_edit' pk=record.pk %}">{{ record.name }}</a>"""
+)
 
 
 def actual_fields():
@@ -249,3 +268,49 @@ class ComplianceFeatureTable(BaseTable):
         model = ComplianceFeature
         fields = ("pk", "name", "slug", "platform", "description", "config_ordered", "match_config")
         default_columns = ("pk", "name", "slug", "platform", "description", "config_ordered", "match_config")
+
+
+class GoldenConfigSettingsTable(BaseTable):
+    """Table to display Golden Config Settings."""
+
+    query = TemplateColumn("{{record.sot_agg_query|truncatewords:8}}")
+    backup = Column(accessor="backup_path_template", verbose_name="Backup Path")
+    intended = Column(accessor="intended_path_template", verbose_name="Intended Path")
+    template = Column(accessor="jinja_path_template", verbose_name="Template Path")
+    connectivity_test = BooleanColumn(accessor="backup_test_connectivity", verbose_name="Backup Connectivity Test")
+    shorten = BooleanColumn(accessor="shorten_sot_query", verbose_name="Shorten")
+
+    class Meta(BaseTable.Meta):
+        """Table to display Golden Config Settings Meta Data."""
+
+        model = GoldenConfigSettings
+        fields = ("query", "backup", "intended", "template", "connectivity_test", "shorten")
+        default_columns = ("query", "backup", "intended", "template", "connectivity_test", "shorten")
+
+
+class BackupConfigLineRemoveTable(BaseTable):
+    """Table to display Compliance Features."""
+
+    pk = ToggleColumn()
+    name_link = TemplateColumn(template_code=BACKUP_LINE_REMOVAL, verbose_name="Name")
+
+    class Meta(BaseTable.Meta):
+        """Table to display Compliance Features Meta Data."""
+
+        model = BackupConfigLineRemove
+        fields = ("pk", "name_link", "platform", "description", "regex_line")
+        default_columns = ("pk", "name_link", "platform", "description", "regex_line")
+
+
+class BackupConfigLineReplaceTable(BaseTable):
+    """Table to display Compliance Features."""
+
+    pk = ToggleColumn()
+    name_link = TemplateColumn(template_code=BACKUP_LINE_REPLACE, verbose_name="Name")
+
+    class Meta(BaseTable.Meta):
+        """Table to display Compliance Features Meta Data."""
+
+        model = BackupConfigLineReplace
+        fields = ("pk", "name_link", "platform", "description", "substitute_text", "replaced_text")
+        default_columns = ("pk", "name_link", "platform", "description", "substitute_text", "replaced_text")

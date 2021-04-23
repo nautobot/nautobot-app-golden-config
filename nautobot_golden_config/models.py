@@ -148,7 +148,7 @@ class GoldenConfigSettings(BaseModel):
         null=False,
         blank=True,
         verbose_name="Backup Path in Jinja Template Form",
-        help_text="The Jinja path representation of where the backup file will be found. The variable `obj` is availiable as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.site.slug}}/{{obj.name}}.cfg`",
+        help_text="The Jinja path representation of where the backup file will be found. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.site.slug}}/{{obj.name}}.cfg`",
     )
     intended_path_template = models.CharField(
         max_length=255,
@@ -162,7 +162,7 @@ class GoldenConfigSettings(BaseModel):
         null=False,
         blank=True,
         verbose_name="Template Path in Jinja Template Form",
-        help_text="The Jinja path representation of where the Jinja temaplte can be found. e.g. `{{obj.platform.slug}}.j2`",
+        help_text="The Jinja path representation of where the Jinja template can be found. e.g. `{{obj.platform.slug}}.j2`",
     )
     backup_test_connectivity = models.BooleanField(
         null=False,
@@ -182,22 +182,10 @@ class GoldenConfigSettings(BaseModel):
         verbose_name="GraphQL Query",
         help_text="A query that is evaluated and used to render the config. The query must start with `query ($device: String!)`.",
     )
-    remove_lines = models.TextField(
-        null=False,
-        blank=True,
-        verbose_name="Lines to remove from backup config",
-        help_text="Configuration lines to remove that match these patterns, one pattern per line.",
-    )
-    substitute_lines = models.TextField(
-        null=False,
-        blank=True,
-        verbose_name="Lines to substitute from backup config",
-        help_text="Lines substitute, using a regex pattern with replacement config three pipes (|||) and a regex pattern with a capture group. e.g. `redacted_config|||username\s+\S+\spassword\s+5\s+(\S+)\s+role\s+\S+`",  # pylint: disable=anomalous-backslash-in-string
-    )
 
     def __str__(self):
         """Return a simple string if model is called."""
-        return "Settings"
+        return "Golden Config Settings"
 
     def clean(self):
         """Validate there is only one model and if there is a GraphQL query, that it is valid."""
@@ -215,3 +203,60 @@ class GoldenConfigSettings(BaseModel):
             graphql_start = "query ($device: String!)"
             if not str(self.sot_agg_query).startswith(graphql_start):
                 raise ValidationError(f"The GraphQL query must start with exactly `{graphql_start}`")
+
+
+class BackupConfigLineRemove(BaseModel):
+    """GoldenConfigSettings for Regex Line Removals from Backup Configuration Model defintion."""
+
+    name = models.CharField(max_length=255, null=False, blank=False)
+    platform = models.ForeignKey(
+        to="dcim.Platform",
+        on_delete=models.CASCADE,
+        related_name="backup_line_remove",
+        null=False,
+        blank=False,
+    )
+    description = models.CharField(
+        max_length=200,
+        blank=True,
+    )
+    regex_line = models.CharField(
+        max_length=200,
+        verbose_name="Regex Pattern",
+        help_text="Regex pattern used to remove a line from the backup configuration.",
+    )
+
+    def __str__(self):
+        """Return a simple string if model is called."""
+        return self.name
+
+
+class BackupConfigLineReplace(BaseModel):
+    """GoldenConfigSettings for Regex Line Replacements from Backup Configuration Model defintion."""
+
+    name = models.CharField(max_length=255, null=False, blank=False)
+    platform = models.ForeignKey(
+        to="dcim.Platform",
+        on_delete=models.CASCADE,
+        related_name="backup_line_replace",
+        null=False,
+        blank=False,
+    )
+    description = models.CharField(
+        max_length=200,
+        blank=True,
+    )
+    substitute_text = models.CharField(
+        max_length=200,
+        verbose_name="Regex Pattern to Substitute",
+        help_text="Regex pattern that will be found and replaced with 'replaced text'.",
+    )
+    replaced_text = models.CharField(
+        max_length=200,
+        verbose_name="Replaced Text",
+        help_text="Text that will be inserted in place of Regex pattern match.",
+    )
+
+    def __str__(self):
+        """Return a simple string if model is called."""
+        return self.name

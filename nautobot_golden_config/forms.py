@@ -9,7 +9,21 @@ from nautobot.extras.forms import CustomFieldFilterForm
 from nautobot.tenancy.models import Tenant, TenantGroup
 from nautobot.utilities.forms import BootstrapMixin, DynamicModelMultipleChoiceField, DynamicModelChoiceField
 
-from .models import ConfigCompliance, ComplianceFeature, GoldenConfigSettings, GoldenConfiguration
+from .models import (
+    ConfigCompliance,
+    ComplianceFeature,
+    GoldenConfigSettings,
+    GoldenConfiguration,
+    BackupConfigLineRemove,
+    BackupConfigLineReplace,
+)
+
+
+class SettingsFeatureFilterForm(BootstrapMixin, forms.Form):
+    """Form for ComplianceFeature instances."""
+
+    platform = DynamicModelChoiceField(queryset=Platform.objects.all(), required=False)
+    name = forms.CharField(required=False)
 
 
 class GoldenConfigurationFilterForm(BootstrapMixin, CustomFieldFilterForm):
@@ -107,12 +121,10 @@ class ConfigComplianceFilterForm(GoldenConfigurationFilterForm):
     )
 
 
-class ComplianceFeatureFilterForm(BootstrapMixin, forms.Form):
+class ComplianceFeatureFilterForm(SettingsFeatureFilterForm):
     """Form for ComplianceFeature instances."""
 
     model = ComplianceFeature
-    platform = DynamicModelChoiceField(queryset=Platform.objects.all(), required=False)
-    name = forms.CharField(required=False)
 
 
 class ComplianceFeatureForm(BootstrapMixin, forms.ModelForm):
@@ -147,6 +159,51 @@ class GoldenConfigSettingsFeatureForm(BootstrapMixin, forms.ModelForm):
             "backup_test_connectivity",
             "shorten_sot_query",
             "sot_agg_query",
-            "remove_lines",
-            "substitute_lines",
         )
+
+
+class BackupLineRemovalForm(BootstrapMixin, forms.ModelForm):
+    """Filter Form for Line Removal instances."""
+
+    platform = DynamicModelChoiceField(queryset=Platform.objects.all())
+
+    class Meta:
+        """Boilerplate form Meta data for removal feature."""
+
+        model = BackupConfigLineRemove
+        fields = (
+            "platform",
+            "name",
+            "description",
+            "regex_line",
+        )
+
+
+class BackupLineReplaceForm(BootstrapMixin, forms.ModelForm):
+    """Filter Form for Line Removal instances."""
+
+    platform = DynamicModelChoiceField(queryset=Platform.objects.all())
+
+    class Meta:
+        """Boilerplate form Meta data for removal feature."""
+
+        model = BackupConfigLineReplace
+        fields = (
+            "platform",
+            "name",
+            "description",
+            "substitute_text",
+            "replaced_text",
+        )
+
+
+class LineRemoveFeatureFilterForm(SettingsFeatureFilterForm):
+    """Filter Form for Line Removal."""
+
+    model = BackupConfigLineRemove
+
+
+class LineReplaceFeatureFilterForm(SettingsFeatureFilterForm):
+    """Filter Form for Line Replacement."""
+
+    model = BackupConfigLineReplace

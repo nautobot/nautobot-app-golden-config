@@ -14,26 +14,26 @@ from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInv
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 
 from nautobot_golden_config.utilities.helper import get_allowed_os, verify_global_settings, check_jinja_template
-from nautobot_golden_config.models import GoldenConfigSettings, GoldenConfiguration
+from nautobot_golden_config.models import (
+    GoldenConfigSettings,
+    GoldenConfiguration,
+    BackupConfigLineRemove,
+    BackupConfigLineReplace,
+)
 from .processor import ProcessGoldenConfig
 
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 
 
-def get_substitute_lines(text):
-    """Helper functionality to split on filter."""
-    substitute_lines = []
-    for line in text.splitlines():
-        regex_replacement, regex_search = line.split("|||")
-        substitute_lines.append({"regex_replacement": regex_replacement, "regex_search": regex_search})
-    return substitute_lines
-
-
-def run_backup(task: Task, logger, global_settings, backup_root_folder) -> Result:
-    """Backup configurations to disk.
+def run_backup(  # pylint: disable=too-many-arguments
+    task: Task, logger, global_settings, remove_regex_dict, replace_regex_dict, backup_root_folder
+) -> Result:
+    r"""Backup configurations to disk.
 
     Args:
         task (Task): Nornir task individual object
+        remove_regex_dict (dict): {'cisco_ios': ['^Building\\s+configuration.*\\n', '^Current\\s+configuration.*\\n', '^!\\s+Last\\s+configuration.*'], 'arista_eos': ['.s*']}
+        replace_regex_dict (dict): {'cisco_ios': [{'regex_replacement': '<redacted_config>', 'regex_search': 'username\\s+\\S+\\spassword\\s+5\\s+(\\S+)\\s+role\\s+\\S+'}]}
 
     Returns:
         result (Result): Result from Nornir task
@@ -50,7 +50,6 @@ def run_backup(task: Task, logger, global_settings, backup_root_folder) -> Resul
 
     backup_path_template_obj = check_jinja_template(obj, logger, global_settings.backup_path_template)
     backup_file = os.path.join(backup_root_folder, backup_path_template_obj)
-    substitute_lines = get_substitute_lines(global_settings.substitute_lines)
 
     if global_settings.backup_test_connectivity is not False:
         task.run(
@@ -67,8 +66,8 @@ def run_backup(task: Task, logger, global_settings, backup_root_folder) -> Resul
         obj=obj,
         logger=logger,
         backup_file=backup_file,
-        remove_lines=global_settings.remove_lines.splitlines(),
-        substitute_lines=substitute_lines,
+        remove_lines=remove_regex_dict.get(obj.platform.slug, []),
+        substitute_lines=replace_regex_dict.get(obj.platform.slug, []),
     )[1].result["config"]
 
     backup_obj.backup_last_success_date = task.host.defaults.data["now"]
@@ -85,6 +84,18 @@ def config_backup(job_result, data, backup_root_folder):
     logger = NornirLogger(__name__, job_result, data.get("debug"))
     global_settings = GoldenConfigSettings.objects.get(id="aaaaaaaa-0000-0000-0000-000000000001")
     verify_global_settings(logger, global_settings, ["backup_path_template", "intended_path_template"])
+    remove_regex_dict = {}
+    for regex in BackupConfigLineRemove.objects.all():
+        if not remove_regex_dict.get(regex.platform.slug):
+            remove_regex_dict[regex.platform.slug] = []
+        remove_regex_dict[regex.platform.slug].append(regex.regex_line)
+    replace_regex_dict = {}
+    for regex in BackupConfigLineReplace.objects.all():
+        if not replace_regex_dict.get(regex.platform.slug):
+            replace_regex_dict[regex.platform.slug] = []
+        replace_regex_dict[regex.platform.slug].append(
+            {"regex_replacement": regex.replaced_text, "regex_search": regex.substitute_text}
+        )
     nornir_obj = InitNornir(
         runner=NORNIR_SETTINGS.get("runner"),
         logging={"enabled": False},
@@ -106,6 +117,8 @@ def config_backup(job_result, data, backup_root_folder):
         name="BACKUP CONFIG",
         logger=logger,
         global_settings=global_settings,
+        remove_regex_dict=remove_regex_dict,
+        replace_regex_dict=replace_regex_dict,
         backup_root_folder=backup_root_folder,
     )
 

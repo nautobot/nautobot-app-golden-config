@@ -5,10 +5,11 @@ from jinja2 import Template, StrictUndefined, UndefinedError
 from jinja2.exceptions import TemplateError, TemplateSyntaxError
 
 from nornir_nautobot.exceptions import NornirNautobotException
+from nornir_nautobot.plugins.tasks.dispatcher import _DEFAULT_DRIVERS_MAPPING
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.dcim.models import Device, Platform
 
-from .constant import ALLOWED_OS
+from .constant import ALLOWED_OS, PLUGIN_CFG
 
 FIELDS = {
     "platform",
@@ -52,6 +53,13 @@ def get_allowed_os_from_nested():
     if "all" in ALLOWED_OS:
         return {"device__platform__slug__in": Platform.objects.values_list("slug", flat=True)}
     return {"device__platform__slug__in": ALLOWED_OS}
+
+
+def get_dispatcher():
+    """Helper method to load the dispatcher from nautobot nornir or config if defined."""
+    if PLUGIN_CFG.get("dispatcher_mapping"):
+        return PLUGIN_CFG["dispatcher_mapping"]
+    return _DEFAULT_DRIVERS_MAPPING
 
 
 def null_to_empty(val):

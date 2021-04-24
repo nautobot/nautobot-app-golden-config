@@ -13,7 +13,12 @@ from nornir_nautobot.utils.logger import NornirLogger
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 
-from nautobot_golden_config.utilities.helper import get_allowed_os, verify_global_settings, check_jinja_template
+from nautobot_golden_config.utilities.helper import (
+    get_allowed_os,
+    get_dispatcher,
+    verify_global_settings,
+    check_jinja_template,
+)
 from nautobot_golden_config.models import (
     GoldenConfigSettings,
     GoldenConfiguration,
@@ -58,6 +63,7 @@ def run_backup(  # pylint: disable=too-many-arguments
             method="check_connectivity",
             obj=obj,
             logger=logger,
+            default_drivers_mapping=get_dispatcher(),
         )
     running_config = task.run(
         task=dispatcher,
@@ -68,6 +74,7 @@ def run_backup(  # pylint: disable=too-many-arguments
         backup_file=backup_file,
         remove_lines=remove_regex_dict.get(obj.platform.slug, []),
         substitute_lines=replace_regex_dict.get(obj.platform.slug, []),
+        default_drivers_mapping=get_dispatcher(),
     )[1].result["config"]
 
     backup_obj.backup_last_success_date = task.host.defaults.data["now"]

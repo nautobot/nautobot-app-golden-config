@@ -113,3 +113,7 @@ There is no way to currently run the script via an API, this would be helpful to
 
 Enabling features such as backup or compliance, will render those parts of the UI visible. It is worth noting that disabling features does not provide any
 garbage collection and it is up to the operator to remove such data.
+
+# Network Operating System Support
+
+The version of OS's supported is documented in the [FAQ](./FAQ.md) and is controlled the platform slug. The platform slug must be exactly as expected for the plugin to work.

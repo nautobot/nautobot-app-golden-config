@@ -121,6 +121,8 @@ BACKUP_LINE_REPLACE = (
     """<a href="{% url 'plugins:nautobot_golden_config:backuplinereplace_edit' pk=record.pk %}">{{ record.name }}</a>"""
 )
 
+SETTINGS_DETAILS = """<a href="{% url 'plugins:nautobot_golden_config:goldenconfigsettings' %}">details</a>"""
+
 
 def actual_fields():
     """Convienance function to conditionally toggle columns."""
@@ -273,6 +275,7 @@ class ComplianceFeatureTable(BaseTable):
 class GoldenConfigSettingsTable(BaseTable):
     """Table to display Golden Config Settings."""
 
+    details = TemplateColumn(SETTINGS_DETAILS)
     query = TemplateColumn("{{record.sot_agg_query|truncatewords:8}}")
     backup = Column(accessor="backup_path_template", verbose_name="Backup Path")
     intended = Column(accessor="intended_path_template", verbose_name="Intended Path")
@@ -284,8 +287,8 @@ class GoldenConfigSettingsTable(BaseTable):
         """Table to display Golden Config Settings Meta Data."""
 
         model = GoldenConfigSettings
-        fields = ("query", "backup", "intended", "template", "connectivity_test", "shorten")
-        default_columns = ("query", "backup", "intended", "template", "connectivity_test", "shorten")
+        fields = ("details", "query", "backup", "intended", "template", "connectivity_test", "shorten")
+        default_columns = ("details", "query", "backup", "intended", "template", "connectivity_test", "shorten")
 
 
 class BackupConfigLineRemoveTable(BaseTable):

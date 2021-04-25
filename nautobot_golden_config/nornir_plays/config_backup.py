@@ -82,7 +82,7 @@ def config_backup(job_result, data, backup_root_folder):
     """Nornir play to backup configurations."""
     now = datetime.now()
     logger = NornirLogger(__name__, job_result, data.get("debug"))
-    global_settings = GoldenConfigSettings.objects.get(id="aaaaaaaa-0000-0000-0000-000000000001")
+    global_settings = GoldenConfigSettings.objects.first()
     verify_global_settings(logger, global_settings, ["backup_path_template", "intended_path_template"])
     remove_regex_dict = {}
     for regex in BackupConfigLineRemove.objects.all():

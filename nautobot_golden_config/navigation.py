@@ -71,9 +71,18 @@ if ENABLE_COMPLIANCE:
     )
     plugin_items.append(
         PluginMenuItem(
-            link="plugins:nautobot_golden_config:goldenconfigsettings",
+            link="plugins:nautobot_golden_config:goldenconfigsettings_list",
             link_text="Settings",
             permissions=["nautobot_golden_config.view_compliancefeature"],
+            buttons=(
+                PluginMenuButton(
+                    link="plugins:nautobot_golden_config:goldenconfigsettings_edit",
+                    title="Golden Config Settings",
+                    icon_class="mdi mdi-pencil",
+                    color=ButtonColorChoices.YELLOW,
+                    permissions=["nautobot_golden_config.edit_goldenconfigsettings"],
+                ),
+            ),
         ),
     )
 

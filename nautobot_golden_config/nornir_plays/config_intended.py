@@ -80,7 +80,7 @@ def config_intended(job_result, data, jinja_root_path, intended_root_folder):
     """Nornir play to generate configurations."""
     now = datetime.now()
     logger = NornirLogger(__name__, job_result, data.get("debug"))
-    global_settings = GoldenConfigSettings.objects.get(id="aaaaaaaa-0000-0000-0000-000000000001")
+    global_settings = GoldenConfigSettings.objects.first()
     verify_global_settings(logger, global_settings, ["jinja_path_template", "intended_path_template", "sot_agg_query"])
     nornir_obj = InitNornir(
         runner=NORNIR_SETTINGS.get("runner"),

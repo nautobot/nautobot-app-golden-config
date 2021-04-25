@@ -29,11 +29,7 @@ class GoldenConfigSettingsModelTestCase(TestCase):
 
     def setUp(self):
         """Get the golden config settings with the only allowed id."""
-        self.global_settings = GoldenConfigSettings.objects.get(id="aaaaaaaa-0000-0000-0000-000000000001")
-
-    def test_only_valid_id(self):
-        """Get global settings and ensure we received the allowed id."""
-        self.assertEqual(str(self.global_settings.pk), "aaaaaaaa-0000-0000-0000-000000000001")
+        self.global_settings = GoldenConfigSettings.objects.first()
 
     def test_bad_graphql_query(self):
         """Invalid graphql query."""

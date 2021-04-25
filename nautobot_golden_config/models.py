@@ -9,12 +9,15 @@ from graphene_django.settings import graphene_settings
 from graphql import get_default_backend
 from graphql.error import GraphQLSyntaxError
 
+from nautobot.extras.models import ObjectChange
+from nautobot.utilities.utils import serialize_object
 from nautobot.core.models import BaseModel
+from nautobot.core.models.generics import PrimaryModel
 
 LOGGER = logging.getLogger(__name__)
 
 
-class ConfigCompliance(BaseModel):
+class ConfigCompliance(PrimaryModel):
     """Configuration compliance details."""
 
     device = models.ForeignKey(to="dcim.Device", on_delete=models.CASCADE, help_text="The device", blank=False)
@@ -29,13 +32,27 @@ class ConfigCompliance(BaseModel):
 
     csv_headers = ["Device Name", "Feature", "Compliance"]
 
+    def get_absolute_url(self):
+        """Return absolute URL for instance."""
+        return reverse("plugins:nautobot_golden_config:application", args=[self.pk])
+
     def to_csv(self):
         """Indicates model fields to return as csv."""
-        return self.device.name, self.feature, self.compliance
+        return (self.device.name, self.feature, self.compliance)
+
+    def to_objectchange(self, action):
+        """Remove actual and intended configuration from changelog."""
+        return ObjectChange(
+            changed_object=self,
+            object_repr=str(self),
+            action=action,
+            object_data=serialize_object(self, exclude=["actual", "intended"]),
+        )
 
     class Meta:
         """Set unique together fields for model."""
 
+        ordering = ["device"]
         unique_together = (
             "device",
             "feature",
@@ -46,7 +63,7 @@ class ConfigCompliance(BaseModel):
         return f"{self.device} -> {self.feature} -> {self.compliance}"
 
 
-class GoldenConfiguration(BaseModel):
+class GoldenConfiguration(PrimaryModel):
     """Configuration Management Model."""
 
     device = models.ForeignKey(
@@ -89,12 +106,26 @@ class GoldenConfiguration(BaseModel):
             self.compliance_last_success_date,
         )
 
+    def to_objectchange(self, action):
+        """Remove actual and intended configuration from changelog."""
+        return ObjectChange(
+            changed_object=self,
+            object_repr=str(self),
+            action=action,
+            object_data=serialize_object(self, exclude=["backup_config", "intended_config", "compliance_config"]),
+        )
+
+    class Meta:
+        """Set unique together fields for model."""
+
+        ordering = ["device"]
+
     def __str__(self):
         """String representation of a the compliance."""
         return f"{self.device}"
 
 
-class ComplianceFeature(BaseModel):
+class ComplianceFeature(PrimaryModel):
     """Configuration compliance details."""
 
     name = models.CharField(max_length=255, null=False, blank=False)
@@ -140,7 +171,7 @@ class ComplianceFeature(BaseModel):
         return reverse("plugins:nautobot_golden_config:compliancefeature_list")
 
 
-class GoldenConfigSettings(BaseModel):
+class GoldenConfigSettings(PrimaryModel):
     """GoldenConfigSettings Model defintion. This provides global configs instead of via configs.py."""
 
     backup_path_template = models.CharField(
@@ -183,14 +214,28 @@ class GoldenConfigSettings(BaseModel):
         help_text="A query that is evaluated and used to render the config. The query must start with `query ($device: String!)`.",
     )
 
+    def get_absolute_url(self):
+        """Return absolute URL for instance."""
+        return reverse("plugins:nautobot_golden_config:goldenconfigsettings")
+
     def __str__(self):
         """Return a simple string if model is called."""
         return "Golden Config Settings"
 
+    def delete(self, *args, **kwargs):
+        """Enforce the singleton pattern, there is no way to delete the configurations."""
+        pass
+
+    @classmethod
+    def load(cls):
+        """Enforce the singleton pattern, fail it somehow more than one instance."""
+        if len(cls.objects.all()) != 1:
+            raise ValidationError("There was an error where more than one instance existed for a setting.")
+        return cls.objects.first()
+
     def clean(self):
         """Validate there is only one model and if there is a GraphQL query, that it is valid."""
-        if str(self.pk) != "aaaaaaaa-0000-0000-0000-000000000001":
-            raise ValidationError("Only one entry with pk aaaaaaaa-0000-0000-0000-000000000001 is permitted")
+        super().clean()
 
         if self.sot_agg_query:
             try:
@@ -205,7 +250,7 @@ class GoldenConfigSettings(BaseModel):
                 raise ValidationError(f"The GraphQL query must start with exactly `{graphql_start}`")
 
 
-class BackupConfigLineRemove(BaseModel):
+class BackupConfigLineRemove(PrimaryModel):
     """GoldenConfigSettings for Regex Line Removals from Backup Configuration Model defintion."""
 
     name = models.CharField(max_length=255, null=False, blank=False)
@@ -231,7 +276,7 @@ class BackupConfigLineRemove(BaseModel):
         return self.name
 
 
-class BackupConfigLineReplace(BaseModel):
+class BackupConfigLineReplace(PrimaryModel):
     """GoldenConfigSettings for Regex Line Replacements from Backup Configuration Model defintion."""
 
     name = models.CharField(max_length=255, null=False, blank=False)
@@ -256,6 +301,10 @@ class BackupConfigLineReplace(BaseModel):
         verbose_name="Replaced Text",
         help_text="Text that will be inserted in place of Regex pattern match.",
     )
+
+    def get_absolute_url(self):
+        """Return absolute URL for instance."""
+        return reverse("plugins:nautobot_golden_config:goldenconfigsettings")
 
     def __str__(self):
         """Return a simple string if model is called."""

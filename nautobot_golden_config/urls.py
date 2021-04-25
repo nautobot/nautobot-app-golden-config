@@ -1,7 +1,8 @@
 """Django urlpatterns declaration for config compliance plugin."""
 from django.urls import path
 
-from . import views
+from nautobot.extras.views import ObjectChangeLogView
+from . import views, models
 
 app_name = "nautobot_golden_config"
 
@@ -33,8 +34,15 @@ urlpatterns = [
         views.ComplianceFeatureDeleteView.as_view(),
         name="compliancefeature_delete",
     ),
-    path("settings/", views.GoldenConfigSettingsView.as_view(), name="goldenconfigsettings"),
-    path("settings/<uuid:pk>/edit/", views.GoldenConfigSettingsEditView.as_view(), name="goldenconfigsettings_edit"),
+    path("settings/", views.GoldenConfigSettingsListView.as_view(), name="goldenconfigsettings_list"),
+    path("settings/view/", views.GoldenConfigSettingsView.as_view(), name="goldenconfigsettings"),
+    path("settings/edit/", views.GoldenConfigSettingsEditView.as_view(), name="goldenconfigsettings_edit"),
+    path(
+        "settings/changelog/",
+        ObjectChangeLogView.as_view(),
+        name="goldenconfigsettings_changelog",
+        kwargs={"model": models.GoldenConfigSettings},
+    ),
     path("line-removal/", views.BackupConfigLineRemovalView.as_view(), name="backuplineremoval"),
     path("line-removal/add/", views.BackupConfigLineRemovalEditView.as_view(), name="backuplineremoval_add"),
     path(

@@ -67,7 +67,7 @@ class Home(generic.ObjectListView):
     table = GoldenConfigurationTable
     filterset = GoldenConfigurationFilter
     filterset_form = GoldenConfigurationFilterForm
-    queryset = GoldenConfiguration.objects.filter(**get_allowed_os_from_nested()).order_by("device__name")
+    queryset = GoldenConfiguration.objects.filter(**get_allowed_os_from_nested())
     template_name = "nautobot_golden_config/home.html"
 
     def extra_context(self):
@@ -78,7 +78,7 @@ class Home(generic.ObjectListView):
 class HomeBulkDeleteView(generic.BulkDeleteView):
     """Standard view for bulk deletion of data."""
 
-    queryset = GoldenConfiguration.objects.filter(**get_allowed_os_from_nested()).order_by("device__name")
+    queryset = GoldenConfiguration.objects.filter(**get_allowed_os_from_nested())
     table = GoldenConfigurationTable
     filterset = GoldenConfigurationFilter
 
@@ -120,7 +120,7 @@ class ConfigDetails(ContentTypePermissionRequiredMixin, generic.View):
             if request.GET.get("format") in ["json", "yaml"]:
                 structure_format = request.GET.get("format")
 
-            global_settings = GoldenConfigSettings.objects.get(id="aaaaaaaa-0000-0000-0000-000000000001")
+            global_settings = GoldenConfigSettings.objects.first()
             _, output = graph_ql_query(request, device, global_settings.sot_agg_query)
 
             if structure_format == "yaml":
@@ -557,20 +557,34 @@ class ComplianceFeatureBulkDeleteView(generic.BulkDeleteView):
     table = ComplianceFeatureTable
 
 
-class GoldenConfigSettingsView(generic.ObjectListView):
+class GoldenConfigSettingsListView(generic.ObjectListView):
     """View for viewing the Global configurations."""
 
-    queryset = GoldenConfigSettings.objects.filter(id="aaaaaaaa-0000-0000-0000-000000000001")
+    queryset = GoldenConfigSettings.objects.all()
     table = GoldenConfigSettingsTable
-    template_name = "nautobot_golden_config/goldenconfigsettings.html"
+    template_name = "nautobot_golden_config/goldenconfigsettings_list.html"
+
+
+class GoldenConfigSettingsView(generic.ObjectView):
+    """View for single dependency feature."""
+
+    queryset = GoldenConfigSettings.objects.all()
+
+    def get_extra_context(self, request, instance):
+        """Add extra data to detail view for Nautobot."""
+        return {}
 
 
 class GoldenConfigSettingsEditView(generic.ObjectEditView):
     """View for editing the Global configurations."""
 
-    queryset = GoldenConfigSettings.objects.filter(id="aaaaaaaa-0000-0000-0000-000000000001")
+    queryset = GoldenConfigSettings.objects.all()
     model_form = GoldenConfigSettingsFeatureForm
     default_return_url = "plugins:nautobot_golden_config:goldenconfigsettings"
+
+    def get_object(self, kwargs):
+        """Override method to get first object to enforce the singleton pattern."""
+        return self.queryset.first()
 
 
 class BackupConfigLineRemovalView(generic.ObjectListView):

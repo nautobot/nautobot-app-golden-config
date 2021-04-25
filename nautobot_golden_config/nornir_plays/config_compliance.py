@@ -126,7 +126,7 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     compliance_obj.compliance_last_success_date = task.host.defaults.data["now"]
     compliance_obj.compliance_config = "\n".join(diff_files(backup_file, intended_file))
     compliance_obj.save()
-    logger.log_success(obj, "Successfully tested complinace.")
+    logger.log_success(obj, "Successfully tested compliance.")
 
     return Result(host=task.host, result=feature_data)
 
@@ -136,7 +136,7 @@ def config_compliance(job_result, data, backup_root_path, intended_root_folder):
     now = datetime.now()
     features = get_features()
     logger = NornirLogger(__name__, job_result, data.get("debug"))
-    global_settings = GoldenConfigSettings.objects.get(id="aaaaaaaa-0000-0000-0000-000000000001")
+    global_settings = GoldenConfigSettings.objects.first()
     verify_global_settings(logger, global_settings, ["backup_path_template", "intended_path_template"])
     nornir_obj = InitNornir(
         runner=NORNIR_SETTINGS.get("runner"),

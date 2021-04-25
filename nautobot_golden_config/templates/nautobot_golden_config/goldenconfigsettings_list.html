@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% load buttons %}
+
+{% block content %}
+<div class="pull-right noprint">
+    {% if perms.nautobot_golden_config.change_goldenconfigsettings %}
+        <a href="{% url 'plugins:nautobot_golden_config:goldenconfigsettings_edit' %}" class="btn btn-warning">
+            <span class="mdi mdi-pencil" aria-hidden="true"></span> Edit
+        </a>
+    {% endif %}
+</div>
+<h1>{% block title %}Golden Config Settings{% endblock %}</h1>
+<div class="row">
+	<div class="col-md-10">
+        {% include 'utilities/obj_table.html' %}
+    </div>
+</div>
+{% endblock %}

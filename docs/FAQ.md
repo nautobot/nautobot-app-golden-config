@@ -42,7 +42,9 @@ _Why not predefine the configuration feature map?_
 The process is based on an opinion on what defines a feature, for one organization BGP may include the prefix configuration and another it would not.
 Understanding that there will never be consensus on what should go into a feature it becomes obvious why the users must maintain such configuration.
 
-_What are the supported platforms?_
+_What are the supported platforms? How do I configure a device with a specific OS?_
+
+The current supported platform and the associated *required* platform slug names are the following:
 
 * arista_eos
 * cisco_ios
@@ -51,6 +53,8 @@ _What are the supported platforms?_
 * linux
 * bigip_f5
 * juniper_junos
+
+In many use cases, this can be extended with a custom dispatcher, which is controlled in the [nornir-nautobot](https://github.com/nautobot/nornir-nautobot) repository.
 
 _Why not provide the corrective configurations?_
 

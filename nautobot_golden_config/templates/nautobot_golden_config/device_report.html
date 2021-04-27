@@ -205,7 +205,7 @@
 {% endfor %}
 <script type="text/javascript">
     function copyToClipboard(config_value) {
-        var $temp = $("<input>");
+        var $temp = $("<textarea>");
         $("body").append($temp);
         $temp.val(config_value).select();
         document.execCommand("copy");

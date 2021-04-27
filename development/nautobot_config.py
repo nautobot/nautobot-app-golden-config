@@ -11,7 +11,7 @@ import sys
 
 from distutils.util import strtobool
 from django.core.exceptions import ImproperlyConfigured
-from nautobot.core import settings
+from nautobot.core.settings import *  # noqa: F401,F403 #pylint: disable=W0401, W0614
 
 # Enforce required configuration parameters
 for key in [
@@ -378,5 +378,5 @@ DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda _request: DEBUG and not 
 
 if "debug_toolbar" not in EXTRA_INSTALLED_APPS:
     EXTRA_INSTALLED_APPS.append("debug_toolbar")
-if "debug_toolbar.middleware.DebugToolbarMiddleware" not in settings.MIDDLEWARE:
-    settings.MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
+if "debug_toolbar.middleware.DebugToolbarMiddleware" not in MIDDLEWARE:
+    MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")

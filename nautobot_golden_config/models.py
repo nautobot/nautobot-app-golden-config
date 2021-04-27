@@ -11,7 +11,6 @@ from graphql.error import GraphQLSyntaxError
 
 from nautobot.extras.models import ObjectChange
 from nautobot.utilities.utils import serialize_object
-from nautobot.core.models import BaseModel
 from nautobot.core.models.generics import PrimaryModel
 
 LOGGER = logging.getLogger(__name__)
@@ -214,7 +213,7 @@ class GoldenConfigSettings(PrimaryModel):
         help_text="A query that is evaluated and used to render the config. The query must start with `query ($device: String!)`.",
     )
 
-    def get_absolute_url(self):
+    def get_absolute_url(self):  # pylint: disable=no-self-use
         """Return absolute URL for instance."""
         return reverse("plugins:nautobot_golden_config:goldenconfigsettings")
 
@@ -224,7 +223,6 @@ class GoldenConfigSettings(PrimaryModel):
 
     def delete(self, *args, **kwargs):
         """Enforce the singleton pattern, there is no way to delete the configurations."""
-        pass
 
     @classmethod
     def load(cls):
@@ -302,7 +300,7 @@ class BackupConfigLineReplace(PrimaryModel):
         help_text="Text that will be inserted in place of Regex pattern match.",
     )
 
-    def get_absolute_url(self):
+    def get_absolute_url(self):  # pylint: disable=no-self-use
         """Return absolute URL for instance."""
         return reverse("plugins:nautobot_golden_config:goldenconfigsettings")
 

@@ -11,7 +11,7 @@ import sys
 
 from distutils.util import strtobool
 from django.core.exceptions import ImproperlyConfigured
-from nautobot.core.settings import *  # noqa: F401,F403 #pylint: disable=W0401, W0614
+from nautobot.core.settings import *  # noqa: F401,F403 #pylint: disable=wildcard-import, unused-wildcard-import
 
 # Enforce required configuration parameters
 for key in [

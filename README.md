@@ -2,6 +2,8 @@
 
 A plugin for [Nautobot](https://github.com/nautobot/nautobot) that intends to provide context around golden configuration.
 
+**This version is currently in Beta and will require a rebuild of the database for a 1.0 release.**
+
 # Overview
 
 You may see the [Navigating Overview](./docs/navigating-golden.md) documentation for an overview of navigating through the different areas of this plugin. You may also see the [FAQ](./docs/FAQ.md) for commonly asked questions.

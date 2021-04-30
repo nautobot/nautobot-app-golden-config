@@ -14,7 +14,7 @@
             <tbody>
             {% for item in compliance %}
                 <tr>
-                    <td>{{ item.feature }}</td>
+                    <td>{{ item.name }}</td>
                     <td>
                     {% if item.compliance == False %}
                         <span class="label label-danger">Non-Compliant</span>
@@ -43,7 +43,7 @@
             <tbody>
             {% for item in compliance %}
                 <tr>
-                    <td>{{ item.feature }}</td>
+                    <td>{{ item.name }}</td>
                     <td><span class="label label-danger">{{ item.non_compliant }}</span></td>
                     <td><span class="label label-success">{{ item.compliant }}</span></td>
                 </tr>

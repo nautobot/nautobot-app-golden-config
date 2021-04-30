@@ -168,7 +168,7 @@ class ConfigComplianceTable(BaseTable):
         # well as not as expected from user standpoint (e.g. not always the same values on columns depending on
         # filtering)
         features = list(
-            models.ConfigCompliance.objects.order_by("feature").values_list("feature", flat=True).distinct()
+            models.ConfigCompliance.objects.order_by("name").values_list("name", flat=True).distinct()
         )
         extra_columns = [(feature, ComplianceColumn(verbose_name=feature)) for feature in features]
         kwargs["extra_columns"] = extra_columns
@@ -187,7 +187,7 @@ class ConfigComplianceTable(BaseTable):
             "pk",
             "device__name",
         )
-        # All other fields (ConfigCompliance features) are constructed dynamically at instantiation time - see views.py
+        # All other fields (ConfigCompliance names) are constructed dynamically at instantiation time - see views.py
 
 
 class ConfigComplianceGlobalFeatureTable(BaseTable):
@@ -197,16 +197,16 @@ class ConfigComplianceGlobalFeatureTable(BaseTable):
     compliant = Column(accessor="compliant", verbose_name="Compliant")
     non_compliant = Column(accessor="non_compliant", verbose_name="Non-Compliant")
     comp_percent = PercentageColumn(accessor="comp_percent", verbose_name="Compliance (%)")
-    feature = Column(accessor="feature", verbose_name="Feature")
+    name = Column(accessor="name", verbose_name="Feature")
 
     class Meta(BaseTable.Meta):
         """Metaclass attributes of ConfigComplianceGlobalFeatureTable."""
 
         model = models.ConfigCompliance
-        fields = ["name", "feature", "count", "compliant", "non_compliant", "comp_percent"]
+        fields = ["name", "slug", "count", "compliant", "non_compliant", "comp_percent"]
         default_columns = [
             "name",
-            "feature",
+            "slug",
             "count",
             "compliant",
             "non_compliant",
@@ -220,12 +220,12 @@ class ConfigComplianceDeleteTable(BaseTable):
     class Meta(BaseTable.Meta):
         """Metaclass attributes of ConfigComplianceDeleteTable."""
 
-        feature = Column(accessor="feature", verbose_name="Feature")
+        name = Column(accessor="name", verbose_name="Feature")
         device__name = Column(accessor="device__name", verbose_name="Device Name")
         compliance = Column(accessor="compliance", verbose_name="Compliance")
 
         model = models.ConfigCompliance
-        fields = ("device__name", "feature", "compliance")
+        fields = ("device__name", "name", "compliance")
 
 
 class GoldenConfigurationTable(BaseTable):

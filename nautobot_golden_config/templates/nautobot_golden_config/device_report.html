@@ -72,8 +72,8 @@
                 {% else %}
                     <td style="background-color: #d9534f;">
                 {% endif %}
-                    <a href="#{{ item.feature }}">
-                        {{ item.feature }}
+                    <a href="#{{ item.name }}">
+                        {{ item.name }}
                     </a>
                 </td>
                 {% if forloop.counter|divisibleby:"5" %}
@@ -87,8 +87,8 @@
 </div>
 {% endblock %}
 {% for item in compliance_details %}
-    <div id="{{ item.feature }}" class="panel panel-default" style="width:100%">
-        <div class="panel-heading"><strong>{{ item.feature|upper }}</strong></div>
+    <div id="{{ item.name }}" class="panel panel-default" style="width:100%">
+        <div class="panel-heading"><strong>{{ item.name|upper }}</strong></div>
         <table id="content">
         <tr>
             <td style="width:250px">Status</td>

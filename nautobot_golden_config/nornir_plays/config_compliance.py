@@ -119,7 +119,7 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
         # using update_or_create() method to conveniently update actual obj or create new one.
         ConfigCompliance.objects.update_or_create(
             device=obj,
-            feature=feature,
+            name=feature,
             defaults=defaults,
         )
 

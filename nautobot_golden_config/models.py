@@ -30,8 +30,8 @@ class ConfigCompliance(PrimaryModel):
     """Configuration compliance details."""
 
     device = models.ForeignKey(to="dcim.Device", on_delete=models.CASCADE, help_text="The device", blank=False)
-    feature = models.CharField(max_length=32)
-    slug = models.SlugField(max_length=100, unique=True)
+    name = models.CharField(max_length=32)
+    slug = models.SlugField(max_length=100)
     compliance = models.BooleanField(null=True)
     actual = models.TextField(blank=True, help_text="Actual Configuration for feature")
     intended = models.TextField(blank=True, help_text="Intended Configuration for feature")
@@ -47,7 +47,7 @@ class ConfigCompliance(PrimaryModel):
 
     def to_csv(self):
         """Indicates model fields to return as csv."""
-        return (self.device.name, self.feature, self.slug, self.compliance)
+        return (self.device.name, self.name, self.slug, self.compliance)
 
     def to_objectchange(self, action):
         """Remove actual and intended configuration from changelog."""
@@ -69,7 +69,7 @@ class ConfigCompliance(PrimaryModel):
 
     def __str__(self):
         """String representation of a the compliance."""
-        return f"{self.device} -> {self.feature} -> {self.compliance}"
+        return f"{self.device} -> {self.name} -> {self.compliance}"
 
 @extras_features(
     "custom_validators",
@@ -151,7 +151,7 @@ class ComplianceFeature(PrimaryModel):
     """Configuration compliance details."""
 
     name = models.CharField(max_length=255, null=False, blank=False)
-    slug = models.SlugField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=100)
     platform = models.ForeignKey(
         to="dcim.Platform",
         on_delete=models.CASCADE,
@@ -167,7 +167,7 @@ class ComplianceFeature(PrimaryModel):
         null=False,
         blank=False,
         verbose_name="Configured Ordered",
-        help_text="Whether or not the configuration is ordered determentistically.",
+        help_text="Whether or not the configuration order matters, such as in ACLs.",
     )
     match_config = models.TextField(
         null=False,
@@ -179,9 +179,9 @@ class ComplianceFeature(PrimaryModel):
     class Meta:
         """Meta information for ComplianceFeature model."""
 
-        ordering = ("name", "platform")
+        ordering = ("slug", "platform")
         unique_together = (
-            "name",
+            "slug",
             "platform",
         )
 
@@ -276,6 +276,7 @@ class BackupConfigLineRemove(PrimaryModel):
     """GoldenConfigSettings for Regex Line Removals from Backup Configuration Model defintion."""
 
     name = models.CharField(max_length=255, null=False, blank=False)
+    slug = models.SlugField(max_length=100, unique=True)
     platform = models.ForeignKey(
         to="dcim.Platform",
         on_delete=models.CASCADE,
@@ -306,6 +307,7 @@ class BackupConfigLineReplace(PrimaryModel):
     """GoldenConfigSettings for Regex Line Replacements from Backup Configuration Model defintion."""
 
     name = models.CharField(max_length=255, null=False, blank=False)
+    slug = models.SlugField(max_length=100, unique=True)
     platform = models.ForeignKey(
         to="dcim.Platform",
         on_delete=models.CASCADE,

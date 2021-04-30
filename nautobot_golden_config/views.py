@@ -79,22 +79,22 @@ class ConfigComplianceListView(generic.ObjectListView):
 
     def alter_queryset(self, request):
         """Build actual runtime queryset as the build time queryset provides no information."""
-        # Current implementation of for feature in ConfigCompliance.objects.values_list(), to always show all
+        # Current implementation of for name (feature) in ConfigCompliance.objects.values_list(), to always show all
         # features, however this may or may not be desirable in the future. To modify, change to
         # self.queryset.values_list()
         return (
             self.queryset.annotate(
                 **{
-                    feature: Subquery(
-                        self.queryset.filter(device=OuterRef("device_id"), feature=feature).values("compliance")
+                    name: Subquery(
+                        self.queryset.filter(device=OuterRef("device_id"), name=name).values("compliance")
                     )
-                    for feature in models.ConfigCompliance.objects.values_list("feature", flat=True)
+                    for name in models.ConfigCompliance.objects.values_list("name", flat=True)
                     .distinct()
-                    .order_by("feature")
+                    .order_by("name")
                 }
             )
             .distinct(
-                *list(models.ConfigCompliance.objects.values_list("feature", flat=True).distinct()) + ["device__name"]
+                *list(models.ConfigCompliance.objects.values_list("name", flat=True).distinct()) + ["device__name"]
             )
             .order_by("device__name")
         )
@@ -110,7 +110,7 @@ class ConfigComplianceListView(generic.ObjectListView):
             return "N/A"
 
         csv_data = []
-        headers = sorted(list(models.ConfigCompliance.objects.values_list("feature", flat=True).distinct()))
+        headers = sorted(list(models.ConfigCompliance.objects.values_list("name", flat=True).distinct()))
         csv_data.append(",".join(list(["Device name"] + headers)))
         for obj in self.alter_queryset(None).values():
             # From all of the unique fields, obtain the columns, using list comprehension, add values per column,
@@ -203,7 +203,7 @@ class ConfigComplianceView(ContentTypePermissionRequiredMixin, generic.View):
         compliance_details = (
             models.ConfigCompliance.objects.filter(device=device)
             .filter(**get_allowed_os_from_nested())
-            .order_by("feature")
+            .order_by("name")
         )
         config_details = {"compliance_details": compliance_details, "device_name": device_name}
 
@@ -228,14 +228,14 @@ class ComplianceDeviceFilteredReport(ContentTypePermissionRequiredMixin, generic
             compliance_details = (
                 models.ConfigCompliance.objects.filter(device=device)
                 .filter(**get_allowed_os_from_nested())
-                .order_by("feature")
+                .order_by("name")
             )
             compliance_details = compliance_details.filter(compliance=True)
         else:
             compliance_details = (
                 models.ConfigCompliance.objects.filter(device=device)
                 .filter(**get_allowed_os_from_nested())
-                .order_by("feature")
+                .order_by("name")
             )
             compliance_details = compliance_details.filter(compliance=False)
 
@@ -346,7 +346,7 @@ class ConfigComplianceOverviewOverviewHelper(ContentTypePermissionRequiredMixin,
     @staticmethod
     def plot_barchart_visual(qs):  # pylint: disable=too-many-locals
         """Construct report visual from queryset."""
-        labels = [item["feature"] for item in qs]
+        labels = [item["name"] for item in qs]
 
         compliant = [item["compliant"] for item in qs]
         non_compliant = [item["non_compliant"] for item in qs]
@@ -422,12 +422,12 @@ class ConfigComplianceOverview(generic.ObjectListView):
     template_name = "nautobot_golden_config/overview_report.html"
     kind = "Features"
     queryset = (
-        models.ConfigCompliance.objects.values("feature")
+        models.ConfigCompliance.objects.values("name")
         .filter(**get_allowed_os_from_nested())
         .annotate(
-            count=Count("feature"),
-            compliant=Count("feature", filter=Q(compliance=True)),
-            non_compliant=Count("feature", filter=~Q(compliance=True)),
+            count=Count("name"),
+            compliant=Count("name", filter=Q(compliance=True)),
+            non_compliant=Count("name", filter=~Q(compliance=True)),
             comp_percent=ExpressionWrapper(100 * F("compliant") / F("count"), output_field=FloatField()),
         )
         .order_by("-comp_percent")
@@ -467,7 +467,7 @@ class ConfigComplianceOverview(generic.ObjectListView):
                 .aggregate(total=Count("device", distinct=True), compliants=Count("compliant", filter=Q(compliant=0)))
             )
             feature_aggr = self.filterset(request.GET, main_qs).qs.aggregate(
-                total=Count("feature"), compliants=Count("feature", filter=Q(compliance=True))
+                total=Count("name"), compliants=Count("name", filter=Q(compliance=True))
             )
 
         return (
@@ -506,7 +506,7 @@ class ConfigComplianceOverview(generic.ObjectListView):
         )
         csv_data.append(",".join([]))
 
-        qs = self.queryset.values("feature", "count", "compliant", "non_compliant", "comp_percent")
+        qs = self.queryset.values("name", "count", "compliant", "non_compliant", "comp_percent")
         csv_data.append(",".join(["Total" if item == "count" else item.capitalize() for item in qs[0].keys()]))
         for obj in qs:
             csv_data.append(

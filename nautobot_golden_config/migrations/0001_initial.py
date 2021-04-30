@@ -101,8 +101,8 @@ class Migration(migrations.Migration):
                 ('created', models.DateField(auto_now_add=True, null=True)),
                 ('last_updated', models.DateTimeField(auto_now=True, null=True)),
                 ('_custom_field_data', models.JSONField(blank=True, default=dict, encoder=django.core.serializers.json.DjangoJSONEncoder)),
-                ('feature', models.CharField(max_length=32)),
-                ('slug', models.SlugField(max_length=100, unique=True)),
+                ('name', models.CharField(max_length=32)),
+                ('slug', models.SlugField(max_length=100)),
                 ('compliance', models.BooleanField(null=True)),
                 ('actual', models.TextField(blank=True)),
                 ('intended', models.TextField(blank=True)),
@@ -125,7 +125,7 @@ class Migration(migrations.Migration):
                 ('last_updated', models.DateTimeField(auto_now=True, null=True)),
                 ('_custom_field_data', models.JSONField(blank=True, default=dict, encoder=django.core.serializers.json.DjangoJSONEncoder)),
                 ('name', models.CharField(max_length=255)),
-                ('slug', models.SlugField(max_length=100, unique=True)),
+                ('slug', models.SlugField(max_length=100)),
                 ('description', models.CharField(blank=True, max_length=200)),
                 ('config_ordered', models.BooleanField()),
                 ('match_config', models.TextField()),
@@ -134,7 +134,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'ordering': ('name', 'platform'),
-                'unique_together': {('name', 'platform')},
+                'unique_together': {('slug', 'platform')},
             },
         ),
     ]

@@ -10,19 +10,29 @@ from graphql import get_default_backend
 from graphql.error import GraphQLSyntaxError
 
 from nautobot.extras.models import ObjectChange
+from nautobot.extras.utils import extras_features
 from nautobot.utilities.utils import serialize_object
 from nautobot.core.models import BaseModel
 from nautobot.core.models.generics import PrimaryModel
 
 LOGGER = logging.getLogger(__name__)
 
-
+@extras_features(
+    "custom_fields",
+    "custom_links",
+    "custom_validators",
+    "export_templates",
+    "graphql",
+    "relationships",
+    "statuses",
+    "webhooks",
+)
 class ConfigCompliance(PrimaryModel):
     """Configuration compliance details."""
 
     device = models.ForeignKey(to="dcim.Device", on_delete=models.CASCADE, help_text="The device", blank=False)
-
     feature = models.CharField(max_length=32)
+    slug = models.SlugField(max_length=100, unique=True)
     compliance = models.BooleanField(null=True)
     actual = models.TextField(blank=True, help_text="Actual Configuration for feature")
     intended = models.TextField(blank=True, help_text="Intended Configuration for feature")
@@ -38,7 +48,7 @@ class ConfigCompliance(PrimaryModel):
 
     def to_csv(self):
         """Indicates model fields to return as csv."""
-        return (self.device.name, self.feature, self.compliance)
+        return (self.device.name, self.feature, self.slug, self.compliance)
 
     def to_objectchange(self, action):
         """Remove actual and intended configuration from changelog."""
@@ -55,14 +65,21 @@ class ConfigCompliance(PrimaryModel):
         ordering = ["device"]
         unique_together = (
             "device",
-            "feature",
+            "slug",
         )
 
     def __str__(self):
         """String representation of a the compliance."""
         return f"{self.device} -> {self.feature} -> {self.compliance}"
 
-
+@extras_features(
+    "custom_validators",
+    "export_templates",
+    "graphql",
+    "relationships",
+    "statuses",
+    "webhooks",
+)
 class GoldenConfiguration(PrimaryModel):
     """Configuration Management Model."""
 
@@ -124,11 +141,18 @@ class GoldenConfiguration(PrimaryModel):
         """String representation of a the compliance."""
         return f"{self.device}"
 
-
+@extras_features(
+    "custom_fields",
+    "custom_validators",
+    "export_templates",
+    "graphql",
+    "webhooks",
+)
 class ComplianceFeature(PrimaryModel):
     """Configuration compliance details."""
 
     name = models.CharField(max_length=255, null=False, blank=False)
+    slug = models.SlugField(max_length=100, unique=True)
     platform = models.ForeignKey(
         to="dcim.Platform",
         on_delete=models.CASCADE,
@@ -274,6 +298,10 @@ class BackupConfigLineRemove(PrimaryModel):
     def __str__(self):
         """Return a simple string if model is called."""
         return self.name
+
+    def get_absolute_url(self):
+        """Return absolute URL for instance."""
+        return reverse("plugins:nautobot_golden_config:backupconfiglineremove", args=[self.pk])
 
 
 class BackupConfigLineReplace(PrimaryModel):

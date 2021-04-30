@@ -7,16 +7,16 @@ from .utilities.constant import ENABLE_COMPLIANCE
 
 plugin_items = [
     PluginMenuItem(
-        link="plugins:nautobot_golden_config:home",
+        link="plugins:nautobot_golden_config:goldenconfiguration_list",
         link_text="Home",
-        permissions=["nautobot_golden_config.view_configstatus"],
+        permissions=["nautobot_golden_config.view_goldenconfiguration"],
     )
 ]
 
 if ENABLE_COMPLIANCE:
     plugin_items.append(
         PluginMenuItem(
-            link="plugins:nautobot_golden_config:config_report",
+            link="plugins:nautobot_golden_config:configcompliance_list",
             link_text="Configuration Compliance",
             permissions=["nautobot_golden_config.view_configcompliance"],
         )
@@ -39,23 +39,23 @@ if ENABLE_COMPLIANCE:
     )
     plugin_items.append(
         PluginMenuItem(
-            link="plugins:nautobot_golden_config:backuplineremoval",
+            link="plugins:nautobot_golden_config:backupconfiglineremove_list",
             link_text="Line Removals",
-            permissions=["nautobot_golden_config.view_compliancefeature"],
+            permissions=["nautobot_golden_config.view_backupconfiglineremove"],
             buttons=(
                 PluginMenuButton(
-                    link="plugins:nautobot_golden_config:backuplineremoval_add",
+                    link="plugins:nautobot_golden_config:backupconfiglineremove_add",
                     title="Line Removals",
                     icon_class="mdi mdi-plus-thick",
                     color=ButtonColorChoices.GREEN,
-                    permissions=["nautobot_golden_config.add_compliancefeature"],
+                    permissions=["nautobot_golden_config.add_backupconfiglineremove"],
                 ),
             ),
         )
     )
     plugin_items.append(
         PluginMenuItem(
-            link="plugins:nautobot_golden_config:backuplinereplace",
+            link="plugins:nautobot_golden_config:backuplinereplace_list",
             link_text="Line Replacements",
             permissions=["nautobot_golden_config.view_compliancefeature"],
             buttons=(

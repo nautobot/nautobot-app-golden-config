@@ -162,7 +162,7 @@ class GoldenConfigSettingsFeatureForm(BootstrapMixin, forms.ModelForm):
         )
 
 
-class BackupLineRemovalForm(BootstrapMixin, forms.ModelForm):
+class BackupConfigLineRemoveForm(BootstrapMixin, forms.ModelForm):
     """Filter Form for Line Removal instances."""
 
     platform = DynamicModelChoiceField(queryset=Platform.objects.all())
@@ -197,13 +197,14 @@ class BackupLineReplaceForm(BootstrapMixin, forms.ModelForm):
         )
 
 
-class LineRemoveFeatureFilterForm(SettingsFeatureFilterForm):
+class BackupConfigLineRemoveFeatureFilterForm(SettingsFeatureFilterForm):
     """Filter Form for Line Removal."""
 
     model = BackupConfigLineRemove
 
 
-class LineReplaceFeatureFilterForm(SettingsFeatureFilterForm):
+class BackupConfigLineReplaceFeatureFilterForm(SettingsFeatureFilterForm):
     """Filter Form for Line Replacement."""
 
     model = BackupConfigLineReplace
+

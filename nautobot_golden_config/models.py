@@ -4,6 +4,7 @@ import logging
 
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.core.validators import validate_slug
 from django.shortcuts import reverse
 from graphene_django.settings import graphene_settings
 from graphql import get_default_backend
@@ -15,6 +16,7 @@ from nautobot.utilities.utils import serialize_object
 from nautobot.core.models.generics import PrimaryModel
 
 LOGGER = logging.getLogger(__name__)
+
 
 @extras_features(
     "custom_fields",
@@ -30,8 +32,7 @@ class ConfigCompliance(PrimaryModel):
     """Configuration compliance details."""
 
     device = models.ForeignKey(to="dcim.Device", on_delete=models.CASCADE, help_text="The device", blank=False)
-    name = models.CharField(max_length=32)
-    slug = models.SlugField(max_length=100)
+    name = models.CharField(max_length=32, validators=[validate_slug])
     compliance = models.BooleanField(null=True)
     actual = models.TextField(blank=True, help_text="Actual Configuration for feature")
     intended = models.TextField(blank=True, help_text="Intended Configuration for feature")
@@ -43,11 +44,11 @@ class ConfigCompliance(PrimaryModel):
 
     def get_absolute_url(self):
         """Return absolute URL for instance."""
-        return reverse("plugins:nautobot_golden_config:application", args=[self.pk])
+        return reverse("plugins:nautobot_golden_config:configcompliance", args=[self.pk])
 
     def to_csv(self):
         """Indicates model fields to return as csv."""
-        return (self.device.name, self.name, self.slug, self.compliance)
+        return (self.device.name, self.name, self.name, self.compliance)
 
     def to_objectchange(self, action):
         """Remove actual and intended configuration from changelog."""
@@ -62,14 +63,12 @@ class ConfigCompliance(PrimaryModel):
         """Set unique together fields for model."""
 
         ordering = ["device"]
-        unique_together = (
-            "device",
-            "slug",
-        )
+        unique_together = ("device", "name")
 
     def __str__(self):
         """String representation of a the compliance."""
         return f"{self.device} -> {self.name} -> {self.compliance}"
+
 
 @extras_features(
     "custom_validators",
@@ -140,6 +139,7 @@ class GoldenConfiguration(PrimaryModel):
         """String representation of a the compliance."""
         return f"{self.device}"
 
+
 @extras_features(
     "custom_fields",
     "custom_validators",
@@ -150,8 +150,7 @@ class GoldenConfiguration(PrimaryModel):
 class ComplianceFeature(PrimaryModel):
     """Configuration compliance details."""
 
-    name = models.CharField(max_length=255, null=False, blank=False)
-    slug = models.SlugField(max_length=100)
+    name = models.CharField(max_length=255, null=False, blank=False, validators=[validate_slug])
     platform = models.ForeignKey(
         to="dcim.Platform",
         on_delete=models.CASCADE,
@@ -179,9 +178,9 @@ class ComplianceFeature(PrimaryModel):
     class Meta:
         """Meta information for ComplianceFeature model."""
 
-        ordering = ("slug", "platform")
+        ordering = ("name", "platform")
         unique_together = (
-            "slug",
+            "name",
             "platform",
         )
 
@@ -272,11 +271,10 @@ class GoldenConfigSettings(PrimaryModel):
                 raise ValidationError(f"The GraphQL query must start with exactly `{graphql_start}`")
 
 
-class BackupConfigLineRemove(PrimaryModel):
+class ConfigRemove(PrimaryModel):
     """GoldenConfigSettings for Regex Line Removals from Backup Configuration Model defintion."""
 
     name = models.CharField(max_length=255, null=False, blank=False)
-    slug = models.SlugField(max_length=100, unique=True)
     platform = models.ForeignKey(
         to="dcim.Platform",
         on_delete=models.CASCADE,
@@ -293,21 +291,31 @@ class BackupConfigLineRemove(PrimaryModel):
         verbose_name="Regex Pattern",
         help_text="Regex pattern used to remove a line from the backup configuration.",
     )
+    csv_headers = ["name", "platform", "description", "regex_line"]
+
+    class Meta:
+        """Meta information for ComplianceFeature model."""
+
+        ordering = ("platform", "name")
+        unique_together = ("name", "platform")
 
     def __str__(self):
         """Return a simple string if model is called."""
         return self.name
 
-    def get_absolute_url(self):
+    def get_absolute_url(self):  # pylint: disable=no-self-use
         """Return absolute URL for instance."""
-        return reverse("plugins:nautobot_golden_config:backupconfiglineremove", args=[self.pk])
+        # TODO: Update to create detailed view, as shown in next line
+        # return reverse("plugins:nautobot_golden_config:configremove", args=[self.pk])
+        return reverse(
+            "plugins:nautobot_golden_config:configremove_list",
+        )
 
 
-class BackupConfigLineReplace(PrimaryModel):
+class ConfigReplace(PrimaryModel):
     """GoldenConfigSettings for Regex Line Replacements from Backup Configuration Model defintion."""
 
     name = models.CharField(max_length=255, null=False, blank=False)
-    slug = models.SlugField(max_length=100, unique=True)
     platform = models.ForeignKey(
         to="dcim.Platform",
         on_delete=models.CASCADE,
@@ -330,9 +338,21 @@ class BackupConfigLineReplace(PrimaryModel):
         help_text="Text that will be inserted in place of Regex pattern match.",
     )
 
+    csv_headers = ["name", "platform", "description", "substitute_text", "replaced_text"]
+
+    class Meta:
+        """Meta information for ComplianceFeature model."""
+
+        ordering = ("platform", "name")
+        unique_together = ("name", "platform")
+
     def get_absolute_url(self):  # pylint: disable=no-self-use
         """Return absolute URL for instance."""
-        return reverse("plugins:nautobot_golden_config:goldenconfigsettings")
+        # TODO: Update to create detailed view, as shown in next line
+        # return reverse("plugins:nautobot_golden_config:configreplace", args=[self.pk])
+        return reverse(
+            "plugins:nautobot_golden_config:configreplace_list",
+        )
 
     def __str__(self):
         """Return a simple string if model is called."""

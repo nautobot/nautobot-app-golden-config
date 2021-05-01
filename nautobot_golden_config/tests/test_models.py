@@ -7,8 +7,8 @@ from nautobot.dcim.models import Platform
 
 from nautobot_golden_config.models import (
     GoldenConfigSettings,
-    BackupConfigLineRemove,
-    BackupConfigLineReplace,
+    ConfigRemove,
+    ConfigReplace,
 )
 
 
@@ -52,13 +52,13 @@ class GoldenConfigSettingsModelTestCase(TestCase):
         self.assertEqual(self.global_settings.clean(), None)
 
 
-class BackupConfigLineRemoveModelTestCase(TestCase):
-    """Test BackupConfigLineRemove Model."""
+class ConfigRemoveModelTestCase(TestCase):
+    """Test ConfigRemove Model."""
 
     def setUp(self):
         """Setup Object."""
         self.platform = Platform.objects.create(slug="cisco_ios")
-        self.line_removal = BackupConfigLineRemove.objects.create(
+        self.line_removal = ConfigRemove.objects.create(
             name="foo", platform=self.platform, description="foo bar", regex_line="^Back.*"
         )
 
@@ -83,13 +83,13 @@ class BackupConfigLineRemoveModelTestCase(TestCase):
         self.assertEqual(self.line_removal.regex_line, new_regex)
 
 
-class BackupConfigLineReplaceModelTestCase(TestCase):
-    """Test BackupConfigLineReplace Model."""
+class ConfigReplaceModelTestCase(TestCase):
+    """Test ConfigReplace Model."""
 
     def setUp(self):
         """Setup Object."""
         self.platform = Platform.objects.create(slug="cisco_ios")
-        self.line_replace = BackupConfigLineReplace.objects.create(
+        self.line_replace = ConfigReplace.objects.create(
             name="foo",
             platform=self.platform,
             description="foo bar",

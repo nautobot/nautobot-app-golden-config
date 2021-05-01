@@ -44,7 +44,7 @@ class GoldenConfigurationListView(generic.ObjectListView):
     filterset = filters.GoldenConfigurationFilter
     filterset_form = forms.GoldenConfigurationFilterForm
     queryset = models.GoldenConfiguration.objects.filter(**get_allowed_os_from_nested())
-    template_name = "nautobot_golden_config/home.html"
+    template_name = "nautobot_golden_config/goldenconfiguration_list.html"
 
     def extra_context(self):
         """Boilerplace code to modify data before returning."""
@@ -85,9 +85,7 @@ class ConfigComplianceListView(generic.ObjectListView):
         return (
             self.queryset.annotate(
                 **{
-                    name: Subquery(
-                        self.queryset.filter(device=OuterRef("device_id"), name=name).values("compliance")
-                    )
+                    name: Subquery(self.queryset.filter(device=OuterRef("device_id"), name=name).values("compliance"))
                     for name in models.ConfigCompliance.objects.values_list("name", flat=True)
                     .distinct()
                     .order_by("name")
@@ -126,7 +124,6 @@ class ConfigComplianceBulkDeleteView(generic.BulkDeleteView):
     """View for deleting one or more OnboardingTasks."""
 
     queryset = models.ConfigCompliance.objects.filter(**get_allowed_os_from_nested()).order_by("device__name")
-    default_return_url = "plugins:nautobot_golden_config:config_report"
     table = tables.ConfigComplianceDeleteTable
     filterset = filters.ConfigComplianceFilter
 
@@ -209,7 +206,7 @@ class ConfigComplianceView(ContentTypePermissionRequiredMixin, generic.View):
 
         return render(
             request,
-            "nautobot_golden_config/device_report.html",
+            "nautobot_golden_config/compliance_device_report.html",
             config_details,
         )
 
@@ -419,7 +416,7 @@ class ConfigComplianceOverview(generic.ObjectListView):
     filterset = filters.ConfigComplianceFilter
     filterset_form = forms.ConfigComplianceFilterForm
     table = tables.ConfigComplianceGlobalFeatureTable
-    template_name = "nautobot_golden_config/overview_report.html"
+    template_name = "nautobot_golden_config/compliance_overview_report.html"
     kind = "Features"
     queryset = (
         models.ConfigCompliance.objects.values("name")
@@ -556,18 +553,23 @@ class ComplianceFeatureBulkDeleteView(generic.BulkDeleteView):
 #
 
 
-class GoldenConfigSettingsListView(generic.ObjectListView):
-    """View for viewing the Global configurations."""
-
-    queryset = models.GoldenConfigSettings.objects.all()
-    table = tables.GoldenConfigSettingsTable
-    template_name = "nautobot_golden_config/goldenconfigsettings_list.html"
-
-
 class GoldenConfigSettingsView(generic.ObjectView):
     """View for single dependency feature."""
 
     queryset = models.GoldenConfigSettings.objects.all()
+
+    def get(self, request, *args, **kwargs):
+        """Override the get parameter to get the first instance to enforce singleton pattern."""
+        instance = self.queryset.first()
+
+        return render(
+            request,
+            self.get_template_name(),
+            {
+                "object": instance,
+                **self.get_extra_context(request, instance),
+            },
+        )
 
     def get_extra_context(self, request, instance):
         """Add extra data to detail view for Nautobot."""
@@ -587,72 +589,110 @@ class GoldenConfigSettingsEditView(generic.ObjectEditView):
 
 
 #
-# BackupConfigLineRemove
+# ConfigRemove
 #
 
 
-class BackupConfigLineRemoveListView(generic.ObjectListView):
+class ConfigRemoveListView(generic.ObjectListView):
     """View to display the current Line Removals."""
 
-    queryset = models.BackupConfigLineRemove.objects.all()
-    table = tables.BackupConfigLineRemoveTable
+    queryset = models.ConfigRemove.objects.all()
+    table = tables.ConfigRemoveTable
     filterset = filters.ComplianceFeatureFilter
-    filterset_form = forms.BackupConfigLineRemoveFeatureFilterForm
-    template_name = "nautobot_golden_config/line_removal.html"
+    filterset_form = forms.ConfigRemoveFeatureFilterForm
 
 
-class BackupConfigLineRemoveView(generic.ObjectView):
+class ConfigRemoveBulkImportView(generic.BulkImportView):
+    """View for bulk import of applications."""
+
+    queryset = models.ConfigRemove.objects.all()
+    model_form = forms.ConfigRemoveCSVForm
+    table = tables.ConfigRemoveTable
+
+
+class ConfigRemoveBulkEditView(generic.BulkEditView):
+    """View for bulk deleting application features."""
+
+    queryset = models.ConfigRemove.objects.all()
+    filterset = filters.ConfigRemoveFilter
+    table = tables.ConfigRemoveTable
+    form = forms.ConfigRemoveBulkEditForm
+
+
+class ConfigRemoveView(generic.ObjectView):
     """View for single dependency feature."""
 
-    queryset = models.BackupConfigLineRemove.objects.all()
+    queryset = models.ConfigRemove.objects.all()
 
     def get_extra_context(self, request, instance):
         """Add extra data to detail view for Nautobot."""
         return {}
 
 
-class BackupConfigLineRemoveEditView(generic.ObjectEditView):
+class ConfigRemoveEditView(generic.ObjectEditView):
     """View for editing the current Line Removals."""
 
-    queryset = models.BackupConfigLineRemove.objects.all()
-    model_form = forms.BackupConfigLineRemoveForm
-    default_return_url = "plugins:nautobot_golden_config:backupconfiglineremove"
+    queryset = models.ConfigRemove.objects.all()
+    model_form = forms.ConfigRemoveForm
 
 
-class BackupConfigLineRemoveBulkDeleteView(generic.BulkDeleteView):
+class ConfigRemoveBulkDeleteView(generic.BulkDeleteView):
     """View for bulk deleting Line Removals."""
 
-    queryset = models.BackupConfigLineRemove.objects.all()
-    default_return_url = "plugins:nautobot_golden_config:backuplinereplace"
-    table = tables.BackupConfigLineRemoveTable
+    queryset = models.ConfigRemove.objects.all()
+    table = tables.ConfigRemoveTable
 
 
 #
-# BackupConfigLineReplace
+# ConfigReplace
 #
 
 
-class BackupConfigLineReplaceListView(generic.ObjectListView):
+class ConfigReplaceListView(generic.ObjectListView):
     """View for displaying the current Line Replacements."""
 
-    queryset = models.BackupConfigLineReplace.objects.all()
-    table = tables.BackupConfigLineReplaceTable
+    queryset = models.ConfigReplace.objects.all()
+    table = tables.ConfigReplaceTable
     filterset = filters.ComplianceFeatureFilter
-    filterset_form = forms.BackupConfigLineReplaceFeatureFilterForm
-    template_name = "nautobot_golden_config/line_replace.html"
+    filterset_form = forms.ConfigReplaceFeatureFilterForm
 
 
-class BackupConfigLineReplaceEditView(generic.ObjectEditView):
+class ConfigReplaceEditView(generic.ObjectEditView):
     """View for editing the current Line Replacements."""
 
-    queryset = models.BackupConfigLineReplace.objects.all()
+    queryset = models.ConfigReplace.objects.all()
     model_form = forms.BackupLineReplaceForm
-    default_return_url = "plugins:nautobot_golden_config:backuplinereplace"
 
 
-class BackupConfigLineReplaceBulkDeleteView(generic.BulkDeleteView):
+class ConfigReplaceBulkDeleteView(generic.BulkDeleteView):
     """View for bulk deleting Line Replacements."""
 
-    queryset = models.BackupConfigLineReplace.objects.all()
-    default_return_url = "plugins:nautobot_golden_config:backuplinereplace"
-    table = tables.BackupConfigLineReplaceTable
+    queryset = models.ConfigReplace.objects.all()
+    table = tables.ConfigReplaceTable
+
+
+class ConfigReplaceView(generic.ObjectView):
+    """View for single dependency feature."""
+
+    queryset = models.ConfigReplace.objects.all()
+
+    def get_extra_context(self, request, instance):
+        """Add extra data to detail view for Nautobot."""
+        return {}
+
+
+class ConfigReplaceBulkImportView(generic.BulkImportView):
+    """View for bulk import of applications."""
+
+    queryset = models.ConfigReplace.objects.all()
+    model_form = forms.ConfigReplaceCSVForm
+    table = tables.ConfigReplaceTable
+
+
+class ConfigReplaceBulkEditView(generic.BulkEditView):
+    """View for bulk deleting application features."""
+
+    queryset = models.ConfigReplace.objects.all()
+    filterset = filters.ConfigReplaceFilter
+    table = tables.ConfigReplaceTable
+    form = forms.ConfigReplaceBulkEditForm

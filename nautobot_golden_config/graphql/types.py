@@ -54,22 +54,22 @@ class GoldenConfigSettingsType(DjangoObjectType):
         model = models.GoldenConfigSettings
 
 
-class BackupConfigLineRemoveType(DjangoObjectType):
+class ConfigRemoveType(DjangoObjectType):
     """Graphql Type Object for Backup Config Line Remove model."""
 
     class Meta:
-        """Meta object boilerplate for BackupConfigLineRemoveType."""
+        """Meta object boilerplate for ConfigRemoveType."""
 
-        model = models.BackupConfigLineRemove
+        model = models.ConfigRemove
 
 
-class BackupConfigLineReplaceType(DjangoObjectType):
+class ConfigReplaceType(DjangoObjectType):
     """Graphql Type Object for Backup Config Line Replace model."""
 
     class Meta:
-        """Meta object boilerplate for BackupConfigLineReplaceType."""
+        """Meta object boilerplate for ConfigReplaceType."""
 
-        model = models.BackupConfigLineReplace
+        model = models.ConfigReplace
 
 
 graphql_types = [
@@ -77,6 +77,6 @@ graphql_types = [
     GoldenConfigurationType,
     ComplianceFeatureType,
     GoldenConfigSettingsType,
-    BackupConfigLineRemoveType,
-    BackupConfigLineReplaceType,
+    ConfigRemoveType,
+    ConfigReplaceType,
 ]

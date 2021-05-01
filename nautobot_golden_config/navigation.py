@@ -39,28 +39,28 @@ if ENABLE_COMPLIANCE:
     )
     plugin_items.append(
         PluginMenuItem(
-            link="plugins:nautobot_golden_config:backupconfiglineremove_list",
+            link="plugins:nautobot_golden_config:configremove_list",
             link_text="Line Removals",
-            permissions=["nautobot_golden_config.view_backupconfiglineremove"],
+            permissions=["nautobot_golden_config.view_configremove"],
             buttons=(
                 PluginMenuButton(
-                    link="plugins:nautobot_golden_config:backupconfiglineremove_add",
+                    link="plugins:nautobot_golden_config:configremove_add",
                     title="Line Removals",
                     icon_class="mdi mdi-plus-thick",
                     color=ButtonColorChoices.GREEN,
-                    permissions=["nautobot_golden_config.add_backupconfiglineremove"],
+                    permissions=["nautobot_golden_config.add_configremove"],
                 ),
             ),
         )
     )
     plugin_items.append(
         PluginMenuItem(
-            link="plugins:nautobot_golden_config:backuplinereplace_list",
+            link="plugins:nautobot_golden_config:configreplace_list",
             link_text="Line Replacements",
             permissions=["nautobot_golden_config.view_compliancefeature"],
             buttons=(
                 PluginMenuButton(
-                    link="plugins:nautobot_golden_config:backuplinereplace_add",
+                    link="plugins:nautobot_golden_config:configreplace_add",
                     title="Line Replacements",
                     icon_class="mdi mdi-plus-thick",
                     color=ButtonColorChoices.GREEN,
@@ -71,7 +71,7 @@ if ENABLE_COMPLIANCE:
     )
     plugin_items.append(
         PluginMenuItem(
-            link="plugins:nautobot_golden_config:goldenconfigsettings_list",
+            link="plugins:nautobot_golden_config:goldenconfigsettings",
             link_text="Settings",
             permissions=["nautobot_golden_config.view_compliancefeature"],
             buttons=(

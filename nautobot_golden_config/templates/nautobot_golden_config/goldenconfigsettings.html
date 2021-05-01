@@ -11,12 +11,12 @@
         <div class="col-sm-8 col-md-9">
             <ol class="breadcrumb">
                 <li>Golden Configuration Settings</li>
-                <li><a href="{% url 'plugins:nautobot_golden_config:goldenconfigsettings_list' %}">Settings</a></li>
+                <li><a href="{% url 'plugins:nautobot_golden_config:goldenconfigsettings_edit' %}">Settings</a></li>
                 <li>{{ object }}</li>
             </ol>
         </div>
         <div class="col-sm-4 col-md-3">
-            <form action="{% url 'plugins:nautobot_golden_config:goldenconfigsettings_list' %}" method="get">
+            <form action="{% url 'plugins:nautobot_golden_config:goldenconfigsettings' %}" method="get">
                 <div class="input-group">
                     <input type="text" name="q" class="form-control" />
                     <span class="input-group-btn">
@@ -30,9 +30,9 @@
     </div>
     <div class="pull-right noprint">
         {% comment %}
-{        <!-- {% if perms.nautobot_golden_config.change_goldenconfigsettings %}
+        {% if perms.nautobot_golden_config.change_goldenconfigsettings %}
             {% edit_button object %}
-        {% endif %} -->
+        {% endif %}
         {% endcomment %}
     </div>
     <h1>{{ object }}</h1>

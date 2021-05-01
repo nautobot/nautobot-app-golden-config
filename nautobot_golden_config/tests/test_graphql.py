@@ -16,8 +16,8 @@ from nautobot_golden_config.models import (
     GoldenConfiguration,
     ComplianceFeature,
     GoldenConfigSettings,
-    BackupConfigLineRemove,
-    BackupConfigLineReplace,
+    ConfigRemove,
+    ConfigReplace,
 )
 
 # Use the proper swappable User model
@@ -95,11 +95,11 @@ class TestGraphQLQuery(TestCase):  # pylint: disable=too-many-instance-attribute
             match_config="test",
         )
 
-        BackupConfigLineRemove.objects.create(
+        ConfigRemove.objects.create(
             name="Test Removal", platform=self.platform1, description="Test Desc", regex_line="^.Test.*"
         )
 
-        BackupConfigLineReplace.objects.create(
+        ConfigReplace.objects.create(
             name="Test Replace",
             platform=self.platform1,
             description="Test Desc",

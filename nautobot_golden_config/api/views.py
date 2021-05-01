@@ -8,7 +8,7 @@ from rest_framework.permissions import AllowAny
 
 from nautobot.dcim.models import Device
 
-from ..models import GoldenConfigSettings, BackupConfigLineRemove, BackupConfigLineReplace
+from ..models import GoldenConfigSettings, ConfigRemove, ConfigReplace
 from ..utilities.graphql import graph_ql_query
 from .serializer import GraphQLSerializer, LineRemoveSerializer, LineReplaceSerializer
 
@@ -27,15 +27,15 @@ class SOTAggDeviceDetailView(APIView):
         return Response(GraphQLSerializer(data=data).initial_data, status=status_code)
 
 
-class BackupConfigLineRemovalViewSet(ModelViewSet):  # pylint:disable=too-many-ancestors
-    """API viewset for interacting with BackupConfigLineRemove objects."""
+class ConfigRemoveViewSet(ModelViewSet):  # pylint:disable=too-many-ancestors
+    """API viewset for interacting with ConfigRemove objects."""
 
-    queryset = BackupConfigLineRemove.objects.all()
+    queryset = ConfigRemove.objects.all()
     serializer_class = LineRemoveSerializer
 
 
-class BackupConfigLineReplaceViewSet(ModelViewSet):  # pylint:disable=too-many-ancestors
-    """API viewset for interacting with BackupConfigLineReplace objects."""
+class ConfigReplaceViewSet(ModelViewSet):  # pylint:disable=too-many-ancestors
+    """API viewset for interacting with ConfigReplace objects."""
 
-    queryset = BackupConfigLineReplace.objects.all()
+    queryset = ConfigReplace.objects.all()
     serializer_class = LineReplaceSerializer

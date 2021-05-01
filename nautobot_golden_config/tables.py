@@ -2,11 +2,11 @@
 import copy
 
 from django.utils.html import format_html
-from django_tables2 import Column, TemplateColumn
+from django_tables2 import Column, LinkColumn, TemplateColumn
+from django_tables2.utils import A
 
 from nautobot.utilities.tables import (
     BaseTable,
-    BooleanColumn,
     ToggleColumn,
 )
 from nautobot_golden_config import models
@@ -99,19 +99,8 @@ ALL_ACTIONS = """
 {% endif %}
 """
 
-COMPLIANCE_FEATURE_NAME = (
-    """<a href="{% url 'plugins:nautobot_golden_config:compliancefeature_edit' pk=record.pk %}">{{ record.name }}</a>"""
-)
-
 MATCH_CONFIG = """{{ record.match_config|linebreaksbr }}"""
 
-BACKUP_LINE_REMOVAL = """<a href="{% url 'plugins:nautobot_golden_config:backupconfiglineremove_edit' pk=record.pk %}">{{ record.name }}</a>"""
-
-BACKUP_LINE_REPLACE = (
-    """<a href="{% url 'plugins:nautobot_golden_config:backuplinereplace_edit' pk=record.pk %}">{{ record.name }}</a>"""
-)
-
-SETTINGS_DETAILS = """<a href="{% url 'plugins:nautobot_golden_config:goldenconfigsettings' %}">details</a>"""
 
 
 def actual_fields():
@@ -126,9 +115,11 @@ def actual_fields():
     active_fields.append("actions")
     return tuple(active_fields)
 
+
 #
 # Columns
 #
+
 
 class PercentageColumn(Column):
     """Column used to display percentage."""
@@ -150,9 +141,11 @@ class ComplianceColumn(Column):
         else:  # value is None
             return format_html('<span class="mdi mdi-minus"></span>')
 
+
 #
 # Tables
 #
+
 
 class ConfigComplianceTable(BaseTable):
     """Table for rendering a listing of Device entries and their associated ConfigCompliance record status."""
@@ -167,9 +160,7 @@ class ConfigComplianceTable(BaseTable):
         # Used ConfigCompliance.objects on purpose, vs queryset (set in args[0]), as there were issues with that as
         # well as not as expected from user standpoint (e.g. not always the same values on columns depending on
         # filtering)
-        features = list(
-            models.ConfigCompliance.objects.order_by("name").values_list("name", flat=True).distinct()
-        )
+        features = list(models.ConfigCompliance.objects.order_by("name").values_list("name", flat=True).distinct())
         extra_columns = [(feature, ComplianceColumn(verbose_name=feature)) for feature in features]
         kwargs["extra_columns"] = extra_columns
         # Nautobot's BaseTable.configurable_columns() only recognizes columns in self.base_columns,
@@ -203,10 +194,9 @@ class ConfigComplianceGlobalFeatureTable(BaseTable):
         """Metaclass attributes of ConfigComplianceGlobalFeatureTable."""
 
         model = models.ConfigCompliance
-        fields = ["name", "slug", "count", "compliant", "non_compliant", "comp_percent"]
+        fields = ["name", "count", "compliant", "non_compliant", "comp_percent"]
         default_columns = [
             "name",
-            "slug",
             "count",
             "compliant",
             "non_compliant",
@@ -260,59 +250,41 @@ class ComplianceFeatureTable(BaseTable):
     """Table to display Compliance Features."""
 
     pk = ToggleColumn()
-    name = TemplateColumn(template_code=COMPLIANCE_FEATURE_NAME)
+    name = LinkColumn("plugins:nautobot_golden_config:compliancefeature_edit", args=[A("pk")])
     match_config = TemplateColumn(template_code=MATCH_CONFIG)
 
     class Meta(BaseTable.Meta):
         """Table to display Compliance Features Meta Data."""
 
         model = models.ComplianceFeature
-        fields = ("pk", "name", "slug", "platform", "description", "config_ordered", "match_config")
-        default_columns = ("pk", "name", "slug", "platform", "description", "config_ordered", "match_config")
+        fields = ("pk", "name", "platform", "description", "config_ordered", "match_config")
+        default_columns = ("pk", "name", "platform", "description", "config_ordered", "match_config")
 
 
-class GoldenConfigSettingsTable(BaseTable):
-    """Table to display Golden Config Settings."""
-
-    details = TemplateColumn(SETTINGS_DETAILS)
-    query = TemplateColumn("{{record.sot_agg_query|truncatewords:8}}")
-    backup = Column(accessor="backup_path_template", verbose_name="Backup Path")
-    intended = Column(accessor="intended_path_template", verbose_name="Intended Path")
-    template = Column(accessor="jinja_path_template", verbose_name="Template Path")
-    connectivity_test = BooleanColumn(accessor="backup_test_connectivity", verbose_name="Backup Connectivity Test")
-    shorten = BooleanColumn(accessor="shorten_sot_query", verbose_name="Shorten")
-
-    class Meta(BaseTable.Meta):
-        """Table to display Golden Config Settings Meta Data."""
-
-        model = models.GoldenConfigSettings
-        fields = ("details", "query", "backup", "intended", "template", "connectivity_test", "shorten")
-        default_columns = ("details", "query", "backup", "intended", "template", "connectivity_test", "shorten")
-
-
-class BackupConfigLineRemoveTable(BaseTable):
+class ConfigRemoveTable(BaseTable):
     """Table to display Compliance Features."""
 
     pk = ToggleColumn()
-    name_link = TemplateColumn(template_code=BACKUP_LINE_REMOVAL, verbose_name="Name")
+    name = LinkColumn("plugins:nautobot_golden_config:configremove_edit", args=[A("pk")])
 
     class Meta(BaseTable.Meta):
         """Table to display Compliance Features Meta Data."""
 
-        model = models.BackupConfigLineRemove
-        fields = ("pk", "name_link", "platform", "description", "regex_line")
-        default_columns = ("pk", "name_link", "platform", "description", "regex_line")
+        model = models.ConfigRemove
+        fields = ("pk", "name", "platform", "description", "regex_line")
+        default_columns = ("pk", "name", "platform", "description", "regex_line")
 
 
-class BackupConfigLineReplaceTable(BaseTable):
+class ConfigReplaceTable(BaseTable):
     """Table to display Compliance Features."""
 
     pk = ToggleColumn()
-    name_link = TemplateColumn(template_code=BACKUP_LINE_REPLACE, verbose_name="Name")
+    name = LinkColumn("plugins:nautobot_golden_config:configreplace_edit", args=[A("pk")])
+
 
     class Meta(BaseTable.Meta):
         """Table to display Compliance Features Meta Data."""
 
-        model = models.BackupConfigLineReplace
-        fields = ("pk", "name_link", "platform", "description", "substitute_text", "replaced_text")
-        default_columns = ("pk", "name_link", "platform", "description", "substitute_text", "replaced_text")
+        model = models.ConfigReplace
+        fields = ("pk", "name", "platform", "description", "substitute_text", "replaced_text")
+        default_columns = ("pk", "name", "platform", "description", "substitute_text", "replaced_text")

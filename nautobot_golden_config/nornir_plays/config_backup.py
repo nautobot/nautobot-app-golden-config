@@ -17,8 +17,8 @@ from nautobot_golden_config.utilities.helper import get_allowed_os, verify_globa
 from nautobot_golden_config.models import (
     GoldenConfigSettings,
     GoldenConfiguration,
-    BackupConfigLineRemove,
-    BackupConfigLineReplace,
+    ConfigRemove,
+    ConfigReplace,
 )
 from .processor import ProcessGoldenConfig
 
@@ -85,12 +85,12 @@ def config_backup(job_result, data, backup_root_folder):
     global_settings = GoldenConfigSettings.objects.first()
     verify_global_settings(logger, global_settings, ["backup_path_template", "intended_path_template"])
     remove_regex_dict = {}
-    for regex in BackupConfigLineRemove.objects.all():
+    for regex in ConfigRemove.objects.all():
         if not remove_regex_dict.get(regex.platform.slug):
             remove_regex_dict[regex.platform.slug] = []
         remove_regex_dict[regex.platform.slug].append(regex.regex_line)
     replace_regex_dict = {}
-    for regex in BackupConfigLineReplace.objects.all():
+    for regex in ConfigReplace.objects.all():
         if not replace_regex_dict.get(regex.platform.slug):
             replace_regex_dict[regex.platform.slug] = []
         replace_regex_dict[regex.platform.slug].append(

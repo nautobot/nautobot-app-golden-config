@@ -19,7 +19,7 @@ class ConfigComplianceDeviceCheck(PluginTemplateExtension):  # pylint: disable=a
     def right_page(self):
         """Content to add to the configuration compliance."""
         comp_obj = (
-            ConfigCompliance.objects.filter(**get_allowed_os_from_nested())
+            ConfigCompliance.objects.filter(get_allowed_os_from_nested())
             .filter(device=self.get_device())
             .values("name", "compliance")
         )
@@ -47,7 +47,7 @@ class ConfigComplianceSiteCheck(PluginTemplateExtension):  # pylint: disable=abs
         """Content to add to the configuration compliance."""
         comp_obj = (
             ConfigCompliance.objects.values("name")
-            .filter(**get_allowed_os_from_nested())
+            .filter(get_allowed_os_from_nested())
             .filter(device__site__slug=self.get_site_slug().slug)
             .annotate(
                 compliant=Count("name", filter=Q(compliance=True)),
@@ -75,7 +75,7 @@ class ConfigDeviceDetails(PluginTemplateExtension):  # pylint: disable=abstract-
     def right_page(self):
         """Content to add to the configuration compliance."""
         golden_config = (
-            GoldenConfiguration.objects.filter(**get_allowed_os_from_nested()).filter(device=self.get_device()).first()
+            GoldenConfiguration.objects.filter(get_allowed_os_from_nested()).filter(device=self.get_device()).first()
         )
         extra_context = {
             "device": self.get_device(),  # device,

@@ -43,21 +43,28 @@ class GoldenConfigurationListView(generic.ObjectListView):
     table = tables.GoldenConfigurationTable
     filterset = filters.GoldenConfigurationFilter
     filterset_form = forms.GoldenConfigurationFilterForm
-    queryset = models.GoldenConfiguration.objects.filter(**get_allowed_os_from_nested())
+    queryset = models.GoldenConfiguration.objects.all()
     template_name = "nautobot_golden_config/goldenconfiguration_list.html"
 
     def extra_context(self):
         """Boilerplace code to modify data before returning."""
         return CONFIG_FEATURES
 
+    def alter_queryset(self, request):
+        """Build actual runtime queryset as the build time queryset does not consider changes to Settings."""
+        return self.queryset.filter(get_allowed_os_from_nested())
+
 
 class GoldenConfigurationBulkDeleteView(generic.BulkDeleteView):
     """Standard view for bulk deletion of data."""
 
-    queryset = models.GoldenConfiguration.objects.filter(**get_allowed_os_from_nested())
+    queryset = models.GoldenConfiguration.objects.all()
     table = tables.GoldenConfigurationTable
     filterset = filters.GoldenConfigurationFilter
 
+    def alter_queryset(self, request):
+        """Build actual runtime queryset as the build time queryset does not consider changes to Settings."""
+        return self.queryset.filter(get_allowed_os_from_nested())
 
 #
 # ConfigCompliance
@@ -69,7 +76,7 @@ class ConfigComplianceListView(generic.ObjectListView):
 
     filterset = filters.ConfigComplianceFilter
     filterset_form = forms.ConfigComplianceFilterForm
-    queryset = models.ConfigCompliance.objects.filter(**get_allowed_os_from_nested())
+    queryset = models.ConfigCompliance.objects.filter(get_allowed_os_from_nested())
     template_name = "nautobot_golden_config/compliance_report.html"
     table = tables.ConfigComplianceTable
 
@@ -123,7 +130,7 @@ class ConfigComplianceListView(generic.ObjectListView):
 class ConfigComplianceBulkDeleteView(generic.BulkDeleteView):
     """View for deleting one or more OnboardingTasks."""
 
-    queryset = models.ConfigCompliance.objects.filter(**get_allowed_os_from_nested()).order_by("device__name")
+    queryset = models.ConfigCompliance.objects.all()
     table = tables.ConfigComplianceDeleteTable
     filterset = filters.ConfigComplianceFilter
 
@@ -167,7 +174,7 @@ class ConfigComplianceBulkDeleteView(generic.BulkDeleteView):
         else:
             form = form_cls(initial={"pk": pk_list, "return_url": self.get_return_url(request)})
 
-        table = tables.self.table(models.ConfigCompliance.objects.filter(device__in=obj_to_del), orderable=False)
+        table = self.table(models.ConfigCompliance.objects.filter(device__in=obj_to_del), orderable=False)
         if not table.rows:
             messages.warning(request, "No {} were selected for deletion.".format(model._meta.verbose_name_plural))
             return redirect(self.get_return_url(request))
@@ -199,7 +206,6 @@ class ConfigComplianceView(ContentTypePermissionRequiredMixin, generic.View):
         device = Device.objects.get(name=device_name)
         compliance_details = (
             models.ConfigCompliance.objects.filter(device=device)
-            .filter(**get_allowed_os_from_nested())
             .order_by("name")
         )
         config_details = {"compliance_details": compliance_details, "device_name": device_name}
@@ -224,14 +230,12 @@ class ComplianceDeviceFilteredReport(ContentTypePermissionRequiredMixin, generic
         if compliance == "compliant":
             compliance_details = (
                 models.ConfigCompliance.objects.filter(device=device)
-                .filter(**get_allowed_os_from_nested())
                 .order_by("name")
             )
             compliance_details = compliance_details.filter(compliance=True)
         else:
             compliance_details = (
                 models.ConfigCompliance.objects.filter(device=device)
-                .filter(**get_allowed_os_from_nested())
                 .order_by("name")
             )
             compliance_details = compliance_details.filter(compliance=False)
@@ -239,7 +243,7 @@ class ComplianceDeviceFilteredReport(ContentTypePermissionRequiredMixin, generic
         config_details = {"compliance_details": compliance_details, "device_name": device_name}
         return render(
             request,
-            "nautobot_golden_config/device_report.html",
+            "nautobot_golden_config/compliance_device_report.html",
             config_details,
         )
 
@@ -420,7 +424,6 @@ class ConfigComplianceOverview(generic.ObjectListView):
     kind = "Features"
     queryset = (
         models.ConfigCompliance.objects.values("name")
-        .filter(**get_allowed_os_from_nested())
         .annotate(
             count=Count("name"),
             compliant=Count("name", filter=Q(compliance=True)),
@@ -453,7 +456,7 @@ class ConfigComplianceOverview(generic.ObjectListView):
             device_aggr: device global report dict
             feature_aggr: feature global report dict
         """
-        main_qs = models.ConfigCompliance.objects.filter(**get_allowed_os_from_nested())
+        main_qs = models.ConfigCompliance.objects.filter(get_allowed_os_from_nested())
 
         device_aggr, feature_aggr = {}, {}
         if self.filterset is not None:
@@ -512,6 +515,9 @@ class ConfigComplianceOverview(generic.ObjectListView):
 
         return "\n".join(csv_data)
 
+    def alter_queryset(self, request):
+        """Build actual runtime queryset as the build time queryset does not consider changes to Settings."""
+        return self.queryset.filter(get_allowed_os_from_nested())
 
 #
 # ComplianceFeature

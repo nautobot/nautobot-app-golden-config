@@ -14,9 +14,15 @@ from nautobot.extras.models import ObjectChange
 from nautobot.extras.utils import extras_features
 from nautobot.utilities.utils import serialize_object
 from nautobot.core.models.generics import PrimaryModel
+from netutils.config.compliance import compliance
 
 LOGGER = logging.getLogger(__name__)
 
+def null_to_empty(val):
+    """Convert to empty string if the value is currently null."""
+    if not val:
+        return ""
+    return val
 
 @extras_features(
     "custom_fields",
@@ -68,6 +74,22 @@ class ConfigCompliance(PrimaryModel):
     def __str__(self):
         """String representation of a the compliance."""
         return f"{self.device} -> {self.name} -> {self.compliance}"
+
+    def save(self, *args, **kwargs):
+        """Overloading save to call full_clean that invokes clean."""
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def clean(self):
+        """Ensures a secret is not leaked into the database object."""
+        self.reordered_list_items = {}
+        obj = ComplianceFeature.objects.get(platform=self.device.platform, name=self.name)
+        features = [{"ordered": obj.config_ordered, "name": obj.name, "section": obj.match_config.splitlines()}]
+        value = compliance(features, self.actual, self.intended, self.device.platform.slug, cfg_type="string")[self.name]
+        self.compliance = value["compliant"]
+        self.ordered: value["ordered_compliant"]
+        self.missing =  null_to_empty(value["missing"])
+        self.extra = null_to_empty(value["extra"])
 
 
 @extras_features(
@@ -235,6 +257,18 @@ class GoldenConfigSettings(PrimaryModel):
         verbose_name="GraphQL Query",
         help_text="A query that is evaluated and used to render the config. The query must start with `query ($device: String!)`.",
     )
+    only_primary_ip = models.BooleanField(
+        null=False,
+        default=False,
+        verbose_name="Include only devices with a Primary IP.",
+    )
+    exclude_chassis_members = models.BooleanField(
+        null=False,
+        default=False,
+        verbose_name="Exclude non-master chassis members.",
+        help_text="This will ensure that chassis that are connected to only via the chassis master.",
+    )
+
 
     def get_absolute_url(self):  # pylint: disable=no-self-use
         """Return absolute URL for instance."""

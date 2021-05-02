@@ -3,12 +3,14 @@
 
 from jinja2 import Template, StrictUndefined, UndefinedError
 from jinja2.exceptions import TemplateError, TemplateSyntaxError
+from django.db.models import Q
 
 from nornir_nautobot.exceptions import NornirNautobotException
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.dcim.models import Device, Platform
 
-from .constant import ALLOWED_OS
+from nautobot_golden_config import models
+from nautobot_golden_config.utilities.constant import ALLOWED_OS
 
 FIELDS = {
     "platform",
@@ -33,7 +35,6 @@ def get_allowed_os(data=None):
     for field in FIELDS:
         if data.get(field):
             query[f"{field}_id"] = data[field].values_list("pk", flat=True)
-
     # Handle case where object is from single device run all.
     if data.get("device") and isinstance(data["device"], Device):
         query.update({"id": [str(data["device"].pk)]})
@@ -44,14 +45,30 @@ def get_allowed_os(data=None):
         _allowed_os = Platform.objects.values_list("slug", flat=True)
     else:
         _allowed_os = ALLOWED_OS
-    return DeviceFilterSet(data=query, queryset=Device.objects.filter(platform__slug__in=_allowed_os)).qs
+    # TODO: Determine if there is a simpler way to filter dynamically within FilterSet
+    filter_query = Q(platform__slug__in=_allowed_os)
+    gc_settings = models.GoldenConfigSettings.objects.first()
+    if gc_settings.only_primary_ip:
+        # TODO: include ip6
+        filter_query = filter_query & Q(primary_ip4__isnull=False)
+    if gc_settings.exclude_chassis_members:
+        filter_query = filter_query & ~Q(Q(virtual_chassis__isnull=False) & Q(vc_master_for__isnull=True))
+    return DeviceFilterSet(data=query, queryset=Device.objects.filter(filter_query)).qs
 
 
 def get_allowed_os_from_nested():
     """Helper method to filter out only in scope OS's."""
     if "all" in ALLOWED_OS:
-        return {"device__platform__slug__in": Platform.objects.values_list("slug", flat=True)}
-    return {"device__platform__slug__in": ALLOWED_OS}
+        filter_query = Q(device__platform__slug__in=Platform.objects.values_list("slug", flat=True))
+    else:
+        filter_query = Q(device__platform__slug__in=ALLOWED_OS)
+
+    gc_settings = models.GoldenConfigSettings.objects.first()
+    if gc_settings.only_primary_ip:
+        filter_query = filter_query & Q(device__primary_ip4__isnull=False)
+    if gc_settings.exclude_chassis_members:
+        filter_query = filter_query & ~Q(Q(device__virtual_chassis__isnull=False) & Q(device__vc_master_for__isnull=True))
+    return filter_query
 
 
 def null_to_empty(val):

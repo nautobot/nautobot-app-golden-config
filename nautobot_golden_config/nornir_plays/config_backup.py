@@ -84,17 +84,21 @@ def config_backup(job_result, data, backup_root_folder):
     logger = NornirLogger(__name__, job_result, data.get("debug"))
     global_settings = GoldenConfigSettings.objects.first()
     verify_global_settings(logger, global_settings, ["backup_path_template", "intended_path_template"])
+
+    # Build a dictionary, with keys of platform.slug, and the regex line in it for the netutils func.
     remove_regex_dict = {}
     for regex in ConfigRemove.objects.all():
         if not remove_regex_dict.get(regex.platform.slug):
             remove_regex_dict[regex.platform.slug] = []
-        remove_regex_dict[regex.platform.slug].append(regex.regex_line)
+        remove_regex_dict[regex.platform.slug].append({"regex": regex.regex_line})
+
+    # Build a dictionary, with keys of platform.slug, and the regex and replace keys for the netutils func.
     replace_regex_dict = {}
     for regex in ConfigReplace.objects.all():
         if not replace_regex_dict.get(regex.platform.slug):
             replace_regex_dict[regex.platform.slug] = []
         replace_regex_dict[regex.platform.slug].append(
-            {"regex_replacement": regex.replaced_text, "regex_search": regex.substitute_text}
+            {"replace": regex.replaced_text, "regex": regex.substitute_text}
         )
     nornir_obj = InitNornir(
         runner=NORNIR_SETTINGS.get("runner"),

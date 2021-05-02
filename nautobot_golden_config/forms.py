@@ -164,6 +164,8 @@ class GoldenConfigSettingsFeatureForm(BootstrapMixin, forms.ModelForm):
             "backup_test_connectivity",
             "shorten_sot_query",
             "sot_agg_query",
+            "only_primary_ip",
+            "exclude_chassis_members",
         )
 
 

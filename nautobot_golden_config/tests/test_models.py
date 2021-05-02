@@ -7,8 +7,8 @@ from nautobot.dcim.models import Platform
 
 from nautobot_golden_config.models import (
     GoldenConfigSettings,
-    BackupConfigLineRemove,
-    BackupConfigLineReplace,
+    ConfigRemove,
+    ConfigReplace,
 )
 
 
@@ -29,11 +29,7 @@ class GoldenConfigSettingsModelTestCase(TestCase):
 
     def setUp(self):
         """Get the golden config settings with the only allowed id."""
-        self.global_settings = GoldenConfigSettings.objects.get(id="aaaaaaaa-0000-0000-0000-000000000001")
-
-    def test_only_valid_id(self):
-        """Get global settings and ensure we received the allowed id."""
-        self.assertEqual(str(self.global_settings.pk), "aaaaaaaa-0000-0000-0000-000000000001")
+        self.global_settings = GoldenConfigSettings.objects.first()
 
     def test_bad_graphql_query(self):
         """Invalid graphql query."""
@@ -56,13 +52,13 @@ class GoldenConfigSettingsModelTestCase(TestCase):
         self.assertEqual(self.global_settings.clean(), None)
 
 
-class BackupConfigLineRemoveModelTestCase(TestCase):
-    """Test BackupConfigLineRemove Model."""
+class ConfigRemoveModelTestCase(TestCase):
+    """Test ConfigRemove Model."""
 
     def setUp(self):
         """Setup Object."""
         self.platform = Platform.objects.create(slug="cisco_ios")
-        self.line_removal = BackupConfigLineRemove.objects.create(
+        self.line_removal = ConfigRemove.objects.create(
             name="foo", platform=self.platform, description="foo bar", regex_line="^Back.*"
         )
 
@@ -87,13 +83,13 @@ class BackupConfigLineRemoveModelTestCase(TestCase):
         self.assertEqual(self.line_removal.regex_line, new_regex)
 
 
-class BackupConfigLineReplaceModelTestCase(TestCase):
-    """Test BackupConfigLineReplace Model."""
+class ConfigReplaceModelTestCase(TestCase):
+    """Test ConfigReplace Model."""
 
     def setUp(self):
         """Setup Object."""
         self.platform = Platform.objects.create(slug="cisco_ios")
-        self.line_replace = BackupConfigLineReplace.objects.create(
+        self.line_replace = ConfigReplace.objects.create(
             name="foo",
             platform=self.platform,
             description="foo bar",

@@ -19,9 +19,9 @@ class ConfigComplianceDeviceCheck(PluginTemplateExtension):  # pylint: disable=a
     def right_page(self):
         """Content to add to the configuration compliance."""
         comp_obj = (
-            ConfigCompliance.objects.filter(**get_allowed_os_from_nested())
+            ConfigCompliance.objects.filter(get_allowed_os_from_nested())
             .filter(device=self.get_device())
-            .values("feature", "compliance")
+            .values("name", "compliance")
         )
         extra_context = {
             "compliance": comp_obj,
@@ -46,14 +46,14 @@ class ConfigComplianceSiteCheck(PluginTemplateExtension):  # pylint: disable=abs
     def right_page(self):
         """Content to add to the configuration compliance."""
         comp_obj = (
-            ConfigCompliance.objects.values("feature")
-            .filter(**get_allowed_os_from_nested())
+            ConfigCompliance.objects.values("name")
+            .filter(get_allowed_os_from_nested())
             .filter(device__site__slug=self.get_site_slug().slug)
             .annotate(
-                compliant=Count("feature", filter=Q(compliance=True)),
-                non_compliant=Count("feature", filter=~Q(compliance=True)),
+                compliant=Count("name", filter=Q(compliance=True)),
+                non_compliant=Count("name", filter=~Q(compliance=True)),
             )
-            .values("feature", "compliant", "non_compliant")
+            .values("name", "compliant", "non_compliant")
         )
 
         extra_context = {"compliance": comp_obj, "template_type": "site"}
@@ -75,7 +75,7 @@ class ConfigDeviceDetails(PluginTemplateExtension):  # pylint: disable=abstract-
     def right_page(self):
         """Content to add to the configuration compliance."""
         golden_config = (
-            GoldenConfiguration.objects.filter(**get_allowed_os_from_nested()).filter(device=self.get_device()).first()
+            GoldenConfiguration.objects.filter(get_allowed_os_from_nested()).filter(device=self.get_device()).first()
         )
         extra_context = {
             "device": self.get_device(),  # device,

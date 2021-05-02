@@ -5,7 +5,12 @@ from django.db.models import Subquery
 
 from nautobot.dcim.models import Device, Platform, Region, Site, DeviceRole, DeviceType, Manufacturer, Rack, RackGroup
 from nautobot.extras.models import Status
-from nautobot.extras.forms import CustomFieldFilterForm
+from nautobot.extras.forms import (
+    CustomFieldFilterForm,
+    CustomFieldModelCSVForm,
+    AddRemoveTagsForm,
+    CustomFieldBulkEditForm,
+)
 from nautobot.tenancy.models import Tenant, TenantGroup
 from nautobot.utilities.forms import BootstrapMixin, DynamicModelMultipleChoiceField, DynamicModelChoiceField
 
@@ -14,8 +19,8 @@ from .models import (
     ComplianceFeature,
     GoldenConfigSettings,
     GoldenConfiguration,
-    BackupConfigLineRemove,
-    BackupConfigLineReplace,
+    ConfigRemove,
+    ConfigReplace,
 )
 
 
@@ -159,10 +164,12 @@ class GoldenConfigSettingsFeatureForm(BootstrapMixin, forms.ModelForm):
             "backup_test_connectivity",
             "shorten_sot_query",
             "sot_agg_query",
+            "only_primary_ip",
+            "exclude_chassis_members",
         )
 
 
-class BackupLineRemovalForm(BootstrapMixin, forms.ModelForm):
+class ConfigRemoveForm(BootstrapMixin, forms.ModelForm):
     """Filter Form for Line Removal instances."""
 
     platform = DynamicModelChoiceField(queryset=Platform.objects.all())
@@ -170,7 +177,7 @@ class BackupLineRemovalForm(BootstrapMixin, forms.ModelForm):
     class Meta:
         """Boilerplate form Meta data for removal feature."""
 
-        model = BackupConfigLineRemove
+        model = ConfigRemove
         fields = (
             "platform",
             "name",
@@ -187,7 +194,7 @@ class BackupLineReplaceForm(BootstrapMixin, forms.ModelForm):
     class Meta:
         """Boilerplate form Meta data for removal feature."""
 
-        model = BackupConfigLineReplace
+        model = ConfigReplace
         fields = (
             "platform",
             "name",
@@ -197,13 +204,55 @@ class BackupLineReplaceForm(BootstrapMixin, forms.ModelForm):
         )
 
 
-class LineRemoveFeatureFilterForm(SettingsFeatureFilterForm):
+class ConfigRemoveFeatureFilterForm(SettingsFeatureFilterForm):
     """Filter Form for Line Removal."""
 
-    model = BackupConfigLineRemove
+    model = ConfigRemove
 
 
-class LineReplaceFeatureFilterForm(SettingsFeatureFilterForm):
+class ConfigReplaceFeatureFilterForm(SettingsFeatureFilterForm):
     """Filter Form for Line Replacement."""
 
-    model = BackupConfigLineReplace
+    model = ConfigReplace
+
+
+class ConfigRemoveCSVForm(CustomFieldModelCSVForm):
+    """CSV Form for ConfigRemove instances."""
+
+    class Meta:
+        """Boilerplate form Meta data for application feature."""
+
+        model = ConfigRemove
+        fields = ConfigRemove.csv_headers
+
+
+class ConfigRemoveBulkEditForm(BootstrapMixin, AddRemoveTagsForm, CustomFieldBulkEditForm):
+    """BulkEdit form for ConfigRemove instances."""
+
+    pk = forms.ModelMultipleChoiceField(queryset=ConfigRemove.objects.all(), widget=forms.MultipleHiddenInput)
+
+    class Meta:
+        """Boilerplate form Meta data for application feature."""
+
+        nullable_fields = []
+
+
+class ConfigReplaceCSVForm(CustomFieldModelCSVForm):
+    """CSV Form for ConfigReplace instances."""
+
+    class Meta:
+        """Boilerplate form Meta data for application feature."""
+
+        model = ConfigReplace
+        fields = ConfigReplace.csv_headers
+
+
+class ConfigReplaceBulkEditForm(BootstrapMixin, AddRemoveTagsForm, CustomFieldBulkEditForm):
+    """BulkEdit form for ConfigReplace instances."""
+
+    pk = forms.ModelMultipleChoiceField(queryset=ConfigReplace.objects.all(), widget=forms.MultipleHiddenInput)
+
+    class Meta:
+        """Boilerplate form Meta data for application feature."""
+
+        nullable_fields = []

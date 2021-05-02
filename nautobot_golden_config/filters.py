@@ -226,3 +226,11 @@ class SettingsFeatureFilter(django_filters.FilterSet):
 
 class ComplianceFeatureFilter(SettingsFeatureFilter):
     """Inherits Base Class SettingsFeatureFilter."""
+
+
+class ConfigRemoveFilter(SettingsFeatureFilter):
+    """Inherits Base Class SettingsFeatureFilter."""
+
+
+class ConfigReplaceFilter(SettingsFeatureFilter):
+    """Inherits Base Class SettingsFeatureFilter."""

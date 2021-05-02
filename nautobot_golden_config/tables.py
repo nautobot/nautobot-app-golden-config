@@ -62,7 +62,7 @@ COMPLIANCE_SUCCESS = """
 ALL_ACTIONS = """
 {% if backup == True %}
     {% if record.backup_config %}
-        <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' device_name=record.device.name config_type='backup' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' device_name=record.device.name config_type='backup' %}?modal=true"> 
+        <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.device.pk config_type='backup' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.device.pk config_type='backup' %}?modal=true"> 
             <i class="mdi mdi-file-document-outline"></i>
         </a>
     {% else %}
@@ -71,7 +71,7 @@ ALL_ACTIONS = """
 {% endif %}
 {% if intended == True %}
     {% if record.intended_config %}
-        <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' device_name=record.device.name config_type='intended' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' device_name=record.device.name config_type='intended' %}?modal=true"> 
+        <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.device.pk config_type='intended' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.device.pk config_type='intended' %}?modal=true"> 
             <i class="mdi mdi-text-box-check-outline"></i>
         </a>
     {% else %}
@@ -80,7 +80,7 @@ ALL_ACTIONS = """
 {% endif %}
 {% if compliance == True %}
     {% if record.compliance_config %}
-        <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' device_name=record.device.name config_type='compliance' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' device_name=record.device.name config_type='compliance' %}?modal=true"> 
+        <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.device.pk config_type='compliance' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.device.pk config_type='compliance' %}?modal=true"> 
             <i class="mdi mdi-file-compare"></i>
         </a>
     {% else %}
@@ -88,7 +88,7 @@ ALL_ACTIONS = """
     {% endif %}
 {% endif %}
 {% if sotagg == True %}
-    <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' device_name=record.device.name config_type='sotagg' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' device_name=record.device.name config_type='sotagg' %}?modal=true"> 
+    <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.device.pk config_type='sotagg' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.device.pk config_type='sotagg' %}?modal=true"> 
         <i class="mdi mdi-code-json"></i>
     </a>
     <a href="{% url 'extras:job' class_path='plugins/nautobot_golden_config.jobs/AllGoldenConfig' %}?device={{ record.device.pk }}"
@@ -100,7 +100,6 @@ ALL_ACTIONS = """
 """
 
 MATCH_CONFIG = """{{ record.match_config|linebreaksbr }}"""
-
 
 
 def actual_fields():
@@ -152,7 +151,7 @@ class ConfigComplianceTable(BaseTable):
 
     pk = ToggleColumn()
     device__name = TemplateColumn(
-        template_code="""<a href="{% url 'plugins:nautobot_golden_config:configcompliance' device_name=record.device  %}" <strong>{{ record.device }}</strong></a> """
+        template_code="""<a href="{% url 'plugins:nautobot_golden_config:configcompliance' pk=record.pk  %}" <strong>{{ record.device }}</strong></a> """
     )
 
     def __init__(self, *args, **kwargs):
@@ -280,7 +279,6 @@ class ConfigReplaceTable(BaseTable):
 
     pk = ToggleColumn()
     name = LinkColumn("plugins:nautobot_golden_config:configreplace_edit", args=[A("pk")])
-
 
     class Meta(BaseTable.Meta):
         """Table to display Compliance Features Meta Data."""

@@ -66,6 +66,7 @@ class GoldenConfigurationBulkDeleteView(generic.BulkDeleteView):
         """Build actual runtime queryset as the build time queryset does not consider changes to Settings."""
         return self.queryset.filter(get_allowed_os_from_nested())
 
+
 #
 # ConfigCompliance
 #
@@ -201,14 +202,11 @@ class ConfigComplianceView(ContentTypePermissionRequiredMixin, generic.View):
         """Manually set permission when not tied to a model for device report."""
         return "nautobot_golden_config.view_configcompliance"
 
-    def get(self, request, device_name):
+    def get(self, request, pk):
         """Read request into a view of a single device."""
-        device = Device.objects.get(name=device_name)
-        compliance_details = (
-            models.ConfigCompliance.objects.filter(device=device)
-            .order_by("name")
-        )
-        config_details = {"compliance_details": compliance_details, "device_name": device_name}
+        device = Device.objects.get(pk=pk)
+        compliance_details = models.ConfigCompliance.objects.filter(device=device).order_by("name")
+        config_details = {"compliance_details": compliance_details, "device_name": device.name}
 
         return render(
             request,
@@ -224,23 +222,17 @@ class ComplianceDeviceFilteredReport(ContentTypePermissionRequiredMixin, generic
         """Manually set permission when not tied to a model for filtered report."""
         return "nautobot_golden_config.view_configcompliance"
 
-    def get(self, request, device_name, compliance):
+    def get(self, request, pk, compliance):
         """Read request into a view of a single device."""
-        device = Device.objects.get(name=device_name)
+        device = Device.objects.get(pk=pk)
         if compliance == "compliant":
-            compliance_details = (
-                models.ConfigCompliance.objects.filter(device=device)
-                .order_by("name")
-            )
+            compliance_details = models.ConfigCompliance.objects.filter(device=device).order_by("name")
             compliance_details = compliance_details.filter(compliance=True)
         else:
-            compliance_details = (
-                models.ConfigCompliance.objects.filter(device=device)
-                .order_by("name")
-            )
+            compliance_details = models.ConfigCompliance.objects.filter(device=device).order_by("name")
             compliance_details = compliance_details.filter(compliance=False)
 
-        config_details = {"compliance_details": compliance_details, "device_name": device_name}
+        config_details = {"compliance_details": compliance_details, "device_name": device.name}
         return render(
             request,
             "nautobot_golden_config/compliance_device_report.html",
@@ -255,9 +247,9 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
         """Manually set permission when not tied to a model for config details."""
         return "nautobot_golden_config.view_goldenconfiguration"
 
-    def get(self, request, device_name, config_type):
+    def get(self, request, pk, config_type):
         """Read request into a view of a single device."""
-        device = Device.objects.get(name=device_name)
+        device = Device.objects.get(pk=pk)
         config_details = models.GoldenConfiguration.objects.filter(device=device).first()
         structure_format = "json"
         if not config_details:
@@ -302,7 +294,13 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
         return render(
             request,
             template_name,
-            {"output": output, "device_name": device_name, "config_type": config_type, "format": structure_format},
+            {
+                "output": output,
+                "device_name": device.name,
+                "config_type": config_type,
+                "format": structure_format,
+                "device": device,
+            },
         )
 
 
@@ -518,6 +516,7 @@ class ConfigComplianceOverview(generic.ObjectListView):
     def alter_queryset(self, request):
         """Build actual runtime queryset as the build time queryset does not consider changes to Settings."""
         return self.queryset.filter(get_allowed_os_from_nested())
+
 
 #
 # ComplianceFeature

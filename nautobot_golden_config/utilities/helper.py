@@ -67,7 +67,9 @@ def get_allowed_os_from_nested():
     if gc_settings.only_primary_ip:
         filter_query = filter_query & Q(device__primary_ip4__isnull=False)
     if gc_settings.exclude_chassis_members:
-        filter_query = filter_query & ~Q(Q(device__virtual_chassis__isnull=False) & Q(device__vc_master_for__isnull=True))
+        filter_query = filter_query & ~Q(
+            Q(device__virtual_chassis__isnull=False) & Q(device__vc_master_for__isnull=True)
+        )
     return filter_query
 
 

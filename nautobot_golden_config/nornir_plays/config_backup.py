@@ -97,9 +97,7 @@ def config_backup(job_result, data, backup_root_folder):
     for regex in ConfigReplace.objects.all():
         if not replace_regex_dict.get(regex.platform.slug):
             replace_regex_dict[regex.platform.slug] = []
-        replace_regex_dict[regex.platform.slug].append(
-            {"replace": regex.replaced_text, "regex": regex.substitute_text}
-        )
+        replace_regex_dict[regex.platform.slug].append({"replace": regex.replaced_text, "regex": regex.substitute_text})
     nornir_obj = InitNornir(
         runner=NORNIR_SETTINGS.get("runner"),
         logging={"enabled": False},

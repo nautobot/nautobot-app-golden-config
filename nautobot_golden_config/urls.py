@@ -12,14 +12,14 @@ urlpatterns = [
     path("config-compliance/", views.ConfigComplianceListView.as_view(), name="configcompliance_list"),
     path("config-compliance/delete/", views.ConfigComplianceBulkDeleteView.as_view(), name="compliance_bulk_delete"),
     path("config-compliance/overview/", views.ConfigComplianceOverview.as_view(), name="configcompliance_report"),
-    path("config-compliance/<str:device_name>", views.ConfigComplianceView.as_view(), name="configcompliance"),
+    path("config-compliance/<uuid:pk>", views.ConfigComplianceView.as_view(), name="configcompliance"),
     path(
-        "config-compliance/<str:device_name>/<str:config_type>/",
+        "config-compliance/<uuid:pk>/<str:config_type>/",
         views.ConfigComplianceDetails.as_view(),
         name="configcompliance_details",
     ),
     path(
-        "config-compliance/filtered/<str:device_name>/<str:compliance>/",
+        "config-compliance/filtered/<uuid:pk>/<str:compliance>/",
         views.ComplianceDeviceFilteredReport.as_view(),
         name="configcompliance_filter_report",
     ),

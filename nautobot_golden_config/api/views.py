@@ -20,7 +20,7 @@ class SOTAggDeviceDetailView(APIView):
 
     def get(self, request, *args, **kwargs):
         """Get method serialize for a dictionary to json response."""
-        device = Device.objects.get(name=kwargs["device_name"])
+        device = kwargs["device"]
         global_settings = GoldenConfigSettings.objects.first()
         status_code, data = graph_ql_query(request, device, global_settings.sot_agg_query)
         data = json.loads(json.dumps(data))

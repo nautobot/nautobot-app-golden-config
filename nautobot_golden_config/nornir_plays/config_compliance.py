@@ -102,7 +102,7 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     for feature in features[obj.platform.slug]:
         defaults = {
             "actual": section_config(feature, backup_cfg, platform),
-            "intended": section_config(feature, intended_cfg, platform)
+            "intended": section_config(feature, intended_cfg, platform),
         }
         # using update_or_create() method to conveniently update actual obj or create new one.
         ConfigCompliance.objects.update_or_create(

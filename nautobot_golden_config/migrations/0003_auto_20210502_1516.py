@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('nautobot_golden_config', '0002_custom_data'),
+        ("nautobot_golden_config", "0002_custom_data"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='goldenconfigsettings',
-            name='exclude_chassis_members',
+            model_name="goldenconfigsettings",
+            name="exclude_chassis_members",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='goldenconfigsettings',
-            name='only_primary_ip',
+            model_name="goldenconfigsettings",
+            name="only_primary_ip",
             field=models.BooleanField(default=False),
         ),
     ]

@@ -17,12 +17,15 @@ from nautobot.core.models.generics import PrimaryModel
 from netutils.config.compliance import compliance
 
 LOGGER = logging.getLogger(__name__)
+GRAPHQL_STR_START = "query ($device_id: ID!)"
+
 
 def null_to_empty(val):
     """Convert to empty string if the value is currently null."""
     if not val:
         return ""
     return val
+
 
 @extras_features(
     "custom_fields",
@@ -85,10 +88,12 @@ class ConfigCompliance(PrimaryModel):
         self.reordered_list_items = {}
         obj = ComplianceFeature.objects.get(platform=self.device.platform, name=self.name)
         features = [{"ordered": obj.config_ordered, "name": obj.name, "section": obj.match_config.splitlines()}]
-        value = compliance(features, self.actual, self.intended, self.device.platform.slug, cfg_type="string")[self.name]
+        value = compliance(features, self.actual, self.intended, self.device.platform.slug, cfg_type="string")[
+            self.name
+        ]
         self.compliance = value["compliant"]
         self.ordered: value["ordered_compliant"]
-        self.missing =  null_to_empty(value["missing"])
+        self.missing = null_to_empty(value["missing"])
         self.extra = null_to_empty(value["extra"])
 
 
@@ -249,13 +254,13 @@ class GoldenConfigSettings(PrimaryModel):
         null=False,
         default=False,
         verbose_name="Shorten the SoT data returned",
-        help_text="This will shorten the response from `devices[0]{data}` to `{data}`",
+        help_text="This will shorten the response from `data['device']{data}` to `{data}`",
     )
     sot_agg_query = models.TextField(
         null=False,
         blank=True,
         verbose_name="GraphQL Query",
-        help_text="A query that is evaluated and used to render the config. The query must start with `query ($device: String!)`.",
+        help_text=f"A query that is evaluated and used to render the config. The query must start with `{GRAPHQL_STR_START}`.",
     )
     only_primary_ip = models.BooleanField(
         null=False,
@@ -268,7 +273,6 @@ class GoldenConfigSettings(PrimaryModel):
         verbose_name="Exclude non-master chassis members.",
         help_text="This will ensure that chassis that are connected to only via the chassis master.",
     )
-
 
     def get_absolute_url(self):  # pylint: disable=no-self-use
         """Return absolute URL for instance."""
@@ -300,9 +304,10 @@ class GoldenConfigSettings(PrimaryModel):
                 backend.document_from_string(schema, str(self.sot_agg_query))
             except GraphQLSyntaxError as error:
                 raise ValidationError(str(error))  # pylint: disable=raise-missing-from
-            graphql_start = "query ($device: String!)"
-            if not str(self.sot_agg_query).startswith(graphql_start):
-                raise ValidationError(f"The GraphQL query must start with exactly `{graphql_start}`")
+
+            LOGGER.debug("GraphQL - test  query start with: `%s`", GRAPHQL_STR_START)
+            if not str(self.sot_agg_query).startswith(GRAPHQL_STR_START):
+                raise ValidationError(f"The GraphQL query must start with exactly `{GRAPHQL_STR_START}`")
 
 
 class ConfigRemove(PrimaryModel):

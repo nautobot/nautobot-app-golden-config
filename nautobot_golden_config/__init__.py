@@ -5,7 +5,7 @@ __version__ = "0.9.0"
 from nautobot.extras.plugins import PluginConfig
 
 
-class GoldenConfiguration(PluginConfig):
+class GoldenConfig(PluginConfig):
     """Plugin configuration for the nautobot_golden_config plugin."""
 
     name = "nautobot_golden_config"
@@ -19,7 +19,6 @@ class GoldenConfiguration(PluginConfig):
     # min_version = "0"
     # max_version = "100"
     default_settings = {
-        "allowed_os": ["all"],
         "enable_backup": True,
         "enable_golden": True,
         "enable_compliance": True,
@@ -31,4 +30,4 @@ class GoldenConfiguration(PluginConfig):
     caching_config = {}
 
 
-config = GoldenConfiguration  # pylint:disable=invalid-name
+config = GoldenConfig  # pylint:disable=invalid-name

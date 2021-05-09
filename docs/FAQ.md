@@ -1,9 +1,5 @@
 # Frequently Asked Questions
 
-_Why must a device name be unique?_
-
-The APIs and other components rely on a single device, such as the ability to perform an API call to `sotagg/<str:device_name>/`. This is a challenge that may be affected by decisions made to the core platform. For the time being, it is a requirement.
-
 _Why don't the configurations match like the vendor cli?_
 
 A vendor processes configuration understanding constructs such as knowing that `int g0/0` and `interface GigabitEthernet0/0` are the same. Each one of these 
@@ -15,8 +11,8 @@ Instead, it is up to the operator to ensure their configurations match exactly a
 
 _Why doesn't the config overview page reflect the inclusion changes immediately?_
 
-On a technical level, those changes enable the model `GoldenConfiguration` to *not* filter out the newly included devices, but this does not add to the
-model. In order to be included, a new job needs to be ran which will create an entry within `GoldenConfiguration`, any of the 3 jobs that successfully run
+On a technical level, those changes enable the model `GoldenConfig` to *not* filter out the newly included devices, but this does not add to the
+model. In order to be included, a new job needs to be ran which will create an entry within `GoldenConfig`, any of the 3 jobs that successfully run
 will create such an entry.
 
 _Why aren't configurations generated or compliance generated real time?_
@@ -64,4 +60,9 @@ out-of-scope for the plugin.
 _Why does the compliance section scroll so much?_
 
 The real estate optimizations is not the best for the configuration compliance overview right now. Users are suggested to review the best practices
-described in the configuration compliance section. Over time, the hope is to optimize this
+described in the configuration compliance section. Over time, the hope is to optimize this.
+
+_Why can't I get access to the name key when generating configuration?_
+
+All data created by GraphQL is unpacked with the `**data` operator. There is a namespace issue with Nornir using name as a keyword as well. The recommended
+approach is to use GraphQL aliasing. An example would be `hostname: name` or `inventory_hostname: name` to workaround this issue.

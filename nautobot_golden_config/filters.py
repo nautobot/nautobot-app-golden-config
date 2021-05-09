@@ -6,15 +6,15 @@ from django.db.models import Q, Subquery
 
 from nautobot.dcim.models import Device, Platform, Region, Site, DeviceRole, DeviceType, Manufacturer, RackGroup, Rack
 from nautobot.extras.models import Status
-from nautobot.extras.filters import CreatedUpdatedFilterSet, StatusFilter
+from nautobot.extras.filters import CreatedUpdatedFilterSet, StatusFilter, CustomFieldModelFilterSet
 from nautobot.tenancy.models import Tenant, TenantGroup
 from nautobot.utilities.filters import TreeNodeMultipleChoiceFilter
 
-from .models import ConfigCompliance, ComplianceFeature, GoldenConfiguration
+from nautobot_golden_config import models
 
 
-class GoldenConfigurationFilter(CreatedUpdatedFilterSet):
-    """Filter capabilities for GoldenConfiguration instances."""
+class GoldenConfigFilter(CreatedUpdatedFilterSet):
+    """Filter capabilities for GoldenConfig instances."""
 
     q = django_filters.CharFilter(
         method="search",
@@ -142,7 +142,7 @@ class GoldenConfigurationFilter(CreatedUpdatedFilterSet):
     class Meta:
         """Meta class attributes for GoldenConfig."""
 
-        model = GoldenConfiguration
+        model = models.GoldenConfig
         distinct = True
         fields = [
             "q",
@@ -169,12 +169,14 @@ class GoldenConfigurationFilter(CreatedUpdatedFilterSet):
         ]
 
 
-class ConfigComplianceFilter(GoldenConfigurationFilter):
+class ConfigComplianceFilter(GoldenConfigFilter):
     """Filter capabilities for ConfigCompliance instances."""
 
     device = django_filters.ModelMultipleChoiceFilter(
         field_name="device__name",
-        queryset=Device.objects.filter(id__in=Subquery(ConfigCompliance.objects.distinct("device").values("device"))),
+        queryset=Device.objects.filter(
+            id__in=Subquery(models.ConfigCompliance.objects.distinct("device").values("device"))
+        ),
         to_field_name="name",
         label="Device Name",
     )
@@ -182,7 +184,7 @@ class ConfigComplianceFilter(GoldenConfigurationFilter):
     class Meta:
         """Meta class attributes for ConfigComplianceFilter."""
 
-        model = ConfigCompliance
+        model = models.ConfigCompliance
         distinct = True
         fields = [
             "q",
@@ -209,8 +211,8 @@ class ConfigComplianceFilter(GoldenConfigurationFilter):
         ]
 
 
-class SettingsFeatureFilter(django_filters.FilterSet):
-    """Boilerplate filter for compliance feature."""
+class ComplianceFeatureFilter(CustomFieldModelFilterSet):
+    """Inherits Base Class CustomFieldModelFilterSet."""
 
     q = django_filters.CharFilter(
         method="search",
@@ -220,9 +222,35 @@ class SettingsFeatureFilter(django_filters.FilterSet):
     class Meta:
         """Boilerplate filter Meta data for compliance feature."""
 
-        model = ComplianceFeature
-        fields = ["name", "platform"]
+        model = models.ComplianceFeature
+        fields = ["q", "name"]
 
 
-class ComplianceFeatureFilter(SettingsFeatureFilter):
-    """Inherits Base Class SettingsFeatureFilter."""
+class ComplianceRuleFilter(CustomFieldModelFilterSet):
+    """Inherits Base Class CustomFieldModelFilterSet."""
+
+    class Meta:
+        """Boilerplate filter Meta data for compliance rule."""
+
+        model = models.ComplianceRule
+        fields = ["platform", "feature"]
+
+
+class ConfigRemoveFilter(CustomFieldModelFilterSet):
+    """Inherits Base Class CustomFieldModelFilterSet."""
+
+    class Meta:
+        """Boilerplate filter Meta data for Config Remove."""
+
+        model = models.ConfigRemove
+        fields = ["platform", "name"]
+
+
+class ConfigReplaceFilter(CustomFieldModelFilterSet):
+    """Inherits Base Class CustomFieldModelFilterSet."""
+
+    class Meta:
+        """Boilerplate filter Meta data for Config Remove."""
+
+        model = models.ConfigReplace
+        fields = ["platform", "name"]

@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% load buttons %}
+{% load static %}
+{% load custom_links %}
+{% load helpers %}
+
+{% block title %}{{ object }}{% endblock %}
+
+{% block header %}
+    <div class="row noprint">
+        <div class="col-sm-8 col-md-9">
+            <ol class="breadcrumb">
+                <li>Golden Configuration Settings</li>
+                <li><a href="{% url 'plugins:nautobot_golden_config:goldenconfigsetting_edit' %}">Settings</a></li>
+                <li>{{ object }}</li>
+            </ol>
+        </div>
+        <div class="col-sm-4 col-md-3">
+            <form action="{% url 'plugins:nautobot_golden_config:goldenconfigsetting' %}" method="get">
+                <div class="input-group">
+                    <input type="text" name="q" class="form-control" />
+                    <span class="input-group-btn">
+                        <button type="submit" class="btn btn-primary">
+                            <span class="mdi mdi-magnify" aria-hidden="true"></span>
+                        </button>
+                    </span>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="pull-right noprint">
+        {% if perms.nautobot_golden_config.change_goldenconfigsetting %}
+            <a href="{% url 'plugins:nautobot_golden_config:goldenconfigsetting_edit' %}" class="btn btn-warning">
+                <span class="mdi mdi-pencil" aria-hidden="true"></span> Edit
+            </a>
+        {% endif %}
+    </div>
+    <h1>{{ object }}</h1>
+    {% include 'inc/created_updated.html' %}
+    <div class="pull-right noprint">
+        {% custom_links object %}
+    </div>
+    <ul class="nav nav-tabs">
+        <li role="presentation"{% if not active_tab %} class="active"{% endif %}>
+            <a href="{{ object.get_absolute_url }}">Settings</a>
+        </li>
+        {% if perms.extras.view_objectchange %}
+            <li role="presentation"{% if active_tab == 'changelog' %} class="active"{% endif %}>
+                <a href="{% url 'plugins:nautobot_golden_config:goldenconfigsetting_changelog' %}">Change Log</a>
+            </li>
+        {% endif %}
+    </ul>
+{% endblock %}
+
+{% block content %}
+<style>
+    pre {
+        font-size: 10px;
+        display: inline-block;
+    }
+</style>
+<div class="row">
+	<div class="col-md-8">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <strong>Settings</strong>
+            </div>
+            <table class="table table-hover panel-body attr-table">
+                <tr>
+                    <td>Backup Repository</td>
+                    <td>
+                    {% if object.backup_repository %}
+                    <a href="{% url 'extras:gitrepository' slug=object.backup_repository.slug %}">{{ object.backup_repository }}</a>
+                    {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Backup Path Template</td>
+                    <td><pre>{{ object.backup_path_template }}</pre></td>
+                </tr>
+                <tr>
+                    <td>Intended Repository</td>
+                    <td>
+                    {% if object.intended_repository %}
+                    <a href="{% url 'extras:gitrepository' slug=object.intended_repository.slug %}">{{ object.intended_repository }}</a>
+                    {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Intended Path Template</td>
+                    <td><pre>{{ object.intended_path_template }}</pre></td>
+                </tr>
+                <tr>
+                    <td>Jinja Repository</td>
+                    <td>
+                    {% if object.jinja_repository %}
+                    <a href="{% url 'extras:gitrepository' slug=object.jinja_repository.slug %}">{{ object.jinja_repository }}</a>
+                    {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Jinja Path Template</td>
+                    <td><pre>{{ object.jinja_path_template }}</pre></td>
+                </tr>
+                <tr>
+                    <td>Backup Test Connectivity</td>
+                    <td>
+                        {% if object.backup_test_connectivity %}
+                            <span class="text-success">
+                                <i class="mdi mdi-check-bold"></i>
+                            </span>
+                        {% else %}
+                            <span class="text-danger">
+                                <i class="mdi mdi-close"></i>
+                            </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td><a href="{{ object.get_url_to_filtered_device_list }}">Scope of Devices</td>
+                    <td><pre>{{ object.scope|render_json }}</pre></a></td>
+                </tr>
+                <tr>
+                    <td>SoT Aggregation Query</td>
+                    <td><pre>{{ object.sot_agg_query }}</pre></td>
+                </tr>
+        </div>
+    </table>
+</div>
+        {% include 'inc/custom_fields_panel.html' %}
+        {% include 'inc/relationships_panel.html' %}
+    </div>
+</div>
+{% endblock %}

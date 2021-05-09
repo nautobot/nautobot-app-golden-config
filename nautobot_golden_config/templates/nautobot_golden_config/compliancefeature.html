@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% load buttons %}
+{% load static %}
+{% load custom_links %}
+{% load helpers %}
+
+{% block title %}{{ object }}{% endblock %}
+
+{% block header %}
+    <div class="row noprint">
+        <div class="col-sm-8 col-md-9">
+            <ol class="breadcrumb">
+                <li>Compliance Feature</li>
+                <li><a href="{% url 'plugins:nautobot_golden_config:compliancefeature_list' %}">Compliance Features</a></li>
+            </ol>
+        </div>
+        <div class="col-sm-4 col-md-3">
+            <form action="{% url 'plugins:nautobot_golden_config:compliancefeature_list' %}" method="get">
+                <div class="input-group">
+                    <input type="text" name="q" class="form-control" />
+                    <span class="input-group-btn">
+                        <button type="submit" class="btn btn-primary">
+                            <span class="mdi mdi-magnify" aria-hidden="true"></span>
+                        </button>
+                    </span>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="pull-right noprint">
+        {% if perms.nautobot_golden_config.add_compliancefeature %}
+            {% clone_button object %}
+        {% endif %}
+        {% if perms.nautobot_golden_config.change_compliancefeature %}
+            {% edit_button object use_pk=1 %}
+        {% endif %}
+        {% if perms.nautobot_golden_config.delete_compliancefeature %}
+            {% delete_button object use_pk=1 %}
+        {% endif %}
+    </div>
+    <h1>{{ object }}</h1>
+    {% include 'inc/created_updated.html' %}
+    <div class="pull-right noprint">
+        {% custom_links object %}
+    </div>
+    <ul class="nav nav-tabs">
+        <li role="presentation"{% if not active_tab %} class="active"{% endif %}>
+            <a href="{{ object.get_absolute_url }}">Compliance Feature</a>
+        </li>
+        {% if perms.extras.view_objectchange %}
+            <li role="presentation"{% if active_tab == 'changelog' %} class="active"{% endif %}>
+                <a href="{% url 'plugins:nautobot_golden_config:compliancefeature_changelog' pk=object.pk %}">Change Log</a>
+            </li>
+        {% endif %}
+    </ul>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+	<div class="col-md-4">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <strong>Details</strong>
+            </div>
+            <table class="table table-hover panel-body attr-table">
+                <tr>
+                    <td>Name</td>
+                    <td>{{ object.name }}</td>
+                </tr>
+                <tr>
+                    <td>Slug</td>
+                    <td>{{ object.slug }}</a></td>
+                </tr>
+                <tr>
+                    <td>Description</td>
+                    <td>{{ object.description }}</a></td>
+                </tr>
+            </table>
+        </div>
+        {% include 'inc/custom_fields_panel.html' %}
+        {% include 'inc/relationships_panel.html' %}
+    </div>
+</div>
+{% endblock %}

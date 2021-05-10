@@ -2,7 +2,7 @@
 from nautobot.extras.choices import LogLevelChoices
 from nautobot.extras.registry import DatasourceContent
 
-from .utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
+from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
 
 
 def refresh_git_jinja(repository_record, job_result, delete=False):  # pylint: disable=unused-argument

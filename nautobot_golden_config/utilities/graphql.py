@@ -7,8 +7,7 @@ from graphene_django.settings import graphene_settings
 from graphql import get_default_backend
 from graphql.error import GraphQLSyntaxError
 
-from nautobot_golden_config.models import GoldenConfigSettings
-from .constant import PLUGIN_CFG
+from nautobot_golden_config.utilities.constant import PLUGIN_CFG
 
 LOGGER = logging.getLogger(__name__)
 
@@ -20,10 +19,11 @@ def graph_ql_query(request, device, query):
     schema = graphene_settings.SCHEMA
 
     LOGGER.debug("GraphQL - set query variable to device.")
-    variables = {"device": device}
+    variables = {"device_id": str(device.pk)}
     try:
         LOGGER.debug("GraphQL - test query: `%s`", str(query))
         document = backend.document_from_string(schema, query)
+
     except GraphQLSyntaxError as error:
         LOGGER.warning("GraphQL - test query Failed: `%s`", str(query))
         return (400, {"error": str(error)})
@@ -35,9 +35,7 @@ def graph_ql_query(request, device, query):
         return (400, result.to_dict())
     data = result.data
 
-    global_settings = GoldenConfigSettings.objects.get(id="aaaaaaaa-0000-0000-0000-000000000001")
-    if global_settings.shorten_sot_query is True:
-        data = data["devices"][0]
+    data = data.get("device", {})
 
     if PLUGIN_CFG.get("sot_agg_transposer"):
         LOGGER.debug("GraphQL - tansform data with function: `%s`", str(PLUGIN_CFG.get("sot_agg_transposer")))

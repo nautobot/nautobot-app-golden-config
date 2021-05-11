@@ -24,7 +24,7 @@ urlpatterns = [
         name="configcompliance_delete",
     ),
     path(
-        "config-compliance/<uuid:pk>/<str:config_type>/",
+        "config-compliance/details/<uuid:pk>/<str:config_type>/",
         views.ConfigComplianceDetails.as_view(),
         name="configcompliance_details",
     ),

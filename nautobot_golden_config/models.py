@@ -40,7 +40,7 @@ def null_to_empty(val):
     "webhooks",
 )
 class ComplianceFeature(PrimaryModel):
-    """Compliance feature details."""
+    """ComplianceFeature details."""
 
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(max_length=100, unique=True)
@@ -75,7 +75,7 @@ class ComplianceFeature(PrimaryModel):
     "webhooks",
 )
 class ComplianceRule(PrimaryModel):
-    """Configuration compliance details."""
+    """ComplianceRule details."""
 
     feature = models.ForeignKey(to="ComplianceFeature", on_delete=models.CASCADE, blank=False, related_name="feature")
 
@@ -458,7 +458,7 @@ class GoldenConfigSetting(PrimaryModel):
     "webhooks",
 )
 class ConfigRemove(PrimaryModel):
-    """GoldenConfigSetting for Regex Line Removals from Backup Configuration Model defintion."""
+    """ConfigRemove for Regex Line Removals from Backup Configuration Model defintion."""
 
     name = models.CharField(max_length=255, null=False, blank=False)
     platform = models.ForeignKey(
@@ -486,7 +486,7 @@ class ConfigRemove(PrimaryModel):
         return (self.name, self.platform.slug, self.regex)
 
     class Meta:
-        """Meta information for ComplianceRule model."""
+        """Meta information for ConfigRemove model."""
 
         ordering = ("platform", "name")
         unique_together = ("name", "platform")
@@ -510,7 +510,7 @@ class ConfigRemove(PrimaryModel):
     "webhooks",
 )
 class ConfigReplace(PrimaryModel):
-    """GoldenConfigSetting for Regex Line Replacements from Backup Configuration Model defintion."""
+    """ConfigReplace for Regex Line Replacements from Backup Configuration Model defintion."""
 
     name = models.CharField(max_length=255, null=False, blank=False)
     platform = models.ForeignKey(
@@ -543,7 +543,7 @@ class ConfigReplace(PrimaryModel):
         return (self.name, self.platform.slug, self.regex, self.replace)
 
     class Meta:
-        """Meta information for ComplianceRule model."""
+        """Meta information for ConfigReplace model."""
 
         ordering = ("platform", "name")
         unique_together = ("name", "platform")

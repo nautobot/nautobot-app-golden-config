@@ -111,6 +111,16 @@ class ConfigComplianceListView(generic.ObjectListView):
         return "\n".join(csv_data)
 
 
+class ConfigComplianceView(generic.ObjectView):
+    """View for a device's specific configuration compliance feature."""
+
+    queryset = models.ConfigCompliance.objects.all()
+
+    def get_extra_context(self, request, instance):
+        """Add extra data to detail view for Nautobot."""
+        return {}
+
+
 class ConfigComplianceBulkDeleteView(generic.BulkDeleteView):
     """View for deleting one or more OnboardingTasks."""
 
@@ -186,8 +196,8 @@ class ConfigComplianceDeleteView(generic.ObjectDeleteView):
 # ConfigCompliance Non-Standards
 
 
-class ConfigComplianceView(ContentTypePermissionRequiredMixin, generic.View):
-    """View for the single device detailed information."""
+class ConfigComplianceDeviceView(ContentTypePermissionRequiredMixin, generic.View):
+    """View for individual device detailed information."""
 
     def get_required_permission(self):
         """Manually set permission when not tied to a model for device report."""

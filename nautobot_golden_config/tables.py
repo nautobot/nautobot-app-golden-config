@@ -150,9 +150,8 @@ class ConfigComplianceTable(BaseTable):
 
     pk = ToggleColumn(accessor=A("device"))
     device = TemplateColumn(
-        template_code="""<a href="{% url 'plugins:nautobot_golden_config:configcompliance' pk=record.device  %}" <strong>{{ record.device__name }}</strong></a> """
+        template_code="""<a href="{% url 'plugins:nautobot_golden_config:configcompliance_devicedetail' pk=record.device  %}" <strong>{{ record.device__name }}</strong></a> """
     )
-    # device = LinkColumn("plugins:nautobot_golden_config:configcompliance", text=lambda record: record.device__name, args=[A("device")])
 
     def __init__(self, *args, **kwargs):
         """Override default values to dynamically add columns."""

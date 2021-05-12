@@ -14,12 +14,17 @@ urlpatterns = [
     path("config-compliance/overview/", views.ConfigComplianceOverview.as_view(), name="configcompliance_report"),
     path("config-compliance/<uuid:pk>", views.ConfigComplianceView.as_view(), name="configcompliance"),
     path(
+        "config-compliance/devicedetail/<uuid:pk>",
+        views.ConfigComplianceDeviceView.as_view(),
+        name="configcompliance_devicedetail",
+    ),
+    path(
         "config-compliance/<uuid:pk>/delete/",
         views.ConfigComplianceDeleteView.as_view(),
         name="configcompliance_delete",
     ),
     path(
-        "config-compliance/<uuid:pk>/<str:config_type>/",
+        "config-compliance/details/<uuid:pk>/<str:config_type>/",
         views.ConfigComplianceDetails.as_view(),
         name="configcompliance_details",
     ),
@@ -27,6 +32,12 @@ urlpatterns = [
         "config-compliance/filtered/<uuid:pk>/<str:compliance>/",
         views.ComplianceDeviceFilteredReport.as_view(),
         name="configcompliance_filter_report",
+    ),
+    path(
+        "config-compliance/<uuid:pk>/changelog/",
+        ObjectChangeLogView.as_view(),
+        name="configcompliance_changelog",
+        kwargs={"model": models.ConfigCompliance},
     ),
     path("compliance-rule/", views.ComplianceRuleListView.as_view(), name="compliancerule_list"),
     path("compliance-rule/add/", views.ComplianceRuleEditView.as_view(), name="compliancerule_add"),

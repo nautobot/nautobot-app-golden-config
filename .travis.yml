@@ -20,7 +20,7 @@ services:
 # Tests
 # --------------------------------------------------------------------------
 before_install:
-  - 'docker login —username "$DOCKER_HUB_USERNAME" --password "$DOCKER_HUB_PASSWORD"'  # yamllint disable-line rule:quoted-strings
+  - 'docker login --username "$DOCKER_HUB_USERNAME" --password "$DOCKER_HUB_PASSWORD"'  # yamllint disable-line rule:quoted-strings
 
 before_script:
   - "pip install invoke toml docker-compose poetry"

@@ -20,7 +20,7 @@ services:
 # Tests
 # --------------------------------------------------------------------------
 before_install:
-  - echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USERNAME" --password-stdin
+  - echo "$DOCKER_HUB_PASSWORD" | docker login --username "$DOCKER_HUB_USERNAME" --password-stdin
 
 before_script:
   - "pip install invoke toml docker-compose poetry"

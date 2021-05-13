@@ -959,7 +959,7 @@ test = ["pyyaml (>=5.1.2)", "pytest (>=5.1.2)"]
 
 [[package]]
 name = "netutils"
-version = "0.1.1"
+version = "0.1.2"
 description = "Common helper functions useful in network automation."
 category = "main"
 optional = false
@@ -1016,7 +1016,7 @@ python-versions = "^3.6"
 develop = false
 
 [package.dependencies]
-netutils = "^0.1.1"
+netutils = "^0.1.2"
 nornir = "^3.0.0"
 nornir-jinja2 = "^0.1.1"
 nornir-napalm = "^0.1.1"
@@ -1029,7 +1029,7 @@ requests = "^2.25.1"
 type = "git"
 url = "https://github.com/nautobot/nornir-nautobot.git"
 reference = "nextgen"
-resolved_reference = "11cdef8617890f5cddc78f172b13ab02408933d8"
+resolved_reference = "d59e3447536583b32ef50f223829df7bc01ded66"
 
 [[package]]
 name = "nornir-netmiko"
@@ -2269,7 +2269,8 @@ netmiko = [
     {file = "netmiko-3.4.0.tar.gz", hash = "sha256:acadb9dd97864ee848e2032f1f0e301c7b31e7a4153757d98f5c8ba1b9614993"},
 ]
 netutils = [
-    {file = "netutils-0.1.1-py3-none-any.whl", hash = "sha256:cea9b2374ef8428b7054d63c631ca9f8ff768a31c477a2580dcc5b07343b7ac1"},
+    {file = "netutils-0.1.2-py3-none-any.whl", hash = "sha256:a381c6f0715b1af818be1e4003a88aa5d2c66ef48c951db4c27dacaeea1a3d50"},
+    {file = "netutils-0.1.2.tar.gz", hash = "sha256:fdf9d809f5ee2f72a6a179d4f5a0ef4503a2836aa9a0695979aab847bc09a30b"},
 ]
 nornir = [
     {file = "nornir-3.1.0-py3-none-any.whl", hash = "sha256:0eed0ca73122ce8f4b90a560ada79d81174845a8a5320972292417eb19efa587"},

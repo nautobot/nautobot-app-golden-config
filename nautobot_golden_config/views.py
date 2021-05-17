@@ -130,6 +130,9 @@ class ConfigComplianceBulkDeleteView(generic.BulkDeleteView):
 
     def post(self, request, **kwargs):
         """Delete instances based on post request data."""
+        # This is a deviation from standard Nautobot. Since the config compliance is pivot'd, the actual
+        # pk is based on the device, this crux of the change is to get all actual config changes based on
+        # the incoming device pk's.
         model = self.queryset.model
 
         # Are we deleting *all* objects in the queryset or just a selected subset?
@@ -143,16 +146,15 @@ class ConfigComplianceBulkDeleteView(generic.BulkDeleteView):
 
         form_cls = self.get_form()
 
-        obj_to_del = [
-            item[0] for item in models.ConfigCompliance.objects.filter(device__pk__in=pk_list).values_list("device")
-        ]
+        # The difference between nautobot core is the creation and usage of obj_to_del
+        obj_to_del = [item[0] for item in self.queryset.filter(device__pk__in=pk_list).values_list("id")]
         if "_confirm" in request.POST:
             form = form_cls(request.POST)
             if form.is_valid():
                 LOGGER.debug("Form validation was successful")
 
                 # Delete objects
-                queryset = models.ConfigCompliance.objects.filter(device__in=obj_to_del)
+                queryset = self.queryset.filter(pk__in=pk_list)
                 try:
                     deleted_count = queryset.delete()[1][model._meta.label]
                 except ProtectedError as error:
@@ -168,23 +170,30 @@ class ConfigComplianceBulkDeleteView(generic.BulkDeleteView):
             LOGGER.debug("Form validation failed")
 
         else:
-            form = form_cls(initial={"pk": pk_list, "return_url": self.get_return_url(request)})
+            form = form_cls(
+                initial={
+                    "pk": obj_to_del,
+                    "return_url": self.get_return_url(request),
+                }
+            )
 
-        table = self.table(models.ConfigCompliance.objects.filter(device__in=obj_to_del), orderable=False)
+        # Retrieve objects being deleted
+        table = self.table(self.queryset.filter(pk__in=obj_to_del), orderable=False)
         if not table.rows:
-            messages.warning(request, "No {} were selected for deletion.".format(model._meta.verbose_name_plural))
+            messages.warning(
+                request,
+                "No {} were selected for deletion.".format(model._meta.verbose_name_plural),
+            )
             return redirect(self.get_return_url(request))
 
-        return render(
-            request,
-            self.template_name,
-            {
-                "form": form,
-                "obj_type_plural": model._meta.verbose_name_plural,
-                "table": table,
-                "return_url": self.get_return_url(request),
-            },
-        )
+        context = {
+            "form": form,
+            "obj_type_plural": model._meta.verbose_name_plural,
+            "table": table,
+            "return_url": self.get_return_url(request),
+        }
+        context.update(self.extra_context())
+        return render(request, self.template_name, context)
 
 
 class ConfigComplianceDeleteView(generic.ObjectDeleteView):

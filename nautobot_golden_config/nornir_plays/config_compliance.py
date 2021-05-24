@@ -97,12 +97,13 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     # TODO: Make this atomic with compliance_obj step.
     for feature in features[obj.platform.slug]:
         # using update_or_create() method to conveniently update actual obj or create new one.
-        ConfigCompliance.objects.update_or_create(
+        cc_obj, _ = ConfigCompliance.objects.get_or_create(
             device=obj,
-            rule=feature["obj"],
-            actual=section_config(feature, backup_cfg, platform),
-            intended=section_config(feature, intended_cfg, platform),
+            rule=feature["obj"]
         )
+        cc_obj.actual=section_config(feature, backup_cfg, platform)
+        cc_obj.intended=section_config(feature, intended_cfg, platform)
+        cc_obj.save()
 
     compliance_obj.compliance_last_success_date = task.host.defaults.data["now"]
     compliance_obj.compliance_config = "\n".join(diff_files(backup_file, intended_file))

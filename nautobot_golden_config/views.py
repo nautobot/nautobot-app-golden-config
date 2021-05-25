@@ -1,4 +1,5 @@
 """Django views for Nautobot Golden Configuration."""
+from datetime import datetime
 
 import base64
 import io
@@ -11,9 +12,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from django.contrib import messages
-from django.db.models import F, Q
-from django.db.models import Subquery, OuterRef, Count, FloatField, ExpressionWrapper, ProtectedError
+from django.db.models import F, Q, Max
+from django.db.models import Count, FloatField, ExpressionWrapper, ProtectedError
 from django.shortcuts import render, redirect
+from django_pivot.pivot import pivot
 
 from nautobot.dcim.models import Device
 from nautobot.core.views import generic
@@ -21,74 +23,262 @@ from nautobot.utilities.utils import csv_format
 from nautobot.utilities.error_handlers import handle_protectederror
 from nautobot.utilities.views import ContentTypePermissionRequiredMixin
 
-from .filters import ComplianceFeatureFilter, ConfigComplianceFilter, GoldenConfigurationFilter
-from .forms import (
-    ComplianceFeatureForm,
-    ComplianceFeatureFilterForm,
-    ConfigComplianceFilterForm,
-    GoldenConfigSettingsFeatureForm,
-    GoldenConfigurationFilterForm,
-)
-from .models import ComplianceFeature, ConfigCompliance, GoldenConfigSettings, GoldenConfiguration
-from .tables import (
-    ComplianceFeatureTable,
-    ConfigComplianceGlobalFeatureTable,
-    ConfigComplianceTable,
-    ConfigComplianceDeleteTable,
-    GoldenConfigurationTable,
-)
-from .utilities.constant import PLUGIN_CFG, ENABLE_COMPLIANCE, CONFIG_FEATURES
-from .utilities.helper import get_allowed_os_from_nested
-from .utilities.graphql import graph_ql_query
+from nautobot_golden_config import filters, forms, models, tables
+
+from nautobot_golden_config.utilities.constant import PLUGIN_CFG, ENABLE_COMPLIANCE, CONFIG_FEATURES
+from nautobot_golden_config.utilities.graphql import graph_ql_query
 
 LOGGER = logging.getLogger(__name__)
 
 GREEN = "#D5E8D4"
 RED = "#F8CECC"
 
+#
+# GoldenConfig
+#
 
-class Home(generic.ObjectListView):
+
+class GoldenConfigListView(generic.ObjectListView):
     """View for displaying the configuration management status for backup, intended, diff, and SoT Agg."""
 
-    table = GoldenConfigurationTable
-    filterset = GoldenConfigurationFilter
-    filterset_form = GoldenConfigurationFilterForm
-    queryset = GoldenConfiguration.objects.filter(**get_allowed_os_from_nested()).order_by("device__name")
-    template_name = "nautobot_golden_config/home.html"
+    table = tables.GoldenConfigTable
+    filterset = filters.GoldenConfigFilter
+    filterset_form = forms.GoldenConfigFilterForm
+    queryset = models.GoldenConfig.objects.all()
+    template_name = "nautobot_golden_config/goldenconfig_list.html"
 
     def extra_context(self):
         """Boilerplace code to modify data before returning."""
         return CONFIG_FEATURES
 
 
-class HomeBulkDeleteView(generic.BulkDeleteView):
+class GoldenConfigBulkDeleteView(generic.BulkDeleteView):
     """Standard view for bulk deletion of data."""
 
-    queryset = GoldenConfiguration.objects.filter(**get_allowed_os_from_nested()).order_by("device__name")
-    table = GoldenConfigurationTable
-    filterset = GoldenConfigurationFilter
+    queryset = models.GoldenConfig.objects.all()
+    table = tables.GoldenConfigTable
+    filterset = filters.GoldenConfigFilter
 
 
-class ConfigDetails(ContentTypePermissionRequiredMixin, generic.View):
+#
+# ConfigCompliance
+#
+
+
+class ConfigComplianceListView(generic.ObjectListView):
+    """Django View for visualizing the compliance report."""
+
+    filterset = filters.ConfigComplianceFilter
+    filterset_form = forms.ConfigComplianceFilterForm
+    queryset = models.ConfigCompliance.objects.all().order_by("device__name")
+    template_name = "nautobot_golden_config/compliance_report.html"
+    table = tables.ConfigComplianceTable
+
+    def alter_queryset(self, request):
+        """Build actual runtime queryset as the build time queryset provides no information."""
+        return pivot(
+            self.queryset,
+            ["device", "device__name"],
+            "rule__feature__slug",
+            "compliance_int",
+            aggregation=Max,
+        )
+
+    def extra_context(self):
+        """Boilerplate code to modify before returning data."""
+        return {"compliance": ENABLE_COMPLIANCE}
+
+    def queryset_to_csv(self):
+        """Export queryset of objects as comma-separated value (CSV)."""
+
+        def conver_to_str(val):
+            if val is False:  # pylint: disable=no-else-return
+                return "non-compliant"
+            elif val is True:
+                return "compliant"
+            return "N/A"
+
+        csv_data = []
+        headers = sorted(list(models.ConfigCompliance.objects.values_list("feature", flat=True).distinct()))
+        csv_data.append(",".join(list(["Device name"] + headers)))
+        for obj in self.alter_queryset(None).values():
+            # From all of the unique fields, obtain the columns, using list comprehension, add values per column,
+            # as some fields may not exist for every device.
+            row = [Device.objects.get(id=obj["device_id"]).name] + [
+                conver_to_str(obj.get(header)) for header in headers
+            ]
+            csv_data.append(csv_format(row))
+        return "\n".join(csv_data)
+
+
+class ConfigComplianceView(generic.ObjectView):
+    """View for a device's specific configuration compliance feature."""
+
+    queryset = models.ConfigCompliance.objects.all()
+
+    def get_extra_context(self, request, instance):
+        """Add extra data to detail view for Nautobot."""
+        return {}
+
+
+class ConfigComplianceBulkDeleteView(generic.BulkDeleteView):
+    """View for deleting one or more OnboardingTasks."""
+
+    queryset = models.ConfigCompliance.objects.all()
+    table = tables.ConfigComplianceDeleteTable
+    filterset = filters.ConfigComplianceFilter
+
+    def post(self, request, **kwargs):
+        """Delete instances based on post request data."""
+        # This is a deviation from standard Nautobot. Since the config compliance is pivot'd, the actual
+        # pk is based on the device, this crux of the change is to get all actual config changes based on
+        # the incoming device pk's.
+        model = self.queryset.model
+
+        # Are we deleting *all* objects in the queryset or just a selected subset?
+        if request.POST.get("_all"):
+            if self.filterset is not None:
+                pk_list = [obj.pk for obj in self.filterset(request.GET, model.objects.only("pk")).qs]
+            else:
+                pk_list = model.objects.values_list("pk", flat=True)
+        else:
+            pk_list = request.POST.getlist("pk")
+
+        form_cls = self.get_form()
+
+        # The difference between nautobot core is the creation and usage of obj_to_del
+        obj_to_del = [item[0] for item in self.queryset.filter(device__pk__in=pk_list).values_list("id")]
+        if "_confirm" in request.POST:
+            form = form_cls(request.POST)
+            if form.is_valid():
+                LOGGER.debug("Form validation was successful")
+
+                # Delete objects
+                queryset = self.queryset.filter(pk__in=pk_list)
+                try:
+                    deleted_count = queryset.delete()[1][model._meta.label]
+                except ProtectedError as error:
+                    LOGGER.info("Caught ProtectedError while attempting to delete objects")
+                    handle_protectederror(queryset, request, error)
+                    return redirect(self.get_return_url(request))
+
+                msg = "Deleted {} {}".format(deleted_count, model._meta.verbose_name_plural)
+                LOGGER.info(msg)
+                messages.success(request, msg)
+                return redirect(self.get_return_url(request))
+
+            LOGGER.debug("Form validation failed")
+
+        else:
+            form = form_cls(
+                initial={
+                    "pk": obj_to_del,
+                    "return_url": self.get_return_url(request),
+                }
+            )
+
+        # Retrieve objects being deleted
+        table = self.table(self.queryset.filter(pk__in=obj_to_del), orderable=False)
+        if not table.rows:
+            messages.warning(
+                request,
+                "No {} were selected for deletion.".format(model._meta.verbose_name_plural),
+            )
+            return redirect(self.get_return_url(request))
+
+        context = {
+            "form": form,
+            "obj_type_plural": model._meta.verbose_name_plural,
+            "table": table,
+            "return_url": self.get_return_url(request),
+        }
+        context.update(self.extra_context())
+        return render(request, self.template_name, context)
+
+
+class ConfigComplianceDeleteView(generic.ObjectDeleteView):
+    """View for deleting compliance rules."""
+
+    queryset = models.ConfigCompliance.objects.all()
+
+
+# ConfigCompliance Non-Standards
+
+
+class ConfigComplianceDeviceView(ContentTypePermissionRequiredMixin, generic.View):
+    """View for individual device detailed information."""
+
+    def get_required_permission(self):
+        """Manually set permission when not tied to a model for device report."""
+        return "nautobot_golden_config.view_configcompliance"
+
+    def get(self, request, pk):  # pylint: disable=invalid-name
+        """Read request into a view of a single device."""
+        device = Device.objects.get(pk=pk)
+        compliance_details = models.ConfigCompliance.objects.filter(device=device)
+
+        config_details = {"compliance_details": compliance_details, "device": device}
+
+        return render(
+            request,
+            "nautobot_golden_config/compliance_device_report.html",
+            config_details,
+        )
+
+
+class ComplianceDeviceFilteredReport(ContentTypePermissionRequiredMixin, generic.View):
+    """View for the single device detailed information."""
+
+    def get_required_permission(self):
+        """Manually set permission when not tied to a model for filtered report."""
+        return "nautobot_golden_config.view_configcompliance"
+
+    def get(self, request, pk, compliance):  # pylint: disable=invalid-name
+        """Read request into a view of a single device."""
+        device = Device.objects.get(pk=pk)
+        compliance_details = models.ConfigCompliance.objects.filter(device=device)
+
+        if compliance == "compliant":
+            compliance_details = compliance_details.filter(compliance=True)
+        else:
+            compliance_details = compliance_details.filter(compliance=False)
+
+        config_details = {"compliance_details": compliance_details, "device": device}
+        return render(
+            request,
+            "nautobot_golden_config/compliance_device_report.html",
+            config_details,
+        )
+
+
+class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
     """View for the single configuration or diff of a single."""
 
     def get_required_permission(self):
         """Manually set permission when not tied to a model for config details."""
-        return "nautobot_golden_config.view_goldenconfiguration"
+        return "nautobot_golden_config.view_goldenconfig"
 
-    def get(self, request, device_name, config_type):
+    def get(self, request, pk, config_type):  # pylint: disable=invalid-name,too-many-branches
         """Read request into a view of a single device."""
-        device = Device.objects.get(name=device_name)
-        config_details = GoldenConfiguration.objects.filter(device=device).first()
+        device = Device.objects.get(pk=pk)
+        config_details = models.GoldenConfig.objects.filter(device=device).first()
         structure_format = "json"
-        if config_type == "backup":
+        if not config_details:
+            output = ""
+        elif config_type == "backup":
             output = config_details.backup_config
         elif config_type == "intended":
             output = config_details.intended_config
         elif config_type == "compliance":
             output = config_details.compliance_config
-            backup_date = str(config_details.backup_last_success_date.strftime("%b %d %Y"))
-            intended_date = str(config_details.intended_last_success_date.strftime("%b %d %Y"))
+            if config_details.backup_last_success_date:
+                backup_date = str(config_details.backup_last_success_date.strftime("%b %d %Y"))
+            else:
+                backup_date = datetime.now().strftime("%b %d %Y")
+            if config_details.intended_last_success_date:
+                intended_date = str(config_details.intended_last_success_date.strftime("%b %d %Y"))
+            else:
+                intended_date = datetime.now().strftime("%b %d %Y")
             first_occurence = output.index("@@")
             second_occurence = output.index("@@", first_occurence)
             # This is logic to match diff2html's expected input.
@@ -106,203 +296,32 @@ class ConfigDetails(ContentTypePermissionRequiredMixin, generic.View):
             if request.GET.get("format") in ["json", "yaml"]:
                 structure_format = request.GET.get("format")
 
-            global_settings = GoldenConfigSettings.objects.get(id="aaaaaaaa-0000-0000-0000-000000000001")
+            global_settings = models.GoldenConfigSetting.objects.first()
             _, output = graph_ql_query(request, device, global_settings.sot_agg_query)
 
             if structure_format == "yaml":
-                output = yaml.dump(output, default_flow_style=False)
+                output = yaml.dump(json.loads(json.dumps(output)), default_flow_style=False)
             else:
                 output = json.dumps(output, indent=4)
 
-        template_name = "nautobot_golden_config/config_details.html"
+        template_name = "nautobot_golden_config/configcompliancedetails.html"
         if request.GET.get("modal") == "true":
-            template_name = "nautobot_golden_config/config_details_modal.html"
+            template_name = "nautobot_golden_config/configcompliancedetails_modal.html"
 
         return render(
             request,
             template_name,
-            {"output": output, "device_name": device_name, "config_type": config_type, "format": structure_format},
-        )
-
-
-class ComplianceReport(generic.ObjectListView):
-    """Django View for visualizing the compliance report."""
-
-    filterset = ConfigComplianceFilter
-    filterset_form = ConfigComplianceFilterForm
-    queryset = ConfigCompliance.objects.filter(**get_allowed_os_from_nested())
-    template_name = "nautobot_golden_config/compliance_report.html"
-    table = ConfigComplianceTable
-
-    def extra_context(self):
-        """Boilerplate code to modify before returning data."""
-        return {"compliance": ENABLE_COMPLIANCE}
-
-    def alter_queryset(self, request):
-        """Build actual runtime queryset as the build time queryset provides no information."""
-        # Current implementation of for feature in ConfigCompliance.objects.values_list(), to always show all
-        # features, however this may or may not be desirable in the future. To modify, change to
-        # self.queryset.values_list()
-        return (
-            self.queryset.annotate(
-                **{
-                    feature: Subquery(
-                        self.queryset.filter(device=OuterRef("device_id"), feature=feature).values("compliance")
-                    )
-                    for feature in ConfigCompliance.objects.values_list("feature", flat=True)
-                    .distinct()
-                    .order_by("feature")
-                }
-            )
-            .distinct(*list(ConfigCompliance.objects.values_list("feature", flat=True).distinct()) + ["device__name"])
-            .order_by("device__name")
-        )
-
-    def queryset_to_csv(self):
-        """Export queryset of objects as comma-separated value (CSV)."""
-
-        def conver_to_str(val):
-            if val is False:  # pylint: disable=no-else-return
-                return "non-compliant"
-            elif val is True:
-                return "compliant"
-            return "N/A"
-
-        csv_data = []
-        headers = sorted(list(ConfigCompliance.objects.values_list("feature", flat=True).distinct()))
-        csv_data.append(",".join(list(["Device name"] + headers)))
-        for obj in self.alter_queryset(None).values():
-            # From all of the unique fields, obtain the columns, using list comprehension, add values per column,
-            # as some fields may not exist for every device.
-            row = [Device.objects.get(id=obj["device_id"]).name] + [
-                conver_to_str(obj.get(header)) for header in headers
-            ]
-            csv_data.append(csv_format(row))
-        return "\n".join(csv_data)
-
-
-class ComplianceBulkDeleteView(generic.BulkDeleteView):
-    """View for deleting one or more OnboardingTasks."""
-
-    queryset = ConfigCompliance.objects.filter(**get_allowed_os_from_nested()).order_by("device__name")
-    default_return_url = "plugins:nautobot_golden_config:config_report"
-    table = ConfigComplianceDeleteTable
-    filterset = ConfigComplianceFilter
-
-    def post(self, request, **kwargs):
-        """Delete instances based on post request data."""
-        model = self.queryset.model
-
-        # Are we deleting *all* objects in the queryset or just a selected subset?
-        if request.POST.get("_all"):
-            if self.filterset is not None:
-                pk_list = [obj.pk for obj in self.filterset(request.GET, model.objects.only("pk")).qs]
-            else:
-                pk_list = model.objects.values_list("pk", flat=True)
-        else:
-            pk_list = request.POST.getlist("pk")
-
-        form_cls = self.get_form()
-
-        obj_to_del = [item[0] for item in ConfigCompliance.objects.filter(pk__in=pk_list).values_list("device")]
-        if "_confirm" in request.POST:
-            form = form_cls(request.POST)
-            if form.is_valid():
-                LOGGER.debug("Form validation was successful")
-
-                # Delete objects
-                queryset = ConfigCompliance.objects.filter(device__in=obj_to_del)
-                try:
-                    deleted_count = queryset.delete()[1][model._meta.label]
-                except ProtectedError as error:
-                    LOGGER.info("Caught ProtectedError while attempting to delete objects")
-                    handle_protectederror(queryset, request, error)
-                    return redirect(self.get_return_url(request))
-
-                msg = "Deleted {} {}".format(deleted_count, model._meta.verbose_name_plural)
-                LOGGER.info(msg)
-                messages.success(request, msg)
-                return redirect(self.get_return_url(request))
-
-            LOGGER.debug("Form validation failed")
-
-        else:
-            form = form_cls(initial={"pk": pk_list, "return_url": self.get_return_url(request)})
-
-        table = self.table(ConfigCompliance.objects.filter(device__in=obj_to_del), orderable=False)
-        if not table.rows:
-            messages.warning(request, "No {} were selected for deletion.".format(model._meta.verbose_name_plural))
-            return redirect(self.get_return_url(request))
-
-        return render(
-            request,
-            self.template_name,
             {
-                "form": form,
-                "obj_type_plural": model._meta.verbose_name_plural,
-                "table": table,
-                "return_url": self.get_return_url(request),
+                "output": output,
+                "device_name": device.name,
+                "config_type": config_type,
+                "format": structure_format,
+                "device": device,
             },
         )
 
 
-class ComplianceDeviceReport(ContentTypePermissionRequiredMixin, generic.View):
-    """View for the single device detailed information."""
-
-    def get_required_permission(self):
-        """Manually set permission when not tied to a model for device report."""
-        return "nautobot_golden_config.view_configcompliance"
-
-    def get(self, request, device_name):
-        """Read request into a view of a single device."""
-        device = Device.objects.get(name=device_name)
-        compliance_details = (
-            ConfigCompliance.objects.filter(device=device).filter(**get_allowed_os_from_nested()).order_by("feature")
-        )
-        config_details = {"compliance_details": compliance_details, "device_name": device_name}
-
-        return render(
-            request,
-            "nautobot_golden_config/device_report.html",
-            config_details,
-        )
-
-
-class ComplianceDeviceFilteredReport(ContentTypePermissionRequiredMixin, generic.View):
-    """View for the single device detailed information."""
-
-    def get_required_permission(self):
-        """Manually set permission when not tied to a model for filtered report."""
-        return "nautobot_golden_config.view_configcompliance"
-
-    def get(self, request, device_name, compliance):
-        """Read request into a view of a single device."""
-        device = Device.objects.get(name=device_name)
-        if compliance == "compliant":
-            compliance_details = (
-                ConfigCompliance.objects.filter(device=device)
-                .filter(**get_allowed_os_from_nested())
-                .order_by("feature")
-            )
-            compliance_details = compliance_details.filter(compliance=True)
-        else:
-            compliance_details = (
-                ConfigCompliance.objects.filter(device=device)
-                .filter(**get_allowed_os_from_nested())
-                .order_by("feature")
-            )
-            compliance_details = compliance_details.filter(compliance=False)
-
-        config_details = {"compliance_details": compliance_details, "device_name": device_name}
-
-        return render(
-            request,
-            "nautobot_golden_config/device_report.html",
-            config_details,
-        )
-
-
-class GlobalReportHelper(ContentTypePermissionRequiredMixin, generic.View):
+class ConfigComplianceOverviewOverviewHelper(ContentTypePermissionRequiredMixin, generic.View):
     """Customized overview view reports aggregation and filterset."""
 
     def get_required_permission(self):
@@ -343,7 +362,7 @@ class GlobalReportHelper(ContentTypePermissionRequiredMixin, generic.View):
     @staticmethod
     def plot_barchart_visual(qs):  # pylint: disable=too-many-locals
         """Construct report visual from queryset."""
-        labels = [item["feature"] for item in qs]
+        labels = [item["rule__feature__slug"] for item in qs]
 
         compliant = [item["compliant"] for item in qs]
         non_compliant = [item["non_compliant"] for item in qs]
@@ -410,21 +429,20 @@ class GlobalReportHelper(ContentTypePermissionRequiredMixin, generic.View):
         return aggr
 
 
-class ComplianceOverviewReport(generic.ObjectListView):
+class ConfigComplianceOverview(generic.ObjectListView):
     """View for executive report on configuration compliance."""
 
-    filterset = ConfigComplianceFilter
-    filterset_form = ConfigComplianceFilterForm
-    table = ConfigComplianceGlobalFeatureTable
-    template_name = "nautobot_golden_config/overview_report.html"
+    filterset = filters.ConfigComplianceFilter
+    filterset_form = forms.ConfigComplianceFilterForm
+    table = tables.ConfigComplianceGlobalFeatureTable
+    template_name = "nautobot_golden_config/compliance_overview_report.html"
     kind = "Features"
     queryset = (
-        ConfigCompliance.objects.values("feature")
-        .filter(**get_allowed_os_from_nested())
+        models.ConfigCompliance.objects.values("rule__feature__slug")
         .annotate(
-            count=Count("feature"),
-            compliant=Count("feature", filter=Q(compliance=True)),
-            non_compliant=Count("feature", filter=~Q(compliance=True)),
+            count=Count("rule__feature__slug"),
+            compliant=Count("rule__feature__slug", filter=Q(compliance=True)),
+            non_compliant=Count("rule__feature__slug", filter=~Q(compliance=True)),
             comp_percent=ExpressionWrapper(100 * F("compliant") / F("count"), output_field=FloatField()),
         )
         .order_by("-comp_percent")
@@ -439,11 +457,11 @@ class ComplianceOverviewReport(generic.ObjectListView):
         device_aggr, feature_aggr = self.get_global_aggr(request)
         feature_qs = self.filterset(request.GET, self.queryset).qs
         self.extra_content = {
-            "bar_chart": GlobalReportHelper.plot_barchart_visual(feature_qs),
+            "bar_chart": ConfigComplianceOverviewOverviewHelper.plot_barchart_visual(feature_qs),
             "device_aggr": device_aggr,
-            "device_visual": GlobalReportHelper.plot_visual(device_aggr),
+            "device_visual": ConfigComplianceOverviewOverviewHelper.plot_visual(device_aggr),
             "feature_aggr": feature_aggr,
-            "feature_visual": GlobalReportHelper.plot_visual(feature_aggr),
+            "feature_visual": ConfigComplianceOverviewOverviewHelper.plot_visual(feature_aggr),
         }
 
     def get_global_aggr(self, request):
@@ -453,7 +471,7 @@ class ComplianceOverviewReport(generic.ObjectListView):
             device_aggr: device global report dict
             feature_aggr: feature global report dict
         """
-        main_qs = ConfigCompliance.objects.filter(**get_allowed_os_from_nested())
+        main_qs = models.ConfigCompliance.objects
 
         device_aggr, feature_aggr = {}, {}
         if self.filterset is not None:
@@ -464,12 +482,12 @@ class ComplianceOverviewReport(generic.ObjectListView):
                 .aggregate(total=Count("device", distinct=True), compliants=Count("compliant", filter=Q(compliant=0)))
             )
             feature_aggr = self.filterset(request.GET, main_qs).qs.aggregate(
-                total=Count("feature"), compliants=Count("feature", filter=Q(compliance=True))
+                total=Count("rule"), compliants=Count("rule", filter=Q(compliance=True))
             )
 
         return (
-            GlobalReportHelper.calculate_aggr_percentage(device_aggr),
-            GlobalReportHelper.calculate_aggr_percentage(feature_aggr),
+            ConfigComplianceOverviewOverviewHelper.calculate_aggr_percentage(device_aggr),
+            ConfigComplianceOverviewOverviewHelper.calculate_aggr_percentage(feature_aggr),
         )
 
     def extra_context(self):
@@ -503,7 +521,7 @@ class ComplianceOverviewReport(generic.ObjectListView):
         )
         csv_data.append(",".join([]))
 
-        qs = self.queryset.values("feature", "count", "compliant", "non_compliant", "comp_percent")
+        qs = self.queryset.values("rule", "count", "compliant", "non_compliant", "comp_percent")
         csv_data.append(",".join(["Total" if item == "count" else item.capitalize() for item in qs[0].keys()]))
         for obj in qs:
             csv_data.append(
@@ -513,38 +531,289 @@ class ComplianceOverviewReport(generic.ObjectListView):
         return "\n".join(csv_data)
 
 
-class ComplianceFeatureView(generic.ObjectListView):
-    """View for managing the config compliance feature definition."""
+#
+# ComplianceFeature
+#
 
-    table = ComplianceFeatureTable
-    filterset = ComplianceFeatureFilter
-    filterset_form = ComplianceFeatureFilterForm
-    queryset = ComplianceFeature.objects.all().order_by("platform", "name")
-    template_name = "nautobot_golden_config/compliance_features.html"
+
+class ComplianceFeatureListView(generic.ObjectListView):
+    """View for managing the config compliance rule definition."""
+
+    table = tables.ComplianceFeatureTable
+    filterset = filters.ComplianceFeatureFilter
+    filterset_form = forms.ComplianceFeatureFilterForm
+    queryset = models.ComplianceFeature.objects.all()
+    # TODO: Get import working
+    action_buttons = ("add", "export")
+
+
+class ComplianceFeatureView(generic.ObjectView):
+    """View for single ComplianceFeature instance."""
+
+    queryset = models.ComplianceFeature.objects.all()
+
+    def get_extra_context(self, request, instance):
+        """Add extra data to detail view for Nautobot."""
+        return {}
+
+
+class ComplianceFeatureBulkImportView(generic.BulkImportView):
+    """View for bulk import of ComplianceFeature."""
+
+    queryset = models.ComplianceFeature.objects.all()
+    model_form = forms.ComplianceFeatureCSVForm
+    table = tables.ComplianceFeatureTable
 
 
 class ComplianceFeatureEditView(generic.ObjectEditView):
-    """View for managing compliance features."""
+    """View for managing compliance rules."""
 
-    queryset = ComplianceFeature.objects.all()
-    model_form = ComplianceFeatureForm
+    queryset = models.ComplianceFeature.objects.all()
+    model_form = forms.ComplianceFeatureForm
 
 
 class ComplianceFeatureDeleteView(generic.ObjectDeleteView):
-    """View for deleting compliance features."""
+    """View for deleting compliance rules."""
 
-    queryset = ComplianceFeature.objects.all()
+    queryset = models.ComplianceFeature.objects.all()
 
 
 class ComplianceFeatureBulkDeleteView(generic.BulkDeleteView):
-    """View for bulk deleting compliance features."""
+    """View for bulk deleting compliance rules."""
 
-    queryset = ComplianceFeature.objects.all()
-    table = ComplianceFeatureTable
+    queryset = models.ComplianceFeature.objects.all()
+    table = tables.ComplianceFeatureTable
 
 
-class GoldenConfigSettingsEditView(generic.ObjectEditView):
+class ComplianceFeatureBulkEditView(generic.BulkEditView):
+    """View for bulk deleting ComplianceFeature instance."""
+
+    queryset = models.ComplianceFeature.objects.all()
+    filterset = filters.ComplianceFeatureFilter
+    table = tables.ComplianceFeatureTable
+    form = forms.ComplianceFeatureBulkEditForm
+
+
+#
+# ComplianceRule
+#
+
+
+class ComplianceRuleListView(generic.ObjectListView):
+    """View for managing the config compliance rule definition."""
+
+    table = tables.ComplianceRuleTable
+    filterset = filters.ComplianceRuleFilter
+    filterset_form = forms.ComplianceRuleFilterForm
+    queryset = models.ComplianceRule.objects.all()
+    # TODO: Get import working
+    action_buttons = ("add", "export")
+
+
+class ComplianceRuleView(generic.ObjectView):
+    """View for single ComplianceRule instance."""
+
+    queryset = models.ComplianceRule.objects.all()
+
+    def get_extra_context(self, request, instance):
+        """Add extra data to detail view for Nautobot."""
+        return {}
+
+
+class ComplianceRuleBulkImportView(generic.BulkImportView):
+    """View for bulk import of ComplianceRule."""
+
+    queryset = models.ComplianceRule.objects.all()
+    model_form = forms.ComplianceRuleCSVForm
+    table = tables.ComplianceRuleTable
+
+
+class ComplianceRuleEditView(generic.ObjectEditView):
+    """View for managing compliance rules."""
+
+    queryset = models.ComplianceRule.objects.all()
+    model_form = forms.ComplianceRuleForm
+
+
+class ComplianceRuleDeleteView(generic.ObjectDeleteView):
+    """View for deleting compliance rules."""
+
+    queryset = models.ComplianceRule.objects.all()
+
+
+class ComplianceRuleBulkDeleteView(generic.BulkDeleteView):
+    """View for bulk deleting compliance rules."""
+
+    queryset = models.ComplianceRule.objects.all()
+    table = tables.ComplianceRuleTable
+
+
+class ComplianceRuleBulkEditView(generic.BulkEditView):
+    """View for bulk deleting ComplianceRule instance."""
+
+    queryset = models.ComplianceRule.objects.all()
+    filterset = filters.ComplianceRuleFilter
+    table = tables.ComplianceRuleTable
+    form = forms.ComplianceRuleBulkEditForm
+
+
+#
+# GoldenConfigSetting
+#
+
+
+class GoldenConfigSettingView(generic.ObjectView):
+    """View for the only GoldenConfigSetting instance."""
+
+    queryset = models.GoldenConfigSetting.objects.all()
+
+    def get(self, request, *args, **kwargs):
+        """Override the get parameter to get the first instance to enforce singleton pattern."""
+        instance = self.queryset.first()
+
+        return render(
+            request,
+            self.get_template_name(),
+            {
+                "object": instance,
+                **self.get_extra_context(request, instance),
+            },
+        )
+
+    def get_extra_context(self, request, instance):
+        """Add extra data to detail view for Nautobot."""
+        return {}
+
+
+class GoldenConfigSettingEditView(generic.ObjectEditView):
     """View for editing the Global configurations."""
 
-    queryset = GoldenConfigSettings.objects.filter(id="aaaaaaaa-0000-0000-0000-000000000001")
-    model_form = GoldenConfigSettingsFeatureForm
+    queryset = models.GoldenConfigSetting.objects.all()
+    model_form = forms.GoldenConfigSettingFeatureForm
+    default_return_url = "plugins:nautobot_golden_config:goldenconfigsetting"
+
+    def get_object(self, kwargs):
+        """Override method to get first object to enforce the singleton pattern."""
+        return self.queryset.first()
+
+
+#
+# ConfigRemove
+#
+
+
+class ConfigRemoveListView(generic.ObjectListView):
+    """View to display the current Line Removals."""
+
+    queryset = models.ConfigRemove.objects.all()
+    table = tables.ConfigRemoveTable
+    filterset = filters.ConfigRemoveFilter
+    filterset_form = forms.ConfigRemoveFeatureFilterForm
+
+
+class ConfigRemoveView(generic.ObjectView):
+    """View for single ConfigRemove instance."""
+
+    queryset = models.ConfigRemove.objects.all()
+
+    def get_extra_context(self, request, instance):
+        """Add extra data to detail view for Nautobot."""
+        return {}
+
+
+class ConfigRemoveBulkImportView(generic.BulkImportView):
+    """View for bulk import of ConfigRemove."""
+
+    queryset = models.ConfigRemove.objects.all()
+    model_form = forms.ConfigRemoveCSVForm
+    table = tables.ConfigRemoveTable
+
+
+class ConfigRemoveBulkEditView(generic.BulkEditView):
+    """View for bulk deleting ConfigRemove instances."""
+
+    queryset = models.ConfigRemove.objects.all()
+    filterset = filters.ConfigRemoveFilter
+    table = tables.ConfigRemoveTable
+    form = forms.ConfigRemoveBulkEditForm
+
+
+class ConfigRemoveEditView(generic.ObjectEditView):
+    """View for editing the current Line Removals."""
+
+    queryset = models.ConfigRemove.objects.all()
+    model_form = forms.ConfigRemoveForm
+
+
+class ConfigRemoveDeleteView(generic.ObjectDeleteView):
+    """View for deleting a ConfigRemove instance."""
+
+    queryset = models.ConfigRemove.objects.all()
+
+
+class ConfigRemoveBulkDeleteView(generic.BulkDeleteView):
+    """View for bulk deleting Line Removals."""
+
+    queryset = models.ConfigRemove.objects.all()
+    table = tables.ConfigRemoveTable
+
+
+#
+# ConfigReplace
+#
+
+
+class ConfigReplaceListView(generic.ObjectListView):
+    """View for displaying the current Line Replacements."""
+
+    queryset = models.ConfigReplace.objects.all()
+    table = tables.ConfigReplaceTable
+    filterset = filters.ConfigReplaceFilter
+    filterset_form = forms.ConfigReplaceFeatureFilterForm
+
+
+class ConfigReplaceView(generic.ObjectView):
+    """View for single ConfigReplace instance."""
+
+    queryset = models.ConfigReplace.objects.all()
+
+    def get_extra_context(self, request, instance):
+        """Add extra data to detail view for Nautobot."""
+        return {}
+
+
+class ConfigReplaceEditView(generic.ObjectEditView):
+    """View for editing the current Line Replacements."""
+
+    queryset = models.ConfigReplace.objects.all()
+    model_form = forms.ConfigReplaceForm
+
+
+class ConfigReplaceBulkDeleteView(generic.BulkDeleteView):
+    """View for bulk deleting Line Replacements."""
+
+    queryset = models.ConfigReplace.objects.all()
+    table = tables.ConfigReplaceTable
+
+
+class ConfigReplaceBulkImportView(generic.BulkImportView):
+    """View for bulk import of ConfigReplace."""
+
+    queryset = models.ConfigReplace.objects.all()
+    model_form = forms.ConfigReplaceCSVForm
+    table = tables.ConfigReplaceTable
+
+
+class ConfigReplaceDeleteView(generic.ObjectDeleteView):
+    """View for deleting a ConfigReplace instance."""
+
+    queryset = models.ConfigReplace.objects.all()
+
+
+class ConfigReplaceBulkEditView(generic.BulkEditView):
+    """View for bulk deleting ConfigReplace instances."""
+
+    queryset = models.ConfigReplace.objects.all()
+    filterset = filters.ConfigReplaceFilter
+    table = tables.ConfigReplaceTable
+    form = forms.ConfigReplaceBulkEditForm

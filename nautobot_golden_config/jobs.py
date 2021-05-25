@@ -2,40 +2,31 @@
 import logging
 
 from datetime import datetime
-from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 
 from nautobot.extras.jobs import Job, MultiObjectVar, ObjectVar, BooleanVar
 from nautobot.extras.models import Tag
 from nautobot.extras.datasources.git import ensure_git_repository
-from nautobot.extras.models.datasources import GitRepository
 from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Site, Platform, Region, Rack, RackGroup
 from nautobot.tenancy.models import Tenant, TenantGroup
 
-from .utilities.git import GitRepo
-from .nornir_plays.config_intended import config_intended
-from .nornir_plays.config_backup import config_backup
-from .nornir_plays.config_compliance import config_compliance
-from .utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
+from nautobot_golden_config.models import GoldenConfigSetting
+from nautobot_golden_config.nornir_plays.config_intended import config_intended
+from nautobot_golden_config.nornir_plays.config_backup import config_backup
+from nautobot_golden_config.nornir_plays.config_compliance import config_compliance
+from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
+from nautobot_golden_config.utilities.git import GitRepo
 
 LOGGER = logging.getLogger(__name__)
 
 
-def git_wrapper(obj, git_type):
+def git_wrapper(obj, orm_obj, git_type):
     """Small wrapper to pull latest branch, and return a GitRepo plugin specific object."""
-    try:
-        orm_obj = GitRepository.objects.get(provided_contents__contains=git_type)
-    except ObjectDoesNotExist:
+    if not orm_obj:
         obj.log_failure(
             obj,
-            f"FATAL ERROR: There is not a valid Git repositories for Git type {git_type}, please see pre-requisite instructions to configure a appropriate Git repositories.",
+            f"FATAL ERROR: There is not a valid Git repositories for Git type {git_type}, please see pre-requisite instructions to configure an appropriate Git repositories.",
         )
-        raise
-    except MultipleObjectsReturned:
-        obj.log_failure(
-            obj,
-            f"FATAL ERROR: There are more than one Git repositories for Git type {git_type}, there is no deterministic way to find which repo should be used, please refer to documentation.",
-        )
-        raise
+        raise  # pylint: disable=misplaced-bare-raise
 
     ensure_git_repository(orm_obj, obj.job_result)
     git_repo = GitRepo(orm_obj)
@@ -103,8 +94,8 @@ class ComplianceJob(Job, FormEntry):
         # pylint: disable-msg=too-many-locals
         # pylint: disable=unused-argument
 
-        backup_repo = git_wrapper(self, "nautobot_golden_config.backupconfigs")
-        intended_repo = git_wrapper(self, "nautobot_golden_config.intendedconfigs")
+        backup_repo = git_wrapper(self, GoldenConfigSetting.objects.first().backup_repository, "backup")
+        intended_repo = git_wrapper(self, GoldenConfigSetting.objects.first().intended_repository, "intended")
 
         config_compliance(self, data, backup_repo.path, intended_repo.path)
 
@@ -137,9 +128,9 @@ class IntendedJob(Job, FormEntry):
         """Run config generation script."""
         now = datetime.now()
         LOGGER.debug("Pull Jinja template repo.")
-        jinja_repo = git_wrapper(self, "nautobot_golden_config.jinjatemplate")
+        jinja_repo = git_wrapper(self, GoldenConfigSetting.objects.first().jinja_repository, "jinja")
         LOGGER.debug("Pull Intended config repo.")
-        intended_repo = git_wrapper(self, "nautobot_golden_config.intendedconfigs")
+        intended_repo = git_wrapper(self, GoldenConfigSetting.objects.first().intended_repository, "intended")
 
         LOGGER.debug("Run config intended nornir play.")
         config_intended(self, data, jinja_repo.path, intended_repo.path)
@@ -177,7 +168,7 @@ class BackupJob(Job, FormEntry):
         """Run config backup process."""
         now = datetime.now()
         LOGGER.debug("Pull Backup config repo.")
-        backup_repo = git_wrapper(self, "nautobot_golden_config.backupconfigs")
+        backup_repo = git_wrapper(self, GoldenConfigSetting.objects.first().backup_repository, "backup")
 
         LOGGER.debug("Run nornir play.")
         config_backup(self, data, backup_repo.path)

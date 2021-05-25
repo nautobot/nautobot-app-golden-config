@@ -1,45 +1,59 @@
+
 ---
-x-nautobot-common: &nautobot-common
+x-nautobot-build: &nautobot-build
   build:
     args:
-      python_ver: "${PYTHON_VER}"
+      NAUTOBOT_VER: "${NAUTOBOT_VER}"
+      PYTHON_VER: "${PYTHON_VER}"
     context: "../"
     dockerfile: "development/Dockerfile"
+x-nautobot-base: &nautobot-base
   image: "nautobot-golden-config/nautobot:${NAUTOBOT_VER}-py${PYTHON_VER}"
-  depends_on:
-    - "postgres"
-    - "redis"
   env_file:
-    - "./dev.env"
-  volumes:
-    - "../:/source"
+    - "dev.env"
   tty: true
 
-version: "3"
+version: "3.4"
 services:
   nautobot:
-    <<: *nautobot-common
-    command: >
-      sh -c "nautobot-server migrate &&
-             nautobot-server runserver 0.0.0.0:8000"
+    command: "nautobot-server runserver 0.0.0.0:8080 --insecure"
+    volumes:
+      - "./nautobot_config.py:/opt/nautobot/nautobot_config.py"
+      - "../:/source"
     ports:
-      - "8000:8000"
+      - "8080:8080"
+    depends_on:
+      - "postgres"
+      - "redis"
+    <<: *nautobot-build
+    <<: *nautobot-base
   worker:
-    <<: *nautobot-common
-    command: "sh -c 'nautobot-server rqworker'"
-    ports:
-      - "8001:8001"
+    entrypoint: "nautobot-server rqworker"
+    volumes:
+      - "./nautobot_config.py:/opt/nautobot/nautobot_config.py"
+      - "../:/source"
+    depends_on:
+      - "nautobot"
+    healthcheck:
+      disable: true
+    <<: *nautobot-base
   postgres:
-    image: "postgres:13"
-    env_file: "dev.env"
+    image: "postgres:13-alpine"
+    env_file:
+      - "dev.env"
     volumes:
       - "pgdata_nautobot_golden_config:/var/lib/postgresql/data"
+    ports:
+      - "5432:5432"
   redis:
     image: "redis:6-alpine"
     command:
       - "sh"
-      - "-c"  # this is to evaluate the $REDIS_PASSWORD from the env
-      - "redis-server --appendonly yes --requirepass $$REDIS_PASSWORD"  ## $$ because of docker-compose
-    env_file: "./dev.env"
+      - "-c" # this is to evaluate the $REDIS_PASSWORD from the env
+      - "redis-server --appendonly yes --requirepass $$REDIS_PASSWORD"
+    env_file:
+      - "dev.env"
+    ports:
+      - "6379:6379"
 volumes:
   pgdata_nautobot_golden_config:  # yamllint disable-line rule:empty-values

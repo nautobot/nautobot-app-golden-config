@@ -1,9 +1,5 @@
 # Frequently Asked Questions
 
-_Why must a device name be unique?_
-
-The APIs and other components rely on a single device, such as the ability to perform an API call to `sotagg/<str:device_name>/`. This is a challenge that may be affected by decisions made to the core platform. For the time being, it is a requirement.
-
 _Why don't the configurations match like the vendor cli?_
 
 A vendor processes configuration understanding constructs such as knowing that `int g0/0` and `interface GigabitEthernet0/0` are the same. Each one of these 
@@ -15,8 +11,8 @@ Instead, it is up to the operator to ensure their configurations match exactly a
 
 _Why doesn't the config overview page reflect the inclusion changes immediately?_
 
-On a technical level, those changes enable the model `GoldenConfiguration` to *not* filter out the newly included devices, but this does not add to the
-model. In order to be included, a new job needs to be ran which will create an entry within `GoldenConfiguration`, any of the 3 jobs that successfully run
+On a technical level, those changes enable the model `GoldenConfig` to *not* filter out the newly included devices, but this does not add to the
+model. In order to be included, a new job needs to be ran which will create an entry within `GoldenConfig`, any of the 3 jobs that successfully run
 will create such an entry.
 
 _Why aren't configurations generated or compliance generated real time?_
@@ -39,5 +35,34 @@ operate as they intend it, without burdening the plugins goals.
 
 _Why not predefine the configuration feature map?_
 
-The process is based on an opinion on what defines a feature, for one organization bgp may include the prefix configuration and another it would not.
+The process is based on an opinion on what defines a feature, for one organization BGP may include the prefix configuration and another it would not.
 Understanding that there will never be consensus on what should go into a feature it becomes obvious why the users must maintain such configuration.
+
+_What are the supported platforms? How do I configure a device with a specific OS?_
+
+The current supported platform and the associated *required* platform slug names are the following:
+
+* arista_eos
+* cisco_ios
+* cisco_nxos
+* cisco_aireos
+* linux
+* bigip_f5
+* juniper_junos
+
+In many use cases, this can be extended with a custom dispatcher, which is controlled in the [nornir-nautobot](https://github.com/nautobot/nornir-nautobot) repository.
+
+_Why not provide the corrective configurations?_
+
+Configuration enforcement is a difficult problem to attack. While potentially could integrate with a system to provide the enforcement, this is currently 
+out-of-scope for the plugin.
+
+_Why does the compliance section scroll so much?_
+
+The real estate optimizations is not the best for the configuration compliance overview right now. Users are suggested to review the best practices
+described in the configuration compliance section. Over time, the hope is to optimize this.
+
+_Why can't I get access to the name key when generating configuration?_
+
+All data created by GraphQL is unpacked with the `**data` operator. There is a namespace issue with Nornir using name as a keyword as well. The recommended
+approach is to use GraphQL aliasing. An example would be `hostname: name` or `inventory_hostname: name` to workaround this issue.

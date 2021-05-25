@@ -21,8 +21,14 @@ class GitRepo:
         self.path = obj.filesystem_path
         self.url = obj.remote_url
         self.token = obj._token
+        self.token_user = obj.username
         if self.token and self.token not in self.url:
-            self.url = re.sub("//", f"//{self.token}:x-oauth-basic@", self.url)
+            # Some Git Providers require a user as well as a token.
+            if self.token_user:
+                self.url = re.sub("//", f"//{self.token_user}:{self.token}@", self.url)
+            else:
+                # Github only requires the token.
+                self.url = re.sub("//", f"//{self.token}@", self.url)
 
         self.branch = obj.branch
         self.obj = obj

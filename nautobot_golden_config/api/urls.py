@@ -1,14 +1,24 @@
 """API for Custom Jobs ."""
 
 from django.urls import path
+from nautobot.core.api import OrderedDefaultRouter
 
-from . import views
+from nautobot_golden_config.api import views
 
-app_name = "nautobot_golden_config"
-urlpatterns = [
+router = OrderedDefaultRouter()
+router.APIRootView = views.GoldenConfigRootView
+router.register("compliance-feature", views.ComplianceFeatureViewSet)
+router.register("compliance-rule", views.ComplianceRuleViewSet)
+router.register("config-compliance", views.ConfigComplianceViewSet)
+router.register("golden-config", views.GoldenConfigViewSet)
+router.register("golden-config-settings", views.GoldenConfigSettingViewSet)
+router.register("config-remove", views.ConfigRemoveViewSet)
+router.register("config-replace", views.ConfigReplaceViewSet)
+urlpatterns = router.urls
+urlpatterns.append(
     path(
-        "sotagg/<str:device_name>/",
+        "sotagg/<uuid:pk>/",
         views.SOTAggDeviceDetailView.as_view(),
         name="device_detail",
-    ),
-]
+    )
+)

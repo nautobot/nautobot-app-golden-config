@@ -2,13 +2,15 @@
 import copy
 
 from django.utils.html import format_html
-from django_tables2 import Column, TemplateColumn
+from django_tables2 import Column, LinkColumn, TemplateColumn
+from django_tables2.utils import A
 
-from nautobot.utilities.tables import BaseTable, ToggleColumn
-
-from .models import ConfigCompliance, ComplianceFeature, GoldenConfiguration
-from .utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED, CONFIG_FEATURES
-
+from nautobot.utilities.tables import (
+    BaseTable,
+    ToggleColumn,
+)
+from nautobot_golden_config import models
+from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED, CONFIG_FEATURES
 
 BACKUP_SUCCESS = """
 {% if record.backup_last_success_date and record.backup_last_attempt_date == record.backup_last_success_date %}
@@ -59,7 +61,7 @@ COMPLIANCE_SUCCESS = """
 ALL_ACTIONS = """
 {% if backup == True %}
     {% if record.backup_config %}
-        <a value="{% url 'plugins:nautobot_golden_config:config_details' device_name=record.device config_type='backup' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:config_details' device_name=record.device config_type='backup' %}?modal=true"> 
+        <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.device.pk config_type='backup' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.device.pk config_type='backup' %}?modal=true"> 
             <i class="mdi mdi-file-document-outline"></i>
         </a>
     {% else %}
@@ -68,7 +70,7 @@ ALL_ACTIONS = """
 {% endif %}
 {% if intended == True %}
     {% if record.intended_config %}
-        <a value="{% url 'plugins:nautobot_golden_config:config_details' device_name=record.device config_type='intended' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:config_details' device_name=record.device config_type='intended' %}?modal=true"> 
+        <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.device.pk config_type='intended' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.device.pk config_type='intended' %}?modal=true"> 
             <i class="mdi mdi-text-box-check-outline"></i>
         </a>
     {% else %}
@@ -77,7 +79,7 @@ ALL_ACTIONS = """
 {% endif %}
 {% if compliance == True %}
     {% if record.compliance_config %}
-        <a value="{% url 'plugins:nautobot_golden_config:config_details' device_name=record.device config_type='compliance' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:config_details' device_name=record.device config_type='compliance' %}?modal=true"> 
+        <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.device.pk config_type='compliance' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.device.pk config_type='compliance' %}?modal=true"> 
             <i class="mdi mdi-file-compare"></i>
         </a>
     {% else %}
@@ -85,7 +87,7 @@ ALL_ACTIONS = """
     {% endif %}
 {% endif %}
 {% if sotagg == True %}
-    <a value="{% url 'plugins:nautobot_golden_config:config_details' device_name=record.device config_type='sotagg' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:config_details' device_name=record.device config_type='sotagg' %}?modal=true"> 
+    <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.device.pk config_type='sotagg' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.device.pk config_type='sotagg' %}?modal=true"> 
         <i class="mdi mdi-code-json"></i>
     </a>
     <a href="{% url 'extras:job' class_path='plugins/nautobot_golden_config.jobs/AllGoldenConfig' %}?device={{ record.device.pk }}"
@@ -95,10 +97,6 @@ ALL_ACTIONS = """
     </a>
 {% endif %}
 """
-
-COMPLIANCE_FEATURE_NAME = (
-    """<a href="{% url 'plugins:nautobot_golden_config:compliancefeature_edit' pk=record.pk %}">{{ record.name }}</a>"""
-)
 
 MATCH_CONFIG = """{{ record.match_config|linebreaksbr }}"""
 
@@ -116,25 +114,43 @@ def actual_fields():
     return tuple(active_fields)
 
 
+#
+# Columns
+#
+
+
+class PercentageColumn(Column):
+    """Column used to display percentage."""
+
+    def render(self, value):
+        """Render percentage value."""
+        return f"{value} %"
+
+
 class ComplianceColumn(Column):
     """Column used to display config compliance status (True/False/None)."""
 
     def render(self, value):
         """Render an entry in this column."""
-        if value is True:  # pylint: disable=no-else-return
+        if value == 1:  # pylint: disable=no-else-return
             return format_html('<span class="text-success"><i class="mdi mdi-check-bold"></i></span>')
-        elif value is False:
+        elif value == 0:
             return format_html('<span class="text-danger"><i class="mdi mdi-close-thick"></i></span>')
         else:  # value is None
             return format_html('<span class="mdi mdi-minus"></span>')
 
 
+#
+# Tables
+#
+
+# ConfigCompliance
 class ConfigComplianceTable(BaseTable):
     """Table for rendering a listing of Device entries and their associated ConfigCompliance record status."""
 
-    pk = ToggleColumn()
-    device__name = TemplateColumn(
-        template_code="""<a href="{% url 'plugins:nautobot_golden_config:device_report' device_name=record.device  %}" <strong>{{ record.device }}</strong></a> """
+    pk = ToggleColumn(accessor=A("device"))
+    device = TemplateColumn(
+        template_code="""<a href="{% url 'plugins:nautobot_golden_config:configcompliance_devicedetail' pk=record.device  %}" <strong>{{ record.device__name }}</strong></a> """
     )
 
     def __init__(self, *args, **kwargs):
@@ -142,7 +158,11 @@ class ConfigComplianceTable(BaseTable):
         # Used ConfigCompliance.objects on purpose, vs queryset (set in args[0]), as there were issues with that as
         # well as not as expected from user standpoint (e.g. not always the same values on columns depending on
         # filtering)
-        features = list(ConfigCompliance.objects.order_by("feature").values_list("feature", flat=True).distinct())
+        features = list(
+            models.ConfigCompliance.objects.order_by("rule__feature__name")
+            .values_list("rule__feature__name", flat=True)
+            .distinct()
+        )
         extra_columns = [(feature, ComplianceColumn(verbose_name=feature)) for feature in features]
         kwargs["extra_columns"] = extra_columns
         # Nautobot's BaseTable.configurable_columns() only recognizes columns in self.base_columns,
@@ -155,38 +175,30 @@ class ConfigComplianceTable(BaseTable):
     class Meta(BaseTable.Meta):
         """Metaclass attributes of ConfigComplianceTable."""
 
-        model = ConfigCompliance
+        model = models.ConfigCompliance
         fields = (
             "pk",
-            "device__name",
+            "device",
         )
-        # All other fields (ConfigCompliance features) are constructed dynamically at instantiation time - see views.py
-
-
-class PercentageColumn(Column):
-    """Column used to display percentage."""
-
-    def render(self, value):
-        """Render percentage value."""
-        return f"{value} %"
+        # All other fields (ConfigCompliance names) are constructed dynamically at instantiation time - see views.py
 
 
 class ConfigComplianceGlobalFeatureTable(BaseTable):
     """Table for feature compliance report."""
 
+    name = Column(accessor="rule__feature__slug", verbose_name="Feature")
     count = Column(accessor="count", verbose_name="Total")
     compliant = Column(accessor="compliant", verbose_name="Compliant")
     non_compliant = Column(accessor="non_compliant", verbose_name="Non-Compliant")
     comp_percent = PercentageColumn(accessor="comp_percent", verbose_name="Compliance (%)")
-    feature = Column(accessor="feature", verbose_name="Feature")
 
     class Meta(BaseTable.Meta):
         """Metaclass attributes of ConfigComplianceGlobalFeatureTable."""
 
-        model = ConfigCompliance
-        fields = ["feature", "count", "compliant", "non_compliant", "comp_percent"]
+        model = models.ConfigCompliance
+        fields = ["name", "count", "compliant", "non_compliant", "comp_percent"]
         default_columns = [
-            "feature",
+            "name",
             "count",
             "compliant",
             "non_compliant",
@@ -197,18 +209,21 @@ class ConfigComplianceGlobalFeatureTable(BaseTable):
 class ConfigComplianceDeleteTable(BaseTable):
     """Table for device compliance report."""
 
+    feature = Column(accessor="rule__feature__name", verbose_name="Feature")
+
     class Meta(BaseTable.Meta):
         """Metaclass attributes of ConfigComplianceDeleteTable."""
 
-        feature = Column(accessor="feature", verbose_name="Feature")
-        device__name = Column(accessor="device__name", verbose_name="Device Name")
+        device = Column(accessor="device__name", verbose_name="Device Name")
         compliance = Column(accessor="compliance", verbose_name="Compliance")
+        model = models.ConfigCompliance
+        fields = ("device", "feature", "compliance")
 
-        model = ConfigCompliance
-        fields = ("device__name", "feature", "compliance")
+
+# GoldenConfig
 
 
-class GoldenConfigurationTable(BaseTable):
+class GoldenConfigTable(BaseTable):
     """Table to display Config Management Status."""
 
     pk = ToggleColumn()
@@ -232,20 +247,74 @@ class GoldenConfigurationTable(BaseTable):
     class Meta(BaseTable.Meta):
         """Meta for class CircuitMaintenanceTable."""
 
-        model = GoldenConfiguration
+        model = models.GoldenConfig
         fields = actual_fields()
+
+
+# ComplianceFeature
 
 
 class ComplianceFeatureTable(BaseTable):
     """Table to display Compliance Features."""
 
     pk = ToggleColumn()
-    name = TemplateColumn(template_code=COMPLIANCE_FEATURE_NAME)
-    match_config = TemplateColumn(template_code=MATCH_CONFIG)
+    name = LinkColumn("plugins:nautobot_golden_config:compliancefeature", args=[A("pk")])
 
     class Meta(BaseTable.Meta):
         """Table to display Compliance Features Meta Data."""
 
-        model = ComplianceFeature
-        fields = ("pk", "name", "slug", "platform", "description", "config_ordered", "match_config")
-        default_columns = ("pk", "name", "slug", "platform", "description", "config_ordered", "match_config")
+        model = models.ComplianceFeature
+        fields = ("pk", "name", "slug", "description")
+        default_columns = ("pk", "name", "slug", "description")
+
+
+# ComplianceRule
+
+
+class ComplianceRuleTable(BaseTable):
+    """Table to display Compliance Rules."""
+
+    pk = ToggleColumn()
+    feature = LinkColumn("plugins:nautobot_golden_config:compliancerule", args=[A("pk")])
+    match_config = TemplateColumn(template_code=MATCH_CONFIG)
+
+    class Meta(BaseTable.Meta):
+        """Table to display Compliance Rules Meta Data."""
+
+        model = models.ComplianceRule
+        fields = ("pk", "feature", "platform", "description", "config_ordered", "match_config", "config_type")
+        default_columns = ("pk", "feature", "platform", "description", "config_ordered", "match_config", "config_type")
+
+
+# ConfigRemove
+
+
+class ConfigRemoveTable(BaseTable):
+    """Table to display Compliance Rules."""
+
+    pk = ToggleColumn()
+    name = LinkColumn("plugins:nautobot_golden_config:configremove", args=[A("pk")])
+
+    class Meta(BaseTable.Meta):
+        """Table to display Compliance Rules Meta Data."""
+
+        model = models.ConfigRemove
+        fields = ("pk", "name", "platform", "description", "regex")
+        default_columns = ("pk", "name", "platform", "description", "regex")
+
+
+# ConfigReplace
+
+
+class ConfigReplaceTable(BaseTable):
+    """Table to display Compliance Rules."""
+
+    pk = ToggleColumn()
+    name = LinkColumn("plugins:nautobot_golden_config:configreplace", args=[A("pk")])
+
+    class Meta(BaseTable.Meta):
+        """Table to display Compliance Rules Meta Data."""
+
+        model = models.ConfigReplace
+        fields = ("pk", "name", "platform", "description", "regex", "replace")
+        default_columns = ("pk", "name", "platform", "description", "regex", "replace")

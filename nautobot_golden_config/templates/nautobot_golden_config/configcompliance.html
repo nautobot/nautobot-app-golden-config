@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load buttons %}
+{% load static %}
+{% load custom_links %}
+{% load helpers %}
+
+{% block title %}{{ object }}{% endblock %}
+
+{% block header %}
+<div class="row noprint">
+    <div class="col-sm-8 col-md-9">
+        <ol class="breadcrumb">
+            <li>Compliance Feature</li>
+            <li><a href="{% url 'plugins:nautobot_golden_config:configcompliance_list' %}">Compliance Device</a>
+            </li>
+        </ol>
+    </div>
+    <div class="col-sm-4 col-md-3">
+        <form action="{% url 'plugins:nautobot_golden_config:configcompliance_list' %}" method="get">
+            <div class="input-group">
+                <input type="text" name="q" class="form-control" />
+                <span class="input-group-btn">
+                    <button type="submit" class="btn btn-primary">
+                        <span class="mdi mdi-magnify" aria-hidden="true"></span>
+                    </button>
+                </span>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="pull-right noprint">
+{% if perms.nautobot_golden_config.delete_compliancerule %}
+    {% delete_button object use_pk=1 %}
+{% endif %}
+</div>
+<h1>{{ object }}</h1>
+{% include 'inc/created_updated.html' %}
+<div class="pull-right noprint">
+    {% custom_links object %}
+</div>
+<ul class="nav nav-tabs">
+    <li role="presentation" {% if not active_tab %} class="active" {% endif %}>
+        <a href="{{ object.get_absolute_url }}">Config Compliance</a>
+    </li>
+    {% if perms.extras.view_objectchange %}
+    <li role="presentation">
+        <a href="{% url 'plugins:nautobot_golden_config:configcompliance_changelog' pk=object.pk %}">Change Log</a>
+    </li>
+    {% endif %}
+</ul>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <strong>Details</strong>
+            </div>
+            <table class="table table-hover panel-body attr-table">
+                <tr>
+                    <td>Device Name</td>
+                    <td>{{ object.device }}</td>
+                </tr>
+                <tr>
+                    <td>Feature</td>
+                    <td>{{ object.rule.feature.name }}</td>
+                </tr>
+                <tr>
+                    <td>Compliance Status</td>
+                    <td>
+                    {% if object.compliance %}
+                        <span class="text-success"><i class="mdi mdi-check-bold"></i></span>
+                    {% else %}
+                        <span class="text-danger"><i class="mdi mdi-close"></i></span>
+                    {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Actual Configuration</td>
+                    <td><pre>{{ object.actual }}</pre></td>
+                </tr>
+                <tr>
+                    <td>Intended Configuration</td>
+                    <td><pre>{{ object.intended }}</pre></td>
+                </tr>
+                <tr>
+                    <td>Extra Configuration</td>
+                    <td><pre>{{ object.extra }}</pre></td>
+                </tr>
+                <tr>
+                    <td>Missing Configuration</td>
+                    <td><pre>{{ object.missing }}</pre></td>
+                </tr>
+                <tr>
+                    <td>Ordered</td>
+                    <td>
+                    {% if object.ordered %}
+                        <span class="text-success"><i class="mdi mdi-check-bold"></i></span>
+                    {% else %}
+                        <span class="text-danger"><i class="mdi mdi-close"></i></span>
+                    {% endif %}
+                    </td>
+                </tr>
+            </table>
+        </div>
+        {% include 'inc/custom_fields_panel.html' %}
+        {% include 'inc/relationships_panel.html' %}
+    </div>
+</div>
+{% endblock %}

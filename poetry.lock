@@ -904,15 +904,15 @@ svgwrite = ">=1.4.1,<1.5.0"
 
 [[package]]
 name = "nautobot-plugin-nornir"
-version = "0.9.0"
+version = "0.9.1"
 description = "Nautobot Nornir plugin."
 category = "main"
 optional = false
 python-versions = ">=3.6,<4.0"
 
 [package.dependencies]
-nautobot = ">=1.0.0-alpha.1,<2.0.0"
-nornir-nautobot = ">=1.0.0,<2.0.0"
+nautobot = ">=1.0.0,<2.0.0"
+nornir-nautobot = ">=2.0.0,<3.0.0"
 
 [[package]]
 name = "ncclient"
@@ -1008,28 +1008,21 @@ nornir = ">=3,<4"
 
 [[package]]
 name = "nornir-nautobot"
-version = "1.0.1"
+version = "2.0.1"
 description = "Nornir Nautobot"
 category = "main"
 optional = false
-python-versions = "^3.6"
-develop = false
+python-versions = ">=3.6,<4.0"
 
 [package.dependencies]
-netutils = "^0.1.2"
-nornir = "^3.0.0"
-nornir-jinja2 = "^0.1.1"
-nornir-napalm = "^0.1.1"
-nornir-netmiko = "^0.1.1"
-nornir-utils = "^0.1.1"
-pynautobot = "^1.0.1"
-requests = "^2.25.1"
-
-[package.source]
-type = "git"
-url = "https://github.com/nautobot/nornir-nautobot.git"
-reference = "nextgen"
-resolved_reference = "d59e3447536583b32ef50f223829df7bc01ded66"
+netutils = ">=0.1.2,<0.2.0"
+nornir = ">=3.0.0,<4.0.0"
+nornir-jinja2 = ">=0.1.1,<0.2.0"
+nornir-napalm = ">=0.1.1,<0.2.0"
+nornir-netmiko = ">=0.1.1,<0.2.0"
+nornir-utils = ">=0.1.1,<0.2.0"
+pynautobot = ">=1.0.1,<2.0.0"
+requests = ">=2.25.1,<3.0.0"
 
 [[package]]
 name = "nornir-netmiko"
@@ -1758,7 +1751,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=1.2.3)", "pytest-flake8", "pyt
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.6"
-content-hash = "dcee2c2f411ac8413de1d50403644c2ed0094b66510bdbb86ad21e4e90e1a59f"
+content-hash = "2929dfe99a74d47e53d6c94fbadcfbfdf98473dd3d9e2bae64390152c17d6e8c"
 
 [metadata.files]
 aniso8601 = [
@@ -1818,24 +1811,36 @@ cffi = [
     {file = "cffi-1.14.5-cp36-cp36m-manylinux1_i686.whl", hash = "sha256:48e1c69bbacfc3d932221851b39d49e81567a4d4aac3b21258d9c24578280058"},
     {file = "cffi-1.14.5-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:69e395c24fc60aad6bb4fa7e583698ea6cc684648e1ffb7fe85e3c1ca131a7d5"},
     {file = "cffi-1.14.5-cp36-cp36m-manylinux2014_aarch64.whl", hash = "sha256:9e93e79c2551ff263400e1e4be085a1210e12073a31c2011dbbda14bda0c6132"},
+    {file = "cffi-1.14.5-cp36-cp36m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:24ec4ff2c5c0c8f9c6b87d5bb53555bf267e1e6f70e52e5a9740d32861d36b6f"},
+    {file = "cffi-1.14.5-cp36-cp36m-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:3c3f39fa737542161d8b0d680df2ec249334cd70a8f420f71c9304bd83c3cbed"},
+    {file = "cffi-1.14.5-cp36-cp36m-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:681d07b0d1e3c462dd15585ef5e33cb021321588bebd910124ef4f4fb71aef55"},
     {file = "cffi-1.14.5-cp36-cp36m-win32.whl", hash = "sha256:58e3f59d583d413809d60779492342801d6e82fefb89c86a38e040c16883be53"},
     {file = "cffi-1.14.5-cp36-cp36m-win_amd64.whl", hash = "sha256:005a36f41773e148deac64b08f233873a4d0c18b053d37da83f6af4d9087b813"},
     {file = "cffi-1.14.5-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:2894f2df484ff56d717bead0a5c2abb6b9d2bf26d6960c4604d5c48bbc30ee73"},
     {file = "cffi-1.14.5-cp37-cp37m-manylinux1_i686.whl", hash = "sha256:0857f0ae312d855239a55c81ef453ee8fd24136eaba8e87a2eceba644c0d4c06"},
     {file = "cffi-1.14.5-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:cd2868886d547469123fadc46eac7ea5253ea7fcb139f12e1dfc2bbd406427d1"},
     {file = "cffi-1.14.5-cp37-cp37m-manylinux2014_aarch64.whl", hash = "sha256:35f27e6eb43380fa080dccf676dece30bef72e4a67617ffda586641cd4508d49"},
+    {file = "cffi-1.14.5-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:06d7cd1abac2ffd92e65c0609661866709b4b2d82dd15f611e602b9b188b0b69"},
+    {file = "cffi-1.14.5-cp37-cp37m-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:0f861a89e0043afec2a51fd177a567005847973be86f709bbb044d7f42fc4e05"},
+    {file = "cffi-1.14.5-cp37-cp37m-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:cc5a8e069b9ebfa22e26d0e6b97d6f9781302fe7f4f2b8776c3e1daea35f1adc"},
     {file = "cffi-1.14.5-cp37-cp37m-win32.whl", hash = "sha256:9ff227395193126d82e60319a673a037d5de84633f11279e336f9c0f189ecc62"},
     {file = "cffi-1.14.5-cp37-cp37m-win_amd64.whl", hash = "sha256:9cf8022fb8d07a97c178b02327b284521c7708d7c71a9c9c355c178ac4bbd3d4"},
     {file = "cffi-1.14.5-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:8b198cec6c72df5289c05b05b8b0969819783f9418e0409865dac47288d2a053"},
     {file = "cffi-1.14.5-cp38-cp38-manylinux1_i686.whl", hash = "sha256:ad17025d226ee5beec591b52800c11680fca3df50b8b29fe51d882576e039ee0"},
     {file = "cffi-1.14.5-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:6c97d7350133666fbb5cf4abdc1178c812cb205dc6f41d174a7b0f18fb93337e"},
     {file = "cffi-1.14.5-cp38-cp38-manylinux2014_aarch64.whl", hash = "sha256:8ae6299f6c68de06f136f1f9e69458eae58f1dacf10af5c17353eae03aa0d827"},
+    {file = "cffi-1.14.5-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:04c468b622ed31d408fea2346bec5bbffba2cc44226302a0de1ade9f5ea3d373"},
+    {file = "cffi-1.14.5-cp38-cp38-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:06db6321b7a68b2bd6df96d08a5adadc1fa0e8f419226e25b2a5fbf6ccc7350f"},
+    {file = "cffi-1.14.5-cp38-cp38-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:293e7ea41280cb28c6fcaaa0b1aa1f533b8ce060b9e701d78511e1e6c4a1de76"},
     {file = "cffi-1.14.5-cp38-cp38-win32.whl", hash = "sha256:b85eb46a81787c50650f2392b9b4ef23e1f126313b9e0e9013b35c15e4288e2e"},
     {file = "cffi-1.14.5-cp38-cp38-win_amd64.whl", hash = "sha256:1f436816fc868b098b0d63b8920de7d208c90a67212546d02f84fe78a9c26396"},
     {file = "cffi-1.14.5-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:1071534bbbf8cbb31b498d5d9db0f274f2f7a865adca4ae429e147ba40f73dea"},
     {file = "cffi-1.14.5-cp39-cp39-manylinux1_i686.whl", hash = "sha256:9de2e279153a443c656f2defd67769e6d1e4163952b3c622dcea5b08a6405322"},
     {file = "cffi-1.14.5-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:6e4714cc64f474e4d6e37cfff31a814b509a35cb17de4fb1999907575684479c"},
     {file = "cffi-1.14.5-cp39-cp39-manylinux2014_aarch64.whl", hash = "sha256:158d0d15119b4b7ff6b926536763dc0714313aa59e320ddf787502c70c4d4bee"},
+    {file = "cffi-1.14.5-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:1bf1ac1984eaa7675ca8d5745a8cb87ef7abecb5592178406e55858d411eadc0"},
+    {file = "cffi-1.14.5-cp39-cp39-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:df5052c5d867c1ea0b311fb7c3cd28b19df469c056f7fdcfe88c7473aa63e333"},
+    {file = "cffi-1.14.5-cp39-cp39-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:24a570cd11895b60829e941f2613a4f79df1a27344cbbb82164ef2e0116f09c7"},
     {file = "cffi-1.14.5-cp39-cp39-win32.whl", hash = "sha256:afb29c1ba2e5a3736f1c301d9d0abe3ec8b86957d04ddfa9d7a6a42b9367e396"},
     {file = "cffi-1.14.5-cp39-cp39-win_amd64.whl", hash = "sha256:f2d45f97ab6bb54753eab54fffe75aaf3de4ff2341c9daee1987ee1837636f1d"},
     {file = "cffi-1.14.5.tar.gz", hash = "sha256:fd78e5fee591709f32ef6edb9a015b4aa1a5022598e36227500c8f4e02328d9c"},
@@ -2254,8 +2259,8 @@ nautobot = [
     {file = "nautobot-1.0.0.tar.gz", hash = "sha256:1fcdc8ffa6eaf3ad9c8fa3f8ec5ff437a1df44ffcd6003abee209c91d8f77efd"},
 ]
 nautobot-plugin-nornir = [
-    {file = "nautobot-plugin-nornir-0.9.0.tar.gz", hash = "sha256:f435bc4f08b7c957e8c01506281454633895a1af4de4fc4bd7867b6f003c0e7b"},
-    {file = "nautobot_plugin_nornir-0.9.0-py3-none-any.whl", hash = "sha256:a18dcbe62910d5762b7e3f5c1ed552b2e338d56dd8e0b41a75ae392ff97cf5d3"},
+    {file = "nautobot-plugin-nornir-0.9.1.tar.gz", hash = "sha256:18746be41104c1eaeed1124ce7b014eadfb10e68634bf3abbc011267f00662c2"},
+    {file = "nautobot_plugin_nornir-0.9.1-py3-none-any.whl", hash = "sha256:4a2dbdfc3eab76e7da43e4c7324b2f0daa8473359b4d3f468de34c5875cef7d2"},
 ]
 ncclient = [
     {file = "ncclient-0.6.9.tar.gz", hash = "sha256:0112f2ad41fb658f52446d870853a63691d69299c73c7351c520d38dbd8dc0c4"},
@@ -2284,7 +2289,10 @@ nornir-napalm = [
     {file = "nornir_napalm-0.1.2-py3-none-any.whl", hash = "sha256:313986bbb16eeaf3a80daf61f6a97e93ecebc47d0c586a2eb856ea91edc2cc1d"},
     {file = "nornir_napalm-0.1.2.tar.gz", hash = "sha256:be7808a990242987500a65701edb626197c5d0b87f35d9eb5da7ce7e4d60fdd5"},
 ]
-nornir-nautobot = []
+nornir-nautobot = [
+    {file = "nornir-nautobot-2.0.1.tar.gz", hash = "sha256:3771a80bcd4df318bb0f36602a2d41eccaaa1f9daa6a316c3702619ad90d3b72"},
+    {file = "nornir_nautobot-2.0.1-py3-none-any.whl", hash = "sha256:551b1a82652786dd6f63bedc2f4407d029b3c5cbec88031f8e5697eefcf5dba0"},
+]
 nornir-netmiko = [
     {file = "nornir_netmiko-0.1.1-py3-none-any.whl", hash = "sha256:c6eadb81f6f3b2f0c27bae151cc62673303f9d085ec3c773ecdc98f20ef30f91"},
     {file = "nornir_netmiko-0.1.1.tar.gz", hash = "sha256:fc41ded40923d23c6155b92c6749170629b4cc2649c340d24bff9f49315836c6"},

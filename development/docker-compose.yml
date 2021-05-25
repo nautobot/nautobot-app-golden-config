@@ -8,7 +8,7 @@ x-nautobot-build: &nautobot-build
     context: "../"
     dockerfile: "development/Dockerfile"
 x-nautobot-base: &nautobot-base
-  image: "nautobot_circuit_maintenance/nautobot:${NAUTOBOT_VER}-py${PYTHON_VER}"
+  image: "nautobot-golden-config/nautobot:${NAUTOBOT_VER}-py${PYTHON_VER}"
   env_file:
     - "dev.env"
   tty: true

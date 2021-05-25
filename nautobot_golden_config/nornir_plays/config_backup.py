@@ -90,7 +90,7 @@ def config_backup(job_result, data, backup_root_folder):
     now = datetime.now()
     logger = NornirLogger(__name__, job_result, data.get("debug"))
     global_settings = GoldenConfigSetting.objects.first()
-    verify_global_settings(logger, global_settings, ["backup_path_template", "intended_path_template"])
+    verify_global_settings(logger, global_settings, ["backup_path_template"])
 
     # Build a dictionary, with keys of platform.slug, and the regex line in it for the netutils func.
     remove_regex_dict = {}

@@ -7,8 +7,8 @@ authors = ["Network to Code, LLC", "<opensource@networktocode.com>"]
 license = "Apache-2.0"
 
 readme = "README.md"
-homepage = "https://github.com/nautobot/nautobot-golden-config"
-repository = "https://github.com/nautobot/nautobot-golden-config"
+homepage = "https://github.com/nautobot/nautobot-plugin-golden-config"
+repository = "https://github.com/nautobot/nautobot-plugin-golden-config"
 keywords = ["nautobot", "nautobot-plugin"]
 include = [
     "LICENSE",
@@ -21,7 +21,6 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.6"
 matplotlib = "^3.3.2"
-nautobot = "~1.0"
 nautobot-plugin-nornir = "^0.9.1"
 django-debug-toolbar = "^3.2.1"
 astroid = "^2.5.5"
@@ -35,6 +34,7 @@ pylint-django = "^2.0.15"
 pydocstyle = "^5.0.2"
 flake8 = "^3.8.4"
 invoke = "^1.5.0"
+nautobot = "~1.0"
 
 
 [tool.black]

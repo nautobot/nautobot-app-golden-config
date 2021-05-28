@@ -866,7 +866,7 @@ textfsm = "*"
 
 [[package]]
 name = "nautobot"
-version = "1.0.0"
+version = "1.0.2"
 description = "Source of truth and network automation platform."
 category = "main"
 optional = false
@@ -1751,7 +1751,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=1.2.3)", "pytest-flake8", "pyt
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.6"
-content-hash = "2929dfe99a74d47e53d6c94fbadcfbfdf98473dd3d9e2bae64390152c17d6e8c"
+content-hash = "3dc21e9eac3694a2ac8c83482de20db2efbfa1d78fc323754a56e61c3a88a731"
 
 [metadata.files]
 aniso8601 = [
@@ -2255,8 +2255,8 @@ napalm = [
     {file = "napalm-3.2.0.tar.gz", hash = "sha256:6e69a505f5d4a678c42f048d13153afabf10b7fec72868e3bfb53ff4089206fc"},
 ]
 nautobot = [
-    {file = "nautobot-1.0.0-py3-none-any.whl", hash = "sha256:f6cf363330f4dc24b3545c5484eb113dc1a82e7b20deff9b57f3c5e783dff066"},
-    {file = "nautobot-1.0.0.tar.gz", hash = "sha256:1fcdc8ffa6eaf3ad9c8fa3f8ec5ff437a1df44ffcd6003abee209c91d8f77efd"},
+    {file = "nautobot-1.0.2-py3-none-any.whl", hash = "sha256:319ca74089a9b77829d559c2a8e8151aebb309c53a54cd08cb298bd573afbbdf"},
+    {file = "nautobot-1.0.2.tar.gz", hash = "sha256:a6d3ba1f8d87267e05035067a224d6a3c0e2d150f19219ee2691837f28ed7189"},
 ]
 nautobot-plugin-nornir = [
     {file = "nautobot-plugin-nornir-0.9.1.tar.gz", hash = "sha256:18746be41104c1eaeed1124ce7b014eadfb10e68634bf3abbc011267f00662c2"},

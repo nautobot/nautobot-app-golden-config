@@ -103,11 +103,11 @@ Configuration compliance requires the Git Repo settings for `config backups` and
 The Configuration compliance rule map must be created per the operator/user. You can find these configurations via `Plugins -> Compliance Rules`
 links, which brings up the specific configurations.
 
-![Configuration Features](./img/compliance-rules.png)
+![Configuration Features](./img/compliance-features.png)
 
 Each configuration can be added and edits from this table. When editing/adding the configurations, the following should be noted.
 
-![Configuration Feature Edit](./img/compliance-rule-edit.png)
+![Configuration Feature Edit](./img/compliance-feature-edit.png)
 
 The platform must refer to a platform with a valid slug supported by the configuration compliance engine. While there is no enforcement of this data from
 a database perspective, the job will never run successfully, rendering the additional configuration ineffective. 
@@ -131,7 +131,7 @@ Drilling into a specific device and feature, you can get an immediate detailed u
 
 ![Compliance Device](./img/compliance-device.png)
 
-![Compliance Rule](./img/compliance-rule.png)
+![Compliance Rule](./img/compliance-feature.png)
 
 Please note the following about the compliance details page.
 

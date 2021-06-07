@@ -131,7 +131,7 @@ Drilling into a specific device and feature, you can get an immediate detailed u
 
 ![Compliance Device](./img/compliance-device.png)
 
-![Compliance Rule](./img/compliance-feature.png)
+![Compliance Rule](./img/compliance-rule-detail.png)
 
 Please note the following about the compliance details page.
 

@@ -62,7 +62,7 @@ ALL_ACTIONS = """
 {% if backup == True %}
     {% if record.backup_config %}
         <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.device.pk config_type='backup' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.device.pk config_type='backup' %}?modal=true"> 
-            <i class="mdi mdi-file-document-outline"></i>
+            <i class="mdi mdi-file-document-outline" title="Backup Configuration"></i>
         </a>
     {% else %}
         <i class="mdi mdi-circle-small"></i>
@@ -71,7 +71,7 @@ ALL_ACTIONS = """
 {% if intended == True %}
     {% if record.intended_config %}
         <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.device.pk config_type='intended' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.device.pk config_type='intended' %}?modal=true"> 
-            <i class="mdi mdi-text-box-check-outline"></i>
+            <i class="mdi mdi-text-box-check-outline" title="Intended Configuration"></i>
         </a>
     {% else %}
         <i class="mdi mdi-circle-small"></i>
@@ -80,7 +80,7 @@ ALL_ACTIONS = """
 {% if compliance == True %}
     {% if record.compliance_config %}
         <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.device.pk config_type='compliance' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.device.pk config_type='compliance' %}?modal=true"> 
-            <i class="mdi mdi-file-compare"></i>
+            <i class="mdi mdi-file-compare" title="Compliance Details"></i>
         </a>
     {% else %}
         <i class="mdi mdi-circle-small"></i>
@@ -88,11 +88,11 @@ ALL_ACTIONS = """
 {% endif %}
 {% if sotagg == True %}
     <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.device.pk config_type='sotagg' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.device.pk config_type='sotagg' %}?modal=true"> 
-        <i class="mdi mdi-code-json"></i>
+        <i class="mdi mdi-code-json" title="SOT Aggregate Data"></i>
     </a>
     <a href="{% url 'extras:job' class_path='plugins/nautobot_golden_config.jobs/AllGoldenConfig' %}?device={{ record.device.pk }}"
         <span class="text-primary">
-            <i class="mdi mdi-play-circle"></i>
+            <i class="mdi mdi-play-circle" title="Execute All Golden Config Jobs"></i>
         </span>
     </a>
 {% endif %}

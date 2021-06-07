@@ -42,7 +42,7 @@ The compliance overview will provide a per device and feature overview on the co
 Drilling into a specific device and feature, you can get an immediate detailed understanding of your device.
 ![Compliance Device](./docs/img/compliance-device.png)
 
-![Compliance Rule](./docs/img/compliance-rule.png)
+![Compliance Rule](./docs/img/compliance-rules.png)
 
 ## Plugin Settings
 

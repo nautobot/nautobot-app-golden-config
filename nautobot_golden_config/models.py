@@ -293,7 +293,7 @@ class GoldenConfigSetting(PrimaryModel):
 
     backup_repository = models.ForeignKey(
         to="extras.GitRepository",
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="backup_repository",
@@ -308,7 +308,7 @@ class GoldenConfigSetting(PrimaryModel):
     )
     intended_repository = models.ForeignKey(
         to="extras.GitRepository",
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="intended_repository",
@@ -323,7 +323,7 @@ class GoldenConfigSetting(PrimaryModel):
     )
     jinja_repository = models.ForeignKey(
         to="extras.GitRepository",
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="jinja_template",

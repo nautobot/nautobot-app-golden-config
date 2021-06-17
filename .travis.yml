@@ -6,7 +6,7 @@ stages:
     if: "tag IS present"  
   - name: "deploy-github"
     if: "tag IS present"
-  - name: "deploy-pypi"
+  - name: "deploy_pypi"
     if: "tag IS present"
 
 language: "python"

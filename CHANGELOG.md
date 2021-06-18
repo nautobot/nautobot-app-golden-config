@@ -8,7 +8,7 @@
  - #74 Added hover text to icon on plugin home screen
  - #84 Added auto-deploy to PyPI
 
- ### Fixed
+### Fixed
 
 - #72 Fix uniqueness constraint on update_or_create of config compliance model
 - #75 Updated doc for various images and links

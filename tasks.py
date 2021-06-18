@@ -1,14 +1,7 @@
 """Tasks for use with Invoke."""
 
 import os
-import sys
-import requests
 from invoke import task
-
-try:
-    import toml
-except ImportError:
-    sys.exit("Please make sure to `pip install toml` or enable the Poetry shell and run `poetry install`.")
 
 PYTHON_VER = os.getenv("PYTHON_VER", "3.7")
 NAUTOBOT_VER = os.getenv("NAUTOBOT_VER", "1.0.1")
@@ -32,12 +25,6 @@ COMPOSE_APPEND = ""
 if os.path.isfile(COMPOSE_OVERRIDE):
     COMPOSE_APPEND = f"-f {COMPOSE_OVERRIDE}"
 COMPOSE_COMMAND = f"docker-compose -f {COMPOSE_FILE} {COMPOSE_APPEND} -p {BUILD_NAME}"
-
-PYPROJECT_CONFIG = toml.load("pyproject.toml")
-# Get project name from the toml file
-PROJECT_NAME = PYPROJECT_CONFIG["tool"]["poetry"]["name"]
-# Get current project version from the toml file
-PROJECT_VERSION = PYPROJECT_CONFIG["tool"]["poetry"]["version"]
 
 environment = DEFAULT_ENV
 # ------------------------------------------------------------------------------
@@ -370,32 +357,3 @@ def tests(context, nautobot_ver=NAUTOBOT_VER, python_ver=PYTHON_VER):
     unittest(context, nautobot_ver=nautobot_ver, python_ver=python_ver)
 
     print("All tests have passed!")
-
-
-@task
-def check_pypi_version(context, name=PROJECT_NAME, version=PROJECT_VERSION):
-    """Verify if the version specified already exists on PyPI.
-
-    Used mostly in CI/CD to make sure that the new version is merged to main.
-    If version already exists, then function exits with non-zero return code,
-    else the function exits with zero return code.
-
-    Args:
-        context (obj): Used to run specific commands
-        name (str): The name of the project
-        version (str): The version of the project
-    """
-    # Running the following from context to pass pylint:
-    # context must be the first argument in invoke
-    context.run(f"echo Verifying the version {version} on PyPI.")
-
-    url = f"https://pypi.org/pypi/{name}/json"
-    response = requests.get(url)
-    data = response.json()
-    if version in data.get("releases", {}).keys():
-        print(f"The version {version} already exists.")
-        print("Bump the version. Run the command: poetry version.")
-        sys.exit(1)
-    print(f"The version {version} does not exist on PyPI.")
-    print("The version can be released.")
-    sys.exit(0)

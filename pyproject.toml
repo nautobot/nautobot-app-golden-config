@@ -35,6 +35,7 @@ pylint-django = "^2.0.15"
 pydocstyle = "^5.0.2"
 flake8 = "^3.8.4"
 invoke = "^1.5.0"
+requests = "^2.25.1"
 
 
 [tool.black]

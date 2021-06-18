@@ -108,8 +108,10 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
         ConfigCompliance.objects.update_or_create(
             device=obj,
             rule=feature["obj"],
-            actual=section_config(feature, backup_cfg, platform),
-            intended=section_config(feature, intended_cfg, platform),
+            defaults={
+                "actual": section_config(feature, backup_cfg, platform),
+                "intended": section_config(feature, intended_cfg, platform),
+            },
         )
 
     compliance_obj.compliance_last_success_date = task.host.defaults.data["now"]

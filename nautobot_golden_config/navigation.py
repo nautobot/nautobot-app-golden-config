@@ -2,7 +2,7 @@
 
 from nautobot.extras.plugins import PluginMenuItem, PluginMenuButton
 from nautobot.utilities.choices import ButtonColorChoices
-from nautobot_golden_config.utilities.constant import ENABLE_COMPLIANCE
+from nautobot_golden_config.utilities.constant import ENABLE_COMPLIANCE, ENABLE_BACKUP
 
 
 plugin_items = [
@@ -53,6 +53,8 @@ if ENABLE_COMPLIANCE:
             ),
         )
     )
+
+if ENABLE_BACKUP:
     plugin_items.append(
         PluginMenuItem(
             link="plugins:nautobot_golden_config:configremove_list",
@@ -85,21 +87,22 @@ if ENABLE_COMPLIANCE:
             ),
         )
     )
-    plugin_items.append(
-        PluginMenuItem(
-            link="plugins:nautobot_golden_config:goldenconfigsetting",
-            link_text="Settings",
-            permissions=["nautobot_golden_config.view_compliancereplace"],
-            buttons=(
-                PluginMenuButton(
-                    link="plugins:nautobot_golden_config:goldenconfigsetting_edit",
-                    title="Golden Config Settings",
-                    icon_class="mdi mdi-pencil",
-                    color=ButtonColorChoices.YELLOW,
-                    permissions=["nautobot_golden_config.edit_goldenconfigsetting"],
-                ),
+
+plugin_items.append(
+    PluginMenuItem(
+        link="plugins:nautobot_golden_config:goldenconfigsetting",
+        link_text="Settings",
+        permissions=["nautobot_golden_config.view_compliancereplace"],
+        buttons=(
+            PluginMenuButton(
+                link="plugins:nautobot_golden_config:goldenconfigsetting_edit",
+                title="Golden Config Settings",
+                icon_class="mdi mdi-pencil",
+                color=ButtonColorChoices.YELLOW,
+                permissions=["nautobot_golden_config.edit_goldenconfigsetting"],
             ),
         ),
-    )
+    ),
+)
 
 menu_items = tuple(plugin_items)

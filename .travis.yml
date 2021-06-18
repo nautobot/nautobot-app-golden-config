@@ -4,8 +4,8 @@ stages:
   - name: "test"
   - name: "deploy-github"
     if: "tag IS present"
-    # - name: "deploy-pypi"
-    #   if: "tag IS present"
+  - name: "deploy_pypi"
+    if: "tag IS present"
 
 language: "python"
 python:
@@ -41,6 +41,7 @@ jobs:
 
     - stage: "deploy-github"
       before_script:
+        - "pip install --upgrade pip"
         - "pip install poetry"
       script:
         - "poetry version $TRAVIS_TAG"
@@ -54,10 +55,16 @@ jobs:
         "on":
           all_branches: true
 
-      # - stage: "deploy-pypi"
-      #   before_script:
-      #     - "pip install poetry"
-      #   script:
-      #     - "poetry version $TRAVIS_TAG"
-      #     - "poetry config pypi-token.pypi $PYPI_TOKEN"
-      #     - "poetry publish --build"
+    - stage: "deploy_pypi"
+      before_script:
+        - "pip install --upgrade pip"
+        - "pip install poetry"
+      script:
+        - "echo Deploying the release to PyPI"
+        - "poetry version $TRAVIS_TAG"
+      deploy:
+        provider: "script"
+        skip_cleanup: true
+        script: "poetry publish --build -u __token__ -p $PYPI_TOKEN"
+        "on":
+          all_branches: true

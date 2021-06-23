@@ -18,7 +18,7 @@ from nautobot.core.models.generics import PrimaryModel
 from netutils.config.compliance import feature_compliance
 
 from nautobot_golden_config.choices import ComplianceRuleTypeChoice
-from nautobot_golden_config.utilities.helper import get_platform
+from nautobot_golden_config.utilities.utils import get_platform
 
 LOGGER = logging.getLogger(__name__)
 GRAPHQL_STR_START = "query ($device_id: ID!)"

@@ -20,11 +20,11 @@ from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_golden_config.models import ComplianceRule, ConfigCompliance, GoldenConfigSetting, GoldenConfig
 from nautobot_golden_config.utilities.helper import (
     get_job_filter,
-    get_platform,
     verify_global_settings,
     check_jinja_template,
 )
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
+from nautobot_golden_config.utilities.utils import get_platform
 
 
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)

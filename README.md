@@ -86,7 +86,7 @@ PLUGINS_CONFIG = {
         "enable_intended": True,
         "enable_sotagg": True,
         "sot_agg_transposer": None,
-        "default_drivers_mapping": None,
+        "platform_slug_map": None,
     },
 }
 
@@ -100,13 +100,15 @@ The plugin behavior can be controlled with the following list of settings.
 | enable_compliance | True | True | A boolean to represent whether or not to run the compliance process within the plugin. |
 | enable_intended | True | True | A boolean to represent whether or not to generate intended configurations within the plugin. |
 | enable_sotagg | True | True | A boolean to represent whether or not to provide a GraphQL query per device to allow the intended configuration to provide data variables to the plugin. |
-| default_drivers_mapping | {"newos": "dispatcher.newos"} | None | A dictionary in which the key is a platform slug and the value is the import path of the dispatcher in string format|
+| platform_slug_map | {"cisco_aireos": "cisco_wlc"} | None | A dictionary in which the key is the platform slug and the value is what netutils uses in any "network_os" parameter. |
 | sot_agg_transposer | mypkg.transposer | - | A string representation of a function that can post-process the graphQL data. |
 | per_feature_bar_width | 0.15 | 0.15 | The width of the table bar within the overview report | 
 | per_feature_width | 13 | 13 | The width in inches that the overview table can be. | 
 | per_feature_height | 4 | 4 | The height in inches that the overview table can be. | 
 
 > Note: Over time the intention is to make the compliance report more dynamic, but for now allow users to configure the `per_*` configs in a way that fits best for them.
+
+> Note: Review [`nautobot_plugin_nornir`](https://pypi.org/project/nautobot-plugin-nornir/) for Nornir and dispatcher configuration options. 
 
 # Contributing
 

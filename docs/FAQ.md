@@ -38,11 +38,12 @@ _Why not predefine the configuration feature map?_
 The process is based on an opinion on what defines a feature, for one organization BGP may include the prefix configuration and another it would not.
 Understanding that there will never be consensus on what should go into a feature it becomes obvious why the users must maintain such configuration.
 
-_What are the supported platforms? How do I configure a device with a specific OS?_
+_What are the supported platforms for Compliance jobs? How do I configure a device with a specific OS?_
 
-The current supported platform and the associated *required* platform slug names are the following:
+The current supported platform and the associated *default* platform slug names are the following for:
 
 * arista_eos
+* cisco_asa
 * cisco_ios
 * cisco_nxos
 * cisco_aireos
@@ -50,7 +51,34 @@ The current supported platform and the associated *required* platform slug names
 * bigip_f5
 * juniper_junos
 
-In many use cases, this can be extended with a custom dispatcher, which is controlled in the [nornir-nautobot](https://github.com/nautobot/nornir-nautobot) repository.
+The expected "network_os" parameter must be as defined by netutils and golden config uses the platform slug to map from the device to the appropriate
+"network_os" that netutils expects. However, there an ability to map the actual platform slug for compliance and parsing tasks via the plugin settings in your
+"nautobot_config.py", and documented on the primary Readme.
+
+To provide a concrete example of this, note the following example that demonstrates how you can transpose any platform slug name to the expected one, as well as
+map multiple keys to a single netutils expected key.
+```json
+{
+    "platform_slug_map":  {
+        "cisco_aireos": "cisco_wlc",
+        "ios": "cisco_ios",
+        "iosxe": "cisco_ios"
+    }
+}
+```
+
+_What are the supported platforms for Backup and Intended Configuratino jobs? How do I configure a device with a specific OS?_
+
+The current supported platform and the associated *default* platform slug names are the following for:
+
+* arista_eos
+* cisco_ios
+* cisco_ios_xr
+* cisco_nxos
+* juniper_junos
+
+In many use cases, this can be extended with a custom dispatcher for nornir tasks, which is controlled in the [nornir-nautobot](https://github.com/nautobot/nornir-nautobot) repository. Additionally the [`nautobot_plugin_nornir`](https://pypi.org/project/nautobot-plugin-nornir/) provide the ability to leverage the
+`dispatcher_mapping` configuration parameter to map and/or extend for your environment. Please see the instructions there for further details.
 
 _Why not provide the corrective configurations?_
 

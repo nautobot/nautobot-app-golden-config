@@ -20,6 +20,7 @@ from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_golden_config.models import ComplianceRule, ConfigCompliance, GoldenConfigSetting, GoldenConfig
 from nautobot_golden_config.utilities.helper import (
     get_job_filter,
+    get_platform,
     verify_global_settings,
     check_jinja_template,
 )
@@ -95,8 +96,8 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
         logger.log_failure(obj, f"There is no `user` defined feature mapping for platform slug {platform}.")
         raise NornirNautobotException()
 
-    if platform not in parser_map.keys():
-        logger.log_failure(obj, f"There is currently no parser support for platform slug {platform}.")
+    if get_platform(platform) not in parser_map.keys():
+        logger.log_failure(obj, f"There is currently no parser support for platform slug {get_platform(platform)}.")
         raise NornirNautobotException()
 
     backup_cfg = _open_file_config(backup_file)
@@ -109,8 +110,8 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
             device=obj,
             rule=feature["obj"],
             defaults={
-                "actual": section_config(feature, backup_cfg, platform),
-                "intended": section_config(feature, intended_cfg, platform),
+                "actual": section_config(feature, backup_cfg, get_platform(platform)),
+                "intended": section_config(feature, intended_cfg, get_platform(platform)),
             },
         )
 

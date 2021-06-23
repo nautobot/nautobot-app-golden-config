@@ -1,6 +1,7 @@
 """Helper functions."""
 # pylint: disable=raise-missing-from
 
+from django.conf import settings
 from jinja2 import Template, StrictUndefined, UndefinedError
 from jinja2.exceptions import TemplateError, TemplateSyntaxError
 
@@ -46,11 +47,11 @@ def get_job_filter(data=None):
     return DeviceFilterSet(data=query, queryset=base_qs).qs
 
 
-def get_dispatcher():
-    """Helper method to load the dispatcher from nautobot nornir or config if defined."""
-    if PLUGIN_CFG.get("dispatcher_mapping"):
-        return PLUGIN_CFG["dispatcher_mapping"]
-    return _DEFAULT_DRIVERS_MAPPING
+def get_platform(platform):
+    """Helper method to map user defined platform slug to netutils named entity."""
+    if PLUGIN_CFG.get("platform_slug_map", {}).get(platform):
+        return PLUGIN_CFG["platform_slug_map"][platform]
+    return platform
 
 
 def null_to_empty(val):

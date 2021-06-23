@@ -120,6 +120,8 @@ what a line starts with only. Meaning, there is an implicit greediness to the ma
 
 > Note: If accidentally the data is "corrupted" with a bad tested match, simply delete the devices an re-run the compliance process.
 
+> Note: The mapping of "network_os" as defined by netutils is provided via the plugin settings in your nautobot_config.py, and documented on the primary Readme.
+
 # Compliance View
 
 The compliance overview will provide a per device and feature overview on the compliance of your network devices. From here you can navigate to the details view.
@@ -142,7 +144,7 @@ Please note the following about the compliance details page.
 
 # Supported Platforms
 
-Platforms support technically come from the options provided by nornir_nautobot. However, for reference, the valid slug's of the platforms are provided in the [FAQ](./FAQ.md).
+Platforms support technically come from the options provided by netutils. However, for reference, the valid slug's of the platforms are provided in the [FAQ](./FAQ.md).
 
 # Overview Report
 

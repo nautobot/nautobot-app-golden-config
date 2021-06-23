@@ -1,17 +1,14 @@
 """Helper functions."""
 # pylint: disable=raise-missing-from
 
-from django.conf import settings
 from jinja2 import Template, StrictUndefined, UndefinedError
 from jinja2.exceptions import TemplateError, TemplateSyntaxError
 
 from nornir_nautobot.exceptions import NornirNautobotException
-from nornir_nautobot.plugins.tasks.dispatcher import _DEFAULT_DRIVERS_MAPPING
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.dcim.models import Device
 
 from nautobot_golden_config import models
-from nautobot_golden_config.utilities.constant import PLUGIN_CFG
 
 
 FIELDS = {
@@ -45,13 +42,6 @@ def get_job_filter(data=None):
 
     base_qs = models.GoldenConfigSetting.objects.first().get_queryset()
     return DeviceFilterSet(data=query, queryset=base_qs).qs
-
-
-def get_platform(platform):
-    """Helper method to map user defined platform slug to netutils named entity."""
-    if PLUGIN_CFG.get("platform_slug_map", {}).get(platform):
-        return PLUGIN_CFG["platform_slug_map"][platform]
-    return platform
 
 
 def null_to_empty(val):

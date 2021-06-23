@@ -1,12 +1,10 @@
 """Helper functions."""
 # pylint: disable=raise-missing-from
 
-from django.conf import settings
 from jinja2 import Template, StrictUndefined, UndefinedError
 from jinja2.exceptions import TemplateError, TemplateSyntaxError
 
 from nornir_nautobot.exceptions import NornirNautobotException
-from nornir_nautobot.plugins.tasks.dispatcher import _DEFAULT_DRIVERS_MAPPING
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.dcim.models import Device
 

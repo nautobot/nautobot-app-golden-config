@@ -5,12 +5,10 @@ from jinja2 import Template, StrictUndefined, UndefinedError
 from jinja2.exceptions import TemplateError, TemplateSyntaxError
 
 from nornir_nautobot.exceptions import NornirNautobotException
-from nornir_nautobot.plugins.tasks.dispatcher import _DEFAULT_DRIVERS_MAPPING
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.dcim.models import Device
 
 from nautobot_golden_config import models
-from nautobot_golden_config.utilities.constant import PLUGIN_CFG
 
 
 FIELDS = {
@@ -44,13 +42,6 @@ def get_job_filter(data=None):
 
     base_qs = models.GoldenConfigSetting.objects.first().get_queryset()
     return DeviceFilterSet(data=query, queryset=base_qs).qs
-
-
-def get_dispatcher():
-    """Helper method to load the dispatcher from nautobot nornir or config if defined."""
-    if PLUGIN_CFG.get("dispatcher_mapping"):
-        return PLUGIN_CFG["dispatcher_mapping"]
-    return _DEFAULT_DRIVERS_MAPPING
 
 
 def null_to_empty(val):

@@ -12,10 +12,11 @@ from nornir_nautobot.utils.logger import NornirLogger
 
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
+from nautobot_plugin_nornir.utils import get_dispatcher
+
 
 from nautobot_golden_config.utilities.helper import (
     get_job_filter,
-    get_dispatcher,
     verify_global_settings,
     check_jinja_template,
 )

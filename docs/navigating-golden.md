@@ -153,4 +153,5 @@ garbage collection and it is up to the operator to remove such data.
 
 # Network Operating System Support
 
-The version of OS's supported is documented in the [FAQ](./FAQ.md) and is controlled the platform slug. The platform slug must be exactly as expected for the plugin to work.
+The version of OS's supported is documented in the [FAQ](./FAQ.md) and is controlled the platform slug. The platform slug must be exactly as expected or leverage
+a configuration option--which is described the the FAQ--for the plugin to work.

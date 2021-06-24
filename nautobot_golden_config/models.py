@@ -18,7 +18,7 @@ from nautobot.core.models.generics import PrimaryModel
 from netutils.config.compliance import feature_compliance
 
 from nautobot_golden_config.choices import ComplianceRuleTypeChoice
-
+from nautobot_golden_config.utilities.utils import get_platform
 
 LOGGER = logging.getLogger(__name__)
 GRAPHQL_STR_START = "query ($device_id: ID!)"
@@ -205,7 +205,7 @@ class ConfigCompliance(PrimaryModel):
             "name": self.rule.feature.name,
             "section": self.rule.match_config.splitlines(),
         }
-        value = feature_compliance(feature, self.actual, self.intended, self.device.platform.slug)
+        value = feature_compliance(feature, self.actual, self.intended, get_platform(self.device.platform.slug))
         self.compliance = value["compliant"]
         if self.compliance:
             self.compliance_int = 1

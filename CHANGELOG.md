@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.9.4 - 2021-06
+
+### Added
+
+- #87 Added the ability to map arbitraty slug to proper netutils expected network_os
+
+### Fixed
+
+- #87 Dispatcher docs and update dependency for nautobot-plugin-nornir
+
 ## v0.9.3 - 2021-06-19
 
 ### Added

@@ -9,13 +9,26 @@ license = "Apache-2.0"
 readme = "README.md"
 homepage = "https://github.com/nautobot/nautobot-golden-config"
 repository = "https://github.com/nautobot/nautobot-golden-config"
+documentation = "https://github.com/nautobot/nautobot-golden-config"
 keywords = ["nautobot", "nautobot-plugin"]
 include = [
     "LICENSE",
     "README.md",
 ]
+classifiers = [
+    "Intended Audience :: Developers",
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+]
 packages = [
     { include = "nautobot_golden_config" },
+]
+include = [
+    "CHANGELOG.md",
+    "LICENSE",
 ]
 
 [tool.poetry.dependencies]

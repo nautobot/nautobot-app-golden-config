@@ -144,7 +144,9 @@ Please note the following about the compliance details page.
 
 # Supported Platforms
 
-Platforms support technically come from the options provided by [nornir-nautobot](https://github.com/nautobot/nornir-nautobot) for nornir tasks and [netutils](https://github.com/networktocode/netutils) for configuration compliance and parsing. However, for reference, the valid slug's of the platforms are provided in the [FAQ](./FAQ.md).
+Platforms support technically come from the options provided by [nornir-nautobot](https://github.com/nautobot/nornir-nautobot) for nornir dispatcher tasks and
+[netutils](https://github.com/networktocode/netutils) for configuration compliance and parsing. However, for reference, the valid slug's of the platforms are
+provided in the [FAQ](./FAQ.md).
 
 # Overview Report
 

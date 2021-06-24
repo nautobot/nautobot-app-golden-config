@@ -12,6 +12,7 @@ repository = "https://github.com/nautobot/nautobot-golden-config"
 documentation = "https://github.com/nautobot/nautobot-golden-config"
 keywords = ["nautobot", "nautobot-plugin"]
 include = [
+    "CHANGELOG.md",
     "LICENSE",
     "README.md",
 ]
@@ -25,10 +26,6 @@ classifiers = [
 ]
 packages = [
     { include = "nautobot_golden_config" },
-]
-include = [
-    "CHANGELOG.md",
-    "LICENSE",
 ]
 
 [tool.poetry.dependencies]

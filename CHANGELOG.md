@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.9.5 - 2021-07
+
+### Fixed
+
+- Loosen Nautobot version
+
 ## v0.9.4 - 2021-06
 
 ### Added

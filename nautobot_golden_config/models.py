@@ -346,7 +346,7 @@ class GoldenConfigSetting(PrimaryModel):
         encoder=DjangoJSONEncoder,
         blank=True,
         null=True,
-        help_text="Queryset filter matching the list of devices for the scope of devices to be considered.",
+        help_text="API filter in JSON format matching the list of devices for the scope of devices to be considered.",
     )
     sot_agg_query = models.TextField(
         null=False,

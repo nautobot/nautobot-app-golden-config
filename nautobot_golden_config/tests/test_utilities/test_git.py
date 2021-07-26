@@ -43,3 +43,13 @@ class GitRepoTest(unittest.TestCase):
         GitRepo(self.mock_obj)
         mock_repo.assert_called_once()
         mock_repo.assert_called_with(path="/fake/path")
+
+    @patch("nautobot_golden_config.utilities.git.os")
+    @patch("nautobot_golden_config.utilities.git.Repo", autospec=True)
+    def test_username_with_symbols(self, mock_repo, mock_os):
+        """Test Repo is not called when path is valid, ensure Repo is called."""
+        mock_os.path.isdir.return_value = True
+        self.mock_obj.username = "user@fakeemail.local"
+        GitRepo(self.mock_obj)
+        mock_repo.assert_called_once()
+        mock_repo.assert_called_with(path="/fake/path")

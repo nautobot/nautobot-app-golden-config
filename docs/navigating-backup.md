@@ -9,7 +9,7 @@ and save the configuration. The high-level process to run backups is:
 * Store the backup configurations locally.
 * Push configurations to the remote Git repository.
 
-# Configuration Backup Settings
+## Configuration Backup Settings
 
 Backup configurations often need some amount of parsing to stay sane. The two obvious use cases are the ability to remove lines such as the "Last 
 Configuration" changed date, as this will cause unnecessary changes the second is to strip out secrets from the configuration. In an effort to support these 
@@ -41,7 +41,16 @@ The credentials/secrets management is further described within the [nautbot-plug
 repo. For the simplist use case you can set environment variables for `NAPALM_USERNAME`, `NAPALM_PASSWORD`, and `DEVICE_SECRET`. For more
 complicated use cases, please refer to the plugin documentation linked above.
 
-# Config Removals
+## Starting a Backup Job
+
+To start a backup job manually:
+
+1. Navigate to the Plugin Home (Plugins->Home), with Home being in the `Golden Configuration` section
+2. Select _Execute_ on the upper right buttons, then _Backup_
+3. Fill in the data that you wish to have backed up
+4. Select _Run Job_
+
+## Config Removals
 
 The line removals settings is a series of regex patterns to identify lines that should be removed. This is helpful as there are usually parts of the
 configurations that will change each time. A match simply means to remove.
@@ -51,7 +60,7 @@ In order to specify line removals. Navigate to **Plugins -> Config Removals**.  
 The remove setting is based on `Platform`.  An example is shown below.
 ![Config Removals View](./img/00-navigating-backup.png)
 
-# Config Replacements
+## Config Replacements
 
 This is a replacement config with a regex pattern with a single capture groups to replace. This is helpful to strip out secrets.
 

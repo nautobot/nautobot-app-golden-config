@@ -1,4 +1,6 @@
-# Configuration Generation
+# Intended Configuration
+
+## Configuration Generation
 
 The Golden Config plugin provides the ability to generate configurations. The process is a Nornir play that points to a single Jinja template per 
 device that generates the configurations. Data is provided via the Source of Truth aggregation and is currently a hard requirement to be turned on if 
@@ -27,7 +29,16 @@ or
 {% endfor %}
 ```
 
-# Intended Configuration Settings
+## Starting a Intended Configuration Job
+
+To start a intended configuration job manually:
+
+1. Navigate to the Plugin Home (Plugins->Home), with Home being in the `Golden Configuration` section
+2. Select _Execute_ on the upper right buttons, then _Intended_
+3. Fill in the data that you wish to have configurations generated for up
+4. Select _Run Job_
+
+## Intended Configuration Settings
 
 In order to generate the intended configurations two repositories are needed.
 
@@ -36,6 +47,6 @@ In order to generate the intended configurations two repositories are needed.
 3. The [intended_path_template](./navigating-golden.md#application-settings) configuration parameter.
 4. The [jinja_path_template](./navigating-golden.md#application-settings) configuration parameter.
 
-# Data
+## Data
 
 The data provided while rendering the configuration of a device is described in the [SoT Aggregation](./navigating-sot-agg.md) overview. 

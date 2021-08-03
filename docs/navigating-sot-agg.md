@@ -6,7 +6,7 @@ The Source of Truth Aggregation Overview is driven by a few key components.
 * The ability to modify data with a "transposer" function.
 * The usage of config contexts and the Nautobot's native git platform.
 
-# GraphQL
+## GraphQL
 
 There is currently support to make an arbitrary GraphQL query that has "device_id" as a variable. It is likely best to use the GraphiQL interface to model
 your data, and then save that query to the configuration. The application configuration ensures the following two components.
@@ -19,7 +19,7 @@ It is worth noting that the graphQL query returned is modified to remove the roo
 
 It is helpful to make adjustments to the query, and then view the data from the Plugin's home page and clicking on a given device's `code-json` icon.
 
-# Transposer Function
+## Transposer Function
 
 The transposer function is an optional function to make arbitrary changes to the data after the fact. There is a Plugin configuration that allows the
 operator to point to a function within the python path by a string. The function will receive a single variable, that by convention should be called
@@ -45,17 +45,17 @@ PLUGINS_CONFIG["nautobot_golden_config"]["sot_agg_transposer"] = "nautobot_golde
 ```
 The path described must be within the Python path of your worker. It is up to the operator to ensure that happens.
 
-# Config Context
+## Config Context
 
 Outside of the scope of this document, but it is worth mentioning the power that configuration context's with integration to Git can provide in this
 solution.
 
-# Performance
+## Performance
 
 The GraphQL and transposer functionality could seriously impact the performance of the server. There are no restrictions imposed as it is up to the
 operator to weigh the pros and cons of the solution.
 
-# Sample Query
+## Sample Query
 
 To test your query in the GraphiQL UI, obtain a device's uuid, which can be seen in the url of the detailed device view. Once you have a valid device uuid, you can use the "Query Variables" portion of the UI, which is on the bottom left-hand side of the screen.
 

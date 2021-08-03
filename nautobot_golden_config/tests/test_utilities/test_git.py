@@ -14,6 +14,7 @@ class GitRepoTest(unittest.TestCase):
         mock_obj.filesystem_path = "/fake/path"
         mock_obj.remote_url = "/fake/remote"
         mock_obj._token = "fake token"  # pylint: disable=protected-access
+        mock_obj.username = None
         self.mock_obj = mock_obj
 
     @patch("nautobot_golden_config.utilities.git.Repo", autospec=True)
@@ -31,3 +32,11 @@ class GitRepoTest(unittest.TestCase):
         GitRepo(self.mock_obj)
         mock_repo.assert_called_once()
         mock_repo.assert_called_with(path="/fake/path")
+
+    @patch("nautobot_golden_config.utilities.git.os")
+    @patch("nautobot_golden_config.utilities.git.Repo", autospec=True)
+    def test_git_with_username(self, mock_repo, mock_os):  # pylint: disable=unused-argument
+        """Test username with special character works."""
+        self.mock_obj.username = "admin@ntc.com"
+        GitRepo(self.mock_obj)
+        mock_repo.assert_called_once()

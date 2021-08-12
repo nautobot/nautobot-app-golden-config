@@ -1,10 +1,14 @@
 """Django Models for tracking the configuration compliance per feature and device."""
 
+import ast
+import json
 import logging
+from deepdiff import DeepDiff
 
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.serializers.json import DjangoJSONEncoder
+from django.db.models import constraints
 from django.shortcuts import reverse
 from graphene_django.settings import graphene_settings
 from graphql import get_default_backend
@@ -143,8 +147,8 @@ class ComplianceRule(PrimaryModel):
         """Verify that if cli, then match_config is set."""
         if self.config_type == ComplianceRuleTypeChoice.TYPE_CLI and not self.match_config:
             raise ValidationError("CLI configuration set, but no configuration set to match.")
-        if self.config_type == ComplianceRuleTypeChoice.TYPE_JSON:
-            raise ValidationError("JSON currently not supported.")
+        if self.config_type == ComplianceRuleTypeChoice.TYPE_JSON and not self.match_config:
+            raise ValidationError("JSON configuration set, but no configuration set to match.")
 
 
 @extras_features(
@@ -167,6 +171,7 @@ class ConfigCompliance(PrimaryModel):
     missing = models.TextField(blank=True, help_text="Configuration that should be on the device.")
     extra = models.TextField(blank=True, help_text="Configuration that should not be on the device.")
     ordered = models.BooleanField(default=True)
+    # Used for django-pivot, both compliance and compliance_int should be set.
     compliance_int = models.IntegerField(null=True, blank=True)
 
     csv_headers = ["Device Name", "Feature", "Compliance"]
@@ -199,22 +204,49 @@ class ConfigCompliance(PrimaryModel):
         return f"{self.device} -> {self.rule} -> {self.compliance}"
 
     def save(self, *args, **kwargs):
-        """Perform that actual compliance check."""
+        """Performs the actual compliance check."""
         feature = {
             "ordered": self.rule.config_ordered,
-            "name": self.rule.feature.name,
-            "section": self.rule.match_config.splitlines(),
+            "name": self.rule,
+            # "section": self.rule.match_config.splitlines(),
         }
-        value = feature_compliance(feature, self.actual, self.intended, get_platform(self.device.platform.slug))
-        self.compliance = value["compliant"]
-        if self.compliance:
-            self.compliance_int = 1
+        if self.rule.config_type == ComplianceRuleTypeChoice.TYPE_JSON:
+            feature.update({"section": self.rule.match_config})
+            try:
+                json.loads(self.actual) and json.loads(self.intended)
+            except json.decoder.JSONDecodeError:
+                raise ValidationError("The data in 'actual or intended' is not JSON serializable. Please fix the JSON data.")
+            diff = DeepDiff(json.loads(self.actual), json.loads(self.intended), ignore_order=self.ordered, report_repetition=True)
+            if not diff:
+                self.compliance_int = 1
+                self.compliance = True
+            else:
+                self.compliance_int = 0
+                self.compliance = False
+                self.missing = null_to_empty(self._normalize_diff(diff, "added"))
+                self.extra = null_to_empty(self._normalize_diff(diff, "removed"))
+                self.reordered_list_items = list(diff.get("repetition_change", {}).keys())
         else:
-            self.compliance_int = 0
-        self.ordered: value["ordered_compliant"]
-        self.missing = null_to_empty(value["missing"])
-        self.extra = null_to_empty(value["extra"])
+            feature.update({"section": self.rule.match_config.splitlines()})
+            value = feature_compliance(feature, self.actual, self.intended, get_platform(self.device.platform.slug))
+            self.compliance = value["compliant"]
+            if self.compliance:
+                self.compliance_int = 1
+            else:
+                self.compliance_int = 0
+                self.ordered = value["ordered_compliant"]
+                self.missing = null_to_empty(value["missing"])
+                self.extra = null_to_empty(value["extra"])
         super().save(*args, **kwargs)
+
+    @staticmethod
+    def _normalize_diff(diff, path_to_diff):
+        """Normalizes the diff to a list of keys and list indexes that have changed."""
+        dictionary_items = list(diff.get(f"dictionary_item_{path_to_diff}", []))
+        list_items = list(diff.get(f"iterable_item_{path_to_diff}", {}).keys())
+        values_changed = list(diff.get("values_changed", {}).keys())
+        type_changes = list(diff.get("type_changes", {}).keys())
+        return dictionary_items + list_items + values_changed + type_changes
 
 
 @extras_features(

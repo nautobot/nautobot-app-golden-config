@@ -1,8 +1,11 @@
 """REST API serializer capabilities for graphql plugin."""
 # pylint: disable=too-many-ancestors
 from rest_framework import serializers
+from nautobot.dcim.models import Device
+
 from nautobot.extras.api.customfields import CustomFieldModelSerializer
 from nautobot.extras.api.serializers import TaggedObjectSerializer
+from nautobot.core.api.serializers import BaseModelSerializer
 
 from nautobot_golden_config import models
 
@@ -27,7 +30,7 @@ class ComplianceFeatureSerializer(TaggedObjectSerializer, CustomFieldModelSerial
         fields = "__all__"
 
 
-class ComplianceRuleSerializer(TaggedObjectSerializer, CustomFieldModelSerializer):
+class ComplianceRuleSerializer(BaseModelSerializer):
     """Serializer for ComplianceRule object."""
 
     url = serializers.HyperlinkedIdentityField(view_name="plugins-api:nautobot_golden_config-api:compliancerule-detail")
@@ -42,15 +45,20 @@ class ComplianceRuleSerializer(TaggedObjectSerializer, CustomFieldModelSerialize
 class ConfigComplianceSerializer(TaggedObjectSerializer, CustomFieldModelSerializer):
     """Serializer for ConfigCompliance object."""
 
-    url = serializers.HyperlinkedIdentityField(
-        view_name="plugins-api:nautobot_golden_config-api:configcompliance-detail"
-    )
+    #url = serializers.HyperlinkedIdentityField(
+    #    view_name="plugins-api:nautobot_golden_config-api:configcompliance-detail"
+    #)
 
     class Meta:
-        """Set Meta Data for ConfigCompliance, will serialize all fields."""
+        """Set Meta Data for ConfigCompliance, will serialize device and rule fields."""
 
         model = models.ConfigCompliance
-        fields = "__all__"
+        fields = (
+            "device",
+            "rule",
+            "actual",
+            "intended",
+        )
 
 
 class GoldenConfigSerializer(TaggedObjectSerializer, CustomFieldModelSerializer):

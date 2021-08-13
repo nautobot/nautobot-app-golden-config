@@ -4,7 +4,6 @@ from rest_framework import serializers
 
 from nautobot.extras.api.customfields import CustomFieldModelSerializer
 from nautobot.extras.api.serializers import TaggedObjectSerializer
-from nautobot.core.api.serializers import BaseModelSerializer
 
 from nautobot_golden_config import models
 
@@ -29,7 +28,7 @@ class ComplianceFeatureSerializer(TaggedObjectSerializer, CustomFieldModelSerial
         fields = "__all__"
 
 
-class ComplianceRuleSerializer(BaseModelSerializer):
+class ComplianceRuleSerializer(TaggedObjectSerializer, CustomFieldModelSerializer):
     """Serializer for ComplianceRule object."""
 
     url = serializers.HyperlinkedIdentityField(view_name="plugins-api:nautobot_golden_config-api:compliancerule-detail")
@@ -45,7 +44,7 @@ class ConfigComplianceSerializer(TaggedObjectSerializer, CustomFieldModelSeriali
     """Serializer for ConfigCompliance object."""
 
     class Meta:
-        """Set Meta Data for ConfigCompliance, will serialize device and rule fields."""
+        """Set Meta Data for ConfigCompliance, will serialize fields."""
 
         model = models.ConfigCompliance
         fields = ("id", "device", "rule", "actual", "intended", "ordered", "compliance")

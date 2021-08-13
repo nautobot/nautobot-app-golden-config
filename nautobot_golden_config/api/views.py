@@ -5,7 +5,6 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.routers import APIRootView
 from rest_framework.permissions import AllowAny
-
 from nautobot.extras.api.views import CustomFieldModelViewSet
 from nautobot.dcim.models import Device
 

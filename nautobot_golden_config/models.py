@@ -145,8 +145,6 @@ class ComplianceRule(PrimaryModel):
         """Verify that if cli, then match_config is set."""
         if self.config_type == ComplianceRuleTypeChoice.TYPE_CLI and not self.match_config:
             raise ValidationError("CLI configuration set, but no configuration set to match.")
-        if self.config_type == ComplianceRuleTypeChoice.TYPE_JSON and not self.match_config:
-            raise ValidationError("JSON configuration set, currently does not support 'config to match'.")
 
 
 @extras_features(

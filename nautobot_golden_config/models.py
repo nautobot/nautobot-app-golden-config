@@ -1,6 +1,5 @@
 """Django Models for tracking the configuration compliance per feature and device."""
 
-import ast
 import json
 import logging
 from deepdiff import DeepDiff
@@ -8,7 +7,6 @@ from deepdiff import DeepDiff
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.serializers.json import DjangoJSONEncoder
-from django.db.models import constraints
 from django.shortcuts import reverse
 from graphene_django.settings import graphene_settings
 from graphql import get_default_backend
@@ -148,7 +146,7 @@ class ComplianceRule(PrimaryModel):
         if self.config_type == ComplianceRuleTypeChoice.TYPE_CLI and not self.match_config:
             raise ValidationError("CLI configuration set, but no configuration set to match.")
         if self.config_type == ComplianceRuleTypeChoice.TYPE_JSON and not self.match_config:
-            raise ValidationError("JSON configuration set, but no configuration set to match.")
+            raise ValidationError("JSON configuration set, currently does not support 'config to match'.")
 
 
 @extras_features(
@@ -208,24 +206,28 @@ class ConfigCompliance(PrimaryModel):
         feature = {
             "ordered": self.rule.config_ordered,
             "name": self.rule,
-            # "section": self.rule.match_config.splitlines(),
         }
         if self.rule.config_type == ComplianceRuleTypeChoice.TYPE_JSON:
             feature.update({"section": self.rule.match_config})
             try:
                 json.loads(self.actual) and json.loads(self.intended)
-            except json.decoder.JSONDecodeError:
-                raise ValidationError("The data in 'actual or intended' is not JSON serializable. Please fix the JSON data.")
-            diff = DeepDiff(json.loads(self.actual), json.loads(self.intended), ignore_order=self.ordered, report_repetition=True)
+            except json.decoder.JSONDecodeError as json_error:
+                raise ValidationError(
+                    "The data in 'actual or intended' is not JSON serializable. Please fix the JSON data."
+                ) from json_error
+            diff = DeepDiff(
+                json.loads(self.actual), json.loads(self.intended), ignore_order=self.ordered, report_repetition=True
+            )
             if not diff:
                 self.compliance_int = 1
                 self.compliance = True
+                self.missing = ""
+                self.extra = ""
             else:
                 self.compliance_int = 0
                 self.compliance = False
                 self.missing = null_to_empty(self._normalize_diff(diff, "added"))
                 self.extra = null_to_empty(self._normalize_diff(diff, "removed"))
-                self.reordered_list_items = list(diff.get("repetition_change", {}).keys())
         else:
             feature.update({"section": self.rule.match_config.splitlines()})
             value = feature_compliance(feature, self.actual, self.intended, get_platform(self.device.platform.slug))

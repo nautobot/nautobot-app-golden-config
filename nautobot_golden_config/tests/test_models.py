@@ -1,19 +1,76 @@
 """Unit tests for nautobot_golden_config models."""
 
+import json
 from django.test import TestCase
 from django.core.exceptions import ValidationError
-
+from django.db.utils import IntegrityError
 from nautobot.dcim.models import Platform
 
 from nautobot_golden_config.models import (
+    ConfigCompliance,
     GoldenConfigSetting,
     ConfigRemove,
     ConfigReplace,
 )
 
+from .conftest import create_device, create_feature_rule_json, create_config_compliance
+
 
 class ConfigComplianceModelTestCase(TestCase):
-    """Test ConfigCompliance Model."""
+    """Test CRUD operations for ConfigCompliance Model."""
+
+    def setUp(self):
+        """Set up base objects."""
+        self.device = create_device()
+        self.compliance_rule_json = create_feature_rule_json(self.device)
+
+    def test_create_config_compliance_success_json(self):
+        """Successful."""
+        actual = '{"foo": {"bar-1": "baz"}}'
+        intended = '{"foo": {"bar-2": "baz"}}'
+        cc_obj = create_config_compliance(
+            self.device, actual=actual, intended=intended, compliance_rule=self.compliance_rule_json
+        )
+
+        self.assertFalse(cc_obj.compliance)
+        self.assertEqual(cc_obj.actual, json.dumps({"foo": {"bar-1": "baz"}}))
+        self.assertEqual(cc_obj.intended, json.dumps({"foo": {"bar-2": "baz"}}))
+        self.assertEqual(cc_obj.missing, ["root['foo']['bar-2']"])
+        self.assertEqual(cc_obj.extra, ["root['foo']['bar-1']"])
+
+    def test_create_config_compliance_unique_failure(self):
+        """Raises error when attempting to create duplicate."""
+        ConfigCompliance.objects.create(
+            device=self.device,
+            rule=self.compliance_rule_json,
+            actual='{"foo": {"bar-1": "baz"}}',
+            intended='{"foo": {"bar-2": "baz"}}',
+            missing={},
+            extra={},
+        )
+        with self.assertRaises(IntegrityError):
+            ConfigCompliance.objects.create(
+                device=self.device,
+                rule=self.compliance_rule_json,
+                compliance=False,
+                actual='{"foo": {"bar-1": "baz"}}',
+                intended='{"foo": {"bar-2": "baz"}}',
+                missing={},
+                extra={},
+            )
+
+    def test_create_config_compliance_success_compliant(self):
+        """Successful."""
+        cc_obj = ConfigCompliance.objects.create(
+            device=self.device,
+            rule=self.compliance_rule_json,
+            actual='{"foo": {"bar-1": "baz"}}',
+            intended='{"foo": {"bar-1": "baz"}}',
+        )
+
+        self.assertTrue(cc_obj.compliance)
+        self.assertEqual(cc_obj.missing, "")
+        self.assertEqual(cc_obj.extra, "")
 
 
 class GoldenConfigTestCase(TestCase):

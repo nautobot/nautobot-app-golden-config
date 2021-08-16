@@ -47,7 +47,8 @@ class ConfigComplianceSerializer(TaggedObjectSerializer, CustomFieldModelSeriali
         """Set Meta Data for ConfigCompliance, will serialize fields."""
 
         model = models.ConfigCompliance
-        fields = ("id", "device", "rule", "actual", "intended", "ordered", "compliance")
+        fields = "__all__"
+        # fields = ("id", "device", "rule", "actual", "intended", "ordered", "compliance")
 
 
 class GoldenConfigSerializer(TaggedObjectSerializer, CustomFieldModelSerializer):

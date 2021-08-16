@@ -48,7 +48,6 @@ class ConfigComplianceSerializer(TaggedObjectSerializer, CustomFieldModelSeriali
 
         model = models.ConfigCompliance
         fields = "__all__"
-        # fields = ("id", "device", "rule", "actual", "intended", "ordered", "compliance")
 
 
 class GoldenConfigSerializer(TaggedObjectSerializer, CustomFieldModelSerializer):

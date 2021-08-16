@@ -36,7 +36,6 @@ def null_to_empty(val):
     "custom_validators",
     "export_templates",
     "relationships",
-    "graphql",
     "webhooks",
 )
 class ComplianceFeature(PrimaryModel):
@@ -71,7 +70,6 @@ class ComplianceFeature(PrimaryModel):
     "custom_validators",
     "export_templates",
     "relationships",
-    "graphql",
     "webhooks",
 )
 class ComplianceRule(PrimaryModel):
@@ -152,7 +150,6 @@ class ComplianceRule(PrimaryModel):
     "custom_links",
     "custom_validators",
     "export_templates",
-    "graphql",
     "relationships",
     "webhooks",
 )
@@ -222,7 +219,6 @@ class ConfigCompliance(PrimaryModel):
     "custom_links",
     "custom_validators",
     "export_templates",
-    "graphql",
     "relationships",
     "webhooks",
 )
@@ -453,7 +449,6 @@ class GoldenConfigSetting(PrimaryModel):
     "custom_links",
     "custom_validators",
     "export_templates",
-    "graphql",
     "relationships",
     "webhooks",
 )
@@ -505,7 +500,6 @@ class ConfigRemove(PrimaryModel):
     "custom_links",
     "custom_validators",
     "export_templates",
-    "graphql",
     "relationships",
     "webhooks",
 )

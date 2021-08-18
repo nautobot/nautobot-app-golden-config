@@ -17,7 +17,7 @@ This plugin enable four (4) key use cases.
 
 
 1. **Configuration Backups** - Is a Nornir process to connect to devices, optionally parse out lines/secrets, backup the configuration, and save to a Git repository.
-2. **Intended Configuration** - Is a Nornir process to generate configuration based on a Git repo of Jinja files and a Git repo to store the intended configuration.
+2. **Intended Configuration** - Is a Nornir process to generate configuration based on a Git repo of Jinja files to combine with a GraphQL generated data and a Git repo to store the intended configuration.
 3. **Source of Truth Aggregation** - Is a GraphQL query per device that creates a data structure used in the generation of configuration.
 4. **Configuration Compliance** - Is a Nornir process to run comparison of the actual (via backups) and intended (via Jinja file creation) CLI configurations.
 

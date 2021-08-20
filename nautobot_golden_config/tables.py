@@ -52,11 +52,15 @@ ALL_ACTIONS = """
     <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='sotagg' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='sotagg' %}?modal=true">
         <i class="mdi mdi-code-json" title="SOT Aggregate Data"></i>
     </a>
-    <a href="{% url 'extras:job' class_path='plugins/nautobot_golden_config.jobs/AllGoldenConfig' %}?device={{ record.pk }}"
-        <span class="text-primary">
-            <i class="mdi mdi-play-circle" title="Execute All Golden Config Jobs"></i>
-        </span>
-    </a>
+    {% if record.configcompliance_set.first.rule.config_type == 'json' %}
+        <i class="mdi mdi-circle-small"></i>
+    {% else %}
+        <a href="{% url 'extras:job' class_path='plugins/nautobot_golden_config.jobs/AllGoldenConfig' %}?device={{ record.pk }}"
+            <span class="text-primary">
+                <i class="mdi mdi-play-circle" title="Execute All Golden Config Jobs"></i>
+            </span>
+        </a>
+    {% endif %}
 {% endif %}
 """
 

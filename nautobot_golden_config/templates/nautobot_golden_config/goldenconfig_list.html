@@ -93,6 +93,7 @@
             var dataURL = $(this).attr('data-href');
             $('.modal-body').load(dataURL,function(){
                 $('#myModal').modal({show:true});
+                location.reload(); // Added to reload after the JSON diff is viewed in order to load the Status times and backup/intended action buttons.
             });
         });
     });

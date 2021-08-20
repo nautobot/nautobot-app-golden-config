@@ -1,13 +1,14 @@
 """Django views for Nautobot Golden Configuration."""
-from datetime import datetime
+from datetime import datetime, timezone
 
 import base64
 import io
 import json
 import logging
 import urllib
-import yaml
 import difflib
+import yaml
+
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -29,7 +30,6 @@ from nautobot_golden_config import filters, forms, models, tables
 from nautobot_golden_config.utilities.constant import PLUGIN_CFG, ENABLE_COMPLIANCE, CONFIG_FEATURES
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 
-from nautobot_golden_config.choices import ComplianceRuleTypeChoice
 
 LOGGER = logging.getLogger(__name__)
 
@@ -266,19 +266,22 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
         """Manually set permission when not tied to a model for config details."""
         return "nautobot_golden_config.view_goldenconfig"
 
-    def get(self, request, pk, config_type):  # pylint: disable=invalid-name,too-many-branches
+    def get(self, request, pk, config_type):  # pylint: disable=invalid-name,too-many-branches,too-many-locals,too-many-statements
         """Read request into a view of a single device."""
 
-        def diff_structured_data(b, i):
-            """Utility function to provide `Unix Diff` between two files."""
-            bk = yaml.safe_dump(json.loads(b))
-            intend = yaml.safe_dump(json.loads(i))
+        def diff_structured_data(backup_data, intended_data):
+            """Utility function to provide `Unix Diff` between two JSON snippets."""
+            backup_yaml = yaml.safe_dump(json.loads(backup_data))
+            intend_yaml = yaml.safe_dump(json.loads(intended_data))
 
-            for line in difflib.unified_diff(bk.splitlines(), intend.splitlines(), lineterm=""):
+            for line in difflib.unified_diff(backup_yaml.splitlines(), intend_yaml.splitlines(), lineterm=""):
                 yield line
 
         device = Device.objects.get(pk=pk)
         config_details = models.GoldenConfig.objects.filter(device=device).first()
+        if not config_details and config_type == "json_compliance":
+            # Create the GoldenConfig object for the device only for JSON compliance.
+            config_details = models.GoldenConfig.objects.create(device=device)
         structure_format = "json"
         if not config_details:
             output = ""
@@ -287,63 +290,64 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
         elif config_type == "intended":
             output = config_details.intended_config
         elif config_type == "compliance":
-            is_type_json = models.ConfigCompliance.objects.filter(device=device.id).first().rule.config_type
-            print(is_type_json)
-            if is_type_json == 'json':
-                print("Do new logic for JSON types.")
-                objs = models.ConfigCompliance.objects.filter(device=device.id)
-                actual = {}
-                intended = {}
-                for obj in objs:
-                    actual[obj.rule.feature.slug] = obj.actual
-                    intended[obj.rule.feature.slug] = obj.intended
-
-                temp_backup = json.dumps(actual, sort_keys=True)
-                temp_intended = json.dumps(intended, sort_keys=True)
-
-                config_details.compliance_config = "\n".join(diff_structured_data(temp_backup, temp_intended))
-                print(f"######## actual = {actual}")
-                print(f"######## intended = {intended}")
-                # Do the json dumps stuff
-                # Need to build the backup_config and intended_config by looping through all current configcompiance objects for the device provided.
-                # Then need to run it through json dumps and sort the keys and pass the diff back in yaml.
-                output = config_details.compliance_config
-                print(f"###########output = {output}")
-                first_occurence = output.index("@@")
-                second_occurence = output.index("@@", first_occurence)
-                output = (
-                    "--- Backup File - "
-                    + 'backup on the fly'
-                    + "\n+++ Intended File - "
-                    + 'intended on the fly'
-                    + "\n"
-                    + output[first_occurence:second_occurence]
-                    + "@@"
-                    + output[second_occurence + 2 :]
-                )
+            output = config_details.compliance_config
+            if config_details.backup_last_success_date:
+                backup_date = str(config_details.backup_last_success_date.strftime("%b %d %Y"))
             else:
-                output = config_details.compliance_config
-                if config_details.backup_last_success_date:
-                    backup_date = str(config_details.backup_last_success_date.strftime("%b %d %Y"))
-                else:
-                    backup_date = datetime.now().strftime("%b %d %Y")
-                if config_details.intended_last_success_date:
-                    intended_date = str(config_details.intended_last_success_date.strftime("%b %d %Y"))
-                else:
-                    intended_date = datetime.now().strftime("%b %d %Y")
-                first_occurence = output.index("@@")
-                second_occurence = output.index("@@", first_occurence)
-                # This is logic to match diff2html's expected input.
-                output = (
-                    "--- Backup File - "
-                    + backup_date
-                    + "\n+++ Intended File - "
-                    + intended_date
-                    + "\n"
-                    + output[first_occurence:second_occurence]
-                    + "@@"
-                    + output[second_occurence + 2 :]
-                )
+                backup_date = datetime.now().strftime("%b %d %Y")
+            if config_details.intended_last_success_date:
+                intended_date = str(config_details.intended_last_success_date.strftime("%b %d %Y"))
+            else:
+                intended_date = datetime.now().strftime("%b %d %Y")
+            first_occurence = output.index("@@")
+            second_occurence = output.index("@@", first_occurence)
+            # This is logic to match diff2html's expected input.
+            output = (
+                "--- Backup File - "
+                + backup_date
+                + "\n+++ Intended File - "
+                + intended_date
+                + "\n"
+                + output[first_occurence:second_occurence]
+                + "@@"
+                + output[second_occurence + 2 :]
+            )
+        elif config_type == "json_compliance":
+            compliance_objects = models.ConfigCompliance.objects.filter(device=device.id)
+            actual = {}
+            intended = {}
+            most_recent_time = datetime(1970, 1, 1, tzinfo=timezone.utc)
+            for obj in compliance_objects:
+                actual[obj.rule.feature.slug] = json.loads(obj.actual)
+                intended[obj.rule.feature.slug] = json.loads(obj.intended)
+                if obj.last_updated > most_recent_time:
+                    most_recent_time = obj.last_updated
+            config_details.backup_last_attempt_date = most_recent_time
+            config_details.backup_last_success_date = most_recent_time
+            config_details.intended_last_attempt_date = most_recent_time
+            config_details.intended_last_success_date = most_recent_time
+            config_details.compliance_last_attempt_date = most_recent_time
+            config_details.compliance_last_success_date = most_recent_time
+            config_details.backup_config = json.dumps(actual, sort_keys=True)
+            config_details.intended_config = json.dumps(intended, sort_keys=True)
+            config_details.compliance_config = "\n".join(
+                diff_structured_data(config_details.backup_config, config_details.intended_config)
+            )
+            config_details.save()
+            output = config_details.compliance_config
+            first_occurence = output.index("@@")
+            second_occurence = output.index("@@", first_occurence)
+            # This is logic to match diff2html's expected input.
+            output = (
+                "--- Backup Data - "
+                + str(most_recent_time.strftime("%b %d %Y"))
+                + "\n+++ Intended Data - "
+                + str(most_recent_time.strftime("%b %d %Y"))
+                + "\n"
+                + output[first_occurence:second_occurence]
+                + "@@"
+                + output[second_occurence + 2 :]
+            )
         elif config_type == "sotagg":
             if request.GET.get("format") in ["json", "yaml"]:
                 structure_format = request.GET.get("format")

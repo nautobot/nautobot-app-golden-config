@@ -14,7 +14,7 @@
 </style>
 {% if config_type == "sotagg" %}
     <h1>Aggregate Data - {{ device_name }}</h1>
-{% elif config_type == "compliance" %}
+{% elif "compliance" in config_type %}
     <h1>Compliance Details - {{ device_name }}</h1>
 {% elif config_type == "backup" %}
     <h1>Backup Configuration Details - {{ device_name }}</h1>
@@ -33,7 +33,7 @@
                     {% include 'extras/inc/configcontext_format.html' %}
                 </div>
                 <pre>{{ output }}</pre>
-            {% elif  config_type == "compliance" %}
+            {% elif "compliance" in config_type %}
                 <div id="output", value="{{ output }}"></div>
                 <div id="diff"></div>
             {% else %}

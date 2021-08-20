@@ -9,7 +9,6 @@ import urllib
 import difflib
 import yaml
 
-
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -30,7 +29,6 @@ from nautobot_golden_config import filters, forms, models, tables
 from nautobot_golden_config.utilities.constant import PLUGIN_CFG, ENABLE_COMPLIANCE, CONFIG_FEATURES
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 
-
 LOGGER = logging.getLogger(__name__)
 
 GREEN = "#D5E8D4"
@@ -48,7 +46,6 @@ class GoldenConfigListView(generic.ObjectListView):
     filterset = filters.GoldenConfigFilter
     filterset_form = forms.GoldenConfigFilterForm
     queryset = models.GoldenConfigSetting.objects.first().get_queryset()
-
     template_name = "nautobot_golden_config/goldenconfig_list.html"
 
     def extra_context(self):

@@ -266,7 +266,9 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
         """Manually set permission when not tied to a model for config details."""
         return "nautobot_golden_config.view_goldenconfig"
 
-    def get(self, request, pk, config_type):  # pylint: disable=invalid-name,too-many-branches,too-many-locals,too-many-statements
+    def get(
+        self, request, pk, config_type
+    ):  # pylint: disable=invalid-name,too-many-branches,too-many-locals,too-many-statements
         """Read request into a view of a single device."""
 
         def diff_structured_data(backup_data, intended_data):

@@ -213,7 +213,7 @@ class GoldenConfigTable(BaseTable):
         """Pull back backup last success per row record."""
         entry = record.goldenconfig_set.first()
         if not hasattr(entry, "backup_last_success_date") or not hasattr(entry, "backup_last_attempt_date"):
-            return ""
+            return "--"
         if entry.backup_last_success_date and entry.backup_last_attempt_date == entry.backup_last_success_date:
             column.attrs = {"td": {"style": "color:green"}}
             return entry.backup_last_success_date
@@ -224,7 +224,7 @@ class GoldenConfigTable(BaseTable):
         """Pull back intended last success per row record."""
         entry = record.goldenconfig_set.first()
         if not hasattr(entry, "intended_last_success_date") or not hasattr(entry, "intended_last_attempt_date"):
-            return ""
+            return "--"
         if entry.intended_last_success_date and entry.intended_last_attempt_date == entry.intended_last_success_date:
             column.attrs = {"td": {"style": "color:green"}}
             return entry.intended_last_success_date
@@ -235,7 +235,7 @@ class GoldenConfigTable(BaseTable):
         """Pull back compliance last success per row record."""
         entry = record.goldenconfig_set.first()
         if not hasattr(entry, "compliance_last_success_date") or not hasattr(entry, "compliance_last_attempt_date"):
-            return ""
+            return "--"
         if (
             entry.compliance_last_success_date
             and entry.compliance_last_attempt_date == entry.compliance_last_success_date

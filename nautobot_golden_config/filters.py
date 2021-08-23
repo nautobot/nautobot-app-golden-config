@@ -22,37 +22,37 @@ class GoldenConfigFilter(CreatedUpdatedFilterSet):
     )
     tenant_group_id = TreeNodeMultipleChoiceFilter(
         queryset=TenantGroup.objects.all(),
-        field_name="device__tenant__group",
+        field_name="tenant__group",
         lookup_expr="in",
         label="Tenant Group (ID)",
     )
     tenant_group = TreeNodeMultipleChoiceFilter(
         queryset=TenantGroup.objects.all(),
-        field_name="device__tenant__group",
+        field_name="tenant__group",
         to_field_name="slug",
         lookup_expr="in",
         label="Tenant Group (slug)",
     )
     tenant_id = django_filters.ModelMultipleChoiceFilter(
         queryset=Tenant.objects.all(),
-        field_name="device__tenant_id",
+        field_name="tenant_id",
         label="Tenant (ID)",
     )
     tenant = django_filters.ModelMultipleChoiceFilter(
         queryset=Tenant.objects.all(),
-        field_name="device__tenant__slug",
+        field_name="tenant__slug",
         to_field_name="slug",
         label="Tenant (slug)",
     )
     region_id = TreeNodeMultipleChoiceFilter(
         queryset=Region.objects.all(),
-        field_name="device__site__region",
+        field_name="site__region",
         lookup_expr="in",
         label="Region (ID)",
     )
     region = TreeNodeMultipleChoiceFilter(
         queryset=Region.objects.all(),
-        field_name="device__site__region",
+        field_name="site__region",
         lookup_expr="in",
         to_field_name="slug",
         label="Region (slug)",
@@ -62,40 +62,40 @@ class GoldenConfigFilter(CreatedUpdatedFilterSet):
         label="Site (ID)",
     )
     site = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__site__slug",
+        field_name="site__slug",
         queryset=Site.objects.all(),
         to_field_name="slug",
         label="Site name (slug)",
     )
     rack_group_id = TreeNodeMultipleChoiceFilter(
         queryset=RackGroup.objects.all(),
-        field_name="device__rack__group",
+        field_name="rack__group",
         lookup_expr="in",
         label="Rack group (ID)",
     )
     rack_id = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__rack",
+        field_name="rack",
         queryset=Rack.objects.all(),
         label="Rack (ID)",
     )
     role_id = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__device_role_id",
+        field_name="device_role_id",
         queryset=DeviceRole.objects.all(),
         label="Role (ID)",
     )
     role = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__device_role__slug",
+        field_name="device_role__slug",
         queryset=DeviceRole.objects.all(),
         to_field_name="slug",
         label="Role (slug)",
     )
     manufacturer_id = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__device_type__manufacturer",
+        field_name="device_type__manufacturer",
         queryset=Manufacturer.objects.all(),
         label="Manufacturer (ID)",
     )
     manufacturer = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__device_type__manufacturer__slug",
+        field_name="device_type__manufacturer__slug",
         queryset=Manufacturer.objects.all(),
         to_field_name="slug",
         label="Manufacturer (slug)",
@@ -105,18 +105,18 @@ class GoldenConfigFilter(CreatedUpdatedFilterSet):
         label="Platform (ID)",
     )
     platform = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__platform__slug",
+        field_name="platform__slug",
         queryset=Platform.objects.all(),
         to_field_name="slug",
         label="Platform (slug)",
     )
     device_status_id = StatusFilter(
-        field_name="device__status",
+        field_name="status",
         queryset=Status.objects.all(),
         label="Device Status",
     )
     device_type_id = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__device_type_id",
+        field_name="device_type_id",
         queryset=DeviceType.objects.all(),
         label="Device type (ID)",
     )
@@ -126,7 +126,7 @@ class GoldenConfigFilter(CreatedUpdatedFilterSet):
         label="Device Name",
     )
     device = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__name",
+        field_name="name",
         queryset=Device.objects.all(),
         label="Device Name",
     )
@@ -136,13 +136,13 @@ class GoldenConfigFilter(CreatedUpdatedFilterSet):
         if not value.strip():
             return queryset
         # Chose only device, can be convinced more should be included
-        qs_filter = Q(device__name__icontains=value)
+        qs_filter = Q(name__icontains=value)
         return queryset.filter(qs_filter)
 
     class Meta:
         """Meta class attributes for GoldenConfig."""
 
-        model = models.GoldenConfig
+        model = Device
         distinct = True
         fields = [
             "q",

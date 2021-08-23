@@ -20,6 +20,7 @@ from django_pivot.pivot import pivot
 
 from nautobot.dcim.models import Device
 from nautobot.core.views import generic
+
 from nautobot.utilities.utils import csv_format
 from nautobot.utilities.error_handlers import handle_protectederror
 from nautobot.utilities.views import ContentTypePermissionRequiredMixin
@@ -54,7 +55,7 @@ class GoldenConfigListView(generic.ObjectListView):
 
     def alter_queryset(self, request):
         """Build actual runtime queryset as the build time queryset provides no information."""
-        return models.GoldenConfigSetting.objects.first().get_queryset()
+        return self.queryset.filter(id__in=models.GoldenConfigSetting.objects.first().get_queryset())
 
 
 class GoldenConfigBulkDeleteView(generic.BulkDeleteView):

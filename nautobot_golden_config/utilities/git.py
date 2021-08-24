@@ -5,6 +5,8 @@ import re
 import logging
 
 from urllib.parse import quote
+from git import Repo
+
 
 from git import Repo
 
@@ -28,10 +30,12 @@ class GitRepo:
         if self.token and self.token not in self.url:
             # Some Git Providers require a user as well as a token.
             if self.token_user:
-                self.url = re.sub("//", f"//{quote(self.token_user, safe='')}:{quote(self.token, safe='')}@", self.url)
+                self.url = re.sub(
+                    "//", f"//{quote(str(self.token_user), safe='')}:{quote(str(self.token), safe='')}@", self.url
+                )
             else:
                 # Github only requires the token.
-                self.url = re.sub("//", f"//{quote(self.token, safe='')}@", self.url)
+                self.url = re.sub("//", f"//{quote(str(self.token), safe='')}@", self.url)
 
         self.branch = obj.branch
         self.obj = obj

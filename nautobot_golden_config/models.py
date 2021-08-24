@@ -35,6 +35,7 @@ def null_to_empty(val):
     "custom_fields",
     "custom_validators",
     "export_templates",
+    "graphql",
     "relationships",
     "webhooks",
 )

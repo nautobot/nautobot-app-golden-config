@@ -289,60 +289,51 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
             output = config_details.backup_config
         elif config_type == "intended":
             output = config_details.intended_config
-        elif config_type == "compliance":
-            output = config_details.compliance_config
-            if config_details.backup_last_success_date:
-                backup_date = str(config_details.backup_last_success_date.strftime("%b %d %Y"))
-            else:
-                backup_date = datetime.now().strftime("%b %d %Y")
-            if config_details.intended_last_success_date:
-                intended_date = str(config_details.intended_last_success_date.strftime("%b %d %Y"))
-            else:
-                intended_date = datetime.now().strftime("%b %d %Y")
+        elif "compliance" in config_type:
+            if config_type == "compliance":
+                diff_type = "File"
+                output = config_details.compliance_config
+                if config_details.backup_last_success_date:
+                    backup_date = str(config_details.backup_last_success_date.strftime("%b %d %Y"))
+                else:
+                    backup_date = datetime.now().strftime("%b %d %Y")
+                if config_details.intended_last_success_date:
+                    intended_date = str(config_details.intended_last_success_date.strftime("%b %d %Y"))
+                else:
+                    intended_date = datetime.now().strftime("%b %d %Y")
+            elif config_type == "json_compliance":
+                diff_type = "JSON"
+                compliance_objects = models.ConfigCompliance.objects.filter(device=device.id)
+                actual = {}
+                intended = {}
+                most_recent_time = datetime(1970, 1, 1, tzinfo=timezone.utc)
+                for obj in compliance_objects:
+                    actual[obj.rule.feature.slug] = json.loads(obj.actual)
+                    intended[obj.rule.feature.slug] = json.loads(obj.intended)
+                    if obj.last_updated > most_recent_time:
+                        most_recent_time = obj.last_updated
+                config_details.backup_last_attempt_date = most_recent_time
+                config_details.backup_last_success_date = most_recent_time
+                config_details.intended_last_attempt_date = most_recent_time
+                config_details.intended_last_success_date = most_recent_time
+                config_details.compliance_last_attempt_date = most_recent_time
+                config_details.compliance_last_success_date = most_recent_time
+                config_details.backup_config = json.dumps(actual, sort_keys=True)
+                config_details.intended_config = json.dumps(intended, sort_keys=True)
+                config_details.compliance_config = "\n".join(
+                    diff_structured_data(config_details.backup_config, config_details.intended_config)
+                )
+                config_details.save()
+                output = config_details.compliance_config
+                backup_date = intended_date = str(most_recent_time.strftime("%b %d %Y"))
             first_occurence = output.index("@@")
             second_occurence = output.index("@@", first_occurence)
             # This is logic to match diff2html's expected input.
             output = (
-                "--- Backup File - "
+                f"--- Backup {diff_type} - "
                 + backup_date
-                + "\n+++ Intended File - "
+                + f"\n+++ Intended {diff_type} - "
                 + intended_date
-                + "\n"
-                + output[first_occurence:second_occurence]
-                + "@@"
-                + output[second_occurence + 2 :]
-            )
-        elif config_type == "json_compliance":
-            compliance_objects = models.ConfigCompliance.objects.filter(device=device.id)
-            actual = {}
-            intended = {}
-            most_recent_time = datetime(1970, 1, 1, tzinfo=timezone.utc)
-            for obj in compliance_objects:
-                actual[obj.rule.feature.slug] = json.loads(obj.actual)
-                intended[obj.rule.feature.slug] = json.loads(obj.intended)
-                if obj.last_updated > most_recent_time:
-                    most_recent_time = obj.last_updated
-            config_details.backup_last_attempt_date = most_recent_time
-            config_details.backup_last_success_date = most_recent_time
-            config_details.intended_last_attempt_date = most_recent_time
-            config_details.intended_last_success_date = most_recent_time
-            config_details.compliance_last_attempt_date = most_recent_time
-            config_details.compliance_last_success_date = most_recent_time
-            config_details.backup_config = json.dumps(actual, sort_keys=True)
-            config_details.intended_config = json.dumps(intended, sort_keys=True)
-            config_details.compliance_config = "\n".join(
-                diff_structured_data(config_details.backup_config, config_details.intended_config)
-            )
-            config_details.save()
-            output = config_details.compliance_config
-            first_occurence = output.index("@@")
-            second_occurence = output.index("@@", first_occurence)
-            # This is logic to match diff2html's expected input.
-            output = (
-                "--- Backup Data - "
-                + str(most_recent_time.strftime("%b %d %Y"))
-                + "\n+++ Intended Data - "
-                + str(most_recent_time.strftime("%b %d %Y"))
                 + "\n"
                 + output[first_occurence:second_occurence]
                 + "@@"

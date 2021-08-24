@@ -2,7 +2,7 @@
 
 A navigation overview of the entire plugin.
 
-# Home
+## Home
 
 The Home view is a portal to understand what the status of the devices are. 
 
@@ -24,7 +24,7 @@ Some of the information described in this view, may not be immediately obvious.
 The first four bring up a "modal" or "dialogue box" which has a detailed view for a dedicated page. The run job brings the user to a job to run all three 
 components against all of the devices.
 
-# Jobs
+## Jobs
 
 There are a series of Jobs that are registered via the Plugin. They can be viewed from the standard Jobs view.
 
@@ -34,7 +34,7 @@ Each Job attempts to provide sane error handling, and respects the `debug` flag 
 
 ![Job Result](./img/job-result.png)
 
-# Application Settings
+## Application Settings
 
 The golden configuration plugin settings can be found by navigating to `Plugins -> Settings` button. Under the `Golden Configuration` section.
 
@@ -55,7 +55,7 @@ To configure or update the settings click the pencil icon to edit.
 
 > Note: Each of these will be further detailed in their respective sections.
 
-## Scope
+### Scope
 
 The scope, is a JSON blob that describes a filter that will provide the list of devices to be allowed whenever a job is ran. A job can optionally further refine the scope, but the outbound would be based on what is defined here. The options are best described by leveraging the Devices list view, search features (the filtering shown on the side of the Devices.) Building a query there, will provide the exact keys expected.
 
@@ -90,7 +90,7 @@ Adding a "has_primary_ip" check.
 
 When viewing the settings, the scope of devices is actually a link to the query built in the Devices view. Click that link to understand which devices are permitted by the filter.
 
-# Git Settings
+## Git Settings
 
 The plugin makes heavy use of the Nautobot git data sources feature. There are up to three repositories used in the application. This set of instructions will walk an operator through setting up the backup repository. The steps are the same, except for the "Provides" field name chosen.
 
@@ -125,33 +125,33 @@ Once you click `Create` and the repository syncs, the main page will now show th
 
 For their respective features, the "Provides" field could be backup intended configs and jinja templates.
 
-# Plugins Buttons
+## Plugins Buttons
 
 The plugins buttons provides you with the ability to navigate to Run the script, overview report, and detailed report.
 
-# Run Script
+## Run Script
 
 This can be accessed via the Plugins drop-down via `Run Script` button of the `Home` view, the user will be provided a form of the Job (as described 
 above), which will allow the user to limit the scope of the request.
 
-# Device Template Content
+## Device Template Content
 
 The plugin makes use of template content `right_page` in order to use display in-line the status of that device in the traditional Nautobot view. From here you can click the link to see the detail compliance view.
 
-# Site Template Content
+## Site Template Content
 
 The plugin makes use of template content `right_page` in order to use display in-line the status of that entire site in the traditional Nautobot view. 
 
-# API
+## API
 
 To run the job programmactially, reference the [nautobot documentation](https://nautobot.readthedocs.io/en/stable/additional-features/jobs/#via-the-api) for the proper API call. Pay special attention to the `class_path` defintion.
 
-# Feature Enablement
+## Feature Enablement
 
 Enabling features such as backup or compliance, will render those parts of the UI visible. It is worth noting that disabling features does not provide any
 garbage collection and it is up to the operator to remove such data.
 
-# Network Operating System Support
+## Network Operating System Support
 
 The version of OS's supported is documented in the [FAQ](./FAQ.md) and is controlled the platform slug. The platform slug must be exactly as expected or leverage
 a configuration option--which is described the the FAQ--for the plugin to work.

@@ -16,21 +16,29 @@ from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMP
 
 ALL_ACTIONS = """
 {% if backup == True %}
-    {% if record.goldenconfig_set.first.backup_config %}
-        <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='backup' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='backup' %}?modal=true">
-            <i class="mdi mdi-file-document-outline" title="Backup Configuration"></i>
-        </a>
-    {% else %}
+    {% if record.configcompliance_set.first.rule.config_type == 'json' %}
         <i class="mdi mdi-circle-small"></i>
+    {% else %}
+        {% if record.goldenconfig_set.first.backup_config %}
+            <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='backup' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='backup' %}?modal=true">
+                <i class="mdi mdi-file-document-outline" title="Backup Configuration"></i>
+            </a>
+        {% else %}
+            <i class="mdi mdi-circle-small"></i>
+        {% endif %}
     {% endif %}
 {% endif %}
 {% if intended == True %}
-    {% if record.goldenconfig_set.first.intended_config %}
-        <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='intended' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='intended' %}?modal=true">
-            <i class="mdi mdi-text-box-check-outline" title="Intended Configuration"></i>
-        </a>
-    {% else %}
+    {% if record.configcompliance_set.first.rule.config_type == 'json' %}
         <i class="mdi mdi-circle-small"></i>
+    {% else %}
+        {% if record.goldenconfig_set.first.intended_config %}
+            <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='intended' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='intended' %}?modal=true">
+                <i class="mdi mdi-text-box-check-outline" title="Intended Configuration"></i>
+            </a>
+        {% else %}
+            <i class="mdi mdi-circle-small"></i>
+        {% endif %}
     {% endif %}
 {% endif %}
 {% if compliance == True %}

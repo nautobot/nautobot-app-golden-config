@@ -35,7 +35,7 @@ def get_features():
     """A serializer of sorts to return feature mappings as a dictionary."""
     # TODO: Review if creating a proper serializer is the way to go.
     features = {}
-    for obj in ComplianceRule.objects.all():
+    for obj in ComplianceRule.objects.filter(config_type="cli"):
         platform = str(obj.platform.slug)
         if not features.get(platform):
             features[platform] = []
@@ -112,6 +112,8 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
             defaults={
                 "actual": section_config(feature, backup_cfg, get_platform(platform)),
                 "intended": section_config(feature, intended_cfg, get_platform(platform)),
+                "missing": "",
+                "extra": "",
             },
         )
 

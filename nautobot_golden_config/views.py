@@ -312,36 +312,31 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
                     intended[obj.rule.feature.slug] = json.loads(obj.intended)
                     if obj.last_updated > most_recent_time:
                         most_recent_time = obj.last_updated
-                # config_details.backup_last_attempt_date = most_recent_time
-                # config_details.backup_last_success_date = most_recent_time
-                # config_details.intended_last_attempt_date = most_recent_time
-                # config_details.intended_last_success_date = most_recent_time
                 config_details.compliance_last_attempt_date = most_recent_time
                 config_details.compliance_last_success_date = most_recent_time
-                # config_details.backup_config = json.dumps(actual, sort_keys=True)
-                # config_details.intended_config = json.dumps(intended, sort_keys=True)
-                # config_details.compliance_config = "\n".join(
-                #     diff_structured_data(config_details.backup_config, config_details.intended_config)
-                # )
                 config_details.compliance_config = "\n".join(
                     diff_structured_data(json.dumps(actual, sort_keys=True), json.dumps(intended, sort_keys=True))
                 )
                 config_details.save()
                 output = config_details.compliance_config
                 backup_date = intended_date = str(most_recent_time.strftime("%b %d %Y"))
-            first_occurence = output.index("@@")
-            second_occurence = output.index("@@", first_occurence)
-            # This is logic to match diff2html's expected input.
-            output = (
-                f"--- Backup {diff_type} - "
-                + backup_date
-                + f"\n+++ Intended {diff_type} - "
-                + intended_date
-                + "\n"
-                + output[first_occurence:second_occurence]
-                + "@@"
-                + output[second_occurence + 2 :]
-            )
+            if output == "":
+                # This is used if all config snippets are in compliance and no diff exist.
+                output = f"--- Backup {diff_type} - " + backup_date + f"\n+++ Intended {diff_type} - " + intended_date
+            else:
+                first_occurence = output.index("@@")
+                second_occurence = output.index("@@", first_occurence)
+                # This is logic to match diff2html's expected input.
+                output = (
+                    f"--- Backup {diff_type} - "
+                    + backup_date
+                    + f"\n+++ Intended {diff_type} - "
+                    + intended_date
+                    + "\n"
+                    + output[first_occurence:second_occurence]
+                    + "@@"
+                    + output[second_occurence + 2 :]
+                )
         elif config_type == "sotagg":
             if request.GET.get("format") in ["json", "yaml"]:
                 structure_format = request.GET.get("format")

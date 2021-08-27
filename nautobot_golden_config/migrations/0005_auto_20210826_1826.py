@@ -21,31 +21,29 @@ def jsonify(apps, schedma_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('nautobot_golden_config', '0004_auto_20210616_2234'),
+        ("nautobot_golden_config", "0004_auto_20210616_2234"),
     ]
 
     operations = [
-        migrations.RunPython(
-            code=jsonify
-        ),
+        migrations.RunPython(code=jsonify),
         migrations.AlterField(
-            model_name='configcompliance',
-            name='actual',
+            model_name="configcompliance",
+            name="actual",
             field=models.JSONField(blank=True),
         ),
         migrations.AlterField(
-            model_name='configcompliance',
-            name='extra',
+            model_name="configcompliance",
+            name="extra",
             field=models.JSONField(blank=True),
         ),
         migrations.AlterField(
-            model_name='configcompliance',
-            name='intended',
+            model_name="configcompliance",
+            name="intended",
             field=models.JSONField(blank=True),
         ),
         migrations.AlterField(
-            model_name='configcompliance',
-            name='missing',
+            model_name="configcompliance",
+            name="missing",
             field=models.JSONField(blank=True),
         ),
     ]

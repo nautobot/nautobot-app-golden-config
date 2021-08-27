@@ -36,6 +36,7 @@ django-debug-toolbar = "^3.2.1"
 astroid = "^2.5.5"
 django-pivot = "^1.8.1"
 deepdiff = "^5.5.0"
+jsonschema = "^3.2.0"
 
 [tool.poetry.dev-dependencies]
 black = "^20.8b1"

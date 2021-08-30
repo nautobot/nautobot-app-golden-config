@@ -304,10 +304,8 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
                 else:
                     intended_date = datetime.now().strftime("%b %d %Y")
             elif config_type == "json_compliance":
-                """
-                The JSON compliance runs differently then CLI, it grabs all configcompliance objects for
-                a given device and merges them, sorts them, and diffs them.
-                """
+                # The JSON compliance runs differently then CLI, it grabs all configcompliance objects for
+                # a given device and merges them, sorts them, and diffs them.
                 diff_type = "JSON"
                 # Get all compliance objects for a device.
                 compliance_objects = models.ConfigCompliance.objects.filter(device=device.id)

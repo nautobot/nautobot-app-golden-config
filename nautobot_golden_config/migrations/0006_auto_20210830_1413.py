@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('nautobot_golden_config', '0005_auto_20210826_1826'),
+        ("nautobot_golden_config", "0005_auto_20210826_1826"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='compliancerule',
-            name='match_config',
+            model_name="compliancerule",
+            name="match_config",
             field=models.TextField(blank=True, null=True),
         ),
     ]

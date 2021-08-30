@@ -289,8 +289,10 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
             output = config_details.backup_config
         elif config_type == "intended":
             output = config_details.intended_config
+        # Compliance type is broken up into JSON(json_compliance) and CLI(compliance) compliance.
         elif "compliance" in config_type:
             if config_type == "compliance":
+                # This section covers the steps to run regular CLI compliance which is a diff of 2 files (backup and intended).
                 diff_type = "File"
                 output = config_details.compliance_config
                 if config_details.backup_last_success_date:
@@ -302,18 +304,27 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
                 else:
                     intended_date = datetime.now().strftime("%b %d %Y")
             elif config_type == "json_compliance":
+                """
+                The JSON compliance runs differently then CLI, it grabs all configcompliance objects for
+                a given device and merges them, sorts them, and diffs them.
+                """
                 diff_type = "JSON"
+                # Get all compliance objects for a device.
                 compliance_objects = models.ConfigCompliance.objects.filter(device=device.id)
                 actual = {}
                 intended = {}
+                # Set a starting time that will be older than all last updated objects in compliance objects.
                 most_recent_time = datetime(1970, 1, 1, tzinfo=timezone.utc)
+                # Loop through config compliance objects and merge the data into one dataset.
                 for obj in compliance_objects:
                     actual[obj.rule.feature.slug] = json.loads(obj.actual)
                     intended[obj.rule.feature.slug] = json.loads(obj.intended)
+                    # Update most_recent_time each time the compliance objects time is more recent then previous.
                     if obj.last_updated > most_recent_time:
                         most_recent_time = obj.last_updated
                 config_details.compliance_last_attempt_date = most_recent_time
                 config_details.compliance_last_success_date = most_recent_time
+                # Generate the diff between both JSON objects and sort keys for accurate diff.
                 config_details.compliance_config = "\n".join(
                     diff_structured_data(json.dumps(actual, sort_keys=True), json.dumps(intended, sort_keys=True))
                 )

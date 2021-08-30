@@ -7,8 +7,8 @@ This feature is in early development and is only implemented within the API.  Th
 - Must have a `Platform` created specifically for the feature.
 - Both the compliance `feature` and `rule` need to be unique for the JSON `config-type`.
 - When creating `Compliance Rules` with the config type of JSON, the `config to match` field is not used but must have bogus data in order to save to the DB.
-- Does **NOT** require Git repositories and for backup and intended.
-- Mixing/Matching CLI and JSON compliance rules is **NOT** supported.  A device should only have compliance rules from one or the other.
+- Does **NOT** use Git repositories for backup and intended configurations.
+- Mixing/Matching CLI and JSON compliance rules is **NOT** supported.  A device should only have compliance rules from one or the other, and it is up to the operator to enforce.
 
 ## Quick Start Guide
 
@@ -74,14 +74,10 @@ As soon as a Configuration Compliance object has been created using the API seen
 
 ![Example of Diff Icon](./img/06-navigating-compliance-json.png)
 
-This will **only** show up for devices using JSON compliance rules.
-
-> Note: In the backend processing the plugin is finding all compliance rule objects that exist for the device and is creating the backup and intended configurations on the fly.  This all occurs when the **diff** action button is clicked.  When the modal is closed the Overview page is refreshed and the backup and intended configurations icons are now available.
-
-![Example of Diff](./img/07-navigating-compliance-json.png)
+Seeing the diff button alone will **only** show up for devices using JSON compliance rules.
 
 If the page is refreshed the Status and other icons will now appear.
 
-![Show Updated Overview](./img/08-navigating-compliance-json.png)
+![Show Updated Overview](./img/07-navigating-compliance-json.png)
 
 The detailed diff view will show a side by side diff, this looks the same as the CLI view.

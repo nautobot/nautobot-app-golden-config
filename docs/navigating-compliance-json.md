@@ -6,7 +6,7 @@ This feature is in early development and is only implemented within the API.  Th
 ## Caveats
 - Must have a `Platform` created specifically for the feature.
 - Both the compliance `feature` and `rule` need to be unique for the JSON `config-type`.
-- When creating `Compliance Rules` with the config type of JSON, the `config to match` field is not used but must have bogus data in order to save to the DB.
+- When creating `Compliance Rules` with the config type of JSON, the `config to match` field is not used it should be left blank.
 - Does **NOT** use Git repositories for backup and intended configurations.
 - Mixing/Matching CLI and JSON compliance rules is **NOT** supported.  A device should only have compliance rules from one or the other, and it is up to the operator to enforce.
 
@@ -21,8 +21,6 @@ This feature is in early development and is only implemented within the API.  Th
 
 3. Link the feature that was just created to a rule definition.
 ![Example Rule Creation](./img/02-navigating-compliance-json.png)
-
-> Notice: Bogus text data `none` was added to `Config to Match` which is not used in the current implementation.
 
 4. Now that the definitions are created and the rule is mapped to the platform we created the API execution can be performed.
 

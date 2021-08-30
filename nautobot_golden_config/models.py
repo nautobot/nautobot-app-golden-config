@@ -100,7 +100,7 @@ class ComplianceRule(PrimaryModel):
     )
     match_config = models.TextField(
         null=True,
-        blank=False,
+        blank=True,
         verbose_name="Config to Match",
         help_text="The config to match that is matched based on the parent most configuration. e.g. `router bgp` or `ntp`.",
     )

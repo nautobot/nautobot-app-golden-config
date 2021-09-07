@@ -8,9 +8,6 @@ from urllib.parse import quote
 from git import Repo
 
 
-from git import Repo
-
-
 LOGGER = logging.getLogger(__name__)
 
 

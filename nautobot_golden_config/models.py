@@ -70,6 +70,7 @@ class ComplianceFeature(PrimaryModel):
     "custom_fields",
     "custom_validators",
     "export_templates",
+    "graphql",
     "relationships",
     "webhooks",
 )
@@ -151,6 +152,7 @@ class ComplianceRule(PrimaryModel):
     "custom_links",
     "custom_validators",
     "export_templates",
+    "graphql",
     "relationships",
     "webhooks",
 )
@@ -220,6 +222,7 @@ class ConfigCompliance(PrimaryModel):
     "custom_links",
     "custom_validators",
     "export_templates",
+    "graphql",
     "relationships",
     "webhooks",
 )
@@ -285,6 +288,9 @@ class GoldenConfig(PrimaryModel):
         return f"{self.device}"
 
 
+@extras_features(
+    "graphql",
+)
 class GoldenConfigSetting(PrimaryModel):
     """GoldenConfigSetting Model defintion. This provides global configs instead of via configs.py."""
 
@@ -450,6 +456,7 @@ class GoldenConfigSetting(PrimaryModel):
     "custom_links",
     "custom_validators",
     "export_templates",
+    "graphql",
     "relationships",
     "webhooks",
 )
@@ -501,6 +508,7 @@ class ConfigRemove(PrimaryModel):
     "custom_links",
     "custom_validators",
     "export_templates",
+    "graphql",
     "relationships",
     "webhooks",
 )

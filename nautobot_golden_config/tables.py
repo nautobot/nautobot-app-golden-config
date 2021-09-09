@@ -217,50 +217,34 @@ class GoldenConfigTable(BaseTable):
         template_code=ALL_ACTIONS, verbose_name="Actions", extra_context=CONFIG_FEATURES, orderable=False
     )
 
+    def _render_last_success_date(self, record, column, value):  # pylint: disable=no-self-use
+        """Abstract method to get last success per row record."""
+        entry = record.goldenconfig_set.first()
+        last_success_date = getattr(entry, f"{value}_last_success_date", None)
+        last_attempt_date = getattr(entry, f"{value}_last_attempt_date", None)
+        if not last_success_date or not last_attempt_date:
+            column.attrs = {"td": {"style": "color:black"}}
+            return "--"
+        if not last_success_date and not last_attempt_date:
+            column.attrs = {"td": {"style": "color:black"}}
+            return "--"
+        if last_success_date and last_attempt_date == last_success_date:
+            column.attrs = {"td": {"style": "color:green"}}
+            return last_success_date
+        column.attrs = {"td": {"style": "color:red"}}
+        return last_success_date
+
     def render_backup_last_success_date(self, record, column):  # pylint: disable=no-self-use
         """Pull back backup last success per row record."""
-        entry = record.goldenconfig_set.first()
-        if not hasattr(entry, "backup_last_success_date") or not hasattr(entry, "backup_last_attempt_date"):
-            column.attrs = {"td": {"style": "color:black"}}
-            return "--"
-        if not entry.backup_last_success_date and not entry.backup_last_attempt_date:
-            column.attrs = {"td": {"style": "color:black"}}
-            return "--"
-        if entry.backup_last_success_date and entry.backup_last_attempt_date == entry.backup_last_success_date:
-            column.attrs = {"td": {"style": "color:green"}}
-            return entry.backup_last_success_date
-        column.attrs = {"td": {"style": "color:red"}}
-        return entry.backup_last_success_date
+        return self._render_last_success_date(record, column, "backup")
 
     def render_intended_last_success_date(self, record, column):  # pylint: disable=no-self-use
         """Pull back intended last success per row record."""
-        entry = record.goldenconfig_set.first()
-        if not hasattr(entry, "intended_last_success_date") or not hasattr(entry, "intended_last_attempt_date"):
-            column.attrs = {"td": {"style": "color:black"}}
-            return "--"
-        if not entry.intended_last_success_date and not entry.intended_last_attempt_date:
-            column.attrs = {"td": {"style": "color:black"}}
-            return "--"
-        if entry.intended_last_success_date and entry.intended_last_attempt_date == entry.intended_last_success_date:
-            column.attrs = {"td": {"style": "color:green"}}
-            return entry.intended_last_success_date
-        column.attrs = {"td": {"style": "color:red"}}
-        return entry.intended_last_success_date
+        return self._render_last_success_date(record, column, "intended")
 
     def render_compliance_last_success_date(self, record, column):  # pylint: disable=no-self-use
         """Pull back compliance last success per row record."""
-        entry = record.goldenconfig_set.first()
-        if not hasattr(entry, "compliance_last_success_date") or not hasattr(entry, "compliance_last_attempt_date"):
-            column.attrs = {"td": {"style": "color:black"}}
-            return "--"
-        if (
-            entry.compliance_last_success_date
-            and entry.compliance_last_attempt_date == entry.compliance_last_success_date
-        ):
-            column.attrs = {"td": {"style": "color:green"}}
-            return entry.compliance_last_success_date
-        column.attrs = {"td": {"style": "color:red"}}
-        return entry.compliance_last_success_date
+        return self._render_last_success_date(record, column, "compliance")
 
     class Meta(BaseTable.Meta):
         """Meta for class GoldenConfigTable."""

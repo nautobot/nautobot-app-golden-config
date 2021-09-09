@@ -76,7 +76,6 @@ Seeing the diff button alone will **only** show up for devices using JSON compli
 
 > Note: The backend will process and find all compliance rule objects that exist for the device and the create the a temporary backup and intended configurations on the fly. Meaning, when the **diff** action button is clicked all of the processes happens at that time, to render the diff.
 
-If the page is refreshed the Status and other icons will now appear.
 
 ![Show Updated Overview](./img/07-navigating-compliance-json.png)
 

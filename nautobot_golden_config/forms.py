@@ -15,7 +15,7 @@ from nautobot_golden_config import models
 class GoldenConfigFilterForm(utilities_forms.BootstrapMixin, extras_forms.CustomFieldFilterForm):
     """Filter Form for GoldenConfig instances."""
 
-    model = models.GoldenConfig
+    model = Device
 
     class Meta:
         """Meta definitions of searchable fields."""
@@ -106,14 +106,14 @@ class ConfigComplianceFilterForm(GoldenConfigFilterForm):
     """Filter Form for ConfigCompliance instances."""
 
     model = models.ConfigCompliance
-    device = utilities_forms.DynamicModelMultipleChoiceField(
-        queryset=Device.objects.filter(
-            id__in=Subquery(models.ConfigCompliance.objects.distinct("device").values("device"))
-        ),
-        to_field_name="name",
-        required=False,
-        null_option="None",
-    )
+    # device = utilities_forms.DynamicModelMultipleChoiceField(
+    #     queryset=Device.objects.filter(
+    #         id__in=Subquery(models.ConfigCompliance.objects.distinct("device").values("device"))
+    #     ),
+    #     to_field_name="name",
+    #     required=False,
+    #     null_option="None",
+    # )
 
 
 # ComplianceRule

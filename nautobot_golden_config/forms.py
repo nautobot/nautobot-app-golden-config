@@ -1,7 +1,6 @@
 """Forms for Device Configuration Backup."""
 
 from django import forms
-from django.db.models import Subquery
 
 import nautobot.extras.forms as extras_forms
 import nautobot.utilities.forms as utilities_forms
@@ -106,14 +105,6 @@ class ConfigComplianceFilterForm(GoldenConfigFilterForm):
     """Filter Form for ConfigCompliance instances."""
 
     model = models.ConfigCompliance
-    # device = utilities_forms.DynamicModelMultipleChoiceField(
-    #     queryset=Device.objects.filter(
-    #         id__in=Subquery(models.ConfigCompliance.objects.distinct("device").values("device"))
-    #     ),
-    #     to_field_name="name",
-    #     required=False,
-    #     null_option="None",
-    # )
 
 
 # ComplianceRule

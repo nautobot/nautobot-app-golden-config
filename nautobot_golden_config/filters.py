@@ -2,7 +2,7 @@
 
 import django_filters
 
-from django.db.models import Q, Subquery
+from django.db.models import Q
 
 from nautobot.dcim.models import Device, Platform, Region, Site, DeviceRole, DeviceType, Manufacturer, RackGroup, Rack
 from nautobot.extras.models import Status

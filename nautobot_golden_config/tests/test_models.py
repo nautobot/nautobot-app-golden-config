@@ -1,6 +1,5 @@
 """Unit tests for nautobot_golden_config models."""
 
-import json
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
@@ -26,15 +25,15 @@ class ConfigComplianceModelTestCase(TestCase):
 
     def test_create_config_compliance_success_json(self):
         """Successful."""
-        actual = '{"foo": {"bar-1": "baz"}}'
-        intended = '{"foo": {"bar-2": "baz"}}'
+        actual = {"foo": {"bar-1": "baz"}}
+        intended = {"foo": {"bar-2": "baz"}}
         cc_obj = create_config_compliance(
             self.device, actual=actual, intended=intended, compliance_rule=self.compliance_rule_json
         )
 
         self.assertFalse(cc_obj.compliance)
-        self.assertEqual(cc_obj.actual, json.dumps({"foo": {"bar-1": "baz"}}))
-        self.assertEqual(cc_obj.intended, json.dumps({"foo": {"bar-2": "baz"}}))
+        self.assertEqual(cc_obj.actual, {"foo": {"bar-1": "baz"}})
+        self.assertEqual(cc_obj.intended, {"foo": {"bar-2": "baz"}})
         self.assertEqual(cc_obj.missing, ["root['foo']['bar-2']"])
         self.assertEqual(cc_obj.extra, ["root['foo']['bar-1']"])
 
@@ -43,8 +42,8 @@ class ConfigComplianceModelTestCase(TestCase):
         ConfigCompliance.objects.create(
             device=self.device,
             rule=self.compliance_rule_json,
-            actual='{"foo": {"bar-1": "baz"}}',
-            intended='{"foo": {"bar-2": "baz"}}',
+            actual={"foo": {"bar-1": "baz"}},
+            intended={"foo": {"bar-2": "baz"}},
             missing={},
             extra={},
         )
@@ -53,8 +52,8 @@ class ConfigComplianceModelTestCase(TestCase):
                 device=self.device,
                 rule=self.compliance_rule_json,
                 compliance=False,
-                actual='{"foo": {"bar-1": "baz"}}',
-                intended='{"foo": {"bar-2": "baz"}}',
+                actual={"foo": {"bar-1": "baz"}},
+                intended={"foo": {"bar-2": "baz"}},
                 missing={},
                 extra={},
             )
@@ -64,8 +63,8 @@ class ConfigComplianceModelTestCase(TestCase):
         cc_obj = ConfigCompliance.objects.create(
             device=self.device,
             rule=self.compliance_rule_json,
-            actual='{"foo": {"bar-1": "baz"}}',
-            intended='{"foo": {"bar-1": "baz"}}',
+            actual={"foo": {"bar-1": "baz"}},
+            intended={"foo": {"bar-1": "baz"}},
         )
 
         self.assertTrue(cc_obj.compliance)

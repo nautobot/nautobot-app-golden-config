@@ -1,6 +1,5 @@
 """Django Models for tracking the configuration compliance per feature and device."""
 
-import json
 import logging
 from deepdiff import DeepDiff
 
@@ -207,15 +206,8 @@ class ConfigCompliance(PrimaryModel):
         }
         if self.rule.config_type == ComplianceRuleTypeChoice.TYPE_JSON:
             feature.update({"section": self.rule.match_config})
-            try:
-                json.loads(self.actual) and json.loads(self.intended)
-            except json.decoder.JSONDecodeError as json_error:
-                raise ValidationError(
-                    "The data in 'actual or intended' is not JSON serializable. Please fix the JSON data."
-                ) from json_error
-            diff = DeepDiff(
-                json.loads(self.actual), json.loads(self.intended), ignore_order=self.ordered, report_repetition=True
-            )
+
+            diff = DeepDiff(self.actual, self.intended, ignore_order=self.ordered, report_repetition=True)
             if not diff:
                 self.compliance_int = 1
                 self.compliance = True

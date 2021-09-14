@@ -12,6 +12,12 @@ jobs:
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v2"
+      - name: "Install the environment"
+        run: "pip install invoke toml docker-compose"
+      - name: "Build the container"
+        run: "invoke build"
+      - name: "Run black"
+        run: "invoke black"
       # - name: "Setup environment"
       #   uses: "./.github/actions/setup-environment"
       # - name: "Linting: black"

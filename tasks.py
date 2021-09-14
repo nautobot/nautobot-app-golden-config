@@ -316,7 +316,6 @@ def pydocstyle(context):
     command = 'pydocstyle --config=.pydocstyle.ini --match-dir="^(?!migrations).*"'
     run_command(context, command)
 
-
     # DEFAULT_ENV[NAUTOBOT_VER] = nautobot_ver
     # DEFAULT_ENV[PYTHON_VER] = python_ver
 
@@ -338,7 +337,6 @@ def bandit(context):
     """
     command = "bandit --recursive . --configfile .bandit.yml"
     run_command(context, command)
-
 
     # DEFAULT_ENV[NAUTOBOT_VER] = nautobot_ver
     # DEFAULT_ENV[PYTHON_VER] = python_ver

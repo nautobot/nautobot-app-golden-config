@@ -1,7 +1,8 @@
 """Tasks for use with Invoke."""
 
 import os
-from invoke import task
+from distutils.util import strtobool
+from invoke import Collection, task
 
 PYTHON_VER = os.getenv("PYTHON_VER", "3.7")
 NAUTOBOT_VER = os.getenv("NAUTOBOT_VER", "1.0.1")
@@ -26,7 +27,68 @@ if os.path.isfile(COMPOSE_OVERRIDE):
     COMPOSE_APPEND = f"-f {COMPOSE_OVERRIDE}"
 COMPOSE_COMMAND = f"docker-compose -f {COMPOSE_FILE} {COMPOSE_APPEND} -p {BUILD_NAME}"
 
+def is_truthy(arg):
+    """Convert "truthy" strings into Booleans.
+
+    Examples:
+        >>> is_truthy('yes')
+        True
+    Args:
+        arg (str): Truthy string (True values are y, yes, t, true, on and 1; false values are n, no,
+        f, false, off and 0. Raises ValueError if val is anything else.
+    """
+    if isinstance(arg, bool):
+        return arg
+    return bool(strtobool(arg))
+
 environment = DEFAULT_ENV
+
+namespace = Collection("nautobot_golden_config")
+namespace.configure(
+    {
+        "nautobot_golden_config": {
+            "local": False,
+        }
+    }
+)
+
+
+def docker_compose(context, command, **kwargs):
+    """Helper function for running a specific docker-compose command with all appropriate parameters and environment.
+
+    Args:
+        context (obj): Used to run specific commands
+        command (str): Command string to append to the "docker-compose ..." command, such as "build", "up", etc.
+        **kwargs: Passed through to the context.run() call.
+    """
+    build_env = {
+        "NAUTOBOT_VER": context.nautobot_chatops.nautobot_ver,
+        "PYTHON_VER": context.nautobot_chatops.python_ver,
+    }
+    compose_command = f'docker-compose --project-name {context.nautobot_chatops.project_name} --project-directory "{context.nautobot_chatops.compose_dir}"'
+    for compose_file in context.nautobot_chatops.compose_files:
+        compose_file_path = os.path.join(context.nautobot_chatops.compose_dir, compose_file)
+        compose_command += f' -f "{compose_file_path}"'
+    compose_command += f" {command}"
+    print(f'Running docker-compose command "{command}"')
+    return context.run(compose_command, env=build_env, **kwargs)
+
+
+def run_command(context, command, **kwargs):
+    """Wrapper to run a command locally or inside the nautobot container."""
+    if is_truthy(context.nautobot_chatops.local):
+        context.run(command, **kwargs)
+    else:
+        # Check if nautobot is running, no need to start another nautobot container to run a command
+        docker_compose_status = "ps --services --filter status=running"
+        results = docker_compose(context, docker_compose_status, hide="out")
+        if "nautobot" in results.stdout:
+            compose_command = f"exec nautobot {command}"
+        else:
+            compose_command = f"run --entrypoint '{command}' nautobot"
+
+        docker_compose(context, compose_command, pty=True)
+
 # ------------------------------------------------------------------------------
 # BUILD
 # ------------------------------------------------------------------------------
@@ -272,14 +334,17 @@ def pylint(context, nautobot_ver=NAUTOBOT_VER, python_ver=PYTHON_VER):
 
 
 @task
-def black(context, nautobot_ver=NAUTOBOT_VER, python_ver=PYTHON_VER):
+def black(context):
     """Run black to check that Python files adhere to its style standards.
 
     Args:
         context (obj): Used to run specific commands
-        nautobot_ver (str): Nautobot version to use to build the container
-        python_ver (str): Will use the Python version docker image to build from
     """
+
+    command = f"black --check --diff ."
+    run_command(context, command)
+    return
+
     DEFAULT_ENV[NAUTOBOT_VER] = nautobot_ver
     DEFAULT_ENV[PYTHON_VER] = python_ver
 

@@ -8,14 +8,14 @@ jobs:
   black:
     runs-on: "ubuntu-20.04"
     env:
-      INVOKE_NAUTOBOT_CHATOPS_LOCAL: "True"
+      INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "True"
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v2"
       - name: "Install the environment"
         run: "pip install invoke toml docker-compose"
-      - name: "Build the container"
-        run: "invoke build"
+      # - name: "Build the container"
+      #   run: "invoke build"
       - name: "Run black"
         run: "invoke black"
       # - name: "Setup environment"

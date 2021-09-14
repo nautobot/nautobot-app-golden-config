@@ -46,7 +46,7 @@ class GoldenConfigListView(generic.ObjectListView):
     table = tables.GoldenConfigTable
     filterset = filters.GoldenConfigFilter
     filterset_form = forms.GoldenConfigFilterForm
-    queryset = models.GoldenConfigSetting.objects.first().get_queryset()
+    queryset = Device.objects.all()
     template_name = "nautobot_golden_config/goldenconfig_list.html"
 
     def extra_context(self):
@@ -315,8 +315,8 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
                 most_recent_time = datetime(1970, 1, 1, tzinfo=timezone.utc)
                 # Loop through config compliance objects and merge the data into one dataset.
                 for obj in compliance_objects:
-                    actual[obj.rule.feature.slug] = json.loads(obj.actual)
-                    intended[obj.rule.feature.slug] = json.loads(obj.intended)
+                    actual[obj.rule.feature.slug] = obj.actual
+                    intended[obj.rule.feature.slug] = obj.intended
                     # Update most_recent_time each time the compliance objects time is more recent then previous.
                     if obj.last_updated > most_recent_time:
                         most_recent_time = obj.last_updated
@@ -354,7 +354,7 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
             _, output = graph_ql_query(request, device, global_settings.sot_agg_query)
 
             if structure_format == "yaml":
-                output = yaml.dump(json.loads(json.dumps(output)), default_flow_style=False)
+                output = yaml.dump(output, default_flow_style=False)
             else:
                 output = json.dumps(output, indent=4)
 

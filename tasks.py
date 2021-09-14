@@ -156,166 +156,103 @@ def debug(context):
 
 
 @task
-def start(context, nautobot_ver=NAUTOBOT_VER, python_ver=PYTHON_VER):
+def start(context):
     """Start Nautobot and its dependencies in detached mode.
 
     Args:
         context (obj): Used to run specific commands
-        nautobot_ver (str): Nautobot version to use to build the container
-        python_ver (str): Will use the Python version docker image to build from
     """
-    DEFAULT_ENV[NAUTOBOT_VER] = nautobot_ver
-    DEFAULT_ENV[PYTHON_VER] = python_ver
-
     print("Starting Nautobot in detached mode.. ")
-    context.run(
-        f"{COMPOSE_COMMAND} up -d",
-        env=DEFAULT_ENV,
-    )
+    docker_compose(context, "up --detach")
 
 
 @task
-def stop(context, nautobot_ver=NAUTOBOT_VER, python_ver=PYTHON_VER):
+def stop(context):
     """Stop Nautobot and its dependencies.
 
     Args:
         context (obj): Used to run specific commands
-        nautobot_ver (str): Nautobot version to use to build the container
-        python_ver (str): Will use the Python version docker image to build from
     """
-    DEFAULT_ENV[NAUTOBOT_VER] = nautobot_ver
-    DEFAULT_ENV[PYTHON_VER] = python_ver
-
-    print("Stopping Nautobot .. ")
-    context.run(
-        f"{COMPOSE_COMMAND} down",
-        env=DEFAULT_ENV,
-    )
+    print("Stopping Nautobot...")
+    docker_compose(context, "down")
 
 
 @task
-def destroy(context, nautobot_ver=NAUTOBOT_VER, python_ver=PYTHON_VER):
+def destroy(context):
     """Destroy all containers and volumes.
 
     Args:
         context (obj): Used to run specific commands
-        nautobot_ver (str): Nautobot version to use to build the container
-        python_ver (str): Will use the Python version docker image to build from
     """
-    DEFAULT_ENV[NAUTOBOT_VER] = nautobot_ver
-    DEFAULT_ENV[PYTHON_VER] = python_ver
-
-    context.run(
-        f"{COMPOSE_COMMAND} down",
-        env=DEFAULT_ENV,
-    )
-    context.run(
-        f"docker volume rm -f {BUILD_NAME}_pgdata_nautobot_golden_config",
-        env=DEFAULT_ENV,
-    )
+    print("Destroying Nautobot...")
+    docker_compose(context, "down --volumes")
 
 
 # ------------------------------------------------------------------------------
 # ACTIONS
 # ------------------------------------------------------------------------------
 @task
-def nbshell(context, nautobot_ver=NAUTOBOT_VER, python_ver=PYTHON_VER):
+def nbshell(context):
     """Launch a nbshell session.
 
     Args:
         context (obj): Used to run specific commands
-        nautobot_ver (str): Nautobot version to use to build the container
-        python_ver (str): Will use the Python version docker image to build from
     """
-    DEFAULT_ENV[NAUTOBOT_VER] = nautobot_ver
-    DEFAULT_ENV[PYTHON_VER] = python_ver
-
-    context.run(
-        f"{COMPOSE_COMMAND} run nautobot nautobot-server nbshell",
-        env=DEFAULT_ENV,
-        pty=True,
-    )
+    command = "nautobot-server nbshell"
+    run_command(context, command)
 
 
 @task
-def cli(context, nautobot_ver=NAUTOBOT_VER, python_ver=PYTHON_VER):
+def cli(context):
     """Launch a bash shell inside the running Nautobot container.
 
     Args:
         context (obj): Used to run specific commands
-        nautobot_ver (str): Nautobot version to use to build the container
-        python_ver (str): Will use the Python version docker image to build from
     """
-    DEFAULT_ENV[NAUTOBOT_VER] = nautobot_ver
-    DEFAULT_ENV[PYTHON_VER] = python_ver
-
-    context.run(
-        f"{COMPOSE_COMMAND} run nautobot bash",
-        env=DEFAULT_ENV,
-        pty=True,
-    )
+    run_command(context, "bash")
 
 
-@task
-def create_user(context, user="admin", nautobot_ver=NAUTOBOT_VER, python_ver=PYTHON_VER):
+@task(
+    help={
+        "user": "name of the superuser to create (default: admin)",
+    }
+)
+def create_user(context, user="admin"):
     """Create a new user in django (default: admin), will prompt for password.
 
     Args:
         context (obj): Used to run specific commands
         user (str): name of the superuser to create
-        nautobot_ver (str): Nautobot version to use to build the container
-        python_ver (str): Will use the Python version docker image to build from
     """
-    DEFAULT_ENV[NAUTOBOT_VER] = nautobot_ver
-    DEFAULT_ENV[PYTHON_VER] = python_ver
-
-    context.run(
-        f"{COMPOSE_COMMAND} run nautobot nautobot-server createsuperuser --username {user}",
-        env=DEFAULT_ENV,
-        pty=True,
-    )
+    command = f"nautobot-server createsuperuser --username {user}"
+    run_command(context, command)
 
 
-@task
-def makemigrations(context, name="", nautobot_ver=NAUTOBOT_VER, python_ver=PYTHON_VER):
+@task(
+    help={
+        "name": "name of the migration to be created; if unspecified, will autogenerate a name",
+    }
+)
+def makemigrations(context, name=""):
     """Run Make Migration in Django.
 
     Args:
         context (obj): Used to run specific commands
         name (str): Name of the migration to be created
-        nautobot_ver (str): Nautobot version to use to build the container
-        python_ver (str): Will use the Python version docker image to build from
     """
-    DEFAULT_ENV[NAUTOBOT_VER] = nautobot_ver
-    DEFAULT_ENV[PYTHON_VER] = python_ver
-
-    context.run(
-        f"{COMPOSE_COMMAND} up -d postgres",
-        env=DEFAULT_ENV,
-    )
+    command = "nautobot-server makemigrations nautobot_golden_config"
 
     if name:
-        context.run(
-            f"{COMPOSE_COMMAND} run nautobot nautobot-server makemigrations nautobot_golden_config --name {name}",
-            env=DEFAULT_ENV,
-        )
-    else:
-        context.run(
-            f"{COMPOSE_COMMAND} run nautobot nautobot-server makemigrations nautobot_golden_config",
-            env=DEFAULT_ENV,
-        )
+        command += f" --name {name}"
 
-    context.run(
-        f"{COMPOSE_COMMAND} down",
-        env=DEFAULT_ENV,
-    )
+    run_command(context, command)
 
 
 # ------------------------------------------------------------------------------
 # TESTS / LINTING
 # ------------------------------------------------------------------------------
 @task
-def unittest(context, nautobot_ver=NAUTOBOT_VER, python_ver=PYTHON_VER):
+def unittest(context):
     """Run Django unit tests for the plugin.
 
     Args:
@@ -323,37 +260,38 @@ def unittest(context, nautobot_ver=NAUTOBOT_VER, python_ver=PYTHON_VER):
         nautobot_ver (str): Nautobot version to use to build the container
         python_ver (str): Will use the Python version docker image to build from
     """
-    DEFAULT_ENV[NAUTOBOT_VER] = nautobot_ver
-    DEFAULT_ENV[PYTHON_VER] = python_ver
+    command = "nautobot-server test nautobot_golden_config"
+    run_command(context, command)
 
-    docker = f"{COMPOSE_COMMAND} run --entrypoint='' nautobot "
-    context.run(
-        f'{docker} sh -c "nautobot-server test nautobot_golden_config"',
-        env=DEFAULT_ENV,
-        pty=True,
-    )
+    # docker = f"{COMPOSE_COMMAND} run --entrypoint='' nautobot "
+    # context.run(
+    #     f'{docker} sh -c "nautobot-server test nautobot_golden_config"',
+    #     env=DEFAULT_ENV,
+    #     pty=True,
+    # )
 
 
 @task
-def pylint(context, nautobot_ver=NAUTOBOT_VER, python_ver=PYTHON_VER):
+def pylint(context):
     """Run pylint code analysis.
 
     Args:
         context (obj): Used to run specific commands
-        nautobot_ver (str): Nautobot version to use to build the container
-        python_ver (str): Will use the Python version docker image to build from
     """
-    DEFAULT_ENV[NAUTOBOT_VER] = nautobot_ver
-    DEFAULT_ENV[PYTHON_VER] = python_ver
+    command = 'pylint --init-hook "import nautobot; nautobot.setup()" --rcfile pyproject.toml nautobot_golden_config'
+    run_command(context, command)
 
-    docker = f"{COMPOSE_COMMAND} run --entrypoint='' nautobot "
-    # We exclude the /migrations/ directory since it is autogenerated code
-    context.run(
-        f"{docker} sh -c \"cd /source && find . -name '*.py' -not -path '*/migrations/*' | "
-        'PYTHONPATH=/source/development DJANGO_SETTINGS_MODULE=nautobot_config xargs pylint"',
-        env=DEFAULT_ENV,
-        pty=True,
-    )
+    # DEFAULT_ENV[NAUTOBOT_VER] = nautobot_ver
+    # DEFAULT_ENV[PYTHON_VER] = python_ver
+
+    # docker = f"{COMPOSE_COMMAND} run --entrypoint='' nautobot "
+    # # We exclude the /migrations/ directory since it is autogenerated code
+    # context.run(
+    #     f"{docker} sh -c \"cd /source && find . -name '*.py' -not -path '*/migrations/*' | "
+    #     'PYTHONPATH=/source/development DJANGO_SETTINGS_MODULE=nautobot_config xargs pylint"',
+    #     env=DEFAULT_ENV,
+    #     pty=True,
+    # )
 
 
 @task
@@ -366,82 +304,73 @@ def black(context):
 
     command = f"black --check --diff ."
     run_command(context, command)
-    return
-
-    DEFAULT_ENV[NAUTOBOT_VER] = nautobot_ver
-    DEFAULT_ENV[PYTHON_VER] = python_ver
-
-    docker = f"{COMPOSE_COMMAND} run --entrypoint='' nautobot "
-    context.run(
-        f'{docker} sh -c "cd /source && black --check --diff ."',
-        env=DEFAULT_ENV,
-        pty=True,
-    )
 
 
 @task
-def pydocstyle(context, nautobot_ver=NAUTOBOT_VER, python_ver=PYTHON_VER):
+def pydocstyle(context):
     """Run pydocstyle to validate docstring formatting adheres to NTC defined standards.
 
     Args:
         context (obj): Used to run specific commands
-        nautobot_ver (str): Nautobot version to use to build the container
-        python_ver (str): Will use the Python version docker image to build from
     """
-    DEFAULT_ENV[NAUTOBOT_VER] = nautobot_ver
-    DEFAULT_ENV[PYTHON_VER] = python_ver
+    command = 'pydocstyle --config=.pydocstyle.ini --match-dir="^(?!migrations).*"'
+    run_command(context, command)
 
-    docker = f"{COMPOSE_COMMAND} run --entrypoint='' nautobot "
-    # We exclude the /migrations/ directory since it is autogenerated code
-    context.run(
-        f"{docker} sh -c \"cd /source && find . -name '*.py' -not -path '*/migrations/*' | xargs pydocstyle\"",
-        env=DEFAULT_ENV,
-        pty=True,
-    )
+
+    # DEFAULT_ENV[NAUTOBOT_VER] = nautobot_ver
+    # DEFAULT_ENV[PYTHON_VER] = python_ver
+
+    # docker = f"{COMPOSE_COMMAND} run --entrypoint='' nautobot "
+    # # We exclude the /migrations/ directory since it is autogenerated code
+    # context.run(
+    #     f"{docker} sh -c \"cd /source && find . -name '*.py' -not -path '*/migrations/*' | xargs pydocstyle\"",
+    #     env=DEFAULT_ENV,
+    #     pty=True,
+    # )
 
 
 @task
-def bandit(context, nautobot_ver=NAUTOBOT_VER, python_ver=PYTHON_VER):
+def bandit(context):
     """Run bandit to validate basic static code security analysis.
 
     Args:
         context (obj): Used to run specific commands
-        nautobot_ver (str): Nautobot version to use to build the container
-        python_ver (str): Will use the Python version docker image to build from
     """
-    DEFAULT_ENV[NAUTOBOT_VER] = nautobot_ver
-    DEFAULT_ENV[PYTHON_VER] = python_ver
+    command = "bandit --recursive . --configfile .bandit.yml"
+    run_command(context, command)
 
-    docker = f"{COMPOSE_COMMAND} run --entrypoint='' nautobot "
-    context.run(
-        f'{docker} sh -c "cd /source && bandit --recursive ./ --configfile .bandit.yml"',
-        env=DEFAULT_ENV,
-        pty=True,
-    )
+
+    # DEFAULT_ENV[NAUTOBOT_VER] = nautobot_ver
+    # DEFAULT_ENV[PYTHON_VER] = python_ver
+
+    # docker = f"{COMPOSE_COMMAND} run --entrypoint='' nautobot "
+    # context.run(
+    #     f'{docker} sh -c "cd /source && bandit --recursive ./ --configfile .bandit.yml"',
+    #     env=DEFAULT_ENV,
+    #     pty=True,
+    # )
 
 
 @task
-def tests(context, nautobot_ver=NAUTOBOT_VER, python_ver=PYTHON_VER):
+def tests(context):
     """Run all tests for this plugin.
 
     Args:
         context (obj): Used to run specific commands
-        nautobot_ver (str): Nautobot version to use to build the container
-        python_ver (str): Will use the Python version docker image to build from
     """
-    DEFAULT_ENV[NAUTOBOT_VER] = nautobot_ver
-    DEFAULT_ENV[PYTHON_VER] = python_ver
-
+    if not is_truthy(context.nautobot_golden_config.local):
+        print("Starting Docker Containers...")
+        start(context)
     # Sorted loosely from fastest to slowest
     print("Running black...")
-    black(context, nautobot_ver=nautobot_ver, python_ver=python_ver)
+    black(context)
     print("Running bandit...")
-    bandit(context, nautobot_ver=nautobot_ver, python_ver=python_ver)
+    bandit(context)
     print("Running pydocstyle...")
-    pydocstyle(context, nautobot_ver=nautobot_ver, python_ver=python_ver)
+    pydocstyle(context)
     print("Running pylint...")
-    pylint(context, nautobot_ver=nautobot_ver, python_ver=python_ver)
+    pylint(context)
     print("Running unit tests...")
-    unittest(context, nautobot_ver=nautobot_ver, python_ver=python_ver)
+    unittest(context)
 
     print("All tests have passed!")

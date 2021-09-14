@@ -16,32 +16,32 @@ jobs:
         uses: "./.github/actions/setup-environment"
       - name: "Linting: black"
         run: "poetry run invoke black"
-  # bandit:
-  #   runs-on: "ubuntu-20.04"
-  #   env:
-  #     INVOKE_NAUTOBOT_CHATOPS_LOCAL: "True"
-  #   steps:
-  #     - name: "Check out repository code"
-  #       uses: "actions/checkout@v2"
-  #     - name: "Setup environment"
-  #       uses: "./.github/actions/setup-environment"
-  #     - name: "Linting: bandit"
-  #       run: "poetry run invoke bandit"
-  #   needs:
-  #     - "black"
-  # pydocstyle:
-  #   runs-on: "ubuntu-20.04"
-  #   env:
-  #     INVOKE_NAUTOBOT_CHATOPS_LOCAL: "True"
-  #   steps:
-  #     - name: "Check out repository code"
-  #       uses: "actions/checkout@v2"
-  #     - name: "Setup environment"
-  #       uses: "./.github/actions/setup-environment"
-  #     - name: "Linting: pydocstyle"
-  #       run: "poetry run invoke pydocstyle"
-  #   needs:
-  #     - "black"
+  bandit:
+    runs-on: "ubuntu-20.04"
+    env:
+      INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "True"
+    steps:
+      - name: "Check out repository code"
+        uses: "actions/checkout@v2"
+      - name: "Setup environment"
+        uses: "./.github/actions/setup-environment"
+      - name: "Linting: bandit"
+        run: "poetry run invoke bandit"
+    needs:
+      - "black"
+  pydocstyle:
+    runs-on: "ubuntu-20.04"
+    env:
+      INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "True"
+    steps:
+      - name: "Check out repository code"
+        uses: "actions/checkout@v2"
+      - name: "Setup environment"
+        uses: "./.github/actions/setup-environment"
+      - name: "Linting: pydocstyle"
+        run: "poetry run invoke pydocstyle"
+    needs:
+      - "black"
   # flake8:
   #   runs-on: "ubuntu-20.04"
   #   env:
@@ -68,60 +68,58 @@ jobs:
   #       run: "poetry run invoke yamllint"
   #   needs:
   #     - "black"
-  # build:
-  #   runs-on: "ubuntu-20.04"
-  #   steps:
-  #     - name: "Check out repository code"
-  #       uses: "actions/checkout@v2"
-  #     - name: "Setup environment"
-  #       uses: "./.github/actions/setup-environment"
-  #     - name: "Copy credentials"
-  #       run: "cp development/creds.example.env development/creds.env"
-  #     - name: "Build Container"
-  #       run: "poetry run invoke build"
-  #   needs:
-  #     - "bandit"
-  #     - "pydocstyle"
-  #     - "flake8"
-  #     - "yamllint"
-  # pylint:
-  #   runs-on: "ubuntu-20.04"
-  #   steps:
-  #     - name: "Check out repository code"
-  #       uses: "actions/checkout@v2"
-  #     - name: "Setup environment"
-  #       uses: "./.github/actions/setup-environment"
-  #     - name: "Copy credentials"
-  #       run: "cp development/creds.example.env development/creds.env"
-  #     - name: "Build Container"
-  #       run: "poetry run invoke build"
-  #     - name: "Linting: Pylint"
-  #       run: "poetry run invoke pylint"
-  #   needs:
-  #     - "build"
-  # unittest:
-  #   strategy:
-  #     fail-fast: true
-  #     matrix:
-  #       python-version: ["3.6", "3.7", "3.8", "3.9"]
-  #       nautobot-version: ["1.0.3", "1.1.2"]
-  #   runs-on: "ubuntu-20.04"
-  #   env:
-  #     INVOKE_NAUTOBOT_CHATOPS_PYTHON_VER: "${{ matrix.python-version }}"
-  #     INVOKE_NAUTOBOT_CHATOPS_NAUTOBOT_VER: "${{ matrix.nautobot-version }}"
-  #   steps:
-  #     - name: "Check out repository code"
-  #       uses: "actions/checkout@v2"
-  #     - name: "Setup environment"
-  #       uses: "./.github/actions/setup-environment"
-  #     - name: "Copy credentials"
-  #       run: "cp development/creds.example.env development/creds.env"
-  #     - name: "Build Container"
-  #       run: "poetry run invoke build"
-  #     - name: "Run Tests"
-  #       run: "poetry run invoke unittest"
-  #   needs:
-  #     - "pylint"
+  build:
+    runs-on: "ubuntu-20.04"
+    steps:
+      - name: "Check out repository code"
+        uses: "actions/checkout@v2"
+      - name: "Setup environment"
+        uses: "./.github/actions/setup-environment"
+      - name: "Copy credentials"
+        run: "cp development/creds.example.env development/creds.env"
+      - name: "Build Container"
+        run: "poetry run invoke build"
+    needs:
+      - "bandit"
+      - "pydocstyle"
+  pylint:
+    runs-on: "ubuntu-20.04"
+    steps:
+      - name: "Check out repository code"
+        uses: "actions/checkout@v2"
+      - name: "Setup environment"
+        uses: "./.github/actions/setup-environment"
+      - name: "Copy credentials"
+        run: "cp development/creds.example.env development/creds.env"
+      - name: "Build Container"
+        run: "poetry run invoke build"
+      - name: "Linting: Pylint"
+        run: "poetry run invoke pylint"
+    needs:
+      - "build"
+  unittest:
+    strategy:
+      fail-fast: true
+      matrix:
+        python-version: ["3.6", "3.7", "3.8", "3.9"]
+        # nautobot-version: ["1.0.3", "1.1.2"]
+    runs-on: "ubuntu-20.04"
+    env:
+      INVOKE_NAUTOBOT_GOLDEN_CONFIG_PYTHON_VER: "${{ matrix.python-version }}"
+      INVOKE_NAUTOBOT_GOLDEN_CONFIG_NAUTOBOT_VER: "${{ matrix.nautobot-version }}"
+    steps:
+      - name: "Check out repository code"
+        uses: "actions/checkout@v2"
+      - name: "Setup environment"
+        uses: "./.github/actions/setup-environment"
+      - name: "Copy credentials"
+        run: "cp development/creds.example.env development/creds.env"
+      - name: "Build Container"
+        run: "poetry run invoke build"
+      - name: "Run Tests"
+        run: "poetry run invoke unittest"
+    needs:
+      - "pylint"
   # publish_gh:
   #   name: "Publish to GitHub"
   #   runs-on: "ubuntu-20.04"

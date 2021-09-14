@@ -2,30 +2,32 @@
 
 import os
 from distutils.util import strtobool
-from invoke import Collection, task
+from invoke import Collection, task as invoke_task
 
 PYTHON_VER = os.getenv("PYTHON_VER", "3.7")
 NAUTOBOT_VER = os.getenv("NAUTOBOT_VER", "1.0.1")
-NAUTOBOT_SRC_URL = os.getenv("NAUTOBOT_SRC_URL", f"https://github.com/nautobot/nautobot/archive/{NAUTOBOT_VER}.tar.gz")
+# NAUTOBOT_SRC_URL = os.getenv("NAUTOBOT_SRC_URL", f"https://github.com/nautobot/nautobot/archive/{NAUTOBOT_VER}.tar.gz")
 
-# Name of the docker image/container
-NAME = os.getenv("IMAGE_NAME", "nautobot-golden-config")
-PWD = os.getcwd()
+# # Name of the docker image/container
+# NAME = os.getenv("IMAGE_NAME", "nautobot-golden-config")
+# PWD = os.getcwd()
 
-COMPOSE_FILE = "development/docker-compose.yml"
-COMPOSE_OVERRIDE = "docker-compose.override.yml"
-BUILD_NAME = "nautobot_golden_config"
+# COMPOSE_FILE = "development/docker-compose.yml"
+# COMPOSE_OVERRIDE = "docker-compose.override.yml"
+# BUILD_NAME = "nautobot_golden_config"
 
-DEFAULT_ENV = {
-    "NAUTOBOT_VER": NAUTOBOT_VER,
-    "PYTHON_VER": PYTHON_VER,
-    "NAUTOBOT_SRC_URL": NAUTOBOT_SRC_URL,
-}
+# DEFAULT_ENV = {
+#     "NAUTOBOT_VER": NAUTOBOT_VER,
+#     "PYTHON_VER": PYTHON_VER,
+#     "NAUTOBOT_SRC_URL": NAUTOBOT_SRC_URL,
+# }
 
-COMPOSE_APPEND = ""
-if os.path.isfile(COMPOSE_OVERRIDE):
-    COMPOSE_APPEND = f"-f {COMPOSE_OVERRIDE}"
-COMPOSE_COMMAND = f"docker-compose -f {COMPOSE_FILE} {COMPOSE_APPEND} -p {BUILD_NAME}"
+# COMPOSE_APPEND = ""
+# if os.path.isfile(COMPOSE_OVERRIDE):
+#     COMPOSE_APPEND = f"-f {COMPOSE_OVERRIDE}"
+# COMPOSE_COMMAND = f"docker-compose -f {COMPOSE_FILE} {COMPOSE_APPEND} -p {BUILD_NAME}"
+# environment = DEFAULT_ENV
+
 
 def is_truthy(arg):
     """Convert "truthy" strings into Booleans.
@@ -41,16 +43,39 @@ def is_truthy(arg):
         return arg
     return bool(strtobool(arg))
 
-environment = DEFAULT_ENV
 
 namespace = Collection("nautobot_golden_config")
 namespace.configure(
     {
         "nautobot_golden_config": {
+            "nautobot_ver": "1.0.1",
+            "project_name": "nautobot-golden-config",
+            "python_ver": "3.7",
             "local": False,
+            "compose_dir": os.path.join(os.path.dirname(__file__), "development"),
+            "compose_files": ["docker-compose.yml"],
         }
     }
 )
+
+
+def task(function=None, *args, **kwargs):
+    """Task decorator to override the default Invoke task decorator and add each task to the invoke namespace."""
+
+    def task_wrapper(function=None):
+        """Wrapper around invoke.task to add the task to the namespace as well."""
+        if args or kwargs:
+            task_func = invoke_task(*args, **kwargs)(function)
+        else:
+            task_func = invoke_task(function)
+        namespace.add_task(task_func)
+        return task_func
+
+    if function:
+        # The decorator was called with no arguments
+        return task_wrapper(function)
+    # The decorator was called with arguments
+    return task_wrapper
 
 
 def docker_compose(context, command, **kwargs):
@@ -62,12 +87,12 @@ def docker_compose(context, command, **kwargs):
         **kwargs: Passed through to the context.run() call.
     """
     build_env = {
-        "NAUTOBOT_VER": context.nautobot_chatops.nautobot_ver,
-        "PYTHON_VER": context.nautobot_chatops.python_ver,
+        "NAUTOBOT_VER": context.nautobot_golden_config.nautobot_ver,
+        "PYTHON_VER": context.nautobot_golden_config.python_ver,
     }
-    compose_command = f'docker-compose --project-name {context.nautobot_chatops.project_name} --project-directory "{context.nautobot_chatops.compose_dir}"'
-    for compose_file in context.nautobot_chatops.compose_files:
-        compose_file_path = os.path.join(context.nautobot_chatops.compose_dir, compose_file)
+    compose_command = f'docker-compose --project-name {context.nautobot_golden_config.project_name} --project-directory "{context.nautobot_golden_config.compose_dir}"'
+    for compose_file in context.nautobot_golden_config.compose_files:
+        compose_file_path = os.path.join(context.nautobot_golden_config.compose_dir, compose_file)
         compose_command += f' -f "{compose_file_path}"'
     compose_command += f" {command}"
     print(f'Running docker-compose command "{command}"')
@@ -89,47 +114,45 @@ def run_command(context, command, **kwargs):
 
         docker_compose(context, compose_command, pty=True)
 
+
 # ------------------------------------------------------------------------------
 # BUILD
 # ------------------------------------------------------------------------------
-@task
-def build(context, nautobot_ver=NAUTOBOT_VER, python_ver=PYTHON_VER):
+@task(
+    help={
+        "force_rm": "Always remove intermediate containers",
+        "cache": "Whether to use Docker's cache when building the image (defaults to enabled)",
+    }
+)
+def build(context, force_rm=False, cache=True):
     """Build all docker images.
 
     Args:
         context (obj): Used to run specific commands
-        nautobot_ver (str): Nautobot version to use to build the container
-        python_ver (str): Will use the Python version docker image to build from
     """
-    DEFAULT_ENV[NAUTOBOT_VER] = nautobot_ver
-    DEFAULT_ENV[PYTHON_VER] = python_ver
+    command = "build"
 
-    context.run(
-        f"{COMPOSE_COMMAND} build",
-        env=DEFAULT_ENV,
-    )
+    if not cache:
+        command += " --no-cache"
+    if force_rm:
+        command += " --force-rm"
+
+    print(f"Building Nautobot with Python {context.nautobot_golden_config.python_ver}...")
+    docker_compose(context, command)
 
 
 # ------------------------------------------------------------------------------
 # START / STOP / DEBUG
 # ------------------------------------------------------------------------------
 @task
-def debug(context, nautobot_ver=NAUTOBOT_VER, python_ver=PYTHON_VER):
+def debug(context):
     """Start Nautobot and its dependencies in debug mode.
 
     Args:
         context (obj): Used to run specific commands
-        nautobot_ver (str): Nautobot version to use to build the container
-        python_ver (str): Will use the Python version docker image to build from
     """
-    DEFAULT_ENV[NAUTOBOT_VER] = nautobot_ver
-    DEFAULT_ENV[PYTHON_VER] = python_ver
-
-    print("Starting Nautobot .. ")
-    context.run(
-        f"{COMPOSE_COMMAND} up",
-        env=DEFAULT_ENV,
-    )
+    print("Starting Nautobot in debug mode...")
+    docker_compose(context, "up")
 
 
 @task

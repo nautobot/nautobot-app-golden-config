@@ -110,8 +110,6 @@ jobs:
         uses: "actions/checkout@v2"
       - name: "Setup environment"
         uses: "./.github/actions/setup-environment"
-      - name: "Copy credentials"
-        run: "cp development/creds.example.env development/creds.env"
       - name: "Build Container"
         run: "poetry run invoke build"
       - name: "Run Tests"

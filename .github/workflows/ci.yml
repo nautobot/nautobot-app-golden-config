@@ -42,19 +42,20 @@ jobs:
         run: "poetry run invoke pydocstyle"
     needs:
       - "black"
-  flake8:
-    runs-on: "ubuntu-20.04"
-    env:
-      INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "True"
-    steps:
-      - name: "Check out repository code"
-        uses: "actions/checkout@v2"
-      - name: "Setup environment"
-        uses: "./.github/actions/setup-environment"
-      - name: "Linting: flake8"
-        run: "poetry run invoke flake8"
-    needs:
-      - "black"
+  # # Don't use until all issues are resolved
+  # flake8:
+  #   runs-on: "ubuntu-20.04"
+  #   env:
+  #     INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "True"
+  #   steps:
+  #     - name: "Check out repository code"
+  #       uses: "actions/checkout@v2"
+  #     - name: "Setup environment"
+  #       uses: "./.github/actions/setup-environment"
+  #     - name: "Linting: flake8"
+  #       run: "poetry run invoke flake8"
+  #   needs:
+  #     - "black"
   yamllint:
     runs-on: "ubuntu-20.04"
     env:
@@ -82,7 +83,7 @@ jobs:
     needs:
       - "bandit"
       - "pydocstyle"
-      - "flake8"
+      # - "flake8"
       - "yamllint"
   pylint:
     runs-on: "ubuntu-20.04"

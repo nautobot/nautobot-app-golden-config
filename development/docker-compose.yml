@@ -1,4 +1,3 @@
-
 ---
 x-nautobot-build: &nautobot-build
   build:
@@ -49,7 +48,7 @@ services:
     image: "redis:6-alpine"
     command:
       - "sh"
-      - "-c" # this is to evaluate the $REDIS_PASSWORD from the env
+      - "-c"  # this is to evaluate the $REDIS_PASSWORD from the env
       - "redis-server --appendonly yes --requirepass $$REDIS_PASSWORD"
     env_file:
       - "dev.env"

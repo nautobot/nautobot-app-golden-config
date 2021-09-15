@@ -77,7 +77,6 @@ def docker_compose(context, command, **kwargs):
 
 def run_command(context, command, **kwargs):
     """Wrapper to run a command locally or inside the nautobot container."""
-    print(is_truthy(context.nautobot_golden_config.local))
     if is_truthy(context.nautobot_golden_config.local):
         context.run(command, **kwargs)
     else:

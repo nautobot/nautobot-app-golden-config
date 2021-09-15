@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.9.6 - 2021-09
+
+### Fixed
+
+- #95 Fix credential escaping issues on Git
+- #113 Clean up and normalize GraphQL decorator
+
+### Added 
+
+- #103 Add manage commands for jobs
+- #108 Update docs and add quick start guide
+- #105 Added structure data config compliance
+- #119 Migrate to Github Actions
+
 ## v0.9.5 - 2021-07
 
 ### Fixed

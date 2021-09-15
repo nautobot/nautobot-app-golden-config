@@ -1,5 +1,8 @@
 # Configuration Compliance 
 
+> Note:
+This document provides instructions based on `CLI` based compliance.  The other option is `JSON` [structured data compliance](./navigating-compliance-json.md).
+
 The following should be noted by what is meant by configuration compliance. Configurations are considered to be compliant if the generated configuration 
 (generally by merging data and Jinja2, will be referred to as the intended configuration from hence forth) matches "exactly" as the actual configuration is 
 on the backup. This may confusing to some, as for example to the average network engineer, there is no difference between `int g0/0` and

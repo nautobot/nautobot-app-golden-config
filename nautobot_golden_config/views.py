@@ -1,11 +1,12 @@
 """Django views for Nautobot Golden Configuration."""
-from datetime import datetime
+from datetime import datetime, timezone
 
 import base64
 import io
 import json
 import logging
 import urllib
+import difflib
 import yaml
 
 import matplotlib.pyplot as plt
@@ -19,6 +20,7 @@ from django_pivot.pivot import pivot
 
 from nautobot.dcim.models import Device
 from nautobot.core.views import generic
+
 from nautobot.utilities.utils import csv_format
 from nautobot.utilities.error_handlers import handle_protectederror
 from nautobot.utilities.views import ContentTypePermissionRequiredMixin
@@ -44,12 +46,16 @@ class GoldenConfigListView(generic.ObjectListView):
     table = tables.GoldenConfigTable
     filterset = filters.GoldenConfigFilter
     filterset_form = forms.GoldenConfigFilterForm
-    queryset = models.GoldenConfig.objects.all()
+    queryset = Device.objects.all()
     template_name = "nautobot_golden_config/goldenconfig_list.html"
 
     def extra_context(self):
         """Boilerplace code to modify data before returning."""
         return CONFIG_FEATURES
+
+    def alter_queryset(self, request):
+        """Build actual runtime queryset as the build time queryset provides no information."""
+        return self.queryset.filter(id__in=models.GoldenConfigSetting.objects.first().get_queryset())
 
 
 class GoldenConfigBulkDeleteView(generic.BulkDeleteView):
@@ -258,10 +264,24 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
         """Manually set permission when not tied to a model for config details."""
         return "nautobot_golden_config.view_goldenconfig"
 
-    def get(self, request, pk, config_type):  # pylint: disable=invalid-name,too-many-branches
+    def get(
+        self, request, pk, config_type
+    ):  # pylint: disable=invalid-name,too-many-branches,too-many-locals,too-many-statements
         """Read request into a view of a single device."""
+
+        def diff_structured_data(backup_data, intended_data):
+            """Utility function to provide `Unix Diff` between two JSON snippets."""
+            backup_yaml = yaml.safe_dump(json.loads(backup_data))
+            intend_yaml = yaml.safe_dump(json.loads(intended_data))
+
+            for line in difflib.unified_diff(backup_yaml.splitlines(), intend_yaml.splitlines(), lineterm=""):
+                yield line
+
         device = Device.objects.get(pk=pk)
         config_details = models.GoldenConfig.objects.filter(device=device).first()
+        if not config_details and config_type == "json_compliance":
+            # Create the GoldenConfig object for the device only for JSON compliance.
+            config_details = models.GoldenConfig.objects.create(device=device)
         structure_format = "json"
         if not config_details:
             output = ""
@@ -269,29 +289,63 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
             output = config_details.backup_config
         elif config_type == "intended":
             output = config_details.intended_config
-        elif config_type == "compliance":
-            output = config_details.compliance_config
-            if config_details.backup_last_success_date:
-                backup_date = str(config_details.backup_last_success_date.strftime("%b %d %Y"))
+        # Compliance type is broken up into JSON(json_compliance) and CLI(compliance) compliance.
+        elif "compliance" in config_type:
+            if config_type == "compliance":
+                # This section covers the steps to run regular CLI compliance which is a diff of 2 files (backup and intended).
+                diff_type = "File"
+                output = config_details.compliance_config
+                if config_details.backup_last_success_date:
+                    backup_date = str(config_details.backup_last_success_date.strftime("%b %d %Y"))
+                else:
+                    backup_date = datetime.now().strftime("%b %d %Y")
+                if config_details.intended_last_success_date:
+                    intended_date = str(config_details.intended_last_success_date.strftime("%b %d %Y"))
+                else:
+                    intended_date = datetime.now().strftime("%b %d %Y")
+            elif config_type == "json_compliance":
+                # The JSON compliance runs differently then CLI, it grabs all configcompliance objects for
+                # a given device and merges them, sorts them, and diffs them.
+                diff_type = "JSON"
+                # Get all compliance objects for a device.
+                compliance_objects = models.ConfigCompliance.objects.filter(device=device.id)
+                actual = {}
+                intended = {}
+                # Set a starting time that will be older than all last updated objects in compliance objects.
+                most_recent_time = datetime(1970, 1, 1, tzinfo=timezone.utc)
+                # Loop through config compliance objects and merge the data into one dataset.
+                for obj in compliance_objects:
+                    actual[obj.rule.feature.slug] = obj.actual
+                    intended[obj.rule.feature.slug] = obj.intended
+                    # Update most_recent_time each time the compliance objects time is more recent then previous.
+                    if obj.last_updated > most_recent_time:
+                        most_recent_time = obj.last_updated
+                config_details.compliance_last_attempt_date = most_recent_time
+                config_details.compliance_last_success_date = most_recent_time
+                # Generate the diff between both JSON objects and sort keys for accurate diff.
+                config_details.compliance_config = "\n".join(
+                    diff_structured_data(json.dumps(actual, sort_keys=True), json.dumps(intended, sort_keys=True))
+                )
+                config_details.save()
+                output = config_details.compliance_config
+                backup_date = intended_date = str(most_recent_time.strftime("%b %d %Y"))
+            if output == "":
+                # This is used if all config snippets are in compliance and no diff exist.
+                output = f"--- Backup {diff_type} - " + backup_date + f"\n+++ Intended {diff_type} - " + intended_date
             else:
-                backup_date = datetime.now().strftime("%b %d %Y")
-            if config_details.intended_last_success_date:
-                intended_date = str(config_details.intended_last_success_date.strftime("%b %d %Y"))
-            else:
-                intended_date = datetime.now().strftime("%b %d %Y")
-            first_occurence = output.index("@@")
-            second_occurence = output.index("@@", first_occurence)
-            # This is logic to match diff2html's expected input.
-            output = (
-                "--- Backup File - "
-                + backup_date
-                + "\n+++ Intended File - "
-                + intended_date
-                + "\n"
-                + output[first_occurence:second_occurence]
-                + "@@"
-                + output[second_occurence + 2 :]
-            )
+                first_occurence = output.index("@@")
+                second_occurence = output.index("@@", first_occurence)
+                # This is logic to match diff2html's expected input.
+                output = (
+                    f"--- Backup {diff_type} - "
+                    + backup_date
+                    + f"\n+++ Intended {diff_type} - "
+                    + intended_date
+                    + "\n"
+                    + output[first_occurence:second_occurence]
+                    + "@@"
+                    + output[second_occurence + 2 :]
+                )
         elif config_type == "sotagg":
             if request.GET.get("format") in ["json", "yaml"]:
                 structure_format = request.GET.get("format")
@@ -300,7 +354,7 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
             _, output = graph_ql_query(request, device, global_settings.sot_agg_query)
 
             if structure_format == "yaml":
-                output = yaml.dump(json.loads(json.dumps(output)), default_flow_style=False)
+                output = yaml.dump(output, default_flow_style=False)
             else:
                 output = json.dumps(output, indent=4)
 

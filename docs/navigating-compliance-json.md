@@ -1,7 +1,7 @@
 # Navigating Compliance Using Structured Data
 
 > Warning:
-This feature is in early development and is only implemented within the API.  There are multiple caveats that need to be considered and are listed below.
+This feature is in early development and is only implemented within the API.  There are multiple caveats that need to be considered and they are listed below.
 
 ## Caveats
 - Must have a `Platform` created specifically for the feature.
@@ -16,7 +16,8 @@ This feature is in early development and is only implemented within the API.  Th
 
 ![Example Platform Creation](./img/00-navigating-compliance-json.png)
 
-2. Next, the compliance feature needs to be created.
+2. Next, the compliance feature needs to be created, the feature can be shared between a CLI rule and a JSON rule.
+
 ![Example Feature Creation](./img/01-navigating-compliance-json.png)
 
 3. Link the feature that was just created to a rule definition.

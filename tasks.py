@@ -101,6 +101,7 @@ def docker_compose(context, command, **kwargs):
 
 def run_command(context, command, **kwargs):
     """Wrapper to run a command locally or inside the nautobot container."""
+    print(is_truthy(context.nautobot_golden_config.local))
     if is_truthy(context.nautobot_golden_config.local):
         context.run(command, **kwargs)
     else:
@@ -347,6 +348,24 @@ def bandit(context):
     #     env=DEFAULT_ENV,
     #     pty=True,
     # )
+
+
+@task
+def yamllint(context):
+    """Run yamllint to validate formating adheres to NTC defined YAML standards.
+
+    Args:
+        context (obj): Used to run specific commands
+    """
+    command = "yamllint . --format standard"
+    run_command(context, command)
+
+
+@task
+def flake8(context):
+    """Check for PEP8 compliance and other style issues."""
+    command = "flake8 ."
+    run_command(context, command)
 
 
 @task

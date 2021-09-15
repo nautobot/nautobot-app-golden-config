@@ -32,7 +32,7 @@ but not want to use other features, which is perfectly fine to do so.
 - [Navigating Overview](./docs/navigating-golden.md)
 - [Navigating Backup](./docs/navigating-backup.md)
 - [Navigating Intended](./docs/navigating-intended.md)
-- [Navigating SoTAgg](./docs/navigating-sot-agg.md)]
+- [Navigating SoTAgg](./docs/navigating-sot-agg.md)
 - [Navigating Compliance](./docs/navigating-compliance.md)
 - [FAQ](./docs/FAQ.md)
 

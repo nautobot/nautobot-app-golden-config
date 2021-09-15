@@ -290,7 +290,7 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
                 + "\n"
                 + output[first_occurence:second_occurence]
                 + "@@"
-                + output[second_occurence + 2 :]
+                + output[second_occurence + 2:]
             )
         elif config_type == "sotagg":
             if request.GET.get("format") in ["json", "yaml"]:

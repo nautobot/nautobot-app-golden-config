@@ -13,7 +13,7 @@ jobs:
       - name: "Check out repository code"
         uses: "actions/checkout@v2"
       - name: "Setup environment"
-        uses: "./.github/actions/setup-environment"
+        uses: "networktocode/gh-action-setup-poetry-environment@v1"
       - name: "Linting: black"
         run: "poetry run invoke black"
   bandit:

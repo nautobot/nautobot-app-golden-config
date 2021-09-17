@@ -21,3 +21,8 @@ class GetPlatformTest(unittest.TestCase):
     def test_get_platform_user_defined(self):
         """Test user defined platform mappings."""
         self.assertEqual(get_platform("cisco"), "cisco_ios")
+
+    @patch("nautobot_golden_config.utilities.utils.PLUGIN_CFG", {"platform_slug_map": {"cisco_xe": "cisco_ios"}})
+    def test_get_platform_defined_but_not_relevant(self):
+        """Test user defined platform mappings not relevant."""
+        self.assertEqual(get_platform("cisco_ios"), "cisco_ios")

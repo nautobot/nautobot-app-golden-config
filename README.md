@@ -74,6 +74,8 @@ The project features a CLI helper based on [invoke](http://www.pyinvoke.org/) to
 
 Each command can be executed with `invoke <command>`. All commands support the arguments `--nautobot-ver` and `--python-ver` if you want to manually define the version of Python and Nautobot to use. Each command also has its own help `invoke <command> --help`
 
+> Note: to run the mysql (mariadb) development environment, set the environment variable as such `export NAUTOBOT_USE_MYSQL=1`.
+
 ### Local Development Environment
 
 ```

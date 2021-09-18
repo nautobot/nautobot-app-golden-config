@@ -19,6 +19,9 @@ def is_truthy(arg):
         return arg
     return bool(strtobool(arg))
 
+COMPOSE_FILES = ["docker-compose.yml", "../docker-compose.override.yml"]
+if os.getenv("NAUTOBOT_USE_MYSQL"):
+    COMPOSE_FILES.append("docker-compose.mysql.yml")
 
 namespace = Collection("nautobot_golden_config")
 namespace.configure(
@@ -29,10 +32,11 @@ namespace.configure(
             "python_ver": "3.7",
             "local": False,
             "compose_dir": os.path.join(os.path.dirname(__file__), "development"),
-            "compose_files": ["docker-compose.yml", "../docker-compose.override.yml"],
+            "compose_files": COMPOSE_FILES,
         }
     }
 )
+
 
 
 def task(function=None, *args, **kwargs):

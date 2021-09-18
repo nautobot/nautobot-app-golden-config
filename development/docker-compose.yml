@@ -15,15 +15,14 @@ x-nautobot-base: &nautobot-base
 version: "3.4"
 services:
   nautobot:
-    command: >
-      sh -c "nautobot-server migrate && nautobot-server runserver 0.0.0.0:8080 --insecure"
+    command: "nautobot-server runserver 0.0.0.0:8080 --insecure"
     volumes:
       - "./nautobot_config.py:/opt/nautobot/nautobot_config.py"
       - "../:/source"
     ports:
       - "8080:8080"
     depends_on:
-      - "postgres"
+      - "db"
       - "redis"
     <<: *nautobot-build
     <<: *nautobot-base
@@ -37,7 +36,7 @@ services:
       - "nautobot"
     entrypoint: "nautobot-server celery worker -B -l INFO"
     <<: *nautobot-base
-  postgres:
+  db:
     image: "postgres:13"
     env_file:
       - "dev.env"

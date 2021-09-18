@@ -1,0 +1,10 @@
+---
+services:
+  db:
+    image: "mariadb:10.6"
+    env_file:
+      - "dev.env"
+    volumes:
+      - "mysqldata_nautobot_golden_config:/var/lib/mysql"
+volumes:
+  mysqldata_nautobot_golden_config:  # yamllint disable-line rule:empty-values

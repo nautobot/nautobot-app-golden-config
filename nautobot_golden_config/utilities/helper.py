@@ -42,9 +42,13 @@ def get_job_filter(data=None):
 
     base_qs = models.GoldenConfigSetting.objects.first().get_queryset()
     device_list = DeviceFilterSet(data=query, queryset=base_qs).qs
-    no_platform_devices = [n[0] for n in device_list.values_list("name", "platform") if n[1] == None]
+    no_platform_devices = [
+        dev_name[0] for dev_name in device_list.values_list("name", "platform") if dev_name[1] == None
+    ]
     if len(no_platform_devices) > 0:
-        raise ValueError(f"The following device(s) {','.join(no_platform_devices)} have no platform defined. Platform is required.")
+        raise ValueError(
+            f"The following device(s) {','.join(no_platform_devices)} have no platform defined. Platform is required."
+        )
     return device_list
 
 

@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.9.6 - 2021-09
+
+### Fixed
+
+- #95 Fix credential escaping issues on Git
+- #113 Clean up and normalize GraphQL decorator
+- #41 Fail Gracefully when platform is missing or wrong, bump nautobot-plugin-nornir version
+- #104 Fail Gracefully when Device queryset is empty
+- #109 Account for Nautobot 1.0/1.1 template change
+
+### Added 
+
+- #103 Add manage commands for jobs
+- #108 Update docs and add quick start guide
+- #105 Added structure data config compliance
+- #119 Migrate to Github Actions
+- #121 Moved to Celery for development environment
+
 ## v0.9.5 - 2021-07
 
 ### Fixed

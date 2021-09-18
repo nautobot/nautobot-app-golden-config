@@ -17,7 +17,6 @@ FIELDS = {
     "tenant",
     "region",
     "site",
-    "platform",
     "role",
     "rack",
     "rack_group",

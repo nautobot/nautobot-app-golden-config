@@ -1,6 +1,7 @@
 """Django Models for tracking the configuration compliance per feature and device."""
 
 import logging
+from deepdiff import DeepDiff
 
 from django.db import models
 from django.core.exceptions import ValidationError
@@ -35,8 +36,8 @@ def null_to_empty(val):
     "custom_fields",
     "custom_validators",
     "export_templates",
-    "relationships",
     "graphql",
+    "relationships",
     "webhooks",
 )
 class ComplianceFeature(PrimaryModel):
@@ -70,8 +71,8 @@ class ComplianceFeature(PrimaryModel):
     "custom_fields",
     "custom_validators",
     "export_templates",
-    "relationships",
     "graphql",
+    "relationships",
     "webhooks",
 )
 class ComplianceRule(PrimaryModel):
@@ -98,7 +99,7 @@ class ComplianceRule(PrimaryModel):
     )
     match_config = models.TextField(
         null=True,
-        blank=False,
+        blank=True,
         verbose_name="Config to Match",
         help_text="The config to match that is matched based on the parent most configuration. e.g. `router bgp` or `ntp`.",
     )
@@ -143,8 +144,6 @@ class ComplianceRule(PrimaryModel):
         """Verify that if cli, then match_config is set."""
         if self.config_type == ComplianceRuleTypeChoice.TYPE_CLI and not self.match_config:
             raise ValidationError("CLI configuration set, but no configuration set to match.")
-        if self.config_type == ComplianceRuleTypeChoice.TYPE_JSON:
-            raise ValidationError("JSON currently not supported.")
 
 
 @extras_features(
@@ -162,11 +161,12 @@ class ConfigCompliance(PrimaryModel):
     device = models.ForeignKey(to="dcim.Device", on_delete=models.CASCADE, help_text="The device", blank=False)
     rule = models.ForeignKey(to="ComplianceRule", on_delete=models.CASCADE, blank=False, related_name="rule")
     compliance = models.BooleanField(null=True, blank=True)
-    actual = models.TextField(blank=True, help_text="Actual Configuration for feature")
-    intended = models.TextField(blank=True, help_text="Intended Configuration for feature")
-    missing = models.TextField(blank=True, help_text="Configuration that should be on the device.")
-    extra = models.TextField(blank=True, help_text="Configuration that should not be on the device.")
+    actual = models.JSONField(blank=True, help_text="Actual Configuration for feature")
+    intended = models.JSONField(blank=True, help_text="Intended Configuration for feature")
+    missing = models.JSONField(blank=True, help_text="Configuration that should be on the device.")
+    extra = models.JSONField(blank=True, help_text="Configuration that should not be on the device.")
     ordered = models.BooleanField(default=True)
+    # Used for django-pivot, both compliance and compliance_int should be set.
     compliance_int = models.IntegerField(null=True, blank=True)
 
     csv_headers = ["Device Name", "Feature", "Compliance"]
@@ -199,22 +199,46 @@ class ConfigCompliance(PrimaryModel):
         return f"{self.device} -> {self.rule} -> {self.compliance}"
 
     def save(self, *args, **kwargs):
-        """Perform that actual compliance check."""
+        """Performs the actual compliance check."""
         feature = {
             "ordered": self.rule.config_ordered,
-            "name": self.rule.feature.name,
-            "section": self.rule.match_config.splitlines(),
+            "name": self.rule,
         }
-        value = feature_compliance(feature, self.actual, self.intended, get_platform(self.device.platform.slug))
-        self.compliance = value["compliant"]
-        if self.compliance:
-            self.compliance_int = 1
+        if self.rule.config_type == ComplianceRuleTypeChoice.TYPE_JSON:
+            feature.update({"section": self.rule.match_config})
+
+            diff = DeepDiff(self.actual, self.intended, ignore_order=self.ordered, report_repetition=True)
+            if not diff:
+                self.compliance_int = 1
+                self.compliance = True
+                self.missing = ""
+                self.extra = ""
+            else:
+                self.compliance_int = 0
+                self.compliance = False
+                self.missing = null_to_empty(self._normalize_diff(diff, "added"))
+                self.extra = null_to_empty(self._normalize_diff(diff, "removed"))
         else:
-            self.compliance_int = 0
-        self.ordered: value["ordered_compliant"]
-        self.missing = null_to_empty(value["missing"])
-        self.extra = null_to_empty(value["extra"])
+            feature.update({"section": self.rule.match_config.splitlines()})
+            value = feature_compliance(feature, self.actual, self.intended, get_platform(self.device.platform.slug))
+            self.compliance = value["compliant"]
+            if self.compliance:
+                self.compliance_int = 1
+            else:
+                self.compliance_int = 0
+                self.ordered = value["ordered_compliant"]
+                self.missing = null_to_empty(value["missing"])
+                self.extra = null_to_empty(value["extra"])
         super().save(*args, **kwargs)
+
+    @staticmethod
+    def _normalize_diff(diff, path_to_diff):
+        """Normalizes the diff to a list of keys and list indexes that have changed."""
+        dictionary_items = list(diff.get(f"dictionary_item_{path_to_diff}", []))
+        list_items = list(diff.get(f"iterable_item_{path_to_diff}", {}).keys())
+        values_changed = list(diff.get("values_changed", {}).keys())
+        type_changes = list(diff.get("type_changes", {}).keys())
+        return dictionary_items + list_items + values_changed + type_changes
 
 
 @extras_features(
@@ -288,6 +312,9 @@ class GoldenConfig(PrimaryModel):
         return f"{self.device}"
 
 
+@extras_features(
+    "graphql",
+)
 class GoldenConfigSetting(PrimaryModel):
     """GoldenConfigSetting Model defintion. This provides global configs instead of via configs.py."""
 
@@ -346,7 +373,7 @@ class GoldenConfigSetting(PrimaryModel):
         encoder=DjangoJSONEncoder,
         blank=True,
         null=True,
-        help_text="Queryset filter matching the list of devices for the scope of devices to be considered.",
+        help_text="API filter in JSON format matching the list of devices for the scope of devices to be considered.",
     )
     sot_agg_query = models.TextField(
         null=False,

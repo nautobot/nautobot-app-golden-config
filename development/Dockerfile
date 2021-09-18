@@ -14,4 +14,8 @@ RUN poetry install --no-interaction --no-ansi --no-root
 COPY . /source
 RUN poetry install --no-interaction --no-ansi
 
+RUN apt update
+RUN apt install -y libmariadb-dev-compat gcc
+RUN pip install mysqlclient
+
 COPY development/nautobot_config.py /opt/nautobot/nautobot_config.py

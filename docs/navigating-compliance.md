@@ -1,5 +1,8 @@
 # Configuration Compliance 
 
+> Note:
+This document provides instructions based on `CLI` based compliance.  The other option is `JSON` [structured data compliance](./navigating-compliance-json.md).
+
 The following should be noted by what is meant by configuration compliance. Configurations are considered to be compliant if the generated configuration 
 (generally by merging data and Jinja2, will be referred to as the intended configuration from hence forth) matches "exactly" as the actual configuration is 
 on the backup. This may confusing to some, as for example to the average network engineer, there is no difference between `int g0/0` and
@@ -17,7 +20,7 @@ There is no magic to determine the state of configuration. You still must define
 configuration may be as a network engineer wants it, but the tool correctly considers it non-compliant, since the tool is only comparing two configurations.
 The tool makes no assumptions to determine what an engineer may want to do, but did not document via the configuration generation process.
 
-# Compliance Configuration Settings
+## Compliance Configuration Settings
 
 In order to generate the intended configurations two repositories are needed.
 
@@ -26,7 +29,16 @@ In order to generate the intended configurations two repositories are needed.
 3. The [intended_path_template](./navigating-golden.md#application-settings) configuration parameter.
 4. The [backup_path_template](./navigating-golden.md#application-settings) configuration parameter.
 
-# Configuration Compliance Parsing Engine
+## Starting a Compliance Job
+
+To start a compliance job manually:
+
+1. Navigate to the Plugin Home (Plugins->Home), with Home being in the `Golden Configuration` section
+2. Select _Execute_ on the upper right buttons, then _Compliance_
+3. Fill in the data that you wish to have a compliance report generated for
+4. Select _Run Job_
+
+## Configuration Compliance Parsing Engine
 
 Configuration compliance is different than a simple UNIX diff. While the UI provides both, the compliance metrics are not influenced by the UNIX diff 
 capabilities. One of the challenges of getting a device into compliance is the ramp up it takes to model and generate configurations for an entire 
@@ -96,7 +108,7 @@ router bgp 65250
 
 > Note: A platform will not run successfully against a device unless at least one compliance rule is set. 
 
-# Configuration Compliance Settings
+## Configuration Compliance Settings
 
 Configuration compliance requires the Git Repo settings for `config backups` and `intended configs`--which are covered in their respective sections--regardless if they are actually managed via the plugin or not. The same is true for the `Backup Path` and `Intended Path`.
 
@@ -122,12 +134,12 @@ what a line starts with only. Meaning, there is an implicit greediness to the ma
 
 > Note: The mapping of "network_os" as defined by netutils is provided via the plugin settings in your nautobot_config.py, and documented on the primary Readme.
 
-# Compliance View
+## Compliance View
 
 The compliance overview will provide a per device and feature overview on the compliance of your network devices. From here you can navigate to the details view.
 ![Compliance Overview](./img/compliance-overview.png)
 
-# Compliance Details View
+## Compliance Details View
 
 Drilling into a specific device and feature, you can get an immediate detailed understanding of your device.
 
@@ -142,13 +154,13 @@ Please note the following about the compliance details page.
 * The icon next to the status will indicate whether or not the configuration is ordered.
 * The icons on top of the page can be used to help navigate the page easier.
 
-# Supported Platforms
+## Supported Platforms
 
 Platforms support technically come from the options provided by [nornir-nautobot](https://github.com/nautobot/nornir-nautobot) for nornir dispatcher tasks and
 [netutils](https://github.com/networktocode/netutils) for configuration compliance and parsing. However, for reference, the valid slug's of the platforms are
 provided in the [FAQ](./FAQ.md).
 
-# Overview Report
+## Overview Report
 
 There is a global overview or executive summary that provides a high level snapshot of the compliance. There are 3 points of data captured.
 
@@ -156,14 +168,14 @@ There is a global overview or executive summary that provides a high level snaps
 * Features - This is the total number of features for all devices, and how many are compliant, and how many are non-compliant.
 * Per Feature - This is a breakdown of that feature and how many within that feature are compliant of not.
 
-# Detail Report
+## Detail Report
 
 This can be accessed via the Plugins drop-down via `Compliance` details button. From there you can filter the devices via the form on the right side, limit the columns with the `Configure` button, or 
 bulk delete with the `Delete` button. Additionally each device is click-able to view the details of that individual device. 
 
 You can configure the columns to limit how much is showing on one screen.
 
-# Device Details
+## Device Details
 
 You can get to the device details form either the Compliance details page, or there is a `content_template` on the device model page is Nautobot's core instance.
 

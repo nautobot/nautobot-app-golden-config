@@ -20,16 +20,20 @@ def is_truthy(arg):
     return bool(strtobool(arg))
 
 
+COMPOSE_FILES = ["docker-compose.yml", "../docker-compose.override.yml"]
+if os.getenv("NAUTOBOT_USE_MYSQL"):
+    COMPOSE_FILES.append("docker-compose.mysql.yml")
+
 namespace = Collection("nautobot_golden_config")
 namespace.configure(
     {
         "nautobot_golden_config": {
             "nautobot_ver": "1.0.1",
-            "project_name": "nautobot-golden-config",
+            "project_name": "nautobot_golden_config",
             "python_ver": "3.7",
             "local": False,
             "compose_dir": os.path.join(os.path.dirname(__file__), "development"),
-            "compose_files": ["docker-compose.yml"],
+            "compose_files": COMPOSE_FILES,
         }
     }
 )
@@ -69,7 +73,8 @@ def docker_compose(context, command, **kwargs):
     compose_command = f'docker-compose --project-name {context.nautobot_golden_config.project_name} --project-directory "{context.nautobot_golden_config.compose_dir}"'
     for compose_file in context.nautobot_golden_config.compose_files:
         compose_file_path = os.path.join(context.nautobot_golden_config.compose_dir, compose_file)
-        compose_command += f' -f "{compose_file_path}"'
+        if os.path.isfile(compose_file_path):
+            compose_command += f' -f "{compose_file_path}"'
     compose_command += f" {command}"
     print(f'Running docker-compose command "{command}"')
     return context.run(compose_command, env=build_env, **kwargs)

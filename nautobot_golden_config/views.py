@@ -11,6 +11,7 @@ import yaml
 
 import matplotlib.pyplot as plt
 import numpy as np
+from packaging.version import Version
 
 from django.contrib import messages
 from django.db.models import F, Q, Max
@@ -18,6 +19,7 @@ from django.db.models import Count, FloatField, ExpressionWrapper, ProtectedErro
 from django.shortcuts import render, redirect
 from django_pivot.pivot import pivot
 
+import nautobot
 from nautobot.dcim.models import Device
 from nautobot.core.views import generic
 
@@ -34,6 +36,7 @@ LOGGER = logging.getLogger(__name__)
 
 GREEN = "#D5E8D4"
 RED = "#F8CECC"
+NAUTOBOT_VERSION = Version(nautobot.__version__)
 
 #
 # GoldenConfig
@@ -283,7 +286,19 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
             # Create the GoldenConfig object for the device only for JSON compliance.
             config_details = models.GoldenConfig.objects.create(device=device)
         structure_format = "json"
-        if not config_details:
+
+        if config_type == "sotagg":
+            if request.GET.get("format") in ["json", "yaml"]:
+                structure_format = request.GET.get("format")
+
+            global_settings = models.GoldenConfigSetting.objects.first()
+            _, output = graph_ql_query(request, device, global_settings.sot_agg_query)
+
+            if structure_format == "yaml":
+                output = yaml.dump(json.loads(json.dumps(output)), default_flow_style=False)
+            else:
+                output = json.dumps(output, indent=4)
+        elif not config_details:
             output = ""
         elif config_type == "backup":
             output = config_details.backup_config
@@ -346,21 +361,15 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
                     + "@@"
                     + output[second_occurence + 2 :]
                 )
-        elif config_type == "sotagg":
-            if request.GET.get("format") in ["json", "yaml"]:
-                structure_format = request.GET.get("format")
-
-            global_settings = models.GoldenConfigSetting.objects.first()
-            _, output = graph_ql_query(request, device, global_settings.sot_agg_query)
-
-            if structure_format == "yaml":
-                output = yaml.dump(output, default_flow_style=False)
-            else:
-                output = json.dumps(output, indent=4)
 
         template_name = "nautobot_golden_config/configcompliancedetails.html"
         if request.GET.get("modal") == "true":
             template_name = "nautobot_golden_config/configcompliancedetails_modal.html"
+        include_file = "extras/inc/json_format.html"
+
+        # Nautobot core update template name, for backwards compat
+        if NAUTOBOT_VERSION < Version("1.1"):
+            include_file = "extras/inc/configcontext_format.html"
 
         return render(
             request,
@@ -371,6 +380,7 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
                 "config_type": config_type,
                 "format": structure_format,
                 "device": device,
+                "include_file": include_file,
             },
         )
 

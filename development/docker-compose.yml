@@ -15,7 +15,8 @@ x-nautobot-base: &nautobot-base
 version: "3.4"
 services:
   nautobot:
-    command: "nautobot-server runserver 0.0.0.0:8080 --insecure"
+    command: >
+      sh -c "nautobot-server migrate && nautobot-server runserver 0.0.0.0:8080 --insecure"
     volumes:
       - "./nautobot_config.py:/opt/nautobot/nautobot_config.py"
       - "../:/source"
@@ -26,24 +27,22 @@ services:
       - "redis"
     <<: *nautobot-build
     <<: *nautobot-base
-  worker:
-    entrypoint: "nautobot-server rqworker"
+  celery:
     volumes:
       - "./nautobot_config.py:/opt/nautobot/nautobot_config.py"
       - "../:/source"
-    depends_on:
-      - "nautobot"
     healthcheck:
       disable: true
+    depends_on:
+      - "nautobot"
+    entrypoint: "nautobot-server celery worker -B -l INFO"
     <<: *nautobot-base
   postgres:
-    image: "postgres:13-alpine"
+    image: "postgres:13"
     env_file:
       - "dev.env"
     volumes:
       - "pgdata_nautobot_golden_config:/var/lib/postgresql/data"
-    ports:
-      - "5432:5432"
   redis:
     image: "redis:6-alpine"
     command:
@@ -52,7 +51,5 @@ services:
       - "redis-server --appendonly yes --requirepass $$REDIS_PASSWORD"
     env_file:
       - "dev.env"
-    ports:
-      - "6379:6379"
 volumes:
   pgdata_nautobot_golden_config:  # yamllint disable-line rule:empty-values

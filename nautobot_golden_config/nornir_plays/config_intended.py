@@ -9,9 +9,9 @@ from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir.core.task import Result, Task
 
 
+from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
 from nornir_nautobot.utils.logger import NornirLogger
-from nornir_nautobot.exceptions import NornirNautobotException
 
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
@@ -88,19 +88,23 @@ def config_intended(job_result, data, jinja_root_path, intended_root_folder):
     logger = NornirLogger(__name__, job_result, data.get("debug"))
     global_settings = GoldenConfigSetting.objects.first()
     verify_global_settings(logger, global_settings, ["jinja_path_template", "intended_path_template", "sot_agg_query"])
-    nornir_obj = InitNornir(
-        runner=NORNIR_SETTINGS.get("runner"),
-        logging={"enabled": False},
-        inventory={
-            "plugin": "nautobot-inventory",
-            "options": {
-                "credentials_class": NORNIR_SETTINGS.get("credentials"),
-                "params": NORNIR_SETTINGS.get("inventory_params"),
-                "queryset": get_job_filter(data),
-                "defaults": {"now": now},
+    try:
+        nornir_obj = InitNornir(
+            runner=NORNIR_SETTINGS.get("runner"),
+            logging={"enabled": False},
+            inventory={
+                "plugin": "nautobot-inventory",
+                "options": {
+                    "credentials_class": NORNIR_SETTINGS.get("credentials"),
+                    "params": NORNIR_SETTINGS.get("inventory_params"),
+                    "queryset": get_job_filter(data),
+                    "defaults": {"now": now},
+                },
             },
-        },
-    )
+        )
+    except NornirNautobotException as err:
+        logger.log_failure(None, err)
+        raise NornirNautobotException()
 
     nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
 

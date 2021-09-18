@@ -7,6 +7,7 @@ from nornir import InitNornir
 from nornir.core.task import Result, Task
 from nornir.core.plugins.inventory import InventoryPluginRegister
 
+from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
 from nornir_nautobot.utils.logger import NornirLogger
 
@@ -106,19 +107,23 @@ def config_backup(job_result, data, backup_root_folder):
         if not replace_regex_dict.get(regex.platform.slug):
             replace_regex_dict[regex.platform.slug] = []
         replace_regex_dict[regex.platform.slug].append({"replace": regex.replace, "regex": regex.regex})
-    nornir_obj = InitNornir(
-        runner=NORNIR_SETTINGS.get("runner"),
-        logging={"enabled": False},
-        inventory={
-            "plugin": "nautobot-inventory",
-            "options": {
-                "credentials_class": NORNIR_SETTINGS.get("credentials"),
-                "params": NORNIR_SETTINGS.get("inventory_params"),
-                "queryset": get_job_filter(data),
-                "defaults": {"now": now},
+    try:
+        nornir_obj = InitNornir(
+            runner=NORNIR_SETTINGS.get("runner"),
+            logging={"enabled": False},
+            inventory={
+                "plugin": "nautobot-inventory",
+                "options": {
+                    "credentials_class": NORNIR_SETTINGS.get("credentials"),
+                    "params": NORNIR_SETTINGS.get("inventory_params"),
+                    "queryset": get_job_filter(data),
+                    "defaults": {"now": now},
+                },
             },
-        },
-    )
+        )
+    except NornirNautobotException as err:
+        logger.log_failure(None, err)
+        raise NornirNautobotException()
 
     nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
 

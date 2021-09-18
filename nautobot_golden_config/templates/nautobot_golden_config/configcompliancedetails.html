@@ -25,12 +25,12 @@
         <div style="padding-left: 10px">
             {% if config_type == "sotagg" and format == 'yaml' %}
                 <div class="panel-heading"><strong>Output</strong>
-                    {% include 'extras/inc/configcontext_format.html' %}
+                    {% include include_file %}
                 </div>
                 <pre>{{ output }}</pre>
             {% elif  config_type == "sotagg" and format == 'json' %}
                 <div class="panel-heading"><strong>Output</strong>
-                    {% include 'extras/inc/configcontext_format.html' %}
+                    {% include include_file %}
                 </div>
                 <pre>{{ output }}</pre>
             {% elif config_type in "compliance,json_compliance" %}

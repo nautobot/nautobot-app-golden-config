@@ -67,7 +67,7 @@ map multiple keys to a single netutils expected key.
 }
 ```
 
-_What are the supported platforms for Backup and Intended Configuratino jobs? How do I configure a device with a specific OS?_
+_What are the supported platforms for Backup and Intended Configuration jobs? How do I configure a device with a specific OS?_
 
 The current supported platform and the associated *default* platform slug names are the following for:
 
@@ -77,8 +77,9 @@ The current supported platform and the associated *default* platform slug names 
 * cisco_nxos
 * juniper_junos
 
-In many use cases, this can be extended with a custom dispatcher for nornir tasks, which is controlled in the [nornir-nautobot](https://github.com/nautobot/nornir-nautobot) repository. Additionally the [`nautobot_plugin_nornir`](https://pypi.org/project/nautobot-plugin-nornir/) provide the ability to leverage the
-`dispatcher_mapping` configuration parameter to map and/or extend for your environment. Please see the instructions there for further details.
+In many use cases, this can be extended with a custom dispatcher for nornir tasks, which is controlled in the [nornir-nautobot](https://github.com/nautobot/nornir-nautobot)
+repository. Additionally the [`nautobot_plugin_nornir`](https://pypi.org/project/nautobot-plugin-nornir/) provide the ability to leverage the `dispatcher_mapping`
+configuration parameter to map and/or extend for your environment. Please see the instructions there for further details.
 
 _Why not provide the corrective configurations?_
 

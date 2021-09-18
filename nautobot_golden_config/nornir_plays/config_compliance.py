@@ -11,8 +11,8 @@ from nornir import InitNornir
 from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir.core.task import Result, Task
 
-from nornir_nautobot.utils.logger import NornirLogger
 from nornir_nautobot.exceptions import NornirNautobotException
+from nornir_nautobot.utils.logger import NornirLogger
 
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
@@ -31,16 +31,16 @@ InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 LOGGER = logging.getLogger(__name__)
 
 
-def get_features():
-    """A serializer of sorts to return feature mappings as a dictionary."""
+def get_rules():
+    """A serializer of sorts to return rule mappings as a dictionary."""
     # TODO: Review if creating a proper serializer is the way to go.
-    features = {}
+    rules = {}
     for obj in ComplianceRule.objects.filter(config_type="cli"):
         platform = str(obj.platform.slug)
-        if not features.get(platform):
-            features[platform] = []
-        features[platform].append({"ordered": obj.config_ordered, "obj": obj, "section": obj.match_config.splitlines()})
-    return features
+        if not rules.get(platform):
+            rules[platform] = []
+        rules[platform].append({"ordered": obj.config_ordered, "obj": obj, "section": obj.match_config.splitlines()})
+    return rules
 
 
 def diff_files(backup_file, intended_file):
@@ -58,7 +58,7 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     global_settings,
     backup_root_path,
     intended_root_folder,
-    features,
+    rules,
 ) -> Result:
     """Prepare data for compliance task.
 
@@ -92,26 +92,26 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
         raise NornirNautobotException()
 
     platform = obj.platform.slug
-    if not features.get(platform):
-        logger.log_failure(obj, f"There is no `user` defined feature mapping for platform slug {platform}.")
+    if not rules.get(platform):
+        logger.log_failure(obj, f"There is no defined `Configuration Rule` for platform slug `{platform}`.")
         raise NornirNautobotException()
 
     if get_platform(platform) not in parser_map.keys():
-        logger.log_failure(obj, f"There is currently no parser support for platform slug {get_platform(platform)}.")
+        logger.log_failure(obj, f"There is currently no parser support for platform slug `{get_platform(platform)}`.")
         raise NornirNautobotException()
 
     backup_cfg = _open_file_config(backup_file)
     intended_cfg = _open_file_config(intended_file)
 
     # TODO: Make this atomic with compliance_obj step.
-    for feature in features[obj.platform.slug]:
+    for rule in rules[obj.platform.slug]:
         # using update_or_create() method to conveniently update actual obj or create new one.
         ConfigCompliance.objects.update_or_create(
             device=obj,
-            rule=feature["obj"],
+            rule=rule["obj"],
             defaults={
-                "actual": section_config(feature, backup_cfg, get_platform(platform)),
-                "intended": section_config(feature, intended_cfg, get_platform(platform)),
+                "actual": section_config(rule, backup_cfg, get_platform(platform)),
+                "intended": section_config(rule, intended_cfg, get_platform(platform)),
                 "missing": "",
                 "extra": "",
             },
@@ -128,23 +128,27 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
 def config_compliance(job_result, data, backup_root_path, intended_root_folder):
     """Nornir play to generate configurations."""
     now = datetime.now()
-    features = get_features()
+    rules = get_rules()
     logger = NornirLogger(__name__, job_result, data.get("debug"))
     global_settings = GoldenConfigSetting.objects.first()
     verify_global_settings(logger, global_settings, ["backup_path_template", "intended_path_template"])
-    nornir_obj = InitNornir(
-        runner=NORNIR_SETTINGS.get("runner"),
-        logging={"enabled": False},
-        inventory={
-            "plugin": "nautobot-inventory",
-            "options": {
-                "credentials_class": NORNIR_SETTINGS.get("credentials"),
-                "params": NORNIR_SETTINGS.get("inventory_params"),
-                "queryset": get_job_filter(data),
-                "defaults": {"now": now},
+    try:
+        nornir_obj = InitNornir(
+            runner=NORNIR_SETTINGS.get("runner"),
+            logging={"enabled": False},
+            inventory={
+                "plugin": "nautobot-inventory",
+                "options": {
+                    "credentials_class": NORNIR_SETTINGS.get("credentials"),
+                    "params": NORNIR_SETTINGS.get("inventory_params"),
+                    "queryset": get_job_filter(data),
+                    "defaults": {"now": now},
+                },
             },
-        },
-    )
+        )
+    except NornirNautobotException as err:
+        logger.log_failure(None, err)
+        raise NornirNautobotException()
 
     nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
     nr_with_processors.run(
@@ -154,7 +158,7 @@ def config_compliance(job_result, data, backup_root_path, intended_root_folder):
         global_settings=global_settings,
         backup_root_path=backup_root_path,
         intended_root_folder=intended_root_folder,
-        features=features,
+        rules=rules,
     )
 
     logger.log_debug("Completed Compliance for devices.")

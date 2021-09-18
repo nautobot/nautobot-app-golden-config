@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nautobot-golden-config"
-version = "0.9.5"
+version = "0.9.6"
 description = "A plugin for configuration on nautobot"
 authors = ["Network to Code, LLC", "<opensource@networktocode.com>"]
 
@@ -30,12 +30,12 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.6"
-matplotlib = "^3.3.2"
-nautobot-plugin-nornir = ">=0.9.3"
-django-debug-toolbar = "^3.2.1"
 astroid = "^2.5.5"
-django-pivot = "^1.8.1"
 deepdiff = "^5.5.0"
+django-debug-toolbar = "^3.2.1"
+django-pivot = "^1.8.1"
+matplotlib = "^3.3.2"
+nautobot-plugin-nornir = ">=0.9.4"
 
 [tool.poetry.dev-dependencies]
 black = "^20.8b1"

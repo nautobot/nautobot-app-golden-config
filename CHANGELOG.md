@@ -17,6 +17,7 @@
 - #105 Added structure data config compliance
 - #119 Migrate to Github Actions
 - #121 Moved to Celery for development environment
+- Added Mysql to development environment
 
 ## v0.9.5 - 2021-07
 

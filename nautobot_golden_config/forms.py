@@ -135,6 +135,8 @@ class ComplianceRuleFilterForm(utilities_forms.BootstrapMixin, extras_forms.Cust
     """Form for ComplianceRule instances."""
 
     model = models.ComplianceRule
+
+    q = forms.CharField(required=False, label="Search")
     platform = utilities_forms.DynamicModelMultipleChoiceField(queryset=Platform.objects.all(), required=False)
     feature = utilities_forms.DynamicModelMultipleChoiceField(
         queryset=models.ComplianceFeature.objects.all(), required=False
@@ -183,7 +185,7 @@ class ComplianceFeatureFilterForm(utilities_forms.BootstrapMixin, extras_forms.C
     """Form for ComplianceFeature instances."""
 
     model = models.ComplianceFeature
-
+    q = forms.CharField(required=False, label="Search")
     name = utilities_forms.DynamicModelChoiceField(queryset=models.ComplianceFeature.objects.all(), required=False)
 
 

@@ -40,15 +40,12 @@ def get_job_filter(data=None):
         query.update({"id": data["device"].values_list("pk", flat=True)})
 
     base_qs = models.GoldenConfigSetting.objects.first().get_queryset()
-    device_list = DeviceFilterSet(data=query, queryset=base_qs).qs
-    no_platform_devices = [
-        dev_name[0] for dev_name in device_list.values_list("name", "platform") if dev_name[1] is None
-    ]
-    if len(no_platform_devices) > 0:
-        raise ValueError(
-            f"The following device(s) {', '.join(no_platform_devices)} have no platform defined. Platform is required."
+    if DeviceFilterSet(data=query, queryset=base_qs).qs.filter(platform__isnull=True).count() > 0:
+        raise NornirNautobotException(
+            f"The following device(s) {', '.join([device.name for device in DeviceFilterSet(data=query, queryset=base_qs).qs.filter(platform__isnull=True)])} have no platform defined. Platform is required."
         )
-    return device_list
+
+    return DeviceFilterSet(data=query, queryset=base_qs).qs
 
 
 def null_to_empty(val):

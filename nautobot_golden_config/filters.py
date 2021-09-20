@@ -332,6 +332,13 @@ class ComplianceFeatureFilter(CustomFieldModelFilterSet):
         label="Search",
     )
 
+    def search(self, queryset, name, value):  # pylint: disable=unused-argument,no-self-use
+        """Perform the filtered search."""
+        if not value.strip():
+            return queryset
+        qs_filter = Q(name__icontains=value)
+        return queryset.filter(qs_filter)
+
     class Meta:
         """Boilerplate filter Meta data for compliance feature."""
 
@@ -342,11 +349,23 @@ class ComplianceFeatureFilter(CustomFieldModelFilterSet):
 class ComplianceRuleFilter(CustomFieldModelFilterSet):
     """Inherits Base Class CustomFieldModelFilterSet."""
 
+    q = django_filters.CharFilter(
+        method="search",
+        label="Search",
+    )
+
+    def search(self, queryset, name, value):  # pylint: disable=unused-argument,no-self-use
+        """Perform the filtered search."""
+        if not value.strip():
+            return queryset
+        qs_filter = Q(feature__name__icontains=value)
+        return queryset.filter(qs_filter)
+
     class Meta:
         """Boilerplate filter Meta data for compliance rule."""
 
         model = models.ComplianceRule
-        fields = ["platform", "feature"]
+        fields = ["q", "platform", "feature"]
 
 
 class ConfigRemoveFilter(CustomFieldModelFilterSet):

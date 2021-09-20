@@ -40,6 +40,11 @@ def get_job_filter(data=None):
         query.update({"id": data["device"].values_list("pk", flat=True)})
 
     base_qs = models.GoldenConfigSetting.objects.first().get_queryset()
+    if DeviceFilterSet(data=query, queryset=base_qs).qs.filter(platform__isnull=True).count() > 0:
+        raise NornirNautobotException(
+            f"The following device(s) {', '.join([device.name for device in DeviceFilterSet(data=query, queryset=base_qs).qs.filter(platform__isnull=True)])} have no platform defined. Platform is required."
+        )
+
     return DeviceFilterSet(data=query, queryset=base_qs).qs
 
 

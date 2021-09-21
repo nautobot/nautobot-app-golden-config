@@ -45,10 +45,14 @@ PLUGINS_CONFIG["nautobot_golden_config"]["sot_agg_transposer"] = "nautobot_golde
 ```
 The path described must be within the Python path of your worker. It is up to the operator to ensure that happens.
 
-## Config Context
+## Config Contexts
 
 Outside of the scope of this document, but it is worth mentioning the power that configuration context's with integration to Git can provide in this
-solution.
+solution. This is important since config contexts can be used for arbitrary JSON serializable data structures. That is helpful to model configuration
+that is not within Nautobot Core or within a Nautobot Plugin. A common use case is to model "global configuration" like data, such as NTP, DNS, SNMP, etc.
+For more information, please refer to the Nautobot Core documentation on
+[Config Contexts](https://nautobot.readthedocs.io/en/latest/additional-features/config-contexts/#configuration-contexts) and leveraging
+[Git Data Sources](https://nautobot.readthedocs.io/en/stable/user-guides/git-data-source/#using-git-data-sources).
 
 ## Performance
 

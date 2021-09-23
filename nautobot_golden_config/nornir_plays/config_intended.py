@@ -89,7 +89,7 @@ def config_intended(job_result, data, jinja_root_path, intended_root_folder):
     global_settings = GoldenConfigSetting.objects.first()
     verify_global_settings(logger, global_settings, ["jinja_path_template", "intended_path_template", "sot_agg_query"])
     try:
-        nornir_obj = InitNornir(
+        with InitNornir(
             runner=NORNIR_SETTINGS.get("runner"),
             logging={"enabled": False},
             inventory={
@@ -101,20 +101,21 @@ def config_intended(job_result, data, jinja_root_path, intended_root_folder):
                     "defaults": {"now": now},
                 },
             },
-        )
-    except NornirNautobotException as err:
+        ) as nornir_obj:
+
+            nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
+
+            # Run the Nornir Tasks
+            nr_with_processors.run(
+                task=run_template,
+                name="RENDER CONFIG",
+                logger=logger,
+                global_settings=global_settings,
+                job_result=job_result,
+                jinja_root_path=jinja_root_path,
+                intended_root_folder=intended_root_folder,
+            )
+
+    except Exception as err:
         logger.log_failure(None, err)
-        raise NornirNautobotException()
-
-    nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
-
-    # Run the Nornir Tasks
-    nr_with_processors.run(
-        task=run_template,
-        name="RENDER CONFIG",
-        logger=logger,
-        global_settings=global_settings,
-        job_result=job_result,
-        jinja_root_path=jinja_root_path,
-        intended_root_folder=intended_root_folder,
-    )
+        raise

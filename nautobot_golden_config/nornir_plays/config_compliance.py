@@ -133,7 +133,7 @@ def config_compliance(job_result, data, backup_root_path, intended_root_folder):
     global_settings = GoldenConfigSetting.objects.first()
     verify_global_settings(logger, global_settings, ["backup_path_template", "intended_path_template"])
     try:
-        nornir_obj = InitNornir(
+        with InitNornir(
             runner=NORNIR_SETTINGS.get("runner"),
             logging={"enabled": False},
             inventory={
@@ -145,20 +145,22 @@ def config_compliance(job_result, data, backup_root_path, intended_root_folder):
                     "defaults": {"now": now},
                 },
             },
-        )
-    except NornirNautobotException as err:
-        logger.log_failure(None, err)
-        raise NornirNautobotException()
+        ) as nornir_obj:
 
-    nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
-    nr_with_processors.run(
-        task=run_compliance,
-        name="RENDER COMPLIANCE TASK GROUP",
-        logger=logger,
-        global_settings=global_settings,
-        backup_root_path=backup_root_path,
-        intended_root_folder=intended_root_folder,
-        rules=rules,
-    )
+            nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
+
+            nr_with_processors.run(
+                task=run_compliance,
+                name="RENDER COMPLIANCE TASK GROUP",
+                logger=logger,
+                global_settings=global_settings,
+                backup_root_path=backup_root_path,
+                intended_root_folder=intended_root_folder,
+                rules=rules,
+            )
+
+    except Exception as err:
+        logger.log_failure(None, err)
+        raise
 
     logger.log_debug("Completed Compliance for devices.")

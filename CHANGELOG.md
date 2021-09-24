@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.9.7 - 2021-09
+
+### Fixed
+
+- #130 SSH Sessions does not die with celery workers, by adding context manager #128
+- #125 Update search filterset
+
+### Added 
+
+- #126 Add more robust checking for platform
+- #115 Update docs to be more clear on how to use config context
 ## v0.9.6 - 2021-09
 
 ### Fixed
@@ -17,6 +28,7 @@
 - #105 Added structure data config compliance
 - #119 Migrate to Github Actions
 - #121 Moved to Celery for development environment
+- Added Mysql to development environment
 
 ## v0.9.5 - 2021-07
 

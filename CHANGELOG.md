@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.9.7 - 2021-09
+
+### Fixed
+
+- #130 SSH Sessions does not die with celery workers, by adding context manager #128
+
 ## v0.9.6 - 2021-09
 
 ### Fixed

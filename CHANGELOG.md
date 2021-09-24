@@ -5,7 +5,12 @@
 ### Fixed
 
 - #130 SSH Sessions does not die with celery workers, by adding context manager #128
+- #125 Update search filterset
 
+### Added 
+
+- #126 Add more robust checking for platform
+- #115 Update docs to be more clear on how to use config context
 ## v0.9.6 - 2021-09
 
 ### Fixed

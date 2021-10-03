@@ -832,9 +832,9 @@ class ConfigRemoveBulkDeleteView(generic.BulkDeleteView):
 
 ## You can toggle the line below, to prove override works, it uses a different, but similar model, so it renders at least
 #     queryset = models.ConfigRemove.objects.all()
-    # table = tables.ConfigReplaceTable
-    # filterset = filters.ConfigReplaceFilter
-    # filterset_form = forms.ConfigReplaceFeatureFilterForm
+# table = tables.ConfigReplaceTable
+# filterset = filters.ConfigReplaceFilter
+# filterset_form = forms.ConfigReplaceFeatureFilterForm
 
 
 class ConfigReplaceView(generic.ObjectView):

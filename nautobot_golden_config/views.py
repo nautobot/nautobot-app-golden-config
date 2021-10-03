@@ -766,13 +766,13 @@ class GoldenConfigSettingEditView(generic.ObjectEditView):
 #
 
 
-class ConfigRemoveListView(generic.ObjectListView):
-    """View to display the current Line Removals."""
+# class ConfigRemoveListView(generic.ObjectListView):
+#     """View to display the current Line Removals."""
 
-    queryset = models.ConfigRemove.objects.all()
-    table = tables.ConfigRemoveTable
-    filterset = filters.ConfigRemoveFilter
-    filterset_form = forms.ConfigRemoveFeatureFilterForm
+#     queryset = models.ConfigRemove.objects.all()
+#     table = tables.ConfigRemoveTable
+#     filterset = filters.ConfigRemoveFilter
+#     filterset_form = forms.ConfigRemoveFeatureFilterForm
 
 
 class ConfigRemoveView(generic.ObjectView):
@@ -827,13 +827,14 @@ class ConfigRemoveBulkDeleteView(generic.BulkDeleteView):
 #
 
 
-class ConfigReplaceListView(generic.ObjectListView):
-    """View for displaying the current Line Replacements."""
+# class ConfigReplaceListView(generic.ObjectListView):
+#     """View for displaying the current Line Replacements."""
 
-    queryset = models.ConfigReplace.objects.all()
-    table = tables.ConfigReplaceTable
-    filterset = filters.ConfigReplaceFilter
-    filterset_form = forms.ConfigReplaceFeatureFilterForm
+## You can toggle the line below, to prove override works, it uses a different, but similar model, so it renders at least
+#     queryset = models.ConfigRemove.objects.all()
+    # table = tables.ConfigReplaceTable
+    # filterset = filters.ConfigReplaceFilter
+    # filterset_form = forms.ConfigReplaceFeatureFilterForm
 
 
 class ConfigReplaceView(generic.ObjectView):

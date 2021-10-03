@@ -3,6 +3,7 @@ from django.urls import path
 
 from nautobot.extras.views import ObjectChangeLogView
 from nautobot_golden_config import views, models
+from nautobot_golden_config.routers import generate_view
 
 app_name = "nautobot_golden_config"
 
@@ -96,8 +97,8 @@ urlpatterns = [
         name="goldenconfigsetting_changelog",
         kwargs={"model": models.GoldenConfigSetting},
     ),
-    path("config-remove/", views.ConfigRemoveListView.as_view(), name="configremove_list"),
-    path("config-remove/add/", views.ConfigRemoveEditView.as_view(), name="configremove_add"),
+    # path("config-remove/", views.ConfigRemoveListView.as_view(), name="configremove_list"),
+    # path("config-remove/add/", views.ConfigRemoveEditView.as_view(), name="configremove_add"),
     path(
         "config-remove/import/",
         views.ConfigRemoveBulkImportView.as_view(),
@@ -130,8 +131,8 @@ urlpatterns = [
         name="configremove_changelog",
         kwargs={"model": models.ConfigRemove},
     ),
-    path("config-replace/", views.ConfigReplaceListView.as_view(), name="configreplace_list"),
-    path("config-replace/add/", views.ConfigReplaceEditView.as_view(), name="configreplace_add"),
+    # path("config-replace/", views.ConfigReplaceListView.as_view(), name="configreplace_list"),
+    # path("config-replace/add/", views.ConfigReplaceEditView.as_view(), name="configreplace_add"),
     path("config-replace/import/", views.ConfigReplaceBulkImportView.as_view(), name="configreplace_import"),
     path("config-replace/edit/", views.ConfigReplaceBulkEditView.as_view(), name="configreplace_bulk_edit"),
     path(
@@ -153,3 +154,6 @@ urlpatterns = [
         kwargs={"model": models.ConfigReplace},
     ),
 ]
+# Push two, just to prove that it works beyond one
+urlpatterns.extend(generate_view(app_name, "ConfigReplace"))
+urlpatterns.extend(generate_view(app_name, "ConfigRemove"))

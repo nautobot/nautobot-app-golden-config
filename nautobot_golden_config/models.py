@@ -227,8 +227,8 @@ class ConfigCompliance(PrimaryModel):
             else:
                 self.compliance_int = 0
                 self.ordered = value["ordered_compliant"]
-                self.missing = null_to_empty(value["missing"])
-                self.extra = null_to_empty(value["extra"])
+            self.missing = null_to_empty(value["missing"])
+            self.extra = null_to_empty(value["extra"])
         super().save(*args, **kwargs)
 
     @staticmethod

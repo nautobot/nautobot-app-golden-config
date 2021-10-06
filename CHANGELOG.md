@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.9.8 - 2021-10
+
+### Fixed
+
+- Fixing missing and extra fields, for edge cases.
+- Replace enable_golden with enable_intended in default settings.
+
 ## v0.9.7 - 2021-09
 
 ### Fixed

@@ -13,7 +13,7 @@ from nautobot.utilities.filters import TreeNodeMultipleChoiceFilter
 from nautobot_golden_config import models
 
 
-class GoldenConfigFilter(CreatedUpdatedFilterSet):
+class GoldenConfigFilterSet(CreatedUpdatedFilterSet):
     """Filter capabilities for GoldenConfig instances."""
 
     q = django_filters.CharFilter(
@@ -169,7 +169,7 @@ class GoldenConfigFilter(CreatedUpdatedFilterSet):
         ]
 
 
-class ConfigComplianceFilter(CreatedUpdatedFilterSet):
+class ConfigComplianceFilterSet(CreatedUpdatedFilterSet):
     """Filter capabilities for ConfigCompliance instances."""
 
     q = django_filters.CharFilter(
@@ -324,7 +324,7 @@ class ConfigComplianceFilter(CreatedUpdatedFilterSet):
         ]
 
 
-class ComplianceFeatureFilter(CustomFieldModelFilterSet):
+class ComplianceFeatureFilterSet(CustomFieldModelFilterSet):
     """Inherits Base Class CustomFieldModelFilterSet."""
 
     q = django_filters.CharFilter(
@@ -346,7 +346,7 @@ class ComplianceFeatureFilter(CustomFieldModelFilterSet):
         fields = ["q", "name"]
 
 
-class ComplianceRuleFilter(CustomFieldModelFilterSet):
+class ComplianceRuleFilterSet(CustomFieldModelFilterSet):
     """Inherits Base Class CustomFieldModelFilterSet."""
 
     q = django_filters.CharFilter(
@@ -368,7 +368,7 @@ class ComplianceRuleFilter(CustomFieldModelFilterSet):
         fields = ["q", "platform", "feature"]
 
 
-class ConfigRemoveFilter(CustomFieldModelFilterSet):
+class ConfigRemoveFilterSet(CustomFieldModelFilterSet):
     """Inherits Base Class CustomFieldModelFilterSet."""
 
     class Meta:
@@ -378,7 +378,7 @@ class ConfigRemoveFilter(CustomFieldModelFilterSet):
         fields = ["platform", "name"]
 
 
-class ConfigReplaceFilter(CustomFieldModelFilterSet):
+class ConfigReplaceFilterSet(CustomFieldModelFilterSet):
     """Inherits Base Class CustomFieldModelFilterSet."""
 
     class Meta:

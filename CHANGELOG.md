@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.9.9 - 2021-10
+
+### Fixed
+
+- #146 Removed custom fields from showing in Configuration Overview ListView.
+- #145 Rename all Filterset to be compliant with Nautobot naming convention.
+- #143 Added appropriate metadata tag to jobs.
+
 ## v0.9.8 - 2021-10
 
 ### Fixed

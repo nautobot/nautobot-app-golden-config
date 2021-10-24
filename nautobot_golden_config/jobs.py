@@ -19,6 +19,9 @@ from nautobot_golden_config.utilities.git import GitRepo
 LOGGER = logging.getLogger(__name__)
 
 
+name = "Golden Configuration"  # pylint: disable=invalid-name
+
+
 def git_wrapper(obj, orm_obj, git_type):
     """Small wrapper to pull latest branch, and return a GitRepo plugin specific object."""
     if not orm_obj:

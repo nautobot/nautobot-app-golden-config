@@ -1,5 +1,31 @@
 # Changelog
 
+## v0.9.9 - 2021-10
+
+### Fixed
+
+- #146 Removed custom fields from showing in Configuration Overview ListView.
+- #145 Rename all Filterset to be compliant with Nautobot naming convention.
+- #143 Added appropriate metadata tag to jobs.
+
+## v0.9.8 - 2021-10
+
+### Fixed
+
+- Fixing missing and extra fields, for edge cases.
+- Replace enable_golden with enable_intended in default settings.
+
+## v0.9.7 - 2021-09
+
+### Fixed
+
+- #130 SSH Sessions does not die with celery workers, by adding context manager #128
+- #125 Update search filterset
+
+### Added 
+
+- #126 Add more robust checking for platform
+- #115 Update docs to be more clear on how to use config context
 ## v0.9.6 - 2021-09
 
 ### Fixed

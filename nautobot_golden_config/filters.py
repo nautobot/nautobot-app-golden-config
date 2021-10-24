@@ -28,7 +28,7 @@ class GenericPlatformFilterSet(CustomFieldModelFilterSet):
     )
 
 
-class GoldenConfigFilter(CustomFieldModelFilterSet):
+class GoldenConfigFilterSet(CustomFieldModelFilterSet):
     """Filter capabilities for GoldenConfig instances."""
 
     q = django_filters.CharFilter(
@@ -187,7 +187,7 @@ class GoldenConfigFilter(CustomFieldModelFilterSet):
         fields = ["id"]
 
 
-class ConfigComplianceFilter(GoldenConfigFilter):
+class ConfigComplianceFilterSet(GoldenConfigFilterSet):
     """Filter capabilities for ConfigCompliance instances."""
 
     class Meta:
@@ -197,7 +197,7 @@ class ConfigComplianceFilter(GoldenConfigFilter):
         fields = ["id"]
 
 
-class ComplianceFeatureFilter(CustomFieldModelFilterSet):
+class ComplianceFeatureFilterSet(CustomFieldModelFilterSet):
     """Inherits Base Class CustomFieldModelFilterSet."""
 
     q = django_filters.CharFilter(
@@ -219,7 +219,7 @@ class ComplianceFeatureFilter(CustomFieldModelFilterSet):
         fields = ["id", "name"]
 
 
-class ComplianceRuleFilter(GenericPlatformFilterSet):
+class ComplianceRuleFilterSet(GenericPlatformFilterSet):
     """Inherits Base Class CustomFieldModelFilterSet."""
 
     q = django_filters.CharFilter(
@@ -241,7 +241,8 @@ class ComplianceRuleFilter(GenericPlatformFilterSet):
         fields = ["feature", "id"]
 
 
-class ConfigRemoveFilter(GenericPlatformFilterSet):
+
+class ConfigRemoveFilterSet(GenericPlatformFilterSet):
     """Inherits Base Class CustomFieldModelFilterSet."""
 
     q = django_filters.CharFilter(
@@ -263,7 +264,7 @@ class ConfigRemoveFilter(GenericPlatformFilterSet):
         fields = ["id", "name"]
 
 
-class ConfigReplaceFilter(GenericPlatformFilterSet):
+class ConfigReplaceFilterSet(GenericPlatformFilterSet):
     """Inherits Base Class CustomFieldModelFilterSet."""
 
     q = django_filters.CharFilter(

@@ -182,7 +182,7 @@ class GoldenConfigBulkDeleteView(generic.BulkDeleteView):
 class ConfigComplianceListView(generic.ObjectListView):
     """Django View for visualizing the compliance report."""
 
-    filterset = filters.ConfigComplianceFilter
+    filterset = filters.ConfigComplianceFilterSet
     filterset_form = forms.ConfigComplianceFilterForm
     queryset = models.ConfigCompliance.objects.all().order_by("device__name")
     template_name = "nautobot_golden_config/compliance_report.html"
@@ -240,7 +240,7 @@ class ConfigComplianceBulkDeleteView(generic.BulkDeleteView):
 
     queryset = models.ConfigCompliance.objects.all()
     table = tables.ConfigComplianceDeleteTable
-    filterset = filters.ConfigComplianceFilter
+    filterset = filters.ConfigComplianceFilterSet
 
     def post(self, request, **kwargs):
         """Delete instances based on post request data."""
@@ -601,7 +601,7 @@ class ConfigComplianceOverviewOverviewHelper(ContentTypePermissionRequiredMixin,
 class ConfigComplianceOverview(generic.ObjectListView):
     """View for executive report on configuration compliance."""
 
-    filterset = filters.ConfigComplianceFilter
+    filterset = filters.ConfigComplianceFilterSet
     filterset_form = forms.ConfigComplianceFilterForm
     table = tables.ConfigComplianceGlobalFeatureTable
     template_name = "nautobot_golden_config/compliance_overview_report.html"
@@ -709,7 +709,7 @@ class ComplianceFeatureListView(generic.ObjectListView):
     """View for managing the config compliance rule definition."""
 
     table = tables.ComplianceFeatureTable
-    filterset = filters.ComplianceFeatureFilter
+    filterset = filters.ComplianceFeatureFilterSet
     filterset_form = forms.ComplianceFeatureFilterForm
     queryset = models.ComplianceFeature.objects.all()
     # TODO: Get import working
@@ -758,7 +758,7 @@ class ComplianceFeatureBulkEditView(generic.BulkEditView):
     """View for bulk deleting ComplianceFeature instance."""
 
     queryset = models.ComplianceFeature.objects.all()
-    filterset = filters.ComplianceFeatureFilter
+    filterset = filters.ComplianceFeatureFilterSet
     table = tables.ComplianceFeatureTable
     form = forms.ComplianceFeatureBulkEditForm
 
@@ -772,7 +772,7 @@ class ComplianceRuleListView(generic.ObjectListView):
     """View for managing the config compliance rule definition."""
 
     table = tables.ComplianceRuleTable
-    filterset = filters.ComplianceRuleFilter
+    filterset = filters.ComplianceRuleFilterSet
     filterset_form = forms.ComplianceRuleFilterForm
     queryset = models.ComplianceRule.objects.all()
     # TODO: Get import working
@@ -821,7 +821,7 @@ class ComplianceRuleBulkEditView(generic.BulkEditView):
     """View for bulk deleting ComplianceRule instance."""
 
     queryset = models.ComplianceRule.objects.all()
-    filterset = filters.ComplianceRuleFilter
+    filterset = filters.ComplianceRuleFilterSet
     table = tables.ComplianceRuleTable
     form = forms.ComplianceRuleBulkEditForm
 
@@ -876,7 +876,7 @@ class ConfigRemoveListView(generic.ObjectListView):
 
     queryset = models.ConfigRemove.objects.all()
     table = tables.ConfigRemoveTable
-    filterset = filters.ConfigRemoveFilter
+    filterset = filters.ConfigRemoveFilterSet
     filterset_form = forms.ConfigRemoveFeatureFilterForm
 
 
@@ -902,7 +902,7 @@ class ConfigRemoveBulkEditView(generic.BulkEditView):
     """View for bulk deleting ConfigRemove instances."""
 
     queryset = models.ConfigRemove.objects.all()
-    filterset = filters.ConfigRemoveFilter
+    filterset = filters.ConfigRemoveFilterSet
     table = tables.ConfigRemoveTable
     form = forms.ConfigRemoveBulkEditForm
 
@@ -937,7 +937,7 @@ class ConfigReplaceListView(generic.ObjectListView):
 
     queryset = models.ConfigReplace.objects.all()
     table = tables.ConfigReplaceTable
-    filterset = filters.ConfigReplaceFilter
+    filterset = filters.ConfigReplaceFilterSet
     filterset_form = forms.ConfigReplaceFeatureFilterForm
 
 
@@ -983,6 +983,6 @@ class ConfigReplaceBulkEditView(generic.BulkEditView):
     """View for bulk deleting ConfigReplace instances."""
 
     queryset = models.ConfigReplace.objects.all()
-    filterset = filters.ConfigReplaceFilter
+    filterset = filters.ConfigReplaceFilterSet
     table = tables.ConfigReplaceTable
     form = forms.ConfigReplaceBulkEditForm

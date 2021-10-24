@@ -108,7 +108,7 @@ def config_backup(job_result, data, backup_root_folder):
             replace_regex_dict[regex.platform.slug] = []
         replace_regex_dict[regex.platform.slug].append({"replace": regex.replace, "regex": regex.regex})
     try:
-        nornir_obj = InitNornir(
+        with InitNornir(
             runner=NORNIR_SETTINGS.get("runner"),
             logging={"enabled": False},
             inventory={
@@ -120,21 +120,23 @@ def config_backup(job_result, data, backup_root_folder):
                     "defaults": {"now": now},
                 },
             },
-        )
-    except NornirNautobotException as err:
+        ) as nornir_obj:
+
+            nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
+
+            nr_with_processors.run(
+                task=run_backup,
+                name="BACKUP CONFIG",
+                logger=logger,
+                global_settings=global_settings,
+                remove_regex_dict=remove_regex_dict,
+                replace_regex_dict=replace_regex_dict,
+                backup_root_folder=backup_root_folder,
+            )
+            logger.log_debug("Completed configuration from devices.")
+
+    except Exception as err:
         logger.log_failure(None, err)
-        raise NornirNautobotException()
-
-    nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
-
-    nr_with_processors.run(
-        task=run_backup,
-        name="BACKUP CONFIG",
-        logger=logger,
-        global_settings=global_settings,
-        remove_regex_dict=remove_regex_dict,
-        replace_regex_dict=replace_regex_dict,
-        backup_root_folder=backup_root_folder,
-    )
+        raise
 
     logger.log_debug("Completed configuration from devices.")

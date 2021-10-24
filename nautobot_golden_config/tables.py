@@ -223,6 +223,14 @@ class DeleteGoldenConfigTable(BaseTable):
 class GoldenConfigTable(BaseTable):
     """Table to display Config Management Status."""
 
+    def __init__(self, *args, **kwargs):
+        """Remove custom field columns from showing."""
+        super().__init__(*args, **kwargs)
+        for feature in list(self.base_columns.keys()):  # pylint: disable=no-member
+            if feature.startswith("cf_"):
+                self.base_columns.pop(feature)  # pylint: disable=no-member
+                self.sequence.remove(feature)
+
     pk = ToggleColumn()
     name = TemplateColumn(
         template_code="""<a href="{% url 'dcim:device' pk=record.pk %}">{{ record.name }}</a>""",

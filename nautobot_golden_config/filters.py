@@ -241,7 +241,6 @@ class ComplianceRuleFilterSet(GenericPlatformFilterSet):
         fields = ["feature", "id"]
 
 
-
 class ConfigRemoveFilterSet(GenericPlatformFilterSet):
     """Inherits Base Class CustomFieldModelFilterSet."""
 

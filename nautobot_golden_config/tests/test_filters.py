@@ -10,10 +10,10 @@ from .conftest import create_feature_rule_json, create_device_data
 
 
 class ConfigComplianceModelTestCase(TestCase):
-    """Test CRUD operations for ConfigCompliance Model."""
+    """Test filtering operations for ConfigCompliance Model."""
 
     queryset = models.ConfigCompliance.objects.all()
-    filterset = filters.ConfigComplianceFilter
+    filterset = filters.ConfigComplianceFilterSet
 
     def setUp(self):
         """Set up base objects."""
@@ -142,10 +142,10 @@ class ConfigComplianceModelTestCase(TestCase):
 
 
 class GoldenConfigModelTestCase(ConfigComplianceModelTestCase):
-    """Test CRUD operations for GoldenConfig Model."""
+    """Test filtering operations for GoldenConfig Model."""
 
     queryset = models.GoldenConfig.objects.all()
-    filterset = filters.GoldenConfigFilter
+    filterset = filters.GoldenConfigFilterSet
 
     def setUp(self):
         """Set up base objects."""
@@ -163,10 +163,10 @@ class GoldenConfigModelTestCase(ConfigComplianceModelTestCase):
 
 
 class ConfigRemoveModelTestCase(TestCase):
-    """Test ConfigRemove Model."""
+    """Test filtering operations for ConfigRemove Model."""
 
     queryset = models.ConfigRemove.objects.all()
-    filterset = filters.ConfigRemoveFilter
+    filterset = filters.ConfigRemoveFilterSet
 
     def setUp(self):
         """Setup Object."""
@@ -210,10 +210,10 @@ class ConfigRemoveModelTestCase(TestCase):
 
 
 class ConfigReplaceModelTestCase(ConfigRemoveModelTestCase):
-    """Test ConfigReplace Model."""
+    """Test filtering operations for ConfigReplace Model."""
 
     queryset = models.ConfigReplace.objects.all()
-    filterset = filters.ConfigReplaceFilter
+    filterset = filters.ConfigReplaceFilterSet
 
     def setUp(self):
         """Setup Object."""
@@ -239,10 +239,10 @@ class ConfigReplaceModelTestCase(ConfigRemoveModelTestCase):
 
 
 class ComplianceRuleModelTestCase(ConfigRemoveModelTestCase):
-    """Test ComplianceRule Model."""
+    """Test filtering operations for ComplianceRule Model."""
 
     queryset = models.ComplianceRule.objects.all()
-    filterset = filters.ComplianceRuleFilter
+    filterset = filters.ComplianceRuleFilterSet
 
     def setUp(self):
         """Setup Object."""
@@ -270,10 +270,10 @@ class ComplianceRuleModelTestCase(ConfigRemoveModelTestCase):
 
 
 class ComplianceFeatureModelTestCase(TestCase):
-    """Test ComplianceFeature Model."""
+    """Test filtering operations for ComplianceFeature Model."""
 
     queryset = models.ComplianceFeature.objects.all()
-    filterset = filters.ComplianceFeatureFilter
+    filterset = filters.ComplianceFeatureFilterSet
 
     def setUp(self):
         """Setup Object."""

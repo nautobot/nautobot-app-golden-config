@@ -194,6 +194,29 @@ class ConfigComplianceDeleteTable(BaseTable):
         fields = ("device", "feature", "compliance")
 
 
+class DeleteGoldenConfigTable(BaseTable):
+    """
+    Table used in bulk delete confirmation.
+
+    This is required since there model is different when deleting the record compared to when viewing the records initially via Device.
+    """
+
+    pk = ToggleColumn()
+
+    def __init__(self, *args, **kwargs):
+        """Remove all fields from showing except device ."""
+        super().__init__(*args, **kwargs)
+        for feature in list(self.base_columns.keys()):  # pylint: disable=no-member
+            if feature not in ["pk", "device"]:
+                self.base_columns.pop(feature)  # pylint: disable=no-member
+                self.sequence.remove(feature)
+
+    class Meta(BaseTable.Meta):
+        """Meta for class DeleteGoldenConfigTable."""
+
+        model = models.GoldenConfig
+
+
 # GoldenConfig
 
 

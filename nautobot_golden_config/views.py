@@ -112,9 +112,6 @@ class GoldenConfigBulkDeleteView(generic.BulkDeleteView):
 
         form_cls = self.get_form()
 
-        # From the list of Device IDs, get the GoldenConfig IDs
-        obj_to_del = [item[0] for item in models.GoldenConfig.objects.filter(device__pk__in=pk_list).values_list("id")]
-
         if "_confirm" in request.POST:
             form = form_cls(request.POST)
             if form.is_valid():
@@ -137,6 +134,9 @@ class GoldenConfigBulkDeleteView(generic.BulkDeleteView):
             LOGGER.debug("Form validation failed")
 
         else:
+            # From the list of Device IDs, get the GoldenConfig IDs
+            obj_to_del = [item[0] for item in models.GoldenConfig.objects.filter(device__pk__in=pk_list).values_list("id")]
+
             form = form_cls(
                 initial={
                     "pk": obj_to_del,

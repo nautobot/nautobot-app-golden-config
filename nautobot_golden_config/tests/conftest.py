@@ -135,7 +135,7 @@ def create_device(name="foobaz"):
     parent_region, _ = Region.objects.get_or_create(name="Parent Region 1", slug="parent_region-1")
     child_region, _ = Region.objects.get_or_create(name="Child Region 1", slug="child_region-1", parent=parent_region)
     site, _ = Site.objects.get_or_create(name="Site 1", slug="site-1", region=child_region)
-    manufacturer, _ = Manufacturer.objects.get_or_create(name="Manafacturer 1", slug="manufacturer-1")
+    manufacturer, _ = Manufacturer.objects.get_or_create(name="Manufacturer 1", slug="manufacturer-1")
     device_role, _ = DeviceRole.objects.get_or_create(name="Role 1", slug="role-1")
     device_type, _ = DeviceType.objects.get_or_create(
         manufacturer=manufacturer, model="Device Type 1", slug="device-type-1"

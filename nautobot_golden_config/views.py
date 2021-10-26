@@ -135,7 +135,9 @@ class GoldenConfigBulkDeleteView(generic.BulkDeleteView):
 
         else:
             # From the list of Device IDs, get the GoldenConfig IDs
-            obj_to_del = [item[0] for item in models.GoldenConfig.objects.filter(device__pk__in=pk_list).values_list("id")]
+            obj_to_del = [
+                item[0] for item in models.GoldenConfig.objects.filter(device__pk__in=pk_list).values_list("id")
+            ]
 
             form = form_cls(
                 initial={

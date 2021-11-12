@@ -1,7 +1,8 @@
 """Plugin declaration for nautobot_golden_config."""
 
-__version__ = "0.9.9"
+__version__ = "0.9.10"
 
+from netutils.utils import jinja2_convenience_function
 from nautobot.extras.plugins import PluginConfig
 
 
@@ -23,6 +24,7 @@ class GoldenConfig(PluginConfig):
         "per_feature_bar_width": 0.3,
         "per_feature_width": 13,
         "per_feature_height": 4,
+        "jinja_filters": jinja2_convenience_function(),
     }
 
 

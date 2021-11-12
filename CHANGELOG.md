@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.9.10 - 2021-11
+
+### Added
+- #151 Add jinja filter parameter, default to netutils filters, and document
+
+### Fixed
+
+- #148 move diff2html to be locally served
+
 ## v0.9.9 - 2021-10
 
 ### Fixed

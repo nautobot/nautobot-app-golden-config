@@ -18,6 +18,7 @@ from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.utils import get_dispatcher
 
 from nautobot_golden_config.models import GoldenConfigSetting, GoldenConfig
+from nautobot_golden_config.utilities.constant import PLUGIN_CFG
 from nautobot_golden_config.utilities.helper import (
     get_job_filter,
     verify_global_settings,
@@ -68,6 +69,7 @@ def run_template(  # pylint: disable=too-many-arguments
         method="generate_config",
         obj=obj,
         logger=logger,
+        jinja_filters=PLUGIN_CFG["jinja_filters"],
         jinja_template=jinja_template,
         jinja_root_path=jinja_root_path,
         output_file_location=output_file_location,

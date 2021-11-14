@@ -2,12 +2,24 @@
 
 ## v0.9.10 - 2021-11
 
+### Announcements
+
+- Nautobot Golden Config 0.9.X will officially not support versions after 1.2.X
+- Nautobot Golden Config 0.9.X will tentativly not support versions after 1.2.X
+- Nautobot Golgen Config will maintain a `stable-<major>.<minor>` branch name
+- Nautobot Golgen Config branching policy created
+
 ### Added
+
 - #151 Add jinja filter parameter, default to netutils filters, and document
+- #151 Added python 3.10 to test suite
+- #151 Contribution policy updated in Readme
+- #151 Created the ability to have a custom compliance
 
 ### Fixed
 
 - #148 move diff2html to be locally served
+- #151 addressed an issue where ordered compliance is not always set
 
 ## v0.9.9 - 2021-10
 

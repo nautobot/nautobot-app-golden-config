@@ -12,7 +12,6 @@
 ### Added
 
 - #151 Add jinja filter parameter, default to netutils filters, and document
-- #151 Added python 3.10 to test suite
 - #151 Contribution policy updated in Readme
 - #151 Created the ability to have a custom compliance
 

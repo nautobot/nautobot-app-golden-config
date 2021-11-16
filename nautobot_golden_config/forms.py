@@ -6,7 +6,9 @@ import nautobot.extras.forms as extras_forms
 import nautobot.utilities.forms as utilities_forms
 from nautobot.dcim.models import Device, Platform, Region, Site, DeviceRole, DeviceType, Manufacturer, Rack, RackGroup
 from nautobot.extras.models import Status
+from nautobot.extras.models import GitRepository
 from nautobot.tenancy.models import Tenant, TenantGroup
+from nautobot.utilities.forms import DynamicModelMultipleChoiceField
 
 from nautobot_golden_config import models
 
@@ -329,6 +331,13 @@ class GoldenConfigSettingFeatureForm(
     utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelForm, extras_forms.RelationshipModelForm
 ):
     """Filter Form for GoldenConfigSettingFeatureForm instances."""
+
+    backup_repository = DynamicModelMultipleChoiceField(
+        queryset=GitRepository.objects.all(provided_contents__contains="nautobot_golden_config.backupconfigs")
+    )
+    intended_repository = DynamicModelMultipleChoiceField(
+        queryset=GitRepository.objects.all(provided_contents__contains="nautobot_golden_config.intendedconfigs")
+    )
 
     class Meta:
         """Filter Form Meta Data for GoldenConfigSettingFeatureForm instances."""

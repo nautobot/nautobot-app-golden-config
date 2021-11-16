@@ -318,9 +318,9 @@ class GoldenConfig(PrimaryModel):
 class GoldenConfigSetting(PrimaryModel):
     """GoldenConfigSetting Model defintion. This provides global configs instead of via configs.py."""
 
-    backup_repository = models.ForeignKey(
+    backup_repository = models.ManyToManyField(
         to="extras.GitRepository",
-        on_delete=models.SET_NULL,
+        # on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="backup_repository",
@@ -333,9 +333,9 @@ class GoldenConfigSetting(PrimaryModel):
         verbose_name="Backup Path in Jinja Template Form",
         help_text="The Jinja path representation of where the backup file will be found. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.site.slug}}/{{obj.name}}.cfg`",
     )
-    intended_repository = models.ForeignKey(
+    intended_repository = models.ManyToManyField(
         to="extras.GitRepository",
-        on_delete=models.SET_NULL,
+        # on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="intended_repository",

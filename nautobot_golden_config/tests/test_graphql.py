@@ -119,11 +119,11 @@ class TestGraphQLQuery(TestCase):  # pylint: disable=too-many-instance-attribute
             git_obj.save()
 
         GoldenConfigSetting.objects.update(
-            backup_repository=GitRepository.objects.get(
+            backup_repository=GitRepository.objects.all(
                 provided_contents__contains="nautobot_golden_config.backupconfigs"
             ),
             backup_path_template="test/backup",
-            intended_repository=GitRepository.objects.get(
+            intended_repository=GitRepository.objects.all(
                 provided_contents__contains="nautobot_golden_config.intendedconfigs"
             ),
             intended_path_template="test/intended",

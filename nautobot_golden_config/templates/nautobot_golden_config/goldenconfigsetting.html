@@ -102,8 +102,7 @@
                     <td>Jinja Repository</td>
                     <td>
                         {% if object.jinja_repository %}
-                        <a href="{% url 'extras:gitrepository' slug=object.jinja_repository.slug %}">{{
-                            object.jinja_repository }}</a>
+                        <a href="{% url 'extras:gitrepository' slug=object.jinja_repository.slug %}">{{ object.jinja_repository }}</a>
                         {% endif %}
                     </td>
                 </tr>

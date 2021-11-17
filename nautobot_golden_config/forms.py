@@ -8,7 +8,7 @@ from nautobot.dcim.models import Device, Platform, Region, Site, DeviceRole, Dev
 from nautobot.extras.models import Status
 from nautobot.extras.models import GitRepository
 from nautobot.tenancy.models import Tenant, TenantGroup
-from nautobot.utilities.forms import DynamicModelMultipleChoiceField
+from nautobot.utilities.forms import DynamicModelMultipleChoiceField, StaticSelect2Multiple
 
 from nautobot_golden_config import models
 
@@ -332,18 +332,14 @@ class GoldenConfigSettingFeatureForm(
 ):
     """Filter Form for GoldenConfigSettingFeatureForm instances."""
 
-    backup_repository = DynamicModelMultipleChoiceField(
-        queryset=GitRepository.objects.filter(provided_contents__contains="nautobot_golden_config.backupconfigs")
+    backup_repository = forms.ModelMultipleChoiceField(
+        queryset=GitRepository.objects.filter(provided_contents__contains="nautobot_golden_config.backupconfigs"),
+        widget=StaticSelect2Multiple(),
     )
-    intended_repository = DynamicModelMultipleChoiceField(queryset=GitRepository.objects.all())
-
-    # These don't work, and I need ANSWERS!
-    # backup_repository = DynamicModelMultipleChoiceField(
-    #     queryset=GitRepository.objects.all(provided_contents__contains="nautobot_golden_config.backupconfigs")
-    # )
-    # intended_repository = DynamicModelMultipleChoiceField(
-    #     queryset=GitRepository.objects.all(provided_contents__contains="nautobot_golden_config.intendedconfigs")
-    # )
+    intended_repository = forms.ModelMultipleChoiceField(
+        queryset=GitRepository.objects.filter(provided_contents__contains="nautobot_golden_config.intendedconfigs"),
+        widget=StaticSelect2Multiple(),
+    )
 
     class Meta:
         """Filter Form Meta Data for GoldenConfigSettingFeatureForm instances."""

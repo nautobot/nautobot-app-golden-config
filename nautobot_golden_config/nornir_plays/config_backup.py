@@ -18,7 +18,7 @@ from nautobot_plugin_nornir.utils import get_dispatcher
 from nautobot_golden_config.utilities.helper import (
     get_job_filter,
     verify_global_settings,
-    check_jinja_template,
+    render_jinja_template,
 )
 from nautobot_golden_config.models import (
     GoldenConfigSetting,
@@ -54,7 +54,7 @@ def run_backup(  # pylint: disable=too-many-arguments
     backup_obj.backup_last_attempt_date = task.host.defaults.data["now"]
     backup_obj.save()
 
-    backup_path_template_obj = check_jinja_template(obj, logger, global_settings.backup_path_template)
+    backup_path_template_obj = render_jinja_template(obj, logger, global_settings.backup_path_template)
     backup_file = os.path.join(backup_root_folder, backup_path_template_obj)
 
     if global_settings.backup_test_connectivity is not False:

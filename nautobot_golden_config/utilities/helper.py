@@ -1,12 +1,13 @@
 """Helper functions."""
 # pylint: disable=raise-missing-from
 
-from jinja2 import Template, StrictUndefined, UndefinedError
-from jinja2.exceptions import TemplateError, TemplateSyntaxError
+from jinja2 import UndefinedError
+from jinja2.exceptions import TemplateError
 
 from nornir_nautobot.exceptions import NornirNautobotException
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.dcim.models import Device
+from nautobot.utilities.utils import render_jinja2
 
 from nautobot_golden_config import models
 
@@ -63,17 +64,26 @@ def verify_global_settings(logger, global_settings, attrs):
             raise NornirNautobotException()
 
 
-def check_jinja_template(obj, logger, template):
-    """Helper function to catch Jinja based issues and raise with proper NornirException."""
+def render_jinja_template(obj, logger, template):
+    """
+    Helper function to render Jinja templates.
+
+    Args:
+        obj (Device): The Device object from Nautobot.
+        logger (NornirLogger): Logger to log error messages to.
+        template (str): A Jinja2 template to be rendered.
+
+    Returns:
+        str: The ``template`` rendered.
+
+    Raises:
+        NornirNautobotException: When there is an error rendering the ``template``.
+    """
     try:
-        template_rendered = Template(template, undefined=StrictUndefined).render(obj=obj)
-        return template_rendered
+        return render_jinja2(template_code=template, context={"obj": obj})
     except UndefinedError as error:
         logger.log_failure(obj, f"Jinja `{template}` has an error of `{error}`.")
         raise NornirNautobotException()
-    except TemplateSyntaxError as error:
-        logger.log_failure(obj, f"Jinja `{template}` has an error of `{error}`.")
-        raise NornirNautobotException()
-    except TemplateError as error:
+    except TemplateError as error:  # All Jinja2 Template errors stem from this Exception class
         logger.log_failure(obj, f"Jinja `{template}` has an error of `{error}`.")
         raise NornirNautobotException()

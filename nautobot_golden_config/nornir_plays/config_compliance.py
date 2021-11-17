@@ -21,7 +21,7 @@ from nautobot_golden_config.models import ComplianceRule, ConfigCompliance, Gold
 from nautobot_golden_config.utilities.helper import (
     get_job_filter,
     verify_global_settings,
-    check_jinja_template,
+    render_jinja_template,
 )
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.utils import get_platform
@@ -76,7 +76,7 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     compliance_obj.compliance_last_attempt_date = task.host.defaults.data["now"]
     compliance_obj.save()
 
-    intended_path_template_obj = check_jinja_template(obj, logger, global_settings.intended_path_template)
+    intended_path_template_obj = render_jinja_template(obj, logger, global_settings.intended_path_template)
 
     intended_file = os.path.join(intended_root_folder, intended_path_template_obj)
 
@@ -84,7 +84,7 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
         logger.log_failure(obj, f"Unable to locate intended file for device at {intended_file}")
         raise NornirNautobotException()
 
-    backup_template = check_jinja_template(obj, logger, global_settings.backup_path_template)
+    backup_template = render_jinja_template(obj, logger, global_settings.backup_path_template)
     backup_file = os.path.join(backup_root_path, backup_template)
 
     if not os.path.exists(backup_file):

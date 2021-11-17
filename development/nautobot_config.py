@@ -154,3 +154,17 @@ PLUGINS_CONFIG = {
         # "get_custom_compliance": "my.custom_compliance.func",
     },
 }
+
+# Add jinja filter for test cases
+django_jinja_config = None
+for template in TEMPLATES:
+    if template["BACKEND"].startswith("django_jinja"):
+        django_jinja_config = template
+
+if django_jinja_config is not None:
+    jinja_filters = django_jinja_config["OPTIONS"].get("filters")
+    if not jinja_filters:
+        jinja_filters = {}
+        django_jinja_config["OPTIONS"]["filters"] = jinja_filters
+    jinja_filters["return_a"] = lambda x: "a"
+

@@ -321,7 +321,7 @@ class GoldenConfigSetting(PrimaryModel):
     backup_repository = models.ManyToManyField(
         to="extras.GitRepository",
         # on_delete=models.SET_NULL,
-        null=True,
+        # null=True,
         blank=True,
         related_name="backup_repository",
         limit_choices_to={"provided_contents__contains": "nautobot_golden_config.backupconfigs"},
@@ -336,7 +336,7 @@ class GoldenConfigSetting(PrimaryModel):
     intended_repository = models.ManyToManyField(
         to="extras.GitRepository",
         # on_delete=models.SET_NULL,
-        null=True,
+        # null=True,
         blank=True,
         related_name="intended_repository",
         limit_choices_to={"provided_contents__contains": "nautobot_golden_config.intendedconfigs"},

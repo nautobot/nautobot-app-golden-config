@@ -332,7 +332,9 @@ class GoldenConfigSettingFeatureForm(
 ):
     """Filter Form for GoldenConfigSettingFeatureForm instances."""
 
-    backup_repository = DynamicModelMultipleChoiceField(queryset=GitRepository.objects.all())
+    backup_repository = DynamicModelMultipleChoiceField(
+        queryset=GitRepository.objects.filter(provided_contents__contains="nautobot_golden_config.backupconfigs")
+    )
     intended_repository = DynamicModelMultipleChoiceField(queryset=GitRepository.objects.all())
 
     # These don't work, and I need ANSWERS!

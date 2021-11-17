@@ -36,6 +36,7 @@ PLUGINS_CONFIG = {
         "sot_agg_transposer": None,
         "platform_slug_map": None,
         # "jinja_filters": {}, # Defaulted in __init__.py
+        # "get_custom_compliance": "my.custom_compliance.func"
     },
 }
 

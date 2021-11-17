@@ -25,6 +25,7 @@ class GoldenConfig(PluginConfig):
         "per_feature_width": 13,
         "per_feature_height": 4,
         "jinja_filters": jinja2_convenience_function(),
+        "get_custom_compliance": None,
     }
 
 

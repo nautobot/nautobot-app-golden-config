@@ -47,6 +47,7 @@ pydocstyle = "^5.0.2"
 flake8 = "^3.8.4"
 invoke = "^1.5.0"
 yamllint = "^1.26.3"
+Markdown = "3.3.4" # temp pin for https://github.com/Python-Markdown/markdown/issues/1195
 
 
 [tool.black]

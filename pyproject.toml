@@ -23,22 +23,23 @@ classifiers = [
     "Programming Language :: Python :: 3.6",
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
 ]
 packages = [
     { include = "nautobot_golden_config" },
 ]
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = "^3.6.2"
 astroid = "^2.5.5"
 deepdiff = "^5.5.0"
 django-debug-toolbar = "^3.2.1"
 django-pivot = "^1.8.1"
 matplotlib = "^3.3.2"
-nautobot-plugin-nornir = ">=0.9.4"
+nautobot-plugin-nornir = ">=0.9.6"
 
 [tool.poetry.dev-dependencies]
-black = "^20.8b1"
+black = "^21.10b0"
 bandit = "^1.6.2"
 pylint = "2.7.4"
 pylint-django = "^2.0.15"

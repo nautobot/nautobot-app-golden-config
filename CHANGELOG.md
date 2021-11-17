@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.9.10 - 2021-11
+
+### Announcements
+
+- Nautobot Golden Config 0.9.X will officially not support versions after 1.2.X
+- Nautobot Golden Config 0.9.X will tentatively not support versions after 1.2.X
+- Nautobot Golgen Config will maintain a `stable-<major>.<minor>` branch name
+- Nautobot Golgen Config branching policy created
+
+### Added
+
+- #155 Contribution policy updated in Readme
+
+### Fixed
+
+- #148 move diff2html to be locally served
+
 ## v0.9.9 - 2021-10
 
 ### Fixed

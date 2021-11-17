@@ -43,13 +43,15 @@ _What are the supported platforms for Compliance jobs? How do I configure a devi
 The current supported platform and the associated *default* platform slug names are the following for:
 
 * arista_eos
+* bigip_f5
 * cisco_asa
 * cisco_ios
 * cisco_nxos
 * cisco_aireos
-* linux
 * bigip_f5
+* fortinet_fortios
 * juniper_junos
+* linux
 
 The expected "network_os" parameter must be as defined by netutils and golden config uses the platform slug to map from the device to the appropriate
 "network_os" that netutils expects. However, there an ability to map the actual platform slug for compliance and parsing tasks via the plugin settings in your
@@ -72,6 +74,7 @@ _What are the supported platforms for Backup and Intended Configuration jobs? Ho
 The current supported platform and the associated *default* platform slug names are the following for:
 
 * arista_eos
+* cisco_asa
 * cisco_ios
 * cisco_ios_xr
 * cisco_nxos

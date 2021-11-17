@@ -7,7 +7,6 @@ from nornir import InitNornir
 from nornir.core.task import Result, Task
 from nornir.core.plugins.inventory import InventoryPluginRegister
 
-from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
 from nornir_nautobot.utils.logger import NornirLogger
 

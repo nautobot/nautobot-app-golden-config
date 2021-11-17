@@ -218,7 +218,7 @@ class TestGraphQLQuery(TestCase):  # pylint: disable=too-many-instance-attribute
                     "rule": {"feature": {"name": "aaa"}},
                     "intended": "aaa test",
                     "missing": "",
-                    "ordered": False,
+                    "ordered": True,
                 }
             ]
         }

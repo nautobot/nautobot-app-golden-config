@@ -151,5 +151,6 @@ PLUGINS_CONFIG = {
         "enable_intended": is_truthy(os.environ.get("ENABLE_INTENDED", True)),
         "enable_sotagg": is_truthy(os.environ.get("ENABLE_SOTAGG", True)),
         "sot_agg_transposer": os.environ.get("SOT_AGG_TRANSPOSER"),
+        # "jinja_filters": {}, # Defaulted in __init__.py
     },
 }

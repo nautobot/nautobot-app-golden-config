@@ -35,6 +35,7 @@ PLUGINS_CONFIG = {
         "enable_sotagg": True,
         "sot_agg_transposer": None,
         "platform_slug_map": None,
+        # "jinja_filters": {}, # Defaulted in __init__.py
     },
 }
 
@@ -58,6 +59,8 @@ The plugin behavior can be controlled with the following list of settings.
 | per_feature_bar_width | 0.15 | 0.15 | The width of the table bar within the overview report |
 | per_feature_width | 13 | 13 | The width in inches that the overview table can be. |
 | per_feature_height | 4 | 4 | The height in inches that the overview table can be. |
+| jinja_filters | {'ip_addr': ipaddr()} | jinja2_convenience_function() | Key value pair mapping functions to for use within jinja. To remove any filters set empty dictionary as value. |
+
 
 > Note: Over time the intention is to make the compliance report more dynamic, but for now allow users to configure the `per_*` configs in a way that fits best for them.
 

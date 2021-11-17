@@ -326,6 +326,13 @@ class GoldenConfigSetting(PrimaryModel):
         related_name="backup_repository",
         limit_choices_to={"provided_contents__contains": "nautobot_golden_config.backupconfigs"},
     )
+    backup_repository_template = models.CharField(
+        max_length=255,
+        null=False,
+        blank=True,
+        verbose_name="Rule to match a device to a Backup Repository.",
+        help_text="The Jinja path representation of a Backup Repository slug. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `backup-{{obj.site.region.slug}}`",
+    )
     backup_path_template = models.CharField(
         max_length=255,
         null=False,
@@ -340,6 +347,13 @@ class GoldenConfigSetting(PrimaryModel):
         blank=True,
         related_name="intended_repository",
         limit_choices_to={"provided_contents__contains": "nautobot_golden_config.intendedconfigs"},
+    )
+    intended_repository_template = models.CharField(
+        max_length=255,
+        null=False,
+        blank=True,
+        verbose_name="Rule to match a device to an Intended Repository.",
+        help_text="The Jinja path representation of a Intended Repository slug. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `intended-{{obj.site.region.slug}}`",
     )
     intended_path_template = models.CharField(
         max_length=255,

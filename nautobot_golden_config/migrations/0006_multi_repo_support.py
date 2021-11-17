@@ -61,4 +61,14 @@ class Migration(migrations.Migration):
                 to="extras.GitRepository",
             ),
         ),
+        migrations.AddField(
+            model_name="goldenconfigsetting",
+            name="backup_repository_template",
+            field=models.CharField(blank=True, max_length=255),
+        ),
+        migrations.AddField(
+            model_name="goldenconfigsetting",
+            name="intended_repository_template",
+            field=models.CharField(blank=True, max_length=255),
+        ),
     ]

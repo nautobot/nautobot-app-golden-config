@@ -67,7 +67,7 @@
             </div>
             <table class="table table-hover panel-body attr-table">
                 <tr>
-                    <td>Backup Repository</td>
+                    <td>Backup Repositories</td>
                     <td>
                     {% for item in object.backup_repository.all %}
                     {% if object.backup_repository %}
@@ -77,19 +77,31 @@
                     </td>
                 </tr>
                 <tr>
+                    <td>Backup Repository Matching Rule</td>
+                    <td>
+                        <pre>{{ object.backup_repository_template }}</pre>
+                    </td>
+                </tr>
+                <tr>
                     <td>Backup Path Template</td>
                     <td>
                         <pre>{{ object.backup_path_template }}</pre>
                     </td>
                 </tr>
                 <tr>
-                    <td>Intended Repository</td>
+                    <td>Intended Repositories</td>
                     <td>
                     {% for item in object.intended_repository.all %}
                     {% if object.intended_repository %}
                     {% include "nautobot_golden_config/manytomany.html" with url_name="extras:gitrepository" %}
                     {% endif %}
                     {% endfor %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Intended Repository Matching Rule</td>
+                    <td>
+                        <pre>{{ object.intended_repository_template }}</pre>
                     </td>
                 </tr>
                 <tr>

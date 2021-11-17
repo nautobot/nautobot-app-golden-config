@@ -347,8 +347,10 @@ class GoldenConfigSettingFeatureForm(
         model = models.GoldenConfigSetting
         fields = (
             "backup_repository",
+            "backup_repository_template",
             "backup_path_template",
             "intended_repository",
+            "intended_repository_template",
             "intended_path_template",
             "jinja_repository",
             "jinja_path_template",

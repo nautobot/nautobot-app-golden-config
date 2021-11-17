@@ -32,6 +32,7 @@ but not want to use other features, which is perfectly fine to do so.
 - [Navigating SoTAgg](./docs/navigating-sot-agg.md)
 - [Navigating Compliance](./docs/navigating-compliance.md)
 - [Navigating JSON Compliance](./docs/navigating-compliance-json.md)
+- [Navigating Custom Compliance](./docs/navigating-compliance-custom.md)
 - [FAQ](./docs/FAQ.md)
 
 ## Screenshots

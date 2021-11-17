@@ -35,7 +35,7 @@ def get_rules():
     """A serializer of sorts to return rule mappings as a dictionary."""
     # TODO: Review if creating a proper serializer is the way to go.
     rules = {}
-    for obj in ComplianceRule.objects.filter(config_type="cli"):
+    for obj in ComplianceRule.objects.exclude(match_config__exact=""):
         platform = str(obj.platform.slug)
         if not rules.get(platform):
             rules[platform] = []

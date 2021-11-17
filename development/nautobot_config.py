@@ -151,5 +151,6 @@ PLUGINS_CONFIG = {
         "enable_intended": is_truthy(os.environ.get("ENABLE_INTENDED", True)),
         "enable_sotagg": is_truthy(os.environ.get("ENABLE_SOTAGG", True)),
         "sot_agg_transposer": os.environ.get("SOT_AGG_TRANSPOSER"),
+        # "get_custom_compliance": "my.custom_compliance.func",
     },
 }

@@ -171,14 +171,15 @@ class BackupJob(Job, FormEntry):
         """Run config backup process."""
         now = datetime.now()
         LOGGER.debug("Pull Backup config repo.")
-        backup_repo = git_wrapper(self, GoldenConfigSetting.objects.first().backup_repository, "backup")
+        for repo in GoldenConfigSetting.objects.first().backup_repository.all():
+            backup_repo = git_wrapper(self, repo, "backup")
 
-        LOGGER.debug("Run nornir play.")
-        config_backup(self, data, backup_repo.path)
+            LOGGER.debug("Run nornir play.")
+            config_backup(self, data, backup_repo.path)
 
-        LOGGER.debug("Pull Backup config repo.")
-        backup_repo.commit_with_added(f"BACKUP JOB {now}")
-        backup_repo.push()
+            LOGGER.debug("Pull Backup config repo.")
+            backup_repo.commit_with_added(f"BACKUP JOB {now}")
+            backup_repo.push()
 
 
 class AllGoldenConfig(Job):

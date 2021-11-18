@@ -358,3 +358,14 @@ class GoldenConfigSettingFeatureForm(
             "scope",
             "sot_agg_query",
         )
+
+    def clean(self):
+        """Clean."""
+        super().clean()
+        if self.cleaned_data.get("backup_repository").count() > 1:
+            if not self.cleaned_data.get("backup_repository_template"):
+                raise forms.ValidationError("If more than one backup repository specified, you must provide a backup repository template.")
+            
+        if self.cleaned_data.get("intended_repository").count() > 1:
+            if not self.cleaned_data.get("intended_repository_template"):
+                raise forms.ValidationError("If more than one intended repository specified, you must provide an intended repository template.")

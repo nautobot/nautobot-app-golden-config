@@ -166,20 +166,29 @@ class BackupJob(Job, FormEntry):
         name = "Backup Configurations"
         description = "Backup the configurations of your network devices."
 
+    def _backup(self, repo, data, now):
+        backup_repo = git_wrapper(self, repo, "backup")
+
+        LOGGER.debug("Run nornir play.")
+        config_backup(self, data, backup_repo.path)
+
+        LOGGER.debug("Pull Backup config repo.")
+        backup_repo.commit_with_added(f"BACKUP JOB {now}")
+        backup_repo.push()
+        
     @commit_check
     def run(self, data, commit):
         """Run config backup process."""
         now = datetime.now()
         LOGGER.debug("Pull Backup config repo.")
-        for repo in GoldenConfigSetting.objects.first().backup_repository.all():
-            backup_repo = git_wrapper(self, repo, "backup")
-
-            LOGGER.debug("Run nornir play.")
-            config_backup(self, data, backup_repo.path)
-
-            LOGGER.debug("Pull Backup config repo.")
-            backup_repo.commit_with_added(f"BACKUP JOB {now}")
-            backup_repo.push()
+        
+        golden_settings = GoldenConfigSetting.objects.first()
+        
+        if golden_settings.backup_repository.count() == 1:
+            self._backup(golden_settings.backup_repository, data, now)
+        else:
+            for repo in golden_settings.backup_repository.all():
+                self._backup(repo.backup_repository, data, now)
 
 
 class AllGoldenConfig(Job):

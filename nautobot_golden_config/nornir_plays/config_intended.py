@@ -8,7 +8,7 @@ from nornir import InitNornir
 from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir.core.task import Result, Task
 
-import django_jinja
+from django_jinja.backend import Jinja2
 
 from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
@@ -68,7 +68,7 @@ def run_template(  # pylint: disable=too-many-arguments
         raise NornirNautobotException()
     task.host.data.update(device_data)
 
-    jinja_settings = django_jinja.backend.Jinja2.get_default()
+    jinja_settings = Jinja2.get_default()
     jinja_env = jinja_settings.env
 
     generated_config = task.run(

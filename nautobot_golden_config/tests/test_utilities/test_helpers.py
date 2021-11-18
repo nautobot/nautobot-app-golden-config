@@ -48,7 +48,6 @@ class HelpersTest(unittest.TestCase):
         rendered_template = render_jinja_template(mock_device, "logger", "{{ data | return_a }}")
         self.assertEqual(rendered_template, "a")
 
-    @unittest.skip("Need to figure out why this does not raise an exception")
     @patch("nautobot.dcim.models.Device", spec=Device)
     def test_render_jinja_template_exceptions_undefined(self, mock_device):
         """Use fake obj key to cause UndefinedError from Jinja2 Template."""

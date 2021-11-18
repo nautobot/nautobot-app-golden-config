@@ -162,9 +162,13 @@ for template in TEMPLATES:
         django_jinja_config = template
 
 if django_jinja_config is not None:
-    jinja_filters = django_jinja_config["OPTIONS"].get("filters")
+    jinja_options = django_jinja_config.get("OPTIONS")
+    if not jinja_options:
+        jinja_options = {}
+        django_jinja_config["OPTIONS"] = jinja_options
+    jinja_options["undefined"] = "jinja2.StrictUndefined"
+    jinja_filters = jinja_options.get("filters")
     if not jinja_filters:
         jinja_filters = {}
         django_jinja_config["OPTIONS"]["filters"] = jinja_filters
     jinja_filters["return_a"] = lambda x: "a"
-

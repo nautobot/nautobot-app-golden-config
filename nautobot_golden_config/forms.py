@@ -8,7 +8,7 @@ from nautobot.dcim.models import Device, Platform, Region, Site, DeviceRole, Dev
 from nautobot.extras.models import Status
 from nautobot.extras.models import GitRepository
 from nautobot.tenancy.models import Tenant, TenantGroup
-from nautobot.utilities.forms import DynamicModelMultipleChoiceField, StaticSelect2Multiple
+from nautobot.utilities.forms import StaticSelect2Multiple
 
 from nautobot_golden_config import models
 
@@ -364,8 +364,12 @@ class GoldenConfigSettingFeatureForm(
         super().clean()
         if self.cleaned_data.get("backup_repository").count() > 1:
             if not self.cleaned_data.get("backup_repository_template"):
-                raise forms.ValidationError("If more than one backup repository specified, you must provide a backup repository template.")
-            
+                raise forms.ValidationError(
+                    "If more than one backup repository specified, you must provide a backup repository template."
+                )
+
         if self.cleaned_data.get("intended_repository").count() > 1:
             if not self.cleaned_data.get("intended_repository_template"):
-                raise forms.ValidationError("If more than one intended repository specified, you must provide an intended repository template.")
+                raise forms.ValidationError(
+                    "If more than one intended repository specified, you must provide an intended repository template."
+                )

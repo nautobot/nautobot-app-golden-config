@@ -159,6 +159,13 @@ def stop(context):
 
 
 @task
+def restart(context):
+    """Gracefully restart all containers."""
+    print("Restarting Nautobot...")
+    docker_compose(context, "restart")
+
+
+@task
 def destroy(context):
     """Destroy all containers and volumes.
 

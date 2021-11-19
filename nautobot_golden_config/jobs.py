@@ -175,7 +175,7 @@ class BackupJob(Job, FormEntry):
         LOGGER.debug("Pull Backup config repo.")
         backup_repo.commit_with_added(f"BACKUP JOB {now}")
         backup_repo.push()
-        
+
     @commit_check
     def run(self, data, commit):
         """Run config backup process."""
@@ -185,10 +185,10 @@ class BackupJob(Job, FormEntry):
         golden_settings = GoldenConfigSetting.objects.first()
         
         if golden_settings.backup_repository.count() == 1:
-            self._backup(golden_settings.backup_repository, data, now)
+            self._backup(golden_settings.backup_repository.first(), data, now)
         else:
             for repo in golden_settings.backup_repository.all():
-                self._backup(repo.backup_repository, data, now)
+                self._backup(repo, data, now)
 
 
 class AllGoldenConfig(Job):

@@ -55,8 +55,6 @@ def run_backup(  # pylint: disable=too-many-arguments
     backup_obj.backup_last_attempt_date = task.host.defaults.data["now"]
     backup_obj.save()
 
-    backedup_device = {"device": []}
-
     for backup_root_dir in backup_root_folder:
         if global_settings.backup_repository_template:
             repo_template = check_jinja_template(obj, logger, global_settings.backup_repository_template)
@@ -68,36 +66,32 @@ def run_backup(  # pylint: disable=too-many-arguments
         backup_path_template_obj = check_jinja_template(obj, logger, global_settings.backup_path_template)
         backup_file = os.path.join(backup_root_folder, backup_path_template_obj)
 
-        if task.host.name not in backedup_device["device"]:
-            if global_settings.backup_test_connectivity is not False:
-                task.run(
-                    task=dispatcher,
-                    name="TEST CONNECTIVITY",
-                    method="check_connectivity",
-                    obj=obj,
-                    logger=logger,
-                    default_drivers_mapping=get_dispatcher(),
-                )
-            running_config = task.run(
+        if global_settings.backup_test_connectivity is not False:
+            task.run(
                 task=dispatcher,
-                name="SAVE BACKUP CONFIGURATION TO FILE",
-                method="get_config",
+                name="TEST CONNECTIVITY",
+                method="check_connectivity",
                 obj=obj,
                 logger=logger,
-                backup_file=backup_file,
-                remove_lines=remove_regex_dict.get(obj.platform.slug, []),
-                substitute_lines=replace_regex_dict.get(obj.platform.slug, []),
                 default_drivers_mapping=get_dispatcher(),
-            )[1].result["config"]
+            )
+        running_config = task.run(
+            task=dispatcher,
+            name="SAVE BACKUP CONFIGURATION TO FILE",
+            method="get_config",
+            obj=obj,
+            logger=logger,
+            backup_file=backup_file,
+            remove_lines=remove_regex_dict.get(obj.platform.slug, []),
+            substitute_lines=replace_regex_dict.get(obj.platform.slug, []),
+            default_drivers_mapping=get_dispatcher(),
+        )[1].result["config"]
 
-            backup_obj.backup_last_success_date = task.host.defaults.data["now"]
-            backup_obj.backup_config = running_config
-            backup_obj.save()
-            logger.log_success(obj, "Successfully backed up device.")
-        else:
-            logger.DEBUG("Device already backed up in another repository %s", task.host.name)
+        backup_obj.backup_last_success_date = task.host.defaults.data["now"]
+        backup_obj.backup_config = running_config
+        backup_obj.save()
 
-        backedup_device["device"].append(task.host.name)
+        logger.log_success(obj, "Successfully backed up device.")
         return Result(host=task.host, result=running_config)
 
 

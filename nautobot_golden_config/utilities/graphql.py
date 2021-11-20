@@ -42,7 +42,7 @@ def graph_ql_query(request, device, query):
 
     
 
-    data = data.get("device", {})
+
 
     if PLUGIN_CFG.get("sot_agg_transposer"):
         LOGGER.debug("GraphQL - tansform data with function: `%s`", str(PLUGIN_CFG.get("sot_agg_transposer")))

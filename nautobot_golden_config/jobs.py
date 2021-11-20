@@ -166,29 +166,44 @@ class BackupJob(Job, FormEntry):
         name = "Backup Configurations"
         description = "Backup the configurations of your network devices."
 
-    def _backup(self, repo, data, now):
-        backup_repo = git_wrapper(self, repo, "backup")
+    # def _backup(self, repo, data, now):
+    #     """Backup."""
+    #     backup_repo = git_wrapper(self, repo, "backup")
+    #     LOGGER.debug("Run nornir play.")
+    #     config_backup(self, data, backup_repo.path)
+    #     LOGGER.debug("Pull Backup config repo.")
+    #     backup_repo.commit_with_added(f"BACKUP JOB {now}")
+    #     backup_repo.push()
 
-        LOGGER.debug("Run nornir play.")
-        config_backup(self, data, backup_repo.path)
-
-        LOGGER.debug("Pull Backup config repo.")
-        backup_repo.commit_with_added(f"BACKUP JOB {now}")
-        backup_repo.push()
+    # @commit_check
+    # def run(self, data, commit):
+    #     """Run config backup process."""
+    #     now = datetime.now()
+    #     LOGGER.debug("Pull Backup config repo.")
+    #     golden_settings = GoldenConfigSetting.objects.first()
+    #     if golden_settings.backup_repository.count() == 1:
+    #         self._backup(golden_settings.backup_repository.first(), data, now)
+    #     else:
+    #         for repo in golden_settings.backup_repository.all():
+    #             self._backup(repo, data, now)
 
     @commit_check
     def run(self, data, commit):
         """Run config backup process."""
         now = datetime.now()
         LOGGER.debug("Pull Backup config repo.")
-        
         golden_settings = GoldenConfigSetting.objects.first()
-        
-        if golden_settings.backup_repository.count() == 1:
-            self._backup(golden_settings.backup_repository.first(), data, now)
-        else:
-            for repo in golden_settings.backup_repository.all():
-                self._backup(repo, data, now)
+
+        backup_repos = [git_wrapper(self, repo, "backup") for repo in golden_settings.backup_repository.all()]
+        LOGGER.debug("Starting backup jobs to the following repos: %s", backup_repos)
+
+        LOGGER.debug("Run nornir play.")
+        config_backup(self, data, backup_repos)
+
+        LOGGER.debug("Pull Backup config repo.")
+        for backup_repo in backup_repos:
+            backup_repo.commit_with_added(f"BACKUP JOB {now}")
+            backup_repo.push()
 
 
 class AllGoldenConfig(Job):

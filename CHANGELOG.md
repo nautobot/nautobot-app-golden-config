@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.0.0 - 2021-XX-XX
+
+### Added
+
+- Updated git repository settings form to have a custom clean method to enfroce
+a template path in case of more than 1 repository selected.
+
 ## v0.9.10 - 2021-11
 
 ### Announcements

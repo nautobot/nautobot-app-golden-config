@@ -18,6 +18,7 @@ from nautobot_plugin_nornir.utils import get_dispatcher
 
 from nautobot_golden_config.utilities.helper import (
     get_job_filter,
+    get_root_folder,
     verify_global_settings,
     check_jinja_template,
 )
@@ -56,13 +57,7 @@ def run_backup(  # pylint: disable=too-many-arguments
     backup_obj.save()
 
     for backup_root_dir in backup_root_folder:
-        if global_settings.backup_repository_template:
-            repo_template = check_jinja_template(obj, logger, global_settings.backup_repository_template)
-            # TODO: How does this path get defined? Can we bring it from somewhere?
-            backup_root_folder = f"/opt/nautobot/git/{repo_template}"
-        else:
-            backup_root_folder = backup_root_dir.path
-
+        backup_root_folder = get_root_folder(backup_root_dir, "backup", obj, logger, global_settings)
         backup_path_template_obj = check_jinja_template(obj, logger, global_settings.backup_path_template)
         backup_file = os.path.join(backup_root_folder, backup_path_template_obj)
 

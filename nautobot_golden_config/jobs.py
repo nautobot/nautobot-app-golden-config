@@ -130,17 +130,22 @@ class IntendedJob(Job, FormEntry):
     def run(self, data, commit):
         """Run config generation script."""
         now = datetime.now()
+
         LOGGER.debug("Pull Jinja template repo.")
         jinja_repo = git_wrapper(self, GoldenConfigSetting.objects.first().jinja_repository, "jinja")
+
         LOGGER.debug("Pull Intended config repo.")
-        intended_repo = git_wrapper(self, GoldenConfigSetting.objects.first().intended_repository, "intended")
+        golden_config = GoldenConfigSetting.objects.first()
+
+        intended_repos = [git_wrapper(self, repo, "intended") for repo in golden_config.intended_repository.all()]
 
         LOGGER.debug("Run config intended nornir play.")
-        config_intended(self, data, jinja_repo.path, intended_repo.path)
+        config_intended(self, data, jinja_repo.path, intended_repos)
 
-        LOGGER.debug("Push new intended configs to repo.")
-        intended_repo.commit_with_added(f"INTENDED CONFIG CREATION JOB - {now}")
-        intended_repo.push()
+        for intended_repo in intended_repos:
+            LOGGER.debug("Push new intended configs to repo.")
+            intended_repo.commit_with_added(f"INTENDED CONFIG CREATION JOB - {now}")
+            intended_repo.push()
 
 
 class BackupJob(Job, FormEntry):

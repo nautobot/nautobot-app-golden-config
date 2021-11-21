@@ -1,12 +1,14 @@
 """Helper functions."""
 # pylint: disable=raise-missing-from
-
 from jinja2 import Template, StrictUndefined, UndefinedError
 from jinja2.exceptions import TemplateError, TemplateSyntaxError
 
 from nornir_nautobot.exceptions import NornirNautobotException
+from nornir_nautobot.utils.logger import NornirLogger
+
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.dcim.models import Device
+from nautobot.extras.models.datasources import GitRepository
 
 from nautobot_golden_config import models
 
@@ -77,3 +79,31 @@ def check_jinja_template(obj, logger, template):
     except TemplateError as error:
         logger.log_failure(obj, f"Jinja `{template}` has an error of `{error}`.")
         raise NornirNautobotException()
+
+
+def get_root_folder(
+    repo: GitRepository, repo_type: str, obj: Device, logger: NornirLogger, global_settings: models.GoldenConfigSetting
+) -> str:
+    """Generate root folder path for multiple repository support with template str matching.
+
+    Args:
+        repo (GitRepository): Repository object.
+        repo_type (str): `intended` or `backup` repository
+        obj (Device): Devie object.
+        logger (NornirLogger): Logger object
+        global_settings (models.GoldenConfigSetting): Golden Config global settings.
+
+    Returns:
+        str: backup root folder
+    """
+    if repo_type == "intended":
+        repo_template = global_settings.intended_repository_template
+    elif repo_type == "backup":
+        repo_template = global_settings.backup_repository_template
+
+    if repo_template:
+        repo_template = check_jinja_template(obj, logger, repo_template)
+        backup_root_folder = f"/opt/nautobot/git/{repo_template}"
+    else:
+        backup_root_folder = repo.path
+    return backup_root_folder

@@ -3,6 +3,7 @@
 import difflib
 import logging
 import os
+from itertools import zip_longest
 
 from datetime import datetime
 
@@ -77,7 +78,15 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     compliance_obj.compliance_last_attempt_date = task.host.defaults.data["now"]
     compliance_obj.save()
 
-    for intended_repo, backup_repo in intended_root_folder, backup_root_path:
+    rescue = {}
+    for intended_repo, backup_repo in zip_longest(intended_root_folder, backup_root_path):
+        # Zip longest appends None if no value found in loop through two lists.
+        # Edge cases where two repos & one intended or vice-versa.
+        if not intended_repo:
+            intended_repo = rescue["intended_repo"]
+        if not backup_repo:
+            backup_repo = rescue["backup_repo"]
+
         intended_root_folder = get_root_folder(intended_repo, "intended", obj, logger, global_settings)
         intended_path_template_obj = check_jinja_template(obj, logger, global_settings.intended_path_template)
         intended_file = os.path.join(intended_root_folder, intended_path_template_obj)
@@ -124,6 +133,10 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
         compliance_obj.compliance_config = "\n".join(diff_files(backup_file, intended_file))
         compliance_obj.save()
         logger.log_success(obj, "Successfully tested compliance.")
+
+        # Add values to dict to track and rescue in case.
+        rescue["intended_repo"] = intended_repo
+        rescue["backup_repo"] = backup_repo
 
         return Result(host=task.host)
 

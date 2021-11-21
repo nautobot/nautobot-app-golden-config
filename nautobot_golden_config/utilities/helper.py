@@ -100,10 +100,12 @@ def get_root_folder(
         repo_template = global_settings.intended_repository_template
     elif repo_type == "backup":
         repo_template = global_settings.backup_repository_template
+    # elif jinja template multiple support?
 
     if repo_template:
         repo_template = check_jinja_template(obj, logger, repo_template)
         backup_root_folder = f"/opt/nautobot/git/{repo_template}"
     else:
         backup_root_folder = repo.path
+
     return backup_root_folder

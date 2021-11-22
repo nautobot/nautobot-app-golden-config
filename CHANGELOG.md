@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.0.0 - 2021-XX-XX
+
+### Added
+
+- Updated GoldenConfigSettings form to have a custom clean method to enfroce
+a template path in case of more than 1 repository selected for backup or inteded repos.
+- Updated backup job to execute against multiple repos if available based on pattern matching
+- Updated intended job to execute against multiple repos if available based on pattern matching
+- Updated compliance job to execute from multiple repos if available based on pattern matching
+- Added utility function to generate the root path based on available template path
+
 ## v0.9.10 - 2021-11
 
 ### Announcements

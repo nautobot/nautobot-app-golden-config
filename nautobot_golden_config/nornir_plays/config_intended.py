@@ -20,6 +20,7 @@ from nautobot_plugin_nornir.utils import get_dispatcher
 from nautobot_golden_config.models import GoldenConfigSetting, GoldenConfig
 from nautobot_golden_config.utilities.helper import (
     get_job_filter,
+    get_root_folder,
     verify_global_settings,
     check_jinja_template,
 )
@@ -51,35 +52,38 @@ def run_template(  # pylint: disable=too-many-arguments
     intended_obj.intended_last_attempt_date = task.host.defaults.data["now"]
     intended_obj.save()
 
-    intended_path_template_obj = check_jinja_template(obj, logger, global_settings.intended_path_template)
-    output_file_location = os.path.join(intended_root_folder, intended_path_template_obj)
+    for intended_root_dir in intended_root_folder:
+        intended_root_folder = get_root_folder(intended_root_dir, "intended", obj, logger, global_settings)
+        intended_path_template_obj = check_jinja_template(obj, logger, global_settings.intended_path_template)
+        output_file_location = os.path.join(intended_root_folder, intended_path_template_obj)
 
-    jinja_template = check_jinja_template(obj, logger, global_settings.jinja_path_template)
+        jinja_template = check_jinja_template(obj, logger, global_settings.jinja_path_template)
+        status, device_data = graph_ql_query(job_result.request, obj, global_settings.sot_agg_query)
+        if status != 200:
+            logger.log_failure(
+                obj, f"The GraphQL query return a status of {str(status)} with error of {str(device_data)}"
+            )
+            raise NornirNautobotException()
+        task.host.data.update(device_data)
 
-    status, device_data = graph_ql_query(job_result.request, obj, global_settings.sot_agg_query)
-    if status != 200:
-        logger.log_failure(obj, f"The GraphQL query return a status of {str(status)} with error of {str(device_data)}")
-        raise NornirNautobotException()
-    task.host.data.update(device_data)
+        generated_config = task.run(
+            task=dispatcher,
+            name="GENERATE CONFIG",
+            method="generate_config",
+            obj=obj,
+            logger=logger,
+            jinja_template=jinja_template,
+            jinja_root_path=jinja_root_path,
+            output_file_location=output_file_location,
+            default_drivers_mapping=get_dispatcher(),
+        )[1].result["config"]
+        intended_obj.intended_last_success_date = task.host.defaults.data["now"]
+        intended_obj.intended_config = generated_config
+        intended_obj.save()
 
-    generated_config = task.run(
-        task=dispatcher,
-        name="GENERATE CONFIG",
-        method="generate_config",
-        obj=obj,
-        logger=logger,
-        jinja_template=jinja_template,
-        jinja_root_path=jinja_root_path,
-        output_file_location=output_file_location,
-        default_drivers_mapping=get_dispatcher(),
-    )[1].result["config"]
-    intended_obj.intended_last_success_date = task.host.defaults.data["now"]
-    intended_obj.intended_config = generated_config
-    intended_obj.save()
+        logger.log_success(obj, "Successfully generated the intended configuration.")
 
-    logger.log_success(obj, "Successfully generated the intended configuration.")
-
-    return Result(host=task.host, result=generated_config)
+        return Result(host=task.host, result=generated_config)
 
 
 def config_intended(job_result, data, jinja_root_path, intended_root_folder):

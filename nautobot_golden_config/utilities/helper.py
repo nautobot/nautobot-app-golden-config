@@ -104,6 +104,9 @@ def get_root_folder(
 
     if repo_template:
         repo_template = check_jinja_template(obj, logger, repo_template)
+        # Figure out how to get this from settings or something?
+        # repo.path returns(example) = "/opt/nautobot/git/repo-name/"
+        # Can we do something with this ^
         backup_root_folder = f"/opt/nautobot/git/{repo_template}"
     else:
         backup_root_folder = repo.path

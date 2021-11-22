@@ -1,41 +1,34 @@
 """Django views for Nautobot Golden Configuration."""
-from datetime import datetime, timezone
-
 import base64
+import difflib
 import io
 import json
 import logging
 import urllib
-import difflib
-import yaml
+from datetime import datetime, timezone
 
 import matplotlib.pyplot as plt
-import numpy as np
-from packaging.version import Version
-
-from django.contrib import messages
-from django.db.models import F, Q, Max
-from django.db.models import Count, FloatField, ExpressionWrapper, ProtectedError
-from django.forms import ModelMultipleChoiceField, MultipleHiddenInput
-from django.shortcuts import render, redirect
-from django_pivot.pivot import pivot
-
 import nautobot
-
+import numpy as np
+import yaml
+from django.contrib import messages
+from django.db.models import Count, ExpressionWrapper, F, FloatField, Max, ProtectedError, Q
+from django.forms import ModelMultipleChoiceField, MultipleHiddenInput
+from django.shortcuts import redirect, render
+from django_pivot.pivot import pivot
 from nautobot.core.views import generic
-from nautobot.dcim.models import Device
-from nautobot.extras.models import CustomField
-
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.dcim.forms import DeviceFilterForm
-from nautobot.utilities.utils import csv_format
+from nautobot.dcim.models import Device
+from nautobot.extras.models import CustomField
 from nautobot.utilities.error_handlers import handle_protectederror
 from nautobot.utilities.forms import ConfirmationForm
+from nautobot.utilities.utils import csv_format
 from nautobot.utilities.views import ContentTypePermissionRequiredMixin
+from packaging.version import Version
 
 from nautobot_golden_config import filters, forms, models, tables
-
-from nautobot_golden_config.utilities.constant import PLUGIN_CFG, ENABLE_COMPLIANCE, CONFIG_FEATURES
+from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_COMPLIANCE, PLUGIN_CFG
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 
 LOGGER = logging.getLogger(__name__)
@@ -207,21 +200,21 @@ class ConfigComplianceListView(generic.ObjectListView):
     def queryset_to_csv(self):
         """Export queryset of objects as comma-separated value (CSV)."""
 
-        def conver_to_str(val):
-            if val is False:  # pylint: disable=no-else-return
+        def convert_to_str(val):
+            if bool(val) is False:  # pylint: disable=no-else-return
                 return "non-compliant"
-            elif val is True:
+            elif bool(val) is True:
                 return "compliant"
             return "N/A"
 
         csv_data = []
-        headers = sorted(list(models.ConfigCompliance.objects.values_list("feature", flat=True).distinct()))
+        headers = sorted(list(models.ConfigCompliance.objects.values_list("rule__feature__name", flat=True).distinct()))
         csv_data.append(",".join(list(["Device name"] + headers)))
         for obj in self.alter_queryset(None).values():
             # From all of the unique fields, obtain the columns, using list comprehension, add values per column,
             # as some fields may not exist for every device.
             row = [Device.objects.get(id=obj["device_id"]).name] + [
-                conver_to_str(obj.get(header)) for header in headers
+                convert_to_str(obj.get(header)) for header in headers
             ]
             csv_data.append(csv_format(row))
         return "\n".join(csv_data)

@@ -21,6 +21,7 @@ from nautobot_golden_config.models import GoldenConfigSetting, GoldenConfig
 from nautobot_golden_config.utilities.helper import (
     get_job_filter,
     get_root_folder,
+    get_repository_working_dir,
     verify_global_settings,
     check_jinja_template,
 )
@@ -53,7 +54,7 @@ def run_template(  # pylint: disable=too-many-arguments
     intended_obj.save()
 
     for intended_root_dir in intended_root_folder:
-        intended_root_folder = get_root_folder(intended_root_dir, "intended", obj, logger, global_settings)
+        intended_root_folder = get_repository_working_dir(intended_root_dir, "intended", obj, logger, global_settings)
         intended_path_template_obj = check_jinja_template(obj, logger, global_settings.intended_path_template)
         output_file_location = os.path.join(intended_root_folder, intended_path_template_obj)
 

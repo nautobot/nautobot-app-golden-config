@@ -1,7 +1,11 @@
 """Helper functions."""
 # pylint: disable=raise-missing-from
+import os
+
 from jinja2 import Template, StrictUndefined, UndefinedError
 from jinja2.exceptions import TemplateError, TemplateSyntaxError
+
+from django.conf import settings
 
 from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.utils.logger import NornirLogger
@@ -82,33 +86,80 @@ def check_jinja_template(obj, logger, template):
 
 
 def get_root_folder(
-    repo: GitRepository, repo_type: str, obj: Device, logger: NornirLogger, global_settings: models.GoldenConfigSetting
+    repository_record: GitRepository,
+    repo_type: str,
+    obj: Device,
+    logger: NornirLogger,
+    global_settings: models.GoldenConfigSetting,
 ) -> str:
     """Generate root folder path for multiple repository support with template str matching.
 
     Args:
-        repo (GitRepository): Repository object.
+        repository_record (GitRepository): Repository object.
         repo_type (str): `intended` or `backup` repository
-        obj (Device): Devie object.
+        obj (Device): Device object.
         logger (NornirLogger): Logger object
         global_settings (models.GoldenConfigSetting): Golden Config global settings.
 
     Returns:
-        str: backup root folder
+        str: The directory
     """
-    if repo_type == "intended":
-        repo_template = global_settings.intended_repository_template
-    elif repo_type == "backup":
+    if repo_type == "backup":
         repo_template = global_settings.backup_repository_template
-    # elif jinja template multiple support?
+    elif repo_type == "intended":
+        repo_template = global_settings.intended_repository_template
 
     if repo_template:
-        repo_template = check_jinja_template(obj, logger, repo_template)
-        # Figure out how to get this from settings or something?
-        # repo.path returns(example) = "/opt/nautobot/git/repo-name/"
-        # Can we do something with this ^
-        backup_root_folder = f"/opt/nautobot/git/{repo_template}"
+        root_folder_suffix = check_jinja_template(obj, logger, repo_template)
+        repository_root_folder = os.path.join(settings.GIT_ROOT, root_folder_suffix)
     else:
-        backup_root_folder = repo.path
+        repository_root_folder = repository_record.path
 
-    return backup_root_folder
+    return repository_root_folder
+
+
+def get_repository_working_dir(
+    repository_record: GitRepository,
+    repo_type: str,
+    obj: Device,
+    logger: NornirLogger,
+    global_settings: models.GoldenConfigSetting,
+) -> str:
+    """Match the Device to a repository working directory, based on the repository matching rule.
+
+    Args:
+        repository_record (GitRepository): Repository object.
+        repo_type (str): `intended` or `backup` repository
+        obj (Device): Device object.
+        logger (NornirLogger): Logger object
+        global_settings (models.GoldenConfigSetting): Golden Config global settings.
+
+    Returns:
+        str: The directory
+    """
+    if repo_type == "backup":
+        repo_list = global_settings.backup_repository.all()
+        repo_template = global_settings.backup_repository_template
+    elif repo_type == "intended":
+        repo_list = global_settings.intended_repository.all()
+        repo_template = global_settings.intended_repository_template
+
+    if repo_template:
+        working_directory = check_jinja_template(obj, logger, repo_template)
+        repository_list = [repository for repository in repo_list if repository.path == working_directory]
+        if len(repository_list) == 1:
+            repository_root_folder = repository_list[0].filesystem_path
+        elif len(repository_list) == 0:
+            obj.log_failure(
+                obj,
+                f"FATAL ERROR: There is no repository '{working_directory}' for device. Verify the matching rule and configured Git repositories.",
+            )
+        else:
+            obj.log_failure(
+                obj,
+                f"FATAL ERROR: Multiple repositories match '{working_directory}' for device. Verify the matching rule and configured Git repositories.",
+            )
+    else:
+        repository_root_folder = repository_record.filesystem_path
+
+    return repository_root_folder

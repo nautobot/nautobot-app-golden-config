@@ -333,11 +333,11 @@ class GoldenConfigSettingFeatureForm(
 ):
     """Filter Form for GoldenConfigSettingFeatureForm instances."""
 
-    backup_repository = forms.ModelMultipleChoiceField(
+    backup_repository = utilities_forms.DynamicModelMultipleChoiceField(
         queryset=GitRepository.objects.filter(provided_contents__contains="nautobot_golden_config.backupconfigs"),
         widget=StaticSelect2Multiple(),
     )
-    intended_repository = forms.ModelMultipleChoiceField(
+    intended_repository = utilities_forms.DynamicModelMultipleChoiceField(
         queryset=GitRepository.objects.filter(provided_contents__contains="nautobot_golden_config.intendedconfigs"),
         widget=StaticSelect2Multiple(),
     )

@@ -132,7 +132,7 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
         compliance_obj.compliance_last_success_date = task.host.defaults.data["now"]
         compliance_obj.compliance_config = "\n".join(diff_files(backup_file, intended_file))
         compliance_obj.save()
-        logger.log_success(obj, "Successfully tested compliance.")
+        logger.log_success(obj, "Successfully tested compliance job.")
 
         # Add values to dict to track and rescue in case.
         rescue["intended_repo"] = intended_repo
@@ -179,4 +179,4 @@ def config_compliance(job_result, data, backup_repos, intended_repos):
         logger.log_failure(None, err)
         raise
 
-    logger.log_debug("Completed Compliance for devices.")
+    logger.log_debug("Completed compliance job for devices.")

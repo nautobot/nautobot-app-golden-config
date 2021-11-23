@@ -84,7 +84,7 @@ def check_jinja_template(obj, logger, template):
 
 
 def get_repository_working_dir(
-    repository_record: GitRepo,
+    repository_obj: GitRepo,
     repo_type: str,
     obj: Device,
     logger: NornirLogger,
@@ -105,7 +105,7 @@ def get_repository_working_dir(
         str: The local filesystem working directory corresponding to the repo slug.
     """
     # Set a default for the root directory to cover the single repo use case.
-    repository_root_directory = f"{settings.GIT_ROOT}/{repository_record.path}"
+    repository_root_directory = repository_obj.path
 
     if repo_type == "backup":
         repo_list = global_settings.backup_repository.all()

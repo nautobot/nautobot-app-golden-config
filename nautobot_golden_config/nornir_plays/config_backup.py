@@ -87,7 +87,7 @@ def run_backup(  # pylint: disable=too-many-arguments
         backup_obj.backup_config = running_config
         backup_obj.save()
 
-        logger.log_success(obj, "Successfully backed up device.")
+        logger.log_success(obj, "Successfully extracted running configuration from device.")
         return Result(host=task.host, result=running_config)
 
 
@@ -143,4 +143,4 @@ def config_backup(job_result, data, backup_repos):
         logger.log_failure(None, err)
         raise
 
-    logger.log_debug("Completed configuration from devices.")
+    logger.log_debug("Completed configuration backup job for devices.")

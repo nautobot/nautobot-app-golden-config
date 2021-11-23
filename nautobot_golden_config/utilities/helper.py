@@ -83,39 +83,6 @@ def check_jinja_template(obj, logger, template):
         raise NornirNautobotException()
 
 
-# def get_root_folder(
-#     repository_record: GitRepository,
-#     repo_type: str,
-#     obj: Device,
-#     logger: NornirLogger,
-#     global_settings: models.GoldenConfigSetting,
-# ) -> str:
-#     """Generate root folder path for multiple repository support with template str matching.
-#
-#     Args:
-#         repository_record (GitRepository): Repository object.
-#         repo_type (str): `intended` or `backup` repository
-#         obj (Device): Device object.
-#         logger (NornirLogger): Logger object
-#         global_settings (models.GoldenConfigSetting): Golden Config global settings.
-#
-#     Returns:
-#         str: The directory
-#     """
-#     if repo_type == "backup":
-#         repo_template = global_settings.backup_repository_template
-#     elif repo_type == "intended":
-#         repo_template = global_settings.intended_repository_template
-#
-#     if repo_template:
-#         root_folder_suffix = check_jinja_template(obj, logger, repo_template)
-#         repository_root_folder = os.path.join(settings.GIT_ROOT, root_folder_suffix)
-#     else:
-#         repository_root_folder = repository_record.path
-#
-#     return repository_root_folder
-
-
 def get_repository_working_dir(
     repository_record: GitRepository,
     repo_type: str,

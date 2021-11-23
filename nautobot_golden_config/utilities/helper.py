@@ -1,7 +1,5 @@
 """Helper functions."""
 # pylint: disable=raise-missing-from
-import os
-
 from jinja2 import Template, StrictUndefined, UndefinedError
 from jinja2.exceptions import TemplateError, TemplateSyntaxError
 
@@ -85,37 +83,37 @@ def check_jinja_template(obj, logger, template):
         raise NornirNautobotException()
 
 
-def get_root_folder(
-    repository_record: GitRepository,
-    repo_type: str,
-    obj: Device,
-    logger: NornirLogger,
-    global_settings: models.GoldenConfigSetting,
-) -> str:
-    """Generate root folder path for multiple repository support with template str matching.
-
-    Args:
-        repository_record (GitRepository): Repository object.
-        repo_type (str): `intended` or `backup` repository
-        obj (Device): Device object.
-        logger (NornirLogger): Logger object
-        global_settings (models.GoldenConfigSetting): Golden Config global settings.
-
-    Returns:
-        str: The directory
-    """
-    if repo_type == "backup":
-        repo_template = global_settings.backup_repository_template
-    elif repo_type == "intended":
-        repo_template = global_settings.intended_repository_template
-
-    if repo_template:
-        root_folder_suffix = check_jinja_template(obj, logger, repo_template)
-        repository_root_folder = os.path.join(settings.GIT_ROOT, root_folder_suffix)
-    else:
-        repository_root_folder = repository_record.path
-
-    return repository_root_folder
+# def get_root_folder(
+#     repository_record: GitRepository,
+#     repo_type: str,
+#     obj: Device,
+#     logger: NornirLogger,
+#     global_settings: models.GoldenConfigSetting,
+# ) -> str:
+#     """Generate root folder path for multiple repository support with template str matching.
+#
+#     Args:
+#         repository_record (GitRepository): Repository object.
+#         repo_type (str): `intended` or `backup` repository
+#         obj (Device): Device object.
+#         logger (NornirLogger): Logger object
+#         global_settings (models.GoldenConfigSetting): Golden Config global settings.
+#
+#     Returns:
+#         str: The directory
+#     """
+#     if repo_type == "backup":
+#         repo_template = global_settings.backup_repository_template
+#     elif repo_type == "intended":
+#         repo_template = global_settings.intended_repository_template
+#
+#     if repo_template:
+#         root_folder_suffix = check_jinja_template(obj, logger, repo_template)
+#         repository_root_folder = os.path.join(settings.GIT_ROOT, root_folder_suffix)
+#     else:
+#         repository_root_folder = repository_record.path
+#
+#     return repository_root_folder
 
 
 def get_repository_working_dir(
@@ -126,17 +124,21 @@ def get_repository_working_dir(
     global_settings: models.GoldenConfigSetting,
 ) -> str:
     """Match the Device to a repository working directory, based on the repository matching rule.
+    Assume that the working directory == the slug of the repo.
 
     Args:
-        repository_record (GitRepository): Repository object.
+        repository_record (GitRepository): Django ORM Repository object.
         repo_type (str): `intended` or `backup` repository
         obj (Device): Device object.
         logger (NornirLogger): Logger object
         global_settings (models.GoldenConfigSetting): Golden Config global settings.
 
     Returns:
-        str: The directory
+        str: The local filesystem working directory corresponding to the repo slug.
     """
+    # Set a default for the root directory to cover the single repo use case.
+    repository_root_directory = f"{settings.GIT_ROOT}/{repository_record.path}"
+
     if repo_type == "backup":
         repo_list = global_settings.backup_repository.all()
         repo_template = global_settings.backup_repository_template
@@ -145,21 +147,21 @@ def get_repository_working_dir(
         repo_template = global_settings.intended_repository_template
 
     if repo_template:
-        working_directory = check_jinja_template(obj, logger, repo_template)
-        repository_list = [repository for repository in repo_list if repository.path == working_directory]
-        if len(repository_list) == 1:
-            repository_root_folder = repository_list[0].filesystem_path
-        elif len(repository_list) == 0:
-            obj.log_failure(
+        desired_repository_slug = check_jinja_template(obj, logger, repo_template)
+        matching_repository_list = [
+            repository for repository in repo_list if repository.slug == desired_repository_slug
+        ]
+        if len(matching_repository_list) == 1:
+            repository_root_directory = f"{settings.GIT_ROOT}/{matching_repository_list[0].slug}"
+        elif len(matching_repository_list) == 0:
+            logger.log_failure(
                 obj,
-                f"FATAL ERROR: There is no repository '{working_directory}' for device. Verify the matching rule and configured Git repositories.",
+                f"FATAL ERROR: There is no repository slug matching '{desired_repository_slug}' for device. Verify the matching rule and configured Git repositories.",
             )
         else:
-            obj.log_failure(
+            logger.log_failure(
                 obj,
-                f"FATAL ERROR: Multiple repositories match '{working_directory}' for device. Verify the matching rule and configured Git repositories.",
+                f"FATAL ERROR: Multiple repositories match the slug '{desired_repository_slug}' for device. Verify the matching rule and configured Git repositories.",
             )
-    else:
-        repository_root_folder = repository_record.filesystem_path
 
-    return repository_root_folder
+    return repository_root_directory

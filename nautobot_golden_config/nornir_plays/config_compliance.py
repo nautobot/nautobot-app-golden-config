@@ -21,7 +21,7 @@ from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_golden_config.models import ComplianceRule, ConfigCompliance, GoldenConfigSetting, GoldenConfig
 from nautobot_golden_config.utilities.helper import (
     get_job_filter,
-    get_root_folder,
+    get_repository_working_dir,
     verify_global_settings,
     check_jinja_template,
 )
@@ -87,14 +87,14 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
         if not backup_repo:
             backup_repo = rescue["backup_repo"]
 
-        intended_root_folder = get_root_folder(intended_repo, "intended", obj, logger, global_settings)
+        intended_root_folder = get_repository_working_dir(intended_repo, "intended", obj, logger, global_settings)
         intended_path_template_obj = check_jinja_template(obj, logger, global_settings.intended_path_template)
         intended_file = os.path.join(intended_root_folder, intended_path_template_obj)
         if not os.path.exists(intended_file):
             logger.log_failure(obj, f"Unable to locate intended file for device at {intended_file}")
             raise NornirNautobotException()
 
-        backup_root_path = get_root_folder(backup_repo, "backup", obj, logger, global_settings)
+        backup_root_path = get_repository_working_dir(backup_repo, "backup", obj, logger, global_settings)
         backup_template = check_jinja_template(obj, logger, global_settings.backup_path_template)
         backup_file = os.path.join(backup_root_path, backup_template)
         if not os.path.exists(backup_file):

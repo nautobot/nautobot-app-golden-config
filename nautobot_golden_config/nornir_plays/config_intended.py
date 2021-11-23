@@ -20,7 +20,6 @@ from nautobot_plugin_nornir.utils import get_dispatcher
 from nautobot_golden_config.models import GoldenConfigSetting, GoldenConfig
 from nautobot_golden_config.utilities.helper import (
     get_job_filter,
-    get_root_folder,
     get_repository_working_dir,
     verify_global_settings,
     check_jinja_template,

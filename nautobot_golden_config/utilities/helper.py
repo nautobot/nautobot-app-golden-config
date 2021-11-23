@@ -8,15 +8,11 @@ from django.conf import settings
 from nautobot.dcim.models import Device
 from nautobot.dcim.filters import DeviceFilterSet
 
-<<<<<<< HEAD
 from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.utils.logger import NornirLogger
 
 from nautobot_golden_config.utilities.git import GitRepo
-=======
-from django import forms
 
->>>>>>> multiple-repo-support
 from nautobot_golden_config import models
 
 

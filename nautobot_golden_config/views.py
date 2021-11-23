@@ -201,21 +201,24 @@ class ConfigComplianceListView(generic.ObjectListView):
         """Export queryset of objects as comma-separated value (CSV)."""
 
         def convert_to_str(val):
-            if bool(val) is False:  # pylint: disable=no-else-return
+            if val is None:
+                return "N/A"
+            if bool(val) is False:
                 return "non-compliant"
-            elif bool(val) is True:
+            if bool(val) is True:
                 return "compliant"
-            return "N/A"
+            return None
 
         csv_data = []
-        headers = sorted(list(models.ConfigCompliance.objects.values_list("rule__feature__name", flat=True).distinct()))
+        # Use set instead of order_by() as Mysql has issues with distinct and order_by.
+        headers = sorted(
+            list(set(models.ConfigCompliance.objects.values_list("rule__feature__name", flat=True).distinct()))
+        )
         csv_data.append(",".join(list(["Device name"] + headers)))
-        for obj in self.alter_queryset(None).values():
+        for obj in self.alter_queryset(None):
             # From all of the unique fields, obtain the columns, using list comprehension, add values per column,
             # as some fields may not exist for every device.
-            row = [Device.objects.get(id=obj["device_id"]).name] + [
-                convert_to_str(obj.get(header)) for header in headers
-            ]
+            row = [obj.get("device__name")] + [convert_to_str(obj.get(header)) for header in headers]
             csv_data.append(csv_format(row))
         return "\n".join(csv_data)
 
@@ -685,7 +688,7 @@ class ConfigComplianceOverview(generic.ObjectListView):
         )
         csv_data.append(",".join([]))
 
-        qs = self.queryset.values("rule", "count", "compliant", "non_compliant", "comp_percent")
+        qs = self.queryset.values("rule__feature__name", "count", "compliant", "non_compliant", "comp_percent")
         csv_data.append(",".join(["Total" if item == "count" else item.capitalize() for item in qs[0].keys()]))
         for obj in qs:
             csv_data.append(

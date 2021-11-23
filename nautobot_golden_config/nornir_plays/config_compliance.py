@@ -58,8 +58,8 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     task: Task,
     logger,
     global_settings,
-    backup_root_path,
-    intended_root_folder,
+    backup_repos,
+    intended_repos,
     rules,
 ) -> Result:
     """Prepare data for compliance task.
@@ -79,7 +79,7 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     compliance_obj.save()
 
     rescue = {}
-    for intended_repo, backup_repo in zip_longest(intended_root_folder, backup_root_path):
+    for intended_repo, backup_repo in zip_longest(intended_repos, backup_repos):
         # Zip longest appends None if no value found in loop through two lists.
         # Edge cases where two repos & one intended or vice-versa.
         if not intended_repo:
@@ -87,16 +87,16 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
         if not backup_repo:
             backup_repo = rescue["backup_repo"]
 
-        intended_root_folder = get_repository_working_dir(intended_repo, "intended", obj, logger, global_settings)
+        intended_directory = get_repository_working_dir(intended_repo, "intended", obj, logger, global_settings)
         intended_path_template_obj = check_jinja_template(obj, logger, global_settings.intended_path_template)
-        intended_file = os.path.join(intended_root_folder, intended_path_template_obj)
+        intended_file = os.path.join(intended_directory, intended_path_template_obj)
         if not os.path.exists(intended_file):
             logger.log_failure(obj, f"Unable to locate intended file for device at {intended_file}")
             raise NornirNautobotException()
 
-        backup_root_path = get_repository_working_dir(backup_repo, "backup", obj, logger, global_settings)
+        backup_directory = get_repository_working_dir(backup_repo, "backup", obj, logger, global_settings)
         backup_template = check_jinja_template(obj, logger, global_settings.backup_path_template)
-        backup_file = os.path.join(backup_root_path, backup_template)
+        backup_file = os.path.join(backup_directory, backup_template)
         if not os.path.exists(backup_file):
             logger.log_failure(obj, f"Unable to locate backup file for device at {backup_file}")
             raise NornirNautobotException()
@@ -141,7 +141,7 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
         return Result(host=task.host)
 
 
-def config_compliance(job_result, data, backup_root_path, intended_root_folder):
+def config_compliance(job_result, data, backup_repos, intended_repos):
     """Nornir play to generate configurations."""
     now = datetime.now()
     rules = get_rules()
@@ -170,8 +170,8 @@ def config_compliance(job_result, data, backup_root_path, intended_root_folder):
                 name="RENDER COMPLIANCE TASK GROUP",
                 logger=logger,
                 global_settings=global_settings,
-                backup_root_path=backup_root_path,
-                intended_root_folder=intended_root_folder,
+                backup_repos=backup_repos,
+                intended_repos=intended_repos,
                 rules=rules,
             )
 

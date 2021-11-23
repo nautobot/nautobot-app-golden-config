@@ -34,7 +34,7 @@ InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 
 
 def run_backup(  # pylint: disable=too-many-arguments
-    task: Task, logger, global_settings, remove_regex_dict, replace_regex_dict, backup_root_folder
+    task: Task, logger, global_settings, remove_regex_dict, replace_regex_dict, backup_repos
 ) -> Result:
     r"""Backup configurations to disk.
 
@@ -56,8 +56,8 @@ def run_backup(  # pylint: disable=too-many-arguments
     backup_obj.backup_last_attempt_date = task.host.defaults.data["now"]
     backup_obj.save()
 
-    for backup_root_dir in backup_root_folder:
-        backup_directory = get_repository_working_dir(backup_root_dir, "backup", obj, logger, global_settings)
+    for backup_repo in backup_repos:
+        backup_directory = get_repository_working_dir(backup_repo, "backup", obj, logger, global_settings)
         logger.log_debug(backup_directory)
         backup_path_template_obj = check_jinja_template(obj, logger, global_settings.backup_path_template)
         backup_file = os.path.join(backup_directory, backup_path_template_obj)
@@ -91,7 +91,7 @@ def run_backup(  # pylint: disable=too-many-arguments
         return Result(host=task.host, result=running_config)
 
 
-def config_backup(job_result, data, backup_root_folder):
+def config_backup(job_result, data, backup_repos):
     """Nornir play to backup configurations."""
     now = datetime.now()
     logger = NornirLogger(__name__, job_result, data.get("debug"))
@@ -135,7 +135,7 @@ def config_backup(job_result, data, backup_root_folder):
                 global_settings=global_settings,
                 remove_regex_dict=remove_regex_dict,
                 replace_regex_dict=replace_regex_dict,
-                backup_root_folder=backup_root_folder,
+                backup_repos=backup_repos,
             )
             logger.log_debug("Completed configuration from devices.")
 

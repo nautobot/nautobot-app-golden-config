@@ -5,13 +5,13 @@ from jinja2.exceptions import TemplateError, TemplateSyntaxError
 
 from django.conf import settings
 
+from nautobot.dcim.models import Device
+from nautobot.dcim.filters import DeviceFilterSet
+
 from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.utils.logger import NornirLogger
 
-from nautobot.dcim.filters import DeviceFilterSet
-from nautobot.dcim.models import Device
-from nautobot.extras.models.datasources import GitRepository
-
+from nautobot_golden_config.utilities.git import GitRepo
 from nautobot_golden_config import models
 
 
@@ -84,17 +84,18 @@ def check_jinja_template(obj, logger, template):
 
 
 def get_repository_working_dir(
-    repository_record: GitRepository,
+    repository_record: GitRepo,
     repo_type: str,
     obj: Device,
     logger: NornirLogger,
     global_settings: models.GoldenConfigSetting,
 ) -> str:
     """Match the Device to a repository working directory, based on the repository matching rule.
+
     Assume that the working directory == the slug of the repo.
 
     Args:
-        repository_record (GitRepository): Django ORM Repository object.
+        repository_record (GitRepo): Git Repo object
         repo_type (str): `intended` or `backup` repository
         obj (Device): Device object.
         logger (NornirLogger): Logger object

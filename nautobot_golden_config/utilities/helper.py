@@ -3,15 +3,20 @@
 from jinja2 import Template, StrictUndefined, UndefinedError
 from jinja2.exceptions import TemplateError, TemplateSyntaxError
 
+from django.conf import settings
+
+from nautobot.dcim.models import Device
+from nautobot.dcim.filters import DeviceFilterSet
+
+<<<<<<< HEAD
 from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.utils.logger import NornirLogger
 
-from nautobot.dcim.filters import DeviceFilterSet
-from nautobot.dcim.models import Device
-from nautobot.extras.models.datasources import GitRepository
-
+from nautobot_golden_config.utilities.git import GitRepo
+=======
 from django import forms
 
+>>>>>>> multiple-repo-support
 from nautobot_golden_config import models
 
 
@@ -83,56 +88,53 @@ def check_jinja_template(obj, logger, template):
         raise NornirNautobotException()
 
 
-def get_root_folder(
-    repo: GitRepository, repo_type: str, obj: Device, logger: NornirLogger, global_settings: models.GoldenConfigSetting
+def get_repository_working_dir(
+    repository_obj: GitRepo,
+    repo_type: str,
+    obj: Device,
+    logger: NornirLogger,
+    global_settings: models.GoldenConfigSetting,
 ) -> str:
-    """Generate root folder path for multiple repository support with template str matching.
+    """Match the Device to a repository working directory, based on the repository matching rule.
+
+    Assume that the working directory == the slug of the repo.
 
     Args:
-        repo (GitRepository): Repository object.
+        repository_record (GitRepo): Git Repo object
         repo_type (str): `intended` or `backup` repository
-        obj (Device): Devie object.
+        obj (Device): Device object.
         logger (NornirLogger): Logger object
         global_settings (models.GoldenConfigSetting): Golden Config global settings.
 
     Returns:
-        str: backup root folder
+        str: The local filesystem working directory corresponding to the repo slug.
     """
-    if repo_type == "intended":
-        repo_template = global_settings.intended_repository_template
-    elif repo_type == "backup":
+    # Set a default for the root directory to cover the single repo use case.
+    repository_root_directory = repository_obj.path
+
+    if repo_type == "backup":
+        repo_list = global_settings.backup_repository.all()
         repo_template = global_settings.backup_repository_template
-    # elif jinja template multiple support?
+    elif repo_type == "intended":
+        repo_list = global_settings.intended_repository.all()
+        repo_template = global_settings.intended_repository_template
 
     if repo_template:
-        repo_template = check_jinja_template(obj, logger, repo_template)
-        # Figure out how to get this from settings or something?
-        # repo.path returns(example) = "/opt/nautobot/git/repo-name/"
-        # Can we do something with this ^
-        backup_root_folder = f"/opt/nautobot/git/{repo_template}"
-    else:
-        backup_root_folder = repo.path
-
-    return backup_root_folder
-
-
-def clean_config_settings(repo_type: str, repo_count: int, repo_template: str):
-    """Custom clean for `GoldenConfigSettingFeatureForm`.
-
-    Args:
-        repo_type (str): `intended` or `backup`.
-        repo_count (int): Total number of repos.
-        repo_template (str): Template str provided by user to match repos.
-
-    Raises:
-        ValidationError: Custom Validation on form.
-    """
-    if repo_count > 1:
-        if not repo_template:
-            raise forms.ValidationError(
-                f"If more than one {repo_type} repository specified, you must provide an {repo_type} repository template."
+        desired_repository_slug = check_jinja_template(obj, logger, repo_template)
+        matching_repository_list = [
+            repository for repository in repo_list if repository.slug == desired_repository_slug
+        ]
+        if len(matching_repository_list) == 1:
+            repository_root_directory = f"{settings.GIT_ROOT}/{matching_repository_list[0].slug}"
+        elif len(matching_repository_list) == 0:
+            logger.log_failure(
+                obj,
+                f"FATAL ERROR: There is no repository slug matching '{desired_repository_slug}' for device. Verify the matching rule and configured Git repositories.",
             )
-    elif repo_count == 1 and repo_template:
-        raise forms.ValidationError(
-            f"If only one {repo_type} repository specified, there is no need to specify an {repo_type} repository template match."
-        )
+        else:
+            logger.log_failure(
+                obj,
+                f"FATAL ERROR: Multiple repositories match the slug '{desired_repository_slug}' for device. Verify the matching rule and configured Git repositories.",
+            )
+
+    return repository_root_directory

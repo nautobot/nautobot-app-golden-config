@@ -22,17 +22,17 @@ LOGGER = logging.getLogger(__name__)
 name = "Golden Configuration"  # pylint: disable=invalid-name
 
 
-def git_wrapper(obj, orm_obj, git_type):
+def git_wrapper(obj, repository_record, git_type):
     """Small wrapper to pull latest branch, and return a GitRepo plugin specific object."""
-    if not orm_obj:
+    if not repository_record:
         obj.log_failure(
             obj,
             f"FATAL ERROR: There is not a valid Git repositories for Git type {git_type}, please see pre-requisite instructions to configure an appropriate Git repositories.",
         )
         raise  # pylint: disable=misplaced-bare-raise
 
-    ensure_git_repository(orm_obj, obj.job_result)
-    git_repo = GitRepo(orm_obj)
+    ensure_git_repository(repository_record, obj.job_result)
+    git_repo = GitRepo(repository_record)
     return git_repo
 
 
@@ -187,7 +187,7 @@ class BackupJob(Job, FormEntry):
         LOGGER.debug("Run nornir play.")
         config_backup(self, data, backup_repos)
 
-        LOGGER.debug("Pull Backup config repo.")
+        LOGGER.debug("Pushing Backup config repo.")
         # Commit / Push each repo after job is completed.
         for backup_repo in backup_repos:
             backup_repo.commit_with_added(f"BACKUP JOB {now}")

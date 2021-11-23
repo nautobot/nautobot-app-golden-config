@@ -3,6 +3,7 @@
 from jinja2 import Template, StrictUndefined, UndefinedError
 from jinja2.exceptions import TemplateError, TemplateSyntaxError
 
+from django import forms
 from django.conf import settings
 
 from nautobot.dcim.models import Device

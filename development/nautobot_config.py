@@ -133,7 +133,7 @@ PLUGINS = ["nautobot_plugin_nornir", "nautobot_golden_config"]
 PLUGINS_CONFIG = {
     "nautobot_plugin_nornir": {
         "nornir_settings": {
-            "credentials": "nautobot_plugin_nornir.plugins.credentials.settings_vars.CredentialsSettingsVars",
+            "credentials": "nautobot_plugin_nornir.plugins.credentials.env_vars.CredentialsEnvVars",
             "runner": {
                 "plugin": "threaded",
                 "options": {
@@ -141,9 +141,6 @@ PLUGINS_CONFIG = {
                 },
             },
         },
-        "dispatcher_mapping": None,
-        "username": "conductor",
-        "password": "zWCKWNzijUYZWRHYzABsVPN4dmoCE6Ai",
     },
     "nautobot_golden_config": {
         "per_feature_bar_width": float(os.environ.get("PER_FEATURE_BAR_WIDTH", 0.15)),

@@ -365,16 +365,6 @@ class GoldenConfigSettingFeatureForm(
         super().clean()
         # This custom clean function validates logic of when or when not to
         # have a template matching path in GlobalConfigSettings for repos.
-        # clean_config_settings(
-        #     repo_type="backup",
-        #     repo_count=self.cleaned_data.get("backup_repository").count(),
-        #     repo_template=self.cleaned_data.get("backup_repository_template"),
-        # )
-        # clean_config_settings(
-        #     repo_type="intended",
-        #     repo_count=self.cleaned_data.get("intended_repository").count(),
-        #     repo_template=self.cleaned_data.get("intended_repository_template"),
-        # )
         for repo_type in ["intended", "backup"]:
             clean_config_settings(
             repo_type=repo_type,

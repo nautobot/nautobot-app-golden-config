@@ -367,7 +367,7 @@ class GoldenConfigSettingFeatureForm(
         # have a template matching path in GlobalConfigSettings for repos.
         for repo_type in ["intended", "backup"]:
             clean_config_settings(
-            repo_type=repo_type,
-            repo_count=self.cleaned_data.get(f"{repo_type}_repository").count(),
-            repo_template=self.cleaned_data.get(f"{repo_type}_repository_template"),
-        )
+                repo_type=repo_type,
+                repo_count=self.cleaned_data.get(f"{repo_type}_repository").count(),
+                repo_template=self.cleaned_data.get(f"{repo_type}_repository_template"),
+            )

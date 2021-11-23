@@ -141,6 +141,14 @@ PLUGINS_CONFIG = {
                 },
             },
         },
+        # dispatcher_mapping may be necessary if you get errors referring to a Nornir driver not being found.
+        # "dispatcher_mapping": {
+        #     "eos": "nornir_nautobot.plugins.tasks.dispatcher.arista_eos.NautobotNornirDriver",
+        #     "ios": "nornir_nautobot.plugins.tasks.dispatcher.cisco_ios.NautobotNornirDriver",
+        #     "iosxe": "nornir_nautobot.plugins.tasks.dispatcher.cisco_ios.NautobotNornirDriver",
+        #     "junos": "nornir_nautobot.plugins.tasks.dispatcher.juniper_junos.NautobotNornirDriver",
+        #     "nxos": "nornir_nautobot.plugins.tasks.dispatcher.cisco_nxos.NautobotNornirDriver",
+        # },
     },
     "nautobot_golden_config": {
         "per_feature_bar_width": float(os.environ.get("PER_FEATURE_BAR_WIDTH", 0.15)),
@@ -151,5 +159,14 @@ PLUGINS_CONFIG = {
         "enable_intended": is_truthy(os.environ.get("ENABLE_INTENDED", True)),
         "enable_sotagg": is_truthy(os.environ.get("ENABLE_SOTAGG", True)),
         "sot_agg_transposer": os.environ.get("SOT_AGG_TRANSPOSER"),
+        # The platform_slug_map maps an arbitrary platform slug to its corresponding parser.
+        # Use this if you get 'There is currently no parser support for platform slug <foo>' errors.
+        # "platform_slug_map": {
+        #     "eos": "arista_eos",
+        #     "ios": "cisco_ios",
+        #     "iosxe": "cisco_ios",
+        #     "junos": "juniper_junos",
+        #     "nxos": "cisco_nxos",
+        # },
     },
 }

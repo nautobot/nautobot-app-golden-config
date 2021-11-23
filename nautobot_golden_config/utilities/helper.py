@@ -84,6 +84,26 @@ def check_jinja_template(obj, logger, template):
         raise NornirNautobotException()
 
 
+def clean_config_settings(repo_type: str, repo_count: int, repo_template: str):
+    """Custom clean for `GoldenConfigSettingFeatureForm`.
+    Args:
+        repo_type (str): `intended` or `backup`.
+        repo_count (int): Total number of repos.
+        repo_template (str): Template str provided by user to match repos.
+    Raises:
+        ValidationError: Custom Validation on form.
+    """
+    if repo_count > 1:
+        if not repo_template:
+            raise forms.ValidationError(
+                f"If more than one {repo_type} repository specified, you must provide an {repo_type} repository template."
+            )
+    elif repo_count == 1 and repo_template:
+        raise forms.ValidationError(
+            f"If only one {repo_type} repository specified, there is no need to specify an {repo_type} repository template match."
+        )
+
+
 def get_repository_working_dir(
     repository_obj: GitRepo,
     repo_type: str,

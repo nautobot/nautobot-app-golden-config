@@ -58,7 +58,6 @@ def run_backup(  # pylint: disable=too-many-arguments
 
     for backup_repo in backup_repos:
         backup_directory = get_repository_working_dir(backup_repo, "backup", obj, logger, global_settings)
-        logger.log_debug(backup_directory)
         backup_path_template_obj = check_jinja_template(obj, logger, global_settings.backup_path_template)
         backup_file = os.path.join(backup_directory, backup_path_template_obj)
 

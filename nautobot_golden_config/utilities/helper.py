@@ -87,21 +87,23 @@ def check_jinja_template(obj, logger, template):
 
 def clean_config_settings(repo_type: str, repo_count: int, repo_template: str):
     """Custom clean for `GoldenConfigSettingFeatureForm`.
+
     Args:
         repo_type (str): `intended` or `backup`.
         repo_count (int): Total number of repos.
         repo_template (str): Template str provided by user to match repos.
+
     Raises:
         ValidationError: Custom Validation on form.
     """
     if repo_count > 1:
         if not repo_template:
             raise forms.ValidationError(
-                f"If more than one {repo_type} repository specified, you must provide an {repo_type} repository template."
+                f"If you specify more than one {repo_type} repository, you must provide an {repo_type} repository matching rule template."
             )
     elif repo_count == 1 and repo_template:
         raise forms.ValidationError(
-            f"If only one {repo_type} repository specified, there is no need to specify an {repo_type} repository template match."
+            f"If you configure only one {repo_type} repository, there is no need to specify the {repo_type} repository matching rule template."
         )
 
 
@@ -117,9 +119,9 @@ def get_repository_working_dir(
     Assume that the working directory == the slug of the repo.
 
     Args:
-        repository_record (GitRepo): Git Repo object
-        repo_type (str): `intended` or `backup` repository
-        obj (Device): Device object.
+        repository_record (GitRepo): Git Repo Django ORM object
+        repo_type (str): Either `intended` or `backup` repository
+        obj (Device): Django ORM Device object.
         logger (NornirLogger): Logger object
         global_settings (models.GoldenConfigSetting): Golden Config global settings.
 
@@ -146,12 +148,12 @@ def get_repository_working_dir(
         elif len(matching_repository_list) == 0:
             logger.log_failure(
                 obj,
-                f"FATAL ERROR: There is no repository slug matching '{desired_repository_slug}' for device. Verify the matching rule and configured Git repositories.",
+                f"There is no repository slug matching '{desired_repository_slug}' for device. Verify the matching rule and configured Git repositories.",
             )
         else:
             logger.log_failure(
                 obj,
-                f"FATAL ERROR: Multiple repositories match the slug '{desired_repository_slug}' for device. Verify the matching rule and configured Git repositories.",
+                f"Multiple repositories match the slug '{desired_repository_slug}' for device. Verify the matching rule and configured Git repositories.",
             )
 
     return repository_root_directory

@@ -398,10 +398,15 @@ class GoldenConfigSetting(PrimaryModel):
 
     def __str__(self):
         """Return a simple string if model is called."""
-        return "Golden Config Settings"
+        return "Configuration Object"
 
     def delete(self, *args, **kwargs):
         """Enforce the singleton pattern, there is no way to delete the configurations."""
+
+    class Meta:
+        """Set unique fields for model."""
+
+        verbose_name = "Golden Config Settings"
 
     @classmethod
     def load(cls):

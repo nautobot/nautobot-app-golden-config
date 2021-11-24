@@ -7,27 +7,6 @@
 {% block title %}{{ object }}{% endblock %}
 
 {% block header %}
-<div class="row noprint">
-    <div class="col-sm-8 col-md-9">
-        <ol class="breadcrumb">
-            <li>Golden Configuration Settings</li>
-            <li><a href="{% url 'plugins:nautobot_golden_config:goldenconfigsetting_edit' %}">Settings</a></li>
-            <li>{{ object }}</li>
-        </ol>
-    </div>
-    <div class="col-sm-4 col-md-3">
-        <form action="{% url 'plugins:nautobot_golden_config:goldenconfigsetting' %}" method="get">
-            <div class="input-group">
-                <input type="text" name="q" class="form-control" />
-                <span class="input-group-btn">
-                    <button type="submit" class="btn btn-primary">
-                        <span class="mdi mdi-magnify" aria-hidden="true"></span>
-                    </button>
-                </span>
-            </div>
-        </form>
-    </div>
-</div>
 <div class="pull-right noprint">
     {% if perms.nautobot_golden_config.change_goldenconfigsetting %}
     <a href="{% url 'plugins:nautobot_golden_config:goldenconfigsetting_edit' %}" class="btn btn-warning">
@@ -35,7 +14,7 @@
     </a>
     {% endif %}
 </div>
-<h1>{{ object }}</h1>
+<h1>Golden Configuration Settings</h1>
 {% include 'inc/created_updated.html' %}
 <div class="pull-right noprint">
     {% custom_links object %}

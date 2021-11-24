@@ -406,12 +406,12 @@ class GoldenConfigSetting(PrimaryModel):
     class Meta:
         """Set unique fields for model."""
 
-        verbose_name = "Golden Config Settings"
+        verbose_name = "Golden Config Setting"
 
     @classmethod
     def load(cls):
         """Enforce the singleton pattern, fail it somehow more than one instance."""
-        if len(cls.objects.all()) != 1:
+        if len(cls.objects.all()) >= 1:
             raise ValidationError("There was an error where more than one instance existed for a setting.")
         return cls.objects.first()
 
@@ -445,6 +445,11 @@ class GoldenConfigSetting(PrimaryModel):
             for key in self.scope.keys():
                 if key not in filterset_params:
                     raise ValidationError({"scope": f"'{key}' is not a valid filter parameter for Device object"})
+
+    # def create(self, *args, **kwargs):
+    #     """Overloading `save` to invoke `load`"""
+    #     self.load()
+    #     super().save(*args, **kwargs)
 
     def get_queryset(self):
         """Generate a Device QuerySet from the filter."""

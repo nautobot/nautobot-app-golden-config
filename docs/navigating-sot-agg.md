@@ -1,10 +1,11 @@
 # SoT Aggregation Overview 
 
-The Source of Truth Aggregation Overview is driven by a few key components.
+The Source of Truth Aggregation feature uses several key components:
 
-* The ability to have a single GraphQL query to aggregate information.
-* The ability to modify data with a "transposer" function.
-* The usage of config contexts and the Nautobot's native git platform.
+* A single GraphQL query which aggregates device data.
+* A facility to modify data with a "transposer" function.
+* Nautobot's config context feature and policy engine.
+* Nautobot's native git platform.
 
 ## GraphQL
 
@@ -14,7 +15,7 @@ your data, and then save that query to the configuration. The application config
 * The query is a valid GraphQL query.
 * The query starts with exactly "query ($device_id: ID!)"". This is to help fail fast and help with overall user experience of clear expectations.
 
-It is worth noting that the graphQL query returned is modified to remove the root key of `device`, so instead of all data being within device, such as
+Note that the GraphQL query returned is modified to remove the root key of `device`, so instead of all data being within device, such as
 `{"device": {"site": {"slug": "jcy"}}}`, it is simply `{"site": {"slug": "jcy"}}` as an example.
 
 It is helpful to make adjustments to the query, and then view the data from the Plugin's home page and clicking on a given device's `code-json` icon.
@@ -35,8 +36,8 @@ def transposer(data):
     return data
 ```
 
-While the example transposer is silly and untested, it provides the structure for which a transposer can be use. The possibilities are obviously endless,
-such as reaching out to an external system but operators should use caution not to overload complexity into the transposer. 
+While the example transposer is silly and untested, it provides the structure for which a transposer can be used. The possibilities are obviously endless,
+such as reaching out to an external system, but operators should use caution not to overload complexity into the transposer. 
 
 The configuration required in the Plugin configuration is as described below.
 
@@ -47,17 +48,16 @@ The path described must be within the Python path of your worker. It is up to th
 
 ## Config Contexts
 
-Outside of the scope of this document, but it is worth mentioning the power that configuration context's with integration to Git can provide in this
-solution. This is important since config contexts can be used for arbitrary JSON serializable data structures. That is helpful to model configuration
-that is not within Nautobot Core or within a Nautobot Plugin. A common use case is to model "global configuration" like data, such as NTP, DNS, SNMP, etc.
+While outside the scope of this document, it is worth mentioning the power that the `config_context` feature, along with integration to Git, can provide in this
+solution. Config contexts can be used for arbitrary JSON serializable data structures. That is helpful to model configuration
+that would not normally be available within Nautobot Core Django ORM models or within a Nautobot plugin's custom models. A common use case is to model "global configuration" like data, such as NTP, DNS, SNMP, etc.
 For more information, please refer to the Nautobot Core documentation on
 [Config Contexts](https://nautobot.readthedocs.io/en/latest/additional-features/config-contexts/#configuration-contexts) and leveraging
 [Git Data Sources](https://nautobot.readthedocs.io/en/stable/user-guides/git-data-source/#using-git-data-sources).
 
 ## Performance
 
-The GraphQL and transposer functionality could seriously impact the performance of the server. There are no restrictions imposed as it is up to the
-operator to weigh the pros and cons of the solution.
+The GraphQL and transposer functions have potential to seriously impact the performance of the Nautobot application. Operator should weigh the pros and cons of the solution before committing to the use of these functions.
 
 ## Sample Query
 

@@ -44,13 +44,15 @@ To configure or update the settings click the pencil icon to edit.
 
 |Setting|Explanation|
 |:--|:--|
-|Backup Repository | This is the Git Repository where your backup configurations will be found. |
-|Backup Path|This represents the Jinja path where the backup files will be found.  The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.site.slug}}/{{obj.name}}.cfg`|
-|Intended Repository | This is the Git Repository where your backup configurations will be found. |
-|Intended Path|The Jinja path representation of where the generated file will be places. e.g. `{{obj.site.slug}}/{{obj.name}}.cfg`|
-|Jinja Repository | This is the Git Repository where your jinja templates will be found. |
-|Jinja Path|The Jinja path representation of where the Jinja temaplte can be found. e.g. `{{obj.platform.slug}}.j2`|
-|Scope| This is where the scope of devices to be considered within Golden Config is defined. |
+|Backup Repositories |One or more Git repository where your backup configurations will be found. |
+|Backup Repository Matching Rule |A Jinja template to match a device to a backup repository's `slug` value. Required if you configure more than one backup repository. E.g. `my-backup-repo-{{obj.site.region.slug}}` |
+|Backup Path|A Jinja template which defines the path and name of backup files within the backup repository. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.site.slug}}/{{obj.name}}.cfg`|
+|Intended Repositories |One or more Git repository where your intended configuration state files will be found. |
+|Intended Repository Matching Rule |A Jinja template to match a device to an intended state repository's `slug` value. Required if you configure more than one intended repository. E.g. `best-of-intentions-repo-{{obj.site.region.slug}}` |
+|Intended Path|A Jinja template which defines the path and name of intended configuration state files within the intended state repository. e.g. `{{obj.site.slug}}/{{obj.name}}.intended_cfg`|
+|Jinja Repository |The Git Repository where your jinja templates will be found. |
+|Jinja Path|A Jinja template which defines the path (within the repository) and name of the Jinja template file. e.g. `{{obj.platform.slug}}/{{obj.role.slug}}/main.j2`|
+|Scope|The scope of devices on which Golden Config's jobs can operate. |
 |GraphQL Query|A query that is evaluated and used to render the config. The query must start with `query ($device_id: ID!)`.|
 
 > Note: Each of these will be further detailed in their respective sections.

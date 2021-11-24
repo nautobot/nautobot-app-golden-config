@@ -333,8 +333,6 @@ class GoldenConfigSettingFeatureForm(
 ):
     """Filter Form for GoldenConfigSettingFeatureForm instances."""
 
-    # TODO: (HUGO) - This only displays one option, even if multiple when using DynamicModelMultipleChoiceField
-    # Review the API
     backup_repository = forms.ModelMultipleChoiceField(
         queryset=GitRepository.objects.filter(provided_contents__contains="nautobot_golden_config.backupconfigs"),
         widget=StaticSelect2Multiple(),

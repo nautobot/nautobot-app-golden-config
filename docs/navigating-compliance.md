@@ -22,10 +22,10 @@ The tool makes no assumptions to determine what an engineer may want to do, but 
 
 ## Compliance Configuration Settings
 
-In order to generate the intended configurations two repositories are needed.
+In order to generate the intended configurations, a minimum of two repositories are required.
 
-1. A repo to save [intended configurations](./navigating-golden.md#git-settings) to once generated.
-2. A repo that stores [Backups](./navigating-golden.md#git-settings) used to as the actual configurations.
+1. At least one repository in which to save [intended configurations](./navigating-golden.md#git-settings) once generated.
+2. At least one repository in which to store [Backups](./navigating-golden.md#git-settings) of devices' running configurations.
 3. The [intended_path_template](./navigating-golden.md#application-settings) configuration parameter.
 4. The [backup_path_template](./navigating-golden.md#application-settings) configuration parameter.
 

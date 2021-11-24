@@ -10,11 +10,11 @@ Follow the steps below to get up and running for the configuration backup elemen
 
 1. Enable the feature in the `PLUGIN_SETTINGS`.  The configuration should have `"enable_backup": True` set in the `PLUGINS_CONFIG` dictionary for `nautobot_golden_config`.
 
-2. Add the git repository that will be used to house the backup configurations.
+2. Add any git repositories that will be used to house the backup configurations.
 
     1. In the UI `Extensibility -> Git Repositories`. Click Add.
     2. Populate the Git Repository data for the backup. [Git Settings](./navigating-golden.md#git-settings)
-    3. Make sure to select the **provides** called `backup configs`.
+    3. Make sure to select the **Provides** called `backup configs`.
     4. Click Create.
 
 3. Next, make sure to update the Plugins **Settings** with the backup details.
@@ -47,18 +47,18 @@ Follow the steps below to get up and running for the intended configuration elem
 
 1. Enable the feature in the `PLUGIN_SETTINGS`.  The configuration should have `"enable_intended": True` set in the `PLUGINS_CONFIG` dictionary for `nautobot_golden_config`.
 
-2. Add the git repository that will be used to house the intended configurations.
+2. Add any git repositories that will be used to house the intended configurations.
 
     1. In the UI `Extensibility -> Git Repositories`. Click Add.
     2. Populate the Git Repository data for the intended. [Git Settings](./navigating-golden.md#git-settings)
-    3. Make sure to select the **provides** called `intended configs`.
+    3. Make sure to select the **Provides** called `intended configs`.
     4. Click Create.
 
 3. Add the git repository that will be used to house the Jinja2 templates.
 
     1. In the UI `Extensibility -> Git Repositories`. Click Add.
     2. Populate the Git Repository data for the jinja2 templates. [Git Settings](./navigating-golden.md#git-settings)
-    3. Make sure to select the **provides** called `jinja templates`.
+    3. Make sure to select the **Provides** called `jinja templates`.
     4. Click Create.
 
 4. Next, make sure to update the Plugins **Settings** with the intended and jinja2 template details.

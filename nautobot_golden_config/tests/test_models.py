@@ -105,6 +105,13 @@ class GoldenConfigSettingModelTestCase(TestCase):
         self.global_settings.sot_agg_query = "query ($device_id: ID!) {device(id: $device_id) {id}}"
         self.assertEqual(self.global_settings.clean(), None)
 
+    def test_singleton_enforcement(self):
+        """Test only one instance of `GoldenConfigSetting` can be created."""
+        self.assertEqual(GoldenConfigSetting.objects.all().count(), 1)
+        with self.assertRaises(IntegrityError) as singleton_error:
+            GoldenConfigSetting.objects.create()
+        self.assertIn("duplicate key value violates unique constraint", str(singleton_error.exception))
+
 
 class ConfigRemoveModelTestCase(TestCase):
     """Test ConfigRemove Model."""

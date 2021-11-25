@@ -416,13 +416,14 @@ class GoldenConfigSetting(PrimaryModel):
         Raises:
             IntegrityError: If an additional `GoldenConfigSetting` object is created from duplicate UUID.
         """
-        if self.__class__.objects.count():
+        if self.__class__.objects.exists():
             self.pk = self.__class__.objects.first().pk  # pylint: disable=invalid-name
         super().save(*args, **kwargs)
 
     def clean(self):
         """Validate there is only one model and if there is a GraphQL query, that it is valid."""
         super().clean()
+        self.save()
 
         if self.sot_agg_query:
             try:

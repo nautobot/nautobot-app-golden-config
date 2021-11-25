@@ -2,7 +2,6 @@
 
 import logging
 from deepdiff import DeepDiff
-
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.serializers.json import DjangoJSONEncoder
@@ -408,12 +407,18 @@ class GoldenConfigSetting(PrimaryModel):
 
         verbose_name = "Golden Config Setting"
 
-    @classmethod
-    def load(cls):
-        """Enforce the singleton pattern, fail it somehow more than one instance."""
-        if len(cls.objects.all()) >= 1:
-            raise ValidationError("There was an error where more than one instance existed for a setting.")
-        return cls.objects.first()
+    def save(self, *args, **kwargs):
+        """Overload save and re-assign the first object.pk and enforce creation of 1 object only.
+
+        This enforces the singleton pattern by manipulating the object UUID to raise
+        an error if an object already exists.
+
+        Raises:
+            IntegrityError: If an additional `GoldenConfigSetting` object is created from duplicate UUID.
+        """
+        if self.__class__.objects.count():
+            self.pk = self.__class__.objects.first().pk  # pylint: disable=invalid-name
+        super().save(*args, **kwargs)
 
     def clean(self):
         """Validate there is only one model and if there is a GraphQL query, that it is valid."""
@@ -445,11 +450,6 @@ class GoldenConfigSetting(PrimaryModel):
             for key in self.scope.keys():
                 if key not in filterset_params:
                     raise ValidationError({"scope": f"'{key}' is not a valid filter parameter for Device object"})
-
-    # def create(self, *args, **kwargs):
-    #     """Overloading `save` to invoke `load`"""
-    #     self.load()
-    #     super().save(*args, **kwargs)
 
     def get_queryset(self):
         """Generate a Device QuerySet from the filter."""

@@ -207,13 +207,10 @@ class ConfigComplianceListView(generic.ObjectListView):
                 return "non-compliant"
             if bool(val) is True:
                 return "compliant"
-            return None
+            raise ValueError(f"Expecting one of 'N/A', 0, or 1, got {val}")
 
         csv_data = []
-        # Use set instead of order_by() as Mysql has issues with distinct and order_by.
-        headers = sorted(
-            list(set(models.ConfigCompliance.objects.values_list("rule__feature__name", flat=True).distinct()))
-        )
+        headers = sorted(list(models.ComplianceFeature.objects.values_list("name", flat=True).distinct()))
         csv_data.append(",".join(list(["Device name"] + headers)))
         for obj in self.alter_queryset(None):
             # From all of the unique fields, obtain the columns, using list comprehension, add values per column,

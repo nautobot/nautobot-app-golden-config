@@ -155,7 +155,7 @@ PLUGINS_CONFIG = {
     },
 }
 
-# Add jinja filter for test cases
+# Modify django_jinja Environment for test cases
 django_jinja_config = None
 for template in TEMPLATES:
     if template["BACKEND"].startswith("django_jinja"):
@@ -166,9 +166,8 @@ if django_jinja_config is not None:
     if not jinja_options:
         jinja_options = {}
         django_jinja_config["OPTIONS"] = jinja_options
+    # Default behavior ignores UndefinedErrors
     jinja_options["undefined"] = "jinja2.StrictUndefined"
-    jinja_filters = jinja_options.get("filters")
-    if not jinja_filters:
-        jinja_filters = {}
-        django_jinja_config["OPTIONS"]["filters"] = jinja_filters
-    jinja_filters["return_a"] = lambda x: "a"
+
+# Import filter function to have it register filter with django_jinja
+from nautobot_golden_config.tests import jinja_filters

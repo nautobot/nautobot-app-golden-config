@@ -1,8 +1,7 @@
 """Helper functions."""
 # pylint: disable=raise-missing-from
 
-from jinja2 import UndefinedError
-from jinja2.exceptions import TemplateError
+from jinja2 import exceptions as jinja_errors
 
 from nornir_nautobot.exceptions import NornirNautobotException
 from nautobot.dcim.filters import DeviceFilterSet
@@ -81,9 +80,25 @@ def render_jinja_template(obj, logger, template):
     """
     try:
         return render_jinja2(template_code=template, context={"obj": obj})
-    except UndefinedError as error:
-        logger.log_failure(obj, f"Jinja `{template}` has an error of `{error}`.")
-        raise NornirNautobotException()
-    except TemplateError as error:  # All Jinja2 Template errors stem from this Exception class
-        logger.log_failure(obj, f"Jinja `{template}` has an error of `{error}`.")
-        raise NornirNautobotException()
+    except jinja_errors.UndefinedError as error:
+        error_msg = (
+            "Jinja encountered and UndefinedError`, check the template for missing variable definitions.\n"
+            f"Template:\n{template}"
+        )
+        logger.log_failure(obj, error_msg)
+        raise NornirNautobotException from error
+    except jinja_errors.TemplateSyntaxError as error:  # Also catches subclass of TemplateAssertionError
+        error_msg = (
+            f"Jinja encountered a SyntaxError at line number {error.lineno},"
+            f"check the template for invalid Jinja syntax.\nTemplate:\n{template}"
+        )
+        logger.log_failure(obj, error_msg)
+        raise NornirNautobotException from error
+    # Intentionally not catching TemplateNotFound errors since template is passes as a string and not a filename
+    except jinja_errors.TemplateError as error:  #  Catches all remaining Jinja errors
+        error_msg = (
+            "Jinja encountered an unexpected TemplateError; check the template for correctness\n"
+            f"Template:\n{template}"
+        )
+        logger.log_failure(error_msg)
+        raise NornirNautobotException from error

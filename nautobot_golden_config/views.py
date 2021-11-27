@@ -119,7 +119,7 @@ class GoldenConfigBulkDeleteView(generic.BulkDeleteView):
                     handle_protectederror(queryset, request, error)
                     return redirect(self.get_return_url(request))
 
-                msg = "Deleted {} {}".format(deleted_count, models.GoldenConfig._meta.verbose_name_plural)
+                msg = f"Deleted {deleted_count} {models.GoldenConfig._meta.verbose_name_plural}"
                 LOGGER.info(msg)
                 messages.success(request, msg)
                 return redirect(self.get_return_url(request))
@@ -143,7 +143,7 @@ class GoldenConfigBulkDeleteView(generic.BulkDeleteView):
         if not table.rows:
             messages.warning(
                 request,
-                "No {} were selected for deletion.".format(model._meta.verbose_name_plural),
+                f"No {model._meta.verbose_name_plural} were selected for deletion.",
             )
             return redirect(self.get_return_url(request))
 
@@ -271,7 +271,7 @@ class ConfigComplianceBulkDeleteView(generic.BulkDeleteView):
                     handle_protectederror(queryset, request, error)
                     return redirect(self.get_return_url(request))
 
-                msg = "Deleted {} {}".format(deleted_count, model._meta.verbose_name_plural)
+                msg = f"Deleted {deleted_count} {model._meta.verbose_name_plural}"
                 LOGGER.info(msg)
                 messages.success(request, msg)
                 return redirect(self.get_return_url(request))
@@ -291,7 +291,7 @@ class ConfigComplianceBulkDeleteView(generic.BulkDeleteView):
         if not table.rows:
             messages.warning(
                 request,
-                "No {} were selected for deletion.".format(model._meta.verbose_name_plural),
+                f"No {model._meta.verbose_name_plural} were selected for deletion.",
             )
             return redirect(self.get_return_url(request))
 
@@ -556,7 +556,7 @@ class ConfigComplianceOverviewOverviewHelper(ContentTypePermissionRequiredMixin,
             for rect in rects:
                 height = rect.get_height()
                 axis.annotate(
-                    "{}".format(height),
+                    f"{height}",
                     xy=(rect.get_x() + rect.get_width() / 2, 0.5),
                     xytext=(0, 3),  # 3 points vertical offset
                     textcoords="offset points",

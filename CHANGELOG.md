@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.9.10 - 2021-11
+
+### Announcements
+
+- Nautobot Golden Config 0.9.X will officially not support versions after 1.2.X
+- Nautobot Golden Config 1.0.X will tentatively not support versions after 1.2.X
+- Nautobot Golden Config will maintain a `stable-<major>.<minor>` branch name
+- Nautobot Golden Config branching policy created
+
+### Added
+
+- #155 Contribution policy updated in Readme
+
+### Fixed
+
+- #129 Update filters, forms, add filters to api.
+- #148 move diff2html to be locally served
+- #154 Fix report bar chart overlap
+- #161 Fix configuration compliance export gives traceback
+- #164 Fixes the export functionality for configuration compliance list view.
+- #166 fix configuration and overview reporting csv exports
+
 ## v0.9.9 - 2021-10
 
 ### Fixed

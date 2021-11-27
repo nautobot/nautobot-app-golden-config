@@ -10,15 +10,14 @@ from nautobot.tenancy.models import Tenant, TenantGroup
 
 from nautobot_golden_config import models
 
+# ConfigCompliance
 
-class GoldenConfigFilterForm(utilities_forms.BootstrapMixin, extras_forms.CustomFieldFilterForm):
-    """Filter Form for GoldenConfig instances."""
 
-    model = Device
+class ConfigComplianceFilterForm(utilities_forms.BootstrapMixin, extras_forms.CustomFieldFilterForm):
+    """Filter Form for ConfigCompliance instances."""
 
-    class Meta:
-        """Meta definitions of searchable fields."""
-
+    model = models.ConfigCompliance
+    # Set field order to be explicit
     field_order = [
         "q",
         "tenant_group",
@@ -30,10 +29,11 @@ class GoldenConfigFilterForm(utilities_forms.BootstrapMixin, extras_forms.Custom
         "role",
         "manufacturer",
         "platform",
-        "device_status_id",
+        "device_status",
         "device_type_id",
         "device",
     ]
+
     q = forms.CharField(required=False, label="Search")
     tenant_group = utilities_forms.DynamicModelMultipleChoiceField(
         queryset=TenantGroup.objects.all(), to_field_name="slug", required=False, null_option="None"
@@ -77,6 +77,7 @@ class GoldenConfigFilterForm(utilities_forms.BootstrapMixin, extras_forms.Custom
         display_field="model",
         query_params={"manufacturer": "$manufacturer"},
     )
+
     platform = utilities_forms.DynamicModelMultipleChoiceField(
         queryset=Platform.objects.all(), to_field_name="slug", required=False, null_option="None"
     )
@@ -87,24 +88,15 @@ class GoldenConfigFilterForm(utilities_forms.BootstrapMixin, extras_forms.Custom
     def __init__(self, *args, **kwargs):
         """Required for status to work."""
         super().__init__(*args, **kwargs)
-        self.fields["device_status_id"] = utilities_forms.DynamicModelMultipleChoiceField(
+        self.fields["device_status"] = utilities_forms.DynamicModelMultipleChoiceField(
             required=False,
             queryset=Status.objects.all(),
             query_params={"content_types": Device._meta.label_lower},
             display_field="label",
             label="Device Status",
-            to_field_name="name",
+            to_field_name="slug",
         )
         self.order_fields(self.field_order)  # Reorder fields again
-
-
-# ConfigCompliance
-
-
-class ConfigComplianceFilterForm(GoldenConfigFilterForm):
-    """Filter Form for ConfigCompliance instances."""
-
-    model = models.ConfigCompliance
 
 
 # ComplianceRule
@@ -240,9 +232,12 @@ class ConfigRemoveFeatureFilterForm(utilities_forms.BootstrapMixin, extras_forms
     """Filter Form for Line Removal."""
 
     model = models.ConfigRemove
-
-    platform = utilities_forms.DynamicModelMultipleChoiceField(queryset=Platform.objects.all(), required=False)
-    name = utilities_forms.DynamicModelChoiceField(queryset=models.ConfigRemove.objects.all(), required=False)
+    platform = utilities_forms.DynamicModelMultipleChoiceField(
+        queryset=Platform.objects.all(), required=False, null_option="None"
+    )
+    name = utilities_forms.DynamicModelChoiceField(
+        queryset=models.ConfigRemove.objects.all(), to_field_name="name", required=False
+    )
 
 
 class ConfigRemoveBulkEditForm(
@@ -296,15 +291,19 @@ class ConfigReplaceFeatureFilterForm(utilities_forms.BootstrapMixin, extras_form
 
     model = models.ConfigReplace
 
-    platform = utilities_forms.DynamicModelMultipleChoiceField(queryset=Platform.objects.all(), required=False)
-    name = utilities_forms.DynamicModelChoiceField(queryset=models.ConfigReplace.objects.all(), required=False)
+    platform = utilities_forms.DynamicModelMultipleChoiceField(
+        queryset=Platform.objects.all(), to_field_name="slug", required=False, null_option="None"
+    )
+    name = utilities_forms.DynamicModelChoiceField(
+        queryset=models.ConfigReplace.objects.all(), to_field_name="name", required=False
+    )
 
 
 class ConfigReplaceCSVForm(extras_forms.CustomFieldModelCSVForm):
-    """CSV Form for ConfigRemove instances."""
+    """CSV Form for ConfigReplace instances."""
 
     class Meta:
-        """Boilerplate form Meta data for ConfigRemove."""
+        """Boilerplate form Meta data for ConfigReplace."""
 
         model = models.ConfigReplace
         fields = models.ConfigReplace.csv_headers

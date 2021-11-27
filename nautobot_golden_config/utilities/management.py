@@ -30,7 +30,7 @@ def job_runner(handle_class, job_class, device=None, user=None):
     job_content_type = ContentType.objects.get(app_label="extras", model="job")
 
     # Run the job and create a new JobResult
-    handle_class.stdout.write("[{:%H:%M:%S}] Running {}...".format(timezone.now(), job_class.class_path))
+    handle_class.stdout.write(f"[{timezone.now():%H:%M:%S}] Running {job_class.class_path}...")
 
     job_result = JobResult.enqueue_job(
         run_job,
@@ -54,13 +54,7 @@ def job_runner(handle_class, job_class, device=None, user=None):
             continue
 
         handle_class.stdout.write(
-            "\t{}: {} success, {} info, {} warning, {} failure".format(
-                test_name,
-                attrs["success"],
-                attrs["info"],
-                attrs["warning"],
-                attrs["failure"],
-            )
+            f"\t{test_name}: {attrs['success']} success, {attrs['info']} info, {attrs['warning']} warning, {attrs['failure']} failure"
         )
 
         for log_entry in attrs["log"]:
@@ -88,10 +82,8 @@ def job_runner(handle_class, job_class, device=None, user=None):
         status = handle_class.style.ERROR("ERRORED")
     else:
         status = handle_class.style.SUCCESS("SUCCESS")
-    handle_class.stdout.write("[{:%H:%M:%S}] {}: {}".format(timezone.now(), job_class.class_path, status))
+    handle_class.stdout.write(f"[{timezone.now():%H:%M:%S}] {job_class.class_path}: {status}")
 
     # Wrap things up
-    handle_class.stdout.write(
-        "[{:%H:%M:%S}] {}: Duration {}".format(timezone.now(), job_class.class_path, job_result.duration)
-    )
-    handle_class.stdout.write("[{:%H:%M:%S}] Finished".format(timezone.now()))
+    handle_class.stdout.write(f"[{timezone.now():%H:%M:%S}] {job_class.class_path}: Duration {job_result.duration}")
+    handle_class.stdout.write(f"[{timezone.now():%H:%M:%S}] Finished")

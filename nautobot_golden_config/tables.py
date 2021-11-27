@@ -194,6 +194,29 @@ class ConfigComplianceDeleteTable(BaseTable):
         fields = ("device", "feature", "compliance")
 
 
+class DeleteGoldenConfigTable(BaseTable):
+    """
+    Table used in bulk delete confirmation.
+
+    This is required since there model is different when deleting the record compared to when viewing the records initially via Device.
+    """
+
+    pk = ToggleColumn()
+
+    def __init__(self, *args, **kwargs):
+        """Remove all fields from showing except device ."""
+        super().__init__(*args, **kwargs)
+        for feature in list(self.base_columns.keys()):  # pylint: disable=no-member
+            if feature not in ["pk", "device"]:
+                self.base_columns.pop(feature)  # pylint: disable=no-member
+                self.sequence.remove(feature)
+
+    class Meta(BaseTable.Meta):
+        """Meta for class DeleteGoldenConfigTable."""
+
+        model = models.GoldenConfig
+
+
 # GoldenConfig
 
 
@@ -215,11 +238,17 @@ class GoldenConfigTable(BaseTable):
     )
 
     if ENABLE_BACKUP:
-        backup_last_success_date = Column(verbose_name="Backup Status", empty_values=())
+        backup_last_success_date = Column(
+            verbose_name="Backup Status", empty_values=(), order_by="goldenconfig__backup_last_success_date"
+        )
     if ENABLE_INTENDED:
-        intended_last_success_date = Column(verbose_name="Intended Status", empty_values=())
+        intended_last_success_date = Column(
+            verbose_name="Intended Status", empty_values=(), order_by="goldenconfig__intended_last_success_date"
+        )
     if ENABLE_COMPLIANCE:
-        compliance_last_success_date = Column(verbose_name="Compliance Status", empty_values=())
+        compliance_last_success_date = Column(
+            verbose_name="Compliance Status", empty_values=(), order_by="goldenconfig__compliance_last_success_date"
+        )
 
     actions = TemplateColumn(
         template_code=ALL_ACTIONS, verbose_name="Actions", extra_context=CONFIG_FEATURES, orderable=False

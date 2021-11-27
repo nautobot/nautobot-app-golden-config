@@ -20,7 +20,7 @@
             {% if bar_chart is not None %}
                 {% block graphic  %}
                     <div id="content">
-                        <img src= "data:image/png;base64,{{ bar_chart|safe }}" >
+                        <img src="data:image/png;base64,{{ bar_chart|safe }}" style="width:100%">
                     </div>
                 {% endblock %}
             {% else %}

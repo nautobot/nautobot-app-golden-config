@@ -10,6 +10,7 @@ from nautobot.dcim.models import Device
 
 from nautobot_golden_config.api import serializers
 from nautobot_golden_config import models
+from nautobot_golden_config import filters
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 
 
@@ -40,6 +41,7 @@ class ComplianceRuleViewSet(CustomFieldModelViewSet):  # pylint:disable=too-many
 
     queryset = models.ComplianceRule.objects.all()
     serializer_class = serializers.ComplianceRuleSerializer
+    filterset_class = filters.ComplianceRuleFilterSet
 
 
 class ComplianceFeatureViewSet(CustomFieldModelViewSet):  # pylint:disable=too-many-ancestors
@@ -47,6 +49,7 @@ class ComplianceFeatureViewSet(CustomFieldModelViewSet):  # pylint:disable=too-m
 
     queryset = models.ComplianceFeature.objects.all()
     serializer_class = serializers.ComplianceFeatureSerializer
+    filterset_class = filters.ComplianceFeatureFilterSet
 
 
 class ConfigComplianceViewSet(CustomFieldModelViewSet):  # pylint:disable=too-many-ancestors
@@ -54,6 +57,7 @@ class ConfigComplianceViewSet(CustomFieldModelViewSet):  # pylint:disable=too-ma
 
     queryset = models.ConfigCompliance.objects.all()
     serializer_class = serializers.ConfigComplianceSerializer
+    filterset_class = filters.ConfigComplianceFilterSet
 
 
 class GoldenConfigViewSet(CustomFieldModelViewSet):  # pylint:disable=too-many-ancestors
@@ -61,6 +65,7 @@ class GoldenConfigViewSet(CustomFieldModelViewSet):  # pylint:disable=too-many-a
 
     queryset = models.GoldenConfig.objects.all()
     serializer_class = serializers.GoldenConfigSerializer
+    filterset_class = filters.GoldenConfigFilterSet
 
 
 class GoldenConfigSettingViewSet(CustomFieldModelViewSet):  # pylint:disable=too-many-ancestors
@@ -75,6 +80,7 @@ class ConfigRemoveViewSet(CustomFieldModelViewSet):  # pylint:disable=too-many-a
 
     queryset = models.ConfigRemove.objects.all()
     serializer_class = serializers.ConfigRemoveSerializer
+    filterset_class = filters.ConfigRemoveFilterSet
 
 
 class ConfigReplaceViewSet(CustomFieldModelViewSet):  # pylint:disable=too-many-ancestors
@@ -82,3 +88,4 @@ class ConfigReplaceViewSet(CustomFieldModelViewSet):  # pylint:disable=too-many-
 
     queryset = models.ConfigReplace.objects.all()
     serializer_class = serializers.ConfigReplaceSerializer
+    filterset_class = filters.ConfigReplaceFilterSet

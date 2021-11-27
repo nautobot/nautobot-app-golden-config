@@ -1,35 +1,34 @@
 """Django views for Nautobot Golden Configuration."""
-from datetime import datetime, timezone
-
 import base64
+import difflib
 import io
 import json
 import logging
 import urllib
-import difflib
-import yaml
+from datetime import datetime, timezone
 
 import matplotlib.pyplot as plt
+import nautobot
 import numpy as np
+import yaml
+from django.contrib import messages
+from django.db.models import Count, ExpressionWrapper, F, FloatField, Max, ProtectedError, Q
+from django.forms import ModelMultipleChoiceField, MultipleHiddenInput
+from django.shortcuts import redirect, render
+from django_pivot.pivot import pivot
+from nautobot.core.views import generic
+from nautobot.dcim.filters import DeviceFilterSet
+from nautobot.dcim.forms import DeviceFilterForm
+from nautobot.dcim.models import Device
+from nautobot.extras.models import CustomField
+from nautobot.utilities.error_handlers import handle_protectederror
+from nautobot.utilities.forms import ConfirmationForm
+from nautobot.utilities.utils import csv_format
+from nautobot.utilities.views import ContentTypePermissionRequiredMixin
 from packaging.version import Version
 
-from django.contrib import messages
-from django.db.models import F, Q, Max
-from django.db.models import Count, FloatField, ExpressionWrapper, ProtectedError
-from django.shortcuts import render, redirect
-from django_pivot.pivot import pivot
-
-import nautobot
-from nautobot.dcim.models import Device
-from nautobot.core.views import generic
-
-from nautobot.utilities.utils import csv_format
-from nautobot.utilities.error_handlers import handle_protectederror
-from nautobot.utilities.views import ContentTypePermissionRequiredMixin
-
 from nautobot_golden_config import filters, forms, models, tables
-
-from nautobot_golden_config.utilities.constant import PLUGIN_CFG, ENABLE_COMPLIANCE, CONFIG_FEATURES
+from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_COMPLIANCE, PLUGIN_CFG
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 
 LOGGER = logging.getLogger(__name__)
@@ -47,8 +46,8 @@ class GoldenConfigListView(generic.ObjectListView):
     """View for displaying the configuration management status for backup, intended, diff, and SoT Agg."""
 
     table = tables.GoldenConfigTable
-    filterset = filters.GoldenConfigFilterSet
-    filterset_form = forms.GoldenConfigFilterForm
+    filterset = DeviceFilterSet
+    filterset_form = DeviceFilterForm
     queryset = Device.objects.all()
     template_name = "nautobot_golden_config/goldenconfig_list.html"
 
@@ -60,13 +59,114 @@ class GoldenConfigListView(generic.ObjectListView):
         """Build actual runtime queryset as the build time queryset provides no information."""
         return self.queryset.filter(id__in=models.GoldenConfigSetting.objects.first().get_queryset())
 
+    def queryset_to_csv(self):
+        """Override nautobot default to account for using Device model for GoldenConfig data."""
+        csv_data = []
+        custom_fields = []
+
+        # Start with the column headers
+        headers = models.GoldenConfig.csv_headers.copy()
+
+        # Add custom field headers, if any
+        if hasattr(models.GoldenConfig, "_custom_field_data"):
+            for custom_field in CustomField.objects.get_for_model(models.GoldenConfig):
+                headers.append(custom_field.name)
+                custom_fields.append(custom_field.name)
+
+        csv_data.append(",".join(headers))
+
+        # Iterate through the queryset appending each object
+        for obj in models.GoldenConfig.objects.all():
+            data = obj.to_csv()
+
+            for custom_field in custom_fields:
+                data += (obj.cf.get(custom_field, ""),)
+
+            csv_data.append(csv_format(data))
+
+        return "\n".join(csv_data)
+
 
 class GoldenConfigBulkDeleteView(generic.BulkDeleteView):
     """Standard view for bulk deletion of data."""
 
-    queryset = models.GoldenConfig.objects.all()
+    queryset = Device.objects.all()
     table = tables.GoldenConfigTable
-    filterset = filters.GoldenConfigFilterSet
+    filterset = DeviceFilterSet
+
+    def post(self, request, **kwargs):
+        """Delete instances based on post request data."""
+        # This is a deviation from standard Nautobot, since the objectlistview is shown on devices, but
+        # displays elements from GoldenConfig model. We have to override attempting to delete from the Device model.
+
+        model = self.queryset.model
+
+        pk_list = request.POST.getlist("pk")
+
+        form_cls = self.get_form()
+
+        if "_confirm" in request.POST:
+            form = form_cls(request.POST)
+            if form.is_valid():
+                LOGGER.debug("Form validation was successful")
+
+                # Delete objects
+                queryset = models.GoldenConfig.objects.filter(pk__in=pk_list)
+                try:
+                    deleted_count = queryset.delete()[1][models.GoldenConfig._meta.label]
+                except ProtectedError as error:
+                    LOGGER.info("Caught ProtectedError while attempting to delete objects")
+                    handle_protectederror(queryset, request, error)
+                    return redirect(self.get_return_url(request))
+
+                msg = f"Deleted {deleted_count} {models.GoldenConfig._meta.verbose_name_plural}"
+                LOGGER.info(msg)
+                messages.success(request, msg)
+                return redirect(self.get_return_url(request))
+
+            LOGGER.debug("Form validation failed")
+
+        else:
+            # From the list of Device IDs, get the GoldenConfig IDs
+            obj_to_del = [
+                item[0] for item in models.GoldenConfig.objects.filter(device__pk__in=pk_list).values_list("id")
+            ]
+
+            form = form_cls(
+                initial={
+                    "pk": obj_to_del,
+                    "return_url": self.get_return_url(request),
+                }
+            )
+        # Levarge a custom table just for deleting
+        table = tables.DeleteGoldenConfigTable(models.GoldenConfig.objects.filter(pk__in=obj_to_del), orderable=False)
+        if not table.rows:
+            messages.warning(
+                request,
+                f"No {model._meta.verbose_name_plural} were selected for deletion.",
+            )
+            return redirect(self.get_return_url(request))
+
+        context = {
+            "form": form,
+            "obj_type_plural": model._meta.verbose_name_plural,
+            "table": table,
+            "return_url": self.get_return_url(request),
+        }
+        return render(request, self.template_name, context)
+
+    def get_form(self):
+        """Override standard form."""
+
+        class BulkDeleteForm(ConfirmationForm):
+            """Local class override."""
+
+            pk = ModelMultipleChoiceField(queryset=models.GoldenConfig.objects.all(), widget=MultipleHiddenInput)
+
+        if self.form:
+            return self.form
+
+        return BulkDeleteForm
 
 
 #
@@ -100,22 +200,22 @@ class ConfigComplianceListView(generic.ObjectListView):
     def queryset_to_csv(self):
         """Export queryset of objects as comma-separated value (CSV)."""
 
-        def conver_to_str(val):
-            if val is False:  # pylint: disable=no-else-return
+        def convert_to_str(val):
+            if val is None:
+                return "N/A"
+            if bool(val) is False:
                 return "non-compliant"
-            elif val is True:
+            if bool(val) is True:
                 return "compliant"
-            return "N/A"
+            raise ValueError(f"Expecting one of 'N/A', 0, or 1, got {val}")
 
         csv_data = []
-        headers = sorted(list(models.ConfigCompliance.objects.values_list("feature", flat=True).distinct()))
+        headers = sorted(list(models.ComplianceFeature.objects.values_list("name", flat=True).distinct()))
         csv_data.append(",".join(list(["Device name"] + headers)))
-        for obj in self.alter_queryset(None).values():
+        for obj in self.alter_queryset(None):
             # From all of the unique fields, obtain the columns, using list comprehension, add values per column,
             # as some fields may not exist for every device.
-            row = [Device.objects.get(id=obj["device_id"]).name] + [
-                conver_to_str(obj.get(header)) for header in headers
-            ]
+            row = [obj.get("device__name")] + [convert_to_str(obj.get(header)) for header in headers]
             csv_data.append(csv_format(row))
         return "\n".join(csv_data)
 
@@ -171,7 +271,7 @@ class ConfigComplianceBulkDeleteView(generic.BulkDeleteView):
                     handle_protectederror(queryset, request, error)
                     return redirect(self.get_return_url(request))
 
-                msg = "Deleted {} {}".format(deleted_count, model._meta.verbose_name_plural)
+                msg = f"Deleted {deleted_count} {model._meta.verbose_name_plural}"
                 LOGGER.info(msg)
                 messages.success(request, msg)
                 return redirect(self.get_return_url(request))
@@ -191,7 +291,7 @@ class ConfigComplianceBulkDeleteView(generic.BulkDeleteView):
         if not table.rows:
             messages.warning(
                 request,
-                "No {} were selected for deletion.".format(model._meta.verbose_name_plural),
+                f"No {model._meta.verbose_name_plural} were selected for deletion.",
             )
             return redirect(self.get_return_url(request))
 
@@ -456,7 +556,7 @@ class ConfigComplianceOverviewOverviewHelper(ContentTypePermissionRequiredMixin,
             for rect in rects:
                 height = rect.get_height()
                 axis.annotate(
-                    "{}".format(height),
+                    f"{height}",
                     xy=(rect.get_x() + rect.get_width() / 2, 0.5),
                     xytext=(0, 3),  # 3 points vertical offset
                     textcoords="offset points",
@@ -585,7 +685,7 @@ class ConfigComplianceOverview(generic.ObjectListView):
         )
         csv_data.append(",".join([]))
 
-        qs = self.queryset.values("rule", "count", "compliant", "non_compliant", "comp_percent")
+        qs = self.queryset.values("rule__feature__name", "count", "compliant", "non_compliant", "comp_percent")
         csv_data.append(",".join(["Total" if item == "count" else item.capitalize() for item in qs[0].keys()]))
         for obj in qs:
             csv_data.append(

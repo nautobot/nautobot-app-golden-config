@@ -2,9 +2,6 @@
 
 A plugin for [Nautobot](https://github.com/nautobot/nautobot) that intends to provide context around golden configuration.
 
-**This version is currently in Beta and will require a rebuild of the database for a 1.0 release.**
-
-
 # Introduction
 
 ## What is the Golden Configuration Plugin?
@@ -19,7 +16,7 @@ This plugin enable four (4) key use cases.
 1. **Configuration Backups** - Is a Nornir process to connect to devices, optionally parse out lines/secrets, backup the configuration, and save to a Git repository.
 2. **Intended Configuration** - Is a Nornir process to generate configuration based on a Git repo of Jinja files to combine with a GraphQL generated data and a Git repo to store the intended configuration.
 3. **Source of Truth Aggregation** - Is a GraphQL query per device that creates a data structure used in the generation of configuration.
-4. **Configuration Compliance** - Is a Nornir process to run comparison of the actual (via backups) and intended (via Jinja file creation) CLI configurations.
+4. **Configuration Compliance** - Is a process to run comparison of the actual (via backups) and intended (via Jinja file creation) CLI configurations upon saving the actual and intended configuration. This is started by either a Nornir process for cli-like configurations or calling the API for json-like configurations
 
 >Notice: The operator's of their own Nautobot instance are welcome to use any combination of these features. Though the appearance may seem like they are tightly 
 coupled, this isn't actually the case. For example, one can obtain backup configurations from their current RANCID/Oxidized process and simply provide a Git Repo
@@ -34,6 +31,7 @@ but not want to use other features, which is perfectly fine to do so.
 - [Navigating Intended](./docs/navigating-intended.md)
 - [Navigating SoTAgg](./docs/navigating-sot-agg.md)
 - [Navigating Compliance](./docs/navigating-compliance.md)
+- [Navigating JSON Compliance](./docs/navigating-compliance-json.md)
 - [FAQ](./docs/FAQ.md)
 
 ## Screenshots
@@ -64,6 +62,33 @@ The project is packaged with a light development environment based on `docker-co
 The project is following Network to Code software development guidelines and are leveraging the following:
 - Black, Pylint, Bandit, flake8, and pydocstyle for Python linting and formatting.
 - Django unit test to ensure the plugin is working properly.
+
+## Branching Policy
+
+The branching policy includes the following tenets:
+
+- The develop branch is the branch of the next major or minor version planned.
+- The `stable-<major>.<minor>` branch is the branch of the latest version within that major/minor version
+- PRs intended to add new features should be sourced from the develop branch
+- PRs intended to address bug fixes and security patches should be sourced from `stable-<major>.<minor>`
+
+Nautobot Golden Config will observe semantic versioning, as of 1.0. This may result in an quick turn around in minor versions to keep
+pace with an ever growing feature set.
+
+## Release Policy
+
+Nautobot Golden Config has currently no intended scheduled release schedule, and will release new feature in minor versions.
+
+## Deprecation Policy
+
+Support of upstream Nautobot will be announced 1 minor or major version ahead. Deprecation policy will be announced within the
+CHANGELOG.md file, and updated in the table below. There will be a `stable-<major>.<minor>` branch that will be minimally maintained.
+Any security enhancements or major bugs will be supported for a limited time. 
+
+| Golden Config Version | Nautobot First Support Version | Nautobot Last Support Version |
+| --------------------- | ------------------------------ | ----------------------------- |
+| 0.9.X                 | 1.0                            | 1.2 [Official]                |
+| 1.0.X                 | 1.2                            | 1.2 [Tentative]               |
 
 ## CLI Helper Commands
 

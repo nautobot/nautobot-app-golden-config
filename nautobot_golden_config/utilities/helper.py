@@ -95,7 +95,7 @@ def render_jinja_template(obj, logger, template):
         logger.log_failure(obj, error_msg)
         raise NornirNautobotException from error
     # Intentionally not catching TemplateNotFound errors since template is passes as a string and not a filename
-    except jinja_errors.TemplateError as error:  #  Catches all remaining Jinja errors
+    except jinja_errors.TemplateError as error:  # Catches all remaining Jinja errors
         error_msg = (
             "Jinja encountered an unexpected TemplateError; check the template for correctness\n"
             f"Template:\n{template}"

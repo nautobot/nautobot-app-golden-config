@@ -170,4 +170,4 @@ if django_jinja_config is not None:
     jinja_options["undefined"] = "jinja2.StrictUndefined"
 
 # Import filter function to have it register filter with django_jinja
-from nautobot_golden_config.tests import jinja_filters
+from nautobot_golden_config.tests import jinja_filters  # noqa: E402

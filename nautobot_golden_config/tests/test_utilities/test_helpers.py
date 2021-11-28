@@ -1,7 +1,7 @@
 """Unit tests for nautobot_golden_config utilities helpers."""
 
 import unittest
-from unittest.mock import patch, Mock
+from unittest.mock import patch
 
 from nautobot.dcim.models import Device
 

@@ -274,7 +274,7 @@ def pydocstyle(context):
     Args:
         context (obj): Used to run specific commands
     """
-    command = 'pydocstyle --config=.pydocstyle.ini'
+    command = "pydocstyle --config=.pydocstyle.ini"
     run_command(context, command)
 
 

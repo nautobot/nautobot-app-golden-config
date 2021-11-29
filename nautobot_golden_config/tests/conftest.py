@@ -1,8 +1,9 @@
 """Params for testing."""
 from nautobot.dcim.models import Device, Site, Manufacturer, DeviceType, DeviceRole, Rack, RackGroup, Region, Platform
 from nautobot.tenancy.models import Tenant, TenantGroup
-from nautobot.extras.models import Status
-
+from nautobot.extras.models import Status, GitRepository
+from nautobot.extras.datasources.registry import get_datasource_contents
+from django.utils.text import slugify
 
 from nautobot_golden_config.models import ConfigCompliance, ComplianceFeature, ComplianceRule
 from nautobot_golden_config.choices import ComplianceRuleTypeChoice
@@ -169,3 +170,93 @@ def create_config_compliance(device, compliance_rule=None, actual=None, intended
         intended=intended,
     )
     return config_compliance
+
+
+# """Fixture Models."""
+def create_git_repos() -> None:
+    """Create five instances of Git Repos.
+
+    Two GitRepository objects provide Backups.
+    Two GitRepository objects provide Intended.
+    One GitRepository objects provide Jinja Templates.
+    The provided content is matched through a loop, in order to prevent any errors if object ID's change.
+    """
+    name = "test-backup-repo-1"
+    provides = "nautobot_golden_config.backupconfigs"
+    git_repo_1 = GitRepository(
+        name=name,
+        slug=slugify(name),
+        remote_url=f"http://www.remote-repo.com/{name}.git",
+        branch="main",
+        username="CoolDeveloper_1",
+        provided_contents=[
+            entry.content_identifier
+            for entry in get_datasource_contents("extras.gitrepository")
+            if entry.content_identifier == provides
+        ],
+    )
+    git_repo_1.save(trigger_resync=False)
+
+    name = "test-backup-repo-2"
+    provides = "nautobot_golden_config.backupconfigs"
+    git_repo_2 = GitRepository(
+        name=name,
+        slug=slugify(name),
+        remote_url=f"http://www.remote-repo.com/{name}.git",
+        branch="main",
+        username="CoolDeveloper_1",
+        provided_contents=[
+            entry.content_identifier
+            for entry in get_datasource_contents("extras.gitrepository")
+            if entry.content_identifier == provides
+        ],
+    )
+    git_repo_2.save(trigger_resync=False)
+
+    name = "test-intended-repo-1"
+    provides = "nautobot_golden_config.intendedconfigs"
+    git_repo_3 = GitRepository(
+        name=name,
+        slug=slugify(name),
+        remote_url=f"http://www.remote-repo.com/{name}.git",
+        branch="main",
+        username="CoolDeveloper_1",
+        provided_contents=[
+            entry.content_identifier
+            for entry in get_datasource_contents("extras.gitrepository")
+            if entry.content_identifier == provides
+        ],
+    )
+    git_repo_3.save(trigger_resync=False)
+
+    name = "test-intended-repo-2"
+    provides = "nautobot_golden_config.intendedconfigs"
+    git_repo_4 = GitRepository(
+        name=name,
+        slug=slugify(name),
+        remote_url=f"http://www.remote-repo.com/{name}.git",
+        branch="main",
+        username="CoolDeveloper_1",
+        provided_contents=[
+            entry.content_identifier
+            for entry in get_datasource_contents("extras.gitrepository")
+            if entry.content_identifier == provides
+        ],
+    )
+    git_repo_4.save(trigger_resync=False)
+
+    name = "test-jinja-repo-1"
+    provides = "nautobot_golden_config.jinjatemplate"
+    git_repo_5 = GitRepository(
+        name=name,
+        slug=slugify(name),
+        remote_url=f"http://www.remote-repo.com/{name}.git",
+        branch="main",
+        username="CoolDeveloper_1",
+        provided_contents=[
+            entry.content_identifier
+            for entry in get_datasource_contents("extras.gitrepository")
+            if entry.content_identifier == provides
+        ],
+    )
+    git_repo_5.save(trigger_resync=False)

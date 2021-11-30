@@ -44,7 +44,7 @@ class HelpersTest(unittest.TestCase):
 
     @patch("nautobot.dcim.models.Device")
     def test_render_jinja_template_success_with_filter(self, mock_device):
-        """Test custom template is accessible."""
+        """Test custom template and jinja filter are accessible."""
         rendered_template = render_jinja_template(mock_device, "logger", "{{ data | return_a }}")
         self.assertEqual(rendered_template, "a")
 

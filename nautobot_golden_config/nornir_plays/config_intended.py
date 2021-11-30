@@ -8,6 +8,7 @@ from nornir import InitNornir
 from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir.core.task import Result, Task
 
+from django_jinja.backend import Jinja2
 
 from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
@@ -21,7 +22,7 @@ from nautobot_golden_config.models import GoldenConfigSetting, GoldenConfig
 from nautobot_golden_config.utilities.helper import (
     get_job_filter,
     verify_global_settings,
-    check_jinja_template,
+    render_jinja_template,
 )
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
@@ -31,7 +32,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def run_template(  # pylint: disable=too-many-arguments
-    task: Task, logger, global_settings, job_result, jinja_root_path, intended_root_folder
+    task: Task, logger, global_settings, nautobot_job, jinja_root_path, intended_root_folder
 ) -> Result:
     """Render Jinja Template.
 
@@ -39,6 +40,11 @@ def run_template(  # pylint: disable=too-many-arguments
 
     Args:
         task (Task): Nornir task individual object
+        logger (NornirLogger): Logger to log messages to.
+        global_settings (GoldenConfigSetting): The settings for GoldenConfigPlugin.
+        nautobot_job (Result): The Nautobot Job instance being ran.
+        jinja_root_path (str): The root path to the Jinja2 intended config file.
+        intended_root_folder (str): The root folder for rendered intended output configs.
 
     Returns:
         result (Result): Result from Nornir task
@@ -51,16 +57,19 @@ def run_template(  # pylint: disable=too-many-arguments
     intended_obj.intended_last_attempt_date = task.host.defaults.data["now"]
     intended_obj.save()
 
-    intended_path_template_obj = check_jinja_template(obj, logger, global_settings.intended_path_template)
-    output_file_location = os.path.join(intended_root_folder, intended_path_template_obj)
+    # Render output relative filepath and jinja template filenames
+    intended_output_filepath = render_jinja_template(obj, logger, global_settings.intended_path_template)
+    jinja_intended_template_filename = render_jinja_template(obj, logger, global_settings.jinja_path_template)
 
-    jinja_template = check_jinja_template(obj, logger, global_settings.jinja_path_template)
-
-    status, device_data = graph_ql_query(job_result.request, obj, global_settings.sot_agg_query)
+    output_file_location = os.path.join(intended_root_folder, intended_output_filepath)
+    status, device_data = graph_ql_query(nautobot_job.request, obj, global_settings.sot_agg_query)
     if status != 200:
         logger.log_failure(obj, f"The GraphQL query return a status of {str(status)} with error of {str(device_data)}")
         raise NornirNautobotException()
     task.host.data.update(device_data)
+
+    jinja_settings = Jinja2.get_default()
+    jinja_env = jinja_settings.env
 
     generated_config = task.run(
         task=dispatcher,
@@ -68,10 +77,11 @@ def run_template(  # pylint: disable=too-many-arguments
         method="generate_config",
         obj=obj,
         logger=logger,
-        jinja_template=jinja_template,
+        jinja_template=jinja_intended_template_filename,
         jinja_root_path=jinja_root_path,
         output_file_location=output_file_location,
         default_drivers_mapping=get_dispatcher(),
+        jinja_filters=jinja_env.filters,
     )[1].result["config"]
     intended_obj.intended_last_success_date = task.host.defaults.data["now"]
     intended_obj.intended_config = generated_config
@@ -82,10 +92,21 @@ def run_template(  # pylint: disable=too-many-arguments
     return Result(host=task.host, result=generated_config)
 
 
-def config_intended(job_result, data, jinja_root_path, intended_root_folder):
-    """Nornir play to generate configurations."""
+def config_intended(nautobot_job, data, jinja_root_path, intended_root_folder):
+    """
+    Nornir play to generate configurations.
+
+    Args:
+        nautobot_job (Result): The Nautobot Job instance being ran.
+        data (dict): Form data from Nautobot Job.
+        jinja_root_path (str): The root path to the Jinja2 intended config file.
+        intended_root_folder (str): The root folder for rendered intended output configs.
+
+    Returns:
+        None: Intended configuration files are written to filesystem.
+    """
     now = datetime.now()
-    logger = NornirLogger(__name__, job_result, data.get("debug"))
+    logger = NornirLogger(__name__, nautobot_job, data.get("debug"))
     global_settings = GoldenConfigSetting.objects.first()
     verify_global_settings(logger, global_settings, ["jinja_path_template", "intended_path_template", "sot_agg_query"])
     try:
@@ -111,7 +132,7 @@ def config_intended(job_result, data, jinja_root_path, intended_root_folder):
                 name="RENDER CONFIG",
                 logger=logger,
                 global_settings=global_settings,
-                job_result=job_result,
+                nautobot_job=nautobot_job,
                 jinja_root_path=jinja_root_path,
                 intended_root_folder=intended_root_folder,
             )

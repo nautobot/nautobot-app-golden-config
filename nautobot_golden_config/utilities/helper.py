@@ -1,12 +1,12 @@
 """Helper functions."""
 # pylint: disable=raise-missing-from
 
-from jinja2 import Template, StrictUndefined, UndefinedError
-from jinja2.exceptions import TemplateError, TemplateSyntaxError
+from jinja2 import exceptions as jinja_errors
 
 from nornir_nautobot.exceptions import NornirNautobotException
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.dcim.models import Device
+from nautobot.utilities.utils import render_jinja2
 
 from nautobot_golden_config import models
 
@@ -63,17 +63,42 @@ def verify_global_settings(logger, global_settings, attrs):
             raise NornirNautobotException()
 
 
-def check_jinja_template(obj, logger, template):
-    """Helper function to catch Jinja based issues and raise with proper NornirException."""
+def render_jinja_template(obj, logger, template):
+    """
+    Helper function to render Jinja templates.
+
+    Args:
+        obj (Device): The Device object from Nautobot.
+        logger (NornirLogger): Logger to log error messages to.
+        template (str): A Jinja2 template to be rendered.
+
+    Returns:
+        str: The ``template`` rendered.
+
+    Raises:
+        NornirNautobotException: When there is an error rendering the ``template``.
+    """
     try:
-        template_rendered = Template(template, undefined=StrictUndefined).render(obj=obj)
-        return template_rendered
-    except UndefinedError as error:
-        logger.log_failure(obj, f"Jinja `{template}` has an error of `{error}`.")
-        raise NornirNautobotException()
-    except TemplateSyntaxError as error:
-        logger.log_failure(obj, f"Jinja `{template}` has an error of `{error}`.")
-        raise NornirNautobotException()
-    except TemplateError as error:
-        logger.log_failure(obj, f"Jinja `{template}` has an error of `{error}`.")
-        raise NornirNautobotException()
+        return render_jinja2(template_code=template, context={"obj": obj})
+    except jinja_errors.UndefinedError as error:
+        error_msg = (
+            "Jinja encountered and UndefinedError`, check the template for missing variable definitions.\n"
+            f"Template:\n{template}"
+        )
+        logger.log_failure(obj, error_msg)
+        raise NornirNautobotException from error
+    except jinja_errors.TemplateSyntaxError as error:  # Also catches subclass of TemplateAssertionError
+        error_msg = (
+            f"Jinja encountered a SyntaxError at line number {error.lineno},"
+            f"check the template for invalid Jinja syntax.\nTemplate:\n{template}"
+        )
+        logger.log_failure(obj, error_msg)
+        raise NornirNautobotException from error
+    # Intentionally not catching TemplateNotFound errors since template is passes as a string and not a filename
+    except jinja_errors.TemplateError as error:  # Catches all remaining Jinja errors
+        error_msg = (
+            "Jinja encountered an unexpected TemplateError; check the template for correctness\n"
+            f"Template:\n{template}"
+        )
+        logger.log_failure(error_msg)
+        raise NornirNautobotException from error

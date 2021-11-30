@@ -35,6 +35,7 @@ PLUGINS_CONFIG = {
         "enable_sotagg": True,
         "sot_agg_transposer": None,
         "platform_slug_map": None,
+        # "get_custom_compliance": "my.custom_compliance.func"
     },
 }
 

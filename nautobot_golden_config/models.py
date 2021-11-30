@@ -1,11 +1,13 @@
 """Django Models for tracking the configuration compliance per feature and device."""
 
 import logging
+import json
 from deepdiff import DeepDiff
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.serializers.json import DjangoJSONEncoder
 from django.shortcuts import reverse
+from django.utils.module_loading import import_string
 from graphene_django.settings import graphene_settings
 from graphql import get_default_backend
 from graphql.error import GraphQLSyntaxError
@@ -19,16 +21,133 @@ from netutils.config.compliance import feature_compliance
 
 from nautobot_golden_config.choices import ComplianceRuleTypeChoice
 from nautobot_golden_config.utilities.utils import get_platform
+from nautobot_golden_config.utilities.constant import PLUGIN_CFG
 
 LOGGER = logging.getLogger(__name__)
 GRAPHQL_STR_START = "query ($device_id: ID!)"
 
+ERROR_MSG = (
+    "There was an issue with the data that was returned by your get_custom_compliance function. "
+    "This is a local issue that requires the attention of your systems administrator and not something "
+    "that can be fixed within the Golden Config plugin. "
+)
+MISSING_MSG = (
+    ERROR_MSG + "Specifically the `{}` key was not found in value the get_custom_compliance function provided."
+)
+VALIDATION_MSG = (
+    ERROR_MSG + "Specifically the key {} was expected to be of type(s) {} and the value of {} was not that type(s)."
+)
 
-def null_to_empty(val):
+
+def _is_jsonable(val):
+    """Check is value can be converted to json."""
+    try:
+        json.dumps(val)
+        return True
+    except (TypeError, OverflowError):
+        return False
+
+
+def _null_to_empty(val):
     """Convert to empty string if the value is currently null."""
     if not val:
         return ""
     return val
+
+
+def _get_cli_compliance(obj):
+    """This function performs the actual compliance for cli configuration."""
+    feature = {
+        "ordered": obj.rule.config_ordered,
+        "name": obj.rule,
+    }
+    feature.update({"section": obj.rule.match_config.splitlines()})
+    value = feature_compliance(feature, obj.actual, obj.intended, get_platform(obj.device.platform.slug))
+    compliance = value["compliant"]
+    if compliance:
+        compliance_int = 1
+        ordered = value["ordered_compliant"]
+    else:
+        compliance_int = 0
+        ordered = value["ordered_compliant"]
+    missing = _null_to_empty(value["missing"])
+    extra = _null_to_empty(value["extra"])
+    return {
+        "compliance": compliance,
+        "compliance_int": compliance_int,
+        "ordered": ordered,
+        "missing": missing,
+        "extra": extra,
+    }
+
+
+def _get_json_compliance(obj):
+    """This function performs the actual compliance for json serializable data."""
+
+    def _normalize_diff(diff, path_to_diff):
+        """Normalizes the diff to a list of keys and list indexes that have changed."""
+        dictionary_items = list(diff.get(f"dictionary_item_{path_to_diff}", []))
+        list_items = list(diff.get(f"iterable_item_{path_to_diff}", {}).keys())
+        values_changed = list(diff.get("values_changed", {}).keys())
+        type_changes = list(diff.get("type_changes", {}).keys())
+        return dictionary_items + list_items + values_changed + type_changes
+
+    diff = DeepDiff(obj.actual, obj.intended, ignore_order=obj.ordered, report_repetition=True)
+    if not diff:
+        compliance_int = 1
+        compliance = True
+        ordered = True
+        missing = ""
+        extra = ""
+    else:
+        compliance_int = 0
+        compliance = False
+        ordered = False
+        missing = _null_to_empty(_normalize_diff(diff, "added"))
+        extra = _null_to_empty(_normalize_diff(diff, "removed"))
+
+    return {
+        "compliance": compliance,
+        "compliance_int": compliance_int,
+        "ordered": ordered,
+        "missing": missing,
+        "extra": extra,
+    }
+
+
+def _verify_get_custom_compliance_data(compliance_details):
+    """This function verifies the data is as expected when a custom function is used."""
+    for val in ["compliance", "compliance_int", "ordered", "missing", "extra"]:
+        try:
+            compliance_details[val]
+        except KeyError:
+            raise ValidationError(MISSING_MSG.format(val)) from KeyError
+    for val in ["compliance", "ordered"]:
+        if compliance_details[val] not in [True, False]:
+            raise ValidationError(VALIDATION_MSG.format(val, "Boolean", compliance_details[val]))
+    if compliance_details["compliance_int"] not in [0, 1]:
+        raise ValidationError(VALIDATION_MSG.format("compliance_int", "0 or 1", compliance_details["compliance_int"]))
+    for val in ["missing", "extra"]:
+        if not isinstance(compliance_details[val], str) and not _is_jsonable(compliance_details[val]):
+            raise ValidationError(VALIDATION_MSG.format(val, "String or Json", compliance_details[val]))
+
+
+# The below maps the provided compliance types
+FUNC_MAPPER = {
+    ComplianceRuleTypeChoice.TYPE_CLI: _get_cli_compliance,
+    ComplianceRuleTypeChoice.TYPE_JSON: _get_json_compliance,
+}
+# The below conditionally add the cusom provided compliance type
+if PLUGIN_CFG.get("get_custom_compliance"):
+    try:
+        FUNC_MAPPER[ComplianceRuleTypeChoice.TYPE_CUSTOM] = import_string(PLUGIN_CFG["get_custom_compliance"])
+    except Exception as error:  # pylint: disable=broad-except
+        msg = (
+            "There was an issue attempting to import the get_custom_compliance function of"
+            f"{PLUGIN_CFG['get_custom_compliance']}, this is expected with a local configuration issue "
+            "and not related to the Golden Configuration Plugin, please contact your system admin for further details"
+        )
+        raise Exception(msg).with_traceback(error.__traceback__)
 
 
 @extras_features(
@@ -198,46 +317,25 @@ class ConfigCompliance(PrimaryModel):
         return f"{self.device} -> {self.rule} -> {self.compliance}"
 
     def save(self, *args, **kwargs):
-        """Performs the actual compliance check."""
-        feature = {
-            "ordered": self.rule.config_ordered,
-            "name": self.rule,
-        }
-        if self.rule.config_type == ComplianceRuleTypeChoice.TYPE_JSON:
-            feature.update({"section": self.rule.match_config})
+        """The actual configuration compliance happens here, but the details for actual compliance job would be found in FUNC_MAPPER."""
+        if self.rule.config_type == ComplianceRuleTypeChoice.TYPE_CUSTOM and not FUNC_MAPPER.get(
+            ComplianceRuleTypeChoice.TYPE_CUSTOM
+        ):
+            raise ValidationError(
+                "Custom type provided, but no `get_custom_compliance` config set, please contact system admin."
+            )
 
-            diff = DeepDiff(self.actual, self.intended, ignore_order=self.ordered, report_repetition=True)
-            if not diff:
-                self.compliance_int = 1
-                self.compliance = True
-                self.missing = ""
-                self.extra = ""
-            else:
-                self.compliance_int = 0
-                self.compliance = False
-                self.missing = null_to_empty(self._normalize_diff(diff, "added"))
-                self.extra = null_to_empty(self._normalize_diff(diff, "removed"))
-        else:
-            feature.update({"section": self.rule.match_config.splitlines()})
-            value = feature_compliance(feature, self.actual, self.intended, get_platform(self.device.platform.slug))
-            self.compliance = value["compliant"]
-            if self.compliance:
-                self.compliance_int = 1
-            else:
-                self.compliance_int = 0
-                self.ordered = value["ordered_compliant"]
-            self.missing = null_to_empty(value["missing"])
-            self.extra = null_to_empty(value["extra"])
+        compliance_details = FUNC_MAPPER[self.rule.config_type](obj=self)
+        if self.rule.config_type == ComplianceRuleTypeChoice.TYPE_CUSTOM:
+            _verify_get_custom_compliance_data(compliance_details)
+
+        self.compliance = compliance_details["compliance"]
+        self.compliance_int = compliance_details["compliance_int"]
+        self.ordered = compliance_details["ordered"]
+        self.missing = compliance_details["missing"]
+        self.extra = compliance_details["extra"]
+
         super().save(*args, **kwargs)
-
-    @staticmethod
-    def _normalize_diff(diff, path_to_diff):
-        """Normalizes the diff to a list of keys and list indexes that have changed."""
-        dictionary_items = list(diff.get(f"dictionary_item_{path_to_diff}", []))
-        list_items = list(diff.get(f"iterable_item_{path_to_diff}", {}).keys())
-        values_changed = list(diff.get("values_changed", {}).keys())
-        type_changes = list(diff.get("type_changes", {}).keys())
-        return dictionary_items + list_items + values_changed + type_changes
 
 
 @extras_features(
@@ -431,8 +529,8 @@ class GoldenConfigSetting(PrimaryModel):
                 backend = get_default_backend()
                 schema = graphene_settings.SCHEMA
                 backend.document_from_string(schema, str(self.sot_agg_query))
-            except GraphQLSyntaxError as error:
-                raise ValidationError(str(error))  # pylint: disable=raise-missing-from
+            except GraphQLSyntaxError as err:
+                raise ValidationError(str(err))  # pylint: disable=raise-missing-from
 
             LOGGER.debug("GraphQL - test  query start with: `%s`", GRAPHQL_STR_START)
             if not str(self.sot_agg_query).startswith(GRAPHQL_STR_START):

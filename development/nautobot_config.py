@@ -161,6 +161,7 @@ PLUGINS_CONFIG = {
         "sot_agg_transposer": os.environ.get("SOT_AGG_TRANSPOSER"),
         # The platform_slug_map maps an arbitrary platform slug to its corresponding parser.
         # Use this if you get 'There is currently no parser support for platform slug <foo>' errors.
+        # Each key should == the slug of the Nautobot platform object.
         # "platform_slug_map": {
         #     "eos": "arista_eos",
         #     "ios": "cisco_ios",
@@ -168,5 +169,6 @@ PLUGINS_CONFIG = {
         #     "junos": "juniper_junos",
         #     "nxos": "cisco_nxos",
         # },
+        # "get_custom_compliance": "my.custom_compliance.func",
     },
 }

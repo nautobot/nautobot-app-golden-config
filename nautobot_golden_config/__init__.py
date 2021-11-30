@@ -1,6 +1,6 @@
 """Plugin declaration for nautobot_golden_config."""
 
-__version__ = "0.9.9"
+__version__ = "1.0.0-beta"
 
 from nautobot.extras.plugins import PluginConfig
 
@@ -23,6 +23,7 @@ class GoldenConfig(PluginConfig):
         "per_feature_bar_width": 0.3,
         "per_feature_width": 13,
         "per_feature_height": 4,
+        "get_custom_compliance": None,
     }
 
 

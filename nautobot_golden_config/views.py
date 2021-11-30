@@ -119,7 +119,7 @@ class GoldenConfigBulkDeleteView(generic.BulkDeleteView):
                     handle_protectederror(queryset, request, error)
                     return redirect(self.get_return_url(request))
 
-                msg = "Deleted {} {}".format(deleted_count, models.GoldenConfig._meta.verbose_name_plural)
+                msg = f"Deleted {deleted_count} {models.GoldenConfig._meta.verbose_name_plural}"
                 LOGGER.info(msg)
                 messages.success(request, msg)
                 return redirect(self.get_return_url(request))
@@ -143,7 +143,7 @@ class GoldenConfigBulkDeleteView(generic.BulkDeleteView):
         if not table.rows:
             messages.warning(
                 request,
-                "No {} were selected for deletion.".format(model._meta.verbose_name_plural),
+                f"No {model._meta.verbose_name_plural} were selected for deletion.",
             )
             return redirect(self.get_return_url(request))
 
@@ -201,21 +201,21 @@ class ConfigComplianceListView(generic.ObjectListView):
         """Export queryset of objects as comma-separated value (CSV)."""
 
         def convert_to_str(val):
-            if bool(val) is False:  # pylint: disable=no-else-return
+            if val is None:
+                return "N/A"
+            if bool(val) is False:
                 return "non-compliant"
-            elif bool(val) is True:
+            if bool(val) is True:
                 return "compliant"
-            return "N/A"
+            raise ValueError(f"Expecting one of 'N/A', 0, or 1, got {val}")
 
         csv_data = []
-        headers = sorted(list(models.ConfigCompliance.objects.values_list("rule__feature__name", flat=True).distinct()))
+        headers = sorted(list(models.ComplianceFeature.objects.values_list("name", flat=True).distinct()))
         csv_data.append(",".join(list(["Device name"] + headers)))
-        for obj in self.alter_queryset(None).values():
+        for obj in self.alter_queryset(None):
             # From all of the unique fields, obtain the columns, using list comprehension, add values per column,
             # as some fields may not exist for every device.
-            row = [Device.objects.get(id=obj["device_id"]).name] + [
-                convert_to_str(obj.get(header)) for header in headers
-            ]
+            row = [obj.get("device__name")] + [convert_to_str(obj.get(header)) for header in headers]
             csv_data.append(csv_format(row))
         return "\n".join(csv_data)
 
@@ -271,7 +271,7 @@ class ConfigComplianceBulkDeleteView(generic.BulkDeleteView):
                     handle_protectederror(queryset, request, error)
                     return redirect(self.get_return_url(request))
 
-                msg = "Deleted {} {}".format(deleted_count, model._meta.verbose_name_plural)
+                msg = f"Deleted {deleted_count} {model._meta.verbose_name_plural}"
                 LOGGER.info(msg)
                 messages.success(request, msg)
                 return redirect(self.get_return_url(request))
@@ -291,7 +291,7 @@ class ConfigComplianceBulkDeleteView(generic.BulkDeleteView):
         if not table.rows:
             messages.warning(
                 request,
-                "No {} were selected for deletion.".format(model._meta.verbose_name_plural),
+                f"No {model._meta.verbose_name_plural} were selected for deletion.",
             )
             return redirect(self.get_return_url(request))
 
@@ -556,7 +556,7 @@ class ConfigComplianceOverviewOverviewHelper(ContentTypePermissionRequiredMixin,
             for rect in rects:
                 height = rect.get_height()
                 axis.annotate(
-                    "{}".format(height),
+                    f"{height}",
                     xy=(rect.get_x() + rect.get_width() / 2, 0.5),
                     xytext=(0, 3),  # 3 points vertical offset
                     textcoords="offset points",
@@ -685,7 +685,7 @@ class ConfigComplianceOverview(generic.ObjectListView):
         )
         csv_data.append(",".join([]))
 
-        qs = self.queryset.values("rule", "count", "compliant", "non_compliant", "comp_percent")
+        qs = self.queryset.values("rule__feature__name", "count", "compliant", "non_compliant", "comp_percent")
         csv_data.append(",".join(["Total" if item == "count" else item.capitalize() for item in qs[0].keys()]))
         for obj in qs:
             csv_data.append(

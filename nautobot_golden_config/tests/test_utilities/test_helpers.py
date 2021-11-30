@@ -37,6 +37,7 @@ class HelpersTest(unittest.TestCase):
 
     @patch("nautobot.dcim.models.Device")
     def test_render_jinja_template_success_render_context(self, mock_device):
+        """Test that device object is passed to template context."""
         platform = "mock_platform"
         mock_device.platform = platform
         rendered_template = render_jinja_template(mock_device, "logger", "{{ obj.platform }}")

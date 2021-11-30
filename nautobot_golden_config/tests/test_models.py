@@ -1,9 +1,12 @@
 """Unit tests for nautobot_golden_config models."""
 
+from json import loads as json_loads
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
 from nautobot.dcim.models import Platform
+from nautobot.extras.models import GitRepository
+from nautobot_golden_config.tests.conftest import create_git_repos
 
 from nautobot_golden_config.models import (
     ConfigCompliance,
@@ -87,11 +90,26 @@ class GoldenConfigSettingModelTestCase(TestCase):
         """Get the golden config settings with the only allowed id."""
         self.global_settings = GoldenConfigSetting.objects.first()
 
+    def test_absolute_url_success(self):
+        """Verify that get_absolute_url() returns the expected URL."""
+        url_string = self.global_settings.get_absolute_url()
+        self.assertEqual(url_string, "/plugins/golden-config/setting/")
+
     def test_bad_graphql_query(self):
         """Invalid graphql query."""
         self.global_settings.sot_agg_query = 'devices(name:"ams-edge-01")'
         with self.assertRaises(ValidationError):
             self.global_settings.clean()
+
+    def test_bad_scope(self):
+        """Verify that a bad value in the scope returns the expected error."""
+        self.global_settings.scope = json_loads('{"has_primary_ip": true, "role": ["Apple", "Pear"]}')
+        with self.assertRaises(ValidationError) as error:
+            self.global_settings.clean()
+        self.assertEqual(
+            error.exception.messages[0],
+            "role: Select a valid choice. Pear is not one of the available choices.",
+        )
 
     def test_good_graphql_query_invalid_starts_with(self):
         """Valid graphql query, however invalid in the usage with golden config plugin."""
@@ -105,12 +123,83 @@ class GoldenConfigSettingModelTestCase(TestCase):
         self.global_settings.sot_agg_query = "query ($device_id: ID!) {device(id: $device_id) {id}}"
         self.assertEqual(self.global_settings.clean(), None)
 
+    def test_good_scope(self):
+        """Verify that the scope passes validation as expected."""
+        self.global_settings.scope = json_loads('{"has_primary_ip": true}')
+        self.assertEqual(self.global_settings.clean(), None)
+
     def test_singleton_enforcement(self):
         """Test only one instance of `GoldenConfigSetting` can be created."""
         self.assertEqual(GoldenConfigSetting.objects.all().count(), 1)
         with self.assertRaises(IntegrityError) as singleton_error:
             GoldenConfigSetting.objects.create()
         self.assertIn("duplicate key value violates unique constraint", str(singleton_error.exception))
+
+
+class GoldenConfigSettingGitModelTestCase(TestCase):
+    """Test GoldenConfigSetting Model."""
+
+    def setUp(self) -> None:
+        """Setup test data."""
+        create_git_repos()
+        # Since we enforce a singleton pattern on this model, nuke the auto-created object.
+        GoldenConfigSetting.objects.all().delete()
+
+    def test_model_success(self):
+        """Create a new instance of the GoldenConfigSettings model."""
+        self.golden_config = GoldenConfigSetting.objects.create(
+            backup_repository_template="backup-{{ obj.site.region.parent.slug }}",
+            backup_path_template="{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg",
+            intended_repository_template="intended-{{ obj.site.region.parent.slug }}",
+            intended_path_template="{{ obj.site.slug }}/{{ obj.name }}.cfg",
+            backup_test_connectivity=True,
+            jinja_repository=GitRepository.objects.get(name="test-jinja-repo-1"),
+            jinja_path_template="{{ obj.platform.slug }}/main.j2",
+        )
+        self.golden_config.backup_repository.set(
+            [
+                GitRepository.objects.get(name="test-backup-repo-1"),
+                GitRepository.objects.get(name="test-backup-repo-2"),
+            ]
+        )
+        self.golden_config.intended_repository.set(
+            [
+                GitRepository.objects.get(name="test-intended-repo-1"),
+                GitRepository.objects.get(name="test-intended-repo-2"),
+            ]
+        )
+        self.assertEqual(self.golden_config.backup_repository_template, "backup-{{ obj.site.region.parent.slug }}")
+        self.assertEqual(self.golden_config.backup_path_template, "{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg")
+        self.assertEqual(self.golden_config.intended_repository_template, "intended-{{ obj.site.region.parent.slug }}")
+        self.assertEqual(self.golden_config.intended_path_template, "{{ obj.site.slug }}/{{ obj.name }}.cfg")
+        self.assertTrue(self.golden_config.backup_test_connectivity)
+        self.assertEqual(self.golden_config.jinja_repository, GitRepository.objects.get(name="test-jinja-repo-1"))
+        self.assertEqual(self.golden_config.jinja_path_template, "{{ obj.platform.slug }}/main.j2")
+        self.assertEqual(
+            self.golden_config.backup_repository.first(), GitRepository.objects.get(name="test-backup-repo-1")
+        )
+        self.assertEqual(
+            self.golden_config.backup_repository.last(), GitRepository.objects.get(name="test-backup-repo-2")
+        )
+        self.assertEqual(
+            self.golden_config.intended_repository.first(), GitRepository.objects.get(name="test-intended-repo-1")
+        )
+        self.assertEqual(
+            self.golden_config.intended_repository.last(), GitRepository.objects.get(name="test-intended-repo-2")
+        )
+        GoldenConfigSetting.objects.all().delete()
+
+    def test_clean_up(self):
+        """Transactional custom model, unable to use `get_or_create`.
+
+        Delete all objects created of GitRepository type.
+        """
+        GitRepository.objects.all().delete()
+        self.assertEqual(GitRepository.objects.all().count(), 0)
+
+        # Put back a general GoldenConfigSetting object.
+        global_settings = GoldenConfigSetting.objects.create()
+        global_settings.save()
 
 
 class ConfigRemoveModelTestCase(TestCase):

@@ -23,7 +23,7 @@ from nautobot_golden_config.utilities.helper import (
     get_job_filter,
     get_repository_working_dir,
     verify_global_settings,
-    check_jinja_template,
+    render_jinja_template,
 )
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.utils import get_platform
@@ -88,14 +88,14 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
             backup_repo = rescue["backup_repo"]
 
         intended_directory = get_repository_working_dir(intended_repo, "intended", obj, logger, global_settings)
-        intended_path_template_obj = check_jinja_template(obj, logger, global_settings.intended_path_template)
+        intended_path_template_obj = render_jinja_template(obj, logger, global_settings.intended_path_template)
         intended_file = os.path.join(intended_directory, intended_path_template_obj)
         if not os.path.exists(intended_file):
             logger.log_failure(obj, f"Unable to locate intended file for device at {intended_file}")
             raise NornirNautobotException()
 
         backup_directory = get_repository_working_dir(backup_repo, "backup", obj, logger, global_settings)
-        backup_template = check_jinja_template(obj, logger, global_settings.backup_path_template)
+        backup_template = render_jinja_template(obj, logger, global_settings.backup_path_template)
         backup_file = os.path.join(backup_directory, backup_template)
         if not os.path.exists(backup_file):
             logger.log_failure(obj, f"Unable to locate backup file for device at {backup_file}")

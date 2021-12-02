@@ -103,12 +103,12 @@ class GoldenConfigSettingModelTestCase(TestCase):
 
     def test_bad_scope(self):
         """Verify that a bad value in the scope returns the expected error."""
-        self.global_settings.scope = json_loads('{"has_primary_ip": true, "role": ["Apple", "Pear"]}')
+        self.global_settings.scope = json_loads('{"has_primary_ip": true, "role": ["Apple"]}')
         with self.assertRaises(ValidationError) as error:
             self.global_settings.clean()
         self.assertEqual(
             error.exception.messages[0],
-            "role: Select a valid choice. Pear is not one of the available choices.",
+            "role: Select a valid choice. Apple is not one of the available choices.",
         )
 
     def test_good_graphql_query_invalid_starts_with(self):

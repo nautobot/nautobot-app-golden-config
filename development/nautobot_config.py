@@ -172,3 +172,20 @@ PLUGINS_CONFIG = {
         # "get_custom_compliance": "my.custom_compliance.func",
     },
 }
+
+# Modify django_jinja Environment for test cases
+django_jinja_config = None
+for template in TEMPLATES:
+    if template["BACKEND"].startswith("django_jinja"):
+        django_jinja_config = template
+
+if django_jinja_config is not None:
+    jinja_options = django_jinja_config.get("OPTIONS")
+    if not jinja_options:
+        jinja_options = {}
+        django_jinja_config["OPTIONS"] = jinja_options
+    # Default behavior ignores UndefinedErrors
+    jinja_options["undefined"] = "jinja2.StrictUndefined"
+
+# Import filter function to have it register filter with django_jinja
+from nautobot_golden_config.tests import jinja_filters  # noqa: E402

@@ -147,7 +147,7 @@ class GoldenConfigSettingGitModelTestCase(TestCase):
 
     def test_model_success(self):
         """Create a new instance of the GoldenConfigSettings model."""
-        self.golden_config = GoldenConfigSetting.objects.create(
+        self.golden_config = GoldenConfigSetting.objects.create(  # pylint: disable=attribute-defined-outside-init
             backup_repository_template="backup-{{ obj.site.region.parent.slug }}",
             backup_path_template="{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg",
             intended_repository_template="intended-{{ obj.site.region.parent.slug }}",

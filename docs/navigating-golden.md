@@ -45,7 +45,7 @@ To configure or update the settings click the pencil icon to edit.
 |Setting|Explanation|
 |:--|:--|
 |Backup Repositories |One or more Git repositories where your backup configurations will be found. |
-|Backup Repository Matching Rule |A Jinja template to match a device to a backup repository's `slug` value. Required if you configure more than one backup repository. E.g. `my-backup-repo-{{obj.site.region.slug}}` |
+|Backup Repository Matching Rule |A Jinja template to match a device to a backup repositories `slug` value. Required if you configure more than one backup repository. E.g. `my-backup-repo-{{obj.site.region.slug}}` |
 |Backup Path|A Jinja template which defines the path and name of backup files within the backup repository. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.site.slug}}/{{obj.name}}.cfg`|
 |Intended Repositories |One or more Git repository where your intended configuration state files will be found. |
 |Intended Repository Matching Rule |A Jinja template to match a device to an intended state repository's `slug` value. Required if you configure more than one intended repository. E.g. `best-of-intentions-repo-{{obj.site.region.slug}}` |

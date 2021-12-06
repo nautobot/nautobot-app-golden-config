@@ -4,7 +4,7 @@
 
 ### Added
 
-- Updated GoldenConfigSettings form to have a custom clean method to enfroce
+- Updated GoldenConfigSettings form to have a custom clean method to enforce
 a template path in case of more than 1 repository selected for backup or inteded repos.
 - Updated backup job to execute against multiple repos if available based on pattern matching
 - Updated intended job to execute against multiple repos if available based on pattern matching

@@ -1,6 +1,6 @@
 # Configuration Backup
 
-The backup configuration process requires the nautobot worker connect via Nornir to the device, run the `show run` or equivalent command, 
+The backup configuration process requires the Nautobot worker to connect via Nornir to the device, and run the `show run` or equivalent command, 
 and save the configuration. The high-level process to run backups is:
 
 * Download the latest version of each of the Git repositories configured with the `backup configs` capability within Nautobot.

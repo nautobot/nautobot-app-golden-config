@@ -81,7 +81,7 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     rescue = {}
     for intended_repo, backup_repo in zip_longest(intended_repos, backup_repos):
         # Zip longest appends None if no value found in loop through two lists.
-        # Edge cases where two repos & one intended or vice-versa.
+        # Edge cases for two backup repos & one intended or vice-versa.
         if not intended_repo:
             intended_repo = rescue["intended_repo"]
         if not backup_repo:

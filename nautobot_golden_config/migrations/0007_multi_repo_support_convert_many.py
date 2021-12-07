@@ -3,11 +3,28 @@
 from django.db import migrations, models
 
 
+def convert_many_repos(apps, schema_editor):
+    """
+    Add the current `backup_repository` and `intended_repository` objects
+    to the `many_to_many` additional intermediary attritbute to retain data.`
+    """
+    GoldenConfigSetting = apps.get_model("nautobot_golden_config", "GoldenConfigSetting")
+
+    settings_obj = GoldenConfigSetting.objects.first()
+    if settings_obj.backup_repositories.all():
+        [settings_obj.backup_repository.add(backup_repo) for backup_repo in settings_obj.backup_repositories.all()]
+    if settings_obj.intended_repositories.all():
+        [
+            settings_obj.intended_repository.add(intended_repo)
+            for intended_repo in settings_obj.intended_repositories.all()
+        ]
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
         ("extras", "0013_default_fallback_value_computedfield"),
-        ("nautobot_golden_config", "0007_data_retention"),
+        ("nautobot_golden_config", "0006_multi_repo_support_temp_field"),
     ]
 
     operations = [
@@ -49,4 +66,5 @@ class Migration(migrations.Migration):
                 to="extras.GitRepository",
             ),
         ),
+        migrations.RunPython(convert_many_repos),
     ]

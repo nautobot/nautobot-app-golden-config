@@ -11,19 +11,19 @@ from nautobot_golden_config.models import GoldenConfigSetting
 
 def convert_many_repos(apps, schema_editor):
     """
-    Add the current `backup_repository` and `intended_repository` objects
-    to the `many_to_many` additional intermediary attritbute to retain data.`
+    Add the current `backup_repositories` and `intended_repositories` objects
+    to the `many_to_many` updated fields backup/intended.`
     """
     settings_obj = GoldenConfigSetting.objects.first()
 
-    settings_obj.backup_repositories.add(settings_obj.backup_repository)
-    settings_obj.intended_repositories.add(settings_obj.intended_repository)
+    settings_obj.backup_repository.add(settings_obj.backup_repositories.all())
+    settings_obj.intended_repositoy.add(settings_obj.intended_repositories.all())
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("nautobot_golden_config", "0006_multiple_repo_support"),
+        ("nautobot_golden_config", "0008_backup_intended_to_many"),
     ]
 
     operations = [

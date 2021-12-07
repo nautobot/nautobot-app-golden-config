@@ -441,6 +441,7 @@ class GoldenConfigSetting(PrimaryModel):
         related_name="intended_repository",
         limit_choices_to={"provided_contents__contains": "nautobot_golden_config.intendedconfigs"},
     )
+
     intended_repository_template = models.CharField(
         max_length=255,
         null=False,

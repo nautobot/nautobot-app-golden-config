@@ -143,6 +143,7 @@ dmypy.json
 
 # Editor
 .vscode/
+.history/
 
 ### macOS ###
 # General

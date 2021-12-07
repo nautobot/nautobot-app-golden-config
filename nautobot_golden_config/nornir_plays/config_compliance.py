@@ -147,6 +147,10 @@ def config_compliance(job_result, data, backup_root_path, intended_root_folder):
             },
         ) as nornir_obj:
 
+            for dev in nornir_obj.inventory.hosts.keys():
+                """ setup netmiko extras per host in the inventory """
+                nornir_obj.inventory.hosts[dev].connection_options['netmiko'].extras = NORNIR_SETTINGS.get("netmiko_extras")
+
             nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
 
             nr_with_processors.run(

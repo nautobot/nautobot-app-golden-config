@@ -8,7 +8,8 @@ from nautobot.dcim.models import Device, Platform, Region, Site, DeviceRole, Dev
 from nautobot.extras.models import Status
 from nautobot.extras.models import GitRepository
 from nautobot.tenancy.models import Tenant, TenantGroup
-from nautobot.utilities.forms import StaticSelect2Multiple
+from nautobot.utilities.forms import StaticSelect2Multiple, SlugField
+
 
 from nautobot_golden_config import models
 from nautobot_golden_config.utilities.helper import clean_config_settings
@@ -168,6 +169,8 @@ class ComplianceFeatureForm(
     utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelForm, extras_forms.RelationshipModelForm
 ):
     """Filter Form for ComplianceFeature instances."""
+
+    slug = SlugField()
 
     class Meta:
         """Boilerplate form Meta data for compliance feature."""

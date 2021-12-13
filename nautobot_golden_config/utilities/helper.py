@@ -172,15 +172,10 @@ def get_repository_working_dir(
         ]
         if len(matching_repository_list) == 1:
             repository_root_directory = f"{settings.GIT_ROOT}/{matching_repository_list[0].slug}"
-        elif len(matching_repository_list) == 0:
-            logger.log_failure(
-                obj,
-                f"There is no repository slug matching '{desired_repository_slug}' for device. Verify the matching rule and configured Git repositories.",
-            )
         else:
             logger.log_failure(
                 obj,
-                f"Multiple repositories match the slug '{desired_repository_slug}' for device. Verify the matching rule and configured Git repositories.",
+                f"There is no repository slug matching '{desired_repository_slug}' for device. Verify the matching rule and configured Git repositories.",
             )
 
     return repository_root_directory

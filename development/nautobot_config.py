@@ -142,7 +142,7 @@ PLUGINS_CONFIG = {
             },
         },
         # dispatcher_mapping may be necessary if you get errors referring to a Nornir driver not being found.
-        # Use this the platform slug names in your Nautobot instance don't correspond exactly
+        # Use this if the platform slug names in your Nautobot instance don't correspond exactly
         # to the Nornir driver names ("arista_eos", "cisco_ios", etc.).
         # "dispatcher_mapping": {
         #     "eos": "nornir_nautobot.plugins.tasks.dispatcher.arista_eos.NautobotNornirDriver",
@@ -162,7 +162,7 @@ PLUGINS_CONFIG = {
         "enable_sotagg": is_truthy(os.environ.get("ENABLE_SOTAGG", True)),
         "sot_agg_transposer": os.environ.get("SOT_AGG_TRANSPOSER"),
         # The platform_slug_map maps an arbitrary platform slug to its corresponding parser.
-        # Use this the platform slug names in your Nautobot instance don't correspond exactly
+        # Use this if the platform slug names in your Nautobot instance don't correspond exactly
         # to the Nornir driver names ("arista_eos", "cisco_ios", etc.).
         # Each key should == the slug of the Nautobot platform object.
         # "platform_slug_map": {

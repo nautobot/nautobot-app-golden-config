@@ -148,6 +148,23 @@ def create_device(name="foobaz"):
     return device
 
 
+def create_orphan_device(name="orphan"):
+    """Creates a Device to be used with tests."""
+    parent_region, _ = Region.objects.get_or_create(name="Parent Region 4", slug="parent_region-4")
+    child_region, _ = Region.objects.get_or_create(name="Child Region 4", slug="child_region-4", parent=parent_region)
+    site, _ = Site.objects.get_or_create(name="Site 4", slug="site-4", region=child_region)
+    manufacturer, _ = Manufacturer.objects.get_or_create(name="Manufacturer 4", slug="manufacturer-4")
+    device_role, _ = DeviceRole.objects.get_or_create(name="Role 4", slug="role-4")
+    device_type, _ = DeviceType.objects.get_or_create(
+        manufacturer=manufacturer, model="Device Type 4", slug="device-type-4"
+    )
+    platform, _ = Platform.objects.get_or_create(manufacturer=manufacturer, name="Platform 4", slug="platform-4")
+    device = Device.objects.create(
+        name=name, platform=platform, site=site, device_role=device_role, device_type=device_type
+    )
+    return device
+
+
 def create_feature_rule_json(device, feature="foo", rule="json"):
     """Creates a Feature/Rule Mapping and Returns the rule."""
     feature_obj, _ = ComplianceFeature.objects.get_or_create(slug=feature, name=feature)
@@ -260,3 +277,23 @@ def create_git_repos() -> None:
         ],
     )
     git_repo_5.save(trigger_resync=False)
+
+
+def create_helper_repo(name="foobaz", provides=None):
+    """
+    Create a backup and/or intended repo to test helper functions.
+    """
+    content_identifier = f"nautobot_golden_config.{provides}"
+    git_repo = GitRepository(
+        name=name,
+        slug=slugify(name),
+        remote_url=f"http://www.remote-repo.com/{name}.git",
+        branch="main",
+        username="CoolDeveloper_1",
+        provided_contents=[
+            entry.content_identifier
+            for entry in get_datasource_contents("extras.gitrepository")
+            if entry.content_identifier == provides
+        ],
+    )
+    git_repo.save(trigger_resync=False)

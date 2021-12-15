@@ -109,6 +109,3 @@ notes = """,
     FIXME,
     XXX,
     """
-
-[tool.poetry.extras]
-nautobot = ["nautobot"]

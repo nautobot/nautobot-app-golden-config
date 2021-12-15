@@ -27,8 +27,8 @@ Follow the steps below to get up and running for the configuration backup elemen
 
 4. Create Configuration Removals and Replacements.
 
-    1. [Config Removals](./navigating-backup#config-removals)
-    2. [Config Replacements](./navigating-backup#config-replacements)
+    1. [Config Removals](./navigating-backup.md#config-removals)
+    2. [Config Replacements](./navigating-backup.md#config-replacements)
 
 5. Execute the Backup.
 

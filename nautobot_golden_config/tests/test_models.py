@@ -147,7 +147,7 @@ class GoldenConfigSettingGitModelTestCase(TestCase):
 
     def test_model_success(self):
         """Create a new instance of the GoldenConfigSettings model."""
-        self.golden_config = GoldenConfigSetting.objects.create(  # pylint: disable=attribute-defined-outside-init
+        golden_config = GoldenConfigSetting.objects.create(  # pylint: disable=attribute-defined-outside-init
             backup_repository_template="backup-{{ obj.site.region.parent.slug }}",
             backup_path_template="{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg",
             intended_repository_template="intended-{{ obj.site.region.parent.slug }}",
@@ -156,46 +156,52 @@ class GoldenConfigSettingGitModelTestCase(TestCase):
             jinja_repository=GitRepository.objects.get(name="test-jinja-repo-1"),
             jinja_path_template="{{ obj.platform.slug }}/main.j2",
         )
-        self.golden_config.backup_repository.set(
+        golden_config.backup_repository.set(
             [
                 GitRepository.objects.get(name="test-backup-repo-1"),
                 GitRepository.objects.get(name="test-backup-repo-2"),
             ]
         )
-        self.golden_config.intended_repository.set(
+        golden_config.intended_repository.set(
             [
                 GitRepository.objects.get(name="test-intended-repo-1"),
                 GitRepository.objects.get(name="test-intended-repo-2"),
             ]
         )
-        self.assertEqual(self.golden_config.backup_repository_template, "backup-{{ obj.site.region.parent.slug }}")
-        self.assertEqual(self.golden_config.backup_path_template, "{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg")
-        self.assertEqual(self.golden_config.intended_repository_template, "intended-{{ obj.site.region.parent.slug }}")
-        self.assertEqual(self.golden_config.intended_path_template, "{{ obj.site.slug }}/{{ obj.name }}.cfg")
-        self.assertTrue(self.golden_config.backup_test_connectivity)
-        self.assertEqual(self.golden_config.jinja_repository, GitRepository.objects.get(name="test-jinja-repo-1"))
-        self.assertEqual(self.golden_config.jinja_path_template, "{{ obj.platform.slug }}/main.j2")
+        golden_config.save()
+        
+        self.assertEqual(golden_config.backup_repository_template, "backup-{{ obj.site.region.parent.slug }}")
+        self.assertEqual(golden_config.backup_path_template, "{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg")
+        self.assertEqual(golden_config.intended_repository_template, "intended-{{ obj.site.region.parent.slug }}")
+        self.assertEqual(golden_config.intended_path_template, "{{ obj.site.slug }}/{{ obj.name }}.cfg")
+        self.assertTrue(golden_config.backup_test_connectivity)
+        self.assertEqual(golden_config.jinja_repository, GitRepository.objects.get(name="test-jinja-repo-1"))
+        self.assertEqual(golden_config.jinja_path_template, "{{ obj.platform.slug }}/main.j2")
         self.assertEqual(
-            self.golden_config.backup_repository.first(), GitRepository.objects.get(name="test-backup-repo-1")
+            golden_config.backup_repository.first(), GitRepository.objects.get(name="test-backup-repo-1")
         )
         self.assertEqual(
-            self.golden_config.backup_repository.last(), GitRepository.objects.get(name="test-backup-repo-2")
+            golden_config.backup_repository.last(), GitRepository.objects.get(name="test-backup-repo-2")
         )
         self.assertEqual(
-            self.golden_config.intended_repository.first(), GitRepository.objects.get(name="test-intended-repo-1")
+            golden_config.intended_repository.first(), GitRepository.objects.get(name="test-intended-repo-1")
         )
         self.assertEqual(
-            self.golden_config.intended_repository.last(), GitRepository.objects.get(name="test-intended-repo-2")
+            golden_config.intended_repository.last(), GitRepository.objects.get(name="test-intended-repo-2")
         )
-        GoldenConfigSetting.objects.all().delete()
-
+    
+        # Ensure we can remove the Git Repository obejcts from GoldenConfigSetting
+        GitRepository.objects.all().delete()
+        self.assertEqual(golden_config.intended_repository.count(), 0)
+        self.assertEqual(golden_config.backup_repository.count(), 0)
+        self.assertEqual(GoldenConfigSetting.objects.all().count(), 1)
+        
     def test_clean_up(self):
         """Transactional custom model, unable to use `get_or_create`.
 
         Delete all objects created of GitRepository type.
         """
-        GitRepository.objects.all().delete()
-        self.assertEqual(GitRepository.objects.all().count(), 0)
+        GoldenConfigSetting.objects.all().delete()
 
         # Put back a general GoldenConfigSetting object.
         global_settings = GoldenConfigSetting.objects.create()

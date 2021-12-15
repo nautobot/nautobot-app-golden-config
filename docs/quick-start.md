@@ -32,10 +32,10 @@ Follow the steps below to get up and running for the configuration backup elemen
 
 5. Execute the Backup.
 
-    1. Navigate to `Plugins -> Home`.
+    1. Navigate to `Plugins -> Home` under the Golden Configuration Section.
     2. Click on the `Execute` button and select `Backup`.
     3. Select what to run the backup on.
-    4. Run the Job.
+    4. Run the Job by clicking "Run Job" button.
 
 > For in-depth details see [Navigating Backup](./navigating-backup.md)
 

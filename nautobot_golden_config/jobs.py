@@ -122,7 +122,7 @@ class IntendedJob(Job, FormEntry):
     debug = FormEntry.debug
 
     class Meta:
-        """Meta object boilerplate for intedned."""
+        """Meta object boilerplate for intended."""
 
         name = "Generate Intended Configurations"
         description = "Generate the configuration for your intended state."
@@ -145,7 +145,7 @@ class IntendedJob(Job, FormEntry):
 
         # Commit / Push each repo after job is completed.
         for intended_repo in intended_repos:
-            LOGGER.debug("Push new intended configs to repo.")
+            LOGGER.debug("Push new intended configs to repo %s.", intended_repo.url)
             intended_repo.commit_with_added(f"INTENDED CONFIG CREATION JOB - {now}")
             intended_repo.push()
 
@@ -187,9 +187,9 @@ class BackupJob(Job, FormEntry):
         LOGGER.debug("Run nornir play.")
         config_backup(self, data, backup_repos)
 
-        LOGGER.debug("Pushing Backup config repo.")
         # Commit / Push each repo after job is completed.
         for backup_repo in backup_repos:
+            LOGGER.debug("Pushing Backup config repo %s.", backup_repo.url)
             backup_repo.commit_with_added(f"BACKUP JOB {now}")
             backup_repo.push()
 

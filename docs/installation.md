@@ -55,7 +55,7 @@ The plugin behavior can be controlled with the following list of settings.
 | enable_intended | True | True | A boolean to represent whether or not to generate intended configurations within the plugin. |
 | enable_sotagg | True | True | A boolean to represent whether or not to provide a GraphQL query per device to allow the intended configuration to provide data variables to the plugin. |
 | platform_slug_map | {"cisco_wlc": "cisco_aireos"} | None | A dictionary in which the key is the platform slug and the value is what netutils uses in any "network_os" parameter. |
-| sot_agg_transposer | mypkg.transposer | - | A string representation of a function that can post-process the graphQL data. |
+| sot_agg_transposer | "mypkg.transposer" | None | A string representation of a function that can post-process the graphQL data. |
 | per_feature_bar_width | 0.15 | 0.15 | The width of the table bar within the overview report |
 | per_feature_width | 13 | 13 | The width in inches that the overview table can be. |
 | per_feature_height | 4 | 4 | The height in inches that the overview table can be. |

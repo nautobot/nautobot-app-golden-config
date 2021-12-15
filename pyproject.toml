@@ -46,7 +46,7 @@ pydocstyle = "*"
 pylint = "*"
 pylint-django = "*"
 yamllint = "*"
-Markdown = "3.3.4" # temp pin for https://github.com/Python-Markdown/markdown/issues/1195
+Markdown = "3.3.6" # temp pin for https://github.com/Python-Markdown/markdown/issues/1195
 
 
 [tool.black]

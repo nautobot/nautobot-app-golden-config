@@ -7,8 +7,8 @@ Plugins can be installed manually or use Python's `pip`. See the [nautobot docum
 **Prerequisite:** The plugin relies on [`nautobot_plugin_nornir`](https://pypi.org/project/nautobot-plugin-nornir/) to be installed and both plugins to be enabled in your configuration settings.
 
 **Required:** The following block of code below shows the additional configuration required to be added to your `nautobot_config.py` file:
-- append `"nautobot_golden_config"` to the `PLUGINS` list
-- append the `"nautobot_golden_config"` dictionary to the `PLUGINS_CONFIG` dictionary
+- append `"nautobot_golden_config"` to the `PLUGINS` list, and `"nautobot_plugin_nornir"` if it was not already there (More info [here](https://github.com/nautobot/nautobot-plugin-nornir))
+- append the `"nautobot_golden_config"` dictionary to the `PLUGINS_CONFIG` dictionary, and `"nautobot_plugin_nornir"` if it was not already there.
 
 ```python
 PLUGINS = ["nautobot_plugin_nornir", "nautobot_golden_config"]

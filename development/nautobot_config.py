@@ -133,7 +133,7 @@ PLUGINS = ["nautobot_plugin_nornir", "nautobot_golden_config"]
 PLUGINS_CONFIG = {
     "nautobot_plugin_nornir": {
         "nornir_settings": {
-            "credentials": "nautobot_plugin_nornir.plugins.credentials.env_vars.CredentialsEnvVars",
+            "credentials": "nautobot_plugin_nornir.plugins.credentials.settings_vars.CredentialsSettingsVars",
             "runner": {
                 "plugin": "threaded",
                 "options": {
@@ -141,11 +141,14 @@ PLUGINS_CONFIG = {
                 },
             },
         },
-        # dispatcher_mapping may be necessary if you get errors referring to a Nornir driver not being found.
-        # Use this if the platform slug names in your Nautobot instance don't correspond exactly
+        "username": "conductor",
+        "password": "zWCKWNzijUYZWRHYzABsVPN4dmoCE6Ai",
+        # dispatcher_mapping may be necessary if you get an error `Cannot import "<foo>". Is the library installed?`
+        # when you run a backup job, and <foo> is the name of the platform applied to the device.
         # to the Nornir driver names ("arista_eos", "cisco_ios", etc.).
         # "dispatcher_mapping": {
         #     "eos": "nornir_nautobot.plugins.tasks.dispatcher.arista_eos.NautobotNornirDriver",
+        #     "arbitrary_platform_name": "nornir_nautobot.plugins.tasks.dispatcher.arista_eos.NautobotNornirDriver",
         #     "ios": "nornir_nautobot.plugins.tasks.dispatcher.cisco_ios.NautobotNornirDriver",
         #     "iosxe": "nornir_nautobot.plugins.tasks.dispatcher.cisco_ios.NautobotNornirDriver",
         #     "junos": "nornir_nautobot.plugins.tasks.dispatcher.juniper_junos.NautobotNornirDriver",

@@ -27,15 +27,15 @@ Follow the steps below to get up and running for the configuration backup elemen
 
 4. Create Configuration Removals and Replacements.
 
-    1. [Config Removals](./navigating-backup#config-removals)
-    2. [Config Replacements](./navigating-backup#config-replacements)
+    1. [Config Removals](./navigating-backup.md#config-removals)
+    2. [Config Replacements](./navigating-backup.md#config-replacements)
 
 5. Execute the Backup.
 
-    1. Navigate to `Plugins -> Home`.
+    1. Navigate to `Plugins -> Home` under the Golden Configuration Section.
     2. Click on the `Execute` button and select `Backup`.
     3. Select what to run the backup on.
-    4. Run the Job.
+    4. Run the Job by clicking "Run Job" button.
 
 > For in-depth details see [Navigating Backup](./navigating-backup.md)
 

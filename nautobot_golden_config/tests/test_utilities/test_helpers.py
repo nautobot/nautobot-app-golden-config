@@ -1,14 +1,14 @@
 """Unit tests for nautobot_golden_config utilities helpers."""
 
-import unittest
 from unittest.mock import patch, MagicMock
 
 from django.test import TestCase
-from nautobot.dcim.models import Device
 
 from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.utils.logger import NornirLogger
 from jinja2 import exceptions as jinja_errors
+
+from nautobot.dcim.models import Device
 from nautobot.extras.models import GitRepository
 from nautobot_golden_config.models import GoldenConfigSetting
 from nautobot_golden_config.tests.conftest import create_device, create_orphan_device, create_helper_repo
@@ -107,7 +107,7 @@ class HelpersTest(TestCase):
         result = get_repository_working_dir(
             self.repository_obj, repo_type, Device.objects.get(name="test_device"), self.logger, self.global_settings
         )
-        self.assertEquals(result, "/opt/nautobot/git/backup-parent_region-1")
+        self.assertEqual(result, "/opt/nautobot/git/backup-parent_region-1")
 
     def test_get_intended_repository_working_dir_success(self):
         """Verify that we successfully look up the path from a provided repo object."""
@@ -115,7 +115,7 @@ class HelpersTest(TestCase):
         result = get_repository_working_dir(
             self.repository_obj, repo_type, Device.objects.get(name="test_device"), self.logger, self.global_settings
         )
-        self.assertEquals(result, "/opt/nautobot/git/intended-parent_region-1")
+        self.assertEqual(result, "/opt/nautobot/git/intended-parent_region-1")
 
     def test_get_backup_repository_working_dir_no_match(self):
         """Verify that we return the correct error when there is no matching backup repo."""
@@ -124,9 +124,9 @@ class HelpersTest(TestCase):
         result = get_repository_working_dir(
             self.repository_obj, repo_type, Device.objects.get(name="orphan_device"), logger, self.global_settings
         )
-        self.assertEquals(result, "/fake/path")
-        self.assertEquals(logger.log_failure.call_count, 1)
-        self.assertEquals(
+        self.assertEqual(result, "/fake/path")
+        self.assertEqual(logger.log_failure.call_count, 1)
+        self.assertEqual(
             logger.log_failure.call_args[0][1],
             "There is no repository slug matching 'backup-parent_region-4' for device. Verify the matching rule and configured Git repositories.",
         )
@@ -138,9 +138,9 @@ class HelpersTest(TestCase):
         result = get_repository_working_dir(
             self.repository_obj, repo_type, Device.objects.get(name="orphan_device"), logger, self.global_settings
         )
-        self.assertEquals(result, "/fake/path")
-        self.assertEquals(logger.log_failure.call_count, 1)
-        self.assertEquals(
+        self.assertEqual(result, "/fake/path")
+        self.assertEqual(logger.log_failure.call_count, 1)
+        self.assertEqual(
             logger.log_failure.call_args[0][1],
             "There is no repository slug matching 'intended-parent_region-4' for device. Verify the matching rule and configured Git repositories.",
         )

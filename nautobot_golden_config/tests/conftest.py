@@ -283,7 +283,7 @@ def create_helper_repo(name="foobaz", provides=None):
     """
     Create a backup and/or intended repo to test helper functions.
     """
-    content_identifier = f"nautobot_golden_config.{provides}"
+    content_provides = f"nautobot_golden_config.{provides}"
     git_repo = GitRepository(
         name=name,
         slug=slugify(name),
@@ -293,7 +293,7 @@ def create_helper_repo(name="foobaz", provides=None):
         provided_contents=[
             entry.content_identifier
             for entry in get_datasource_contents("extras.gitrepository")
-            if entry.content_identifier == provides
+            if entry.content_identifier == content_provides
         ],
     )
     git_repo.save(trigger_resync=False)

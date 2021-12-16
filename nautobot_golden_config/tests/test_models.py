@@ -2,6 +2,7 @@
 
 from json import loads as json_loads
 from django.test import TestCase
+from django.db.utils import IntegrityError
 from django.core.exceptions import ValidationError
 from nautobot.dcim.models import Platform
 from nautobot.extras.models import GitRepository
@@ -128,7 +129,6 @@ class GoldenConfigSettingModelTestCase(TestCase):
         self.assertEqual(self.global_settings.clean(), None)
 
 
-
 class GoldenConfigSettingGitModelTestCase(TestCase):
     """Test GoldenConfigSetting Model."""
 
@@ -170,12 +170,8 @@ class GoldenConfigSettingGitModelTestCase(TestCase):
         self.assertTrue(golden_config.backup_test_connectivity)
         self.assertEqual(golden_config.jinja_repository, GitRepository.objects.get(name="test-jinja-repo-1"))
         self.assertEqual(golden_config.jinja_path_template, "{{ obj.platform.slug }}/main.j2")
-        self.assertEqual(
-            golden_config.backup_repository.first(), GitRepository.objects.get(name="test-backup-repo-1")
-        )
-        self.assertEqual(
-            golden_config.backup_repository.last(), GitRepository.objects.get(name="test-backup-repo-2")
-        )
+        self.assertEqual(golden_config.backup_repository.first(), GitRepository.objects.get(name="test-backup-repo-1"))
+        self.assertEqual(golden_config.backup_repository.last(), GitRepository.objects.get(name="test-backup-repo-2"))
         self.assertEqual(
             golden_config.intended_repository.first(), GitRepository.objects.get(name="test-intended-repo-1")
         )
@@ -190,15 +186,12 @@ class GoldenConfigSettingGitModelTestCase(TestCase):
         self.assertEqual(GoldenConfigSetting.objects.all().count(), 1)
 
     def test_clean_up(self):
-        """Transactional custom model, unable to use `get_or_create`.
-
-        Delete all objects created of GitRepository type.
-        """
+        """Delete all objects created of GitRepository type."""
         GoldenConfigSetting.objects.all().delete()
-
         # Put back a general GoldenConfigSetting object.
         global_settings = GoldenConfigSetting.objects.create()
         global_settings.save()
+        self.assertEqual(GoldenConfigSetting.objects.all().count(), 1)
 
 
 class ConfigRemoveModelTestCase(TestCase):

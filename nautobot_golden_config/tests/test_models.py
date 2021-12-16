@@ -3,7 +3,6 @@
 from json import loads as json_loads
 from django.test import TestCase
 from django.core.exceptions import ValidationError
-from django.db.utils import IntegrityError
 from nautobot.dcim.models import Platform
 from nautobot.extras.models import GitRepository
 from nautobot_golden_config.tests.conftest import create_git_repos
@@ -128,12 +127,6 @@ class GoldenConfigSettingModelTestCase(TestCase):
         self.global_settings.scope = json_loads('{"has_primary_ip": true}')
         self.assertEqual(self.global_settings.clean(), None)
 
-    def test_singleton_enforcement(self):
-        """Test only one instance of `GoldenConfigSetting` can be created."""
-        self.assertEqual(GoldenConfigSetting.objects.all().count(), 1)
-        with self.assertRaises(IntegrityError) as singleton_error:
-            GoldenConfigSetting.objects.create()
-        self.assertIn("duplicate key value violates unique constraint", str(singleton_error.exception))
 
 
 class GoldenConfigSettingGitModelTestCase(TestCase):
@@ -169,7 +162,7 @@ class GoldenConfigSettingGitModelTestCase(TestCase):
             ]
         )
         golden_config.save()
-        
+
         self.assertEqual(golden_config.backup_repository_template, "backup-{{ obj.site.region.parent.slug }}")
         self.assertEqual(golden_config.backup_path_template, "{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg")
         self.assertEqual(golden_config.intended_repository_template, "intended-{{ obj.site.region.parent.slug }}")
@@ -189,13 +182,13 @@ class GoldenConfigSettingGitModelTestCase(TestCase):
         self.assertEqual(
             golden_config.intended_repository.last(), GitRepository.objects.get(name="test-intended-repo-2")
         )
-    
+
         # Ensure we can remove the Git Repository obejcts from GoldenConfigSetting
         GitRepository.objects.all().delete()
         self.assertEqual(golden_config.intended_repository.count(), 0)
         self.assertEqual(golden_config.backup_repository.count(), 0)
         self.assertEqual(GoldenConfigSetting.objects.all().count(), 1)
-        
+
     def test_clean_up(self):
         """Transactional custom model, unable to use `get_or_create`.
 

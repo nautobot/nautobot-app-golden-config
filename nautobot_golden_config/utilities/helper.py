@@ -1,6 +1,5 @@
 """Helper functions."""
 # pylint: disable=raise-missing-from
-# from jinja2 import Template, StrictUndefined, UndefinedError
 # from jinja2.exceptions import TemplateError, TemplateSyntaxError
 
 from jinja2 import exceptions as jinja_errors

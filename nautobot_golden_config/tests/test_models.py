@@ -138,9 +138,9 @@ class GoldenConfigSettingGitModelTestCase(TestCase):
         # Since we enforce a singleton pattern on this model, nuke the auto-created object.
         GoldenConfigSetting.objects.all().delete()
 
-    def test_model_success(self):
-        """Create a new instance of the GoldenConfigSettings model."""
-        golden_config = GoldenConfigSetting.objects.create(  # pylint: disable=attribute-defined-outside-init
+        # Create fresh new object, populate accordingly.
+
+        self.golden_config = GoldenConfigSetting.objects.create(  # pylint: disable=attribute-defined-outside-init
             backup_repository_template="backup-{{ obj.site.region.parent.slug }}",
             backup_path_template="{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg",
             intended_repository_template="intended-{{ obj.site.region.parent.slug }}",
@@ -149,40 +149,114 @@ class GoldenConfigSettingGitModelTestCase(TestCase):
             jinja_repository=GitRepository.objects.get(name="test-jinja-repo-1"),
             jinja_path_template="{{ obj.platform.slug }}/main.j2",
         )
-        golden_config.backup_repository.set(
+        self.golden_config.backup_repository.set(
             [
                 GitRepository.objects.get(name="test-backup-repo-1"),
                 GitRepository.objects.get(name="test-backup-repo-2"),
             ]
         )
-        golden_config.intended_repository.set(
+        self.golden_config.intended_repository.set(
             [
                 GitRepository.objects.get(name="test-intended-repo-1"),
                 GitRepository.objects.get(name="test-intended-repo-2"),
             ]
         )
-        golden_config.save()
+        self.golden_config.save()
 
-        self.assertEqual(golden_config.backup_repository_template, "backup-{{ obj.site.region.parent.slug }}")
-        self.assertEqual(golden_config.backup_path_template, "{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg")
-        self.assertEqual(golden_config.intended_repository_template, "intended-{{ obj.site.region.parent.slug }}")
-        self.assertEqual(golden_config.intended_path_template, "{{ obj.site.slug }}/{{ obj.name }}.cfg")
-        self.assertTrue(golden_config.backup_test_connectivity)
-        self.assertEqual(golden_config.jinja_repository, GitRepository.objects.get(name="test-jinja-repo-1"))
-        self.assertEqual(golden_config.jinja_path_template, "{{ obj.platform.slug }}/main.j2")
-        self.assertEqual(golden_config.backup_repository.first(), GitRepository.objects.get(name="test-backup-repo-1"))
-        self.assertEqual(golden_config.backup_repository.last(), GitRepository.objects.get(name="test-backup-repo-2"))
+    def test_model_success(self):
+        """Create a new instance of the GoldenConfigSettings model."""
+
+        self.assertEqual(self.golden_config.backup_repository_template, "backup-{{ obj.site.region.parent.slug }}")
+        self.assertEqual(self.golden_config.backup_path_template, "{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg")
+        self.assertEqual(self.golden_config.intended_repository_template, "intended-{{ obj.site.region.parent.slug }}")
+        self.assertEqual(self.golden_config.intended_path_template, "{{ obj.site.slug }}/{{ obj.name }}.cfg")
+        self.assertTrue(self.golden_config.backup_test_connectivity)
+        self.assertEqual(self.golden_config.jinja_repository, GitRepository.objects.get(name="test-jinja-repo-1"))
+        self.assertEqual(self.golden_config.jinja_path_template, "{{ obj.platform.slug }}/main.j2")
         self.assertEqual(
-            golden_config.intended_repository.first(), GitRepository.objects.get(name="test-intended-repo-1")
+            self.golden_config.backup_repository.first(), GitRepository.objects.get(name="test-backup-repo-1")
         )
         self.assertEqual(
-            golden_config.intended_repository.last(), GitRepository.objects.get(name="test-intended-repo-2")
+            self.golden_config.backup_repository.last(), GitRepository.objects.get(name="test-backup-repo-2")
+        )
+        self.assertEqual(
+            self.golden_config.intended_repository.first(), GitRepository.objects.get(name="test-intended-repo-1")
+        )
+        self.assertEqual(
+            self.golden_config.intended_repository.last(), GitRepository.objects.get(name="test-intended-repo-2")
         )
 
-        # Ensure we can remove the Git Repository obejcts from GoldenConfigSetting
+    def test_clean_gc_model_backup_repo(self):
+        """Ensure we raise `ValidationError` on `GoldenConfigSetting` model.
+
+        Leave just 1 backup repository, but with a matching repo rule.
+        """
+        self.golden_config.backup_repository.first().delete()
+        with self.assertRaises(ValidationError) as error:
+            self.golden_config.validated_save()
+        self.assertEqual(
+            error.exception.messages[0],
+            "If you configure only one backup repository, there is no need to specify the backup repository matching rule template.",
+        )
+
+    def test_clean_gc_model_backup_repo_missing_template(self):
+        """Ensure we raise `ValidationError` on `GoldenConfigSetting` model.
+
+        2 backup repositories, but with no matching rule.
+        """
+        self.golden_config.backup_repository.set(
+            [
+                GitRepository.objects.get(name="test-backup-repo-1"),
+                GitRepository.objects.get(name="test-backup-repo-2"),
+            ]
+        )
+        self.golden_config.backup_repository_template = None
+        self.assertEqual(self.golden_config.backup_repository.all().count(), 2)
+        with self.assertRaises(ValidationError) as error:
+            self.golden_config.clean()
+        self.assertEqual(
+            error.exception.messages[0],
+            "If you specify more than one backup repository, you must provide a backup repository matching rule template.",
+        )
+
+    def test_clean_gc_model_intended_repo(self):
+        """Ensure we raise `ValidationError` on `GoldenConfigSetting` model.
+
+        Leave just 1 intended repository, but with a matching repo rule.
+        """
+        self.golden_config.intended_repository.first().delete()
+        with self.assertRaises(ValidationError) as error:
+            self.golden_config.validated_save()
+        self.assertEqual(
+            error.exception.messages[0],
+            "If you configure only one intended repository, there is no need to specify the intended repository matching rule template.",
+        )
+
+    def test_clean_gc_model_intended_repo_missing_template(self):
+        """Ensure we raise `ValidationError` on `GoldenConfigSetting` model.
+
+        2 intended repositories, but with no matching rule.
+        """
+        self.golden_config.backup_repository.set(
+            [
+                GitRepository.objects.get(name="test-intended-repo-1"),
+                GitRepository.objects.get(name="test-intended-repo-2"),
+            ]
+        )
+        self.golden_config.intended_repository_template = None
+        self.assertEqual(self.golden_config.intended_repository.all().count(), 2)
+        with self.assertRaises(ValidationError) as error:
+            self.golden_config.clean()
+        self.assertEqual(
+            error.exception.messages[0],
+            "If you specify more than one intended repository, you must provide a intended repository matching rule template.",
+        )
+
+    def test_removing_git_repos(self):
+        """Ensure we can remove the Git Repository obejcts from GoldenConfigSetting."""
         GitRepository.objects.all().delete()
-        self.assertEqual(golden_config.intended_repository.count(), 0)
-        self.assertEqual(golden_config.backup_repository.count(), 0)
+        self.assertEqual(self.golden_config.intended_repository.count(), 0)
+        self.assertEqual(self.golden_config.backup_repository.count(), 0)
         self.assertEqual(GoldenConfigSetting.objects.all().count(), 1)
 
     def test_clean_up(self):

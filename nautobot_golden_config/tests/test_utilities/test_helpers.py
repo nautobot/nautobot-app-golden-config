@@ -105,7 +105,7 @@ class HelpersTest(TestCase):
         """Verify that we successfully look up the path from a provided repo object."""
         repo_type = "backup"
         result = get_repository_working_dir(
-            self.repository_obj, repo_type, Device.objects.get(name="test_device"), self.logger, self.global_settings
+            repo_type, Device.objects.get(name="test_device"), self.logger, self.global_settings
         )
         self.assertEqual(result, "/opt/nautobot/git/backup-parent_region-1")
 
@@ -113,7 +113,7 @@ class HelpersTest(TestCase):
         """Verify that we successfully look up the path from a provided repo object."""
         repo_type = "intended"
         result = get_repository_working_dir(
-            self.repository_obj, repo_type, Device.objects.get(name="test_device"), self.logger, self.global_settings
+            repo_type, Device.objects.get(name="test_device"), self.logger, self.global_settings
         )
         self.assertEqual(result, "/opt/nautobot/git/intended-parent_region-1")
 
@@ -122,9 +122,9 @@ class HelpersTest(TestCase):
         repo_type = "backup"
         logger = MagicMock()
         result = get_repository_working_dir(
-            self.repository_obj, repo_type, Device.objects.get(name="orphan_device"), logger, self.global_settings
+            repo_type, Device.objects.get(name="orphan_device"), logger, self.global_settings
         )
-        self.assertEqual(result, "/fake/path")
+        self.assertEqual(result, "/opt/nautobot/git/backup-parent_region-1")
         self.assertEqual(logger.log_failure.call_count, 1)
         self.assertEqual(
             logger.log_failure.call_args[0][1],
@@ -136,9 +136,9 @@ class HelpersTest(TestCase):
         repo_type = "intended"
         logger = MagicMock()
         result = get_repository_working_dir(
-            self.repository_obj, repo_type, Device.objects.get(name="orphan_device"), logger, self.global_settings
+            repo_type, Device.objects.get(name="orphan_device"), logger, self.global_settings
         )
-        self.assertEqual(result, "/fake/path")
+        self.assertEqual(result, "/opt/nautobot/git/intended-parent_region-1")
         self.assertEqual(logger.log_failure.call_count, 1)
         self.assertEqual(
             logger.log_failure.call_args[0][1],

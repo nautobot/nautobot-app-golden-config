@@ -96,12 +96,7 @@ class ComplianceJob(Job, FormEntry):
         """Run config compliance report script."""
         # pylint: disable-msg=too-many-locals
         # pylint: disable=unused-argument
-        golden_settings = GoldenConfigSetting.objects.first()
-        # Instantiate a GitRepo object for each GitRepository in GoldenConfigSettings.
-        backup_repos = [git_wrapper(self, repo, "backup") for repo in golden_settings.backup_repository.all()]
-        intended_repos = [git_wrapper(self, repo, "intended") for repo in golden_settings.intended_repository.all()]
-
-        config_compliance(self, data, backup_repos, intended_repos)
+        config_compliance(self, data)
 
 
 class IntendedJob(Job, FormEntry):
@@ -141,7 +136,7 @@ class IntendedJob(Job, FormEntry):
         intended_repos = [git_wrapper(self, repo, "intended") for repo in golden_config.intended_repository.all()]
 
         LOGGER.debug("Run config intended nornir play.")
-        config_intended(self, data, jinja_repo.path, intended_repos)
+        config_intended(self, data, jinja_repo.path)
 
         # Commit / Push each repo after job is completed.
         for intended_repo in intended_repos:
@@ -185,7 +180,7 @@ class BackupJob(Job, FormEntry):
         LOGGER.debug("Starting backup jobs to the following repos: %s", backup_repos)
 
         LOGGER.debug("Run nornir play.")
-        config_backup(self, data, backup_repos)
+        config_backup(self, data)
 
         # Commit / Push each repo after job is completed.
         for backup_repo in backup_repos:

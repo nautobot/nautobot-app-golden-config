@@ -14,8 +14,6 @@ from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.utils.logger import NornirLogger
 
 from nautobot_golden_config import models
-from nautobot_golden_config.utilities.git import GitRepo
-
 
 FIELDS = {
     "platform",
@@ -124,7 +122,7 @@ def clean_config_settings(repo_type: str, repo_count: int, repo_template: str):
     if repo_count > 1:
         if not repo_template:
             raise forms.ValidationError(
-                f"If you specify more than one {repo_type} repository, you must provide an {repo_type} repository matching rule template."
+                f"If you specify more than one {repo_type} repository, you must provide a {repo_type} repository matching rule template."
             )
     elif repo_count == 1 and repo_template:
         raise forms.ValidationError(
@@ -133,7 +131,6 @@ def clean_config_settings(repo_type: str, repo_count: int, repo_template: str):
 
 
 def get_repository_working_dir(
-    repository_obj: GitRepo,
     repo_type: str,
     obj: Device,
     logger: NornirLogger,
@@ -144,7 +141,6 @@ def get_repository_working_dir(
     Assume that the working directory == the slug of the repo.
 
     Args:
-        repository_record (GitRepo): Git Repo Django ORM object
         repo_type (str): Either `intended` or `backup` repository
         obj (Device): Django ORM Device object.
         logger (NornirLogger): Logger object
@@ -153,15 +149,14 @@ def get_repository_working_dir(
     Returns:
         str: The local filesystem working directory corresponding to the repo slug.
     """
-    # Set a default for the root directory to cover the single repo use case.
-    repository_root_directory = repository_obj.path
-
     if repo_type == "backup":
         repo_list = global_settings.backup_repository.all()
         repo_template = global_settings.backup_repository_template
     elif repo_type == "intended":
         repo_list = global_settings.intended_repository.all()
         repo_template = global_settings.intended_repository_template
+
+    repository_root_directory = repo_list[0].filesystem_path
 
     if repo_template:
         desired_repository_slug = render_jinja_template(obj, logger, repo_template)

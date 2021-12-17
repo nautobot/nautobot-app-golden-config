@@ -133,7 +133,7 @@ PLUGINS = ["nautobot_plugin_nornir", "nautobot_golden_config"]
 PLUGINS_CONFIG = {
     "nautobot_plugin_nornir": {
         "nornir_settings": {
-            "credentials": "nautobot_plugin_nornir.plugins.credentials.settings_vars.CredentialsSettingsVars",
+            "credentials": "nautobot_plugin_nornir.plugins.credentials.env_vars.CredentialsEnvVars",
             "runner": {
                 "plugin": "threaded",
                 "options": {
@@ -141,9 +141,6 @@ PLUGINS_CONFIG = {
                 },
             },
         },
-        "dispatcher_mapping": None,
-        "username": "cisco",
-        "password": "cisco",
         # dispatcher_mapping may be necessary if you get an error `Cannot import "<foo>". Is the library installed?`
         # when you run a backup job, and <foo> is the name of the platform applied to the device.
         # to the Nornir driver names ("arista_eos", "cisco_ios", etc.).

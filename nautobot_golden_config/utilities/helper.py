@@ -151,7 +151,7 @@ def get_repository_working_dir(
     Returns:
         str: The local filesystem working directory corresponding to the repo slug.
     """
-    
+
     if repo_type == "backup":
         repo_list = global_settings.backup_repository.all()
         repo_template = global_settings.backup_repository_template

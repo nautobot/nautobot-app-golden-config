@@ -124,7 +124,7 @@ class HelpersTest(TestCase):
         result = get_repository_working_dir(
             repo_type, Device.objects.get(name="orphan_device"), logger, self.global_settings
         )
-        self.assertEqual(result, "/fake/path")
+        self.assertEqual(result, "/opt/nautobot/git/backup-parent_region-1")
         self.assertEqual(logger.log_failure.call_count, 1)
         self.assertEqual(
             logger.log_failure.call_args[0][1],
@@ -138,7 +138,7 @@ class HelpersTest(TestCase):
         result = get_repository_working_dir(
             repo_type, Device.objects.get(name="orphan_device"), logger, self.global_settings
         )
-        self.assertEqual(result, "/fake/path")
+        self.assertEqual(result, "/opt/nautobot/git/intended-parent_region-1")
         self.assertEqual(logger.log_failure.call_count, 1)
         self.assertEqual(
             logger.log_failure.call_args[0][1],

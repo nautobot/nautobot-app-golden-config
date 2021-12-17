@@ -55,41 +55,41 @@ def run_backup(  # pylint: disable=too-many-arguments
     backup_obj.backup_last_attempt_date = task.host.defaults.data["now"]
     backup_obj.save()
 
-    for backup_repo in backup_repos:
-        backup_directory = get_repository_working_dir(backup_repo, "backup", obj, logger, global_settings)
-        backup_path_template_obj = render_jinja_template(obj, logger, global_settings.backup_path_template)
-        backup_file = os.path.join(backup_directory, backup_path_template_obj)
+    backup_directory = get_repository_working_dir("backup", obj, logger, global_settings)
+    backup_path_template_obj = render_jinja_template(obj, logger, global_settings.backup_path_template)
+    backup_file = os.path.join(backup_directory, backup_path_template_obj)
 
-        if global_settings.backup_test_connectivity is not False:
-            task.run(
-                task=dispatcher,
-                name="TEST CONNECTIVITY",
-                method="check_connectivity",
-                obj=obj,
-                logger=logger,
-                default_drivers_mapping=get_dispatcher(),
-            )
-        running_config = task.run(
+    if global_settings.backup_test_connectivity is not False:
+        task.run(
             task=dispatcher,
-            name="SAVE BACKUP CONFIGURATION TO FILE",
-            method="get_config",
+            name="TEST CONNECTIVITY",
+            method="check_connectivity",
             obj=obj,
             logger=logger,
-            backup_file=backup_file,
-            remove_lines=remove_regex_dict.get(obj.platform.slug, []),
-            substitute_lines=replace_regex_dict.get(obj.platform.slug, []),
             default_drivers_mapping=get_dispatcher(),
-        )[1].result["config"]
+        )
+    running_config = task.run(
+        task=dispatcher,
+        name="SAVE BACKUP CONFIGURATION TO FILE",
+        method="get_config",
+        obj=obj,
+        logger=logger,
+        backup_file=backup_file,
+        remove_lines=remove_regex_dict.get(obj.platform.slug, []),
+        substitute_lines=replace_regex_dict.get(obj.platform.slug, []),
+        default_drivers_mapping=get_dispatcher(),
+    )[1].result["config"]
 
-        backup_obj.backup_last_success_date = task.host.defaults.data["now"]
-        backup_obj.backup_config = running_config
-        backup_obj.save()
+    backup_obj.backup_last_success_date = task.host.defaults.data["now"]
+    backup_obj.backup_config = running_config
+    backup_obj.save()
 
-        logger.log_success(obj, "Successfully extracted running configuration from device.")
-        return Result(host=task.host, result=running_config)
+    logger.log_success(obj, "Successfully extracted running configuration from device.")
+
+    return Result(host=task.host, result=running_config)
 
 
-def config_backup(job_result, data, backup_repos):
+def config_backup(job_result, data):
     """Nornir play to backup configurations."""
     now = datetime.now()
     logger = NornirLogger(__name__, job_result, data.get("debug"))
@@ -133,7 +133,6 @@ def config_backup(job_result, data, backup_repos):
                 global_settings=global_settings,
                 remove_regex_dict=remove_regex_dict,
                 replace_regex_dict=replace_regex_dict,
-                backup_repos=backup_repos,
             )
             logger.log_debug("Completed configuration from devices.")
 

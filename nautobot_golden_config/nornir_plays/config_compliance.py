@@ -58,8 +58,6 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     task: Task,
     logger,
     global_settings,
-    # backup_repos,
-    # intended_repos,
     rules,
 ) -> Result:
     """Prepare data for compliance task.
@@ -78,7 +76,7 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     compliance_obj.compliance_last_attempt_date = task.host.defaults.data["now"]
     compliance_obj.save()
 
-    intended_directory = get_repository_working_dir(None, "intended", obj, logger, global_settings)
+    intended_directory = get_repository_working_dir("intended", obj, logger, global_settings)
 
     intended_path_template_obj = render_jinja_template(obj, logger, global_settings.intended_path_template)
     intended_file = os.path.join(intended_directory, intended_path_template_obj)
@@ -86,7 +84,7 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
         logger.log_failure(obj, f"Unable to locate intended file for device at {intended_file}")
         raise NornirNautobotException()
 
-    backup_directory = get_repository_working_dir(None, "backup", obj, logger, global_settings)
+    backup_directory = get_repository_working_dir("backup", obj, logger, global_settings)
 
     backup_template = render_jinja_template(obj, logger, global_settings.backup_path_template)
     backup_file = os.path.join(backup_directory, backup_template)
@@ -125,14 +123,10 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     compliance_obj.save()
     logger.log_success(obj, "Successfully tested compliance job.")
 
-    # # Add values to dict to track and rescue in case.
-    # rescue["intended_repo"] = intended_repo
-    # rescue["backup_repo"] = backup_repo
-
     return Result(host=task.host)
 
 
-def config_compliance(job_result, data, backup_repos, intended_repos):
+def config_compliance(job_result, data):
     """Nornir play to generate configurations."""
     now = datetime.now()
     rules = get_rules()
@@ -161,8 +155,6 @@ def config_compliance(job_result, data, backup_repos, intended_repos):
                 name="RENDER COMPLIANCE TASK GROUP",
                 logger=logger,
                 global_settings=global_settings,
-                backup_repos=backup_repos,
-                intended_repos=intended_repos,
                 rules=rules,
             )
 

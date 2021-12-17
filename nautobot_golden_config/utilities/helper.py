@@ -133,7 +133,6 @@ def clean_config_settings(repo_type: str, repo_count: int, repo_template: str):
 
 
 def get_repository_working_dir(
-    repository_obj: Optional[GitRepo],
     repo_type: str,
     obj: Device,
     logger: NornirLogger,
@@ -144,7 +143,6 @@ def get_repository_working_dir(
     Assume that the working directory == the slug of the repo.
 
     Args:
-        repository_record (GitRepo): Git Repo Django ORM object
         repo_type (str): Either `intended` or `backup` repository
         obj (Device): Django ORM Device object.
         logger (NornirLogger): Logger object
@@ -153,17 +151,15 @@ def get_repository_working_dir(
     Returns:
         str: The local filesystem working directory corresponding to the repo slug.
     """
-    # Set a default for the root directory to cover the single repo use case.
-    if repository_obj:
-        repository_root_directory = repository_obj.path
-
     if repo_type == "backup":
         repo_list = global_settings.backup_repository.all()
         repo_template = global_settings.backup_repository_template
     elif repo_type == "intended":
         repo_list = global_settings.intended_repository.all()
         repo_template = global_settings.intended_repository_template
+    import pdb
 
+    pdb.set_trace()
     if repo_template:
         desired_repository_slug = render_jinja_template(obj, logger, repo_template)
         matching_repository_list = [
@@ -176,5 +172,7 @@ def get_repository_working_dir(
                 obj,
                 f"There is no repository slug matching '{desired_repository_slug}' for device. Verify the matching rule and configured Git repositories.",
             )
+    else:
+        repository_root_directory = repo_list[0].filesystem_path
 
     return repository_root_directory

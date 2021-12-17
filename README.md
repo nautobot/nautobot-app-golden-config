@@ -108,8 +108,8 @@ for any security enhancements or major bugs will be supported for a limited time
 
 | Golden Config Version | Nautobot First Support Version | Nautobot Last Support Version |
 | --------------------- | ------------------------------ | ----------------------------- |
-| 0.9.X                 | 1.0                            | 1.2 [Official]                |
-| 1.0.X                 | 1.2                            | 1.2 [Tentative]               |
+| 0.9.X                 | 1.0.0                          | 1.2.99 [Official]             |
+| 1.0.X                 | 1.2.0                          | 1.2.99 [Official]             |
 
 ## CLI Helper Commands
 

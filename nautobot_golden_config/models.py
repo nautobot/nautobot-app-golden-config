@@ -515,7 +515,6 @@ class GoldenConfigSetting(PrimaryModel):
     def clean(self):
         """Validate there is only one model and if there is a GraphQL query, that it is valid."""
         super().clean()
-        self.save()
 
         if self.sot_agg_query:
             try:

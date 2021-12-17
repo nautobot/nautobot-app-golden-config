@@ -15,7 +15,7 @@ from nornir_nautobot.utils.logger import NornirLogger
 
 from nautobot_golden_config import models
 from nautobot_golden_config.utilities.git import GitRepo
-
+from typing import Optional
 
 FIELDS = {
     "platform",
@@ -133,7 +133,7 @@ def clean_config_settings(repo_type: str, repo_count: int, repo_template: str):
 
 
 def get_repository_working_dir(
-    repository_obj: GitRepo,
+    repository_obj: Optional[GitRepo],
     repo_type: str,
     obj: Device,
     logger: NornirLogger,
@@ -154,7 +154,8 @@ def get_repository_working_dir(
         str: The local filesystem working directory corresponding to the repo slug.
     """
     # Set a default for the root directory to cover the single repo use case.
-    repository_root_directory = repository_obj.path
+    if repository_obj:
+        repository_root_directory = repository_obj.path
 
     if repo_type == "backup":
         repo_list = global_settings.backup_repository.all()

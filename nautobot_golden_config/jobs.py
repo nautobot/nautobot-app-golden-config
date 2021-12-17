@@ -96,12 +96,13 @@ class ComplianceJob(Job, FormEntry):
         """Run config compliance report script."""
         # pylint: disable-msg=too-many-locals
         # pylint: disable=unused-argument
-        golden_settings = GoldenConfigSetting.objects.first()
-        # Instantiate a GitRepo object for each GitRepository in GoldenConfigSettings.
-        backup_repos = [git_wrapper(self, repo, "backup") for repo in golden_settings.backup_repository.all()]
-        intended_repos = [git_wrapper(self, repo, "intended") for repo in golden_settings.intended_repository.all()]
+        # golden_settings = GoldenConfigSetting.objects.first()
+        # # Instantiate a GitRepo object for each GitRepository in GoldenConfigSettings.
+        # backup_repos = [git_wrapper(self, repo, "backup") for repo in golden_settings.backup_repository.all()]
+        # intended_repos = [git_wrapper(self, repo, "intended") for repo in golden_settings.intended_repository.all()]
 
-        config_compliance(self, data, backup_repos, intended_repos)
+        # config_compliance(self, data, backup_repos, intended_repos)
+        config_compliance(self, data)
 
 
 class IntendedJob(Job, FormEntry):

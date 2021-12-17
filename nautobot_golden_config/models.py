@@ -23,6 +23,7 @@ from nautobot_golden_config.choices import ComplianceRuleTypeChoice
 from nautobot_golden_config.utilities.utils import get_platform
 from nautobot_golden_config.utilities.constant import PLUGIN_CFG
 
+
 LOGGER = logging.getLogger(__name__)
 GRAPHQL_STR_START = "query ($device_id: ID!)"
 
@@ -409,6 +410,7 @@ class GoldenConfig(PrimaryModel):
         return f"{self.device}"
 
 
+#  pylint: disable=too-many-branches
 @extras_features(
     "graphql",
 )
@@ -542,6 +544,26 @@ class GoldenConfigSetting(PrimaryModel):
             for key in self.scope.keys():
                 if key not in filterset_params:
                     raise ValidationError({"scope": f"'{key}' is not a valid filter parameter for Device object"})
+        # Backup Rule
+        if self.backup_repository.all().count() > 1:
+            if not self.backup_repository_template:
+                raise ValidationError(
+                    "If you specify more than one backup repository, you must provide a backup repository matching rule template."
+                )
+        elif self.backup_repository.all().count() == 1 and self.backup_repository_template:
+            raise ValidationError(
+                "If you configure only one backup repository, there is no need to specify the backup repository matching rule template."
+            )
+        # Intended Rule
+        if self.intended_repository.all().count() > 1:
+            if not self.intended_repository_template:
+                raise ValidationError(
+                    "If you specify more than one intended repository, you must provide a intended repository matching rule template."
+                )
+        elif self.intended_repository.all().count() == 1 and self.intended_repository_template:
+            raise ValidationError(
+                "If you configure only one intended repository, there is no need to specify the intended repository matching rule template."
+            )
 
     def get_queryset(self):
         """Generate a Device QuerySet from the filter."""

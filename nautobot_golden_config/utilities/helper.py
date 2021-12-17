@@ -14,8 +14,6 @@ from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.utils.logger import NornirLogger
 
 from nautobot_golden_config import models
-from nautobot_golden_config.utilities.git import GitRepo
-from typing import Optional
 
 FIELDS = {
     "platform",
@@ -124,7 +122,7 @@ def clean_config_settings(repo_type: str, repo_count: int, repo_template: str):
     if repo_count > 1:
         if not repo_template:
             raise forms.ValidationError(
-                f"If you specify more than one {repo_type} repository, you must provide an {repo_type} repository matching rule template."
+                f"If you specify more than one {repo_type} repository, you must provide a {repo_type} repository matching rule template."
             )
     elif repo_count == 1 and repo_template:
         raise forms.ValidationError(
@@ -151,7 +149,6 @@ def get_repository_working_dir(
     Returns:
         str: The local filesystem working directory corresponding to the repo slug.
     """
-
     if repo_type == "backup":
         repo_list = global_settings.backup_repository.all()
         repo_template = global_settings.backup_repository_template

@@ -33,7 +33,7 @@ InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 
 
 def run_backup(  # pylint: disable=too-many-arguments
-    task: Task, logger, global_settings, remove_regex_dict, replace_regex_dict, backup_repos
+    task: Task, logger, global_settings, remove_regex_dict, replace_regex_dict
 ) -> Result:
     r"""Backup configurations to disk.
 

@@ -70,6 +70,10 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     Returns:
         result (Result): Result from Nornir task
     """
+    # In case there are no inteded or backup repos configured.
+    if not all([intended_repos, backup_repos]):
+        raise ValueError("There must be at least one Intended Repo or Backup Repo configured.")
+
     obj = task.host.data["obj"]
 
     compliance_obj = GoldenConfig.objects.filter(device=obj).first()
@@ -138,7 +142,7 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
         rescue["intended_repo"] = intended_repo
         rescue["backup_repo"] = backup_repo
 
-        return Result(host=task.host)
+    return Result(host=task.host)
 
 
 def config_compliance(job_result, data, backup_repos, intended_repos):

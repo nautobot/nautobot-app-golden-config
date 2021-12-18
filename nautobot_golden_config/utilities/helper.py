@@ -108,23 +108,23 @@ def render_jinja_template(obj, logger, template):
         raise NornirNautobotException from error
 
 
-def clean_config_settings(repo_type: str, repo_count: int, repo_template: str):
+def clean_config_settings(repo_type: str, repo_count: int, match_rule: str):
     """Custom clean for `GoldenConfigSettingFeatureForm`.
 
     Args:
         repo_type (str): `intended` or `backup`.
         repo_count (int): Total number of repos.
-        repo_template (str): Template str provided by user to match repos.
+        match_rule (str): Template str provided by user to match repos.
 
     Raises:
         ValidationError: Custom Validation on form.
     """
     if repo_count > 1:
-        if not repo_template:
+        if not match_rule:
             raise forms.ValidationError(
                 f"If you specify more than one {repo_type} repository, you must provide a {repo_type} repository matching rule template."
             )
-    elif repo_count == 1 and repo_template:
+    elif repo_count == 1 and match_rule:
         raise forms.ValidationError(
             f"If you configure only one {repo_type} repository, there is no need to specify the {repo_type} repository matching rule template."
         )
@@ -149,26 +149,17 @@ def get_repository_working_dir(
     Returns:
         str: The local filesystem working directory corresponding to the repo slug.
     """
-    if repo_type == "backup":
-        repo_list = global_settings.backup_repository.all()
-        repo_template = global_settings.backup_repository_template
-    elif repo_type == "intended":
-        repo_list = global_settings.intended_repository.all()
-        repo_template = global_settings.intended_repository_template
+    match_rule = getattr(global_settings, f"{repo_type}_match_rule")
 
-    repository_root_directory = repo_list[0].filesystem_path
+    if not match_rule:
+        return global_settings.backup_repository.first().filesystem_path
 
-    if repo_template:
-        desired_repository_slug = render_jinja_template(obj, logger, repo_template)
-        matching_repository_list = [
-            repository for repository in repo_list if repository.slug == desired_repository_slug
-        ]
-        if len(matching_repository_list) == 1:
-            repository_root_directory = f"{settings.GIT_ROOT}/{matching_repository_list[0].slug}"
-        else:
-            logger.log_failure(
-                obj,
-                f"There is no repository slug matching '{desired_repository_slug}' for device. Verify the matching rule and configured Git repositories.",
-            )
-
-    return repository_root_directory
+    desired_repository_slug = render_jinja_template(obj, logger, match_rule)
+    matching_repo = getattr(global_settings, f"{repo_type}_repository").filter(slug=desired_repository_slug)
+    if len(matching_repo) == 1:
+        return f"{settings.GIT_ROOT}/{matching_repo[0].slug}"
+    logger.log_failure(
+        obj,
+        f"There is no repository slug matching '{desired_repository_slug}' for device. Verify the matching rule and configured Git repositories.",
+    )
+    return None

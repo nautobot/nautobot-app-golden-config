@@ -97,6 +97,15 @@ In order to generate the intended configurations at least two repositories are n
 3. The [intended_path_template](./navigating-golden.md#application-settings) configuration parameter.
 4. The [jinja_path_template](./navigating-golden.md#application-settings) configuration parameter.
 
+### Intended Repository Matching Rule
+
+.. Note::
+    Only use a Intended Repository Matching Rule if you have **more than one** intended repository. It is **not needed"" if you only have one repository. The operator is expected to ensure that every device results in a successful matching rule (or that device will fail to render a config).
+
+The `intended_match_rule` setting allows you to match a given `Device` Django ORM object to a backup Git repository. This field should contain a Jinja2-formatted template. The plugin populates the variables in the Jinja2 template via the GraphQL query configured on the plugin.
+
+This is exactly the same concept as described in [Backup Repository Matching Rule](./navigating-backup.md#repository-matching-rule), and better described there.
+
 ## Data
 
 The data provided while rendering the configuration of a device is described in the [SoT Aggregation](./navigating-sot-agg.md) overview. 

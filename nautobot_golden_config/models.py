@@ -423,7 +423,7 @@ class GoldenConfigSetting(PrimaryModel):
         related_name="backup_repository",
         limit_choices_to={"provided_contents__contains": "nautobot_golden_config.backupconfigs"},
     )
-    backup_repository_template = models.CharField(
+    backup_match_rule = models.CharField(
         max_length=255,
         null=False,
         blank=True,
@@ -443,7 +443,7 @@ class GoldenConfigSetting(PrimaryModel):
         related_name="intended_repository",
         limit_choices_to={"provided_contents__contains": "nautobot_golden_config.intendedconfigs"},
     )
-    intended_repository_template = models.CharField(
+    intended_match_rule = models.CharField(
         max_length=255,
         null=False,
         blank=True,
@@ -546,21 +546,21 @@ class GoldenConfigSetting(PrimaryModel):
                     raise ValidationError({"scope": f"'{key}' is not a valid filter parameter for Device object"})
         # Backup Rule
         if self.backup_repository.all().count() > 1:
-            if not self.backup_repository_template:
+            if not self.backup_match_rule:
                 raise ValidationError(
                     "If you specify more than one backup repository, you must provide a backup repository matching rule template."
                 )
-        elif self.backup_repository.all().count() == 1 and self.backup_repository_template:
+        elif self.backup_repository.all().count() == 1 and self.backup_match_rule:
             raise ValidationError(
                 "If you configure only one backup repository, there is no need to specify the backup repository matching rule template."
             )
         # Intended Rule
         if self.intended_repository.all().count() > 1:
-            if not self.intended_repository_template:
+            if not self.intended_match_rule:
                 raise ValidationError(
                     "If you specify more than one intended repository, you must provide a intended repository matching rule template."
                 )
-        elif self.intended_repository.all().count() == 1 and self.intended_repository_template:
+        elif self.intended_repository.all().count() == 1 and self.intended_match_rule:
             raise ValidationError(
                 "If you configure only one intended repository, there is no need to specify the intended repository matching rule template."
             )

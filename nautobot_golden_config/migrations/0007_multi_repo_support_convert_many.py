@@ -30,12 +30,12 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name="goldenconfigsetting",
-            name="backup_repository_template",
+            name="backup_match_rule",
             field=models.CharField(blank=True, max_length=255),
         ),
         migrations.AddField(
             model_name="goldenconfigsetting",
-            name="intended_repository_template",
+            name="intended_match_rule",
             field=models.CharField(blank=True, max_length=255),
         ),
         migrations.RemoveField(

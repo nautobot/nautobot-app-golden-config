@@ -20,6 +20,7 @@ from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_golden_config.models import ComplianceRule, ConfigCompliance, GoldenConfigSetting, GoldenConfig
 from nautobot_golden_config.utilities.helper import (
     get_job_filter,
+    get_repository_working_dir,
     verify_global_settings,
     render_jinja_template,
 )
@@ -56,8 +57,6 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     task: Task,
     logger,
     global_settings,
-    backup_root_path,
-    intended_root_folder,
     rules,
 ) -> Result:
     """Prepare data for compliance task.
@@ -76,17 +75,18 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     compliance_obj.compliance_last_attempt_date = task.host.defaults.data["now"]
     compliance_obj.save()
 
+    intended_directory = get_repository_working_dir("intended", obj, logger, global_settings)
+
     intended_path_template_obj = render_jinja_template(obj, logger, global_settings.intended_path_template)
-
-    intended_file = os.path.join(intended_root_folder, intended_path_template_obj)
-
+    intended_file = os.path.join(intended_directory, intended_path_template_obj)
     if not os.path.exists(intended_file):
         logger.log_failure(obj, f"Unable to locate intended file for device at {intended_file}")
         raise NornirNautobotException()
 
-    backup_template = render_jinja_template(obj, logger, global_settings.backup_path_template)
-    backup_file = os.path.join(backup_root_path, backup_template)
+    backup_directory = get_repository_working_dir("backup", obj, logger, global_settings)
 
+    backup_template = render_jinja_template(obj, logger, global_settings.backup_path_template)
+    backup_file = os.path.join(backup_directory, backup_template)
     if not os.path.exists(backup_file):
         logger.log_failure(obj, f"Unable to locate backup file for device at {backup_file}")
         raise NornirNautobotException()
@@ -120,12 +120,12 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     compliance_obj.compliance_last_success_date = task.host.defaults.data["now"]
     compliance_obj.compliance_config = "\n".join(diff_files(backup_file, intended_file))
     compliance_obj.save()
-    logger.log_success(obj, "Successfully tested compliance.")
+    logger.log_success(obj, "Successfully tested compliance job.")
 
     return Result(host=task.host)
 
 
-def config_compliance(job_result, data, backup_root_path, intended_root_folder):
+def config_compliance(job_result, data):
     """Nornir play to generate configurations."""
     now = datetime.now()
     rules = get_rules()
@@ -154,8 +154,6 @@ def config_compliance(job_result, data, backup_root_path, intended_root_folder):
                 name="RENDER COMPLIANCE TASK GROUP",
                 logger=logger,
                 global_settings=global_settings,
-                backup_root_path=backup_root_path,
-                intended_root_folder=intended_root_folder,
                 rules=rules,
             )
 
@@ -163,4 +161,4 @@ def config_compliance(job_result, data, backup_root_path, intended_root_folder):
         logger.log_failure(None, err)
         raise
 
-    logger.log_debug("Completed Compliance for devices.")
+    logger.log_debug("Completed compliance job for devices.")

@@ -60,6 +60,6 @@ The plugin behavior can be controlled with the following list of settings.
 | per_feature_width | 13 | 13 | The width in inches that the overview table can be. |
 | per_feature_height | 4 | 4 | The height in inches that the overview table can be. |
 
-> Note: Over time the intention is to make the compliance report more dynamic, but for now allow users to configure the `per_*` configs in a way that fits best for them.
+> Note: Over time the compliance report will become more dynamic, but for now allow users to configure the `per_*` configs in a way that fits best for them.
 
 > Note: Review [`nautobot_plugin_nornir`](https://pypi.org/project/nautobot-plugin-nornir/) for Nornir and dispatcher configuration options. 

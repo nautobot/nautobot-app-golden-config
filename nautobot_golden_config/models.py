@@ -3,7 +3,6 @@
 import logging
 import json
 from deepdiff import DeepDiff
-
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.serializers.json import DjangoJSONEncoder
@@ -23,6 +22,7 @@ from netutils.config.compliance import feature_compliance
 from nautobot_golden_config.choices import ComplianceRuleTypeChoice
 from nautobot_golden_config.utilities.utils import get_platform
 from nautobot_golden_config.utilities.constant import PLUGIN_CFG
+
 
 LOGGER = logging.getLogger(__name__)
 GRAPHQL_STR_START = "query ($device_id: ID!)"
@@ -410,19 +410,25 @@ class GoldenConfig(PrimaryModel):
         return f"{self.device}"
 
 
+#  pylint: disable=too-many-branches
 @extras_features(
     "graphql",
 )
 class GoldenConfigSetting(PrimaryModel):
     """GoldenConfigSetting Model defintion. This provides global configs instead of via configs.py."""
 
-    backup_repository = models.ForeignKey(
+    backup_repository = models.ManyToManyField(
         to="extras.GitRepository",
-        on_delete=models.SET_NULL,
-        null=True,
         blank=True,
         related_name="backup_repository",
         limit_choices_to={"provided_contents__contains": "nautobot_golden_config.backupconfigs"},
+    )
+    backup_match_rule = models.CharField(
+        max_length=255,
+        null=False,
+        blank=True,
+        verbose_name="Rule to match a device to a Backup Repository.",
+        help_text="The Jinja path representation of a Backup Repository slug. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `backup-{{obj.site.region.slug}}`",
     )
     backup_path_template = models.CharField(
         max_length=255,
@@ -431,13 +437,18 @@ class GoldenConfigSetting(PrimaryModel):
         verbose_name="Backup Path in Jinja Template Form",
         help_text="The Jinja path representation of where the backup file will be found. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.site.slug}}/{{obj.name}}.cfg`",
     )
-    intended_repository = models.ForeignKey(
+    intended_repository = models.ManyToManyField(
         to="extras.GitRepository",
-        on_delete=models.SET_NULL,
-        null=True,
         blank=True,
         related_name="intended_repository",
         limit_choices_to={"provided_contents__contains": "nautobot_golden_config.intendedconfigs"},
+    )
+    intended_match_rule = models.CharField(
+        max_length=255,
+        null=False,
+        blank=True,
+        verbose_name="Rule to match a device to an Intended Repository.",
+        help_text="The Jinja path representation of a Intended Repository slug. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `intended-{{obj.site.region.slug}}`",
     )
     intended_path_template = models.CharField(
         max_length=255,
@@ -486,10 +497,15 @@ class GoldenConfigSetting(PrimaryModel):
 
     def __str__(self):
         """Return a simple string if model is called."""
-        return "Golden Config Settings"
+        return "Configuration Object"
 
     def delete(self, *args, **kwargs):
         """Enforce the singleton pattern, there is no way to delete the configurations."""
+
+    class Meta:
+        """Set unique fields for model."""
+
+        verbose_name = "Golden Config Setting"
 
     @classmethod
     def load(cls):
@@ -528,6 +544,26 @@ class GoldenConfigSetting(PrimaryModel):
             for key in self.scope.keys():
                 if key not in filterset_params:
                     raise ValidationError({"scope": f"'{key}' is not a valid filter parameter for Device object"})
+        # Backup Rule
+        if self.backup_repository.all().count() > 1:
+            if not self.backup_match_rule:
+                raise ValidationError(
+                    "If you specify more than one backup repository, you must provide a backup repository matching rule template."
+                )
+        elif self.backup_repository.all().count() == 1 and self.backup_match_rule:
+            raise ValidationError(
+                "If you configure only one backup repository, there is no need to specify the backup repository matching rule template."
+            )
+        # Intended Rule
+        if self.intended_repository.all().count() > 1:
+            if not self.intended_match_rule:
+                raise ValidationError(
+                    "If you specify more than one intended repository, you must provide a intended repository matching rule template."
+                )
+        elif self.intended_repository.all().count() == 1 and self.intended_match_rule:
+            raise ValidationError(
+                "If you configure only one intended repository, there is no need to specify the intended repository matching rule template."
+            )
 
     def get_queryset(self):
         """Generate a Device QuerySet from the filter."""

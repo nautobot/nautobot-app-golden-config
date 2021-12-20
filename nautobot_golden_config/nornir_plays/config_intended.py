@@ -21,6 +21,7 @@ from nautobot_plugin_nornir.utils import get_dispatcher
 from nautobot_golden_config.models import GoldenConfigSetting, GoldenConfig
 from nautobot_golden_config.utilities.helper import (
     get_job_filter,
+    get_repository_working_dir,
     verify_global_settings,
     render_jinja_template,
 )
@@ -30,9 +31,12 @@ from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 LOGGER = logging.getLogger(__name__)
 
+jinja_settings = Jinja2.get_default()
+jinja_env = jinja_settings.env
+
 
 def run_template(  # pylint: disable=too-many-arguments
-    task: Task, logger, global_settings, nautobot_job, jinja_root_path, intended_root_folder
+    task: Task, logger, global_settings, nautobot_job, jinja_root_path
 ) -> Result:
     """Render Jinja Template.
 
@@ -42,9 +46,8 @@ def run_template(  # pylint: disable=too-many-arguments
         task (Task): Nornir task individual object
         logger (NornirLogger): Logger to log messages to.
         global_settings (GoldenConfigSetting): The settings for GoldenConfigPlugin.
-        nautobot_job (Result): The Nautobot Job instance being ran.
+        nautobot_job (Result): The the output from the Nautobot Job instance being run.
         jinja_root_path (str): The root path to the Jinja2 intended config file.
-        intended_root_folder (str): The root folder for rendered intended output configs.
 
     Returns:
         result (Result): Result from Nornir task
@@ -57,19 +60,16 @@ def run_template(  # pylint: disable=too-many-arguments
     intended_obj.intended_last_attempt_date = task.host.defaults.data["now"]
     intended_obj.save()
 
-    # Render output relative filepath and jinja template filenames
-    intended_output_filepath = render_jinja_template(obj, logger, global_settings.intended_path_template)
-    jinja_intended_template_filename = render_jinja_template(obj, logger, global_settings.jinja_path_template)
+    intended_directory = get_repository_working_dir("intended", obj, logger, global_settings)
+    intended_path_template_obj = render_jinja_template(obj, logger, global_settings.intended_path_template)
+    output_file_location = os.path.join(intended_directory, intended_path_template_obj)
 
-    output_file_location = os.path.join(intended_root_folder, intended_output_filepath)
+    jinja_template = render_jinja_template(obj, logger, global_settings.jinja_path_template)
     status, device_data = graph_ql_query(nautobot_job.request, obj, global_settings.sot_agg_query)
     if status != 200:
         logger.log_failure(obj, f"The GraphQL query return a status of {str(status)} with error of {str(device_data)}")
         raise NornirNautobotException()
     task.host.data.update(device_data)
-
-    jinja_settings = Jinja2.get_default()
-    jinja_env = jinja_settings.env
 
     generated_config = task.run(
         task=dispatcher,
@@ -77,7 +77,7 @@ def run_template(  # pylint: disable=too-many-arguments
         method="generate_config",
         obj=obj,
         logger=logger,
-        jinja_template=jinja_intended_template_filename,
+        jinja_template=jinja_template,
         jinja_root_path=jinja_root_path,
         output_file_location=output_file_location,
         default_drivers_mapping=get_dispatcher(),
@@ -92,15 +92,14 @@ def run_template(  # pylint: disable=too-many-arguments
     return Result(host=task.host, result=generated_config)
 
 
-def config_intended(nautobot_job, data, jinja_root_path, intended_root_folder):
+def config_intended(nautobot_job, data, jinja_root_path):
     """
     Nornir play to generate configurations.
 
     Args:
-        nautobot_job (Result): The Nautobot Job instance being ran.
+        nautobot_job (Result): The Nautobot Job instance being run.
         data (dict): Form data from Nautobot Job.
         jinja_root_path (str): The root path to the Jinja2 intended config file.
-        intended_root_folder (str): The root folder for rendered intended output configs.
 
     Returns:
         None: Intended configuration files are written to filesystem.
@@ -134,7 +133,6 @@ def config_intended(nautobot_job, data, jinja_root_path, intended_root_folder):
                 global_settings=global_settings,
                 nautobot_job=nautobot_job,
                 jinja_root_path=jinja_root_path,
-                intended_root_folder=intended_root_folder,
             )
 
     except Exception as err:

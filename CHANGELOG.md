@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.0.0 - 2021-XX-XX
+
+### Added
+
+- GoldenConfigSettings enforces a `template path` be provided if more than 1 backup or intended repository is configured.
+- Updated backup job to execute against multiple repos if available based on pattern matching.
+- Updated intended job to execute against multiple repos if available based on pattern matching.
+- Updated compliance job to execute from multiple repos if available based on pattern matching.
+- Added utility function to determine the local filesystem path which stores the backup and intended repository files for a given device.
+
 ## v0.9.10 - 2021-11
 
 ### Announcements

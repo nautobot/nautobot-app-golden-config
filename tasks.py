@@ -159,6 +159,13 @@ def stop(context):
 
 
 @task
+def restart(context):
+    """Gracefully restart all containers."""
+    print("Restarting Nautobot...")
+    docker_compose(context, "restart")
+
+
+@task
 def destroy(context):
     """Destroy all containers and volumes.
 
@@ -233,15 +240,14 @@ def makemigrations(context, name=""):
 # TESTS / LINTING
 # ------------------------------------------------------------------------------
 @task
-def unittest(context):
+def unittest(context, label="nautobot_golden_config"):
     """Run Django unit tests for the plugin.
 
     Args:
         context (obj): Used to run specific commands
-        nautobot_ver (str): Nautobot version to use to build the container
-        python_ver (str): Will use the Python version docker image to build from
+        label (str): Specify a directory or module to test instead of running all Nautobot Golden Config tests.
     """
-    command = "nautobot-server test nautobot_golden_config"
+    command = f"nautobot-server test {label}"
     run_command(context, command)
 
 

@@ -31,6 +31,9 @@ from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 LOGGER = logging.getLogger(__name__)
 
+jinja_settings = Jinja2.get_default()
+jinja_env = jinja_settings.env
+
 
 def run_template(  # pylint: disable=too-many-arguments
     task: Task, logger, global_settings, nautobot_job, jinja_root_path
@@ -78,6 +81,7 @@ def run_template(  # pylint: disable=too-many-arguments
         jinja_root_path=jinja_root_path,
         output_file_location=output_file_location,
         default_drivers_mapping=get_dispatcher(),
+        jinja_filters=jinja_env.filters,
     )[1].result["config"]
     intended_obj.intended_last_success_date = task.host.defaults.data["now"]
     intended_obj.intended_config = generated_config

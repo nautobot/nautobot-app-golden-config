@@ -3,7 +3,6 @@
 import difflib
 import logging
 import os
-from itertools import zip_longest
 
 from datetime import datetime
 

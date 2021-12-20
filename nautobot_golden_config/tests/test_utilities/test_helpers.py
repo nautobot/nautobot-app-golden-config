@@ -33,8 +33,8 @@ class HelpersTest(TestCase):
         self.global_settings.backup_repository.set([GitRepository.objects.get(name="backup-parent_region-1")])
         self.global_settings.intended_repository.set([GitRepository.objects.get(name="intended-parent_region-1")])
         self.global_settings.jinja_repository = GitRepository.objects.get(name="test-jinja-repo")
-        self.global_settings.backup_repository_template = "backup-{{ obj.site.region.parent.slug }}"
-        self.global_settings.intended_repository_template = "intended-{{ obj.site.region.parent.slug }}"
+        self.global_settings.backup_match_rule = "backup-{{ obj.site.region.parent.slug }}"
+        self.global_settings.intended_match_rule = "intended-{{ obj.site.region.parent.slug }}"
         # Device.objects.all().delete()
         create_device(name="test_device")
         create_orphan_device(name="orphan_device")
@@ -124,7 +124,7 @@ class HelpersTest(TestCase):
         result = get_repository_working_dir(
             repo_type, Device.objects.get(name="orphan_device"), logger, self.global_settings
         )
-        self.assertEqual(result, "/opt/nautobot/git/backup-parent_region-1")
+        self.assertEqual(result, None)
         self.assertEqual(logger.log_failure.call_count, 1)
         self.assertEqual(
             logger.log_failure.call_args[0][1],
@@ -138,7 +138,7 @@ class HelpersTest(TestCase):
         result = get_repository_working_dir(
             repo_type, Device.objects.get(name="orphan_device"), logger, self.global_settings
         )
-        self.assertEqual(result, "/opt/nautobot/git/intended-parent_region-1")
+        self.assertEqual(result, None)
         self.assertEqual(logger.log_failure.call_count, 1)
         self.assertEqual(
             logger.log_failure.call_args[0][1],

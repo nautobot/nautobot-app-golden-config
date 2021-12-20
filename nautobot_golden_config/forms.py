@@ -351,10 +351,10 @@ class GoldenConfigSettingFeatureForm(
         model = models.GoldenConfigSetting
         fields = (
             "backup_repository",
-            "backup_repository_template",
+            "backup_match_rule",
             "backup_path_template",
             "intended_repository",
-            "intended_repository_template",
+            "intended_match_rule",
             "intended_path_template",
             "jinja_repository",
             "jinja_path_template",
@@ -372,5 +372,5 @@ class GoldenConfigSettingFeatureForm(
             clean_config_settings(
                 repo_type=repo_type,
                 repo_count=self.cleaned_data.get(f"{repo_type}_repository").count(),
-                repo_template=self.cleaned_data.get(f"{repo_type}_repository_template"),
+                match_rule=self.cleaned_data.get(f"{repo_type}_match_rule"),
             )

@@ -141,9 +141,9 @@ class GoldenConfigSettingGitModelTestCase(TestCase):
         # Create fresh new object, populate accordingly.
 
         self.golden_config = GoldenConfigSetting.objects.create(  # pylint: disable=attribute-defined-outside-init
-            backup_repository_template="backup-{{ obj.site.region.parent.slug }}",
+            backup_match_rule="backup-{{ obj.site.region.parent.slug }}",
             backup_path_template="{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg",
-            intended_repository_template="intended-{{ obj.site.region.parent.slug }}",
+            intended_match_rule="intended-{{ obj.site.region.parent.slug }}",
             intended_path_template="{{ obj.site.slug }}/{{ obj.name }}.cfg",
             backup_test_connectivity=True,
             jinja_repository=GitRepository.objects.get(name="test-jinja-repo-1"),
@@ -166,9 +166,9 @@ class GoldenConfigSettingGitModelTestCase(TestCase):
     def test_model_success(self):
         """Create a new instance of the GoldenConfigSettings model."""
 
-        self.assertEqual(self.golden_config.backup_repository_template, "backup-{{ obj.site.region.parent.slug }}")
+        self.assertEqual(self.golden_config.backup_match_rule, "backup-{{ obj.site.region.parent.slug }}")
         self.assertEqual(self.golden_config.backup_path_template, "{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg")
-        self.assertEqual(self.golden_config.intended_repository_template, "intended-{{ obj.site.region.parent.slug }}")
+        self.assertEqual(self.golden_config.intended_match_rule, "intended-{{ obj.site.region.parent.slug }}")
         self.assertEqual(self.golden_config.intended_path_template, "{{ obj.site.slug }}/{{ obj.name }}.cfg")
         self.assertTrue(self.golden_config.backup_test_connectivity)
         self.assertEqual(self.golden_config.jinja_repository, GitRepository.objects.get(name="test-jinja-repo-1"))
@@ -210,7 +210,7 @@ class GoldenConfigSettingGitModelTestCase(TestCase):
                 GitRepository.objects.get(name="test-backup-repo-2"),
             ]
         )
-        self.golden_config.backup_repository_template = None
+        self.golden_config.backup_match_rule = None
         self.assertEqual(self.golden_config.backup_repository.all().count(), 2)
         with self.assertRaises(ValidationError) as error:
             self.golden_config.clean()
@@ -243,7 +243,7 @@ class GoldenConfigSettingGitModelTestCase(TestCase):
                 GitRepository.objects.get(name="test-intended-repo-2"),
             ]
         )
-        self.golden_config.intended_repository_template = None
+        self.golden_config.intended_match_rule = None
         self.assertEqual(self.golden_config.intended_repository.all().count(), 2)
         with self.assertRaises(ValidationError) as error:
             self.golden_config.clean()

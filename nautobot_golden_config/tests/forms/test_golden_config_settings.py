@@ -22,10 +22,10 @@ class GoldenConfigSettingFormTest(TestCase):
         form = GoldenConfigSettingFeatureForm(
             data={
                 "backup_repository": [GitRepository.objects.get(name="test-backup-repo-1"), GitRepository.objects.get(name="test-backup-repo-2")],
-                "backup_repository_template": "backup-{{ obj.site.region.parent.slug }}",
+                "backup_match_rule": "backup-{{ obj.site.region.parent.slug }}",
                 "backup_path_template": "{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg",
                 "intended_repository": [GitRepository.objects.get(name="test-intended-repo-1"), GitRepository.objects.get(name="test-intended-repo-2")],
-                "intended_repository_template": "intended-{{ obj.site.region.parent.slug }}",
+                "intended_match_rule": "intended-{{ obj.site.region.parent.slug }}",
                 "intended_path_template": "{{ obj.site.slug }}/{{ obj.name }}.cfg",
                 "backup_test_connectivity": True,
             }
@@ -38,10 +38,10 @@ class GoldenConfigSettingFormTest(TestCase):
         form = GoldenConfigSettingFeatureForm(
             data={
                 "backup_repository": [GitRepository.objects.get(name="test-backup-repo-2")],
-                "backup_repository_template": "backup-{{ obj.site.region.parent.slug }}",
+                "backup_match_rule": "backup-{{ obj.site.region.parent.slug }}",
                 "backup_path_template": "{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg",
                 "intended_repository": [GitRepository.objects.get(name="test-intended-repo-1"), GitRepository.objects.get(name="test-intended-repo-2")],
-                "intended_repository_template": "intended-{{ obj.site.region.parent.slug }}",
+                "intended_match_rule": "intended-{{ obj.site.region.parent.slug }}",
                 "intended_path_template": "{{ obj.site.slug }}/{{ obj.name }}.cfg",
                 "backup_test_connectivity": True,
             }
@@ -56,7 +56,7 @@ class GoldenConfigSettingFormTest(TestCase):
                 "backup_repository": [GitRepository.objects.get(name="test-backup-repo-2")],
                 "backup_path_template": "{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg",
                 "intended_repository": [GitRepository.objects.get(name="test-intended-repo-1")],
-                "intended_repository_template": "intended-{{ obj.site.region.parent.slug }}",
+                "intended_match_rule": "intended-{{ obj.site.region.parent.slug }}",
                 "intended_path_template": "{{ obj.site.slug }}/{{ obj.name }}.cfg",
                 "backup_test_connectivity": True,
             }

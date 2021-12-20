@@ -30,7 +30,7 @@ Backup repositories must first be configured under **Extensibility -> Git Reposi
 .. Note::
     Only use a Backup Repository Matching Rule if you have **more than one** backup repository. It is not needed if you only have one, and will cause backup failures for any devices which do not match the rule. The setting is mandatory if you have more than one repository.
 
-The `backup_repository_matching_rule` setting allows you to match a given `Device` Django ORM object to a backup Git repository. This field should contain a Jinja2-formatted template. The plugin populates the variables in the Jinja2 template via the GraphQL query configured on the plugin.
+The `backup_match_rule` setting allows you to match a given `Device` Django ORM object to a backup Git repository. This field should contain a Jinja2-formatted template. The plugin populates the variables in the Jinja2 template via the GraphQL query configured on the plugin.
 
 Say that in your environment you have three regions in which your devices reside: North America, Asia Pacific, and Africa. You have populated these values as `Region` objects in Nautobot, and assigned a `Region` value to each of your devices. You want your backup solution to scale well, so you have a dedicated backup Git repository for each region. Every Nautobot object has a `slug` (URL compatible) name in addition to its human-friendly name; our regions' slugs are `north-america`, `asia-pacific`, and `africa`. To configure the plugin to match devices to the desired Git repository, you must first configure the GraphQL query; a _VERY_ simple one might look like this:
 ```

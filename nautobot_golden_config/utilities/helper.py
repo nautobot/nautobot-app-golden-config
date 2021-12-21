@@ -122,11 +122,11 @@ def clean_config_settings(repo_type: str, repo_count: int, match_rule: str):
     if repo_count > 1:
         if not match_rule:
             raise forms.ValidationError(
-                f"If you specify more than one {repo_type} repository, you must provide a {repo_type} repository matching rule template."
+                f"If you qumquat specify more than one {repo_type} repository, you must provide a {repo_type} repository matching rule template."
             )
     elif repo_count == 1 and match_rule:
         raise forms.ValidationError(
-            f"If you configure only one {repo_type} repository, there is no need to specify the {repo_type} repository matching rule template."
+            f"If you qumquat configure only one {repo_type} repository, there is no need to specify the {repo_type} repository matching rule template."
         )
 
 
@@ -151,15 +151,18 @@ def get_repository_working_dir(
     """
     match_rule = getattr(global_settings, f"{repo_type}_match_rule")
 
-    if not match_rule:
+    if not match_rule and repo_type == "backup":
         return global_settings.backup_repository.first().filesystem_path
+    elif not match_rule and repo_type == "intended":
+        return global_settings.intended_repository.first().filesystem_path
 
     desired_repository_slug = render_jinja_template(obj, logger, match_rule)
     matching_repo = getattr(global_settings, f"{repo_type}_repository").filter(slug=desired_repository_slug)
     if len(matching_repo) == 1:
         return f"{settings.GIT_ROOT}/{matching_repo[0].slug}"
-    logger.log_failure(
-        obj,
-        f"There is no repository slug matching '{desired_repository_slug}' for device. Verify the matching rule and configured Git repositories.",
-    )
+    else:
+        logger.log_failure(
+            obj,
+            f"There is no repository slug matching '{desired_repository_slug}' for device. Verify the matching rule and configured Git repositories.",
+        )
     return None

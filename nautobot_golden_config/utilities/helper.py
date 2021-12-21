@@ -152,7 +152,7 @@ def get_repository_working_dir(
     match_rule = getattr(global_settings, f"{repo_type}_match_rule")
 
     if not match_rule:
-        return global_settings.backup_repository.first().filesystem_path
+        return getattr(global_settings, f"{repo_type}_repository").first().filesystem_path
 
     desired_repository_slug = render_jinja_template(obj, logger, match_rule)
     matching_repo = getattr(global_settings, f"{repo_type}_repository").filter(slug=desired_repository_slug)

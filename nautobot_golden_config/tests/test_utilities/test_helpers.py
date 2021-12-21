@@ -8,11 +8,16 @@ from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.utils.logger import NornirLogger
 from jinja2 import exceptions as jinja_errors
 
-from nautobot.dcim.models import Device
-from nautobot.extras.models import GitRepository
+from nautobot.dcim.models import Device, Platform, Site
+from nautobot.extras.models import GitRepository, Status
 from nautobot_golden_config.models import GoldenConfigSetting
 from nautobot_golden_config.tests.conftest import create_device, create_orphan_device, create_helper_repo
-from nautobot_golden_config.utilities.helper import null_to_empty, render_jinja_template, get_repository_working_dir
+from nautobot_golden_config.utilities.helper import (
+    null_to_empty,
+    render_jinja_template,
+    get_job_filter,
+    get_repository_working_dir,
+)
 
 
 # pylint: disable=no-self-use
@@ -143,4 +148,60 @@ class HelpersTest(TestCase):
         self.assertEqual(
             logger.log_failure.call_args[0][1],
             "There is no repository slug matching 'intended-parent_region-4' for device. Verify the matching rule and configured Git repositories.",
+        )
+
+    def test_get_job_filter_no_data_success(self):
+        """Verify we get two devices returned when providing no data."""
+        result = get_job_filter()
+        self.assertEqual(result.count(), 2)
+
+    def test_get_job_filter_site_success(self):
+        """Verify we get a single device returned when providing specific site."""
+        result = get_job_filter(data={"site": Site.objects.filter(slug="site-4")})
+        self.assertEqual(result.count(), 1)
+
+    def test_get_job_filter_device_object_success(self):
+        """Verify we get a single device returned when providing single device object."""
+        result = get_job_filter(data={"device": Device.objects.get(name="test_device")})
+        self.assertEqual(result.count(), 1)
+
+    def test_get_job_filter_device_filter_success(self):
+        """Verify we get a single device returned when providing single device filter."""
+        result = get_job_filter(data={"device": Device.objects.filter(name="test_device")})
+        self.assertEqual(result.count(), 1)
+
+    def test_get_job_filter_base_queryset_raise(self):
+        """Verify we get raise for having a base_qs with no objects due to bad Golden Config Setting scope."""
+        Platform.objects.create(name="Placeholder Platform", slug="placeholder-platform")
+        golden_settings = GoldenConfigSetting.objects.first()
+        golden_settings.scope = {"platform": ["placeholder-platform"]}
+        golden_settings.validated_save()
+        with self.assertRaises(NornirNautobotException) as failure:
+            get_job_filter()
+        self.assertEqual(
+            failure.exception.args[0],
+            "The base queryset didn't find any devices. Please check the Golden Config Setting scope.",
+        )
+
+    def test_get_job_filter_filtered_devices_raise(self):
+        """Verify we get raise for having providing site that doesn't have any devices in scope."""
+        Site.objects.create(name="New Site", slug="new-site", status=Status.objects.get(slug="active"))
+        with self.assertRaises(NornirNautobotException) as failure:
+            get_job_filter(data={"site": Site.objects.filter(name="New Site")})
+        self.assertEqual(
+            failure.exception.args[0],
+            "The provided job parameters didn't match any devices detected by the Golden Config scope. Please check the scope defined within Golden Config Settings or select the correct job parameters to correctly match devices.",
+        )
+
+    def test_get_job_filter_device_no_platform_raise(self):
+        """Verify we get raise for not having a platform set on a device."""
+        device = Device.objects.get(name="test_device")
+        device.platform = None
+        device.status = Status.objects.get(slug="active")
+        device.validated_save()
+        with self.assertRaises(NornirNautobotException) as failure:
+            get_job_filter()
+        self.assertEqual(
+            failure.exception.args[0],
+            "The following device(s) test_device have no platform defined. Platform is required.",
         )

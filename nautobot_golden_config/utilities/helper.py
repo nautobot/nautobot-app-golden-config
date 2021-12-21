@@ -151,14 +151,15 @@ def get_repository_working_dir(
     """
     match_rule = getattr(global_settings, f"{repo_type}_match_rule")
 
-    if not match_rule and repo_type == "backup":
-        return global_settings.backup_repository.first().filesystem_path
-    elif not match_rule and repo_type == "intended":
-        return global_settings.intended_repository.first().filesystem_path
+    if not match_rule:
+        if repo_type == "backup":  # pylint: disable=R1705
+            return global_settings.backup_repository.first().filesystem_path
+        else:
+            return global_settings.intended_repository.first().filesystem_path
 
     desired_repository_slug = render_jinja_template(obj, logger, match_rule)
     matching_repo = getattr(global_settings, f"{repo_type}_repository").filter(slug=desired_repository_slug)
-    if len(matching_repo) == 1:
+    if len(matching_repo) == 1:  # pylint: disable=R1705
         return f"{settings.GIT_ROOT}/{matching_repo[0].slug}"
     else:
         logger.log_failure(

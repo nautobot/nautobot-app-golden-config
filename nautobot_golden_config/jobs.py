@@ -94,8 +94,11 @@ class ComplianceJob(Job, FormEntry):
     @commit_check
     def run(self, data, commit):  # pylint: disable=too-many-branches
         """Run config compliance report script."""
-        # pylint: disable-msg=too-many-locals
         # pylint: disable=unused-argument
+
+        _ = [git_wrapper(self, repo, "intended") for repo in GoldenConfigSetting.objects.first().intended_repository.all()]
+        _ = [git_wrapper(self, repo, "backup") for repo in GoldenConfigSetting.objects.first().backup_repository.all()]
+
         config_compliance(self, data)
 
 

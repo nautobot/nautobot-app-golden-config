@@ -58,9 +58,7 @@ class GoldenConfigSettingFormTest(TestCase):
         self.assertFalse(form.is_valid())
         self.assertEqual(
             form.non_field_errors(),
-            [
-                "If you configure only one backup repository, there is no need to specify the backup repository matching rule template."
-            ],
+            ["If you configure only one backup repository, do not enter the backup repository matching rule template."],
         )
 
     def test_clean_backup_template_missing_match_rule(self):
@@ -86,7 +84,7 @@ class GoldenConfigSettingFormTest(TestCase):
         self.assertEqual(
             form.non_field_errors(),
             [
-                "If you specify more than one backup repository, you must provide a backup repository matching rule template."
+                "If you specify more than one backup repository, you must provide the backup repository matching rule template."
             ],
         )
 
@@ -106,7 +104,7 @@ class GoldenConfigSettingFormTest(TestCase):
         self.assertEqual(
             form.non_field_errors(),
             [
-                "If you configure only one intended repository, there is no need to specify the intended repository matching rule template."
+                "If you configure only one intended repository, do not enter the intended repository matching rule template."
             ],
         )
 
@@ -133,7 +131,7 @@ class GoldenConfigSettingFormTest(TestCase):
         self.assertEqual(
             form.non_field_errors(),
             [
-                "If you specify more than one intended repository, you must provide a intended repository matching rule template."
+                "If you specify more than one intended repository, you must provide the intended repository matching rule template."
             ],
         )
 

@@ -75,6 +75,25 @@ class GoldenConfigSettingSerializer(TaggedObjectSerializer, CustomFieldModelSeri
         model = models.GoldenConfigSetting
         fields = "__all__"
 
+    def validate(self, data):
+        """Verify that the values in the GoldenConfigSetting API call make sense."""
+        if data.backup_repository.all().count() == 1 and data.backup_match_rule:
+            raise serializers.ValidationError(
+                "If you configure only one backup repository, do not enter the backup repository matching rule template."
+            )
+        if data.backup_repository.all().count() > 1 and not data.backup_match_rule:
+            raise serializers.ValidationError(
+                "If you specify more than one backup repository, you must provide the backup repository matching rule template."
+            )
+        if data.intended_repository.all().count() == 1 and data.intended_match_rule:
+            raise serializers.ValidationError(
+                "If you configure only one intended repository, do not enter the intended repository matching rule template."
+            )
+        if data.intended_repository.all().count() > 1 and not data.intended_match_rule:
+            raise serializers.ValidationError(
+                "If you specify more than one intended repository, you must provide the intended repository matching rule template."
+            )
+
 
 class ConfigRemoveSerializer(TaggedObjectSerializer, CustomFieldModelSerializer):
     """Serializer for ConfigRemove object."""

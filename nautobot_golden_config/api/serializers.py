@@ -85,6 +85,7 @@ class GoldenConfigSettingSerializer(TaggedObjectSerializer, CustomFieldModelSeri
             raise serializers.ValidationError(
                 "If you specify more than one backup repository, you must provide the backup repository matching rule template."
             )
+
         if data.intended_repository.all().count() == 1 and data.intended_match_rule:
             raise serializers.ValidationError(
                 "If you configure only one intended repository, do not enter the intended repository matching rule template."

@@ -188,7 +188,7 @@ class ConfigComplianceListView(generic.ObjectListView):
         return pivot(
             self.queryset,
             ["device", "device__name"],
-            "rule__feature__slug",
+            "rule__feature__name",
             "compliance_int",
             aggregation=Max,
         )

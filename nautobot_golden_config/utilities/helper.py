@@ -132,11 +132,11 @@ def clean_config_settings(repo_type: str, repo_count: int, match_rule: str):
     if repo_count > 1:
         if not match_rule:
             raise forms.ValidationError(
-                f"If you specify more than one {repo_type} repository, you must provide a {repo_type} repository matching rule template."
+                f"If you specify more than one {repo_type} repository, you must provide the {repo_type} repository matching rule template."
             )
     elif repo_count == 1 and match_rule:
         raise forms.ValidationError(
-            f"If you configure only one {repo_type} repository, there is no need to specify the {repo_type} repository matching rule template."
+            f"If you configure only one {repo_type} repository, do not enter the {repo_type} repository matching rule template."
         )
 
 

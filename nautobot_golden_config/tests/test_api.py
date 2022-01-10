@@ -16,6 +16,7 @@ from .conftest import create_device, create_feature_rule_json, create_config_com
 
 User = get_user_model()
 
+
 class GoldenConfigJSONAPITest(APITestCase):  # pylint: disable=too-many-ancestors
     """Test the ConfigCompliance API."""
 
@@ -85,6 +86,7 @@ class GoldenConfigJSONAPITest(APITestCase):  # pylint: disable=too-many-ancestor
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertFalse(response.data["compliance"])
+
 
 class GoldenConfigCustomAPITest(APITestCase):  # pylint: disable=too-many-ancestors
     """Test the ConfigCompliance API."""

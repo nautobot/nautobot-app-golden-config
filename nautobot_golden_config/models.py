@@ -508,7 +508,7 @@ class GoldenConfigSetting(PrimaryModel):
                 backend = get_default_backend()
                 schema = graphene_settings.SCHEMA
                 backend.document_from_string(schema, str(self.sot_agg_query))
-            except GraphQLSyntaxError as error:
+            except GraphQLSyntaxError as error:  # pylint: disable=redefined-outer-name
                 raise ValidationError(str(error))  # pylint: disable=raise-missing-from
 
             LOGGER.debug("GraphQL - test  query start with: `%s`", GRAPHQL_STR_START)

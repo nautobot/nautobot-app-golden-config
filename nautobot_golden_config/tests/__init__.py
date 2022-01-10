@@ -1,5 +1,6 @@
 """Unit tests for nautobot_golden_config plugin."""
 
+
 def custom_compliance_func(obj):
     """Custom compliance testing"""
 
@@ -16,7 +17,7 @@ def custom_compliance_func(obj):
             compliance = True
             ordered = True
             missing = ""
-            extra = ""                    
+            extra = ""
     return {
         "compliance": compliance,
         "compliance_int": compliance_int,

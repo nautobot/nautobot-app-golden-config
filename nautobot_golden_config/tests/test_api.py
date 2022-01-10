@@ -1,16 +1,15 @@
 """Unit tests for nautobot_golden_config."""
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.utils.module_loading import import_string
 
-from django.conf import settings
 from django.urls import reverse
 from rest_framework import status
-from unittest.mock import patch
 
 from nautobot.utilities.testing import APITestCase
 from nautobot_golden_config.choices import ComplianceRuleTypeChoice
-from ..models import FUNC_MAPPER
 
 from .conftest import create_device, create_feature_rule_json, create_config_compliance, create_feature_rule_custom
 
@@ -111,7 +110,10 @@ class GoldenConfigCustomAPITest(APITestCase):  # pylint: disable=too-many-ancest
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["count"], 1)
 
-    @patch.dict("nautobot_golden_config.models.FUNC_MAPPER", {ComplianceRuleTypeChoice.TYPE_CUSTOM: import_string("nautobot_golden_config.tests.custom_compliance_func")})
+    @patch.dict(
+        "nautobot_golden_config.models.FUNC_MAPPER",
+        {ComplianceRuleTypeChoice.TYPE_CUSTOM: import_string("nautobot_golden_config.tests.custom_compliance_func")},
+    )
     def test_config_compliance_list_view(self):
         """Verify that config compliance objects can be listed."""
         actual = '{"foo": {"bar-1": "baz"}}'
@@ -124,7 +126,10 @@ class GoldenConfigCustomAPITest(APITestCase):  # pylint: disable=too-many-ancest
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["count"], 1)
 
-    @patch.dict("nautobot_golden_config.models.FUNC_MAPPER", {ComplianceRuleTypeChoice.TYPE_CUSTOM: import_string("nautobot_golden_config.tests.custom_compliance_func")})
+    @patch.dict(
+        "nautobot_golden_config.models.FUNC_MAPPER",
+        {ComplianceRuleTypeChoice.TYPE_CUSTOM: import_string("nautobot_golden_config.tests.custom_compliance_func")},
+    )
     def test_config_compliance_post_new_custom_compliant(self):
         """Verify that config compliance detail view for custom compliance."""
         self.add_permissions("nautobot_golden_config.add_configcompliance")
@@ -142,7 +147,10 @@ class GoldenConfigCustomAPITest(APITestCase):  # pylint: disable=too-many-ancest
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(response.data["compliance"])
 
-    @patch.dict("nautobot_golden_config.models.FUNC_MAPPER", {ComplianceRuleTypeChoice.TYPE_CUSTOM: import_string("nautobot_golden_config.tests.custom_compliance_func")})
+    @patch.dict(
+        "nautobot_golden_config.models.FUNC_MAPPER",
+        {ComplianceRuleTypeChoice.TYPE_CUSTOM: import_string("nautobot_golden_config.tests.custom_compliance_func")},
+    )
     def test_config_compliance_post_new_custom_not_compliant(self):
         """Verify that config compliance detail view for custom compliance."""
         self.add_permissions("nautobot_golden_config.add_configcompliance")

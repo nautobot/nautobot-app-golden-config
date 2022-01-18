@@ -21,65 +21,10 @@ uses cases, the following settings are available and further documented below.
 
 ### Backup Repositories
 
-In the `Backup Repositories` field of the UI, configure all of the repositories which you intend to use for backed-up device configurations as part of Golden Config.
+In the `Backup Repository` field of the Settings, configure the repository which you intend to use for backed-up device configurations as part of Golden Config.
 
 Backup repositories must first be configured under **Extensibility -> Git Repositories**. When you configure a repository, look for the `Provides` field in the UI. To serve as a configuration backup store, the repository must be configured with the `backup configs` capability under the `Provides` field. For further details, refer to [Navigating Nautobot Git Settings](./navigating-golden.md#git-settings).
 
-### Backup Repository Matching Rule
-
-.. Note::
-    Only use a Backup Repository Matching Rule if you have **more than one** backup repository. It is not needed if you only have one, and will cause backup failures for any devices which do not match the rule. The setting is mandatory if you have more than one repository.
-
-The `backup_match_rule` setting allows you to match a given `Device` Django ORM object to a backup Git repository. This field should contain a Jinja2-formatted template. The plugin populates the variables in the Jinja2 template via the GraphQL query configured on the plugin.
-
-Say that in your environment you have three regions in which your devices reside: North America, Asia Pacific, and Africa. You have populated these values as `Region` objects in Nautobot, and assigned a `Region` value to each of your devices. You want your backup solution to scale well, so you have a dedicated backup Git repository for each region. Every Nautobot object has a `slug` (URL compatible) name in addition to its human-friendly name; our regions' slugs are `north-america`, `asia-pacific`, and `africa`. To configure the plugin to match devices to the desired Git repository, you must first configure the GraphQL query; a _VERY_ simple one might look like this:
-```
-query ($device_id: ID!) {
-  device(id: $device_id) {
-    config_context
-    hostname: name
-    platform {
-      manufacturer {
-        name
-      }
-      name
-      napalm_driver
-      slug
-    }
-    primary_ip4 {
-      address
-      interface {
-        name
-      }
-      id
-    }
-    site {
-      name
-      region {
-        name
-        slug
-      }
-      slug
-    }
-  }
-}
-```
-
-The query will look at the `Device` ORM object, and return the values from the query as keys under the top-level `obj` key. The `obj` key represents the Device object. With this GraphQL query, we can make a Jinja2 template to translate the returned values into a string. For example, say that you have a device which is in your Sydney, AU office, which is in the `asia-pacific` region in Nautobot. If you made a Jinja2 template based on that, which looked like this:
-
-```
-{{obj.site.region.slug}}
-```
-Then the template would be rendered to the string:
-```
-asia-pacific
-```
-
-When you create backup repositories, pay attention to your naming scheme. You should name each repository in a way that matches the value of whatever parameter from the Device object which you wish to use to sort devices into repositories. So, for our Sydney device above, it would work to name your Asia Pacific repository something "Asia Pacific Device Backups". This would give it a `slug` value of `asia-pacific-device-backups`, and you could use this in a backup repository matching rule with a template like this:
-
-```
-{{obj.site.region.slug}}-device-backups
-```
 
 ### Backup Path Template
 

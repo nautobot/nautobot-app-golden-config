@@ -3,15 +3,11 @@
 
 from jinja2 import exceptions as jinja_errors
 
-from django import forms
-from django.conf import settings
-
 from nautobot.dcim.models import Device
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.utilities.utils import render_jinja2
 
 from nornir_nautobot.exceptions import NornirNautobotException
-from nornir_nautobot.utils.logger import NornirLogger
 
 from nautobot_golden_config import models
 
@@ -43,7 +39,10 @@ def get_job_filter(data=None):
     elif data.get("device"):
         query.update({"id": data["device"].values_list("pk", flat=True)})
 
-    base_qs = models.GoldenConfigSetting.objects.first().get_queryset()
+    base_qs = Device.objects.none()
+    for obj in models.GoldenConfigSetting.objects.all():
+        base_qs = base_qs | obj.get_queryset().distinct()
+
     if base_qs.count() == 0:
         raise NornirNautobotException(
             "The base queryset didn't find any devices. Please check the Golden Config Setting scope."
@@ -69,7 +68,7 @@ def null_to_empty(val):
     return val
 
 
-def verify_global_settings(logger, global_settings, attrs):
+def verify_settings(logger, global_settings, attrs):
     """Helper function to verify required attributes are set before a Nornir play start."""
     for item in attrs:
         if not getattr(global_settings, item):
@@ -118,58 +117,12 @@ def render_jinja_template(obj, logger, template):
         raise NornirNautobotException from error
 
 
-def clean_config_settings(repo_type: str, repo_count: int, match_rule: str):
-    """Custom clean for `GoldenConfigSettingFeatureForm`.
+def get_device_to_settings_map(queryset):
+    """Helper function to map settings to devices."""
+    device_to_settings_map = {}
+    for golden_config_setting in models.GoldenConfigSetting.objects.all():
+        for device in golden_config_setting.get_queryset():
+            if (device in queryset) and (device not in device_to_settings_map):
+                device_to_settings_map[device] = golden_config_setting
 
-    Args:
-        repo_type (str): `intended` or `backup`.
-        repo_count (int): Total number of repos.
-        match_rule (str): Template str provided by user to match repos.
-
-    Raises:
-        ValidationError: Custom Validation on form.
-    """
-    if repo_count > 1:
-        if not match_rule:
-            raise forms.ValidationError(
-                f"If you specify more than one {repo_type} repository, you must provide the {repo_type} repository matching rule template."
-            )
-    elif repo_count == 1 and match_rule:
-        raise forms.ValidationError(
-            f"If you configure only one {repo_type} repository, do not enter the {repo_type} repository matching rule template."
-        )
-
-
-def get_repository_working_dir(
-    repo_type: str,
-    obj: Device,
-    logger: NornirLogger,
-    global_settings: models.GoldenConfigSetting,
-) -> str:
-    """Match the Device to a repository working directory, based on the repository matching rule.
-
-    Assume that the working directory == the slug of the repo.
-
-    Args:
-        repo_type (str): Either `intended` or `backup` repository
-        obj (Device): Django ORM Device object.
-        logger (NornirLogger): Logger object
-        global_settings (models.GoldenConfigSetting): Golden Config global settings.
-
-    Returns:
-        str: The local filesystem working directory corresponding to the repo slug.
-    """
-    match_rule = getattr(global_settings, f"{repo_type}_match_rule")
-
-    if not match_rule:
-        return getattr(global_settings, f"{repo_type}_repository").first().filesystem_path
-
-    desired_repository_slug = render_jinja_template(obj, logger, match_rule)
-    matching_repo = getattr(global_settings, f"{repo_type}_repository").filter(slug=desired_repository_slug)
-    if len(matching_repo) == 1:
-        return f"{settings.GIT_ROOT}/{matching_repo[0].slug}"
-    logger.log_failure(
-        obj,
-        f"There is no repository slug matching '{desired_repository_slug}' for device. Verify the matching rule and configured Git repositories.",
-    )
-    return None
+    return device_to_settings_map

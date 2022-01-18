@@ -98,9 +98,14 @@ class ComplianceJob(Job, FormEntry):
 
         _ = [
             git_wrapper(self, repo, "intended")
-            for repo in GoldenConfigSetting.objects.first().intended_repository.all()
+            for repo in [
+                gcs.intended_repository for gcs in GoldenConfigSetting.objects.all() if gcs.intended_repository
+            ]
         ]
-        _ = [git_wrapper(self, repo, "backup") for repo in GoldenConfigSetting.objects.first().backup_repository.all()]
+        _ = [
+            git_wrapper(self, repo, "backup")
+            for repo in [gcs.backup_repository for gcs in GoldenConfigSetting.objects.all() if gcs.backup_repository]
+        ]
 
         config_compliance(self, data)
 
@@ -133,16 +138,21 @@ class IntendedJob(Job, FormEntry):
         """Run config generation script."""
         now = datetime.now()
 
-        LOGGER.debug("Pull Jinja template repo.")
-        jinja_repo = git_wrapper(self, GoldenConfigSetting.objects.first().jinja_repository, "jinja")
+        LOGGER.debug("Pull Jinja template repos.")
+        _ = [
+            git_wrapper(self, repo, "jinja")
+            for repo in [r.jinja_repository for r in GoldenConfigSetting.objects.all() if r.jinja_repository]
+        ]
 
-        LOGGER.debug("Pull Intended config repo.")
-        golden_config = GoldenConfigSetting.objects.first()
+        LOGGER.debug("Pull Intended config repos.")
         # Instantiate a GitRepo object for each GitRepository in GoldenConfigSettings.
-        intended_repos = [git_wrapper(self, repo, "intended") for repo in golden_config.intended_repository.all()]
+        intended_repos = [
+            git_wrapper(self, repo, "intended")
+            for repo in [r.intended_repository for r in GoldenConfigSetting.objects.all() if r.intended_repository]
+        ]
 
         LOGGER.debug("Run config intended nornir play.")
-        config_intended(self, data, jinja_repo.path)
+        config_intended(self, data)
 
         # Commit / Push each repo after job is completed.
         for intended_repo in intended_repos:
@@ -179,10 +189,12 @@ class BackupJob(Job, FormEntry):
         """Run config backup process."""
         now = datetime.now()
         LOGGER.debug("Pull Backup config repo.")
-        golden_settings = GoldenConfigSetting.objects.first()
 
         # Instantiate a GitRepo object for each GitRepository in GoldenConfigSettings.
-        backup_repos = [git_wrapper(self, repo, "backup") for repo in golden_settings.backup_repository.all()]
+        backup_repos = [
+            git_wrapper(self, repo, "backup")
+            for repo in [r.backup_repository for r in GoldenConfigSetting.objects.all() if r.backup_repository]
+        ]
         LOGGER.debug("Starting backup jobs to the following repos: %s", backup_repos)
 
         LOGGER.debug("Run nornir play.")

@@ -1,139 +1,247 @@
 {% extends 'base.html' %}
 {% load buttons %}
-{% load static %}
 {% load custom_links %}
 {% load helpers %}
-
-{% block title %}{{ object }}{% endblock %}
+{% load perms %}
+{% load plugins %}
+{% load static %}
+{% load tz %}
 
 {% block header %}
-<div class="pull-right noprint">
-    {% if perms.nautobot_golden_config.change_goldenconfigsetting %}
-    <a href="{% url 'plugins:nautobot_golden_config:goldenconfigsetting_edit' %}" class="btn btn-warning">
-        <span class="mdi mdi-pencil" aria-hidden="true"></span> Edit
-    </a>
-    {% endif %}
-</div>
-<h1>Golden Configuration Settings</h1>
-{% include 'inc/created_updated.html' %}
-<div class="pull-right noprint">
-    {% custom_links object %}
-</div>
-<ul class="nav nav-tabs">
-    <li role="presentation" {% if not active_tab %} class="active" {% endif %}>
-        <a href="{{ object.get_absolute_url }}">Settings</a>
-    </li>
-    {% if perms.extras.view_objectchange %}
-    <li role="presentation" {% if active_tab == 'changelog' %} class="active" {% endif %}>
-        <a href="{% url 'plugins:nautobot_golden_config:goldenconfigsetting_changelog' %}">Change Log</a>
-    </li>
-    {% endif %}
-</ul>
-{% endblock %}
+    <div class="row noprint">
+        {% with list_url=object|validated_viewname:"list" %}
+        <div class="col-sm-8 col-md-9">
+            <ol class="breadcrumb">
+                <li><a href="{% url list_url %}">
+                    {{ verbose_name_plural|bettertitle }}
+                </a></li>
+                {% if object.name %}
+                    <li><a href="{{ object.get_absolute_url }}">{{ object.name }}</a></li>
+                {% else %}
+                    <li><a href="{{ object.get_absolute_url }}">{{ object }}</a></li>
+                {% endif %}
+            </ol>
+        </div>
+        <div class="col-sm-4 col-md-3">
+            <form action="{% url list_url %}" method="get">
+                <div class="input-group">
+                    <input type="text" name="q" class="form-control" placeholder="Search {{ verbose_name_plural }}" />
+                    <span class="input-group-btn">
+                        <button type="submit" class="btn btn-primary">
+                            <span class="mdi mdi-magnify" aria-hidden="true"></span>
+                        </button>
+                    </span>
+                </div>
+            </form>
+        </div>
+        {% endwith %}
+    </div>
+    <div class="pull-right noprint">
+    {% block buttons %}
+        {% if user|can_change:object %}
+            {% edit_button object %}
+        {% endif %}
+        {% if user|can_delete:object %}
+            {% delete_button object %}
+        {% endif %}
+    {% endblock buttons %}
+    </div>
+    <h1>{{ object }}</h1>
+    {% include 'inc/created_updated.html' %}
+    <div class="pull-right noprint">
+    </div>
+
+    <ul class="nav nav-tabs">
+        <li role="presentation"{% if not active_tab and not request.GET.tab or request.GET.tab == "main" %} class="active"{% endif %}>
+            <a href="{{ object.get_absolute_url }}#main" onclick="switch_tab(this.href)" aria-controls="main" role="tab" data-toggle="tab">
+                {{ verbose_name|bettertitle }}
+            </a>
+        </li>
+        <li role="presentation"{% if request.GET.tab == 'advanced' %} class="active"{% endif %}>
+            <a href="{{ object.get_absolute_url }}#advanced" onclick="switch_tab(this.href)" aria-controls="advanced" role="tab" data-toggle="tab">
+                Advanced
+            </a>
+        </li>
+        {% if perms.extras.view_objectchange %}
+            {% if active_tab != 'changelog' and changelog_url or active_tab == 'changelog' %}
+            <li role="presentation"{% if active_tab == 'changelog' %} class="active"{% endif %}>
+                <a href="{{ changelog_url }}">Change Log</a>
+            </li>
+            {% endif %}
+        {% endif %}
+    </ul>
+{% endblock header %}
 
 {% block content %}
-<style>
-    pre {
-        font-size: 10px;
-        display: inline-block;
-    }
-</style>
-<div class="row">
-    <div class="col-md-8">
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <strong>Settings</strong>
+    <div class="tab-content">
+        <div id="main" role="tabpanel" class="tab-pane {% if not active_tab and not request.GET.tab or request.GET.tab == "main" %}active{% else %}fade{% endif %}">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <strong>General Settings</strong>
+                        </div>
+                        <table class="table table-hover panel-body attr-table">
+                            <tr>
+                                <td>Weight</td>
+                                <td>{{ object.weight }}</td>
+                            </tr>
+                            <tr>
+                                <td>Description</td>
+                                <td>{{ object.description|placeholder }}</td>
+                            </tr>
+                            <tr>
+                                <td><a href="{{ object.get_url_to_filtered_device_list }}">Scope of Devices</td>
+                                <td>
+                                    <pre>{{ object.scope|render_json }}</pre></a>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <strong>Backup Configuration</strong>
+                        </div>
+                        <table class="table table-hover panel-body attr-table">
+                            <tr>
+                                <td>
+                                    Backup Repository
+                                </td>
+                                <td>
+                                    {% if object.backup_repository %}
+                                        <a href="{{ object.backup_repository.get_absolute_url }}">{{ object.backup_repository }}</a>
+                                    {% else %}
+                                        <span class="text-muted">None</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    Backup Path in Jinja Template Form
+                                </td>
+                                <td>
+                                    {{ object.backup_path_template|placeholder }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    Backup Test
+                                </td>
+                                <td>
+                                    {{ object.backup_test_connectivity|placeholder }}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <strong>Intended Configuration</strong>
+                        </div>
+                        <table class="table table-hover panel-body attr-table">
+                            <tr>
+                                <td>
+                                    Intended Repository
+                                </td>
+                                <td>
+                                    {% if object.intended_repository %}
+                                        <a href="{{ object.intended_repository.get_absolute_url }}">{{ object.intended_repository }}</a>
+                                    {% else %}
+                                        <span class="text-muted">None</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    Intended Path in Jinja Template Form
+                                </td>
+                                <td>
+                                    {{ object.intended_path_template|placeholder }}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <strong>Templates Configuration</strong>
+                        </div>
+                        <table class="table table-hover panel-body attr-table">
+                            <tr>
+                                <td>
+                                    Jinja Repository
+                                </td>
+                                <td>
+                                    {% if object.jinja_repository %}
+                                        <a href="{{ object.jinja_repository.get_absolute_url }}">{{ object.jinja_repository }}</a>
+                                    {% else %}
+                                        <span class="text-muted">None</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    Template Path in Jinja Template Form
+                                </td>
+                                <td>
+                                    {{ object.jinja_path_template|placeholder }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>GraphQL Query</td>
+                                <td>
+                                    <pre>{{ object.sot_agg_query|render_json }}</pre>
+                                </td>
+                            </tr>
+
+                        </table>
+                    </div>
+                </div>
             </div>
-            <table class="table table-hover panel-body attr-table">
-                <tr>
-                    <td>Backup Repositories</td>
-                    <td>
-                    {% for item in object.backup_repository.all %}
-                    {% if object.backup_repository %}
-                    {% include "nautobot_golden_config/manytomany.html" with url_name="extras:gitrepository" %}
-                    {% endif %}
-                    {% endfor %}
-                    </td>
-                </tr>
-                <tr>
-                    <td>Backup Repository Matching Rule</td>
-                    <td>
-                        <pre>{{ object.backup_match_rule }}</pre>
-                    </td>
-                </tr>
-                <tr>
-                    <td>Backup Path Template</td>
-                    <td>
-                        <pre>{{ object.backup_path_template }}</pre>
-                    </td>
-                </tr>
-                <tr>
-                    <td>Intended Repositories</td>
-                    <td>
-                    {% for item in object.intended_repository.all %}
-                    {% if object.intended_repository %}
-                    {% include "nautobot_golden_config/manytomany.html" with url_name="extras:gitrepository" %}
-                    {% endif %}
-                    {% endfor %}
-                    </td>
-                </tr>
-                <tr>
-                    <td>Intended Repository Matching Rule</td>
-                    <td>
-                        <pre>{{ object.intended_match_rule }}</pre>
-                    </td>
-                </tr>
-                <tr>
-                    <td>Intended Path Template</td>
-                    <td>
-                        <pre>{{ object.intended_path_template }}</pre>
-                    </td>
-                </tr>
-                <tr>
-                    <td>Jinja Repository</td>
-                    <td>
-                        {% if object.jinja_repository %}
-                        <a href="{% url 'extras:gitrepository' slug=object.jinja_repository.slug %}">{{ object.jinja_repository }}</a>
-                        {% endif %}
-                    </td>
-                </tr>
-                <tr>
-                    <td>Jinja Path Template</td>
-                    <td>
-                        <pre>{{ object.jinja_path_template }}</pre>
-                    </td>
-                </tr>
-                <tr>
-                    <td>Backup Test Connectivity</td>
-                    <td>
-                        {% if object.backup_test_connectivity %}
-                        <span class="text-success">
-                            <i class="mdi mdi-check-bold"></i>
-                        </span>
-                        {% else %}
-                        <span class="text-danger">
-                            <i class="mdi mdi-close"></i>
-                        </span>
-                        {% endif %}
-                    </td>
-                </tr>
-                <tr>
-                    <td><a href="{{ object.get_url_to_filtered_device_list }}">Scope of Devices</td>
-                    <td>
-                        <pre>{{ object.scope|render_json }}</pre></a>
-                    </td>
-                </tr>
-                <tr>
-                    <td>SoT Aggregation Query</td>
-                    <td>
-                        <pre>{{ object.sot_agg_query }}</pre>
-                    </td>
-                </tr>
+
+            <div class="row">
+                <div class="col-md-12">
+                    {% block content_full_width_page %}{% endblock content_full_width_page %}
+                    {% plugin_full_width_page object %}
+                </div>
+            </div>
         </div>
-        </table>
+        <div id="advanced" role="tabpanel" class="tab-pane {% if request.GET.tab == 'advanced' %}active{% else %}fade{% endif %}">
+            <div class="row">
+                <div class="col-md-6">
+                    {% include 'inc/object_details_advanced_panel.html' %}
+                </div>
+                <div class="col-md-6">
+                    {% block advanced_content_right_page %}{% endblock advanced_content_right_page %}
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    {% block advanced_content_full_width_page %}{% endblock advanced_content_full_width_page %}
+                </div>
+            </div>
+        </div>
     </div>
-    {% include 'inc/custom_fields_panel.html' %}
-    {% include 'inc/relationships_panel.html' %}
-</div>
-</div>
-{% endblock %}
+{% endblock content %}
+
+{% block javascript %}
+<script src="{% static 'clipboard.js/clipboard-2.0.6.min.js' %}"
+    onerror="window.location='{% url 'media_failure' %}?filename=clipboard.js/clipboard-2.0.6.min.js'">
+</script>
+<script>
+    url = window.location.href.split("?")[0];
+    window.history.pushState({}, document.title, url);
+    var clipboard = new ClipboardJS('.btn');
+
+    clipboard.on('success', function (e) {});
+
+    clipboard.on('error', function (e) {});
+
+    function switch_tab(tab_href) {
+        if (location.pathname != "{{ object.get_absolute_url }}") {
+            tab_location = tab_href.split("#");
+            window.location.href = `${tab_location[0]}?tab=${tab_location[1]}`;
+        };
+    }
+</script>
+{% endblock javascript %}

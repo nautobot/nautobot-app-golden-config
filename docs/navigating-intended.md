@@ -2,7 +2,7 @@
 
 ## Configuration Generation
 
-The Golden Config plugin **Intended Configuration** job generates intended state files for each device in the plugin's configured scope. An intended state file contains the output from rendering the device's Source of Truth Aggregation values through the Jinja templates used by the plugin.
+The Golden Config plugin **Intended Configuration** job generates intended state files for each device in the plugin setting's configured scope. An intended state file contains the output from rendering the device's Source of Truth Aggregation values through the Jinja templates used by the plugin.
 
 The job itself is a Nornir play which uses a single Jinja template per device. Source of Truth Aggregation data comes from the GraphQL query configured in the Golden Config plugin's settings. An important component of the SoT Aggregation data are the `config_context` values. `config_context` should contain a vendor-neutral, JSON structured representation of a device's configuration values: a list of NTP/AAA/Syslog servers, common VRFs, etc. See [Config Contexts](https://nautobot.readthedocs.io/en/latest/additional-features/config-contexts/#configuration-contexts) for more information. 
 

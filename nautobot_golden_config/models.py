@@ -416,18 +416,20 @@ class GoldenConfig(PrimaryModel):
 class GoldenConfigSetting(PrimaryModel):
     """GoldenConfigSetting Model defintion. This provides global configs instead of via configs.py."""
 
-    backup_repository = models.ManyToManyField(
+    name = models.CharField(max_length=100, unique=True, blank=False)
+    slug = models.SlugField(max_length=100, unique=True, blank=False)
+    weight = models.PositiveSmallIntegerField(default=1000, blank=False)
+    description = models.CharField(
+        max_length=200,
+        blank=True,
+    )
+    backup_repository = models.ForeignKey(
         to="extras.GitRepository",
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
         related_name="backup_repository",
         limit_choices_to={"provided_contents__contains": "nautobot_golden_config.backupconfigs"},
-    )
-    backup_match_rule = models.CharField(
-        max_length=255,
-        null=False,
-        blank=True,
-        verbose_name="Rule to match a device to a Backup Repository.",
-        help_text="The Jinja path representation of a Backup Repository slug. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `backup-{{obj.site.region.slug}}`",
     )
     backup_path_template = models.CharField(
         max_length=255,
@@ -436,18 +438,13 @@ class GoldenConfigSetting(PrimaryModel):
         verbose_name="Backup Path in Jinja Template Form",
         help_text="The Jinja path representation of where the backup file will be found. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.site.slug}}/{{obj.name}}.cfg`",
     )
-    intended_repository = models.ManyToManyField(
+    intended_repository = models.ForeignKey(
         to="extras.GitRepository",
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
         related_name="intended_repository",
         limit_choices_to={"provided_contents__contains": "nautobot_golden_config.intendedconfigs"},
-    )
-    intended_match_rule = models.CharField(
-        max_length=255,
-        null=False,
-        blank=True,
-        verbose_name="Rule to match a device to an Intended Repository.",
-        help_text="The Jinja path representation of a Intended Repository slug. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `intended-{{obj.site.region.slug}}`",
     )
     intended_path_template = models.CharField(
         max_length=255,
@@ -492,29 +489,23 @@ class GoldenConfigSetting(PrimaryModel):
 
     def get_absolute_url(self):  # pylint: disable=no-self-use
         """Return absolute URL for instance."""
-        return reverse("plugins:nautobot_golden_config:goldenconfigsetting")
+        return reverse("plugins:nautobot_golden_config:goldenconfigsetting", args=[self.slug])
 
     def __str__(self):
         """Return a simple string if model is called."""
-        return "Configuration Object"
-
-    def delete(self, *args, **kwargs):
-        """Enforce the singleton pattern, there is no way to delete the configurations."""
+        return f"Golden Config Setting - {self.name}"
 
     class Meta:
-        """Set unique fields for model."""
+        """Set unique fields for model.
+
+        Provide ordering used in tables and get_device_to_settings_map.
+        """
 
         verbose_name = "Golden Config Setting"
-
-    @classmethod
-    def load(cls):
-        """Enforce the singleton pattern, fail it somehow more than one instance."""
-        if len(cls.objects.all()) != 1:
-            raise ValidationError("There was an error where more than one instance existed for a setting.")
-        return cls.objects.first()
+        ordering = ["-weight", "name"]
 
     def clean(self):
-        """Validate there is only one model and if there is a GraphQL query, that it is valid."""
+        """Validate the scope and GraphQL query."""
         super().clean()
 
         if self.sot_agg_query:

@@ -88,12 +88,29 @@ class GoldenConfigSettingModelTestCase(TestCase):
 
     def setUp(self):
         """Get the golden config settings with the only allowed id."""
-        self.global_settings = GoldenConfigSetting.objects.first()
+        create_git_repos()
+
+        # Since we enforce a singleton pattern on this model, nuke the auto-created object.
+        GoldenConfigSetting.objects.all().delete()
+
+        self.global_settings = GoldenConfigSetting.objects.create(  # pylint: disable=attribute-defined-outside-init
+            name="test",
+            slug="test",
+            weight=1000,
+            description="Test Description.",
+            backup_path_template="{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg",
+            intended_path_template="{{ obj.site.slug }}/{{ obj.name }}.cfg",
+            backup_test_connectivity=True,
+            jinja_repository=GitRepository.objects.get(name="test-jinja-repo-1"),
+            jinja_path_template="{{ obj.platform.slug }}/main.j2",
+            backup_repository=GitRepository.objects.get(name="test-backup-repo-1"),
+            intended_repository=GitRepository.objects.get(name="test-intended-repo-1"),
+        )
 
     def test_absolute_url_success(self):
         """Verify that get_absolute_url() returns the expected URL."""
         url_string = self.global_settings.get_absolute_url()
-        self.assertEqual(url_string, "/plugins/golden-config/setting/")
+        self.assertEqual(url_string, f"/plugins/golden-config/setting/{self.global_settings.slug}/")
 
     def test_bad_graphql_query(self):
         """Invalid graphql query."""
@@ -135,71 +152,51 @@ class GoldenConfigSettingGitModelTestCase(TestCase):
     def setUp(self) -> None:
         """Setup test data."""
         create_git_repos()
-        # Since we enforce a singleton pattern on this model, nuke the auto-created object.
+
+        # Since we enforced a singleton pattern on this model in 0.9 release migrations, nuke any auto-created objects.
         GoldenConfigSetting.objects.all().delete()
 
         # Create fresh new object, populate accordingly.
-
         self.golden_config = GoldenConfigSetting.objects.create(  # pylint: disable=attribute-defined-outside-init
-            backup_match_rule="backup-{{ obj.site.region.parent.slug }}",
+            name="test",
+            slug="test",
+            weight=1000,
+            description="Test Description.",
             backup_path_template="{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg",
-            intended_match_rule="intended-{{ obj.site.region.parent.slug }}",
             intended_path_template="{{ obj.site.slug }}/{{ obj.name }}.cfg",
             backup_test_connectivity=True,
             jinja_repository=GitRepository.objects.get(name="test-jinja-repo-1"),
             jinja_path_template="{{ obj.platform.slug }}/main.j2",
+            backup_repository=GitRepository.objects.get(name="test-backup-repo-1"),
+            intended_repository=GitRepository.objects.get(name="test-intended-repo-1"),
         )
-        self.golden_config.backup_repository.set(
-            [
-                GitRepository.objects.get(name="test-backup-repo-1"),
-                GitRepository.objects.get(name="test-backup-repo-2"),
-            ]
-        )
-        self.golden_config.intended_repository.set(
-            [
-                GitRepository.objects.get(name="test-intended-repo-1"),
-                GitRepository.objects.get(name="test-intended-repo-2"),
-            ]
-        )
-        self.golden_config.save()
 
     def test_model_success(self):
         """Create a new instance of the GoldenConfigSettings model."""
-
-        self.assertEqual(self.golden_config.backup_match_rule, "backup-{{ obj.site.region.parent.slug }}")
+        self.assertEqual(self.golden_config.name, "test")
+        self.assertEqual(self.golden_config.slug, "test")
+        self.assertEqual(self.golden_config.weight, 1000)
+        self.assertEqual(self.golden_config.description, "Test Description.")
         self.assertEqual(self.golden_config.backup_path_template, "{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg")
-        self.assertEqual(self.golden_config.intended_match_rule, "intended-{{ obj.site.region.parent.slug }}")
         self.assertEqual(self.golden_config.intended_path_template, "{{ obj.site.slug }}/{{ obj.name }}.cfg")
         self.assertTrue(self.golden_config.backup_test_connectivity)
         self.assertEqual(self.golden_config.jinja_repository, GitRepository.objects.get(name="test-jinja-repo-1"))
         self.assertEqual(self.golden_config.jinja_path_template, "{{ obj.platform.slug }}/main.j2")
-        self.assertEqual(
-            self.golden_config.backup_repository.first(), GitRepository.objects.get(name="test-backup-repo-1")
-        )
-        self.assertEqual(
-            self.golden_config.backup_repository.last(), GitRepository.objects.get(name="test-backup-repo-2")
-        )
-        self.assertEqual(
-            self.golden_config.intended_repository.first(), GitRepository.objects.get(name="test-intended-repo-1")
-        )
-        self.assertEqual(
-            self.golden_config.intended_repository.last(), GitRepository.objects.get(name="test-intended-repo-2")
-        )
+        self.assertEqual(self.golden_config.backup_repository, GitRepository.objects.get(name="test-backup-repo-1"))
+        self.assertEqual(self.golden_config.intended_repository, GitRepository.objects.get(name="test-intended-repo-1"))
 
     def test_removing_git_repos(self):
         """Ensure we can remove the Git Repository obejcts from GoldenConfigSetting."""
         GitRepository.objects.all().delete()
-        self.assertEqual(self.golden_config.intended_repository.count(), 0)
-        self.assertEqual(self.golden_config.backup_repository.count(), 0)
+        gc = GoldenConfigSetting.objects.all().first()  # pylint: disable=invalid-name
+        self.assertEqual(gc.intended_repository, None)
+        self.assertEqual(gc.backup_repository, None)
         self.assertEqual(GoldenConfigSetting.objects.all().count(), 1)
 
     def test_clean_up(self):
-        """Delete all objects created of GitRepository type."""
+        """Delete all objects created of GoldenConfigSetting type."""
         GoldenConfigSetting.objects.all().delete()
-        # Put back a general GoldenConfigSetting object.
-        global_settings = GoldenConfigSetting.objects.create()
-        global_settings.save()
-        self.assertEqual(GoldenConfigSetting.objects.all().count(), 1)
+        self.assertEqual(GoldenConfigSetting.objects.all().count(), 0)
 
 
 class ConfigRemoveModelTestCase(TestCase):

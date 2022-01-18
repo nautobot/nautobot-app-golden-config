@@ -19,9 +19,9 @@ from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 
 from nautobot_golden_config.models import ComplianceRule, ConfigCompliance, GoldenConfigSetting, GoldenConfig
 from nautobot_golden_config.utilities.helper import (
+    get_device_to_settings_map,
     get_job_filter,
-    get_repository_working_dir,
-    verify_global_settings,
+    verify_settings,
     render_jinja_template,
 )
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
@@ -56,7 +56,7 @@ def diff_files(backup_file, intended_file):
 def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     task: Task,
     logger,
-    global_settings,
+    device_to_settings_map,
     rules,
 ) -> Result:
     """Prepare data for compliance task.
@@ -68,6 +68,7 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
         result (Result): Result from Nornir task
     """
     obj = task.host.data["obj"]
+    settings = device_to_settings_map[obj]
 
     compliance_obj = GoldenConfig.objects.filter(device=obj).first()
     if not compliance_obj:
@@ -75,18 +76,18 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     compliance_obj.compliance_last_attempt_date = task.host.defaults.data["now"]
     compliance_obj.save()
 
-    intended_directory = get_repository_working_dir("intended", obj, logger, global_settings)
-
-    intended_path_template_obj = render_jinja_template(obj, logger, global_settings.intended_path_template)
+    intended_directory = settings.intended_repository.filesystem_path
+    intended_path_template_obj = render_jinja_template(obj, logger, settings.intended_path_template)
     intended_file = os.path.join(intended_directory, intended_path_template_obj)
+
     if not os.path.exists(intended_file):
         logger.log_failure(obj, f"Unable to locate intended file for device at {intended_file}")
         raise NornirNautobotException()
 
-    backup_directory = get_repository_working_dir("backup", obj, logger, global_settings)
-
-    backup_template = render_jinja_template(obj, logger, global_settings.backup_path_template)
+    backup_directory = settings.backup_repository.filesystem_path
+    backup_template = render_jinja_template(obj, logger, settings.backup_path_template)
     backup_file = os.path.join(backup_directory, backup_template)
+
     if not os.path.exists(backup_file):
         logger.log_failure(obj, f"Unable to locate backup file for device at {backup_file}")
         raise NornirNautobotException()
@@ -130,8 +131,13 @@ def config_compliance(job_result, data):
     now = datetime.now()
     rules = get_rules()
     logger = NornirLogger(__name__, job_result, data.get("debug"))
-    global_settings = GoldenConfigSetting.objects.first()
-    verify_global_settings(logger, global_settings, ["backup_path_template", "intended_path_template"])
+
+    qs = get_job_filter(data)
+    device_to_settings_map = get_device_to_settings_map(queryset=qs)
+
+    for settings in set(device_to_settings_map.values()):
+        verify_settings(logger, settings, ["backup_path_template", "intended_path_template"])
+
     try:
         with InitNornir(
             runner=NORNIR_SETTINGS.get("runner"),
@@ -141,7 +147,7 @@ def config_compliance(job_result, data):
                 "options": {
                     "credentials_class": NORNIR_SETTINGS.get("credentials"),
                     "params": NORNIR_SETTINGS.get("inventory_params"),
-                    "queryset": get_job_filter(data),
+                    "queryset": qs,
                     "defaults": {"now": now},
                 },
             },
@@ -153,7 +159,7 @@ def config_compliance(job_result, data):
                 task=run_compliance,
                 name="RENDER COMPLIANCE TASK GROUP",
                 logger=logger,
-                global_settings=global_settings,
+                device_to_settings_map=device_to_settings_map,
                 rules=rules,
             )
 

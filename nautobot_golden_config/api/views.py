@@ -12,6 +12,7 @@ from nautobot_golden_config.api import serializers
 from nautobot_golden_config import models
 from nautobot_golden_config import filters
 from nautobot_golden_config.utilities.graphql import graph_ql_query
+from nautobot_golden_config.utilities.helper import get_device_to_settings_map
 
 
 class GoldenConfigRootView(APIRootView):
@@ -30,8 +31,8 @@ class SOTAggDeviceDetailView(APIView):
     def get(self, request, *args, **kwargs):
         """Get method serialize for a dictionary to json response."""
         device = Device.objects.get(pk=kwargs["pk"])
-        global_settings = models.GoldenConfigSetting.objects.first()
-        status_code, data = graph_ql_query(request, device, global_settings.sot_agg_query)
+        settings = get_device_to_settings_map(queryset=Device.objects.filter(pk=device.pk))[device]
+        status_code, data = graph_ql_query(request, device, settings.sot_agg_query)
         data = json.loads(json.dumps(data))
         return Response(serializers.GraphQLSerializer(data=data).initial_data, status=status_code)
 

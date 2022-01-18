@@ -17,13 +17,14 @@ Follow the steps below to get up and running for the configuration backup elemen
    3. Make sure to select the **Provides** called `backup configs`.
    4. Click Create.
 
-3. Next, make sure to update the Plugins **Settings** with the backup details.
+3. Next, make sure to create new or update existing Plugins **Settings** with the backup details.
 
    1. Navigate to `Plugins -> Settings` under the Golden Configuration Section.
-   2. Fill out the Backup Repository. (The dropdown will show the repository that was just created.)
-   3. Fill out Backup Path Template. Typically `{{obj.site.slug}}/{{obj.name}}.cfg`, see [Setting Details](./navigating-golden.md#application-settings)
-   4. Select whether or not to do a connectivity check per device.
-   5. Click Save.
+   2. Create new or select one of the existing `Settings` objects
+   3. Fill out the Backup Repository. (The dropdown will show the repository that was just created.)
+   4. Fill out Backup Path Template. Typically `{{obj.site.slug}}/{{obj.name}}.cfg`, see [Setting Details](./navigating-golden.md#application-settings)
+   5. Select whether or not to do a connectivity check per device.
+   6. Click Save.
 
 4. Create Configuration Removals and Replacements.
 
@@ -61,13 +62,14 @@ Follow the steps below to get up and running for the intended configuration elem
    3. Make sure to select the **Provides** called `jinja templates`.
    4. Click Create.
 
-4. Next, make sure to update the Plugins **Settings** with the intended and jinja2 template details.
+4. Next, make sure to create new or update existing Plugins **Settings** with the intended and jinja2 template details.
 
    1. Navigate to `Plugins -> Settings` under the Golden Configuration Section.
-   2. Fill out the Intended Repository. (The dropdown will show the repository that was just created.)
-   3. Fill out Intended Path Template. Typically `{{obj.site.slug}}/{{obj.name}}.cfg`, see [Setting Details](./navigating-golden.md#application-settings)
-   4. Fill out Jinja Repository. (The dropdown will show the repository that was just created.)
-   5. Fill out Jinja Path Template. Typically `{{obj.platform.slug}}.j2`.
+   2. Create new or select one of the existing `Settings` objects
+   3. Fill out the Intended Repository. (The dropdown will show the repository that was just created.)
+   4. Fill out Intended Path Template. Typically `{{obj.site.slug}}/{{obj.name}}.cfg`, see [Setting Details](./navigating-golden.md#application-settings)
+   5. Fill out Jinja Repository. (The dropdown will show the repository that was just created.)
+   6. Fill out Jinja Path Template.  Typically `{{obj.platform.slug}}.j2`.
 
 5. Determine what data(variables) the Jinja2 templates need from Nautobot.
 

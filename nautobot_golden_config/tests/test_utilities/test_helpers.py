@@ -16,14 +16,14 @@ from nautobot_golden_config.utilities.helper import (
     null_to_empty,
     render_jinja_template,
     get_job_filter,
-    get_repository_working_dir,
+    get_device_to_settings_map,
 )
 
 
 # pylint: disable=no-self-use
 
 
-class HelpersTest(TestCase):
+class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
     """Test Helper Functions."""
 
     def setUp(self):
@@ -34,18 +34,59 @@ class HelpersTest(TestCase):
         create_helper_repo(name="backup-parent_region-1", provides="backupconfigs")
         create_helper_repo(name="intended-parent_region-1", provides="intendedconfigs")
         create_helper_repo(name="test-jinja-repo", provides="jinjatemplate")
-        self.global_settings = GoldenConfigSetting.objects.first()
-        self.global_settings.backup_repository.set([GitRepository.objects.get(name="backup-parent_region-1")])
-        self.global_settings.intended_repository.set([GitRepository.objects.get(name="intended-parent_region-1")])
-        self.global_settings.jinja_repository = GitRepository.objects.get(name="test-jinja-repo")
-        self.global_settings.backup_match_rule = "backup-{{ obj.site.region.parent.slug }}"
-        self.global_settings.intended_match_rule = "intended-{{ obj.site.region.parent.slug }}"
+
+        create_helper_repo(name="backup-parent_region-2", provides="backupconfigs")
+        create_helper_repo(name="intended-parent_region-2", provides="intendedconfigs")
+        create_helper_repo(name="test-jinja-repo-2", provides="jinjatemplate")
+
+        create_helper_repo(name="backup-parent_region-3", provides="backupconfigs")
+        create_helper_repo(name="intended-parent_region-3", provides="intendedconfigs")
+        create_helper_repo(name="test-jinja-repo-3", provides="jinjatemplate")
+
+        # Since we enforce a singleton pattern on this model, nuke the auto-created object.
+        GoldenConfigSetting.objects.all().delete()
+
+        self.test_settings_a = GoldenConfigSetting.objects.create(
+            name="test_a",
+            slug="test_a",
+            description="test_a",
+            weight=1000,
+            backup_repository=GitRepository.objects.get(name="backup-parent_region-1"),
+            intended_repository=GitRepository.objects.get(name="intended-parent_region-1"),
+            jinja_repository=GitRepository.objects.get(name="test-jinja-repo"),
+            # Limit scope to orphaned device only
+            scope={"site": ["site-4"]},
+        )
+
+        self.test_settings_b = GoldenConfigSetting.objects.create(
+            name="test_b",
+            slug="test_b",
+            description="test_b",
+            weight=2000,
+            backup_repository=GitRepository.objects.get(name="backup-parent_region-2"),
+            intended_repository=GitRepository.objects.get(name="intended-parent_region-2"),
+            jinja_repository=GitRepository.objects.get(name="test-jinja-repo-2"),
+            # Limit scope to orphaned device only
+            scope={"site": ["site-4"]},
+        )
+
+        self.test_settings_c = GoldenConfigSetting.objects.create(
+            name="test_c",
+            slug="test_c",
+            description="test_c",
+            weight=1000,
+            backup_repository=GitRepository.objects.get(name="backup-parent_region-3"),
+            intended_repository=GitRepository.objects.get(name="intended-parent_region-3"),
+            jinja_repository=GitRepository.objects.get(name="test-jinja-repo-3"),
+        )
+
         # Device.objects.all().delete()
         create_device(name="test_device")
         create_orphan_device(name="orphan_device")
         self.job_result = MagicMock()
         self.data = MagicMock()
         self.logger = NornirLogger(__name__, self.job_result, self.data)
+        self.device_to_settings_map = get_device_to_settings_map(queryset=Device.objects.all())
 
     def test_null_to_empty_null(self):
         """Ensure None returns with empty string."""
@@ -106,49 +147,25 @@ class HelpersTest(TestCase):
                 render_jinja_template(mock_device, mock_nornir_logger, "template")
         mock_nornir_logger.log_failure.assert_called_once()
 
-    def test_get_backup_repository_working_dir_success(self):
+    def test_get_backup_repository_dir_success(self):
         """Verify that we successfully look up the path from a provided repo object."""
-        repo_type = "backup"
-        result = get_repository_working_dir(
-            repo_type, Device.objects.get(name="test_device"), self.logger, self.global_settings
-        )
-        self.assertEqual(result, "/opt/nautobot/git/backup-parent_region-1")
+        device = Device.objects.get(name="test_device")
+        backup_directory = self.device_to_settings_map[device].backup_repository.filesystem_path
+        self.assertEqual(backup_directory, "/opt/nautobot/git/backup-parent_region-3")
 
-    def test_get_intended_repository_working_dir_success(self):
+        device = Device.objects.get(name="orphan_device")
+        backup_directory = self.device_to_settings_map[device].backup_repository.filesystem_path
+        self.assertEqual(backup_directory, "/opt/nautobot/git/backup-parent_region-2")
+
+    def test_get_intended_repository_dir_success(self):
         """Verify that we successfully look up the path from a provided repo object."""
-        repo_type = "intended"
-        result = get_repository_working_dir(
-            repo_type, Device.objects.get(name="test_device"), self.logger, self.global_settings
-        )
-        self.assertEqual(result, "/opt/nautobot/git/intended-parent_region-1")
+        device = Device.objects.get(name="test_device")
+        intended_directory = self.device_to_settings_map[device].intended_repository.filesystem_path
+        self.assertEqual(intended_directory, "/opt/nautobot/git/intended-parent_region-3")
 
-    def test_get_backup_repository_working_dir_no_match(self):
-        """Verify that we return the correct error when there is no matching backup repo."""
-        repo_type = "backup"
-        logger = MagicMock()
-        result = get_repository_working_dir(
-            repo_type, Device.objects.get(name="orphan_device"), logger, self.global_settings
-        )
-        self.assertEqual(result, None)
-        self.assertEqual(logger.log_failure.call_count, 1)
-        self.assertEqual(
-            logger.log_failure.call_args[0][1],
-            "There is no repository slug matching 'backup-parent_region-4' for device. Verify the matching rule and configured Git repositories.",
-        )
-
-    def test_get_intended_repository_working_dir_no_match(self):
-        """Verify that we return the correct error when there is no matching intended repo."""
-        repo_type = "intended"
-        logger = MagicMock()
-        result = get_repository_working_dir(
-            repo_type, Device.objects.get(name="orphan_device"), logger, self.global_settings
-        )
-        self.assertEqual(result, None)
-        self.assertEqual(logger.log_failure.call_count, 1)
-        self.assertEqual(
-            logger.log_failure.call_args[0][1],
-            "There is no repository slug matching 'intended-parent_region-4' for device. Verify the matching rule and configured Git repositories.",
-        )
+        device = Device.objects.get(name="orphan_device")
+        intended_directory = self.device_to_settings_map[device].intended_repository.filesystem_path
+        self.assertEqual(intended_directory, "/opt/nautobot/git/intended-parent_region-2")
 
     def test_get_job_filter_no_data_success(self):
         """Verify we get two devices returned when providing no data."""
@@ -173,9 +190,9 @@ class HelpersTest(TestCase):
     def test_get_job_filter_base_queryset_raise(self):
         """Verify we get raise for having a base_qs with no objects due to bad Golden Config Setting scope."""
         Platform.objects.create(name="Placeholder Platform", slug="placeholder-platform")
-        golden_settings = GoldenConfigSetting.objects.first()
-        golden_settings.scope = {"platform": ["placeholder-platform"]}
-        golden_settings.validated_save()
+        for golden_settings in GoldenConfigSetting.objects.all():
+            golden_settings.scope = {"platform": ["placeholder-platform"]}
+            golden_settings.validated_save()
         with self.assertRaises(NornirNautobotException) as failure:
             get_job_filter()
         self.assertEqual(
@@ -205,3 +222,11 @@ class HelpersTest(TestCase):
             failure.exception.args[0],
             "The following device(s) test_device have no platform defined. Platform is required.",
         )
+
+    def test_device_to_settings_map(self):
+        """Verify Golden Config Settings are properly mapped to devices."""
+        test_device = Device.objects.get(name="test_device")
+        orphan_device = Device.objects.get(name="orphan_device")
+        self.assertEqual(self.device_to_settings_map[test_device], self.test_settings_c)
+        self.assertEqual(self.device_to_settings_map[orphan_device], self.test_settings_b)
+        self.assertEqual(get_device_to_settings_map(queryset=Device.objects.none()), {})

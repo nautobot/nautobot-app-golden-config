@@ -123,6 +123,55 @@ Golden Config properties include: Compliance Features, Compliance Rules, Config 
 
 > The files within these folders can follow any naming pattern or nested structure, all of them will be recursively taken into account.
 
+The `YAML` files will contain all the attributes necessary to identify an object and the other attributes to update. For example:
+
+`compliance_features` example:
+
+```yaml
+---
+- name: "aaa"
+  slug: "aaa"
+  description: "aaa feature"
+```
+
+`compliance_rules` example:
+
+```yaml
+---
+- feature_slug: "aaa"
+  platform_slug: "cisco_ios"
+  config_ordered: true
+  match_config: |
+    aaa
+    line
+    username
+    role
+    tacacs
+  config_type: "CLI"
+```
+
+`config_remove` example:
+
+```yaml
+---
+- platform_slug: "cisco_ios"
+  name: "Build config"
+  regex: '^Building\s+configuration.*\n'
+```
+
+`config_replace` example:
+
+```yaml
+---
+- name: "username"
+  platform_slug: "cisco_ios"
+  description: "username"
+  regex: '(username\s+\S+\spassword\s+5\s+)\S+(\s+role\s+\S+)'
+  replace: '\1<redacted_config>\2'
+```
+
+> For Foreign Key references to `ComplianceFeature` and `Platform` we use the keywords `feature_slug` and `platform_slug` respectively.
+
 1. Add the git repository that will be used to sync Git properties.
 
    1. In the UI `Extensibility -> Git Repositories`. Click Add.

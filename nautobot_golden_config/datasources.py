@@ -148,6 +148,9 @@ def update_git_gc_properties(golden_config_path, job_result, gc_config_item):
 
     for root, _, files in os.walk(gc_config_item_path):
         for file_name in files:
+            if not any(file_name.endswith(yaml_extension) for yaml_extension in (".yml", ".yaml")):
+                continue
+
             with open(os.path.join(root, file_name), "r", encoding="utf-8") as yaml_file:
                 try:
                     for gc_config_item_dict in yaml.safe_load(yaml_file):

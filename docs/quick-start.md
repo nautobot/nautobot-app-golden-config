@@ -111,7 +111,7 @@ Compliance requires Backups and Intended Configurations in order to be executed.
 
 # Load Properties from Git
 
-Golden Config properties include: Compliance Features, Compliance Rules, Config Remove and Config Replace. They can be created one by one on the plugin, but you can also load them from a Git repository, defined in YAML files following the same directory structure:
+Golden Config properties include: Compliance Features, Compliance Rules, Config Removals and Config Replacements. They can be created one by one in the plugin, alternatively you can load them from a Git repository, defined in YAML files following the same directory structure:
 
 ```
 ├── golden_config
@@ -172,11 +172,11 @@ The `YAML` files will contain all the attributes necessary to identify an object
 
 > For Foreign Key references to `ComplianceFeature` and `Platform` we use the keywords `feature_slug` and `platform_slug` respectively.
 
-1. Add the git repository that will be used to sync Git properties.
+1. Add the Git repository that will be used to sync Git properties.
 
    1. In the UI `Extensibility -> Git Repositories`. Click Add.
    2. Populate the Git Repository data for the GC properties. [Git Settings](./navigating-golden.md#git-settings)
    3. Make sure to select the **Provides** called `Golden Config properties`.
    4. Click Create.
 
-2. Run `sync` and all the properties will be created. Take into account that if the dependencies are not available (for instance, a referenced `Platform` is not created), the specific import task will raise a `warning`.
+2. Run `sync` and all the properties will be created. The import task will raise a `warning` if the dependencies are not available (for instance, a referenced `Platform` is not created).

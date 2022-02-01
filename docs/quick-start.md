@@ -123,7 +123,7 @@ Golden Config properties include: Compliance Features, Compliance Rules, Config 
 
 > The files within these folders can follow any naming pattern or nested structure, all of them will be recursively taken into account.
 
-The `YAML` files will contain all the attributes necessary to identify an object and the other attributes to update. For example:
+The `YAML` files will contain all the attributes necessary to identify an object (for instance, a `ComplianceRule` is identified by the `feature_slug` and the `platform_slug` together) and the other attributes (the ones that are not used to identify the object). For example:
 
 `compliance_features` example:
 

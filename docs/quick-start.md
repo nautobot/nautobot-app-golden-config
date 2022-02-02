@@ -111,7 +111,7 @@ Compliance requires Backups and Intended Configurations in order to be executed.
 
 # Load Properties from Git
 
-Golden Config properties include: Compliance Features, Compliance Rules, Config Removals and Config Replacements. They can be created one by one in the plugin, alternatively you can load them from a Git repository, defined in YAML files following the same directory structure:
+Golden Config properties include: Compliance Features, Compliance Rules, Config Removals, and Config Replacements. They can be created via the UI, API, or alternatively you can load these properties from a Git repository, defined in YAML files following the following directory structure:
 
 ```
 ├── golden_config

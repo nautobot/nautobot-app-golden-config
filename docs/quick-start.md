@@ -123,7 +123,7 @@ Golden Config properties include: Compliance Features, Compliance Rules, Config 
 
 The files within these folders can follow any naming pattern or nested folder structure, all of them will be recursively taken into account. So it's up to you to decide how to you prefer to organize these files (within the previously stated directory structure):
 
-````
+```
 ├── golden_config
 │   ├── compliance_features
 │   │   └── all.yml
@@ -149,7 +149,7 @@ The `YAML` files will contain all the attributes necessary to identify an object
 - name: "aaa"
   slug: "aaa"
   description: "aaa feature"
-````
+```
 
 `compliance_rules` example:
 

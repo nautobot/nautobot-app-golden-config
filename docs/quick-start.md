@@ -117,13 +117,13 @@ Golden Config properties include: Compliance Features, Compliance Rules, Config 
 ├── golden_config
 │   ├── compliance_features
 │   ├── compliance_rules
-│   ├── config_remove
-│   ├── config_replace
+│   ├── config_removes
+│   ├── config_replaces
 ```
 
 The files within these folders can follow any naming pattern or nested folder structure, all of them will be recursively taken into account. So it's up to you to decide how to you prefer to organize these files (within the previously stated directory structure):
 
-```
+````
 ├── golden_config
 │   ├── compliance_features
 │   │   └── all.yml
@@ -132,10 +132,10 @@ The files within these folders can follow any naming pattern or nested folder st
 │   │   │   ├── some_rules.yml
 │   │   │   └── some_other_rules.yml
 │   │   └── juniper_junos.yml
-│   ├── config_remove
+│   ├── config_removes
 │   │   ├── cisco_ios.yml
 │   │   └── juniper_junos.yml
-│   ├── config_replace
+│   ├── config_replaces
 │   │   ├── cisco_ios.yml
 │   │   └── juniper_junos.yml
 ``
@@ -149,7 +149,7 @@ The `YAML` files will contain all the attributes necessary to identify an object
 - name: "aaa"
   slug: "aaa"
   description: "aaa feature"
-```
+````
 
 `compliance_rules` example:
 
@@ -167,7 +167,7 @@ The `YAML` files will contain all the attributes necessary to identify an object
   config_type: "CLI"
 ```
 
-`config_remove` example:
+`config_removes` example:
 
 ```yaml
 ---
@@ -176,7 +176,7 @@ The `YAML` files will contain all the attributes necessary to identify an object
   regex: '^Building\s+configuration.*\n'
 ```
 
-`config_replace` example:
+`config_replaces` example:
 
 ```yaml
 ---
@@ -197,3 +197,7 @@ The `YAML` files will contain all the attributes necessary to identify an object
    4. Click Create (This step runs an automatic sync).
 
 2. Run `sync` and all the properties will be created/updated in a declarative way and following the right order to respect the dependencies between objects. The import task will raise a `warning` if the dependencies are not available yet (for instance, a referenced `Platform` is not created), so the `sync` process will continue, and you could then fix these warnings by reviewing the mismatch (maybe creating the required object) and run the `sync` process again.
+
+```
+
+```

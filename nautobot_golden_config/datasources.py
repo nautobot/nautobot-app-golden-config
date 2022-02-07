@@ -41,44 +41,48 @@ def refresh_git_gc_properties(repository_record, job_result, delete=False):  # p
     ├── golden_config
     │   ├── compliance_features
     │   ├── compliance_rules
-    │   ├── config_remove
-    │   ├── config_replace
+    │   ├── config_removes
+    │   ├── config_replaces
 
     """
     golden_config_path = os.path.join(repository_record.filesystem_path, "golden_config")
     if not os.path.isdir(golden_config_path):
+        job_result.log(
+            f"Skipping sync for {golden_config_path} because directory doesn't exist.",
+            level_choice=LogLevelChoices.LOG_INFO,
+        )
         return
 
     # gc_config_items parametrize the method to import the different GC properties
     # "directory_name": is the directory name under golden_config
-    # "class_name": is the Django model related to the property
+    # "class": is the Django model related to the property
     # "id_keys": is a tuple of tuples, defining the attributes that identify an instance. The inner tuple
     #   defines the mapping from the YAML to the actual attribute name.
     gc_config_items = (
         {
             "directory_name": "compliance_features",
-            "class_name": ComplianceFeature,
+            "class": ComplianceFeature,
             "id_keys": (("name", "name"),),
         },
         {
             "directory_name": "compliance_rules",
-            "class_name": ComplianceRule,
+            "class": ComplianceRule,
             "id_keys": (
                 ("feature", "feature_slug"),
                 ("platform", "platform_slug"),
             ),
         },
         {
-            "directory_name": "config_remove",
-            "class_name": ConfigRemove,
+            "directory_name": "config_removes",
+            "class": ConfigRemove,
             "id_keys": (
                 ("name", "name"),
                 ("platform", "platform_slug"),
             ),
         },
         {
-            "directory_name": "config_replace",
-            "class_name": ConfigReplace,
+            "directory_name": "config_replaces",
+            "class": ConfigReplace,
             "id_keys": (
                 ("name", "name"),
                 ("platform", "platform_slug"),
@@ -137,9 +141,13 @@ def update_git_gc_properties(golden_config_path, job_result, gc_config_item):
     """Refresh any compliance features provided by this Git repository."""
     gc_config_item_path = os.path.join(golden_config_path, gc_config_item["directory_name"])
     if not os.path.isdir(gc_config_item_path):
+        job_result.log(
+            f"Skipping sync for {gc_config_item['directory_name']} because directory doesn't exist.",
+            level_choice=LogLevelChoices.LOG_INFO,
+        )
         return
 
-    property_model = gc_config_item["class_name"]
+    property_model = gc_config_item["class"]
 
     job_result.log(
         f"Refreshing {property_model.__name__}...",
@@ -156,7 +164,7 @@ def update_git_gc_properties(golden_config_path, job_result, gc_config_item):
                     for gc_config_item_dict in yaml.safe_load(yaml_file):
                         try:
                             id_kwargs = get_id_kwargs(gc_config_item_dict, gc_config_item["id_keys"], job_result)
-                            item, created = gc_config_item["class_name"].objects.update_or_create(
+                            item, created = gc_config_item["class"].objects.update_or_create(
                                 **id_kwargs, defaults=gc_config_item_dict
                             )
 

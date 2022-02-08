@@ -499,10 +499,12 @@ class GoldenConfigSetting(PrimaryModel):
         """Set unique fields for model.
 
         Provide ordering used in tables and get_device_to_settings_map.
+        Sorting on weight is performed from the highest weight value to the lowest weight value.
+        This is to ensure only one plugin settings could be applied per single device based on priority and name.
         """
 
         verbose_name = "Golden Config Setting"
-        ordering = ["-weight", "name"]
+        ordering = ["-weight", "name"]  # Refer to weight comment in class docstring.
 
     def clean(self):
         """Validate the scope and GraphQL query."""

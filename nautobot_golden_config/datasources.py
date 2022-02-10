@@ -154,47 +154,55 @@ def update_git_gc_properties(golden_config_path, job_result, gc_config_item):
         level_choice=LogLevelChoices.LOG_INFO,
     )
 
+    file_names = []
     for root, _, files in os.walk(gc_config_item_path):
         for file_name in files:
             if not any(file_name.endswith(yaml_extension) for yaml_extension in (".yml", ".yaml")):
                 continue
+            file_names.append({"root": root, "file_name": file_name})
+    for details in files:
+        root = details["root"]
+        file_name = details["file_name"]
 
-            with open(os.path.join(root, file_name), "r", encoding="utf-8") as yaml_file:
-                try:
-                    for gc_config_item_dict in yaml.safe_load(yaml_file):
-                        try:
-                            id_kwargs = get_id_kwargs(gc_config_item_dict, gc_config_item["id_keys"], job_result)
-                            item, created = gc_config_item["class"].objects.update_or_create(
-                                **id_kwargs, defaults=gc_config_item_dict
-                            )
+        with open(os.path.join(root, file_name), "r", encoding="utf-8") as yaml_file:
+            try:
+                gc_config_item_dict = yaml.safe_load(yaml_file)
 
-                            if created:
-                                job_result.log(
-                                    f"New {property_model.__name__} created: {item}",
-                                    level_choice=LogLevelChoices.LOG_SUCCESS,
-                                )
-                            else:
-                                job_result.log(
-                                    f"Updated {property_model.__name__}: {item}",
-                                    level_choice=LogLevelChoices.LOG_SUCCESS,
-                                )
+            except yaml.YAMLError as exc:
+                job_result.log(
+                    f"Error loading {os.path.join(root, file_name)}: {exc}",
+                    level_choice=LogLevelChoices.LOG_WARNING,
+                )
+                continue
 
-                        except MissingReference:
-                            continue
 
-                        except IntegrityError as exc:
-                            job_result.log(
-                                f"Issue seen with attribute values: {exc}",
-                                level_choice=LogLevelChoices.LOG_WARNING,
-                            )
-                            continue
+        try:
+            id_kwargs = get_id_kwargs(gc_config_item_dict, gc_config_item["id_keys"], job_result)
+            item, created = gc_config_item["class"].objects.update_or_create(
+                **id_kwargs, defaults=gc_config_item_dict
+            )
 
-                except yaml.YAMLError as exc:
-                    job_result.log(
-                        f"Error loading {os.path.join(root, file_name)}: {exc}",
-                        level_choice=LogLevelChoices.LOG_WARNING,
-                    )
-                    continue
+            if created:
+                job_result.log(
+                    f"New {property_model.__name__} created: {item}",
+                    level_choice=LogLevelChoices.LOG_SUCCESS,
+                )
+            else:
+                job_result.log(
+                    f"Updated {property_model.__name__}: {item}",
+                    level_choice=LogLevelChoices.LOG_SUCCESS,
+                )
+
+        except MissingReference:
+            continue
+
+        except IntegrityError as exc:
+            job_result.log(
+                f"Issue seen with attribute values: {exc}",
+                level_choice=LogLevelChoices.LOG_WARNING,
+            )
+            continue
+
 
 
 datasource_contents = []

@@ -175,12 +175,9 @@ def update_git_gc_properties(golden_config_path, job_result, gc_config_item):
                 )
                 continue
 
-
         try:
             id_kwargs = get_id_kwargs(gc_config_item_dict, gc_config_item["id_keys"], job_result)
-            item, created = gc_config_item["class"].objects.update_or_create(
-                **id_kwargs, defaults=gc_config_item_dict
-            )
+            item, created = gc_config_item["class"].objects.update_or_create(**id_kwargs, defaults=gc_config_item_dict)
 
             if created:
                 job_result.log(
@@ -202,7 +199,6 @@ def update_git_gc_properties(golden_config_path, job_result, gc_config_item):
                 level_choice=LogLevelChoices.LOG_WARNING,
             )
             continue
-
 
 
 datasource_contents = []

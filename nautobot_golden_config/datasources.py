@@ -137,7 +137,7 @@ def get_id_kwargs(gc_config_item_dict, id_keys, job_result):
     return id_kwargs
 
 
-def update_git_gc_properties(golden_config_path, job_result, gc_config_item):
+def update_git_gc_properties(golden_config_path, job_result, gc_config_item):  # pylint: disable=too-many-locals
     """Refresh any compliance features provided by this Git repository."""
     gc_config_item_path = os.path.join(golden_config_path, gc_config_item["directory_name"])
     if not os.path.isdir(gc_config_item_path):
@@ -160,7 +160,8 @@ def update_git_gc_properties(golden_config_path, job_result, gc_config_item):
             if not any(file_name.endswith(yaml_extension) for yaml_extension in (".yml", ".yaml")):
                 continue
             file_names.append({"root": root, "file_name": file_name})
-    for details in files:
+
+    for details in file_names:
         root = details["root"]
         file_name = details["file_name"]
 

@@ -167,7 +167,7 @@ def update_git_gc_properties(golden_config_path, job_result, gc_config_item):  #
 
         with open(os.path.join(root, file_name), "r", encoding="utf-8") as yaml_file:
             try:
-                gc_config_item_list = yaml.safe_load(yaml_file)
+                gc_config_property_list = yaml.safe_load(yaml_file)
 
             except yaml.YAMLError as exc:
                 job_result.log(
@@ -177,22 +177,20 @@ def update_git_gc_properties(golden_config_path, job_result, gc_config_item):  #
                 continue
 
         try:
-            for gc_config_item_dict in gc_config_item_list:
-                id_kwargs = get_id_kwargs(gc_config_item_dict, gc_config_item["id_keys"], job_result)
-                item, created = gc_config_item["class"].objects.update_or_create(
-                    **id_kwargs, defaults=gc_config_item_dict
+            for item_dict in gc_config_property_list:
+                id_kwargs = get_id_kwargs(item_dict, gc_config_item["id_keys"], job_result)
+                item, created = gc_config_item["class"].objects.update_or_create(**id_kwargs, defaults=item_dict)
+
+                log_message = (
+                    f"New {property_model.__name__} created: {item}"
+                    if created
+                    else f"Updated {property_model.__name__}: {item}"
                 )
 
-                if created:
-                    job_result.log(
-                        f"New {property_model.__name__} created: {item}",
-                        level_choice=LogLevelChoices.LOG_SUCCESS,
-                    )
-                else:
-                    job_result.log(
-                        f"Updated {property_model.__name__}: {item}",
-                        level_choice=LogLevelChoices.LOG_SUCCESS,
-                    )
+                job_result.log(
+                    log_message,
+                    level_choice=LogLevelChoices.LOG_SUCCESS,
+                )
 
         except MissingReference:
             continue

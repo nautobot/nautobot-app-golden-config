@@ -227,6 +227,6 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         """Verify Golden Config Settings are properly mapped to devices."""
         test_device = Device.objects.get(name="test_device")
         orphan_device = Device.objects.get(name="orphan_device")
-        self.assertEqual(self.device_to_settings_map[test_device], self.test_settings_c)
-        self.assertEqual(self.device_to_settings_map[orphan_device], self.test_settings_b)
+        self.assertEqual(self.device_to_settings_map[test_device.id], self.test_settings_c)
+        self.assertEqual(self.device_to_settings_map[orphan_device.id], self.test_settings_b)
         self.assertEqual(get_device_to_settings_map(queryset=Device.objects.none()), {})

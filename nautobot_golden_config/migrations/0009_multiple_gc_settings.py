@@ -4,18 +4,6 @@ from django.db import migrations, models
 import django.db.models.deletion
 
 
-def repo_convert_check_eligibility(apps, schema_editor):
-    """
-    Check if migration is applicable. Fail in case of many repositories created.
-    """
-    GoldenConfigSetting = apps.get_model("nautobot_golden_config", "GoldenConfigSetting")
-
-    settings_obj = GoldenConfigSetting.objects.first()
-
-    if settings_obj.backup_repository.all().count() > 1 or settings_obj.intended_repository.all().count() > 1:
-        raise ValueError("Please manually remove multiple repositories from Golden Config Settings before applying this migration")
-
-
 def convert_many_repos_part1(apps, schema_editor):
     """
     Add the current `backup_repository` and `intended_repository` objects values
@@ -37,7 +25,7 @@ def convert_many_repos_part1(apps, schema_editor):
 def convert_many_repos_part2(apps, schema_editor):
     """
     Add the current `backup_repository_tmp` and `intended_repository_tmp` object values
-    to the FKs final attritbutes to retain data.`
+    to the FKs final attributes to retain data.`
     """
     GoldenConfigSetting = apps.get_model("nautobot_golden_config", "GoldenConfigSetting")
 
@@ -60,8 +48,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(repo_convert_check_eligibility),
-
         migrations.AlterModelOptions(
             name='goldenconfigsetting',
             options={'ordering': ['-weight', 'name'], 'verbose_name': 'Golden Config Setting'},

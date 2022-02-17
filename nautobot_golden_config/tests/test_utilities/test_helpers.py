@@ -150,21 +150,21 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
     def test_get_backup_repository_dir_success(self):
         """Verify that we successfully look up the path from a provided repo object."""
         device = Device.objects.get(name="test_device")
-        backup_directory = self.device_to_settings_map[device].backup_repository.filesystem_path
+        backup_directory = self.device_to_settings_map[device.id].backup_repository.filesystem_path
         self.assertEqual(backup_directory, "/opt/nautobot/git/backup-parent_region-3")
 
         device = Device.objects.get(name="orphan_device")
-        backup_directory = self.device_to_settings_map[device].backup_repository.filesystem_path
+        backup_directory = self.device_to_settings_map[device.id].backup_repository.filesystem_path
         self.assertEqual(backup_directory, "/opt/nautobot/git/backup-parent_region-2")
 
     def test_get_intended_repository_dir_success(self):
         """Verify that we successfully look up the path from a provided repo object."""
         device = Device.objects.get(name="test_device")
-        intended_directory = self.device_to_settings_map[device].intended_repository.filesystem_path
+        intended_directory = self.device_to_settings_map[device.id].intended_repository.filesystem_path
         self.assertEqual(intended_directory, "/opt/nautobot/git/intended-parent_region-3")
 
         device = Device.objects.get(name="orphan_device")
-        intended_directory = self.device_to_settings_map[device].intended_repository.filesystem_path
+        intended_directory = self.device_to_settings_map[device.id].intended_repository.filesystem_path
         self.assertEqual(intended_directory, "/opt/nautobot/git/intended-parent_region-2")
 
     def test_get_job_filter_no_data_success(self):

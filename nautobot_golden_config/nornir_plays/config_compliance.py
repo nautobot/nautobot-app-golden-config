@@ -68,7 +68,7 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
         result (Result): Result from Nornir task
     """
     obj = task.host.data["obj"]
-    settings = device_to_settings_map[obj]
+    settings = device_to_settings_map[obj.id]
 
     compliance_obj = GoldenConfig.objects.filter(device=obj).first()
     if not compliance_obj:

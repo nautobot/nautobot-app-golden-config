@@ -120,9 +120,11 @@ def render_jinja_template(obj, logger, template):
 def get_device_to_settings_map(queryset):
     """Helper function to map settings to devices."""
     device_to_settings_map = {}
+    queryset_ids = queryset.values_list('id', flat=True)
     for golden_config_setting in models.GoldenConfigSetting.objects.all():
-        for device in golden_config_setting.get_queryset():
-            if (device in queryset) and (device not in device_to_settings_map):
-                device_to_settings_map[device] = golden_config_setting
+        for device_id in golden_config_setting.get_queryset().values_list('id', flat=True):
+            if (device_id in queryset_ids) and (device_id not in device_to_settings_map):
+                device_to_settings_map[device_id] = golden_config_setting
 
     return device_to_settings_map
+

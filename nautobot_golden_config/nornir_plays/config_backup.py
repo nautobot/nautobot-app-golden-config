@@ -45,7 +45,7 @@ def run_backup(  # pylint: disable=too-many-arguments
         result (Result): Result from Nornir task
     """
     obj = task.host.data["obj"]
-    settings = device_to_settings_map[obj]
+    settings = device_to_settings_map[obj.id]
 
     backup_obj = GoldenConfig.objects.filter(device=obj).first()
     if not backup_obj:

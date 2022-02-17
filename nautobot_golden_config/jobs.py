@@ -24,9 +24,9 @@ name = "Golden Configuration"  # pylint: disable=invalid-name
 
 def get_refreshed_repos(job_obj, repo_type):
     """Small wrapper to pull latest branch, and return a GitRepo plugin specific object."""
-    repository_records = set([
-        getattr(gcs, repo_type) for gcs in GoldenConfigSetting.objects.all() if getattr(gcs, repo_type, None)
-    ])
+    repository_records = set(
+        [getattr(gcs, repo_type) for gcs in GoldenConfigSetting.objects.all() if getattr(gcs, repo_type, None)]
+    )
 
     repositories = []
     for repository_record in repository_records:

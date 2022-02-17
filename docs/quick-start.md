@@ -164,7 +164,7 @@ The `YAML` files will contain all the attributes necessary to identify an object
     username
     role
     tacacs
-  config_type: "CLI"
+  config_type: "cli"
 ```
 
 `config_removes` example:

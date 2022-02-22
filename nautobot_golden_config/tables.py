@@ -357,3 +357,55 @@ class ConfigReplaceTable(BaseTable):
         model = models.ConfigReplace
         fields = ("pk", "name", "platform", "description", "regex", "replace")
         default_columns = ("pk", "name", "platform", "description", "regex", "replace")
+
+
+class GoldenConfigSettingTable(BaseTable):
+    # pylint: disable=R0903
+    """Table for list view."""
+
+    pk = ToggleColumn()
+    name = Column(order_by=("_name",), linkify=True)
+    jinja_repository = Column(
+        verbose_name="Jinja Repository",
+        empty_values=(),
+    )
+    intended_repository = Column(
+        verbose_name="Intended Repository",
+        empty_values=(),
+    )
+    backup_repository = Column(
+        verbose_name="Backup Repository",
+        empty_values=(),
+    )
+
+    def _render_capability(self, record, column, record_attribute):  # pylint: disable=unused-argument, no-self-use
+        if getattr(record, record_attribute, None):  # pylint: disable=no-else-return
+            return "✔"
+
+        return "✘"
+
+    def render_backup_repository(self, record, column):  # pylint: disable=no-self-use
+        """Render backup repository YES/NO value."""
+        return self._render_capability(record=record, column=column, record_attribute="backup_repository")
+
+    def render_intended_repository(self, record, column):  # pylint: disable=no-self-use
+        """Render intended repository YES/NO value."""
+        return self._render_capability(record=record, column=column, record_attribute="intended_repository")
+
+    def render_jinja_repository(self, record, column):  # pylint: disable=no-self-use
+        """Render jinja repository YES/NO value."""
+        return self._render_capability(record=record, column=column, record_attribute="jinja_repository")
+
+    class Meta(BaseTable.Meta):
+        """Meta attributes."""
+
+        model = models.GoldenConfigSetting
+        fields = (
+            "pk",
+            "name",
+            "weight",
+            "description",
+            "backup_repository",
+            "intended_repository",
+            "jinja_repository",
+        )

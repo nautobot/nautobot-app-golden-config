@@ -21,119 +21,19 @@ class GoldenConfigSettingFormTest(TestCase):
         """Testing GoldenConfigForm without specifying a unique scope or GraphQL Query."""
         form = GoldenConfigSettingFeatureForm(
             data={
-                "backup_repository": [
-                    GitRepository.objects.get(name="test-backup-repo-1"),
-                    GitRepository.objects.get(name="test-backup-repo-2"),
-                ],
-                "backup_match_rule": "backup-{{ obj.site.region.parent.slug }}",
+                "name": "test",
+                "slug": "test",
+                "weight": 1000,
+                "description": "Test description.",
+                "backup_repository": GitRepository.objects.get(name="test-backup-repo-1"),
                 "backup_path_template": "{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg",
-                "intended_repository": [
-                    GitRepository.objects.get(name="test-intended-repo-1"),
-                    GitRepository.objects.get(name="test-intended-repo-2"),
-                ],
-                "intended_match_rule": "intended-{{ obj.site.region.parent.slug }}",
+                "intended_repository": GitRepository.objects.get(name="test-intended-repo-1"),
                 "intended_path_template": "{{ obj.site.slug }}/{{ obj.name }}.cfg",
                 "backup_test_connectivity": True,
             }
         )
         self.assertTrue(form.is_valid())
         self.assertTrue(form.save())
-
-    def test_clean_backup_template(self):
-        """Testing clean method for single backup repo with a matching pattern."""
-        form = GoldenConfigSettingFeatureForm(
-            data={
-                "backup_repository": [GitRepository.objects.get(name="test-backup-repo-2")],
-                "backup_match_rule": "backup-{{ obj.site.region.parent.slug }}",
-                "backup_path_template": "{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg",
-                "intended_repository": [
-                    GitRepository.objects.get(name="test-intended-repo-1"),
-                    GitRepository.objects.get(name="test-intended-repo-2"),
-                ],
-                "intended_match_rule": "intended-{{ obj.site.region.parent.slug }}",
-                "intended_path_template": "{{ obj.site.slug }}/{{ obj.name }}.cfg",
-                "backup_test_connectivity": True,
-            }
-        )
-        self.assertFalse(form.is_valid())
-        self.assertEqual(
-            form.non_field_errors(),
-            ["If you configure only one backup repository, do not enter the backup repository matching rule template."],
-        )
-
-    def test_clean_backup_template_missing_match_rule(self):
-        """Testing clean method for multiple backup repos without a matching pattern."""
-        form = GoldenConfigSettingFeatureForm(
-            data={
-                "backup_repository": [
-                    GitRepository.objects.get(name="test-backup-repo-1"),
-                    GitRepository.objects.get(name="test-backup-repo-2"),
-                ],
-                "backup_match_rule": "",
-                "backup_path_template": "{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg",
-                "intended_repository": [
-                    GitRepository.objects.get(name="test-intended-repo-1"),
-                    GitRepository.objects.get(name="test-intended-repo-2"),
-                ],
-                "intended_match_rule": "intended-{{ obj.site.region.parent.slug }}",
-                "intended_path_template": "{{ obj.site.slug }}/{{ obj.name }}.cfg",
-                "backup_test_connectivity": True,
-            }
-        )
-        self.assertFalse(form.is_valid())
-        self.assertEqual(
-            form.non_field_errors(),
-            [
-                "If you specify more than one backup repository, you must provide the backup repository matching rule template."
-            ],
-        )
-
-    def test_clean_intended_template(self):
-        """Testing clean method for single intended repo with a matching pattern."""
-        form = GoldenConfigSettingFeatureForm(
-            data={
-                "backup_repository": [GitRepository.objects.get(name="test-backup-repo-2")],
-                "backup_path_template": "{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg",
-                "intended_repository": [GitRepository.objects.get(name="test-intended-repo-1")],
-                "intended_match_rule": "intended-{{ obj.site.region.parent.slug }}",
-                "intended_path_template": "{{ obj.site.slug }}/{{ obj.name }}.cfg",
-                "backup_test_connectivity": True,
-            }
-        )
-        self.assertFalse(form.is_valid())
-        self.assertEqual(
-            form.non_field_errors(),
-            [
-                "If you configure only one intended repository, do not enter the intended repository matching rule template."
-            ],
-        )
-
-    def test_clean_intended_template_missing_match_rule(self):
-        """Testing clean method for multiple intended repos without a matching pattern."""
-        form = GoldenConfigSettingFeatureForm(
-            data={
-                "backup_repository": [
-                    GitRepository.objects.get(name="test-backup-repo-1"),
-                    GitRepository.objects.get(name="test-backup-repo-2"),
-                ],
-                "backup_match_rule": "backup-{{ obj.site.region.parent.slug }}",
-                "backup_path_template": "{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg",
-                "intended_repository": [
-                    GitRepository.objects.get(name="test-intended-repo-1"),
-                    GitRepository.objects.get(name="test-intended-repo-2"),
-                ],
-                "intended_match_rule": "",
-                "intended_path_template": "{{ obj.site.slug }}/{{ obj.name }}.cfg",
-                "backup_test_connectivity": True,
-            }
-        )
-        self.assertFalse(form.is_valid())
-        self.assertEqual(
-            form.non_field_errors(),
-            [
-                "If you specify more than one intended repository, you must provide the intended repository matching rule template."
-            ],
-        )
 
     def test_clean_up(self):
         """Transactional custom model, unable to use `get_or_create`.
@@ -142,7 +42,3 @@ class GoldenConfigSettingFormTest(TestCase):
         """
         GitRepository.objects.all().delete()
         self.assertEqual(GitRepository.objects.all().count(), 0)
-
-        # Put back a general GoldenConfigSetting object.
-        global_settings = GoldenConfigSetting.objects.create()
-        global_settings.save()

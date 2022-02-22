@@ -41,7 +41,7 @@ PLUGINS_CONFIG = {
 
 ```
 
-## Plugin Settings
+## Plugin Configuration
 
 The plugin behavior can be controlled with the following list of settings. 
 

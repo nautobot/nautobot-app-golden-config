@@ -36,19 +36,24 @@ Each Job attempts to provide sane error handling, and respects the `debug` flag 
 
 ## Application Settings
 
-The golden configuration plugin settings can be found by navigating to `Plugins -> Settings` button. Under the `Golden Configuration` section.
+The golden configuration plugin settings can be found by navigating to `Plugins -> Settings` button. Select one of the Settings, under the `Golden Configuration` section.
+Since Golden Configuration Plugin version 1.0, the plugin allows for multiple settings to be configured by the User.
+Each of the settings, has the individual repositories and configuration details, as well as the scope.
+You could use a combination of settings to customize Your Configuration Compliance behaviour.
+Settings have a name and a weight. The weight parameter indicates the priority of given Settings - the higher the weight, the device matching the scope defined will be assigned to the scope.
+At the same moment, each device will be matched up to maximum of only one `Settings.` In case of the same weight, the sorting is performed by the name.
 
 ![Navigate to Settings](./img/navigate-compliance-rules.png)
 
-To configure or update the settings click the pencil icon to edit.
+To create new settings click on the `+Add` button.
+To update existing settings click on one of the `Settings` name.
+
 
 |Setting|Explanation|
 |:--|:--|
-|Backup Repositories |One or more Git repositories where your backup configurations will be found. |
-|Backup Repository Matching Rule |A Jinja template to match a device to a backup repositories `slug` value. Required if you configure more than one backup repository. E.g. `my-backup-repo-{{obj.site.region.slug}}` |
+|Backup Repositories |The Git Repository where your backup configurations will be found. |
 |Backup Path|A Jinja template which defines the path and name of backup files within the backup repository. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.site.slug}}/{{obj.name}}.cfg`|
-|Intended Repositories |One or more Git repository where your intended configuration state files will be found. |
-|Intended Repository Matching Rule |A Jinja template to match a device to an intended state repository's `slug` value. Required if you configure more than one intended repository. E.g. `best-of-intentions-repo-{{obj.site.region.slug}}` |
+|Intended Repositories |The Git Repository where your intended configuration state files will be found. |
 |Intended Path|A Jinja template which defines the path and name of intended configuration state files within the intended state repository. e.g. `{{obj.site.slug}}/{{obj.name}}.intended_cfg`|
 |Jinja Repository |The Git Repository where your jinja templates will be found. |
 |Jinja Path|A Jinja template which defines the path (within the repository) and name of the Jinja template file. e.g. `{{obj.platform.slug}}/{{obj.role.slug}}/main.j2`|

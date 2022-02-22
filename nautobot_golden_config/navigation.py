@@ -90,16 +90,16 @@ if ENABLE_BACKUP:
 
 plugin_items.append(
     PluginMenuItem(
-        link="plugins:nautobot_golden_config:goldenconfigsetting",
+        link="plugins:nautobot_golden_config:goldenconfigsetting_list",
         link_text="Settings",
-        permissions=["nautobot_golden_config.view_compliancereplace"],
+        permissions=["nautobot_golden_config.view_goldenconfigsetting"],
         buttons=(
             PluginMenuButton(
-                link="plugins:nautobot_golden_config:goldenconfigsetting_edit",
-                title="Golden Config Settings",
-                icon_class="mdi mdi-pencil",
-                color=ButtonColorChoices.YELLOW,
-                permissions=["nautobot_golden_config.edit_goldenconfigsetting"],
+                link="plugins:nautobot_golden_config:goldenconfigsetting_add",
+                title="Add",
+                icon_class="mdi mdi-plus-thick",
+                color=ButtonColorChoices.GREEN,
+                permissions=["nautobot_golden_config.change_goldenconfigsetting"],
             ),
         ),
     ),

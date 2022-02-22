@@ -22,18 +22,19 @@ LOGGER = logging.getLogger(__name__)
 name = "Golden Configuration"  # pylint: disable=invalid-name
 
 
-def git_wrapper(obj, repository_record, git_type):
+def get_refreshed_repos(job_obj, repo_type):
     """Small wrapper to pull latest branch, and return a GitRepo plugin specific object."""
-    if not repository_record:
-        obj.log_failure(
-            obj,
-            f"FATAL ERROR: There is not a valid Git repositories for Git type {git_type}, please see pre-requisite instructions to configure an appropriate Git repositories.",
-        )
-        raise  # pylint: disable=misplaced-bare-raise
+    repository_records = set(
+        getattr(gcs, repo_type) for gcs in GoldenConfigSetting.objects.all() if getattr(gcs, repo_type, None)
+    )
 
-    ensure_git_repository(repository_record, obj.job_result)
-    git_repo = GitRepo(repository_record)
-    return git_repo
+    repositories = []
+    for repository_record in repository_records:
+        ensure_git_repository(repository_record, job_obj.job_result)
+        git_repo = GitRepo(repository_record)
+        repositories.append(git_repo)
+
+    return repositories
 
 
 def commit_check(method):
@@ -96,11 +97,8 @@ class ComplianceJob(Job, FormEntry):
         """Run config compliance report script."""
         # pylint: disable=unused-argument
 
-        _ = [
-            git_wrapper(self, repo, "intended")
-            for repo in GoldenConfigSetting.objects.first().intended_repository.all()
-        ]
-        _ = [git_wrapper(self, repo, "backup") for repo in GoldenConfigSetting.objects.first().backup_repository.all()]
+        get_refreshed_repos(job_obj=self, repo_type="intended_repository")
+        get_refreshed_repos(job_obj=self, repo_type="backup_repository")
 
         config_compliance(self, data)
 
@@ -133,16 +131,15 @@ class IntendedJob(Job, FormEntry):
         """Run config generation script."""
         now = datetime.now()
 
-        LOGGER.debug("Pull Jinja template repo.")
-        jinja_repo = git_wrapper(self, GoldenConfigSetting.objects.first().jinja_repository, "jinja")
+        LOGGER.debug("Pull Jinja template repos.")
+        get_refreshed_repos(job_obj=self, repo_type="jinja_repository")
 
-        LOGGER.debug("Pull Intended config repo.")
-        golden_config = GoldenConfigSetting.objects.first()
+        LOGGER.debug("Pull Intended config repos.")
         # Instantiate a GitRepo object for each GitRepository in GoldenConfigSettings.
-        intended_repos = [git_wrapper(self, repo, "intended") for repo in golden_config.intended_repository.all()]
+        intended_repos = get_refreshed_repos(job_obj=self, repo_type="intended_repository")
 
         LOGGER.debug("Run config intended nornir play.")
-        config_intended(self, data, jinja_repo.path)
+        config_intended(self, data)
 
         # Commit / Push each repo after job is completed.
         for intended_repo in intended_repos:
@@ -179,10 +176,10 @@ class BackupJob(Job, FormEntry):
         """Run config backup process."""
         now = datetime.now()
         LOGGER.debug("Pull Backup config repo.")
-        golden_settings = GoldenConfigSetting.objects.first()
 
         # Instantiate a GitRepo object for each GitRepository in GoldenConfigSettings.
-        backup_repos = [git_wrapper(self, repo, "backup") for repo in golden_settings.backup_repository.all()]
+        backup_repos = get_refreshed_repos(job_obj=self, repo_type="backup_repository")
+
         LOGGER.debug("Starting backup jobs to the following repos: %s", backup_repos)
 
         LOGGER.debug("Run nornir play.")

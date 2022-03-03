@@ -396,7 +396,7 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
             if request.GET.get("format") in ["json", "yaml"]:
                 structure_format = request.GET.get("format")
 
-            settings = get_device_to_settings_map(queryset=Device.objects.filter(pk=device.pk))[device]
+            settings = get_device_to_settings_map(queryset=Device.objects.filter(pk=device.pk))[device.id]
             _, output = graph_ql_query(request, device, settings.sot_agg_query)
 
             if structure_format == "yaml":

@@ -397,7 +397,7 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
                 structure_format = request.GET.get("format")
 
             settings = get_device_to_settings_map(queryset=Device.objects.filter(pk=device.pk))[device.id]
-            _, output = graph_ql_query(request, device, settings.sot_agg_query)
+            _, output = graph_ql_query(request, device, settings.sot_agg_query.query)
 
             if structure_format == "yaml":
                 output = yaml.dump(json.loads(json.dumps(output)), default_flow_style=False)

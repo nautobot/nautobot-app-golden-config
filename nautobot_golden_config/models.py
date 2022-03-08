@@ -480,11 +480,12 @@ class GoldenConfigSetting(PrimaryModel):
         null=True,
         help_text="API filter in JSON format matching the list of devices for the scope of devices to be considered.",
     )
-    sot_agg_query = models.TextField(
-        null=False,
+    sot_agg_query = models.ForeignKey(
+        to="extras.GraphQLQuery",
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
-        verbose_name="GraphQL Query",
-        help_text=f"A query starting with `{GRAPHQL_STR_START}` that is used to render the config. Please make sure to alias name, see FAQ for more details.",
+        related_name="sot_aggregation",
     )
 
     def get_absolute_url(self):  # pylint: disable=no-self-use
@@ -511,16 +512,8 @@ class GoldenConfigSetting(PrimaryModel):
         super().clean()
 
         if self.sot_agg_query:
-            try:
-                LOGGER.debug("GraphQL - test query: `%s`", str(self.sot_agg_query))
-                backend = get_default_backend()
-                schema = graphene_settings.SCHEMA
-                backend.document_from_string(schema, str(self.sot_agg_query))
-            except GraphQLSyntaxError as err:
-                raise ValidationError(str(err))  # pylint: disable=raise-missing-from
-
             LOGGER.debug("GraphQL - test  query start with: `%s`", GRAPHQL_STR_START)
-            if not str(self.sot_agg_query).startswith(GRAPHQL_STR_START):
+            if not str(self.sot_agg_query.query).startswith(GRAPHQL_STR_START):
                 raise ValidationError(f"The GraphQL query must start with exactly `{GRAPHQL_STR_START}`")
 
         if self.scope:

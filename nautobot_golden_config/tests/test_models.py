@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.db.utils import IntegrityError
 from django.core.exceptions import ValidationError
 from nautobot.dcim.models import Platform
-from nautobot.extras.models import GitRepository
+from nautobot.extras.models import GitRepository, GraphQLQuery
 from nautobot_golden_config.tests.conftest import create_git_repos
 
 from nautobot_golden_config.models import (
@@ -15,7 +15,7 @@ from nautobot_golden_config.models import (
     ConfigReplace,
 )
 
-from .conftest import create_device, create_feature_rule_json, create_config_compliance
+from .conftest import create_device, create_feature_rule_json, create_config_compliance, create_saved_queries
 
 
 class ConfigComplianceModelTestCase(TestCase):
@@ -89,6 +89,7 @@ class GoldenConfigSettingModelTestCase(TestCase):
     def setUp(self):
         """Get the golden config settings with the only allowed id."""
         create_git_repos()
+        create_saved_queries()
 
         # Since we enforce a singleton pattern on this model, nuke the auto-created object.
         GoldenConfigSetting.objects.all().delete()
@@ -112,12 +113,6 @@ class GoldenConfigSettingModelTestCase(TestCase):
         url_string = self.global_settings.get_absolute_url()
         self.assertEqual(url_string, f"/plugins/golden-config/setting/{self.global_settings.slug}/")
 
-    def test_bad_graphql_query(self):
-        """Invalid graphql query."""
-        self.global_settings.sot_agg_query = 'devices(name:"ams-edge-01")'
-        with self.assertRaises(ValidationError):
-            self.global_settings.clean()
-
     def test_bad_scope(self):
         """Verify that a bad value in the scope returns the expected error."""
         self.global_settings.scope = json_loads('{"has_primary_ip": true, "role": ["Apple"]}')
@@ -130,14 +125,14 @@ class GoldenConfigSettingModelTestCase(TestCase):
 
     def test_good_graphql_query_invalid_starts_with(self):
         """Valid graphql query, however invalid in the usage with golden config plugin."""
-        self.global_settings.sot_agg_query = '{devices(name:"ams-edge-01"){id}}'
+        self.global_settings.sot_agg_query = GraphQLQuery.objects.get(name="GC-SoTAgg-Query-3")
         with self.assertRaises(ValidationError) as error:
             self.global_settings.clean()
         self.assertEqual(error.exception.message, "The GraphQL query must start with exactly `query ($device_id: ID!)`")
 
     def test_good_graphql_query_validate_starts_with(self):
         """Ensure clean() method returns None when valid query is sent through."""
-        self.global_settings.sot_agg_query = "query ($device_id: ID!) {device(id: $device_id) {id}}"
+        self.global_settings.sot_agg_query = GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1")
         self.assertEqual(self.global_settings.clean(), None)
 
     def test_good_scope(self):

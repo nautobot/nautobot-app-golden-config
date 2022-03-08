@@ -6,10 +6,16 @@ from django.urls import reverse
 from rest_framework import status
 
 from nautobot.utilities.testing import APITestCase
-from nautobot.extras.models import GitRepository
+from nautobot.extras.models import GitRepository, GraphQLQuery
 from nautobot_golden_config.models import GoldenConfigSetting
 
-from .conftest import create_device, create_feature_rule_json, create_config_compliance, create_git_repos
+from .conftest import (
+    create_device,
+    create_feature_rule_json,
+    create_config_compliance,
+    create_git_repos,
+    create_saved_queries,
+)
 
 
 User = get_user_model()
@@ -93,6 +99,7 @@ class GoldenConfigSettingsAPITest(APITestCase):
         """Create a superuser and token for API calls."""
         super().setUp()
         create_git_repos()
+        create_saved_queries()
         self.add_permissions("nautobot_golden_config.add_goldenconfigsetting")
         self.add_permissions("nautobot_golden_config.change_goldenconfigsetting")
         self.base_view = reverse("plugins-api:nautobot_golden_config-api:goldenconfigsetting-list")
@@ -110,7 +117,7 @@ class GoldenConfigSettingsAPITest(APITestCase):
             "jinja_path_template": "templates/{{obj.platform.slug}}/{{obj.platform.slug}}_main.j2",
             "backup_test_connectivity": False,
             "scope": {"has_primary_ip": "True"},
-            "sot_agg_query": "query ($device_id: ID!) {\r\n  device(id: $device_id) {\r\n    config_context\r\n    device_role {\r\n      name\r\n      slug\r\n    }\r\n    hostname: name\r\n    platform {\r\n      manufacturer {\r\n        name\r\n      }\r\n      name\r\n      napalm_driver\r\n      slug\r\n    }\r\n    primary_ip4 {\r\n      address\r\n      interface {\r\n        name\r\n      }\r\n      id\r\n    }\r\n    site {\r\n      name\r\n      region {\r\n        name\r\n        slug\r\n        parent {\r\n          name\r\n          slug\r\n        }\r\n      }\r\n      slug\r\n    }\r\n  }\r\n}",
+            "sot_agg_query": str(GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1").id),
             "jinja_repository": str(GitRepository.objects.get(name="test-jinja-repo-1").id),
             "backup_repository": str(GitRepository.objects.get(name="test-backup-repo-1").id),
             "intended_repository": str(GitRepository.objects.get(name="test-intended-repo-1").id),
@@ -140,10 +147,7 @@ class GoldenConfigSettingsAPITest(APITestCase):
         )
         self.assertFalse(response.data["backup_test_connectivity"])
         self.assertEqual(response.data["scope"], {"has_primary_ip": "True"})
-        self.assertEqual(
-            response.data["sot_agg_query"],
-            "query ($device_id: ID!) {\r\n  device(id: $device_id) {\r\n    config_context\r\n    device_role {\r\n      name\r\n      slug\r\n    }\r\n    hostname: name\r\n    platform {\r\n      manufacturer {\r\n        name\r\n      }\r\n      name\r\n      napalm_driver\r\n      slug\r\n    }\r\n    primary_ip4 {\r\n      address\r\n      interface {\r\n        name\r\n      }\r\n      id\r\n    }\r\n    site {\r\n      name\r\n      region {\r\n        name\r\n        slug\r\n        parent {\r\n          name\r\n          slug\r\n        }\r\n      }\r\n      slug\r\n    }\r\n  }\r\n}",
-        )
+        self.assertEqual(response.data["sot_agg_query"], GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1").id)
         self.assertEqual(response.data["jinja_repository"], GitRepository.objects.get(name="test-jinja-repo-1").id)
         self.assertEqual(response.data["backup_repository"], GitRepository.objects.get(name="test-backup-repo-1").id)
         self.assertEqual(
@@ -181,10 +185,7 @@ class GoldenConfigSettingsAPITest(APITestCase):
         )
         self.assertFalse(response.data["backup_test_connectivity"])
         self.assertEqual(response.data["scope"], {"has_primary_ip": "True"})
-        self.assertEqual(
-            response.data["sot_agg_query"],
-            "query ($device_id: ID!) {\r\n  device(id: $device_id) {\r\n    config_context\r\n    device_role {\r\n      name\r\n      slug\r\n    }\r\n    hostname: name\r\n    platform {\r\n      manufacturer {\r\n        name\r\n      }\r\n      name\r\n      napalm_driver\r\n      slug\r\n    }\r\n    primary_ip4 {\r\n      address\r\n      interface {\r\n        name\r\n      }\r\n      id\r\n    }\r\n    site {\r\n      name\r\n      region {\r\n        name\r\n        slug\r\n        parent {\r\n          name\r\n          slug\r\n        }\r\n      }\r\n      slug\r\n    }\r\n  }\r\n}",
-        )
+        self.assertEqual(response.data["sot_agg_query"], GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1").id)
         self.assertEqual(response.data["jinja_repository"], GitRepository.objects.get(name="test-jinja-repo-1").id)
         self.assertEqual(response.data["backup_repository"], GitRepository.objects.get(name="test-backup-repo-1").id)
         self.assertEqual(

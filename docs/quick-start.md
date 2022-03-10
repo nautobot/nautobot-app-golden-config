@@ -80,10 +80,10 @@ Follow the steps below to get up and running for the intended configuration elem
    1. See [Source of Truth Agg Details](./navigating-sot-agg.md)
    2. In the UI `Extensibility -> GraphQL Queries`. Click Add.
    3. Populate the GraphQL data.
-   4. Make sure to follow the format specified in
+   4. Make sure to follow the format specified in the **GraphQL** section in [Source of Truth Agg Details](./navigating-sot-agg.md)
    5. Click Create.
    6. Navigate to `Plugins -> Settings` under the Golden Configuration Section.
-   7. Fill out SoTAgg field. (The dropdown will show the GraphQL query that was just created.).
+   7. Select a SoTAgg Saved Query. (The dropdown will show the GraphQL query that was just created.)
 
 6. Execute the Intended.
 

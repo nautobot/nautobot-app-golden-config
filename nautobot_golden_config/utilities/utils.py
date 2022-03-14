@@ -11,6 +11,7 @@ def get_platform(platform):
         return platform
     return PLUGIN_CFG.get("platform_slug_map").get(platform, platform)
 
+
 def get_secret_value(secret_type, git_obj):
     """Get value for a secret based on secret type and device.
 

@@ -48,6 +48,8 @@ Follow the steps below to get up and running for the intended configuration elem
 
 1. Enable the feature in the `PLUGIN_SETTINGS`. The configuration should have `"enable_intended": True` set in the `PLUGINS_CONFIG` dictionary for `nautobot_golden_config`.
 
+> Notice: If Secret Group is used for the Repositories the secrets type HTTP(S) is required for this plugin.
+
 2. Add any git repositories that will be used to house the intended configurations.
 
    1. In the UI `Extensibility -> Git Repositories`. Click Add.

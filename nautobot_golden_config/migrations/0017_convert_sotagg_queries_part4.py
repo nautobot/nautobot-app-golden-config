@@ -4,7 +4,7 @@ import logging
 from django.core.validators import ValidationError
 from django.db import migrations
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("nautobot")
 
 
 def create_and_link_gql_queries(apps, schema_editor):
@@ -18,30 +18,24 @@ def create_and_link_gql_queries(apps, schema_editor):
 
     for gc_setting_obj in GoldenConfigSetting.objects.all():
         if gc_setting_obj.sot_agg_query_tmp:
-            sotagg_name = gc_setting_obj.name
+            gcsetting_name = gc_setting_obj.name
             sotagg_query = gc_setting_obj.sot_agg_query_tmp
-            gqlsq_name = f"GC {sotagg_name} - {today}"
+            if not sotagg_query.strip().startswith("query ($device_id: ID!)"):
+                msg = f"Could not migrate SoTAgg query for Golden Config Setting '{gcsetting_name}'"
+                logger.warning(msg)
+                continue
 
+            gqlsq_name = f"GC {gcsetting_name} - {today}"
             gqlsq_obj = GraphQLQuery()
             gqlsq_obj.name = gqlsq_name
             gqlsq_obj.query = sotagg_query
             gqlsq_obj.variables = {"device_id": ""}
-            try:
-                gqlsq_obj.clean()
-                gqlsq_obj.save()
-            except ValidationError:
-                msg = f"Could not migrate SoTAgg query for Golden Config Setting {gc_setting_obj.name}"
-                logger.warning(msg)
-                continue
+            gqlsq_obj.save()
 
             gc_setting_obj.sot_agg_query = gqlsq_obj
-            try:
-                gc_setting_obj.clean()
-                gc_setting_obj.save()
-            except ValidationError:
-                msg = f"Could not save migrated Golden Config Setting {gc_setting_obj.name}"
-                logger.warning(msg)
-                continue
+            gc_setting_obj.save()
+            msg = f"Migrated SoTAgg query for Golden Config Setting '{gcsetting_name}'"
+            logger.info(msg)
 
 
 class Migration(migrations.Migration):

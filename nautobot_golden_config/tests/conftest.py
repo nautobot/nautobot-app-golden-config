@@ -1,7 +1,7 @@
 """Params for testing."""
 from nautobot.dcim.models import Device, Site, Manufacturer, DeviceType, DeviceRole, Rack, RackGroup, Region, Platform
 from nautobot.tenancy.models import Tenant, TenantGroup
-from nautobot.extras.models import Status, GitRepository
+from nautobot.extras.models import Status, GitRepository, GraphQLQuery
 from nautobot.extras.datasources.registry import get_datasource_contents
 from django.utils.text import slugify
 
@@ -297,3 +297,103 @@ def create_helper_repo(name="foobaz", provides=None):
         ],
     )
     git_repo.save(trigger_resync=False)
+
+
+def create_saved_queries() -> None:
+    """
+    Create saved GraphQL queries.
+    """
+    variables = {"device_id": ""}
+
+    name = "GC-SoTAgg-Query-1"
+    query = """query ($device_id: ID!) {
+                  device(id: $device_id) {
+                    name
+                    tenant {
+                      name
+                    }
+                  }
+               }
+            """
+    saved_query_1 = GraphQLQuery(
+        name=name,
+        slug=slugify(name),
+        variables=variables,
+        query=query,
+    )
+    saved_query_1.save()
+
+    name = "GC-SoTAgg-Query-2"
+    query = """query ($device_id: ID!) {
+                  device(id: $device_id) {
+                    config_context
+                    name
+                    site {
+                      name
+                    }
+                  }
+               }
+            """
+    saved_query_2 = GraphQLQuery(
+        name=name,
+        slug=slugify(name),
+        variables=variables,
+        query=query,
+    )
+    saved_query_2.save()
+
+    name = "GC-SoTAgg-Query-3"
+    query = '{devices(name:"ams-edge-01"){id}}'
+    saved_query_3 = GraphQLQuery(
+        name=name,
+        slug=slugify(name),
+        query=query,
+    )
+    saved_query_3.save()
+
+    name = "GC-SoTAgg-Query-4"
+    query = """
+        query {
+            compliance_rules {
+                feature {
+                  name
+                }
+                platform {
+                    name
+                }
+                description
+                config_ordered
+                match_config
+            }
+        }
+    """
+    saved_query_4 = GraphQLQuery(
+        name=name,
+        slug=slugify(name),
+        query=query,
+    )
+    saved_query_4.save()
+
+    name = "GC-SoTAgg-Query-5"
+    query = """
+        query {
+            golden_config_settings {
+                name
+                slug
+                weight
+                backup_path_template
+                intended_path_template
+                jinja_path_template
+                backup_test_connectivity
+                sot_agg_query {
+                    name
+                }
+            }
+        }
+    """
+    saved_query_5 = GraphQLQuery(
+        name=name,
+        slug=slugify(name),
+        query=query,
+    )
+    saved_query_5.save()

@@ -65,7 +65,7 @@ def run_template(  # pylint: disable=too-many-arguments
     output_file_location = os.path.join(intended_directory, intended_path_template_obj)
 
     jinja_template = render_jinja_template(obj, logger, settings.jinja_path_template)
-    status, device_data = graph_ql_query(nautobot_job.request, obj, settings.sot_agg_query)
+    status, device_data = graph_ql_query(nautobot_job.request, obj, settings.sot_agg_query.query)
     if status != 200:
         logger.log_failure(obj, f"The GraphQL query return a status of {str(status)} with error of {str(device_data)}")
         raise NornirNautobotException()

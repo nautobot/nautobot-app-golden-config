@@ -1,8 +1,10 @@
 # Quick Start Guides
 
+- [Quick Start Guides](#quick-start-guides)
 - [Backup Configuration](#backup-configuration)
 - [Intended Configuration](#intended-configuration)
 - [Compliance](#compliance)
+- [Load Properties from Git](#load-properties-from-git)
 
 # Backup Configuration
 
@@ -76,7 +78,12 @@ Follow the steps below to get up and running for the intended configuration elem
 5. Determine what data(variables) the Jinja2 templates need from Nautobot.
 
    1. See [Source of Truth Agg Details](./navigating-sot-agg.md)
-   2. Populate the SoTAgg field in the `Plugin -> Settings`.
+   2. In the UI `Extensibility -> GraphQL Queries`. Click Add.
+   3. Populate the GraphQL data.
+   4. Make sure to follow the format specified in the **GraphQL** section in [Source of Truth Agg Details](./navigating-sot-agg.md)
+   5. Click Create.
+   6. Navigate to `Plugins -> Settings` under the Golden Configuration Section.
+   7. Select a SoTAgg Saved Query. (The dropdown will show the GraphQL query that was just created.)
 
 6. Execute the Intended.
 

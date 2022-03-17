@@ -10,7 +10,7 @@ from graphql import get_default_backend
 from graphene_django.settings import graphene_settings
 
 from nautobot.dcim.models import Platform, Site, Device, Manufacturer, DeviceRole, DeviceType
-from nautobot.extras.models import GitRepository
+from nautobot.extras.models import GitRepository, GraphQLQuery
 
 from nautobot_golden_config.models import (
     ComplianceFeature,
@@ -21,6 +21,8 @@ from nautobot_golden_config.models import (
     ConfigRemove,
     ConfigReplace,
 )
+
+from .conftest import create_saved_queries
 
 # Use the proper swappable User model
 User = get_user_model()
@@ -84,6 +86,7 @@ class TestGraphQLQuery(TestCase):  # pylint: disable=too-many-instance-attribute
         """Setup request and create test data to validate GraphQL."""
         super().setUp()
         self.user = User.objects.create(username="Super User", is_active=True, is_superuser=True)
+        create_saved_queries()
 
         # Initialize fake request that will be required to execute GraphQL query
         self.request = RequestFactory().request(SERVER_NAME="WebRequestContext")
@@ -131,7 +134,7 @@ class TestGraphQLQuery(TestCase):  # pylint: disable=too-many-instance-attribute
             jinja_path_template="{{jinja_path}}",
             backup_test_connectivity=True,
             scope={"platform": ["platform1"]},
-            sot_agg_query="{test_model}",
+            sot_agg_query=GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1"),
             backup_repository=GitRepository.objects.get(
                 provided_contents__contains="nautobot_golden_config.backupconfigs"
             ),
@@ -264,21 +267,7 @@ class TestGraphQLQuery(TestCase):  # pylint: disable=too-many-instance-attribute
 
     def test_query_compliance_rule(self):
         """Test Configuration Compliance Details Model."""
-        query = """
-            query {
-                compliance_rules {
-                    feature {
-                      name
-                    }
-                    platform {
-                        name
-                    }
-                    description
-                    config_ordered
-                    match_config
-                }
-            }
-        """
+        query = GraphQLQuery.objects.get(name="GC-SoTAgg-Query-4").query
         response_data = {
             "compliance_rules": [
                 {
@@ -296,20 +285,7 @@ class TestGraphQLQuery(TestCase):  # pylint: disable=too-many-instance-attribute
 
     def test_query_golden_config_setting(self):
         """Test GraphQL Golden Config Settings Model."""
-        query = """
-            query {
-                golden_config_settings {
-                    name
-                    slug
-                    weight
-                    backup_path_template
-                    intended_path_template
-                    jinja_path_template
-                    backup_test_connectivity
-                    sot_agg_query
-                }
-            }
-        """
+        query = GraphQLQuery.objects.get(name="GC-SoTAgg-Query-5").query
         response_data = {
             "golden_config_settings": [
                 {
@@ -320,7 +296,7 @@ class TestGraphQLQuery(TestCase):  # pylint: disable=too-many-instance-attribute
                     "intended_path_template": "test/intended",
                     "jinja_path_template": "{{jinja_path}}",
                     "backup_test_connectivity": True,
-                    "sot_agg_query": "{test_model}",
+                    "sot_agg_query": {"name": "GC-SoTAgg-Query-1"},
                 }
             ]
         }

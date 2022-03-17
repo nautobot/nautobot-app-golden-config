@@ -2,7 +2,7 @@
 
 The Source of Truth Aggregation feature uses several key components:
 
-* A single GraphQL query which aggregates device data.
+* A GraphQL query, per settings instance, which aggregates device data.
 * A facility to modify data with a "transposer" function.
 * Nautobot's config context feature and policy engine.
 * Nautobot's native git platform.
@@ -10,10 +10,11 @@ The Source of Truth Aggregation feature uses several key components:
 ## GraphQL
 
 There is currently support to make an arbitrary GraphQL query that has "device_id" as a variable. It is likely best to use the GraphiQL interface to model
-your data, and then save that query to the configuration. The application configuration ensures the following two components.
+your data, and then save that query as the Saved Query object. The application configuration ensures the following component.
 
-* The query is a valid GraphQL query.
 * The query starts with exactly "query ($device_id: ID!)"". This is to help fail fast and help with overall user experience of clear expectations.
+
+> NOTE: The above validation will not happen if the query in the Saved Query object is modified after it's been assigned to the Settings object. That is, validation of the SoTAgg field only happens when the Settings object is created or updated.
 
 Note that the GraphQL query returned is modified to remove the root key of `device`, so instead of all data being within device, such as
 `{"device": {"site": {"slug": "jcy"}}}`, it is simply `{"site": {"slug": "jcy"}}` as an example.

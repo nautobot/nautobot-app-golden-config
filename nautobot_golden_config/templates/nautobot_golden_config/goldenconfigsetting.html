@@ -190,7 +190,11 @@
                             <tr>
                                 <td>GraphQL Query</td>
                                 <td>
-                                    <pre>{{ object.sot_agg_query|render_json }}</pre>
+                                    {% if object.sot_agg_query %}
+                                        <a href="{{ object.sot_agg_query.get_absolute_url }}">{{ object.sot_agg_query }}</a>
+                                    {% else %}
+                                        <span class="text-muted">None</span>
+                                    {% endif %}
                                 </td>
                             </tr>
 

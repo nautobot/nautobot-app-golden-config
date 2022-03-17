@@ -39,7 +39,7 @@ Each Job attempts to provide sane error handling, and respects the `debug` flag 
 The golden configuration plugin settings can be found by navigating to `Plugins -> Settings` button. Select one of the Settings, under the `Golden Configuration` section.
 Since Golden Configuration Plugin version 1.0, the plugin allows for multiple settings to be configured by the User.
 Each of the settings, has the individual repositories and configuration details, as well as the scope.
-You could use a combination of settings to customize Your Configuration Compliance behaviour.
+You could use a combination of settings to customize Your Configuration Compliance behavior.
 Settings have a name and a weight. The weight parameter indicates the priority of given Settings - the higher the weight, the device matching the scope defined will be assigned to the scope.
 At the same moment, each device will be matched up to maximum of only one `Settings.` In case of the same weight, the sorting is performed by the name.
 
@@ -123,6 +123,8 @@ Parameters:
 |Provides|Valid providers for Git Repo.|
 <br>
 
+> Note: If Secret Group is used for the Repositories the secrets type HTTP(S) is required for this plugin.
+
 ![Example Git Backups](./img/backup-git-step2.png)
 
 Select `backup configs` and click on `Create`.
@@ -151,7 +153,7 @@ The plugin makes use of template content `right_page` in order to use display in
 
 ## API
 
-To run the job programmactially, reference the [nautobot documentation](https://nautobot.readthedocs.io/en/stable/additional-features/jobs/#via-the-api) for the proper API call. Pay special attention to the `class_path` defintion.
+To run the job programmactially, reference the [nautobot documentation](https://nautobot.readthedocs.io/en/stable/additional-features/jobs/#via-the-api) for the proper API call. Pay special attention to the `class_path` definition.
 
 ## Feature Enablement
 

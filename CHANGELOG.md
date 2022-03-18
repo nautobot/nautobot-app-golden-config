@@ -1,15 +1,19 @@
 # Changelog
 
-## v1.0.0-beta - 2021-12
+## v1.0.0-beta - 2022-22
 
 ### Announcements
 
-- Nautobot Golden Config 1.0.X will officially only support versions 1.2.0 - 1.2.99
+- Nautobot Golden Config 1.0.X will officially only support versions 1.2.0 - 1.3.99
 
 ### Added
 
 - #180 Added Renovate for proactive package management
 - #158 Allow for Jinja2 Filters to be used by GoldenConfig templates 
+- #225 Added support for nautobot secrets group on git repos
+- #205 Added support for multiple golden config settings
+- #206 Add Git datasource to load GC properties
+- #218 Added ability to storre SoTAgg field leveraging Nautobot saved GraphQl query
 
 ### Changed
 
@@ -20,6 +24,7 @@
 - #188 Update Markdown dependency
 - #190 Update to Nautobot 1.2.0
 - #190 Remove Nautobot 1.0 specific code
+- #211 Update dependency mariadb to v10.8 
 
 ### Fixed
 

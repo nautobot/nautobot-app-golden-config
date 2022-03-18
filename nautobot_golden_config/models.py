@@ -479,7 +479,7 @@ class GoldenConfigSetting(PrimaryModel):
     )
     sot_agg_query = models.ForeignKey(
         to="extras.GraphQLQuery",
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name="sot_aggregation",

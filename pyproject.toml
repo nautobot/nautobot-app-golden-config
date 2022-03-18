@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nautobot-golden-config"
-version = "1.0.0-beta"
+version = "1.0.0-beta.1"
 description = "A plugin for configuration on nautobot"
 authors = ["Network to Code, LLC", "<opensource@networktocode.com>"]
 

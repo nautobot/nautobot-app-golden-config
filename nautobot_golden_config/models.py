@@ -3,15 +3,11 @@
 import logging
 import json
 from deepdiff import DeepDiff
-
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.serializers.json import DjangoJSONEncoder
 from django.shortcuts import reverse
 from django.utils.module_loading import import_string
-from graphene_django.settings import graphene_settings
-from graphql import get_default_backend
-from graphql.error import GraphQLSyntaxError
 
 from nautobot.dcim.models import Device
 from nautobot.extras.models import ObjectChange
@@ -23,6 +19,7 @@ from netutils.config.compliance import feature_compliance
 from nautobot_golden_config.choices import ComplianceRuleTypeChoice
 from nautobot_golden_config.utilities.utils import get_platform
 from nautobot_golden_config.utilities.constant import PLUGIN_CFG
+
 
 LOGGER = logging.getLogger(__name__)
 GRAPHQL_STR_START = "query ($device_id: ID!)"
@@ -416,6 +413,13 @@ class GoldenConfig(PrimaryModel):
 class GoldenConfigSetting(PrimaryModel):
     """GoldenConfigSetting Model defintion. This provides global configs instead of via configs.py."""
 
+    name = models.CharField(max_length=100, unique=True, blank=False)
+    slug = models.SlugField(max_length=100, unique=True, blank=False)
+    weight = models.PositiveSmallIntegerField(default=1000, blank=False)
+    description = models.CharField(
+        max_length=200,
+        blank=True,
+    )
     backup_repository = models.ForeignKey(
         to="extras.GitRepository",
         on_delete=models.SET_NULL,
@@ -473,46 +477,40 @@ class GoldenConfigSetting(PrimaryModel):
         null=True,
         help_text="API filter in JSON format matching the list of devices for the scope of devices to be considered.",
     )
-    sot_agg_query = models.TextField(
-        null=False,
+    sot_agg_query = models.ForeignKey(
+        to="extras.GraphQLQuery",
+        on_delete=models.PROTECT,
+        null=True,
         blank=True,
-        verbose_name="GraphQL Query",
-        help_text=f"A query starting with `{GRAPHQL_STR_START}` that is used to render the config. Please make sure to alias name, see FAQ for more details.",
+        related_name="sot_aggregation",
     )
 
     def get_absolute_url(self):  # pylint: disable=no-self-use
         """Return absolute URL for instance."""
-        return reverse("plugins:nautobot_golden_config:goldenconfigsetting")
+        return reverse("plugins:nautobot_golden_config:goldenconfigsetting", args=[self.slug])
 
     def __str__(self):
         """Return a simple string if model is called."""
-        return "Golden Config Settings"
+        return f"Golden Config Setting - {self.name}"
 
-    def delete(self, *args, **kwargs):
-        """Enforce the singleton pattern, there is no way to delete the configurations."""
+    class Meta:
+        """Set unique fields for model.
 
-    @classmethod
-    def load(cls):
-        """Enforce the singleton pattern, fail it somehow more than one instance."""
-        if len(cls.objects.all()) != 1:
-            raise ValidationError("There was an error where more than one instance existed for a setting.")
-        return cls.objects.first()
+        Provide ordering used in tables and get_device_to_settings_map.
+        Sorting on weight is performed from the highest weight value to the lowest weight value.
+        This is to ensure only one plugin settings could be applied per single device based on priority and name.
+        """
+
+        verbose_name = "Golden Config Setting"
+        ordering = ["-weight", "name"]  # Refer to weight comment in class docstring.
 
     def clean(self):
-        """Validate there is only one model and if there is a GraphQL query, that it is valid."""
+        """Validate the scope and GraphQL query."""
         super().clean()
 
         if self.sot_agg_query:
-            try:
-                LOGGER.debug("GraphQL - test query: `%s`", str(self.sot_agg_query))
-                backend = get_default_backend()
-                schema = graphene_settings.SCHEMA
-                backend.document_from_string(schema, str(self.sot_agg_query))
-            except GraphQLSyntaxError as err:
-                raise ValidationError(str(err))  # pylint: disable=raise-missing-from
-
             LOGGER.debug("GraphQL - test  query start with: `%s`", GRAPHQL_STR_START)
-            if not str(self.sot_agg_query).startswith(GRAPHQL_STR_START):
+            if not str(self.sot_agg_query.query).startswith(GRAPHQL_STR_START):
                 raise ValidationError(f"The GraphQL query must start with exactly `{GRAPHQL_STR_START}`")
 
         if self.scope:

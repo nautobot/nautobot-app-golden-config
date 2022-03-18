@@ -3,13 +3,13 @@
 
 from jinja2 import exceptions as jinja_errors
 
-from nornir_nautobot.exceptions import NornirNautobotException
-from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.dcim.models import Device
+from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.utilities.utils import render_jinja2
 
-from nautobot_golden_config import models
+from nornir_nautobot.exceptions import NornirNautobotException
 
+from nautobot_golden_config import models
 
 FIELDS = {
     "platform",
@@ -39,13 +39,26 @@ def get_job_filter(data=None):
     elif data.get("device"):
         query.update({"id": data["device"].values_list("pk", flat=True)})
 
-    base_qs = models.GoldenConfigSetting.objects.first().get_queryset()
-    if DeviceFilterSet(data=query, queryset=base_qs).qs.filter(platform__isnull=True).count() > 0:
+    base_qs = Device.objects.none()
+    for obj in models.GoldenConfigSetting.objects.all():
+        base_qs = base_qs | obj.get_queryset().distinct()
+
+    if base_qs.count() == 0:
         raise NornirNautobotException(
-            f"The following device(s) {', '.join([device.name for device in DeviceFilterSet(data=query, queryset=base_qs).qs.filter(platform__isnull=True)])} have no platform defined. Platform is required."
+            "The base queryset didn't find any devices. Please check the Golden Config Setting scope."
+        )
+    devices_filtered = DeviceFilterSet(data=query, queryset=base_qs)
+    if devices_filtered.qs.count() == 0:
+        raise NornirNautobotException(
+            "The provided job parameters didn't match any devices detected by the Golden Config scope. Please check the scope defined within Golden Config Settings or select the correct job parameters to correctly match devices."
+        )
+    devices_no_platform = devices_filtered.qs.filter(platform__isnull=True)
+    if devices_no_platform.count() > 0:
+        raise NornirNautobotException(
+            f"The following device(s) {', '.join([device.name for device in devices_no_platform])} have no platform defined. Platform is required."
         )
 
-    return DeviceFilterSet(data=query, queryset=base_qs).qs
+    return devices_filtered.qs
 
 
 def null_to_empty(val):
@@ -55,7 +68,7 @@ def null_to_empty(val):
     return val
 
 
-def verify_global_settings(logger, global_settings, attrs):
+def verify_settings(logger, global_settings, attrs):
     """Helper function to verify required attributes are set before a Nornir play start."""
     for item in attrs:
         if not getattr(global_settings, item):
@@ -102,3 +115,15 @@ def render_jinja_template(obj, logger, template):
         )
         logger.log_failure(error_msg)
         raise NornirNautobotException from error
+
+
+def get_device_to_settings_map(queryset):
+    """Helper function to map settings to devices."""
+    device_to_settings_map = {}
+    queryset_ids = queryset.values_list("id", flat=True)
+    for golden_config_setting in models.GoldenConfigSetting.objects.all():
+        for device_id in golden_config_setting.get_queryset().values_list("id", flat=True):
+            if (device_id in queryset_ids) and (device_id not in device_to_settings_map):
+                device_to_settings_map[device_id] = golden_config_setting
+
+    return device_to_settings_map

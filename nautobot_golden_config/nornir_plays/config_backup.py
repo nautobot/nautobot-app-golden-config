@@ -16,12 +16,12 @@ from nautobot_plugin_nornir.utils import get_dispatcher
 
 
 from nautobot_golden_config.utilities.helper import (
+    get_device_to_settings_map,
     get_job_filter,
-    verify_global_settings,
+    verify_settings,
     render_jinja_template,
 )
 from nautobot_golden_config.models import (
-    GoldenConfigSetting,
     GoldenConfig,
     ConfigRemove,
     ConfigReplace,
@@ -32,7 +32,7 @@ InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 
 
 def run_backup(  # pylint: disable=too-many-arguments
-    task: Task, logger, global_settings, remove_regex_dict, replace_regex_dict, backup_root_folder
+    task: Task, logger, device_to_settings_map, remove_regex_dict, replace_regex_dict
 ) -> Result:
     r"""Backup configurations to disk.
 
@@ -45,6 +45,7 @@ def run_backup(  # pylint: disable=too-many-arguments
         result (Result): Result from Nornir task
     """
     obj = task.host.data["obj"]
+    settings = device_to_settings_map[obj.id]
 
     backup_obj = GoldenConfig.objects.filter(device=obj).first()
     if not backup_obj:
@@ -54,10 +55,11 @@ def run_backup(  # pylint: disable=too-many-arguments
     backup_obj.backup_last_attempt_date = task.host.defaults.data["now"]
     backup_obj.save()
 
-    backup_path_template_obj = render_jinja_template(obj, logger, global_settings.backup_path_template)
-    backup_file = os.path.join(backup_root_folder, backup_path_template_obj)
+    backup_directory = settings.backup_repository.filesystem_path
+    backup_path_template_obj = render_jinja_template(obj, logger, settings.backup_path_template)
+    backup_file = os.path.join(backup_directory, backup_path_template_obj)
 
-    if global_settings.backup_test_connectivity is not False:
+    if settings.backup_test_connectivity is not False:
         task.run(
             task=dispatcher,
             name="TEST CONNECTIVITY",
@@ -81,17 +83,22 @@ def run_backup(  # pylint: disable=too-many-arguments
     backup_obj.backup_last_success_date = task.host.defaults.data["now"]
     backup_obj.backup_config = running_config
     backup_obj.save()
-    logger.log_success(obj, "Successfully backed up device.")
+
+    logger.log_success(obj, "Successfully extracted running configuration from device.")
 
     return Result(host=task.host, result=running_config)
 
 
-def config_backup(job_result, data, backup_root_folder):
+def config_backup(job_result, data):
     """Nornir play to backup configurations."""
     now = datetime.now()
     logger = NornirLogger(__name__, job_result, data.get("debug"))
-    global_settings = GoldenConfigSetting.objects.first()
-    verify_global_settings(logger, global_settings, ["backup_path_template"])
+
+    qs = get_job_filter(data)
+    device_to_settings_map = get_device_to_settings_map(queryset=qs)
+
+    for settings in set(device_to_settings_map.values()):
+        verify_settings(logger, settings, ["backup_path_template"])
 
     # Build a dictionary, with keys of platform.slug, and the regex line in it for the netutils func.
     remove_regex_dict = {}
@@ -115,7 +122,7 @@ def config_backup(job_result, data, backup_root_folder):
                 "options": {
                     "credentials_class": NORNIR_SETTINGS.get("credentials"),
                     "params": NORNIR_SETTINGS.get("inventory_params"),
-                    "queryset": get_job_filter(data),
+                    "queryset": qs,
                     "defaults": {"now": now},
                 },
             },
@@ -127,10 +134,9 @@ def config_backup(job_result, data, backup_root_folder):
                 task=run_backup,
                 name="BACKUP CONFIG",
                 logger=logger,
-                global_settings=global_settings,
+                device_to_settings_map=device_to_settings_map,
                 remove_regex_dict=remove_regex_dict,
                 replace_regex_dict=replace_regex_dict,
-                backup_root_folder=backup_root_folder,
             )
             logger.log_debug("Completed configuration from devices.")
 
@@ -138,4 +144,4 @@ def config_backup(job_result, data, backup_root_folder):
         logger.log_failure(None, err)
         raise
 
-    logger.log_debug("Completed configuration from devices.")
+    logger.log_debug("Completed configuration backup job for devices.")

@@ -7,6 +7,8 @@ import nautobot.utilities.forms as utilities_forms
 from nautobot.dcim.models import Device, Platform, Region, Site, DeviceRole, DeviceType, Manufacturer, Rack, RackGroup
 from nautobot.extras.models import Status
 from nautobot.tenancy.models import Tenant, TenantGroup
+from nautobot.utilities.forms import SlugField
+
 
 from nautobot_golden_config import models
 
@@ -165,6 +167,8 @@ class ComplianceFeatureForm(
     utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelForm, extras_forms.RelationshipModelForm
 ):
     """Filter Form for ComplianceFeature instances."""
+
+    slug = SlugField()
 
     class Meta:
         """Boilerplate form Meta data for compliance feature."""
@@ -330,11 +334,17 @@ class GoldenConfigSettingFeatureForm(
 ):
     """Filter Form for GoldenConfigSettingFeatureForm instances."""
 
+    slug = SlugField()
+
     class Meta:
         """Filter Form Meta Data for GoldenConfigSettingFeatureForm instances."""
 
         model = models.GoldenConfigSetting
         fields = (
+            "name",
+            "slug",
+            "weight",
+            "description",
             "backup_repository",
             "backup_path_template",
             "intended_repository",

@@ -69,7 +69,7 @@ exclude = '''
     | dist
   )/
   | settings.py     # This is where you define files that should not be stylized by black
-                     # the root of the project
+          # the root of the project
 )
 '''
 [build-system]

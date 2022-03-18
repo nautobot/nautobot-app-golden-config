@@ -1,9 +1,12 @@
 """Unit tests for nautobot_golden_config models."""
 
+from json import loads as json_loads
 from django.test import TestCase
-from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
+from django.core.exceptions import ValidationError
 from nautobot.dcim.models import Platform
+from nautobot.extras.models import GitRepository, GraphQLQuery
+from nautobot_golden_config.tests.conftest import create_git_repos
 
 from nautobot_golden_config.models import (
     ConfigCompliance,
@@ -12,7 +15,7 @@ from nautobot_golden_config.models import (
     ConfigReplace,
 )
 
-from .conftest import create_device, create_feature_rule_json, create_config_compliance
+from .conftest import create_device, create_feature_rule_json, create_config_compliance, create_saved_queries
 
 
 class ConfigComplianceModelTestCase(TestCase):
@@ -85,25 +88,110 @@ class GoldenConfigSettingModelTestCase(TestCase):
 
     def setUp(self):
         """Get the golden config settings with the only allowed id."""
-        self.global_settings = GoldenConfigSetting.objects.first()
+        create_git_repos()
+        create_saved_queries()
 
-    def test_bad_graphql_query(self):
-        """Invalid graphql query."""
-        self.global_settings.sot_agg_query = 'devices(name:"ams-edge-01")'
-        with self.assertRaises(ValidationError):
+        # Since we enforce a singleton pattern on this model, nuke the auto-created object.
+        GoldenConfigSetting.objects.all().delete()
+
+        self.global_settings = GoldenConfigSetting.objects.create(  # pylint: disable=attribute-defined-outside-init
+            name="test",
+            slug="test",
+            weight=1000,
+            description="Test Description.",
+            backup_path_template="{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg",
+            intended_path_template="{{ obj.site.slug }}/{{ obj.name }}.cfg",
+            backup_test_connectivity=True,
+            jinja_repository=GitRepository.objects.get(name="test-jinja-repo-1"),
+            jinja_path_template="{{ obj.platform.slug }}/main.j2",
+            backup_repository=GitRepository.objects.get(name="test-backup-repo-1"),
+            intended_repository=GitRepository.objects.get(name="test-intended-repo-1"),
+        )
+
+    def test_absolute_url_success(self):
+        """Verify that get_absolute_url() returns the expected URL."""
+        url_string = self.global_settings.get_absolute_url()
+        self.assertEqual(url_string, f"/plugins/golden-config/setting/{self.global_settings.slug}/")
+
+    def test_bad_scope(self):
+        """Verify that a bad value in the scope returns the expected error."""
+        self.global_settings.scope = json_loads('{"has_primary_ip": true, "role": ["Apple"]}')
+        with self.assertRaises(ValidationError) as error:
             self.global_settings.clean()
+        self.assertEqual(
+            error.exception.messages[0],
+            "role: Select a valid choice. Apple is not one of the available choices.",
+        )
 
     def test_good_graphql_query_invalid_starts_with(self):
         """Valid graphql query, however invalid in the usage with golden config plugin."""
-        self.global_settings.sot_agg_query = '{devices(name:"ams-edge-01"){id}}'
+        self.global_settings.sot_agg_query = GraphQLQuery.objects.get(name="GC-SoTAgg-Query-3")
         with self.assertRaises(ValidationError) as error:
             self.global_settings.clean()
         self.assertEqual(error.exception.message, "The GraphQL query must start with exactly `query ($device_id: ID!)`")
 
     def test_good_graphql_query_validate_starts_with(self):
         """Ensure clean() method returns None when valid query is sent through."""
-        self.global_settings.sot_agg_query = "query ($device_id: ID!) {device(id: $device_id) {id}}"
+        self.global_settings.sot_agg_query = GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1")
         self.assertEqual(self.global_settings.clean(), None)
+
+    def test_good_scope(self):
+        """Verify that the scope passes validation as expected."""
+        self.global_settings.scope = json_loads('{"has_primary_ip": true}')
+        self.assertEqual(self.global_settings.clean(), None)
+
+
+class GoldenConfigSettingGitModelTestCase(TestCase):
+    """Test GoldenConfigSetting Model."""
+
+    def setUp(self) -> None:
+        """Setup test data."""
+        create_git_repos()
+
+        # Since we enforced a singleton pattern on this model in 0.9 release migrations, nuke any auto-created objects.
+        GoldenConfigSetting.objects.all().delete()
+
+        # Create fresh new object, populate accordingly.
+        self.golden_config = GoldenConfigSetting.objects.create(  # pylint: disable=attribute-defined-outside-init
+            name="test",
+            slug="test",
+            weight=1000,
+            description="Test Description.",
+            backup_path_template="{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg",
+            intended_path_template="{{ obj.site.slug }}/{{ obj.name }}.cfg",
+            backup_test_connectivity=True,
+            jinja_repository=GitRepository.objects.get(name="test-jinja-repo-1"),
+            jinja_path_template="{{ obj.platform.slug }}/main.j2",
+            backup_repository=GitRepository.objects.get(name="test-backup-repo-1"),
+            intended_repository=GitRepository.objects.get(name="test-intended-repo-1"),
+        )
+
+    def test_model_success(self):
+        """Create a new instance of the GoldenConfigSettings model."""
+        self.assertEqual(self.golden_config.name, "test")
+        self.assertEqual(self.golden_config.slug, "test")
+        self.assertEqual(self.golden_config.weight, 1000)
+        self.assertEqual(self.golden_config.description, "Test Description.")
+        self.assertEqual(self.golden_config.backup_path_template, "{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg")
+        self.assertEqual(self.golden_config.intended_path_template, "{{ obj.site.slug }}/{{ obj.name }}.cfg")
+        self.assertTrue(self.golden_config.backup_test_connectivity)
+        self.assertEqual(self.golden_config.jinja_repository, GitRepository.objects.get(name="test-jinja-repo-1"))
+        self.assertEqual(self.golden_config.jinja_path_template, "{{ obj.platform.slug }}/main.j2")
+        self.assertEqual(self.golden_config.backup_repository, GitRepository.objects.get(name="test-backup-repo-1"))
+        self.assertEqual(self.golden_config.intended_repository, GitRepository.objects.get(name="test-intended-repo-1"))
+
+    def test_removing_git_repos(self):
+        """Ensure we can remove the Git Repository obejcts from GoldenConfigSetting."""
+        GitRepository.objects.all().delete()
+        gc = GoldenConfigSetting.objects.all().first()  # pylint: disable=invalid-name
+        self.assertEqual(gc.intended_repository, None)
+        self.assertEqual(gc.backup_repository, None)
+        self.assertEqual(GoldenConfigSetting.objects.all().count(), 1)
+
+    def test_clean_up(self):
+        """Delete all objects created of GoldenConfigSetting type."""
+        GoldenConfigSetting.objects.all().delete()
+        self.assertEqual(GoldenConfigSetting.objects.all().count(), 0)
 
 
 class ConfigRemoveModelTestCase(TestCase):

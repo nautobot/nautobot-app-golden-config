@@ -1,7 +1,8 @@
 """Unit tests for nautobot_golden_config utilities git."""
 
 import unittest
-from unittest.mock import patch, Mock
+from unittest.mock import Mock, patch
+
 from nautobot_golden_config.utilities.git import GitRepo
 
 
@@ -15,6 +16,7 @@ class GitRepoTest(unittest.TestCase):
         mock_obj.remote_url = "/fake/remote"
         mock_obj._token = "fake token"  # pylint: disable=protected-access
         mock_obj.username = None
+        mock_obj.secrets_group = None
         self.mock_obj = mock_obj
 
     @patch("nautobot_golden_config.utilities.git.Repo", autospec=True)

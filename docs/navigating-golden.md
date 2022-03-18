@@ -36,21 +36,28 @@ Each Job attempts to provide sane error handling, and respects the `debug` flag 
 
 ## Application Settings
 
-The golden configuration plugin settings can be found by navigating to `Plugins -> Settings` button. Under the `Golden Configuration` section.
+The golden configuration plugin settings can be found by navigating to `Plugins -> Settings` button. Select one of the Settings, under the `Golden Configuration` section.
+Since Golden Configuration Plugin version 1.0, the plugin allows for multiple settings to be configured by the User.
+Each of the settings, has the individual repositories and configuration details, as well as the scope.
+You could use a combination of settings to customize Your Configuration Compliance behavior.
+Settings have a name and a weight. The weight parameter indicates the priority of given Settings - the higher the weight, the device matching the scope defined will be assigned to the scope.
+At the same moment, each device will be matched up to maximum of only one `Settings.` In case of the same weight, the sorting is performed by the name.
 
 ![Navigate to Settings](./img/navigate-compliance-rules.png)
 
-To configure or update the settings click the pencil icon to edit.
+To create new settings click on the `+Add` button.
+To update existing settings click on one of the `Settings` name.
+
 
 |Setting|Explanation|
 |:--|:--|
-|Backup Repository | This is the Git Repository where your backup configurations will be found. |
-|Backup Path|This represents the Jinja path where the backup files will be found.  The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.site.slug}}/{{obj.name}}.cfg`|
-|Intended Repository | This is the Git Repository where your backup configurations will be found. |
-|Intended Path|The Jinja path representation of where the generated file will be places. e.g. `{{obj.site.slug}}/{{obj.name}}.cfg`|
-|Jinja Repository | This is the Git Repository where your jinja templates will be found. |
-|Jinja Path|The Jinja path representation of where the Jinja temaplte can be found. e.g. `{{obj.platform.slug}}.j2`|
-|Scope| This is where the scope of devices to be considered within Golden Config is defined. |
+|Backup Repositories |The Git Repository where your backup configurations will be found. |
+|Backup Path|A Jinja template which defines the path and name of backup files within the backup repository. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.site.slug}}/{{obj.name}}.cfg`|
+|Intended Repositories |The Git Repository where your intended configuration state files will be found. |
+|Intended Path|A Jinja template which defines the path and name of intended configuration state files within the intended state repository. e.g. `{{obj.site.slug}}/{{obj.name}}.intended_cfg`|
+|Jinja Repository |The Git Repository where your jinja templates will be found. |
+|Jinja Path|A Jinja template which defines the path (within the repository) and name of the Jinja template file. e.g. `{{obj.platform.slug}}/{{obj.role.slug}}/main.j2`|
+|Scope|The scope of devices on which Golden Config's jobs can operate. |
 |GraphQL Query|A query that is evaluated and used to render the config. The query must start with `query ($device_id: ID!)`.|
 
 > Note: Each of these will be further detailed in their respective sections.
@@ -116,6 +123,8 @@ Parameters:
 |Provides|Valid providers for Git Repo.|
 <br>
 
+> Note: If Secret Group is used for the Repositories the secrets type HTTP(S) is required for this plugin.
+
 ![Example Git Backups](./img/backup-git-step2.png)
 
 Select `backup configs` and click on `Create`.
@@ -144,7 +153,7 @@ The plugin makes use of template content `right_page` in order to use display in
 
 ## API
 
-To run the job programmactially, reference the [nautobot documentation](https://nautobot.readthedocs.io/en/stable/additional-features/jobs/#via-the-api) for the proper API call. Pay special attention to the `class_path` defintion.
+To run the job programmactially, reference the [nautobot documentation](https://nautobot.readthedocs.io/en/stable/additional-features/jobs/#via-the-api) for the proper API call. Pay special attention to the `class_path` definition.
 
 ## Feature Enablement
 

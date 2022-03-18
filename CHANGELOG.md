@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.10.0 - 2022-09
+
+### Added
+
+- #163 Create custom compliance feature 
+
 ## v0.9.10 - 2021-11
 
 ### Announcements

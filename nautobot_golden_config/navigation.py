@@ -75,14 +75,14 @@ if ENABLE_BACKUP:
         PluginMenuItem(
             link="plugins:nautobot_golden_config:configreplace_list",
             link_text="Config Replacements",
-            permissions=["nautobot_golden_config.view_compliancereplace"],
+            permissions=["nautobot_golden_config.view_configreplace"],
             buttons=(
                 PluginMenuButton(
                     link="plugins:nautobot_golden_config:configreplace_add",
                     title="Config Replace",
                     icon_class="mdi mdi-plus-thick",
                     color=ButtonColorChoices.GREEN,
-                    permissions=["nautobot_golden_config.add_compliancereplace"],
+                    permissions=["nautobot_golden_config.add_configreplace"],
                 ),
             ),
         )

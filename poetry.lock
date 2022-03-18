@@ -227,7 +227,7 @@ unicode_backport = ["unicodedata2"]
 
 [[package]]
 name = "ciscoconfparse"
-version = "1.6.10"
+version = "1.6.11"
 description = "Parse, Audit, Query, Build, and Modify Cisco IOS-style and JunOS-style configurations"
 category = "main"
 optional = false
@@ -2193,7 +2193,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.6"
-content-hash = "d4ecd6f04c9ca5f7751e58b5045a69ef4fad75e2816ea0230f6b668d667e7af9"
+content-hash = "63c416d9e1d53f0e0f1fa1753f5e72e50b7d4f42b6af4f0ea7a19b5e54e78120"
 
 [metadata.files]
 aiocontextvars = [
@@ -2310,8 +2310,8 @@ charset-normalizer = [
     {file = "charset_normalizer-2.0.9-py3-none-any.whl", hash = "sha256:1eecaa09422db5be9e29d7fc65664e6c33bd06f9ced7838578ba40d58bdf3721"},
 ]
 ciscoconfparse = [
-    {file = "ciscoconfparse-1.6.10-py3-none-any.whl", hash = "sha256:2e7c5a3c9b0b12df9825c850ff78a8a3b7d1adda8c62f3ac1b6aa0746f97ec23"},
-    {file = "ciscoconfparse-1.6.10.tar.gz", hash = "sha256:aa0329e240013b8a72cff8f1c749e565ed00554f64dc0bf20889054aea0ba640"},
+    {file = "ciscoconfparse-1.6.11-py3-none-any.whl", hash = "sha256:d136f1b9f842e666fd2eb33f9452111cf83b330912b7325e0701d1bec3bedee8"},
+    {file = "ciscoconfparse-1.6.11.tar.gz", hash = "sha256:e1cb71784c6f30e6de269025e61ec0c9a6e86291c7423dc3d613da7ba608e4b3"},
 ]
 click = [
     {file = "click-7.1.2-py2.py3-none-any.whl", hash = "sha256:dacca89f4bfadd5de3d7489b7c8a566eee0d3676333fbb50030263894c38c0dc"},

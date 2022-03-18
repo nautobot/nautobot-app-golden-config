@@ -1,13 +1,37 @@
 # Changelog
 
-## v1.0.0 - 2022-XX-XX
+## v1.0.0-beta - 2022-22
+
+### Announcements
+
+- Nautobot Golden Config 1.0.X will officially only support versions 1.2.0 - 1.3.99
 
 ### Added
 
-- Added utility function to determine the local filesystem path which stores the backup and intended repository files for a given device.
+- #180 Added Renovate for proactive package management
+- #158 Allow for Jinja2 Filters to be used by GoldenConfig templates 
+- #225 Added support for nautobot secrets group on git repos
+- #205 Added support for multiple golden config settings
+- #206 Add Git datasource to load GC properties
+- #218 Added ability to storre SoTAgg field leveraging Nautobot saved GraphQl query
 
 ### Changed
-- [#205](https://github.com/nautobot/nautobot-plugin-golden-config/pull/205) - Multiple Golden Config Settings allows for multiple instances of the plugin settings
+
+- #171 Changed the release policy
+- #158 Changed variable job_result to nautobot_job
+- #186 Update mariadb Docker tag to v10.7
+- #187 Update postgres Docker tag to v14
+- #188 Update Markdown dependency
+- #190 Update to Nautobot 1.2.0
+- #190 Remove Nautobot 1.0 specific code
+- #211 Update dependency mariadb to v10.8 
+
+### Fixed
+
+- #176 Fixed Pylint issue
+- #182 Add reference to Nornir plugin for installation
+- #183 Fixed documentation for sot_agg_transposer default
+- #184 Fix markdown links in quick-start
 
 ## v0.9.10 - 2021-11
 

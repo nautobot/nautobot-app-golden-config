@@ -8,7 +8,6 @@ import urllib
 from datetime import datetime, timezone
 
 import matplotlib.pyplot as plt
-import nautobot
 import numpy as np
 import yaml
 from django.contrib import messages
@@ -25,7 +24,6 @@ from nautobot.utilities.error_handlers import handle_protectederror
 from nautobot.utilities.forms import ConfirmationForm
 from nautobot.utilities.utils import csv_format
 from nautobot.utilities.views import ContentTypePermissionRequiredMixin
-from packaging.version import Version
 
 from nautobot_golden_config import filters, forms, models, tables
 from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_COMPLIANCE, PLUGIN_CFG
@@ -36,7 +34,6 @@ LOGGER = logging.getLogger(__name__)
 
 GREEN = "#D5E8D4"
 RED = "#F8CECC"
-NAUTOBOT_VERSION = Version(nautobot.__version__)
 
 #
 # GoldenConfig
@@ -470,11 +467,6 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
         template_name = "nautobot_golden_config/configcompliancedetails.html"
         if request.GET.get("modal") == "true":
             template_name = "nautobot_golden_config/configcompliancedetails_modal.html"
-        include_file = "extras/inc/json_format.html"
-
-        # Nautobot core update template name, for backwards compat
-        if NAUTOBOT_VERSION < Version("1.1"):
-            include_file = "extras/inc/configcontext_format.html"
 
         return render(
             request,
@@ -485,7 +477,7 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
                 "config_type": config_type,
                 "format": structure_format,
                 "device": device,
-                "include_file": include_file,
+                "include_file": "extras/inc/json_format.html",
             },
         )
 

@@ -1,6 +1,6 @@
 """Plugin declaration for nautobot_golden_config."""
 
-__version__ = "1.0.0-beta"
+__version__ = "1.0.0-beta.1"
 
 from nautobot.extras.plugins import PluginConfig
 
@@ -15,6 +15,8 @@ class GoldenConfig(PluginConfig):
     author_email = "opensource@networktocode.com"
     description = "A plugin for managing Golden Configurations."
     base_url = "golden-config"
+    min_version = "1.2.0"
+    max_version = "1.3.99"
     default_settings = {
         "enable_backup": True,
         "enable_compliance": True,

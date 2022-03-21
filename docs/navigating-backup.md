@@ -55,7 +55,7 @@ complicated use cases, please refer to the plugin documentation linked above.
 
 To start a backup job manually:
 
-1. Navigate to the Plugin Home (Plugins->Home), with Home being in the `Golden Configuration` section
+1. Navigate to the Plugin Home (Golden Config->Home), with Home being in the `Golden Configuration` section
 2. Select _Execute_ on the upper right buttons, then _Backup_
 3. Fill in the data that you wish to have backed up
 4. Select _Run Job_
@@ -65,7 +65,7 @@ To start a backup job manually:
 The line removals settings is a series of regex patterns to identify lines that should be removed. This is helpful as there are usually parts of the
 configurations that will change each time. A match simply means to remove.
 
-In order to specify line removals. Navigate to **Plugins -> Config Removals**.  Click the **Add** button and fill out the details.
+In order to specify line removals. Navigate to **Golden Config -> Config Removals**.  Click the **Add** button and fill out the details.
 
 The remove setting is based on `Platform`.  An example is shown below.
 ![Config Removals View](./img/00-navigating-backup.png)

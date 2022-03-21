@@ -33,7 +33,7 @@ class ConfigComplianceFilterForm(utilities_forms.BootstrapMixin, extras_forms.Cu
         "platform",
         "device_status",
         "device_type_id",
-        "device",
+        "device_id",
     ]
 
     q = forms.CharField(required=False, label="Search")
@@ -83,7 +83,7 @@ class ConfigComplianceFilterForm(utilities_forms.BootstrapMixin, extras_forms.Cu
     platform = utilities_forms.DynamicModelMultipleChoiceField(
         queryset=Platform.objects.all(), to_field_name="slug", required=False, null_option="None"
     )
-    device = utilities_forms.DynamicModelMultipleChoiceField(
+    device_id = utilities_forms.DynamicModelMultipleChoiceField(
         queryset=Device.objects.all(), required=False, null_option="None", label="Device"
     )
 

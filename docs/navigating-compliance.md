@@ -33,7 +33,7 @@ In order to generate the intended configurations, a minimum of two repositories 
 
 To start a compliance job manually:
 
-1. Navigate to the Plugin Home (Plugins->Home), with Home being in the `Golden Configuration` section
+1. Navigate to `Golden Config->Home`, with Home being in the `Golden Configuration` section
 2. Select _Execute_ on the upper right buttons, then _Compliance_
 3. Fill in the data that you wish to have a compliance report generated for
 4. Select _Run Job_
@@ -112,7 +112,7 @@ router bgp 65250
 
 Configuration compliance requires the Git Repo settings for `config backups` and `intended configs`--which are covered in their respective sections--regardless if they are actually managed via the plugin or not. The same is true for the `Backup Path` and `Intended Path`.
 
-The Configuration compliance rule map must be created per the operator/user. You can find these configurations via `Plugins -> Compliance Rules`
+The Configuration compliance rule map must be created per the operator/user. You can find these configurations via `Golden Config -> Compliance Rules`
 links, which brings up the specific configurations.
 
 ![Configuration Rule](./img/compliance-rule.png)
@@ -170,8 +170,9 @@ There is a global overview or executive summary that provides a high level snaps
 
 ## Detail Report
 
-This can be accessed via the Plugins drop-down via `Compliance` details button. From there you can filter the devices via the form on the right side, limit the columns with the `Configure` button, or 
-bulk delete with the `Delete` button. Additionally each device is click-able to view the details of that individual device. 
+You can view the details from the `Compliance` details button within the `Configuration Compliance` table. From there you can filter the devices via the
+form on the right side, limit the columns with the `Configure` button, or bulk delete with the `Delete` button. Additionally each device is click-able to view
+the details of that individual device.
 
 You can configure the columns to limit how much is showing on one screen.
 

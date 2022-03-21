@@ -36,7 +36,7 @@ Each Job attempts to provide sane error handling, and respects the `debug` flag 
 
 ## Application Settings
 
-The golden configuration plugin settings can be found by navigating to `Plugins -> Settings` button. Select one of the Settings, under the `Golden Configuration` section.
+The golden configuration plugin settings can be found by navigating to `Golden Config -> Settings` button. Select one of the Settings, under the `Golden Configuration` section.
 Since Golden Configuration Plugin version 1.0, the plugin allows for multiple settings to be configured by the User.
 Each of the settings, has the individual repositories and configuration details, as well as the scope.
 You could use a combination of settings to customize Your Configuration Compliance behavior.

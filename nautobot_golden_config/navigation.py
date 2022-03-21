@@ -1,53 +1,59 @@
 """Add the configuration compliance buttons to the Plugins Navigation."""
 
-from nautobot.extras.plugins import PluginMenuItem, PluginMenuButton
+from nautobot.core.apps import NavMenuGroup, NavMenuItem, NavMenuTab, NavMenuButton
 from nautobot.utilities.choices import ButtonColorChoices
 from nautobot_golden_config.utilities.constant import ENABLE_COMPLIANCE, ENABLE_BACKUP
 
-
-plugin_items = [
-    PluginMenuItem(
+items = [
+    NavMenuItem(
         link="plugins:nautobot_golden_config:goldenconfig_list",
-        link_text="Home",
+        name="Home",
         permissions=["nautobot_golden_config.view_goldenconfig"],
     )
 ]
 
 if ENABLE_COMPLIANCE:
-    plugin_items.append(
-        PluginMenuItem(
+    items.append(
+        NavMenuItem(
             link="plugins:nautobot_golden_config:configcompliance_list",
-            link_text="Configuration Compliance",
+            name="Configuration Compliance",
             permissions=["nautobot_golden_config.view_configcompliance"],
         )
     )
-    plugin_items.append(
-        PluginMenuItem(
+    items.append(
+        NavMenuItem(
+            link="plugins:nautobot_golden_config:configcompliance_report",
+            name="Compliance Report",
+            permissions=["nautobot_golden_config.view_configcompliance"],
+        )
+    )
+    items.append(
+        NavMenuItem(
             link="plugins:nautobot_golden_config:compliancerule_list",
-            link_text="Compliance Rules",
+            name="Compliance Rules",
             permissions=["nautobot_golden_config.view_compliancerule"],
             buttons=(
-                PluginMenuButton(
+                NavMenuButton(
                     link="plugins:nautobot_golden_config:compliancerule_add",
                     title="Compliance Rules",
                     icon_class="mdi mdi-plus-thick",
-                    color=ButtonColorChoices.GREEN,
+                    button_class=ButtonColorChoices.GREEN,
                     permissions=["nautobot_golden_config.add_compliancerule"],
                 ),
             ),
         )
     )
-    plugin_items.append(
-        PluginMenuItem(
+    items.append(
+        NavMenuItem(
             link="plugins:nautobot_golden_config:compliancefeature_list",
-            link_text="Compliance Features",
+            name="Compliance Features",
             permissions=["nautobot_golden_config.view_compliancefeature"],
             buttons=(
-                PluginMenuButton(
+                NavMenuButton(
                     link="plugins:nautobot_golden_config:compliancefeature_add",
                     title="Compliance Features",
                     icon_class="mdi mdi-plus-thick",
-                    color=ButtonColorChoices.GREEN,
+                    button_class=ButtonColorChoices.GREEN,
                     permissions=["nautobot_golden_config.add_compliancefeature"],
                 ),
             ),
@@ -55,54 +61,62 @@ if ENABLE_COMPLIANCE:
     )
 
 if ENABLE_BACKUP:
-    plugin_items.append(
-        PluginMenuItem(
+    items.append(
+        NavMenuItem(
             link="plugins:nautobot_golden_config:configremove_list",
-            link_text="Config Removals",
+            name="Config Removals",
             permissions=["nautobot_golden_config.view_configremove"],
             buttons=(
-                PluginMenuButton(
+                NavMenuButton(
                     link="plugins:nautobot_golden_config:configremove_add",
                     title="Config Remove",
                     icon_class="mdi mdi-plus-thick",
-                    color=ButtonColorChoices.GREEN,
+                    button_class=ButtonColorChoices.GREEN,
                     permissions=["nautobot_golden_config.add_configremove"],
                 ),
             ),
         )
     )
-    plugin_items.append(
-        PluginMenuItem(
+    items.append(
+        NavMenuItem(
             link="plugins:nautobot_golden_config:configreplace_list",
-            link_text="Config Replacements",
+            name="Config Replacements",
             permissions=["nautobot_golden_config.view_configreplace"],
             buttons=(
-                PluginMenuButton(
+                NavMenuButton(
                     link="plugins:nautobot_golden_config:configreplace_add",
                     title="Config Replace",
                     icon_class="mdi mdi-plus-thick",
-                    color=ButtonColorChoices.GREEN,
+                    button_class=ButtonColorChoices.GREEN,
                     permissions=["nautobot_golden_config.add_configreplace"],
                 ),
             ),
         )
     )
 
-plugin_items.append(
-    PluginMenuItem(
+
+items.append(
+    NavMenuItem(
         link="plugins:nautobot_golden_config:goldenconfigsetting_list",
-        link_text="Settings",
+        name="Settings",
         permissions=["nautobot_golden_config.view_goldenconfigsetting"],
         buttons=(
-            PluginMenuButton(
+            NavMenuButton(
                 link="plugins:nautobot_golden_config:goldenconfigsetting_add",
                 title="Add",
                 icon_class="mdi mdi-plus-thick",
-                color=ButtonColorChoices.GREEN,
+                button_class=ButtonColorChoices.GREEN,
                 permissions=["nautobot_golden_config.change_goldenconfigsetting"],
             ),
         ),
     ),
 )
 
-menu_items = tuple(plugin_items)
+
+menu_items = (
+    NavMenuTab(
+        name="Golden Config",
+        weight=1000,
+        groups=(NavMenuGroup(name="Golden Config", weight=100, items=tuple(items)),),
+    ),
+)

@@ -21,7 +21,7 @@ Follow the steps below to get up and running for the configuration backup elemen
 
 3. Next, make sure to create new or update existing Plugins **Settings** with the backup details.
 
-   1. Navigate to `Plugins -> Settings` under the Golden Configuration Section.
+   1. Navigate to `Golden Config -> Settings` under the Golden Configuration Section.
    2. Create new or select one of the existing `Settings` objects
    3. Fill out the Backup Repository. (The dropdown will show the repository that was just created.)
    4. Fill out Backup Path Template. Typically `{{obj.site.slug}}/{{obj.name}}.cfg`, see [Setting Details](./navigating-golden.md#application-settings)
@@ -35,7 +35,7 @@ Follow the steps below to get up and running for the configuration backup elemen
 
 5. Execute the Backup.
 
-   1. Navigate to `Plugins -> Home` under the Golden Configuration Section.
+   1. Navigate to `Golden Config -> Home` under the Golden Configuration Section.
    2. Click on the `Execute` button and select `Backup`.
    3. Select what to run the backup on.
    4. Run the Job by clicking "Run Job" button.
@@ -68,7 +68,7 @@ Follow the steps below to get up and running for the intended configuration elem
 
 4. Next, make sure to create new or update existing Plugins **Settings** with the intended and jinja2 template details.
 
-   1. Navigate to `Plugins -> Settings` under the Golden Configuration Section.
+   1. Navigate to `Golden Config -> Settings` under the Golden Configuration Section.
    2. Create new or select one of the existing `Settings` objects
    3. Fill out the Intended Repository. (The dropdown will show the repository that was just created.)
    4. Fill out Intended Path Template. Typically `{{obj.site.slug}}/{{obj.name}}.cfg`, see [Setting Details](./navigating-golden.md#application-settings)
@@ -82,12 +82,12 @@ Follow the steps below to get up and running for the intended configuration elem
    3. Populate the GraphQL data.
    4. Make sure to follow the format specified in the **GraphQL** section in [Source of Truth Agg Details](./navigating-sot-agg.md)
    5. Click Create.
-   6. Navigate to `Plugins -> Settings` under the Golden Configuration Section.
+   6. Navigate to `Golden Config -> Settings` under the Golden Configuration Section.
    7. Select a SoTAgg Saved Query. (The dropdown will show the GraphQL query that was just created.)
 
 6. Execute the Intended.
 
-   1. Navigate to `Plugins -> Home`.
+   1. Navigate to `Golden Config -> Home`.
    2. Click on the `Execute` button and select `Intended`.
    3. Select what to run the intended generation on.
    4. Run the Job.
@@ -103,17 +103,17 @@ Compliance requires Backups and Intended Configurations in order to be executed.
 3. Follow the steps in [Intended Configuration](#intended-configuration).
 4. Create a Compliance Feature.
 
-   1. Navigate to `Plugins -> Compliance Feature`.
+   1. Navigate to `Golden Config -> Compliance Feature`.
    2. Click Add and give the feature a name. Typically this is based on the configuration snippet or section. E.g. "aaa".
 
 5. Create a Compliance Rule.
 
-   1. Navigate to `Plugins -> Compliance Rules`.
+   1. Navigate to `Golden Config -> Compliance Rules`.
    2. Click Add and populate the fields, make sure the rule is linked to the feature created previously. See [Configuration Compliance Settings](./navigating-compliance.md#configuration-compliance-settings) for details.
 
 6. Execute Compliance Check.
 
-   1. Navigate to `Plugins -> Configuration Compliance`.
+   1. Navigate to `Golden Config -> Configuration Compliance`.
    2. Click on the `Execute` button and select `Compliance`.
    3. Select what to run the compliance on.
    4. Run the Job.

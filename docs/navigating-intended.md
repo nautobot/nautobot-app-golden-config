@@ -83,7 +83,7 @@ from custom_jinja_filters import config_templates
 
 To start a intended configuration job manually:
 
-1. Navigate to the Plugin Home (Plugins->Home), with Home being in the `Golden Configuration` section
+1. Navigate to `Golden Config -> Home`, with Home being in the `Golden Configuration` section
 2. Select _Execute_ on the upper right buttons, then _Intended_
 3. Fill in the data that you wish to have configurations generated for up
 4. Select _Run Job_

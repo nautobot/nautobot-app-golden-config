@@ -1,0 +1,42 @@
+{% extends 'generic/object_edit.html' %}
+{% load form_helpers %}
+
+{% block form %}
+    <div class="panel panel-default">
+        <div class="panel-heading"><strong>GoldenConfigSetting</strong></div>
+        <div class="panel-body">
+            {% render_field form.name %}
+            {% render_field form.slug %}
+            {% render_field form.weight %}
+            {% render_field form.description %}
+            {% render_field form.scope %}
+        </div>
+    </div>
+
+    <div class="panel panel-default">
+        <div class="panel-heading"><strong>Backup Configuration</strong></div>
+        <div class="panel-body">
+            {% render_field form.backup_repository %}
+            {% render_field form.backup_path_template %}
+            {% render_field form.backup_test_connectivity %}
+        </div>
+    </div>
+
+    <div class="panel panel-default">
+        <div class="panel-heading"><strong>Intended Configuration</strong></div>
+        <div class="panel-body">
+            {% render_field form.intended_repository %}
+            {% render_field form.intended_path_template %}
+        </div>
+    </div>
+
+    <div class="panel panel-default">
+        <div class="panel-heading"><strong>Templates Configuration</strong></div>
+        <div class="panel-body">
+            {% render_field form.jinja_repository %}
+            {% render_field form.jinja_path_template %}
+            {% render_field form.sot_agg_query %}
+        </div>
+    </div>
+
+{% endblock %}

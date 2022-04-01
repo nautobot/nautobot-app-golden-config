@@ -1,0 +1,6 @@
+{% if url_name %}
+<a href="{% url url_name slug=item.slug %}">
+    {% endif %}<span class="label label-default">
+        {{ item.name }}</span>
+    {% if url_name %}</a>
+{% endif %}

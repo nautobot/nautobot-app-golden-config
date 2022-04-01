@@ -10,7 +10,7 @@ from graphql import get_default_backend
 from graphene_django.settings import graphene_settings
 
 from nautobot.dcim.models import Platform, Site, Device, Manufacturer, DeviceRole, DeviceType
-from nautobot.extras.models import GitRepository
+from nautobot.extras.models import GitRepository, GraphQLQuery
 
 from nautobot_golden_config.models import (
     ComplianceFeature,
@@ -21,6 +21,8 @@ from nautobot_golden_config.models import (
     ConfigRemove,
     ConfigReplace,
 )
+
+from .conftest import create_saved_queries
 
 # Use the proper swappable User model
 User = get_user_model()
@@ -84,6 +86,7 @@ class TestGraphQLQuery(TestCase):  # pylint: disable=too-many-instance-attribute
         """Setup request and create test data to validate GraphQL."""
         super().setUp()
         self.user = User.objects.create(username="Super User", is_active=True, is_superuser=True)
+        create_saved_queries()
 
         # Initialize fake request that will be required to execute GraphQL query
         self.request = RequestFactory().request(SERVER_NAME="WebRequestContext")
@@ -118,22 +121,29 @@ class TestGraphQLQuery(TestCase):  # pylint: disable=too-many-instance-attribute
             git_obj = GitRepository.objects.create(**item)
             git_obj.save()
 
-        GoldenConfigSetting.objects.update(
-            backup_repository=GitRepository.objects.get(
-                provided_contents__contains="nautobot_golden_config.backupconfigs"
-            ),
+        # Since we enforce a singleton pattern on this model, nuke the auto-created object.
+        GoldenConfigSetting.objects.all().delete()
+
+        GoldenConfigSetting.objects.create(
+            name="test_name",
+            slug="test_slug",
+            weight=1000,
+            description="Test Description.",
             backup_path_template="test/backup",
-            intended_repository=GitRepository.objects.get(
-                provided_contents__contains="nautobot_golden_config.intendedconfigs"
-            ),
             intended_path_template="test/intended",
-            jinja_repository=GitRepository.objects.get(
-                provided_contents__contains="nautobot_golden_config.jinjatemplate"
-            ),
             jinja_path_template="{{jinja_path}}",
             backup_test_connectivity=True,
             scope={"platform": ["platform1"]},
-            sot_agg_query="{test_model}",
+            sot_agg_query=GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1"),
+            backup_repository=GitRepository.objects.get(
+                provided_contents__contains="nautobot_golden_config.backupconfigs"
+            ),
+            intended_repository=GitRepository.objects.get(
+                provided_contents__contains="nautobot_golden_config.intendedconfigs"
+            ),
+            jinja_repository=GitRepository.objects.get(
+                provided_contents__contains="nautobot_golden_config.jinjatemplate"
+            ),
         )
 
         self.feature1 = ComplianceFeature.objects.create(
@@ -218,7 +228,7 @@ class TestGraphQLQuery(TestCase):  # pylint: disable=too-many-instance-attribute
                     "rule": {"feature": {"name": "aaa"}},
                     "intended": "aaa test",
                     "missing": "",
-                    "ordered": False,
+                    "ordered": True,
                 }
             ]
         }
@@ -257,21 +267,7 @@ class TestGraphQLQuery(TestCase):  # pylint: disable=too-many-instance-attribute
 
     def test_query_compliance_rule(self):
         """Test Configuration Compliance Details Model."""
-        query = """
-            query {
-                compliance_rules {
-                    feature {
-                      name
-                    }
-                    platform {
-                        name
-                    }
-                    description
-                    config_ordered
-                    match_config
-                }
-            }
-        """
+        query = GraphQLQuery.objects.get(name="GC-SoTAgg-Query-4").query
         response_data = {
             "compliance_rules": [
                 {
@@ -289,25 +285,18 @@ class TestGraphQLQuery(TestCase):  # pylint: disable=too-many-instance-attribute
 
     def test_query_golden_config_setting(self):
         """Test GraphQL Golden Config Settings Model."""
-        query = """
-            query {
-                golden_config_settings {
-                    backup_path_template
-                    intended_path_template
-                    jinja_path_template
-                    backup_test_connectivity
-                    sot_agg_query
-                }
-            }
-        """
+        query = GraphQLQuery.objects.get(name="GC-SoTAgg-Query-5").query
         response_data = {
             "golden_config_settings": [
                 {
+                    "name": "test_name",
+                    "slug": "test_slug",
+                    "weight": 1000,
                     "backup_path_template": "test/backup",
                     "intended_path_template": "test/intended",
                     "jinja_path_template": "{{jinja_path}}",
                     "backup_test_connectivity": True,
-                    "sot_agg_query": "{test_model}",
+                    "sot_agg_query": {"name": "GC-SoTAgg-Query-1"},
                 }
             ]
         }

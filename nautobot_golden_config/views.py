@@ -1,4 +1,4 @@
-"""Django views for Nautobot Golden Configuration."""
+"""Django views for Nautobot Golden Configuration."""  # pylint: disable=too-many-lines
 import base64
 import difflib
 import io
@@ -8,7 +8,6 @@ import urllib
 from datetime import datetime, timezone
 
 import matplotlib.pyplot as plt
-import nautobot
 import numpy as np
 import yaml
 from django.contrib import messages
@@ -25,17 +24,16 @@ from nautobot.utilities.error_handlers import handle_protectederror
 from nautobot.utilities.forms import ConfirmationForm
 from nautobot.utilities.utils import csv_format
 from nautobot.utilities.views import ContentTypePermissionRequiredMixin
-from packaging.version import Version
 
 from nautobot_golden_config import filters, forms, models, tables
 from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_COMPLIANCE, PLUGIN_CFG
 from nautobot_golden_config.utilities.graphql import graph_ql_query
+from nautobot_golden_config.utilities.helper import get_device_to_settings_map
 
 LOGGER = logging.getLogger(__name__)
 
 GREEN = "#D5E8D4"
 RED = "#F8CECC"
-NAUTOBOT_VERSION = Version(nautobot.__version__)
 
 #
 # GoldenConfig
@@ -57,7 +55,11 @@ class GoldenConfigListView(generic.ObjectListView):
 
     def alter_queryset(self, request):
         """Build actual runtime queryset as the build time queryset provides no information."""
-        return self.queryset.filter(id__in=models.GoldenConfigSetting.objects.first().get_queryset())
+        qs = Device.objects.none()
+        for obj in models.GoldenConfigSetting.objects.all():
+            qs = qs | obj.get_queryset().distinct()
+
+        return self.queryset.filter(id__in=qs)
 
     def queryset_to_csv(self):
         """Override nautobot default to account for using Device model for GoldenConfig data."""
@@ -188,7 +190,7 @@ class ConfigComplianceListView(generic.ObjectListView):
         return pivot(
             self.queryset,
             ["device", "device__name"],
-            "rule__feature__slug",
+            "rule__feature__name",
             "compliance_int",
             aggregation=Max,
         )
@@ -391,8 +393,8 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
             if request.GET.get("format") in ["json", "yaml"]:
                 structure_format = request.GET.get("format")
 
-            global_settings = models.GoldenConfigSetting.objects.first()
-            _, output = graph_ql_query(request, device, global_settings.sot_agg_query)
+            settings = get_device_to_settings_map(queryset=Device.objects.filter(pk=device.pk))[device.id]
+            _, output = graph_ql_query(request, device, settings.sot_agg_query.query)
 
             if structure_format == "yaml":
                 output = yaml.dump(json.loads(json.dumps(output)), default_flow_style=False)
@@ -465,11 +467,6 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
         template_name = "nautobot_golden_config/configcompliancedetails.html"
         if request.GET.get("modal") == "true":
             template_name = "nautobot_golden_config/configcompliancedetails_modal.html"
-        include_file = "extras/inc/json_format.html"
-
-        # Nautobot core update template name, for backwards compat
-        if NAUTOBOT_VERSION < Version("1.1"):
-            include_file = "extras/inc/configcontext_format.html"
 
         return render(
             request,
@@ -480,7 +477,7 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
                 "config_type": config_type,
                 "format": structure_format,
                 "device": device,
-                "include_file": include_file,
+                "include_file": "extras/inc/json_format.html",
             },
         )
 
@@ -824,41 +821,55 @@ class ComplianceRuleBulkEditView(generic.BulkEditView):
 #
 # GoldenConfigSetting
 #
-
-
 class GoldenConfigSettingView(generic.ObjectView):
-    """View for the only GoldenConfigSetting instance."""
+    """View for single GoldenConfigSetting instance."""
 
     queryset = models.GoldenConfigSetting.objects.all()
 
-    def get(self, request, *args, **kwargs):
-        """Override the get parameter to get the first instance to enforce singleton pattern."""
-        instance = self.queryset.first()
+    # def get_extra_context(self, request, instance):
+    #     """Add extra data to detail view for Nautobot."""
+    #     return {}
 
-        return render(
-            request,
-            self.get_template_name(),
-            {
-                "object": instance,
-                **self.get_extra_context(request, instance),
-            },
-        )
 
-    def get_extra_context(self, request, instance):
-        """Add extra data to detail view for Nautobot."""
-        return {}
+class GoldenConfigSettingCreateView(generic.ObjectEditView):
+    """Create view."""
+
+    model = models.GoldenConfigSetting
+    queryset = models.GoldenConfigSetting.objects.all()
+    model_form = forms.GoldenConfigSettingFeatureForm
+    template_name = "nautobot_golden_config/goldenconfigsetting_edit.html"
+
+
+class GoldenConfigSettingDeleteView(generic.ObjectDeleteView):
+    """Delete view."""
+
+    model = models.GoldenConfigSetting
+    queryset = models.GoldenConfigSetting.objects.all()
+
+
+class GoldenConfigSettingBulkDeleteView(generic.BulkDeleteView):
+    """Delete view."""
+
+    queryset = models.GoldenConfigSetting.objects.all()
+    table = tables.GoldenConfigSettingTable
 
 
 class GoldenConfigSettingEditView(generic.ObjectEditView):
-    """View for editing the Global configurations."""
+    """Edit view."""
 
+    model = models.GoldenConfigSetting
     queryset = models.GoldenConfigSetting.objects.all()
     model_form = forms.GoldenConfigSettingFeatureForm
-    default_return_url = "plugins:nautobot_golden_config:goldenconfigsetting"
+    template_name = "nautobot_golden_config/goldenconfigsetting_edit.html"
 
-    def get_object(self, kwargs):
-        """Override method to get first object to enforce the singleton pattern."""
-        return self.queryset.first()
+
+class GoldenConfigSettingListView(generic.ObjectListView):
+    """List view."""
+
+    queryset = models.GoldenConfigSetting.objects.all()
+    table = tables.GoldenConfigSettingTable
+    # TODO: Get import working
+    action_buttons = ("add", "export")
 
 
 #

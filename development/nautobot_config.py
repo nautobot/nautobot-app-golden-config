@@ -141,6 +141,17 @@ PLUGINS_CONFIG = {
                 },
             },
         },
+        # dispatcher_mapping may be necessary if you get an error `Cannot import "<foo>". Is the library installed?`
+        # when you run a backup job, and <foo> is the name of the platform applied to the device.
+        # to the Nornir driver names ("arista_eos", "cisco_ios", etc.).
+        # "dispatcher_mapping": {
+        #     "eos": "nornir_nautobot.plugins.tasks.dispatcher.arista_eos.NautobotNornirDriver",
+        #     "arbitrary_platform_name": "nornir_nautobot.plugins.tasks.dispatcher.arista_eos.NautobotNornirDriver",
+        #     "ios": "nornir_nautobot.plugins.tasks.dispatcher.cisco_ios.NautobotNornirDriver",
+        #     "iosxe": "nornir_nautobot.plugins.tasks.dispatcher.cisco_ios.NautobotNornirDriver",
+        #     "junos": "nornir_nautobot.plugins.tasks.dispatcher.juniper_junos.NautobotNornirDriver",
+        #     "nxos": "nornir_nautobot.plugins.tasks.dispatcher.cisco_nxos.NautobotNornirDriver",
+        # },
     },
     "nautobot_golden_config": {
         "per_feature_bar_width": float(os.environ.get("PER_FEATURE_BAR_WIDTH", 0.15)),
@@ -151,5 +162,34 @@ PLUGINS_CONFIG = {
         "enable_intended": is_truthy(os.environ.get("ENABLE_INTENDED", True)),
         "enable_sotagg": is_truthy(os.environ.get("ENABLE_SOTAGG", True)),
         "sot_agg_transposer": os.environ.get("SOT_AGG_TRANSPOSER"),
+        # The platform_slug_map maps an arbitrary platform slug to its corresponding parser.
+        # Use this if the platform slug names in your Nautobot instance don't correspond exactly
+        # to the Nornir driver names ("arista_eos", "cisco_ios", etc.).
+        # Each key should == the slug of the Nautobot platform object.
+        # "platform_slug_map": {
+        #     "eos": "arista_eos",
+        #     "ios": "cisco_ios",
+        #     "iosxe": "cisco_ios",
+        #     "junos": "juniper_junos",
+        #     "nxos": "cisco_nxos",
+        # },
+        # "get_custom_compliance": "my.custom_compliance.func",
     },
 }
+
+# Modify django_jinja Environment for test cases
+django_jinja_config = None
+for template in TEMPLATES:
+    if template["BACKEND"].startswith("django_jinja"):
+        django_jinja_config = template
+
+if django_jinja_config is not None:
+    jinja_options = django_jinja_config.get("OPTIONS")
+    if not jinja_options:
+        jinja_options = {}
+        django_jinja_config["OPTIONS"] = jinja_options
+    # Default behavior ignores UndefinedErrors
+    jinja_options["undefined"] = "jinja2.StrictUndefined"
+
+# Import filter function to have it register filter with django_jinja
+from nautobot_golden_config.tests import jinja_filters  # noqa: E402

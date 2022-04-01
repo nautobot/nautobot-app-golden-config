@@ -7,16 +7,6 @@
 <div class="pull-right noprint">
 {% block buttons %}
 <div class="btn-group">
-    <button type="button" class="btn btn-warning dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <span class="mdi mdi-book-open-variant" aria-hidden="true"></span> Report <span class="caret"></span>
-    </button>
-    <ul class="dropdown-menu">
-        {% if compliance %}
-            <li><a href="{% url 'plugins:nautobot_golden_config:configcompliance_report' %}">Compliance</a></li>
-        {% endif %}
-    </ul>
-</div>
-<div class="btn-group">
     <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         <span class="mdi mdi-plus-thick" aria-hidden="true"></span> Execute <span class="caret"></span>
     </button>

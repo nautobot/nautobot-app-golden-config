@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nautobot-golden-config"
-version = "0.9.10"
+version = "1.0.0"
 description = "A plugin for configuration on nautobot"
 authors = ["Network to Code, LLC", "<opensource@networktocode.com>"]
 
@@ -35,6 +35,7 @@ deepdiff = "^5.5.0"
 django-pivot = "^1.8.1"
 matplotlib = "^3.3.2"
 nautobot-plugin-nornir = ">=0.9.7"
+nautobot = ">=1.2.0"
 
 [tool.poetry.dev-dependencies]
 bandit = "*"
@@ -46,7 +47,7 @@ pydocstyle = "*"
 pylint = "*"
 pylint-django = "*"
 yamllint = "*"
-Markdown = "3.3.4" # temp pin for https://github.com/Python-Markdown/markdown/issues/1195
+Markdown = {version="*", python="^3.6.2"}
 
 
 [tool.black]
@@ -68,12 +69,12 @@ exclude = '''
     | dist
   )/
   | settings.py     # This is where you define files that should not be stylized by black
-                     # the root of the project
+          # the root of the project
 )
 '''
 [build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+requires = ["poetry_core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
 
 [tool.pylint.master]
 # Include the pylint_django plugin to avoid spurious warnings about Django patterns
@@ -84,6 +85,9 @@ persistent="no"
 
 # Don't raise alarms if args/kwargs has an issue, as may be required, just as a decorator
 ignored-argument-names="args|kwargs"
+
+# ignore files that should not be linted
+ignore=["jinja_filters.py"]
 
 [tool.pylint.basic]
 # No docstrings required for private methods (Pylint default), or for test_ functions, or for inner Meta classes.

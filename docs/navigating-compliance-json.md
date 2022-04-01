@@ -54,7 +54,7 @@ Once the API call is made the response data provides a quick snapshot.
 
 You can also see the compliance data in the UI once it is created via API.
 
-In the navigation menu: `Plugins -> Configuration Compliance`.
+In the navigation menu: `Golden Config -> Configuration Compliance`.
 
 ![Example Compliance Run in UI](./img/03-navigating-compliance-json.png)
 

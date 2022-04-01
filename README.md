@@ -32,7 +32,10 @@ but not want to use other features, which is perfectly fine to do so.
 - [Navigating SoTAgg](./docs/navigating-sot-agg.md)
 - [Navigating Compliance](./docs/navigating-compliance.md)
 - [Navigating JSON Compliance](./docs/navigating-compliance-json.md)
+- [Navigating Custom Compliance](./docs/navigating-compliance-custom.md)
 - [FAQ](./docs/FAQ.md)
+- [Upgrade Notes](./docs/upgrade.md)
+
 
 ## Screenshots
 
@@ -67,10 +70,12 @@ The project is following Network to Code software development guidelines and are
 
 The branching policy includes the following tenets:
 
-- The develop branch is the branch of the next major or minor version planned.
-- The `stable-<major>.<minor>` branch is the branch of the latest version within that major/minor version
-- PRs intended to add new features should be sourced from the develop branch
-- PRs intended to address bug fixes and security patches should be sourced from `stable-<major>.<minor>`
+- The develop branch is the branch of the next major and minor paired version planned.
+- The `stable-<major>.<minor>` branch is the branch of the latest version within that major/minor version.
+- The `stable-<major>.<minor>` branch will have all of the latest bug fixes and security patches, and may or may not represent the released version.
+- PRs intended to add new features should be sourced from the develop branch.
+- PRs intended to add new features that break backward compatability should be discussed before a PR is created.
+- PRs intended to address bug fixes and security patches should be sourced from `stable-<major>.<minor>`.
 
 Nautobot Golden Config will observe semantic versioning, as of 1.0. This may result in an quick turn around in minor versions to keep
 pace with an ever growing feature set.
@@ -79,16 +84,35 @@ pace with an ever growing feature set.
 
 Nautobot Golden Config has currently no intended scheduled release schedule, and will release new feature in minor versions.
 
+When a new release of any kind (e.g. from develop to main, or a release of a `stable-<major>.<minor>`) is created the following should happen.
+- A release PR is created with:
+  - Update to the CHANGELOG.md file to reflect the changes.
+  - Change the version from `<major>.<minor>.<patch>-beta` to `<major>.<minor>.<patch>` in both pyproject.toml and `nautobot.__init__.__version__`.
+  - Set the PR to the proper branch, e.g. either `main` or `stable-<major>.<minor>`.
+- Ensure the tests for the PR pass.
+- Merge the PR.
+- Create a new tag:
+  - The tag should be in the form of `v<major>.<minor>.<patch>`.
+  - The title should be in the form of `v<major>.<minor>.<patch>`.
+  - The description should be the changes that were added to the CHANGELOG.md document.
+- If merged into main, then push from main to develop, in order to retain the merge commit created when the PR was merged
+- If the is a new `<major>.<minor>`, create a `stable-<major>.<minor>` branch and push that to the repo.
+- A post release PR is created with.
+  - Change the version from `<major>.<minor>.<patch>` to `<major>.<minor>.<patch + 1>-beta` in both pyproject.toml and `nautobot.__init__.__version__`.
+  - Set the PR to the proper branch, e.g. either `develop` or `stable-<major>.<minor>`.
+  - Once tests pass, merge. 
+
 ## Deprecation Policy
 
 Support of upstream Nautobot will be announced 1 minor or major version ahead. Deprecation policy will be announced within the
-CHANGELOG.md file, and updated in the table below. There will be a `stable-<major>.<minor>` branch that will be minimally maintained.
-Any security enhancements or major bugs will be supported for a limited time. 
+CHANGELOG.md file, and updated in the table below. There will be a `stable-<major>.<minor>` branch that will be minimally maintained, 
+for any security enhancements or major bugs will be supported for a limited time. 
 
 | Golden Config Version | Nautobot First Support Version | Nautobot Last Support Version |
 | --------------------- | ------------------------------ | ----------------------------- |
-| 0.9.X                 | 1.0                            | 1.2 [Official]                |
-| 1.0.X                 | 1.2                            | 1.2 [Tentative]               |
+| 0.9.X                 | 1.0.0                          | 1.2.99 [Official]             |
+| 0.10.X                | 1.0.0                          | 1.2.99 [Official]             |
+| 1.0.X                 | 1.2.0                          | 1.3.99 [Official]             |
 
 ## CLI Helper Commands
 

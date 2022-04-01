@@ -1,8 +1,9 @@
 """Params for testing."""
 from nautobot.dcim.models import Device, Site, Manufacturer, DeviceType, DeviceRole, Rack, RackGroup, Region, Platform
 from nautobot.tenancy.models import Tenant, TenantGroup
-from nautobot.extras.models import Status
-
+from nautobot.extras.models import Status, GitRepository, GraphQLQuery
+from nautobot.extras.datasources.registry import get_datasource_contents
+from django.utils.text import slugify
 
 from nautobot_golden_config.models import ConfigCompliance, ComplianceFeature, ComplianceRule
 from nautobot_golden_config.choices import ComplianceRuleTypeChoice
@@ -147,6 +148,23 @@ def create_device(name="foobaz"):
     return device
 
 
+def create_orphan_device(name="orphan"):
+    """Creates a Device to be used with tests."""
+    parent_region, _ = Region.objects.get_or_create(name="Parent Region 4", slug="parent_region-4")
+    child_region, _ = Region.objects.get_or_create(name="Child Region 4", slug="child_region-4", parent=parent_region)
+    site, _ = Site.objects.get_or_create(name="Site 4", slug="site-4", region=child_region)
+    manufacturer, _ = Manufacturer.objects.get_or_create(name="Manufacturer 4", slug="manufacturer-4")
+    device_role, _ = DeviceRole.objects.get_or_create(name="Role 4", slug="role-4")
+    device_type, _ = DeviceType.objects.get_or_create(
+        manufacturer=manufacturer, model="Device Type 4", slug="device-type-4"
+    )
+    platform, _ = Platform.objects.get_or_create(manufacturer=manufacturer, name="Platform 4", slug="platform-4")
+    device = Device.objects.create(
+        name=name, platform=platform, site=site, device_role=device_role, device_type=device_type
+    )
+    return device
+
+
 def create_feature_rule_json(device, feature="foo", rule="json"):
     """Creates a Feature/Rule Mapping and Returns the rule."""
     feature_obj, _ = ComplianceFeature.objects.get_or_create(slug=feature, name=feature)
@@ -169,3 +187,213 @@ def create_config_compliance(device, compliance_rule=None, actual=None, intended
         intended=intended,
     )
     return config_compliance
+
+
+# """Fixture Models."""
+def create_git_repos() -> None:
+    """Create five instances of Git Repos.
+
+    Two GitRepository objects provide Backups.
+    Two GitRepository objects provide Intended.
+    One GitRepository objects provide Jinja Templates.
+    The provided content is matched through a loop, in order to prevent any errors if object ID's change.
+    """
+    name = "test-backup-repo-1"
+    provides = "nautobot_golden_config.backupconfigs"
+    git_repo_1 = GitRepository(
+        name=name,
+        slug=slugify(name),
+        remote_url=f"http://www.remote-repo.com/{name}.git",
+        branch="main",
+        username="CoolDeveloper_1",
+        provided_contents=[
+            entry.content_identifier
+            for entry in get_datasource_contents("extras.gitrepository")
+            if entry.content_identifier == provides
+        ],
+    )
+    git_repo_1.save(trigger_resync=False)
+
+    name = "test-backup-repo-2"
+    provides = "nautobot_golden_config.backupconfigs"
+    git_repo_2 = GitRepository(
+        name=name,
+        slug=slugify(name),
+        remote_url=f"http://www.remote-repo.com/{name}.git",
+        branch="main",
+        username="CoolDeveloper_1",
+        provided_contents=[
+            entry.content_identifier
+            for entry in get_datasource_contents("extras.gitrepository")
+            if entry.content_identifier == provides
+        ],
+    )
+    git_repo_2.save(trigger_resync=False)
+
+    name = "test-intended-repo-1"
+    provides = "nautobot_golden_config.intendedconfigs"
+    git_repo_3 = GitRepository(
+        name=name,
+        slug=slugify(name),
+        remote_url=f"http://www.remote-repo.com/{name}.git",
+        branch="main",
+        username="CoolDeveloper_1",
+        provided_contents=[
+            entry.content_identifier
+            for entry in get_datasource_contents("extras.gitrepository")
+            if entry.content_identifier == provides
+        ],
+    )
+    git_repo_3.save(trigger_resync=False)
+
+    name = "test-intended-repo-2"
+    provides = "nautobot_golden_config.intendedconfigs"
+    git_repo_4 = GitRepository(
+        name=name,
+        slug=slugify(name),
+        remote_url=f"http://www.remote-repo.com/{name}.git",
+        branch="main",
+        username="CoolDeveloper_1",
+        provided_contents=[
+            entry.content_identifier
+            for entry in get_datasource_contents("extras.gitrepository")
+            if entry.content_identifier == provides
+        ],
+    )
+    git_repo_4.save(trigger_resync=False)
+
+    name = "test-jinja-repo-1"
+    provides = "nautobot_golden_config.jinjatemplate"
+    git_repo_5 = GitRepository(
+        name=name,
+        slug=slugify(name),
+        remote_url=f"http://www.remote-repo.com/{name}.git",
+        branch="main",
+        username="CoolDeveloper_1",
+        provided_contents=[
+            entry.content_identifier
+            for entry in get_datasource_contents("extras.gitrepository")
+            if entry.content_identifier == provides
+        ],
+    )
+    git_repo_5.save(trigger_resync=False)
+
+
+def create_helper_repo(name="foobaz", provides=None):
+    """
+    Create a backup and/or intended repo to test helper functions.
+    """
+    content_provides = f"nautobot_golden_config.{provides}"
+    git_repo = GitRepository(
+        name=name,
+        slug=slugify(name),
+        remote_url=f"http://www.remote-repo.com/{name}.git",
+        branch="main",
+        username="CoolDeveloper_1",
+        provided_contents=[
+            entry.content_identifier
+            for entry in get_datasource_contents("extras.gitrepository")
+            if entry.content_identifier == content_provides
+        ],
+    )
+    git_repo.save(trigger_resync=False)
+
+
+def create_saved_queries() -> None:
+    """
+    Create saved GraphQL queries.
+    """
+    variables = {"device_id": ""}
+
+    name = "GC-SoTAgg-Query-1"
+    query = """query ($device_id: ID!) {
+                  device(id: $device_id) {
+                    name
+                    tenant {
+                      name
+                    }
+                  }
+               }
+            """
+    saved_query_1 = GraphQLQuery(
+        name=name,
+        slug=slugify(name),
+        variables=variables,
+        query=query,
+    )
+    saved_query_1.save()
+
+    name = "GC-SoTAgg-Query-2"
+    query = """query ($device_id: ID!) {
+                  device(id: $device_id) {
+                    config_context
+                    name
+                    site {
+                      name
+                    }
+                  }
+               }
+            """
+    saved_query_2 = GraphQLQuery(
+        name=name,
+        slug=slugify(name),
+        variables=variables,
+        query=query,
+    )
+    saved_query_2.save()
+
+    name = "GC-SoTAgg-Query-3"
+    query = '{devices(name:"ams-edge-01"){id}}'
+    saved_query_3 = GraphQLQuery(
+        name=name,
+        slug=slugify(name),
+        query=query,
+    )
+    saved_query_3.save()
+
+    name = "GC-SoTAgg-Query-4"
+    query = """
+        query {
+            compliance_rules {
+                feature {
+                  name
+                }
+                platform {
+                    name
+                }
+                description
+                config_ordered
+                match_config
+            }
+        }
+    """
+    saved_query_4 = GraphQLQuery(
+        name=name,
+        slug=slugify(name),
+        query=query,
+    )
+    saved_query_4.save()
+
+    name = "GC-SoTAgg-Query-5"
+    query = """
+        query {
+            golden_config_settings {
+                name
+                slug
+                weight
+                backup_path_template
+                intended_path_template
+                jinja_path_template
+                backup_test_connectivity
+                sot_agg_query {
+                    name
+                }
+            }
+        }
+    """
+    saved_query_5 = GraphQLQuery(
+        name=name,
+        slug=slugify(name),
+        query=query,
+    )
+    saved_query_5.save()

@@ -7,8 +7,10 @@ class ComplianceRuleTypeChoice(ChoiceSet):
 
     TYPE_CLI = "cli"
     TYPE_JSON = "json"
+    TYPE_CUSTOM = "custom"
 
     CHOICES = (
         (TYPE_CLI, "CLI"),
         (TYPE_JSON, "JSON"),
+        (TYPE_CUSTOM, "CUSTOM"),
     )

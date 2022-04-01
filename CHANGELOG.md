@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.0.0-beta - 2022-22
+## v1.0.0 - 2022-04
 
 ### Announcements
 
@@ -15,6 +15,7 @@
 - #206 Add Git datasource to load GC properties
 - #218 Added ability to storre SoTAgg field leveraging Nautobot saved GraphQl query
 - #225 Added support for nautobot secrets group on git repos
+- #234 Minor update to FAQ
 
 ### Changed
 

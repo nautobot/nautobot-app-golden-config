@@ -7,7 +7,10 @@ rules a subject to a given vendor's OS implementation. The ability to track thes
 this practice would be error prone and not follow the principal of least astonishment. Notwithstanding a major change in the network industry, adjusting 
 this strategy is outside the scope of the plugin. 
 
-Instead, it is up to the operator to ensure their configurations match exactly as the configurations show in the running configuration.
+Instead, the operator is required to ensure their configurations match exactly as the configurations show in the running configuration. This includes all
+spacing, special characters, or literally anything that result in a string comparison not returning true.
+
+Any other interpretations of how compliance should be viewed are encouraged to use custom compliance option.
 
 _Why doesn't the config overview page reflect the inclusion changes immediately?_
 

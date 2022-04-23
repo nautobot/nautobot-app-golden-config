@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.0.1 - 2022-04
+
+### Fixed
+
+- #238 Fixed repo/docs/homepage links for PyPI
+- #243 Removing unneed javascript source as it is part of #243
+
 ## v1.0.0 - 2022-04
 
 ### Announcements

@@ -663,7 +663,7 @@ class ConfigReplace(PrimaryModel):
 
     def to_csv(self):
         """Indicates model fields to return as csv."""
-        return (self.name, self.platform.slug, self.regex, self.replace)
+        return (self.name, self.platform.slug, self.description, self.regex, self.replace)
 
     class Meta:
         """Meta information for ConfigReplace model."""

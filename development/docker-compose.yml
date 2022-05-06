@@ -43,7 +43,7 @@ services:
     volumes:
       - "pgdata_nautobot_golden_config:/var/lib/postgresql/data"
   redis:
-    image: "redis:6-alpine"
+    image: "redis:7-alpine"
     command:
       - "sh"
       - "-c"  # this is to evaluate the $REDIS_PASSWORD from the env

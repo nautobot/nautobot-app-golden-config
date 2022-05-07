@@ -1,6 +1,14 @@
 # Changelog
 
-## v1.0.1 - 2022-04
+## v1.0.2 - 2022-05
+
+### Fixed
+
+- #246 Dependabot update to Docker redis-7.x
+- #233 Dependabot update to paramiko-2.10.1
+- #251 Add description to CSV config replace export
+
+## v1.0.1 - 2022-05
 
 ### Fixed
 

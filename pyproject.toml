@@ -1,15 +1,15 @@
 [tool.poetry]
 name = "nautobot-golden-config"
-version = "1.0.0"
+version = "1.0.2"
 description = "A plugin for configuration on nautobot"
 authors = ["Network to Code, LLC", "<opensource@networktocode.com>"]
 
 license = "Apache-2.0"
 
 readme = "README.md"
-homepage = "https://github.com/nautobot/nautobot-golden-config"
-repository = "https://github.com/nautobot/nautobot-golden-config"
-documentation = "https://github.com/nautobot/nautobot-golden-config"
+homepage = "https://github.com/nautobot/nautobot-plugin-golden-config"
+repository = "https://github.com/nautobot/nautobot-plugin-golden-config"
+documentation = "https://github.com/nautobot/nautobot-plugin-golden-config"
 keywords = ["nautobot", "nautobot-plugin"]
 include = [
     "CHANGELOG.md",

@@ -12,9 +12,8 @@ and save the configuration. The high-level process to run backups is:
 
 ## Configuration Backup Settings
 
-Backup configurations often need some amount of parsing to stay sane. The two obvious use cases are the ability to remove lines such as the "Last 
-Configuration" changed date, as this will cause unnecessary changes the second is to strip out secrets from the configuration. In an effort to support these 
-uses cases, the following settings are available and further documented below.
+Backup configurations often need some amount of parsing to stay sane. The two obvious use cases are firstly the ability to remove lines such as the "Last 
+Configuration" changed date, as this will cause unnecessary changes and secondly stripping out secrets from the configuration. In an effort to support these use cases, the following settings are available and further documented below.
 
 * Config Removals - provides the ability to remove a line based on a regex match.
 * Config Replacements - provides the ability to swap out parts of a line based on a regex match.
@@ -48,7 +47,7 @@ The `backup_path_template` can be set in the UI.  For navigation details [see](.
 ### Device Login Credentials
 
 The credentials/secrets management is further described within the [nautbot-plugin-nornir](https://github.com/nautobot/nautobot-plugin-nornir)
-repository. For the simplist use case you can set environment variables for `NAPALM_USERNAME`, `NAPALM_PASSWORD`, and `DEVICE_SECRET`. For more
+repository. For the simplest use case you can set environment variables for `NAPALM_USERNAME`, `NAPALM_PASSWORD`, and `DEVICE_SECRET`. For more
 complicated use cases, please refer to the plugin documentation linked above.
 
 ## Starting a Backup Job

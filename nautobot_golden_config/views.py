@@ -493,7 +493,7 @@ class ConfigComplianceOverviewOverviewHelper(ContentTypePermissionRequiredMixin,
     def plot_visual(aggr):
         """Plot aggregation visual."""
         labels = "Compliant", "Non-Compliant"
-        if any(aggr.values()):
+        if any((aggr["compliants"], aggr["non_compliants"])):
             sizes = [aggr["compliants"], aggr["non_compliants"]]
             explode = (0, 0.1)  # only "explode" the 2nd slice (i.e. 'Hogs')
             # colors used for visuals ('compliant','non_compliant')

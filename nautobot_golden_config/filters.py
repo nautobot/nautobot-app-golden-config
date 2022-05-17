@@ -216,7 +216,7 @@ class ComplianceFeatureFilterSet(CustomFieldModelFilterSet):
         """Boilerplate filter Meta data for compliance feature."""
 
         model = models.ComplianceFeature
-        fields = ["id", "name"]
+        fields = ["id", "name", "slug"]
 
 
 class ComplianceRuleFilterSet(GenericPlatformFilterSet):

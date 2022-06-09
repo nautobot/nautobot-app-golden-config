@@ -734,6 +734,27 @@ curio = ["curio (>=1.2)", "sniffio (>=1.1)"]
 trio = ["trio (>=0.14.0)", "sniffio (>=1.1)"]
 
 [[package]]
+name = "drf-spectacular"
+version = "0.22.1"
+description = "Sane and flexible OpenAPI 3 schema generation for Django REST framework"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+Django = ">=2.2"
+djangorestframework = ">=3.10"
+inflection = ">=0.3.1"
+jsonschema = ">=2.6.0"
+PyYAML = ">=5.1"
+typing-extensions = {version = "*", markers = "python_version < \"3.8\""}
+uritemplate = ">=2.0.0"
+
+[package.extras]
+offline = ["drf-spectacular-sidecar"]
+sidecar = ["drf-spectacular-sidecar"]
+
+[[package]]
 name = "drf-yasg"
 version = "1.20.0"
 description = "Automated generation of real Swagger/OpenAPI 2.0 schemas from Django Rest Framework code."
@@ -2194,7 +2215,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.6"
-content-hash = "63c416d9e1d53f0e0f1fa1753f5e72e50b7d4f42b6af4f0ea7a19b5e54e78120"
+content-hash = "2af920f18d8a6431db06b5f1826569947fdb6ad84bcec088645df7fff7dd3411"
 
 [metadata.files]
 aiocontextvars = [
@@ -2491,6 +2512,10 @@ djangorestframework = [
 dnspython = [
     {file = "dnspython-2.1.0-py3-none-any.whl", hash = "sha256:95d12f6ef0317118d2a1a6fc49aac65ffec7eb8087474158f42f26a639135216"},
     {file = "dnspython-2.1.0.zip", hash = "sha256:e4a87f0b573201a0f3727fa18a516b055fd1107e0e5477cded4a2de497df1dd4"},
+]
+drf-spectacular = [
+    {file = "drf-spectacular-0.22.1.tar.gz", hash = "sha256:866e16ddaae167a1234c76cd8c351161373551db994ce9665b347b32d5daf38b"},
+    {file = "drf_spectacular-0.22.1-py3-none-any.whl", hash = "sha256:17ac5e31e5d6150dd5fa10843b429202f4f38069202acc44394cc5a771de63d9"},
 ]
 drf-yasg = [
     {file = "drf-yasg-1.20.0.tar.gz", hash = "sha256:d50f197c7f02545d0b736df88c6d5cf874f8fea2507ad85ad7de6ae5bf2d9e5a"},
@@ -3231,36 +3256,26 @@ pyuwsgi = [
     {file = "pyuwsgi-2.0.20-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:bd09a7328558728f6e38f77609f44d16f18d8b4dc5f8b8776f657c8892b70337"},
     {file = "pyuwsgi-2.0.20-cp310-cp310-manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:210ad768b8af02bbfd3c0345a51c6d2c56a2333ac268d9a97ecf2d4209f78ef8"},
     {file = "pyuwsgi-2.0.20-cp310-cp310-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:e33111308a79dbd202094963fd3a537dab30854e375d9be018f642fcd359e03d"},
-    {file = "pyuwsgi-2.0.20-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b0306c3ca6f781ed7409774e44a2a90217824d3efb44e075a1f39a78a54ffe7d"},
-    {file = "pyuwsgi-2.0.20-cp310-cp310-musllinux_1_1_aarch64.whl", hash = "sha256:3eeea48fd965b68801618fc20eda2cb65dc2aeb4121955c9c422685f046311da"},
     {file = "pyuwsgi-2.0.20-cp310-cp310-musllinux_1_1_i686.whl", hash = "sha256:dd048b85abb90c79a34afbf787995ab2933cb2a8b210a6e064e5fca0a9bdf2d8"},
     {file = "pyuwsgi-2.0.20-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:f612a72437c2934e39393fb575fab791e919efc102a0aa1a27b5d9a301d462e9"},
     {file = "pyuwsgi-2.0.20-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:78ac2d8b7d307232f8276cb8a45300211b0fae179c0494f2a3e3178c70693f81"},
     {file = "pyuwsgi-2.0.20-cp36-cp36m-manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:f84fc44bba77d05fa9d01189028501ff8e6a2d63db184ceea42085ce28196317"},
     {file = "pyuwsgi-2.0.20-cp36-cp36m-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:342c312949c2f494f5d9ac272965715483cb22ed0353c18abb1b4590769ef00f"},
-    {file = "pyuwsgi-2.0.20-cp36-cp36m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:5740b84a016a246c69edef0df11912560df9a45c2adf6e47701329a974e37a71"},
-    {file = "pyuwsgi-2.0.20-cp36-cp36m-musllinux_1_1_aarch64.whl", hash = "sha256:82058f6b6656f12dbc66c963be2d7c0b977f481ddca5d4d3918e26def003b60d"},
     {file = "pyuwsgi-2.0.20-cp36-cp36m-musllinux_1_1_i686.whl", hash = "sha256:dc99724df6d5613300d3357c4017cde840830ca132fe98f0a4feab9a6af48622"},
     {file = "pyuwsgi-2.0.20-cp36-cp36m-musllinux_1_1_x86_64.whl", hash = "sha256:70096084ccfa18f058dfb3380aa10e80d48958ddfdb888b827f06aacb72f80b8"},
     {file = "pyuwsgi-2.0.20-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:3e7a8576452635612c82f660e5be99ba42cdcdff142948f5c263b5278f2c17b0"},
     {file = "pyuwsgi-2.0.20-cp37-cp37m-manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:2844205e0095a29d3a6e9e23bd37bcf18d65e4e5ab23a14a45f5159c03a3b890"},
     {file = "pyuwsgi-2.0.20-cp37-cp37m-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:e2c0d5dafb9faacc8ed5b662f9eacb22e723fbc3cb7152b2ebf09a92b8bd6c0d"},
-    {file = "pyuwsgi-2.0.20-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:087397457837c5fd653eda91c5d2c7948e06da589c786d26145bdcc397656bb2"},
-    {file = "pyuwsgi-2.0.20-cp37-cp37m-musllinux_1_1_aarch64.whl", hash = "sha256:da24ddb7e3522d36b4cdc2dbf131141d559084862f515d37f9a4b7b5c8b538b1"},
     {file = "pyuwsgi-2.0.20-cp37-cp37m-musllinux_1_1_i686.whl", hash = "sha256:99b0c5a87aa95dcbaca2ccb599d783f37461600e098881d4ec9796ba68e3ff8f"},
     {file = "pyuwsgi-2.0.20-cp37-cp37m-musllinux_1_1_x86_64.whl", hash = "sha256:df08a05dda4a92da46bd56af755dac091b145815c3cf6dda1855e01e40d12a99"},
     {file = "pyuwsgi-2.0.20-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:7c8ac4b2f411d15222f53a96627b8fa79056b39606925f429f59a51668bd95ab"},
     {file = "pyuwsgi-2.0.20-cp38-cp38-manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:f1494d00df440865b1ee269a350187766c9c364ba5f124eddb064f366c4b6d8a"},
     {file = "pyuwsgi-2.0.20-cp38-cp38-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:c5ee8782932dbacdb4dd98714c3575cbbb88ba87d7bcb3149c828725ba048897"},
-    {file = "pyuwsgi-2.0.20-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:0cdc4b32234b40fa2d515108a2f56a159896134ef16394f26dba764635142976"},
-    {file = "pyuwsgi-2.0.20-cp38-cp38-musllinux_1_1_aarch64.whl", hash = "sha256:300417d6669171a454da19991fc7f910b3975232dac5b2dbc359e26f1038624b"},
     {file = "pyuwsgi-2.0.20-cp38-cp38-musllinux_1_1_i686.whl", hash = "sha256:015a8d310503eb8c0028ac8f98c7df3b49bc937c7db137aaf149ca7fae64c777"},
     {file = "pyuwsgi-2.0.20-cp38-cp38-musllinux_1_1_x86_64.whl", hash = "sha256:9fc3d256270adf24b87f1dff893f3bc59bd5ee20c4ebb5add25e944c36359e1e"},
     {file = "pyuwsgi-2.0.20-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:052fe12d6a9ab9e9fc7814e40d2d28061aaea1a610069008d773e1d8a71feb11"},
     {file = "pyuwsgi-2.0.20-cp39-cp39-manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:7d160c7bfa8f2974fc6b807a8fc080be0d130b1a4ad0b463c0320e707e6a6eb6"},
     {file = "pyuwsgi-2.0.20-cp39-cp39-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:7691ca470e541133c444b23f83c6f07ecca12f4771a49e0e3a04b05f4c80f2d3"},
-    {file = "pyuwsgi-2.0.20-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:8c87fb1d56dd2c6f18b87b08496be326afb6cf57c6a059261b01ce99046d9147"},
-    {file = "pyuwsgi-2.0.20-cp39-cp39-musllinux_1_1_aarch64.whl", hash = "sha256:8eb97cf51f58df05ec0dd74d83510172a2f5bcd8adc91382e24690a2abddc2f3"},
     {file = "pyuwsgi-2.0.20-cp39-cp39-musllinux_1_1_i686.whl", hash = "sha256:a8fc4d52232f55df16e9cbf6faf4bf16910d15042229d5f8c717278fd4ea37a5"},
     {file = "pyuwsgi-2.0.20-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:1acedb1841aa0e60e1a7245ae483a5fcb30e39cf0cdfe3987e14de4746daf75b"},
     {file = "pyuwsgi-2.0.20.tar.gz", hash = "sha256:8b0936a964511fa0e2ac2847c2435e95130e7c98619f06fe1f67320527576043"},

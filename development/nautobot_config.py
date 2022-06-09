@@ -30,6 +30,17 @@ DATABASES = {
         "ENGINE": os.getenv("NAUTOBOT_DB_ENGINE", "django.db.backends.postgresql"),
     }
 }
+#
+# Update Django renderer.
+# This setting is necessary for the candidate configuration API view to use the nautobot_golden_config.api.renderers.PlainTextRenderer.
+# It is required for the option to render a plaintext configuration for immediate push to a device.
+#
+
+REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"] = (
+    "rest_framework.renderers.JSONRenderer",
+    "nautobot.core.api.renderers.FormlessBrowsableAPIRenderer",
+    "nautobot_golden_config.api.renderers.PlainTextRenderer",
+)
 
 #
 # Debug

@@ -139,7 +139,12 @@ class IntendedJob(Job, FormEntry):
         intended_repos = get_refreshed_repos(job_obj=self, repo_type="intended_repository")
 
         LOGGER.debug("Run config intended nornir play.")
-        config_intended(self, data)
+        config_intended(
+            self.request,
+            self,
+            data,
+            True,
+        )
 
         # Commit / Push each repo after job is completed.
         for intended_repo in intended_repos:

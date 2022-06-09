@@ -36,6 +36,7 @@ django-pivot = "^1.8.1"
 matplotlib = "^3.3.2"
 nautobot-plugin-nornir = ">=0.9.7"
 nautobot = ">=1.2.0"
+drf-spectacular = "^0.22.1"
 
 [tool.poetry.dev-dependencies]
 bandit = "*"

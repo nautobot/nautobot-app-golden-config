@@ -302,6 +302,12 @@ class ConfigReplaceFeatureFilterForm(utilities_forms.BootstrapMixin, extras_form
 
 class ConfigReplaceCSVForm(extras_forms.CustomFieldModelCSVForm):
     """CSV Form for ConfigRemove instances."""
+    platform = utilities_forms.CSVModelChoiceField(
+        queryset=Platform.objects.all(),
+        required=False,
+        to_field_name="name",
+        help_text="Assigned platform",
+    )
 
     class Meta:
         """Boilerplate form Meta data for ConfigRemove."""
@@ -316,6 +322,7 @@ class ConfigReplaceBulkEditForm(
     """BulkEdit form for ConfigReplace instances."""
 
     pk = forms.ModelMultipleChoiceField(queryset=models.ConfigReplace.objects.all(), widget=forms.MultipleHiddenInput)
+    platform = utilities_forms.DynamicModelChoiceField(queryset=Platform.objects.all(), required=False)
 
     class Meta:
         """Boilerplate form Meta data for ConfigReplace."""

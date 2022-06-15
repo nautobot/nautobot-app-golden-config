@@ -27,7 +27,7 @@ from nautobot.utilities.utils import csv_format
 from nautobot.utilities.error_handlers import handle_protectederror
 from nautobot.utilities.views import ContentTypePermissionRequiredMixin
 
-from nautobot_golden_config import filters, forms, models, tables
+from nautobot_golden_config import filters, forms, models, tables, viewsets
 
 from nautobot_golden_config.utilities.constant import PLUGIN_CFG, ENABLE_COMPLIANCE, CONFIG_FEATURES
 from nautobot_golden_config.utilities.graphql import graph_ql_query
@@ -827,57 +827,68 @@ class ConfigRemoveBulkDeleteView(generic.BulkDeleteView):
 #
 
 
-class ConfigReplaceListView(generic.ObjectListView):
-    """View for displaying the current Line Replacements."""
+#class ConfigReplaceListView(generic.ObjectListView):
+#    """View for displaying the current Line Replacements."""
+#
+#    queryset = models.ConfigReplace.objects.all()
+#    table = tables.ConfigReplaceTable
+#    filterset = filters.ConfigReplaceFilter
+#    filterset_form = forms.ConfigReplaceFeatureFilterForm
+#
+#
+#class ConfigReplaceView(generic.ObjectView):
+#    """View for single ConfigReplace instance."""
+#
+#    queryset = models.ConfigReplace.objects.all()
+#
+#    def get_extra_context(self, request, instance):
+#        """Add extra data to detail view for Nautobot."""
+#        return {}
+#
+#
+#class ConfigReplaceEditView(generic.ObjectEditView):
+#    """View for editing the current Line Replacements."""
+#
+#    queryset = models.ConfigReplace.objects.all()
+#    model_form = forms.ConfigReplaceForm
+#
+#
+#class ConfigReplaceBulkDeleteView(generic.BulkDeleteView):
+#    """View for bulk deleting Line Replacements."""
+#
+#    queryset = models.ConfigReplace.objects.all()
+#    table = tables.ConfigReplaceTable
+#
+#
+#class ConfigReplaceBulkImportView(generic.BulkImportView):
+#    """View for bulk import of ConfigReplace."""
+#
+#    queryset = models.ConfigReplace.objects.all()
+#    model_form = forms.ConfigReplaceCSVForm
+#    table = tables.ConfigReplaceTable
+#
+#
+#class ConfigReplaceDeleteView(generic.ObjectDeleteView):
+#    """View for deleting a ConfigReplace instance."""
+#
+#    queryset = models.ConfigReplace.objects.all()
+#
+#
+#class ConfigReplaceBulkEditView(generic.BulkEditView):
+#    """View for bulk deleting ConfigReplace instances."""
+#
+#    queryset = models.ConfigReplace.objects.all()
+#    filterset = filters.ConfigReplaceFilter
+#    table = tables.ConfigReplaceTable
+#    form = forms.ConfigReplaceBulkEditForm
 
+class ConfigReplaceModelViewSet(viewsets.ModelViewSet):
     queryset = models.ConfigReplace.objects.all()
-    table = tables.ConfigReplaceTable
-    filterset = filters.ConfigReplaceFilter
-    filterset_form = forms.ConfigReplaceFeatureFilterForm
-
-
-class ConfigReplaceView(generic.ObjectView):
-    """View for single ConfigReplace instance."""
-
-    queryset = models.ConfigReplace.objects.all()
-
-    def get_extra_context(self, request, instance):
-        """Add extra data to detail view for Nautobot."""
-        return {}
-
-
-class ConfigReplaceEditView(generic.ObjectEditView):
-    """View for editing the current Line Replacements."""
-
-    queryset = models.ConfigReplace.objects.all()
-    model_form = forms.ConfigReplaceForm
-
-
-class ConfigReplaceBulkDeleteView(generic.BulkDeleteView):
-    """View for bulk deleting Line Replacements."""
-
-    queryset = models.ConfigReplace.objects.all()
-    table = tables.ConfigReplaceTable
-
-
-class ConfigReplaceBulkImportView(generic.BulkImportView):
-    """View for bulk import of ConfigReplace."""
-
-    queryset = models.ConfigReplace.objects.all()
-    model_form = forms.ConfigReplaceCSVForm
-    table = tables.ConfigReplaceTable
-
-
-class ConfigReplaceDeleteView(generic.ObjectDeleteView):
-    """View for deleting a ConfigReplace instance."""
-
-    queryset = models.ConfigReplace.objects.all()
-
-
-class ConfigReplaceBulkEditView(generic.BulkEditView):
-    """View for bulk deleting ConfigReplace instances."""
-
-    queryset = models.ConfigReplace.objects.all()
-    filterset = filters.ConfigReplaceFilter
-    table = tables.ConfigReplaceTable
-    form = forms.ConfigReplaceBulkEditForm
+    object_list_table = tables.ConfigReplaceTable
+    object_list_filterset = filters.ConfigReplaceFilter
+    object_list_filterset_form = forms.ConfigReplaceFeatureFilterForm
+    object_edit_model_form = forms.ConfigReplaceForm
+    bulk_delete_table = tables.ConfigReplaceTable
+    bulk_edit_filterset = filters.ConfigReplaceFilter
+    bulk_edit_table = tables.ConfigReplaceTable
+    bulk_edit_form = forms.ConfigReplaceBulkEditForm

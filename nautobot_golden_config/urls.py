@@ -1,10 +1,15 @@
 """Django urlpatterns declaration for config compliance plugin."""
-from django.urls import path
+from django.urls import include, path
 
 from nautobot.extras.views import ObjectChangeLogView
-from nautobot_golden_config import views, models
+from nautobot_golden_config import views, models, viewsets
 
 app_name = "nautobot_golden_config"
+
+
+router = viewsets.ModelRouter()
+
+router.register("config-replace", views.ConfigReplaceModelViewSet)
 
 urlpatterns = [
     path("golden/", views.GoldenConfigListView.as_view(), name="goldenconfig_list"),
@@ -52,7 +57,7 @@ urlpatterns = [
         name="compliancerule_bulk_delete",
     ),
     path("compliance-rule/<uuid:pk>/", views.ComplianceRuleView.as_view(), name="compliancerule"),
-    path("compliance-rule/edit/", views.ConfigReplaceBulkEditView.as_view(), name="compliancerule_bulk_edit"),
+    #path("compliance-rule/edit/", views.ConfigReplaceBulkEditView.as_view(), name="compliancerule_bulk_edit"),
     path("compliance-rule/<uuid:pk>/edit/", views.ComplianceRuleEditView.as_view(), name="compliancerule_edit"),
     path(
         "compliance-rule/<uuid:pk>/delete/",
@@ -130,26 +135,27 @@ urlpatterns = [
         name="configremove_changelog",
         kwargs={"model": models.ConfigRemove},
     ),
-    path("config-replace/", views.ConfigReplaceListView.as_view(), name="configreplace_list"),
-    path("config-replace/add/", views.ConfigReplaceEditView.as_view(), name="configreplace_add"),
-    path("config-replace/import/", views.ConfigReplaceBulkImportView.as_view(), name="configreplace_import"),
-    path("config-replace/edit/", views.ConfigReplaceBulkEditView.as_view(), name="configreplace_bulk_edit"),
-    path(
-        "config-replace/delete/",
-        views.ConfigReplaceBulkDeleteView.as_view(),
-        name="configreplace_bulk_delete",
-    ),
-    path("config-replace/<uuid:pk>/", views.ConfigReplaceView.as_view(), name="configreplace"),
-    path("config-replace/<uuid:pk>/edit/", views.ConfigReplaceEditView.as_view(), name="configreplace_edit"),
-    path(
-        "config-replace/<uuid:pk>/delete/",
-        views.ConfigReplaceDeleteView.as_view(),
-        name="configreplace_delete",
-    ),
-    path(
-        "config-replace/<uuid:pk>/changelog/",
-        ObjectChangeLogView.as_view(),
-        name="configreplace_changelog",
-        kwargs={"model": models.ConfigReplace},
-    ),
+    #path("config-replace/", views.ConfigReplaceListView.as_view(), name="configreplace_list"),
+    #path("config-replace/add/", views.ConfigReplaceEditView.as_view(), name="configreplace_add"),
+    #path("config-replace/import/", views.ConfigReplaceBulkImportView.as_view(), name="configreplace_import"),
+    #path("config-replace/edit/", views.ConfigReplaceBulkEditView.as_view(), name="configreplace_bulk_edit"),
+    #path(
+    #    "config-replace/delete/",
+    #    views.ConfigReplaceBulkDeleteView.as_view(),
+    #    name="configreplace_bulk_delete",
+    #),
+    #path("config-replace/<uuid:pk>/", views.ConfigReplaceView.as_view(), name="configreplace"),
+    #path("config-replace/<uuid:pk>/edit/", views.ConfigReplaceEditView.as_view(), name="configreplace_edit"),
+    #path(
+    #    "config-replace/<uuid:pk>/delete/",
+    #    views.ConfigReplaceDeleteView.as_view(),
+    #    name="configreplace_delete",
+    #),
+    #path(
+    #    "config-replace/<uuid:pk>/changelog/",
+    #    ObjectChangeLogView.as_view(),
+    #    name="configreplace_changelog",
+    #    kwargs={"model": models.ConfigReplace},
+    #),
+    path("", include(router.urls))
 ]

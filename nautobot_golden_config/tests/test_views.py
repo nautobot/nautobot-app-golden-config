@@ -1,6 +1,5 @@
 """Unit tests for nautobot_golden_config views."""
 
-from unittest import skip
 from django.test import TestCase
 
 from nautobot.dcim.models import Device

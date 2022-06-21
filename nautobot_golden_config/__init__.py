@@ -1,6 +1,6 @@
 """Plugin declaration for nautobot_golden_config."""
 
-__version__ = "1.0.2"
+__version__ = "1.0.3"
 
 from nautobot.extras.plugins import PluginConfig
 

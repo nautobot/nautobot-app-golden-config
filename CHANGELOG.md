@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.0.3 - 2022-06
+
+### Fixed
+
+- #257 Resolved template_content displaying SoT AGG link on Device detail page if Device not in scope of GoldenConfigSetting
+- Change to pull version from package instead of static variable
+
 ## v1.0.2 - 2022-05
 
 ### Fixed

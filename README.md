@@ -87,7 +87,7 @@ Nautobot Golden Config has currently no intended scheduled release schedule, and
 When a new release of any kind (e.g. from develop to main, or a release of a `stable-<major>.<minor>`) is created the following should happen.
 - A release PR is created with:
   - Update to the CHANGELOG.md file to reflect the changes.
-  - Change the version from `<major>.<minor>.<patch>-beta` to `<major>.<minor>.<patch>` in both pyproject.toml and `nautobot.__init__.__version__`.
+  - Change the version from `<major>.<minor>.<patch>-beta` to `<major>.<minor>.<patch>` in pyproject.toml.
   - Set the PR to the proper branch, e.g. either `main` or `stable-<major>.<minor>`.
 - Ensure the tests for the PR pass.
 - Merge the PR.

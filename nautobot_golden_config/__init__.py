@@ -26,6 +26,7 @@ class GoldenConfig(PluginConfig):
         "per_feature_width": 13,
         "per_feature_height": 4,
         "get_custom_compliance": None,
+        "optimize_home": False,
     }
 
 

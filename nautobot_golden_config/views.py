@@ -26,7 +26,7 @@ from nautobot.utilities.utils import csv_format
 from nautobot.utilities.views import ContentTypePermissionRequiredMixin
 
 from nautobot_golden_config import filters, forms, models, tables
-from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_COMPLIANCE, PLUGIN_CFG
+from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_COMPLIANCE, PLUGIN_CFG, OPTIMIZE_HOME
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import get_device_to_settings_map
 
@@ -46,7 +46,7 @@ class GoldenConfigListView(generic.ObjectListView):
     table = tables.GoldenConfigTable
     filterset = DeviceFilterSet
     filterset_form = DeviceFilterForm
-    queryset = Device.objects.all()
+    queryset = models.GoldenConfig.objects.all() if OPTIMIZE_HOME else Device.objects.all()
     template_name = "nautobot_golden_config/goldenconfig_list.html"
 
     def extra_context(self):
@@ -55,6 +55,8 @@ class GoldenConfigListView(generic.ObjectListView):
 
     def alter_queryset(self, request):
         """Build actual runtime queryset as the build time queryset provides no information."""
+        if OPTIMIZE_HOME:
+            return self.queryset
         qs = Device.objects.none()
         for obj in models.GoldenConfigSetting.objects.all():
             qs = qs | obj.get_queryset().distinct()

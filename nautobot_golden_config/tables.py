@@ -11,7 +11,13 @@ from nautobot.utilities.tables import (
     ToggleColumn,
 )
 from nautobot_golden_config import models
-from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED, CONFIG_FEATURES
+from nautobot_golden_config.utilities.constant import (
+    ENABLE_BACKUP,
+    ENABLE_COMPLIANCE,
+    ENABLE_INTENDED,
+    CONFIG_FEATURES,
+    OPTIMIZE_HOME,
+)
 
 
 ALL_ACTIONS = """
@@ -73,6 +79,13 @@ ALL_ACTIONS = """
 """
 
 MATCH_CONFIG = """{{ record.match_config|linebreaksbr }}"""
+
+OPTIMIZE_HOME_LOOKUP = "" if OPTIMIZE_HOME else "goldenconfig__"
+
+GOLDEN_CONFIG_DEVICE_COLUMN = """<a href="{% url 'dcim:device' pk=record.pk %}">{{ record.name }}</a>"""
+OPTIMIZE_HOME_GOLDEN_CONFIG_DEVICE_COLUMN = (
+    """<a href="{% url 'dcim:device' pk=record.device.pk %}">{{ record.device.name }}</a>"""
+)
 
 
 def actual_fields():
@@ -233,21 +246,25 @@ class GoldenConfigTable(BaseTable):
 
     pk = ToggleColumn()
     name = TemplateColumn(
-        template_code="""<a href="{% url 'dcim:device' pk=record.pk %}">{{ record.name }}</a>""",
+        template_code=OPTIMIZE_HOME_GOLDEN_CONFIG_DEVICE_COLUMN if OPTIMIZE_HOME else GOLDEN_CONFIG_DEVICE_COLUMN,
         verbose_name="Device",
     )
 
     if ENABLE_BACKUP:
         backup_last_success_date = Column(
-            verbose_name="Backup Status", empty_values=(), order_by="goldenconfig__backup_last_success_date"
+            verbose_name="Backup Status", empty_values=(), order_by=f"{OPTIMIZE_HOME_LOOKUP}backup_last_success_date"
         )
     if ENABLE_INTENDED:
         intended_last_success_date = Column(
-            verbose_name="Intended Status", empty_values=(), order_by="goldenconfig__intended_last_success_date"
+            verbose_name="Intended Status",
+            empty_values=(),
+            order_by=f"{OPTIMIZE_HOME_LOOKUP}intended_last_success_date",
         )
     if ENABLE_COMPLIANCE:
         compliance_last_success_date = Column(
-            verbose_name="Compliance Status", empty_values=(), order_by="goldenconfig__compliance_last_success_date"
+            verbose_name="Compliance Status",
+            empty_values=(),
+            order_by=f"{OPTIMIZE_HOME_LOOKUP}compliance_last_success_date",
         )
 
     actions = TemplateColumn(
@@ -256,7 +273,10 @@ class GoldenConfigTable(BaseTable):
 
     def _render_last_success_date(self, record, column, value):  # pylint: disable=no-self-use
         """Abstract method to get last success per row record."""
-        entry = record.goldenconfig_set.first()
+        if OPTIMIZE_HOME:
+            entry = record
+        else:
+            entry = record.goldenconfig_set.first()
         last_success_date = getattr(entry, f"{value}_last_success_date", None)
         last_attempt_date = getattr(entry, f"{value}_last_attempt_date", None)
         if not last_success_date or not last_attempt_date:
@@ -286,7 +306,7 @@ class GoldenConfigTable(BaseTable):
     class Meta(BaseTable.Meta):
         """Meta for class GoldenConfigTable."""
 
-        model = Device
+        model = models.GoldenConfig if OPTIMIZE_HOME else Device
         fields = actual_fields()
 
 

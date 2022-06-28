@@ -22,11 +22,23 @@ LOGGER = logging.getLogger(__name__)
 name = "Golden Configuration"  # pylint: disable=invalid-name
 
 
-def get_refreshed_repos(job_obj, repo_type):
+def get_refreshed_repos(job_obj, repo_type, devices=None):
     """Small wrapper to pull latest branch, and return a GitRepo plugin specific object."""
-    repository_records = set(
-        getattr(gcs, repo_type) for gcs in GoldenConfigSetting.objects.all() if getattr(gcs, repo_type, None)
-    )
+    if isinstance(devices, Device):
+        # AllGoldenConfig only accepts a single device object, so we cast it to a list here for consistency
+        devices = [devices]
+    if devices and all(isinstance(d, Device) for d in devices):
+        # Only return the repositories that have the device(s) in scope (#271)
+        device_ids = [d.id for d in devices]
+        repository_records = set(
+            getattr(gcs, repo_type)
+            for gcs in GoldenConfigSetting.objects.all()
+            if hasattr(gcs, repo_type) and gcs.get_queryset().filter(pk__in=device_ids)
+        )
+    else:
+        repository_records = set(
+            getattr(gcs, repo_type) for gcs in GoldenConfigSetting.objects.all() if hasattr(gcs, repo_type)
+        )
 
     repositories = []
     for repository_record in repository_records:
@@ -97,8 +109,8 @@ class ComplianceJob(Job, FormEntry):
         """Run config compliance report script."""
         # pylint: disable=unused-argument
 
-        get_refreshed_repos(job_obj=self, repo_type="intended_repository")
-        get_refreshed_repos(job_obj=self, repo_type="backup_repository")
+        get_refreshed_repos(job_obj=self, repo_type="intended_repository", devices=data.get("device"))
+        get_refreshed_repos(job_obj=self, repo_type="backup_repository", devices=data.get("device"))
 
         config_compliance(self, data)
 
@@ -132,11 +144,11 @@ class IntendedJob(Job, FormEntry):
         now = datetime.now()
 
         LOGGER.debug("Pull Jinja template repos.")
-        get_refreshed_repos(job_obj=self, repo_type="jinja_repository")
+        get_refreshed_repos(job_obj=self, repo_type="jinja_repository", devices=data.get("device"))
 
         LOGGER.debug("Pull Intended config repos.")
         # Instantiate a GitRepo object for each GitRepository in GoldenConfigSettings.
-        intended_repos = get_refreshed_repos(job_obj=self, repo_type="intended_repository")
+        intended_repos = get_refreshed_repos(job_obj=self, repo_type="intended_repository", devices=data.get("device"))
 
         LOGGER.debug("Run config intended nornir play.")
         config_intended(self, data)
@@ -178,7 +190,7 @@ class BackupJob(Job, FormEntry):
         LOGGER.debug("Pull Backup config repo.")
 
         # Instantiate a GitRepo object for each GitRepository in GoldenConfigSettings.
-        backup_repos = get_refreshed_repos(job_obj=self, repo_type="backup_repository")
+        backup_repos = get_refreshed_repos(job_obj=self, repo_type="backup_repository", devices=data.get("device"))
 
         LOGGER.debug("Starting backup jobs to the following repos: %s", backup_repos)
 

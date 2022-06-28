@@ -13,6 +13,7 @@ import yaml
 from django.contrib import messages
 from django.db.models import Count, ExpressionWrapper, F, FloatField, Max, ProtectedError, Q
 from django.forms import ModelMultipleChoiceField, MultipleHiddenInput
+from django.http import QueryDict
 from django.shortcuts import redirect, render
 from django_pivot.pivot import pivot
 from nautobot.core.views import generic
@@ -46,7 +47,8 @@ class GoldenConfigListView(generic.ObjectListView):
     table = tables.GoldenConfigTable
     filterset = DeviceFilterSet
     filterset_form = DeviceFilterForm
-    queryset = models.GoldenConfig.objects.all() if OPTIMIZE_HOME else Device.objects.all()
+    # queryset = models.GoldenConfig.objects.all() if OPTIMIZE_HOME else Device.objects.all()
+    queryset = Device.objects.all()
     template_name = "nautobot_golden_config/goldenconfig_list.html"
 
     def extra_context(self):
@@ -55,13 +57,28 @@ class GoldenConfigListView(generic.ObjectListView):
 
     def alter_queryset(self, request):
         """Build actual runtime queryset as the build time queryset provides no information."""
-        if OPTIMIZE_HOME:
-            return self.queryset
-        qs = Device.objects.none()
-        for obj in models.GoldenConfigSetting.objects.all():
-            qs = qs | obj.get_queryset().distinct()
+        # if OPTIMIZE_HOME:
+        #     return self.queryset
+        # qs = Device.objects.none()
+        params = QueryDict()
+        params._mutable = True
+        for obj in models.GoldenConfigSetting.objects.values_list("scope", flat=True).distinct():
 
-        return self.queryset.filter(id__in=qs)
+            params.update(QueryDict(urllib.parse.urlencode(obj, doseq=True)))
+        fs = self.filterset(params, self.queryset)
+
+        return fs.qs.annotate(
+            config_type=F("configcompliance__rule__config_type"),
+            backup_config=F("goldenconfig__backup_config"),
+            intended_config=F("goldenconfig__intended_config"),
+            compliance_config=F("goldenconfig__compliance_config"),
+            backup_last_success_date=F("goldenconfig__backup_last_success_date"),
+            intended_last_success_date=F("goldenconfig__intended_last_success_date"),
+            compliance_last_success_date=F("goldenconfig__compliance_last_success_date"),
+            backup_last_attempt_date=F("goldenconfig__backup_last_attempt_date"),
+            intended_last_attempt_date=F("goldenconfig__intended_last_attempt_date"),
+            compliance_last_attempt_date=F("goldenconfig__compliance_last_attempt_date"),
+            )
 
     def queryset_to_csv(self):
         """Override nautobot default to account for using Device model for GoldenConfig data."""

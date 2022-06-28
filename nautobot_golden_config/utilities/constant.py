@@ -14,5 +14,3 @@ CONFIG_FEATURES = {
     "backup": ENABLE_BACKUP,
     "sotagg": ENABLE_SOTAGG,
 }
-
-OPTIMIZE_HOME = PLUGIN_CFG["optimize_home"]

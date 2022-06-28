@@ -35,7 +35,6 @@ PLUGINS_CONFIG = {
         "enable_sotagg": True,
         "sot_agg_transposer": None,
         "platform_slug_map": None,
-        "optimize_home": False,
         # "get_custom_compliance": "my.custom_compliance.func"
     },
 }
@@ -60,11 +59,7 @@ The plugin behavior can be controlled with the following list of settings.
 | per_feature_bar_width | 0.15 | 0.15 | The width of the table bar within the overview report |
 | per_feature_width | 13 | 13 | The width in inches that the overview table can be. |
 | per_feature_height | 4 | 4 | The height in inches that the overview table can be. |
-| optimize_home | False | False | Optimizes SQL queries when multiple GoldenConfigSetting instances exist. |
 
 > Note: Over time the compliance report will become more dynamic, but for now allow users to configure the `per_*` configs in a way that fits best for them.
 
 > Note: Review [`nautobot_plugin_nornir`](https://pypi.org/project/nautobot-plugin-nornir/) for Nornir and dispatcher configuration options. 
-
-## Optimize Home Setting
-Be default the Golden Configuration `Home` page will display `ALL` Device objects that are in scope of `ANY` `GoldenConfigSetting` object no matter `IF` a Golden Config job has been run against the device. This behavior allows for a user to inititate a job directly from the home page, however in deployments with a larger number of `GoldenConfigSetting` objects this opperation becomes very costly from a `SQL` standpoint. To improve efficiency of SQL queries on this type of deployment the plugin setting of `optimize_home` can be set to `True` and this will limit the home page to `ONLY` Device objects where a Golden Config job has been run against them. The jobs are `Backup`, `Intended`, and `Compliance`. These jobs are still able to be triggered via Extensibility > Jobs in the navigation menu. Enabling this configuration item does mean that a Device object `MAY` be in scope of a GoldenConfigSetting `BUT` may not be displayed on the homepage `IF` one of the above jobs has not been run against the Device.

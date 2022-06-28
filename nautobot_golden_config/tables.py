@@ -16,7 +16,6 @@ from nautobot_golden_config.utilities.constant import (
     ENABLE_COMPLIANCE,
     ENABLE_INTENDED,
     CONFIG_FEATURES,
-    OPTIMIZE_HOME,
 )
 
 
@@ -245,19 +244,19 @@ class GoldenConfigTable(BaseTable):
 
     if ENABLE_BACKUP:
         backup_last_success_date = Column(
-            verbose_name="Backup Status", empty_values=(), order_by=f"backup_last_success_date"
+            verbose_name="Backup Status", empty_values=(), order_by="backup_last_success_date"
         )
     if ENABLE_INTENDED:
         intended_last_success_date = Column(
             verbose_name="Intended Status",
             empty_values=(),
-            order_by=f"intended_last_success_date",
+            order_by="intended_last_success_date",
         )
     if ENABLE_COMPLIANCE:
         compliance_last_success_date = Column(
             verbose_name="Compliance Status",
             empty_values=(),
-            order_by=f"compliance_last_success_date",
+            order_by="compliance_last_success_date",
         )
 
     actions = TemplateColumn(
@@ -295,7 +294,7 @@ class GoldenConfigTable(BaseTable):
     class Meta(BaseTable.Meta):
         """Meta for class GoldenConfigTable."""
 
-        model = models.GoldenConfig if OPTIMIZE_HOME else Device
+        model = Device
         fields = actual_fields()
 
 

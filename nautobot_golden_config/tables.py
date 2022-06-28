@@ -238,7 +238,7 @@ class GoldenConfigTable(BaseTable):
 
     pk = ToggleColumn()
     name = TemplateColumn(
-        template_code="""<a href="{% url 'dcim:device' pk=record.pk %}">{{ record.name }}""",
+        template_code="""<a href="{% url 'dcim:device' pk=record.pk %}">{{ record.name }}</a>""",
         verbose_name="Device",
     )
 

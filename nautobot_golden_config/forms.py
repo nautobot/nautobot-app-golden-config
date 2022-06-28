@@ -5,7 +5,7 @@ from django import forms
 import nautobot.extras.forms as extras_forms
 import nautobot.utilities.forms as utilities_forms
 from nautobot.dcim.models import Device, Platform, Region, Site, DeviceRole, DeviceType, Manufacturer, Rack, RackGroup
-from nautobot.extras.models import Status
+from nautobot.extras.models import Status, GitRepository
 from nautobot.tenancy.models import Tenant, TenantGroup
 from nautobot.utilities.forms import SlugField
 
@@ -355,3 +355,25 @@ class GoldenConfigSettingFeatureForm(
             "scope",
             "sot_agg_query",
         )
+
+
+class GoldenConfigSettingFilterForm(utilities_forms.BootstrapMixin, extras_forms.CustomFieldFilterForm):
+    """Form for GoldenConfigSetting instances."""
+
+    model = models.GoldenConfigSetting
+
+    q = forms.CharField(required=False, label="Search")
+    name = forms.CharField(required=False)
+    weight = forms.IntegerField(required=False)
+    backup_repository = forms.ModelChoiceField(
+        queryset=GitRepository.objects.filter(provided_contents__contains="nautobot_golden_config.backupconfigs"),
+        required=False,
+    )
+    intended_repository = forms.ModelChoiceField(
+        queryset=GitRepository.objects.filter(provided_contents__contains="nautobot_golden_config.intendedconfigs"),
+        required=False,
+    )
+    jinja_repository = forms.ModelChoiceField(
+        queryset=GitRepository.objects.filter(provided_contents__contains="nautobot_golden_config.jinjatemplate"),
+        required=False,
+    )

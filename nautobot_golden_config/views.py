@@ -868,6 +868,8 @@ class GoldenConfigSettingListView(generic.ObjectListView):
 
     queryset = models.GoldenConfigSetting.objects.all()
     table = tables.GoldenConfigSettingTable
+    filterset = filters.GoldenConfigSettingFilterSet
+    filterset_form = forms.GoldenConfigSettingFilterForm
     # TODO: Get import working
     action_buttons = ("add", "export")
 

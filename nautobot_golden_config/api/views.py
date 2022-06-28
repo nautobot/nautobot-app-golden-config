@@ -74,6 +74,7 @@ class GoldenConfigSettingViewSet(CustomFieldModelViewSet):  # pylint:disable=too
 
     queryset = models.GoldenConfigSetting.objects.all()
     serializer_class = serializers.GoldenConfigSettingSerializer
+    filterset_class = filters.GoldenConfigSettingFilterSet
 
 
 class ConfigRemoveViewSet(CustomFieldModelViewSet):  # pylint:disable=too-many-ancestors

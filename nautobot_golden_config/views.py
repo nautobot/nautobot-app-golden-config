@@ -56,14 +56,11 @@ class GoldenConfigListView(generic.ObjectListView):
 
     def alter_queryset(self, request):
         """Build actual runtime queryset as the build time queryset provides no information."""
-        params = QueryDict()
-        params._mutable = True  # pylint: disable=protected-access
-        for obj in models.GoldenConfigSetting.objects.values_list("scope", flat=True).distinct():
+        qs = Device.objects.none()
+        for obj in models.GoldenConfigSetting.objects.all():
+            qs = qs | obj.get_queryset().distinct()
 
-            params.update(QueryDict(urllib.parse.urlencode(obj, doseq=True)))
-        filtered_query = self.filterset(params, self.queryset)
-
-        return filtered_query.qs.annotate(
+        return self.queryset.filter(id__in=qs).annotate(
             config_type=F("configcompliance__rule__config_type"),
             backup_config=F("goldenconfig__backup_config"),
             intended_config=F("goldenconfig__intended_config"),

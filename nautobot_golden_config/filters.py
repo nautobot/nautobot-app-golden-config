@@ -8,7 +8,7 @@ from nautobot.dcim.models import Device, Platform, Region, Site, DeviceRole, Dev
 from nautobot.extras.models import Status
 from nautobot.extras.filters import StatusFilter, CustomFieldModelFilterSet
 from nautobot.tenancy.models import Tenant, TenantGroup
-from nautobot.utilities.filters import TreeNodeMultipleChoiceFilter
+from nautobot.utilities.filters import TreeNodeMultipleChoiceFilter, BaseFilterSet, NameSlugSearchFilterSet
 
 from nautobot_golden_config import models
 
@@ -216,7 +216,7 @@ class ComplianceFeatureFilterSet(CustomFieldModelFilterSet):
         """Boilerplate filter Meta data for compliance feature."""
 
         model = models.ComplianceFeature
-        fields = ["id", "name"]
+        fields = ["id", "name", "slug"]
 
 
 class ComplianceRuleFilterSet(GenericPlatformFilterSet):
@@ -283,3 +283,13 @@ class ConfigReplaceFilterSet(GenericPlatformFilterSet):
 
         model = models.ConfigReplace
         fields = ["id", "name"]
+
+
+class GoldenConfigSettingFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
+    """Inherits Base Class BaseFilterSet."""
+
+    class Meta:
+        """Boilerplate filter Meta data for Config Remove."""
+
+        model = models.GoldenConfigSetting
+        fields = ["id", "name", "slug", "weight", "backup_repository", "intended_repository", "jinja_repository"]

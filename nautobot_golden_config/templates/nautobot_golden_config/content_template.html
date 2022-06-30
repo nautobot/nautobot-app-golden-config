@@ -64,40 +64,42 @@
                     <th>Config</th>
                 </tr>
             </thead>
-            <tbody>
-            {% if config_features.compliance and golden_config.compliance_config %}
-                <tr>
-                    <td>Compliance</td>
-                    <td>
-                        <a href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=device.pk config_type='compliance' %}"><i class="mdi mdi-file-compare"></i></a>
-                    </td>
-                </tr>
+            {% if matched_config_setting %}
+                <tbody>
+                {% if config_features.compliance and golden_config.compliance_config %}
+                    <tr>
+                        <td>Compliance</td>
+                        <td>
+                            <a href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=device.pk config_type='compliance' %}"><i class="mdi mdi-file-compare"></i></a>
+                        </td>
+                    </tr>
+                {% endif %}
+                {% if config_features.intended and golden_config.intended_config %}
+                    <tr>
+                        <td>Intended</td>
+                        <td>
+                            <a href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=device.pk config_type='intended' %}"><i class="mdi mdi-text-box-check-outline"></i></a>
+                        </td>
+                    </tr>
+                {% endif %}
+                {% if config_features.backup and golden_config.backup_config %}
+                    <tr>
+                        <td>Actual</td>
+                        <td>
+                            <a href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=device.pk config_type='backup' %}"><i class="mdi mdi-file-document-outline"></i></a>
+                        </td>
+                    </tr>
+                {% endif %}
+                {% if config_features.sotagg %}
+                    <tr>
+                        <td>SoT Aggregation Data</td>
+                        <td>
+                            <a href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=device.pk config_type='sotagg' %}"><i class="mdi mdi-code-json"></i></a>
+                        </td>
+                    </tr>
+                {% endif %}
+                </tbody>
             {% endif %}
-            {% if config_features.intended and golden_config.intended_config %}
-                <tr>
-                    <td>Intended</td>
-                    <td>
-                        <a href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=device.pk config_type='intended' %}"><i class="mdi mdi-text-box-check-outline"></i></a>
-                    </td>
-                </tr>
-            {% endif %}
-            {% if config_features.backup and golden_config.backup_config %}
-                <tr>
-                    <td>Actual</td>
-                    <td>
-                        <a href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=device.pk config_type='backup' %}"><i class="mdi mdi-file-document-outline"></i></a>
-                    </td>
-                </tr>
-            {% endif %}
-            {% if config_features.sotagg %}
-                <tr>
-                    <td>SoT Aggregation Data</td>
-                    <td>
-                        <a href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=device.pk config_type='sotagg' %}"><i class="mdi mdi-code-json"></i></a>
-                    </td>
-                </tr>
-            {% endif %}
-            </tbody>
         </table>
         </div>
 {% endif %}

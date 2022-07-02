@@ -10,6 +10,7 @@ x-nautobot-base: &nautobot-base
   image: "nautobot-golden-config/nautobot:${NAUTOBOT_VER}-py${PYTHON_VER}"
   env_file:
     - "dev.env"
+    - "creds.env"
   tty: true
 
 version: "3.4"
@@ -40,6 +41,7 @@ services:
     image: "postgres:14"
     env_file:
       - "dev.env"
+      - "creds.env"
     volumes:
       - "pgdata_nautobot_golden_config:/var/lib/postgresql/data"
   redis:
@@ -50,5 +52,6 @@ services:
       - "redis-server --appendonly yes --requirepass $$REDIS_PASSWORD"
     env_file:
       - "dev.env"
+      - "creds.env"
 volumes:
   pgdata_nautobot_golden_config:  # yamllint disable-line rule:empty-values

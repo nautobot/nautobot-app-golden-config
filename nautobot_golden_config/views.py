@@ -191,6 +191,7 @@ class GoldenConfigBulkDeleteView(generic.BulkDeleteView):
 class ConfigComplianceListView(generic.ObjectListView):
     """Django View for visualizing the compliance report."""
 
+    action_buttons = ("export",)
     filterset = filters.ConfigComplianceFilterSet
     filterset_form = forms.ConfigComplianceFilterForm
     queryset = models.ConfigCompliance.objects.all().order_by("device__name")
@@ -608,6 +609,7 @@ class ConfigComplianceOverviewOverviewHelper(ContentTypePermissionRequiredMixin,
 class ConfigComplianceOverview(generic.ObjectListView):
     """View for executive report on configuration compliance."""
 
+    action_buttons = ("export",)
     filterset = filters.ConfigComplianceFilterSet
     filterset_form = forms.ConfigComplianceFilterForm
     table = tables.ConfigComplianceGlobalFeatureTable

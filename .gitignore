@@ -5,10 +5,6 @@ nautobot_golden_config/transposer.py
 docker-compose.override.yml
 packages/
 
-# Standard creds ignore
-development/creds.env
-development/*_credentials.json
-
 # Ansible Retry Files
 *.retry
 

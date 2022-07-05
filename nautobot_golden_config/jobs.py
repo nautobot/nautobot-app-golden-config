@@ -29,7 +29,7 @@ def get_refreshed_repos(job_obj, repo_type, devices=None):
         devices = [devices]
     if devices and all(isinstance(d, Device) for d in devices):
         # Only return the repositories that have the device(s) in scope (#271)
-        device_ids = [d.id for d in devices]
+        device_ids = [device.id for device in devices]
         repository_records = set(
             getattr(gcs, repo_type)
             for gcs in GoldenConfigSetting.objects.all()

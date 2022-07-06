@@ -81,14 +81,13 @@ class FormEntry:  # pylint disable=too-few-public-method
     platform = MultiObjectVar(model=Platform, required=False)
     device_type = MultiObjectVar(model=DeviceType, required=False, display_field="display_name")
     device = MultiObjectVar(model=Device, required=False)
-    if GoldenConfigSetting.objects.count() > 1:
-        gc_setting = MultiObjectVar(
-            model=GoldenConfigSetting,
-            required=False,
-            label="Golden Config Setting",
-            display_field="name",
-            description="Limits to the specific scope of Devices in a Golden Config Setting.",
-        )
+    gc_setting = MultiObjectVar(
+        model=GoldenConfigSetting,
+        required=False,
+        label="Golden Config Setting",
+        display_field="name",
+        description="Limits to the specific scope of Devices in a Golden Config Setting.",
+    )
     tag = MultiObjectVar(model=Tag, required=False)
     debug = BooleanVar(description="Enable for more verbose debug logging")
     # TODO: Add status
@@ -108,8 +107,7 @@ class ComplianceJob(Job, FormEntry):
     platform = FormEntry.platform
     device_type = FormEntry.device_type
     device = FormEntry.device
-    if GoldenConfigSetting.objects.count() > 1:
-        gc_setting = FormEntry.gc_setting
+    gc_setting = FormEntry.gc_setting
     tag = FormEntry.tag
     debug = FormEntry.debug
 
@@ -154,8 +152,7 @@ class IntendedJob(Job, FormEntry):
     platform = FormEntry.platform
     device_type = FormEntry.device_type
     device = FormEntry.device
-    if GoldenConfigSetting.objects.count() > 1:
-        gc_setting = FormEntry.gc_setting
+    gc_setting = FormEntry.gc_setting
     tag = FormEntry.tag
     debug = FormEntry.debug
 
@@ -206,8 +203,7 @@ class BackupJob(Job, FormEntry):
     platform = FormEntry.platform
     device_type = FormEntry.device_type
     device = FormEntry.device
-    if GoldenConfigSetting.objects.count() > 1:
-        gc_setting = FormEntry.gc_setting
+    gc_setting = FormEntry.gc_setting
     tag = FormEntry.tag
     debug = FormEntry.debug
 
@@ -280,8 +276,7 @@ class AllDevicesGoldenConfig(Job):
     platform = FormEntry.platform
     device_type = FormEntry.device_type
     device = FormEntry.device
-    if GoldenConfigSetting.objects.count() > 1:
-        gc_setting = FormEntry.gc_setting
+    gc_setting = FormEntry.gc_setting
     tag = FormEntry.tag
     debug = FormEntry.debug
 

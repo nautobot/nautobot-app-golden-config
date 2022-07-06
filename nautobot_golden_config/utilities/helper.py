@@ -39,8 +39,10 @@ def get_job_filter(data=None):
     elif data.get("device"):
         query.update({"id": data["device"].values_list("pk", flat=True)})
 
+    gc_setting_qs = data.get("gc_setting") if data.get("gc_setting") else models.GoldenConfigSetting.objects.all()
+
     base_qs = Device.objects.none()
-    for obj in models.GoldenConfigSetting.objects.all():
+    for obj in gc_setting_qs:
         base_qs = base_qs | obj.get_queryset().distinct()
 
     if base_qs.count() == 0:

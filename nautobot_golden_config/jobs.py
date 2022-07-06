@@ -22,22 +22,27 @@ LOGGER = logging.getLogger(__name__)
 name = "Golden Configuration"  # pylint: disable=invalid-name
 
 
-def get_refreshed_repos(job_obj, repo_type, devices=None):
+def get_refreshed_repos(job_obj, repo_type, devices=None, gc_settings=None):
     """Small wrapper to pull latest branch, and return a GitRepo plugin specific object."""
     if isinstance(devices, Device):
         # AllGoldenConfig only accepts a single device object, so we cast it to a list here for consistency
         devices = [devices]
+    gc_settings_query = gc_settings if gc_settings else GoldenConfigSetting.objects.all()
+
     if devices and all(isinstance(d, Device) for d in devices):
         # Only return the repositories that have the device(s) in scope (#271)
         device_ids = [device.id for device in devices]
         repository_records = set(
             getattr(gcs, repo_type)
-            for gcs in GoldenConfigSetting.objects.all()
+            for gcs in gc_settings_query
             if hasattr(gcs, repo_type) and gcs.get_queryset().filter(pk__in=device_ids)
         )
     else:
-        repository_records = set(
-            getattr(gcs, repo_type) for gcs in GoldenConfigSetting.objects.all() if hasattr(gcs, repo_type)
+        repository_records = set(getattr(gcs, repo_type) for gcs in gc_settings_query if hasattr(gcs, repo_type))
+
+    if not repository_records and gc_settings:
+        job_obj.log_failure(
+            "Unable to find a any Devices that match specified scope of selected Golden Config Setting(s)."
         )
 
     repositories = []
@@ -76,6 +81,14 @@ class FormEntry:  # pylint disable=too-few-public-method
     platform = MultiObjectVar(model=Platform, required=False)
     device_type = MultiObjectVar(model=DeviceType, required=False, display_field="display_name")
     device = MultiObjectVar(model=Device, required=False)
+    if GoldenConfigSetting.objects.count() > 1:
+        gc_setting = MultiObjectVar(
+            model=GoldenConfigSetting,
+            required=False,
+            label="Golden Config Setting",
+            display_field="name",
+            description="Limits to the specific scope of Devices in a Golden Config Setting.",
+        )
     tag = MultiObjectVar(model=Tag, required=False)
     debug = BooleanVar(description="Enable for more verbose debug logging")
     # TODO: Add status
@@ -95,6 +108,8 @@ class ComplianceJob(Job, FormEntry):
     platform = FormEntry.platform
     device_type = FormEntry.device_type
     device = FormEntry.device
+    if GoldenConfigSetting.objects.count() > 1:
+        gc_setting = FormEntry.gc_setting
     tag = FormEntry.tag
     debug = FormEntry.debug
 
@@ -109,8 +124,18 @@ class ComplianceJob(Job, FormEntry):
         """Run config compliance report script."""
         # pylint: disable=unused-argument
 
-        get_refreshed_repos(job_obj=self, repo_type="intended_repository", devices=data.get("device"))
-        get_refreshed_repos(job_obj=self, repo_type="backup_repository", devices=data.get("device"))
+        get_refreshed_repos(
+            job_obj=self,
+            repo_type="intended_repository",
+            devices=data.get("device"),
+            gc_settings=data.get("gc_setting"),
+        )
+        get_refreshed_repos(
+            job_obj=self,
+            repo_type="backup_repository",
+            devices=data.get("device"),
+            gc_settings=data.get("gc_setting"),
+        )
 
         config_compliance(self, data)
 
@@ -129,6 +154,8 @@ class IntendedJob(Job, FormEntry):
     platform = FormEntry.platform
     device_type = FormEntry.device_type
     device = FormEntry.device
+    if GoldenConfigSetting.objects.count() > 1:
+        gc_setting = FormEntry.gc_setting
     tag = FormEntry.tag
     debug = FormEntry.debug
 
@@ -148,7 +175,12 @@ class IntendedJob(Job, FormEntry):
 
         LOGGER.debug("Pull Intended config repos.")
         # Instantiate a GitRepo object for each GitRepository in GoldenConfigSettings.
-        intended_repos = get_refreshed_repos(job_obj=self, repo_type="intended_repository", devices=data.get("device"))
+        intended_repos = get_refreshed_repos(
+            job_obj=self,
+            repo_type="intended_repository",
+            devices=data.get("device"),
+            gc_settings=data.get("gc_setting"),
+        )
 
         LOGGER.debug("Run config intended nornir play.")
         config_intended(self, data)
@@ -174,6 +206,8 @@ class BackupJob(Job, FormEntry):
     platform = FormEntry.platform
     device_type = FormEntry.device_type
     device = FormEntry.device
+    if GoldenConfigSetting.objects.count() > 1:
+        gc_setting = FormEntry.gc_setting
     tag = FormEntry.tag
     debug = FormEntry.debug
 
@@ -190,7 +224,12 @@ class BackupJob(Job, FormEntry):
         LOGGER.debug("Pull Backup config repo.")
 
         # Instantiate a GitRepo object for each GitRepository in GoldenConfigSettings.
-        backup_repos = get_refreshed_repos(job_obj=self, repo_type="backup_repository", devices=data.get("device"))
+        backup_repos = get_refreshed_repos(
+            job_obj=self,
+            repo_type="backup_repository",
+            devices=data.get("device"),
+            gc_settings=data.get("gc_setting"),
+        )
 
         LOGGER.debug("Starting backup jobs to the following repos: %s", backup_repos)
 
@@ -241,6 +280,8 @@ class AllDevicesGoldenConfig(Job):
     platform = FormEntry.platform
     device_type = FormEntry.device_type
     device = FormEntry.device
+    if GoldenConfigSetting.objects.count() > 1:
+        gc_setting = FormEntry.gc_setting
     tag = FormEntry.tag
     debug = FormEntry.debug
 

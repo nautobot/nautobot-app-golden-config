@@ -113,6 +113,7 @@ for any security enhancements or major bugs will be supported for a limited time
 | 0.9.X                 | 1.0.0                          | 1.2.99 [Official]             |
 | 0.10.X                | 1.0.0                          | 1.2.99 [Official]             |
 | 1.0.X                 | 1.2.0                          | 1.3.99 [Official]             |
+| 1.1.X                 | 1.2.0                          | 1.3.99 [Official]             |
 
 ## CLI Helper Commands
 

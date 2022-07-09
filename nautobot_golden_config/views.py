@@ -60,7 +60,18 @@ class GoldenConfigListView(generic.ObjectListView):
         for obj in models.GoldenConfigSetting.objects.all():
             qs = qs | obj.get_queryset().distinct()
 
-        return self.queryset.filter(id__in=qs)
+        return self.queryset.filter(id__in=qs).annotate(
+            config_type=F("configcompliance__rule__config_type"),
+            backup_config=F("goldenconfig__backup_config"),
+            intended_config=F("goldenconfig__intended_config"),
+            compliance_config=F("goldenconfig__compliance_config"),
+            backup_last_success_date=F("goldenconfig__backup_last_success_date"),
+            intended_last_success_date=F("goldenconfig__intended_last_success_date"),
+            compliance_last_success_date=F("goldenconfig__compliance_last_success_date"),
+            backup_last_attempt_date=F("goldenconfig__backup_last_attempt_date"),
+            intended_last_attempt_date=F("goldenconfig__intended_last_attempt_date"),
+            compliance_last_attempt_date=F("goldenconfig__compliance_last_attempt_date"),
+        )
 
     def queryset_to_csv(self):
         """Override nautobot default to account for using Device model for GoldenConfig data."""
@@ -180,6 +191,7 @@ class GoldenConfigBulkDeleteView(generic.BulkDeleteView):
 class ConfigComplianceListView(generic.ObjectListView):
     """Django View for visualizing the compliance report."""
 
+    action_buttons = ("export",)
     filterset = filters.ConfigComplianceFilterSet
     filterset_form = forms.ConfigComplianceFilterForm
     queryset = models.ConfigCompliance.objects.all().order_by("device__name")
@@ -597,6 +609,7 @@ class ConfigComplianceOverviewOverviewHelper(ContentTypePermissionRequiredMixin,
 class ConfigComplianceOverview(generic.ObjectListView):
     """View for executive report on configuration compliance."""
 
+    action_buttons = ("export",)
     filterset = filters.ConfigComplianceFilterSet
     filterset_form = forms.ConfigComplianceFilterForm
     table = tables.ConfigComplianceGlobalFeatureTable
@@ -872,6 +885,8 @@ class GoldenConfigSettingListView(generic.ObjectListView):
 
     queryset = models.GoldenConfigSetting.objects.all()
     table = tables.GoldenConfigSettingTable
+    filterset = filters.GoldenConfigSettingFilterSet
+    filterset_form = forms.GoldenConfigSettingFilterForm
     # TODO: Get import working
     action_buttons = ("add", "export")
 

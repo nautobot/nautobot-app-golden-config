@@ -11,15 +11,20 @@ from nautobot.utilities.tables import (
     ToggleColumn,
 )
 from nautobot_golden_config import models
-from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED, CONFIG_FEATURES
+from nautobot_golden_config.utilities.constant import (
+    ENABLE_BACKUP,
+    ENABLE_COMPLIANCE,
+    ENABLE_INTENDED,
+    CONFIG_FEATURES,
+)
 
 
 ALL_ACTIONS = """
 {% if backup == True %}
-    {% if record.configcompliance_set.first.rule.config_type == 'json' %}
+    {% if record.config_type == 'json' %}
         <i class="mdi mdi-circle-small"></i>
     {% else %}
-        {% if record.goldenconfig_set.first.backup_config %}
+        {% if record.backup_config %}
             <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='backup' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='backup' %}?modal=true">
                 <i class="mdi mdi-file-document-outline" title="Backup Configuration"></i>
             </a>
@@ -29,10 +34,10 @@ ALL_ACTIONS = """
     {% endif %}
 {% endif %}
 {% if intended == True %}
-    {% if record.configcompliance_set.first.rule.config_type == 'json' %}
+    {% if record.config_type == 'json' %}
         <i class="mdi mdi-circle-small"></i>
     {% else %}
-        {% if record.goldenconfig_set.first.intended_config %}
+        {% if record.intended_config %}
             <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='intended' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='intended' %}?modal=true">
                 <i class="mdi mdi-text-box-check-outline" title="Intended Configuration"></i>
             </a>
@@ -42,12 +47,12 @@ ALL_ACTIONS = """
     {% endif %}
 {% endif %}
 {% if compliance == True %}
-    {% if record.configcompliance_set.first.rule.config_type == 'json' %}
+    {% if record.config_type == 'json' %}
             <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='json_compliance' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='json_compliance' %}?modal=true">
                 <i class="mdi mdi-file-compare" title="Compliance Details JSON"></i>
             </a>
     {% else %}
-        {% if record.goldenconfig_set.first.compliance_config %}
+        {% if record.compliance_config %}
             <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='compliance' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='compliance' %}?modal=true">
                 <i class="mdi mdi-file-compare" title="Compliance Details"></i>
             </a>
@@ -60,7 +65,7 @@ ALL_ACTIONS = """
     <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='sotagg' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='sotagg' %}?modal=true">
         <i class="mdi mdi-code-json" title="SOT Aggregate Data"></i>
     </a>
-    {% if record.configcompliance_set.first.rule.config_type == 'json' %}
+    {% if record.config_type == 'json' %}
         <i class="mdi mdi-circle-small"></i>
     {% else %}
         <a href="{% url 'extras:job' class_path='plugins/nautobot_golden_config.jobs/AllGoldenConfig' %}?device={{ record.pk }}"
@@ -239,15 +244,19 @@ class GoldenConfigTable(BaseTable):
 
     if ENABLE_BACKUP:
         backup_last_success_date = Column(
-            verbose_name="Backup Status", empty_values=(), order_by="goldenconfig__backup_last_success_date"
+            verbose_name="Backup Status", empty_values=(), order_by="backup_last_success_date"
         )
     if ENABLE_INTENDED:
         intended_last_success_date = Column(
-            verbose_name="Intended Status", empty_values=(), order_by="goldenconfig__intended_last_success_date"
+            verbose_name="Intended Status",
+            empty_values=(),
+            order_by="intended_last_success_date",
         )
     if ENABLE_COMPLIANCE:
         compliance_last_success_date = Column(
-            verbose_name="Compliance Status", empty_values=(), order_by="goldenconfig__compliance_last_success_date"
+            verbose_name="Compliance Status",
+            empty_values=(),
+            order_by="compliance_last_success_date",
         )
 
     actions = TemplateColumn(
@@ -256,9 +265,8 @@ class GoldenConfigTable(BaseTable):
 
     def _render_last_success_date(self, record, column, value):  # pylint: disable=no-self-use
         """Abstract method to get last success per row record."""
-        entry = record.goldenconfig_set.first()
-        last_success_date = getattr(entry, f"{value}_last_success_date", None)
-        last_attempt_date = getattr(entry, f"{value}_last_attempt_date", None)
+        last_success_date = getattr(record, f"{value}_last_success_date", None)
+        last_attempt_date = getattr(record, f"{value}_last_attempt_date", None)
         if not last_success_date or not last_attempt_date:
             column.attrs = {"td": {"style": "color:black"}}
             return "--"

@@ -1,6 +1,5 @@
 """Unit tests for nautobot_golden_config models."""
 
-from json import loads as json_loads
 from django.test import TestCase
 from django.db.utils import IntegrityError
 from django.core.exceptions import ValidationError
@@ -113,16 +112,6 @@ class GoldenConfigSettingModelTestCase(TestCase):
         url_string = self.global_settings.get_absolute_url()
         self.assertEqual(url_string, f"/plugins/golden-config/setting/{self.global_settings.slug}/")
 
-    def test_bad_scope(self):
-        """Verify that a bad value in the scope returns the expected error."""
-        self.global_settings.scope = json_loads('{"has_primary_ip": true, "role": ["Apple"]}')
-        with self.assertRaises(ValidationError) as error:
-            self.global_settings.clean()
-        self.assertEqual(
-            error.exception.messages[0],
-            "role: Select a valid choice. Apple is not one of the available choices.",
-        )
-
     def test_good_graphql_query_invalid_starts_with(self):
         """Valid graphql query, however invalid in the usage with golden config plugin."""
         self.global_settings.sot_agg_query = GraphQLQuery.objects.get(name="GC-SoTAgg-Query-3")
@@ -133,11 +122,6 @@ class GoldenConfigSettingModelTestCase(TestCase):
     def test_good_graphql_query_validate_starts_with(self):
         """Ensure clean() method returns None when valid query is sent through."""
         self.global_settings.sot_agg_query = GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1")
-        self.assertEqual(self.global_settings.clean(), None)
-
-    def test_good_scope(self):
-        """Verify that the scope passes validation as expected."""
-        self.global_settings.scope = json_loads('{"has_primary_ip": true}')
         self.assertEqual(self.global_settings.clean(), None)
 
 

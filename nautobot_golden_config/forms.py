@@ -5,7 +5,7 @@ from django import forms
 import nautobot.extras.forms as extras_forms
 import nautobot.utilities.forms as utilities_forms
 from nautobot.dcim.models import Device, Platform, Region, Site, DeviceRole, DeviceType, Manufacturer, Rack, RackGroup
-from nautobot.extras.models import Status, GitRepository
+from nautobot.extras.models import Status, GitRepository, DynamicGroup
 from nautobot.tenancy.models import Tenant, TenantGroup
 from nautobot.utilities.forms import SlugField
 
@@ -335,6 +335,7 @@ class GoldenConfigSettingFeatureForm(
     """Filter Form for GoldenConfigSettingFeatureForm instances."""
 
     slug = SlugField()
+    dynamic_group = utilities_forms.DynamicModelChoiceField(queryset=DynamicGroup.objects.all(), required=False)
 
     class Meta:
         """Filter Form Meta Data for GoldenConfigSettingFeatureForm instances."""
@@ -352,7 +353,7 @@ class GoldenConfigSettingFeatureForm(
             "jinja_repository",
             "jinja_path_template",
             "backup_test_connectivity",
-            "scope",
+            "dynamic_group",
             "sot_agg_query",
         )
 

@@ -4,6 +4,7 @@ from rest_framework import serializers
 
 from nautobot.extras.api.customfields import CustomFieldModelSerializer
 from nautobot.extras.api.serializers import TaggedObjectSerializer
+from nautobot.extras.api.nested_serializers import NestedDynamicGroupSerializer
 
 from nautobot_golden_config import models
 
@@ -68,6 +69,8 @@ class GoldenConfigSettingSerializer(TaggedObjectSerializer, CustomFieldModelSeri
     url = serializers.HyperlinkedIdentityField(
         view_name="plugins-api:nautobot_golden_config-api:goldenconfigsetting-detail"
     )
+    scope = serializers.JSONField(read_only=True)
+    dynamic_group = NestedDynamicGroupSerializer(required=False)
 
     class Meta:
         """Set Meta Data for GoldenConfigSetting, will serialize all fields."""

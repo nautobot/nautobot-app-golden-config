@@ -5,7 +5,6 @@ import json
 from deepdiff import DeepDiff
 from django.db import models
 from django.core.exceptions import ValidationError
-from django.core.serializers.json import DjangoJSONEncoder
 from django.shortcuts import reverse
 from django.utils.module_loading import import_string
 
@@ -295,7 +294,7 @@ class ConfigCompliance(PrimaryModel):
         """Indicates model fields to return as csv."""
         return (self.device.name, self.rule.feature.name, self.compliance)
 
-    def to_objectchange(self, action):
+    def to_objectchange(self, action):  # pylint: disable=arguments-differ
         """Remove actual and intended configuration from changelog."""
         return ObjectChange(
             changed_object=self,
@@ -388,7 +387,7 @@ class GoldenConfig(PrimaryModel):
             self.compliance_last_success_date,
         )
 
-    def to_objectchange(self, action):
+    def to_objectchange(self, action):  # pylint: disable=arguments-differ
         """Remove actual and intended configuration from changelog."""
         return ObjectChange(
             changed_object=self,
@@ -471,18 +470,25 @@ class GoldenConfigSetting(PrimaryModel):
         verbose_name="Backup Test",
         help_text="Whether or not to pretest the connectivity of the device by verifying there is a resolvable IP that can connect to port 22.",
     )
-    scope = models.JSONField(
-        encoder=DjangoJSONEncoder,
-        blank=True,
-        null=True,
-        help_text="API filter in JSON format matching the list of devices for the scope of devices to be considered.",
-    )
+    # scope = models.JSONField(
+    #     encoder=DjangoJSONEncoder,
+    #     blank=True,
+    #     null=True,
+    #     help_text="API filter in JSON format matching the list of devices for the scope of devices to be considered.",
+    # )
     sot_agg_query = models.ForeignKey(
         to="extras.GraphQLQuery",
         on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name="sot_aggregation",
+    )
+    dynamic_group = models.OneToOneField(
+        to="extras.DynamicGroup",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="golden_config_setting",
     )
 
     def get_absolute_url(self):  # pylint: disable=no-self-use
@@ -492,6 +498,13 @@ class GoldenConfigSetting(PrimaryModel):
     def __str__(self):
         """Return a simple string if model is called."""
         return f"Golden Config Setting - {self.name}"
+
+    @property
+    def scope(self):
+        """Returns filter from DynamicGroup."""
+        if self.dynamic_group:
+            return self.dynamic_group.filter
+        return {}
 
     class Meta:
         """Set unique fields for model.
@@ -523,19 +536,16 @@ class GoldenConfigSetting(PrimaryModel):
                     raise ValidationError({"scope": f"{key}: {error_message}"})
 
             filterset_params = set(filterset.get_filters().keys())
-            for key in self.scope.keys():
+            for key in self.scope:
                 if key not in filterset_params:
                     raise ValidationError({"scope": f"'{key}' is not a valid filter parameter for Device object"})
 
     def get_queryset(self):
         """Generate a Device QuerySet from the filter."""
-        if not self.scope:
+        if not self.dynamic_group:
             return Device.objects.all()
 
-        filterset_class = get_filterset_for_model(Device)
-        filterset = filterset_class(self.scope, Device.objects.all())
-
-        return filterset.qs
+        return self.dynamic_group.get_queryset()
 
     def device_count(self):
         """Return the number of devices in the group."""

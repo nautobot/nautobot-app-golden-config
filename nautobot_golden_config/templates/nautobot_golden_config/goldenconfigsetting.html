@@ -91,7 +91,7 @@
                                 <td>{{ object.description|placeholder }}</td>
                             </tr>
                             <tr>
-                                <td><a href="{{ object.get_url_to_filtered_device_list }}">Scope of Devices</td>
+                                <td><a href="{{ object.get_url_to_filtered_device_list }}">Scope of Devices</a>{% if object.dynamic_group %}<br/>via <a href="{{ object.dynamic_group.get_absolute_url }}">{{ object.dynamic_group.name }}</a>{% endif %}</td>
                                 <td>
                                     <pre>{{ object.scope|render_json }}</pre></a>
                                 </td>

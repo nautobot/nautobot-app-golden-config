@@ -28,7 +28,7 @@ namespace = Collection("nautobot_golden_config")
 namespace.configure(
     {
         "nautobot_golden_config": {
-            "nautobot_ver": "1.2.1",
+            "nautobot_ver": "1.3.7",
             "project_name": "nautobot_golden_config",
             "python_ver": "3.7",
             "local": False,
@@ -176,6 +176,34 @@ def destroy(context):
     docker_compose(context, "down --volumes")
 
 
+@task
+def vscode(context):
+    """Launch Visual Studio Code with the appropriate Environment variables to run in a container."""
+    command = "code nautobot.code-workspace"
+
+    context.run(command)
+
+
+@task(
+    help={
+        "service": "Docker-compose service name to view (default: nautobot)",
+        "follow": "Follow logs",
+        "tail": "Tail N number of lines or 'all'",
+    }
+)
+def logs(context, service="nautobot", follow=False, tail=None):
+    """View the logs of a docker-compose service."""
+    command = "logs "
+
+    if follow:
+        command += "--follow "
+    if tail:
+        command += f"--tail={tail} "
+
+    command += service
+    docker_compose(context, command)
+
+
 # ------------------------------------------------------------------------------
 # ACTIONS
 # ------------------------------------------------------------------------------
@@ -232,6 +260,33 @@ def makemigrations(context, name=""):
 
     if name:
         command += f" --name {name}"
+
+    run_command(context, command)
+
+
+@task
+def migrate(context):
+    """Perform migrate operation in Django."""
+    command = "nautobot-server migrate"
+
+    run_command(context, command)
+
+
+@task(help={})
+def post_upgrade(context):
+    """
+    Performs Nautobot common post-upgrade operations using a single entrypoint.
+
+    This will run the following management commands with default settings, in order:
+
+    - migrate
+    - trace_paths
+    - collectstatic
+    - remove_stale_contenttypes
+    - clearsessions
+    - invalidate all
+    """
+    command = "nautobot-server post_upgrade"
 
     run_command(context, command)
 

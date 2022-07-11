@@ -1,12 +1,13 @@
 """Unit tests for nautobot_golden_config."""
 from copy import deepcopy
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
 
 from django.urls import reverse
 from rest_framework import status
 
 from nautobot.utilities.testing import APITestCase
-from nautobot.extras.models import GitRepository, GraphQLQuery
+from nautobot.extras.models import GitRepository, GraphQLQuery, DynamicGroup
 from nautobot_golden_config.models import GoldenConfigSetting
 
 from .conftest import (
@@ -103,6 +104,14 @@ class GoldenConfigSettingsAPITest(APITestCase):
         self.add_permissions("nautobot_golden_config.add_goldenconfigsetting")
         self.add_permissions("nautobot_golden_config.change_goldenconfigsetting")
         self.base_view = reverse("plugins-api:nautobot_golden_config-api:goldenconfigsetting-list")
+        self.content_type = ContentType.objects.get(app_label="dcim", model="device")
+        self.dynamic_group = DynamicGroup.objects.create(
+            name="test1 site site-4",
+            slug="test1-site-site-4",
+            content_type=self.content_type,
+            filter={"has_primary_ip": "True"},
+        )
+
         self.data = {
             "name": "test-setting-1",
             "slug": "test_setting_1",
@@ -116,7 +125,7 @@ class GoldenConfigSettingsAPITest(APITestCase):
             "intended_path_template": "{{obj.site.region.slug}}/{{obj.site.slug}}/{{obj.name}}.cfg",
             "jinja_path_template": "templates/{{obj.platform.slug}}/{{obj.platform.slug}}_main.j2",
             "backup_test_connectivity": False,
-            "scope": {"has_primary_ip": "True"},
+            "dynamic_group": str(self.dynamic_group.id),
             "sot_agg_query": str(GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1").id),
             "jinja_repository": str(GitRepository.objects.get(name="test-jinja-repo-1").id),
             "backup_repository": str(GitRepository.objects.get(name="test-backup-repo-1").id),

@@ -18,7 +18,7 @@ def create_dynamic_groups(apps, schedma_editor):
                 slug=slugify(name),
                 filter=i.scope,
                 content_type=content_type,
-                description="Automatically generated for nautobot_golden_config version 2.0.0.",
+                description="Automatically generated for nautobot_golden_config version 1.2.0.",
             )
             i.dynamic_group = d_group
             i.save()

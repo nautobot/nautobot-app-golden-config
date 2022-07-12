@@ -69,7 +69,7 @@ class GoldenConfigSettingSerializer(TaggedObjectSerializer, CustomFieldModelSeri
     url = serializers.HyperlinkedIdentityField(
         view_name="plugins-api:nautobot_golden_config-api:goldenconfigsetting-detail"
     )
-    scope = serializers.JSONField(read_only=True)
+    scope = serializers.JSONField(required=False)
     dynamic_group = NestedDynamicGroupSerializer(required=False)
 
     class Meta:

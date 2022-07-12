@@ -4,12 +4,14 @@ import logging
 import json
 from deepdiff import DeepDiff
 from django.db import models
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.shortcuts import reverse
 from django.utils.module_loading import import_string
+from django.utils.text import slugify
 
 from nautobot.dcim.models import Device
-from nautobot.extras.models import ObjectChange
+from nautobot.extras.models import ObjectChange, DynamicGroup
 from nautobot.extras.utils import extras_features
 from nautobot.utilities.utils import get_filterset_for_model, serialize_object
 from nautobot.core.models.generics import PrimaryModel
@@ -470,12 +472,6 @@ class GoldenConfigSetting(PrimaryModel):
         verbose_name="Backup Test",
         help_text="Whether or not to pretest the connectivity of the device by verifying there is a resolvable IP that can connect to port 22.",
     )
-    # scope = models.JSONField(
-    #     encoder=DjangoJSONEncoder,
-    #     blank=True,
-    #     null=True,
-    #     help_text="API filter in JSON format matching the list of devices for the scope of devices to be considered.",
-    # )
     sot_agg_query = models.ForeignKey(
         to="extras.GraphQLQuery",
         on_delete=models.PROTECT,
@@ -505,6 +501,25 @@ class GoldenConfigSetting(PrimaryModel):
         if self.dynamic_group:
             return self.dynamic_group.filter
         return {}
+
+    @scope.setter
+    def scope(self, value):
+        """Create DynamicGroup in with original scope JSON."""
+        if self.dynamic_group:
+            self.dynamic_group.filter = value
+            self.dynamic_group.validated_save()
+        else:
+            name = f"GoldenConfigSetting {self.name} scope"
+            content_type = ContentType.objects.get(app_label="dcim", model="device")
+            dynamic_group = DynamicGroup.objects.create(
+                name=name,
+                slug=slugify(name),
+                filter=value,
+                content_type=content_type,
+                description="Automatically generated for nautobot_golden_config GoldenConfigSetting.",
+            )
+            self.dynamic_group = dynamic_group
+            self.validated_save()
 
     class Meta:
         """Set unique fields for model.

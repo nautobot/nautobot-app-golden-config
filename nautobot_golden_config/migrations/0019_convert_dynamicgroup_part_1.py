@@ -7,7 +7,6 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("extras", "0034_alter_fileattachment_mimetype"),
         ("nautobot_golden_config", "0018_convert_sotagg_queries_part5"),
     ]
 

@@ -215,7 +215,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
             golden_settings.dynamic_group = dynamic_group
             golden_settings.validated_save()
         with self.assertRaises(NornirNautobotException) as failure:
-            print(get_job_filter())
+            get_job_filter()
         self.assertEqual(
             failure.exception.args[0],
             "The base queryset didn't find any devices. Please check the Golden Config Setting scope.",

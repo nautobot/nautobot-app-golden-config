@@ -14,17 +14,17 @@ class ConfigComplianceOverviewOverviewHelperTestCase(TestCase):
     def setUp(self):
         """Set up base objects."""
         create_device_data()
-        self.dev01 = Device.objects.get(name="Device 1")
+        dev01 = Device.objects.get(name="Device 1")
         dev02 = Device.objects.get(name="Device 2")
         dev03 = Device.objects.get(name="Device 3")
         dev04 = Device.objects.get(name="Device 4")
 
-        feature_dev01 = create_feature_rule_json(self.dev01)
+        feature_dev01 = create_feature_rule_json(dev01)
         feature_dev02 = create_feature_rule_json(dev02)
         feature_dev03 = create_feature_rule_json(dev03)
 
         updates = [
-            {"device": self.dev01, "feature": feature_dev01},
+            {"device": dev01, "feature": feature_dev01},
             {"device": dev02, "feature": feature_dev02},
             {"device": dev03, "feature": feature_dev03},
             {"device": dev04, "feature": feature_dev01},

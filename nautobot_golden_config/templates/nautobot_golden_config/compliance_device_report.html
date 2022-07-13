@@ -111,68 +111,58 @@
             <tr>
                 <td style="width:250px">Intended Configuration</td>
                 <td class="config_hover">
-                    {% if item.intended %}
-                    <pre>{{ item.intended }}</pre>
-                    <span class="config_hover_button"><button class="btn btn-link btn-xs" value="{{ item.intended }}" title="Copy to Clipboard"
-                            aria-hidden="true" type="button" onclick="copyToClipboard(this.value)">Copy</button>
+                    <span id="{{ item.rule|slugify }}_intended"><pre>{{ item.in_intended|placeholder }}</pre></span>
+                    <span class="config_hover_button">
+                        <button class="btn btn-inline btn-default hover_copy_button" data-clipboard-target="#{{ item.rule|slugify }}_intended">
+                            <span class="mdi mdi-content-copy"></span>
+                        </button>
                     </span>
-                    {% else %}
-                        <span>___</span>
-                    {% endif %}
                 </td>
             </tr>
             <tr>
                 <td style="width:250px">Actual Configuration</td>
                 <td class="config_hover">
-                    {% if item.actual %}
-                    <pre>{{ item.actual }}</pre>
-                    <span class="config_hover_button"><button class="btn btn-link btn-xs" value="{{ item.actual }}" title="Copy to Clipboard"
-                            aria-hidden="true" type="button" onclick="copyToClipboard(this.value)">Copy</button>
+                    <span id="{{ item.rule|slugify }}_intended"><pre>{{ item.intended|placeholder }}</pre></span>
+                    <span class="config_hover_button">
+                        <button class="btn btn-inline btn-default hover_copy_button" data-clipboard-target="#{{ item.rule|slugify }}_intended">
+                            <span class="mdi mdi-content-copy"></span>
+                        </button>
                     </span>
-                    {% else %}
-                        <span>___</span>
-                    {% endif %}
                 </td>
             </tr>
         {% elif item.compliance %}
             <tr>
                 <td style="width:250px">Configuration</td>
                 <td class="config_hover">
-                    {% if item.actual %}
-                    <pre>{{ item.actual }}</pre>
-                    <span class="config_hover_button"><button class="btn btn-link btn-xs" value="{{ item.actual }}" title="Copy to Clipboard"
-                            aria-hidden="true" type="button" onclick="copyToClipboard(this.value)">Copy</button>
+                    <span id="{{ item.rule|slugify }}_actual"><pre>{{ item.actual|placeholder }}</pre></span>
+                    <span class="config_hover_button">
+                        <button class="btn btn-inline btn-default hover_copy_button" data-clipboard-target="#{{ item.rule|slugify }}_actual">
+                            <span class="mdi mdi-content-copy"></span>
+                        </button>
                     </span>
-                    {% else %}
-                        <span>___</span>
-                    {% endif %}
                 </td>
             </tr>
         {% else %}
             <tr>
                 <td style="width:250px">Intended Configuration</td>
                 <td class="config_hover">
-                    {% if item.intended %}
-                    <pre>{{ item.intended }}</pre>
-                    <span class="config_hover_button"><button class="btn btn-link btn-xs" value="{{ item.intended }}" title="Copy to Clipboard"
-                            aria-hidden="true" type="button" onclick="copyToClipboard(this.value)">Copy</button>
+                    <span id="{{ item.rule|slugify }}_intended"><pre>{{ item.intended|placeholder }}</pre></span>
+                    <span class="config_hover_button">
+                        <button class="btn btn-inline btn-default hover_copy_button" data-clipboard-target="#{{ item.rule|slugify }}_intended">
+                            <span class="mdi mdi-content-copy"></span>
+                        </button>
                     </span>
-                    {% else %}
-                        <span>___</span>
-                    {% endif %}
                 </td>
             </tr>
             <tr>
                 <td style="width:250px">Actual Configuration</td>
                 <td class="config_hover">
-                    {% if item.actual %}
-                        <pre>{{ item.actual }}</pre>
-                        <span class="config_hover_button"><button class="btn btn-link btn-xs" value="{{ item.actual }}" title="Copy to Clipboard"
-                                aria-hidden="true" type="button" onclick="copyToClipboard(this.value)">Copy</button>
-                        </span>
-                    {% else %}
-                        <span>___</span>
-                    {% endif %}
+                    <span id="{{ item.rule|slugify }}_actual"><pre>{{ item.actual|placeholder }}</pre></span>
+                    <span class="config_hover_button">
+                        <button class="btn btn-inline btn-default hover_copy_button" data-clipboard-target="#{{ item.rule|slugify }}_actual">
+                            <span class="mdi mdi-content-copy"></span>
+                        </button>
+                    </span>
                 </td>
             </tr>
         {% endif %}
@@ -180,10 +170,11 @@
             <tr>
                 <td style="color:red;width:250px">Missing Configuration</td>
                 <td class="config_hover">
-                    <pre>{{ item.missing }}</pre>
+                    <span id="{{ item.rule|slugify }}_missing"><pre>{{ item.missing }}</pre></span>
                     <span class="config_hover_button">
-                        <button class="btn btn-link btn-xs" value="{{ item.missing }}" title="Copy to Clipboard"
-                            aria-hidden="true" type="button" onclick="copyToClipboard(this.value)">Copy</button>
+                        <button class="btn btn-inline btn-default hover_copy_button" data-clipboard-target="#{{ item.rule|slugify }}_missing">
+                            <span class="mdi mdi-content-copy"></span>
+                        </button>
                     </span>
                 </td>
             </tr>
@@ -192,10 +183,11 @@
             <tr>
                 <td style="color:red;width:250px">Extra Configuration</td>
                 <td class="config_hover">
-                    <pre>{{ item.extra }}<span class="config_hover_button"></pre>
+                    <span id="{{ item.rule|slugify }}_extra"><pre>{{ item.extra }}</pre></span>
                     <span class="config_hover_button">
-                        <button class="btn btn-link btn-xs" value="{{ item.extra }}" title="Copy to Clipboard"
-                            aria-hidden="true" type="button" onclick="copyToClipboard(this.value)">Copy</button>
+                        <button class="btn btn-inline btn-default hover_copy_button" data-clipboard-target="#{{ item.rule|slugify }}_extra">
+                            <span class="mdi mdi-content-copy"></span>
+                        </button>
                     </span>
                 </td>
             </tr>
@@ -203,13 +195,19 @@
     </table>
     </div>
 {% endfor %}
-<script type="text/javascript">
-    function copyToClipboard(config_value) {
-        var $temp = $("<textarea>");
-        $("body").append($temp);
-        $temp.val(config_value).select();
-        document.execCommand("copy");
-        $temp.remove();
-    }
+
+{% endblock %}
+<!-- TODO: This should come from the extends base, need to figure out why still required -->
+{% block javascript %}
+<script>
+    var clipboard = new ClipboardJS('.btn');
+
+    clipboard.on('success', function (e) {
+        console.log(e);
+    });
+
+    clipboard.on('error', function (e) {
+        console.log(e);
+    });
 </script>
 {% endblock %}

@@ -1,0 +1,23 @@
+---
+dev_addr: "127.0.0.1:8001"
+edit_uri: "edit/main/nautobot-golden-config/docs"
+site_name: "NautbotGoldenConfig Documentation"
+site_url: "https://nautobot-golden-config.readthedocs.io/"
+repo_url: "https://github.com/nautobot/nautobot-plugin-golden-config"
+python:
+  install:
+    - requirements: "docs/requirements.txt"
+theme:
+  name: "readthedocs"
+  navigation_depth: 4
+  hljs_languages:
+    - "django"
+    - "yaml"
+extra_css:
+  - "extra.css"
+markdown_extensions:
+  - "admonition"
+  - toc:
+      permalink: true
+nav:
+  - Introduction: "index.md"

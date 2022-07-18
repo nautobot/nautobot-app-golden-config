@@ -11,17 +11,18 @@ def create_dynamic_groups(apps, schedma_editor):
     content_type = apps.get_model("contenttypes.ContentType").objects.get(app_label="dcim", model="device")
     qs = apps.get_model("nautobot_golden_config.GoldenConfigSetting").objects.all()
     for i in qs:
-        if i.scope:
-            name = f"GoldenConfigSetting {i.name} scope"
-            d_group = model.objects.create(
-                name=name,
-                slug=slugify(name),
-                filter=i.scope,
-                content_type=content_type,
-                description="Automatically generated for nautobot_golden_config version 1.2.0.",
-            )
-            i.dynamic_group = d_group
-            i.save()
+        if not isinstance(i.scope, dict):
+            i.scope = {}
+        name = f"GoldenConfigSetting {i.name} scope"
+        d_group = model.objects.create(
+            name=name,
+            slug=slugify(name),
+            filter=i.scope,
+            content_type=content_type,
+            description="Automatically generated for nautobot_golden_config version 1.2.0.",
+        )
+        i.dynamic_group = d_group
+        i.save()
 
 
 class Migration(migrations.Migration):

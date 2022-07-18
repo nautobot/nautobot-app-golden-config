@@ -355,6 +355,7 @@ class GoldenConfigSettingFeatureForm(
             "backup_test_connectivity",
             "dynamic_group",
             "sot_agg_query",
+            "tags",
         )
 
 

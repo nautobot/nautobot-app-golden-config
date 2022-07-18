@@ -20,24 +20,26 @@ RUN poetry config virtualenvs.create false \
 WORKDIR /tmp/install
 
 # Copy in only pyproject.toml/poetry.lock to help with caching this layer if no updates to dependencies
-COPY poetry.lock pyproject.toml /tmp/install/
+# COPY poetry.lock pyproject.toml /tmp/install/
 
 # Add the requested Nautobot version to pyproject
 # to install the correct version based on the NAUTOBOT_VER argument
 # Otherwise Poetry will override the version in this container
 # with the one in the poetry.lock
 # Redifine NAUTOBOT_VER as a build arg as initial is defined outside FROM.
-ARG NAUTOBOT_VER="1.3.0"
-RUN poetry add nautobot@${NAUTOBOT_VER}
+
+## Commenting out for now as needing install from GIT
+# ARG NAUTOBOT_VER="1.3.0"
+# RUN poetry add nautobot@${NAUTOBOT_VER}
 
 # --no-root declares not to install the project package since we're wanting to take advantage of caching dependency installation
 # and the project is copied in and installed after this step
-RUN poetry install --no-interaction --no-ansi --no-root
+# RUN poetry install --no-interaction --no-ansi --no-root
 
 # Copy in the rest of the source code and install local Nautobot plugin
 WORKDIR /source
 COPY . /source
-RUN cp /tmp/install/* /source/
+# RUN cp /tmp/install/* /source/
 RUN poetry install --no-interaction --no-ansi
 
 RUN apt update

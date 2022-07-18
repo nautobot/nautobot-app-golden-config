@@ -541,25 +541,8 @@ class GoldenConfigSetting(PrimaryModel):
             if not str(self.sot_agg_query.query).startswith(GRAPHQL_STR_START):
                 raise ValidationError(f"The GraphQL query must start with exactly `{GRAPHQL_STR_START}`")
 
-        if self.scope:
-            filterset_class = get_filterset_for_model(Device)
-            filterset = filterset_class(self.scope, Device.objects.all())
-
-            if filterset.errors:
-                for key in filterset.errors:
-                    error_message = ", ".join(filterset.errors[key])
-                    raise ValidationError({"scope": f"{key}: {error_message}"})
-
-            filterset_params = set(filterset.get_filters().keys())
-            for key in self.scope:
-                if key not in filterset_params:
-                    raise ValidationError({"scope": f"'{key}' is not a valid filter parameter for Device object"})
-
     def get_queryset(self):
         """Generate a Device QuerySet from the filter."""
-        if not self.dynamic_group:
-            return Device.objects.all()
-
         return self.dynamic_group.get_queryset()
 
     def device_count(self):

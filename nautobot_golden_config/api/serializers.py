@@ -43,6 +43,12 @@ class ComplianceRuleSerializer(TaggedObjectSerializer, CustomFieldModelSerialize
 class ConfigComplianceSerializer(TaggedObjectSerializer, CustomFieldModelSerializer):
     """Serializer for ConfigCompliance object."""
 
+    def to_representation(self, instance):
+        if self.context['request'].query_params['secrets']: # verify syntax
+            instance.insert_secrets = True
+        representation = super().to_representation(instance)
+        return representation
+
     class Meta:
         """Set Meta Data for ConfigCompliance, will serialize fields."""
 

@@ -17,7 +17,7 @@ from nautobot.core.models.generics import PrimaryModel
 from netutils.config.compliance import feature_compliance
 
 from nautobot_golden_config.choices import ComplianceRuleTypeChoice
-from nautobot_golden_config.utilities.utils import get_platform
+from nautobot_golden_config.utilities.utils import get_platform, do_magic_replace_secrets
 from nautobot_golden_config.utilities.constant import PLUGIN_CFG
 
 
@@ -281,15 +281,22 @@ class ConfigCompliance(PrimaryModel):
     intended = models.JSONField(blank=True, help_text="Intended Configuration for feature")
     missing = models.JSONField(blank=True, help_text="Configuration that should be on the device.")
     extra = models.JSONField(blank=True, help_text="Configuration that should not be on the device.")
+    pushed = models.JSONField(blank=True, help_text="Configuration that should be pushed to the device.")
     ordered = models.BooleanField(default=True)
     # Used for django-pivot, both compliance and compliance_int should be set.
     compliance_int = models.IntegerField(null=True, blank=True)
 
     csv_headers = ["Device Name", "Feature", "Compliance"]
+    insert_secrets = False
 
     def get_absolute_url(self):
         """Return absolute URL for instance."""
         return reverse("plugins:nautobot_golden_config:configcompliance", args=[self.pk])
+
+    def get_pushed(self):
+        if self.insert_secrets:
+           return do_magic_replace_secrets(self.actual, self.intended, self.missing, self.extra) # Can potentially be minimized
+        return self.pushed
 
     def to_csv(self):
         """Indicates model fields to return as csv."""

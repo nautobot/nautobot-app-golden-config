@@ -4,6 +4,8 @@ from nautobot.extras.choices import SecretsGroupAccessTypeChoices
 from nautobot.extras.models.secrets import SecretsGroupAssociation
 from nautobot_golden_config.utilities.constant import PLUGIN_CFG
 
+def do_magic_replace_secrets(actual, intended, missing, extra):
+    pass # Add logic
 
 def get_platform(platform):
     """Utility method to map user defined platform slug to netutils named entity."""

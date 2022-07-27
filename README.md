@@ -1,6 +1,6 @@
 # Nautobot Golden Config
 
-A plugin for [Nautobot](https://github.com/nautobot/nautobot) that provides a NetDevOps approach to golden configuration and config compliance.
+A plugin for [Nautobot](https://github.com/nautobot/nautobot) that provides a NetDevOps approach to golden configuration and configuration compliance.
 
 # Introduction
 

@@ -1,12 +1,12 @@
-# nautobot-golden-config
+# Nautobot Golden Config
 
-A plugin for [Nautobot](https://github.com/nautobot/nautobot) that intends to provide context around golden configuration.
+A plugin for [Nautobot](https://github.com/nautobot/nautobot) that provides a NetDevOps approach to golden configuration and config compliance.
 
 # Introduction
 
 ## What is the Golden Configuration Plugin?
 
-The golden configuration plugin is a Nautobot plugin that aims to solve common configuration management challenges.
+The Golden Configuration plugin is a Nautobot plugin that aims to solve common configuration management challenges.
 
 ## Key Use Cases
 

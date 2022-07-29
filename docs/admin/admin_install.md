@@ -1,14 +1,29 @@
-# Installation
+# Installing the App in Nautobot
+
+## Prerequisites
+
+- The plugin relies on [`nautobot_plugin_nornir`](https://pypi.org/project/nautobot-plugin-nornir/) to be installed and both plugins to be enabled in your configuration settings.
+- The plugin is compatible with Nautobot 1.2.0 and higher.
+- Databases supported: PostgreSQL, MySQL
+
+## Install Guide
 
 Plugins can be installed manually or use Python's `pip`. See the [nautobot documentation](https://nautobot.readthedocs.io/en/latest/plugins/#install-the-package) for more details. The pip package name for this plugin is [`nautobot-golden-config`](https://pypi.org/project/nautobot-golden-config/)
 
-> The plugin is compatible with Nautobot 1.0.0 and higher
 
-**Prerequisite:** The plugin relies on [`nautobot_plugin_nornir`](https://pypi.org/project/nautobot-plugin-nornir/) to be installed and both plugins to be enabled in your configuration settings.
+The plugin is available as a Python package via PyPI and can be installed with `pip`:
 
-**Required:** The following block of code below shows the additional configuration required to be added to your `nautobot_config.py` file:
-- append `"nautobot_golden_config"` to the `PLUGINS` list, and `"nautobot_plugin_nornir"` if it was not already there (More info [here](https://github.com/nautobot/nautobot-plugin-nornir))
-- append the `"nautobot_golden_config"` dictionary to the `PLUGINS_CONFIG` dictionary, and `"nautobot_plugin_nornir"` if it was not already there.
+```shell
+pip install nautobot-golden-config
+```
+
+To ensure Nautobot Golden Config is automatically re-installed during future upgrades, create a file named `local_requirements.txt` (if not already existing) in the Nautobot root directory (alongside `requirements.txt`) and list the `nautobot-golden-config` package:
+
+```no-highlight
+# echo nautobot-golden-config >> local_requirements.txt
+```
+
+Once installed, the plugin needs to be enabled in your `nautobot_config.py`
 
 ```python
 PLUGINS = ["nautobot_plugin_nornir", "nautobot_golden_config"]
@@ -38,10 +53,13 @@ PLUGINS_CONFIG = {
         # "get_custom_compliance": "my.custom_compliance.func"
     },
 }
-
 ```
 
-## Plugin Configuration
+The following block of code below shows the additional configuration required to be added to your `nautobot_config.py` file:
+- append `"nautobot_golden_config"` to the `PLUGINS` list, and `"nautobot_plugin_nornir"` if it was not already there (More info [here](https://github.com/nautobot/nautobot-plugin-nornir))
+- append the `"nautobot_golden_config"` dictionary to the `PLUGINS_CONFIG` dictionary, and `"nautobot_plugin_nornir"` if it was not already there.
+
+## App Configuration
 
 The plugin behavior can be controlled with the following list of settings. 
 
@@ -63,3 +81,16 @@ The plugin behavior can be controlled with the following list of settings.
 > Note: Over time the compliance report will become more dynamic, but for now allow users to configure the `per_*` configs in a way that fits best for them.
 
 > Note: Review [`nautobot_plugin_nornir`](https://pypi.org/project/nautobot-plugin-nornir/) for Nornir and dispatcher configuration options. 
+
+## Deprecation Policy
+
+Support of upstream Nautobot will be announced 1 minor or major version ahead. Deprecation policy will be announced within the
+CHANGELOG.md file, and updated in the table below. There will be a `stable-<major>.<minor>` branch that will be minimally maintained, 
+for any security enhancements or major bugs will be supported for a limited time. 
+
+| Golden Config Version | Nautobot First Support Version | Nautobot Last Support Version |
+| --------------------- | ------------------------------ | ----------------------------- |
+| 0.9.X                 | 1.0.0                          | 1.2.99 [Official]             |
+| 0.10.X                | 1.0.0                          | 1.2.99 [Official]             |
+| 1.0.X                 | 1.2.0                          | 1.3.99 [Official]             |
+| 1.1.X                 | 1.2.0                          | 1.3.99 [Official]             |

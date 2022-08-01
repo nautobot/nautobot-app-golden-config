@@ -105,7 +105,7 @@ class ConfigComplianceFilterForm(utilities_forms.BootstrapMixin, extras_forms.Cu
 
 
 class ComplianceRuleForm(
-    utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelForm, extras_forms.RelationshipModelForm
+    utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelForm, extras_forms.RelationshipModelFormMixin
 ):
     """Filter Form for ComplianceRule instances."""
 
@@ -164,7 +164,7 @@ class ComplianceRuleCSVForm(extras_forms.CustomFieldModelCSVForm):
 
 
 class ComplianceFeatureForm(
-    utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelForm, extras_forms.RelationshipModelForm
+    utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelForm, extras_forms.RelationshipModelFormMixin
 ):
     """Filter Form for ComplianceFeature instances."""
 
@@ -214,7 +214,7 @@ class ComplianceFeatureCSVForm(extras_forms.CustomFieldModelCSVForm):
 
 
 class ConfigRemoveForm(
-    utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelForm, extras_forms.RelationshipModelForm
+    utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelForm, extras_forms.RelationshipModelFormMixin
 ):
     """Filter Form for Line Removal instances."""
 
@@ -271,7 +271,7 @@ class ConfigRemoveCSVForm(extras_forms.CustomFieldModelCSVForm):
 
 
 class ConfigReplaceForm(
-    utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelForm, extras_forms.RelationshipModelForm
+    utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelForm, extras_forms.RelationshipModelFormMixin
 ):
     """Filter Form for Line Removal instances."""
 
@@ -330,7 +330,7 @@ class ConfigReplaceBulkEditForm(
 
 
 class GoldenConfigSettingFeatureForm(
-    utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelForm, extras_forms.RelationshipModelForm
+    utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelForm, extras_forms.RelationshipModelFormMixin
 ):
     """Filter Form for GoldenConfigSettingFeatureForm instances."""
 

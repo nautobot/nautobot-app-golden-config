@@ -10,10 +10,9 @@ from django.shortcuts import reverse
 from django.utils.module_loading import import_string
 from django.utils.text import slugify
 
-from nautobot.dcim.models import Device
 from nautobot.extras.models import ObjectChange, DynamicGroup
 from nautobot.extras.utils import extras_features
-from nautobot.utilities.utils import get_filterset_for_model, serialize_object
+from nautobot.utilities.utils import serialize_object
 from nautobot.core.models.generics import PrimaryModel
 from netutils.config.compliance import feature_compliance
 
@@ -157,7 +156,7 @@ if PLUGIN_CFG.get("get_custom_compliance"):
     "relationships",
     "webhooks",
 )
-class ComplianceFeature(PrimaryModel):
+class ComplianceFeature(PrimaryModel):  # pylint: disable=too-many-ancestors
     """ComplianceFeature details."""
 
     name = models.CharField(max_length=100, unique=True)
@@ -192,7 +191,7 @@ class ComplianceFeature(PrimaryModel):
     "relationships",
     "webhooks",
 )
-class ComplianceRule(PrimaryModel):
+class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
     """ComplianceRule details."""
 
     feature = models.ForeignKey(to="ComplianceFeature", on_delete=models.CASCADE, blank=False, related_name="feature")
@@ -272,7 +271,7 @@ class ComplianceRule(PrimaryModel):
     "relationships",
     "webhooks",
 )
-class ConfigCompliance(PrimaryModel):
+class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
     """Configuration compliance details."""
 
     device = models.ForeignKey(to="dcim.Device", on_delete=models.CASCADE, help_text="The device", blank=False)
@@ -346,7 +345,7 @@ class ConfigCompliance(PrimaryModel):
     "relationships",
     "webhooks",
 )
-class GoldenConfig(PrimaryModel):
+class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
     """Configuration Management Model."""
 
     device = models.ForeignKey(
@@ -411,7 +410,7 @@ class GoldenConfig(PrimaryModel):
 @extras_features(
     "graphql",
 )
-class GoldenConfigSetting(PrimaryModel):
+class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     """GoldenConfigSetting Model defintion. This provides global configs instead of via configs.py."""
 
     name = models.CharField(max_length=100, unique=True, blank=False)
@@ -482,8 +481,6 @@ class GoldenConfigSetting(PrimaryModel):
     dynamic_group = models.OneToOneField(
         to="extras.DynamicGroup",
         on_delete=models.PROTECT,
-        null=True,
-        blank=True,
         related_name="golden_config_setting",
     )
 
@@ -549,34 +546,9 @@ class GoldenConfigSetting(PrimaryModel):
         """Return the number of devices in the group."""
         return self.get_queryset().count()
 
-    def get_filter_as_string(self):
-        """Get filter as string."""
-        if not self.scope:
-            return None
-
-        result = ""
-
-        for key, value in self.scope.items():
-            if isinstance(value, list):
-                for item in value:
-                    if result != "":
-                        result += "&"
-                    result += f"{key}={item}"
-            else:
-                result += "&"
-                result += f"{key}={value}"
-
-        return result
-
     def get_url_to_filtered_device_list(self):
         """Get url to all devices that are matching the filter."""
-        base_url = reverse("dcim:device_list")
-        filter_str = self.get_filter_as_string()
-
-        if filter_str:
-            return f"{base_url}?{filter_str}"
-
-        return base_url
+        return self.dynamic_group.get_group_members_url()
 
 
 @extras_features(
@@ -588,7 +560,7 @@ class GoldenConfigSetting(PrimaryModel):
     "relationships",
     "webhooks",
 )
-class ConfigRemove(PrimaryModel):
+class ConfigRemove(PrimaryModel):  # pylint: disable=too-many-ancestors
     """ConfigRemove for Regex Line Removals from Backup Configuration Model defintion."""
 
     name = models.CharField(max_length=255, null=False, blank=False)
@@ -640,7 +612,7 @@ class ConfigRemove(PrimaryModel):
     "relationships",
     "webhooks",
 )
-class ConfigReplace(PrimaryModel):
+class ConfigReplace(PrimaryModel):  # pylint: disable=too-many-ancestors
     """ConfigReplace for Regex Line Replacements from Backup Configuration Model defintion."""
 
     name = models.CharField(max_length=255, null=False, blank=False)

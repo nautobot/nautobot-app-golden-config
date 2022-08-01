@@ -37,7 +37,7 @@ matplotlib = "^3.3.2"
 nautobot-plugin-nornir = ">=0.9.7"
 
 ## Setting as next to test with DynamicGroup changes
-nautobot = {git = "https://github.com/nautobot/nautobot.git", rev = "next"}
+nautobot = "1.4.0b1"
 
 [tool.poetry.dev-dependencies]
 bandit = "*"

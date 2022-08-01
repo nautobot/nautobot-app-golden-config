@@ -21,7 +21,7 @@ class GoldenConfig(PluginConfig):
     author_email = "opensource@networktocode.com"
     description = "A plugin for managing Golden Configurations."
     base_url = "golden-config"
-    min_version = "1.3.0"
+    min_version = "1.4.0b1"
     max_version = "1.5.99"
     default_settings = {
         "enable_backup": True,

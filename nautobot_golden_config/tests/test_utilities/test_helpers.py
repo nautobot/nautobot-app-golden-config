@@ -61,6 +61,12 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
             content_type=self.content_type,
             filter={"site": ["site-4"]},
         )
+        dynamic_group3 = DynamicGroup.objects.create(
+            name="test3 site site-4",
+            slug="test3-site-site-4",
+            content_type=self.content_type,
+            filter={},
+        )
         self.test_settings_a = GoldenConfigSetting.objects.create(
             name="test_a",
             slug="test_a",
@@ -93,6 +99,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
             backup_repository=GitRepository.objects.get(name="backup-parent_region-3"),
             intended_repository=GitRepository.objects.get(name="intended-parent_region-3"),
             jinja_repository=GitRepository.objects.get(name="test-jinja-repo-3"),
+            dynamic_group=dynamic_group3,
         )
 
         # Device.objects.all().delete()

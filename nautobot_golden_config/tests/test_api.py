@@ -93,7 +93,7 @@ class GoldenConfigAPITest(APITestCase):  # pylint: disable=too-many-ancestors
         self.assertFalse(response.data["compliance"])
 
 
-class GoldenConfigSettingsAPITest(APITestCase):
+class GoldenConfigSettingsAPITest(APITestCase):  # pylint: disable=too-many-ancestors
     """Verify that the combination of values in a GoldenConfigSettings object POST are valid."""
 
     def setUp(self):
@@ -213,5 +213,5 @@ class GoldenConfigSettingsAPITest(APITestCase):
         self.assertEqual(GitRepository.objects.all().count(), 0)
 
         # Put back a general GoldenConfigSetting object.
-        global_settings = GoldenConfigSetting.objects.create()
+        global_settings = GoldenConfigSetting.objects.create(dynamic_group=self.dynamic_group)
         global_settings.save()

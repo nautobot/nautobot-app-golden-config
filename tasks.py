@@ -302,7 +302,7 @@ def unittest(context, label="nautobot_golden_config"):
         context (obj): Used to run specific commands
         label (str): Specify a directory or module to test instead of running all Nautobot Golden Config tests.
     """
-    command = f"nautobot-server test {label}"
+    command = f"nautobot-server test {label} --keepdb"
     run_command(context, command)
 
 

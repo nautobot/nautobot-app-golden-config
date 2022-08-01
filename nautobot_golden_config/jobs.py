@@ -9,7 +9,6 @@ from nautobot.extras.datasources.git import ensure_git_repository
 from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Site, Platform, Region, Rack, RackGroup
 from nautobot.tenancy.models import Tenant, TenantGroup
 
-from nautobot_golden_config.models import GoldenConfigSetting
 from nautobot_golden_config.nornir_plays.config_intended import config_intended
 from nautobot_golden_config.nornir_plays.config_backup import config_backup
 from nautobot_golden_config.nornir_plays.config_compliance import config_compliance

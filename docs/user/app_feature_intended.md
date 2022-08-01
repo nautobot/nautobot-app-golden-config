@@ -92,10 +92,10 @@ To start a intended configuration job manually:
 
 In order to generate the intended configurations at least two repositories are needed.
 
-1. At least one repository in which to save [intended configurations](./navigating-golden.md#git-settings) once generated.
-2. At least one repository in which to store device [backups](./navigating-golden.md#git-settings); the device's current operating configuration.
-3. The [intended_path_template](./navigating-golden.md#application-settings) configuration parameter.
-4. The [jinja_path_template](./navigating-golden.md#application-settings) configuration parameter.
+1. At least one repository in which to save [intended configurations](./app_use_cases.md#git-settings) once generated.
+2. At least one repository in which to store device [backups](./app_use_cases.md#git-settings); the device's current operating configuration.
+3. The [intended_path_template](./app_use_cases.md#application-settings) configuration parameter.
+4. The [jinja_path_template](./app_use_cases.md#application-settings) configuration parameter.
 
 ### Intended Repository Matching Rule
 
@@ -104,8 +104,8 @@ In order to generate the intended configurations at least two repositories are n
 
 The `intended_match_rule` setting allows you to match a given `Device` Django ORM object to a backup Git repository. This field should contain a Jinja2-formatted template. The plugin populates the variables in the Jinja2 template via the GraphQL query configured on the plugin.
 
-This is exactly the same concept as described in [Backup Repository Matching Rule](./navigating-backup.md#repository-matching-rule), and better described there.
+This is exactly the same concept as described in [Backup Repository Matching Rule](./app_feature_backup.md#repository-matching-rule), and better described there.
 
 ## Data
 
-The data provided while rendering the configuration of a device is described in the [SoT Aggregation](./navigating-sot-agg.md) overview. 
+The data provided while rendering the configuration of a device is described in the [SoT Aggregation](./app_feature_sotagg.md) overview. 

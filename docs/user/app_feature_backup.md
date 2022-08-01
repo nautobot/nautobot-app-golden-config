@@ -22,7 +22,7 @@ Configuration" changed date, as this will cause unnecessary changes and secondly
 
 In the `Backup Repository` field of the Settings, configure the repository which you intend to use for backed-up device configurations as part of Golden Config.
 
-Backup repositories must first be configured under **Extensibility -> Git Repositories**. When you configure a repository, look for the `Provides` field in the UI. To serve as a configuration backup store, the repository must be configured with the `backup configs` capability under the `Provides` field. For further details, refer to [Navigating Nautobot Git Settings](./navigating-golden.md#git-settings).
+Backup repositories must first be configured under **Extensibility -> Git Repositories**. When you configure a repository, look for the `Provides` field in the UI. To serve as a configuration backup store, the repository must be configured with the `backup configs` capability under the `Provides` field. For further details, refer to [Navigating Nautobot Git Settings](./app_use_cases.md#git-settings).
 
 
 ### Backup Path Template
@@ -42,7 +42,7 @@ With a Sydney, AU device `SYD001AURTR32`, in the site named `Sydney001` and the 
 
 The backup process will automatically create folders as required based on the path definition. 
 
-The `backup_path_template` can be set in the UI.  For navigation details [see](./navigating-golden.md#application-settings).
+The `backup_path_template` can be set in the UI.  For navigation details [see](./app_use_cases.md#application-settings).
 
 ### Device Login Credentials
 
@@ -67,7 +67,7 @@ configurations that will change each time. A match simply means to remove.
 In order to specify line removals. Navigate to **Golden Config -> Config Removals**.  Click the **Add** button and fill out the details.
 
 The remove setting is based on `Platform`.  An example is shown below.
-![Config Removals View](./img/00-navigating-backup.png)
+![Config Removals View](../images/00-navigating-backup.png)
 
 ## Config Replacements
 
@@ -75,7 +75,7 @@ This is a replacement config with a regex pattern with a single capture groups t
 
 The replace lines setting is based on `Platform`.  An example is shown below.
 
-![Config Replacements View](./img/01-navigating-backup.png)
+![Config Replacements View](../images/01-navigating-backup.png)
 
 The line replace uses Python's `re.sub` method. As shown, a common pattern is to obtain the non-confidential data in a capture group e.g. `()`, and return the rest of the string returned in the backrefence, e.g. `\2`.
 

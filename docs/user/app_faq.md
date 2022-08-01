@@ -47,14 +47,14 @@ The current supported platform and the associated *default* platform slug names 
 
 * arista_eos
 * bigip_f5
+* cisco_aireos
 * cisco_asa
 * cisco_ios
 * cisco_nxos
-* cisco_aireos
-* bigip_f5
 * fortinet_fortios
 * juniper_junos
 * linux
+* nokia_sros
 
 The expected "network_os" parameter must be as defined by netutils and golden config uses the platform slug to map from the device to the appropriate
 "network_os" that netutils expects. However, there an ability to map the actual platform slug for compliance and parsing tasks via the plugin settings in your

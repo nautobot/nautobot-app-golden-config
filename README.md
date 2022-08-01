@@ -1,17 +1,22 @@
-# nautobot-golden-config
+# Nautobot Golden Config
 
-A plugin for [Nautobot](https://github.com/nautobot/nautobot) that intends to provide context around golden configuration.
+<p align="center">
+  <img src="docs/images/icon-NautobotGoldenConfig.png" height="200px">
+  <br>
+  <a href="https://github.com/nautobot/nautobot-plugin-golden-config/actions"><img src="https://github.com/nautobot/nautobot-plugin-golden-config/actions/workflows/ci.yml/badge.svg?branch=main"></a>
+  <a href="https://pypi.org/project/nautobot-golden-config/"><img src="https://img.shields.io/pypi/v/nautobot-golden-config"></a>
+  <a href="https://pypi.org/project/nautobot-golden-config/"><img src="https://img.shields.io/pypi/dm/nautobot-golden-config"></a>
+  <br>
+  An App for <a href="https://github.com/nautobot/nautobot">Nautobot</a>.
+</p>
 
-# Introduction
+## Overview
 
-## What is the Golden Configuration Plugin?
+The Golden Config plugin is a Nautobot plugin that provides a NetDevOps approach to golden configuration and configuration compliance.
 
-The golden configuration plugin is a Nautobot plugin that aims to solve common configuration management challenges.
-
-## Key Use Cases
+### Key Use Cases
 
 This plugin enable four (4) key use cases.
-
 
 1. **Configuration Backups** - Is a Nornir process to connect to devices, optionally parse out lines/secrets, backup the configuration, and save to a Git repository.
 2. **Intended Configuration** - Is a Nornir process to generate configuration based on a Git repo of Jinja files to combine with a GraphQL generated data and a Git repo to store the intended configuration.
@@ -23,37 +28,50 @@ coupled, this isn't actually the case. For example, one can obtain backup config
 of the location of the backup configurations, and the compliance process would work the same way. Also, another user may only want to generate configurations,
 but not want to use other features, which is perfectly fine to do so.
 
-## Documentation
-- [Installation](./docs/installation.md)
-- [Quick Start Guide](./docs/quick-start.md)
-- [Navigating Overview](./docs/navigating-golden.md)
-- [Navigating Backup](./docs/navigating-backup.md)
-- [Navigating Intended](./docs/navigating-intended.md)
-- [Navigating SoTAgg](./docs/navigating-sot-agg.md)
-- [Navigating Compliance](./docs/navigating-compliance.md)
-- [Navigating JSON Compliance](./docs/navigating-compliance-json.md)
-- [Navigating Custom Compliance](./docs/navigating-compliance-custom.md)
-- [FAQ](./docs/FAQ.md)
-- [Upgrade Notes](./docs/upgrade.md)
-
-
 ## Screenshots
 
 There are many features and capabilities the plugin provides into the Nautobot ecosystem. The following screenshots are intended to provide a quick visual overview of some of these features.
 
 The golden configuration is driven by jobs that run a series of tasks and the result is captured in this overview.
 
-![Overview](./docs/img/golden-overview.png)
+![Overview](https://raw.githubusercontent.com/nautobot/nautobot-plugin-golden-config/develop/docs/images/ss_golden-overview.png)
 
 The compliance report provides a high-level overview on the compliance of your network.
-![Compliance Report](./docs/img/compliance-report.png)
+![Compliance Report](https://raw.githubusercontent.com/nautobot/nautobot-plugin-golden-config/develop/docs/images/ss_compliance-report.png)
 
 The compliance overview will provide a per device and feature overview on the compliance of your network devices.
-![Compliance Overview](./docs/img/compliance-overview.png)
+![Compliance Overview](https://raw.githubusercontent.com/nautobot/nautobot-plugin-golden-config/develop/docs/images/ss_compliance-overview.png)
 
 Drilling into a specific device and feature, you can get an immediate detailed understanding of your device.
-![Compliance Device](./docs/img/compliance-device.png)
+![Compliance Device](https://raw.githubusercontent.com/nautobot/nautobot-plugin-golden-config/develop/docs/images/ss_compliance-device.png)
 
+![Compliance Rule](https://raw.githubusercontent.com/nautobot/nautobot-plugin-golden-config/develop/docs/images/ss_compliance-rule.png)
+
+## Try it out!
+
+This App is installed in the Nautobot Community Sandbox found over at [demo.nautobot.com](https://demo.nautobot.com/)!
+
+> For a full list of all the available always-on sandbox environments, head over to the main page on [networktocode.com](https://www.networktocode.com/nautobot/sandbox-environments/).
+
+## Documentation
+
+Full web-based HTML documentation for this app can be found over on the [Nautobot Docs](https://github.com/nautobot/nautobot-plugin-golden-config) website:
+
+- [User Guide](./docs/user/) - Overview, Using the App, Getting Started, Navigating compliance (cli, json, custom), backup, app usage, intended state creation.
+- [Administrator Guide](./docs/admin/) - How to Install, Configure, Upgrade, or Uninstall the App.
+- [Developer Guide](./docs/dev/) - Extending the App, API Reference, Contribution Guide.
+- [Release Notes / Changelog](./docs/admin/release_notes)
+- [Frequently Asked Questions](./docs/user/app_faq)
+
+### Contributing to the Docs
+
+You can find all the Markdown source for the App documentation under the [docs](docs/) folder in this repository. Any PRs with fixes or improvements are very welcome!
+
+Project documentation is generated by [mkdocs](https://www.mkdocs.org/) from the documentation located in the docs folder. You can configure [readthedocs.io](https://readthedocs.io/) to point at this folder in your repo. A container hosting the docs will be started using the invoke commands on [http://localhost:8001](http://localhost:8001), as changes are saved the docs will be automatically reloaded.
+
+## Questions
+
+<<<<<<< HEAD
 ![Compliance Rule](./docs/img/compliance-rule.png)
 
 # Contributing
@@ -158,3 +176,6 @@ Each command can be executed with `invoke <command>`. All commands support the a
   tests            Run all tests for this plugin.
   unittest         Run Django unit tests for the plugin.
 ```
+=======
+For any questions or comments, please check the [FAQ](./docs/user/app_faq.md) first. Feel free to also swing by the [Network to Code slack channel](https://networktocode.slack.com/) (channel #nautobot), sign up [here](http://slack.networktocode.com/).
+>>>>>>> b23e3f96b6be8df5750bd4a49af94b92cba786b4

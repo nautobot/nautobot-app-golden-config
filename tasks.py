@@ -294,15 +294,24 @@ def post_upgrade(context):
 # ------------------------------------------------------------------------------
 # TESTS / LINTING
 # ------------------------------------------------------------------------------
-@task
-def unittest(context, label="nautobot_golden_config"):
-    """Run Django unit tests for the plugin.
+@task(
+    help={
+        "keepdb": "save and re-use test database between test runs for faster re-testing.",
+        "label": "specify a directory or module to test instead of running all Nautobot tests",
+        "failfast": "fail as soon as a single test fails don't run the entire test suite",
+        "buffer": "Discard output from passing tests",
+    }
+)
+def unittest(context, keepdb=False, label="nautobot_golden_config", failfast=False, buffer=True):
+    """Run Nautobot unit tests."""
+    command = f"coverage run --module nautobot.core.cli test {label}"
 
-    Args:
-        context (obj): Used to run specific commands
-        label (str): Specify a directory or module to test instead of running all Nautobot Golden Config tests.
-    """
-    command = f"nautobot-server test {label} --keepdb"
+    if keepdb:
+        command += " --keepdb"
+    if failfast:
+        command += " --failfast"
+    if buffer:
+        command += " --buffer"
     run_command(context, command)
 
 

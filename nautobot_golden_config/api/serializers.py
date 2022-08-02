@@ -78,6 +78,22 @@ class GoldenConfigSettingSerializer(TaggedObjectSerializer, CustomFieldModelSeri
         model = models.GoldenConfigSetting
         fields = "__all__"
 
+    def validate(self, data):
+        """Validate scope & dynamic_group are not both submitted."""
+        if data.get("scope") and data.get("dynamic_group"):
+            raise serializers.ValidationError("Payload can only contain `scope` or `dynamic_group`, but not both.")
+        return data
+
+    def create(self, validated_data):
+        """Overload to handle ability to post scope instead of dynamic_group."""
+        if not validated_data.get("scope"):
+            return models.GoldenConfigSetting.objects.create(**validated_data)
+        scope = validated_data.pop("scope")
+        setting = models.GoldenConfigSetting(**validated_data)
+        setting.scope = scope
+        setting.save()
+        return setting
+
 
 class ConfigRemoveSerializer(TaggedObjectSerializer, CustomFieldModelSerializer):
     """Serializer for ConfigRemove object."""

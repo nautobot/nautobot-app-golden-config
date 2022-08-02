@@ -4,7 +4,6 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 
 from django.urls import reverse
-from django.test import override_settings
 from rest_framework import status
 
 from nautobot.utilities.testing import APITestCase

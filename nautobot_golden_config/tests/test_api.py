@@ -218,7 +218,7 @@ class GoldenConfigSettingsAPITest(APITestCase):  # pylint: disable=too-many-ance
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(
             response.json(),
-            {"non_field_errors": ["Payload can only contain `scope` or `dynamic_group`, but not both."]},
+            {"non_field_errors": ["Payload can only contain `scope` or `dynamic_group`, but both were provided."]},
         )
 
     def test_scope_create(self):

@@ -501,7 +501,7 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
 
     @scope.setter
     def scope(self, value):
-        """Create DynamicGroup in with original scope JSON."""
+        """Create DynamicGroup based on original scope JSON data."""
         if hasattr(self, "dynamic_group"):
             self.dynamic_group.filter = value
             self.dynamic_group.validated_save()

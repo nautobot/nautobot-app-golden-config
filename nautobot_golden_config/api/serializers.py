@@ -81,7 +81,7 @@ class GoldenConfigSettingSerializer(TaggedObjectSerializer, CustomFieldModelSeri
     def validate(self, data):
         """Validate scope & dynamic_group are not both submitted."""
         if data.get("scope") and data.get("dynamic_group"):
-            raise serializers.ValidationError("Payload can only contain `scope` or `dynamic_group`, but not both.")
+            raise serializers.ValidationError("Payload can only contain `scope` or `dynamic_group`, but both were provided.")
         return data
 
     def create(self, validated_data):

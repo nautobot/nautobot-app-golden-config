@@ -4,14 +4,14 @@
 
 ### Home
 
-The Home view is a portal to understand what the status of the devices are. 
+The Home view is a portal to understand what the status of the devices are.
 
 ![Home Overview](../images/ss_golden-overview.png)
 
 Some of the information described in this view, may not be immediately obvious.
 
 * The Backup/Intended/Compliance status will always show the last time the job was successfully ran for that device, but there are several conditions it may be in.
-  * Green with a date indicates that the ran was successful, which was the last time the job ran. 
+  * Green with a date indicates that the ran was successful, which was the last time the job ran.
   * Red with a data indicates the last time the job ran successfully, with the last time the job was attempted in be shown when you mouse over the date.
   * A red double-dashed icon indicated the job has never been successful
 * The icons are provided in the following order, that largely matches the status.
@@ -21,7 +21,7 @@ Some of the information described in this view, may not be immediately obvious.
   * SoT aggregation data
   * Run job
 
-The first four bring up a "modal" or "dialogue box" which has a detailed view for a dedicated page. The run job brings the user to a job to run all three 
+The first four bring up a "modal" or "dialogue box" which has a detailed view for a dedicated page. The run job brings the user to a job to run all three
 components against all of the devices.
 
 ### Jobs
@@ -60,7 +60,8 @@ To update existing settings click on one of the `Settings` name.
 |Scope|The scope of devices on which Golden Config's jobs can operate. |
 |GraphQL Query|A query that is evaluated and used to render the config. The query must start with `query ($device_id: ID!)`.|
 
-> Note: Each of these will be further detailed in their respective sections.
+!!! note
+    Each of these will be further detailed in their respective sections.
 
 #### Scope
 
@@ -79,9 +80,10 @@ Filtering to specific platforms, based on their slug.
 }
 ```
 
-> Note: The Platform slug is an important value, see the [FAQ](./app_faq.md) for further details.
+!!! note
+    The Platform slug is an important value, see the [FAQ](./app_faq.md) for further details.
 
-Adding a "has_primary_ip" check. 
+Adding a "has_primary_ip" check.
 
 ```json
 {
@@ -112,6 +114,7 @@ Click on `Add`.
 You will now be presented with a page to fill in the repository details.
 
 Parameters:
+
 |Field|Explanation|
 |:--|:--|
 |Name|User friendly name for the backup repo.|
@@ -121,9 +124,10 @@ Parameters:
 |Token|The token is a personal access token for the `username` provided.  For more information on generating a personal access token. [Github Personal Access Token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token)
 |Username|The Git username that corresponds with the personal access token above.|
 |Provides|Valid providers for Git Repo.|
-<br>
 
-> Note: If Secret Group is used for the Repositories the secrets type HTTP(S) is required for this plugin.
+
+!!! note
+    If Secret Group is used for the Repositories the secrets type HTTP(S) is required for this plugin.
 
 ![Example Git Backups](../images/backup-git-step2.png)
 
@@ -140,7 +144,7 @@ The plugins buttons provides you with the ability to navigate to Run the script,
 
 ### Run Script
 
-This can be accessed via the Plugins drop-down via `Run Script` button of the `Home` view, the user will be provided a form of the Job (as described 
+This can be accessed via the Plugins drop-down via `Run Script` button of the `Home` view, the user will be provided a form of the Job (as described
 above), which will allow the user to limit the scope of the request.
 
 ### Device Template Content
@@ -149,7 +153,7 @@ The plugin makes use of template content `right_page` in order to use display in
 
 ### Site Template Content
 
-The plugin makes use of template content `right_page` in order to use display in-line the status of that entire site in the traditional Nautobot view. 
+The plugin makes use of template content `right_page` in order to use display in-line the status of that entire site in the traditional Nautobot view.
 
 ### API
 
@@ -174,10 +178,8 @@ This plugin enable four (4) key use cases.
 3. **Source of Truth Aggregation** - Is a GraphQL query per device that creates a data structure used in the generation of configuration.
 4. **Configuration Compliance** - Is a process to run comparison of the actual (via backups) and intended (via Jinja file creation) CLI configurations upon saving the actual and intended configuration. This is started by either a Nornir process for cli-like configurations or calling the API for json-like configurations
 
->Notice: The operator's of their own Nautobot instance are welcome to use any combination of these features. Though the appearance may seem like they are tightly 
-coupled, this isn't actually the case. For example, one can obtain backup configurations from their current RANCID/Oxidized process and simply provide a Git Repo
-of the location of the backup configurations, and the compliance process would work the same way. Also, another user may only want to generate configurations,
-but not want to use other features, which is perfectly fine to do so.
+!!! warning "Notice"
+    The operators of their own Nautobot instance are welcome to use any combination of these features. Though the appearance may seem like they are tightly coupled, this isn't actually the case. For example, one can obtain backup configurations from their current RANCID/Oxidized process and simply provide a Git Repo of the location of the backup configurations, and the compliance process would work the same way. Also, another user may only want to generate configurations, but not want to use other features, which is perfectly fine to do so.
 
 ## Screenshots
 

@@ -4,17 +4,17 @@ import logging
 from datetime import datetime
 
 from nautobot.extras.jobs import Job, MultiObjectVar, ObjectVar, BooleanVar
-from nautobot.extras.models import Tag
+from nautobot.extras.models import Tag, DynamicGroup
 from nautobot.extras.datasources.git import ensure_git_repository
 from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Site, Platform, Region, Rack, RackGroup
 from nautobot.tenancy.models import Tenant, TenantGroup
 
-from nautobot_golden_config.models import GoldenConfigSetting
 from nautobot_golden_config.nornir_plays.config_intended import config_intended
 from nautobot_golden_config.nornir_plays.config_backup import config_backup
 from nautobot_golden_config.nornir_plays.config_compliance import config_compliance
 from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
 from nautobot_golden_config.utilities.git import GitRepo
+from nautobot_golden_config.utilities.helper import get_job_filter
 
 LOGGER = logging.getLogger(__name__)
 
@@ -22,11 +22,13 @@ LOGGER = logging.getLogger(__name__)
 name = "Golden Configuration"  # pylint: disable=invalid-name
 
 
-def get_refreshed_repos(job_obj, repo_type):
+def get_refreshed_repos(job_obj, repo_type, data=None):
     """Small wrapper to pull latest branch, and return a GitRepo plugin specific object."""
-    repository_records = set(
-        getattr(gcs, repo_type) for gcs in GoldenConfigSetting.objects.all() if getattr(gcs, repo_type, None)
-    )
+    device_ids = get_job_filter(data).values_list("id").distinct()
+    repository_records = set()
+    for group in DynamicGroup.objects.exclude(golden_config_setting__isnull=True):
+        if getattr(group.golden_config_setting, repo_type, None) and group.get_queryset().filter(id__in=device_ids):
+            repository_records.add(getattr(group.golden_config_setting, repo_type))
 
     repositories = []
     for repository_record in repository_records:
@@ -97,8 +99,8 @@ class ComplianceJob(Job, FormEntry):
         """Run config compliance report script."""
         # pylint: disable=unused-argument
 
-        get_refreshed_repos(job_obj=self, repo_type="intended_repository")
-        get_refreshed_repos(job_obj=self, repo_type="backup_repository")
+        get_refreshed_repos(job_obj=self, repo_type="intended_repository", data=data)
+        get_refreshed_repos(job_obj=self, repo_type="backup_repository", data=data)
 
         config_compliance(self, data)
 
@@ -132,11 +134,11 @@ class IntendedJob(Job, FormEntry):
         now = datetime.now()
 
         LOGGER.debug("Pull Jinja template repos.")
-        get_refreshed_repos(job_obj=self, repo_type="jinja_repository")
+        get_refreshed_repos(job_obj=self, repo_type="jinja_repository", data=data)
 
         LOGGER.debug("Pull Intended config repos.")
         # Instantiate a GitRepo object for each GitRepository in GoldenConfigSettings.
-        intended_repos = get_refreshed_repos(job_obj=self, repo_type="intended_repository")
+        intended_repos = get_refreshed_repos(job_obj=self, repo_type="intended_repository", data=data)
 
         LOGGER.debug("Run config intended nornir play.")
         config_intended(self, data)
@@ -178,7 +180,7 @@ class BackupJob(Job, FormEntry):
         LOGGER.debug("Pull Backup config repo.")
 
         # Instantiate a GitRepo object for each GitRepository in GoldenConfigSettings.
-        backup_repos = get_refreshed_repos(job_obj=self, repo_type="backup_repository")
+        backup_repos = get_refreshed_repos(job_obj=self, repo_type="backup_repository", data=data)
 
         LOGGER.debug("Starting backup jobs to the following repos: %s", backup_repos)
 
@@ -208,11 +210,11 @@ class AllGoldenConfig(Job):
     def run(self, data, commit):
         """Run all jobs."""
         if ENABLE_INTENDED:
-            IntendedJob().run.__func__(self, data, True)
+            IntendedJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
         if ENABLE_BACKUP:
-            BackupJob().run.__func__(self, data, True)
+            BackupJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
         if ENABLE_COMPLIANCE:
-            ComplianceJob().run.__func__(self, data, True)
+            ComplianceJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
 
 
 class AllDevicesGoldenConfig(Job):
@@ -242,11 +244,11 @@ class AllDevicesGoldenConfig(Job):
     def run(self, data, commit):
         """Run all jobs."""
         if ENABLE_INTENDED:
-            IntendedJob().run.__func__(self, data, True)
+            IntendedJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
         if ENABLE_BACKUP:
-            BackupJob().run.__func__(self, data, True)
+            BackupJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
         if ENABLE_COMPLIANCE:
-            ComplianceJob().run.__func__(self, data, True)
+            ComplianceJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
 
 
 # Conditionally allow jobs based on whether or not turned on.

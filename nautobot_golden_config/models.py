@@ -4,15 +4,15 @@ import logging
 import json
 from deepdiff import DeepDiff
 from django.db import models
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.core.serializers.json import DjangoJSONEncoder
 from django.shortcuts import reverse
 from django.utils.module_loading import import_string
+from django.utils.text import slugify
 
-from nautobot.dcim.models import Device
-from nautobot.extras.models import ObjectChange
+from nautobot.extras.models import ObjectChange, DynamicGroup
 from nautobot.extras.utils import extras_features
-from nautobot.utilities.utils import get_filterset_for_model, serialize_object
+from nautobot.utilities.utils import serialize_object
 from nautobot.core.models.generics import PrimaryModel
 from netutils.config.compliance import feature_compliance
 
@@ -156,7 +156,7 @@ if PLUGIN_CFG.get("get_custom_compliance"):
     "relationships",
     "webhooks",
 )
-class ComplianceFeature(PrimaryModel):
+class ComplianceFeature(PrimaryModel):  # pylint: disable=too-many-ancestors
     """ComplianceFeature details."""
 
     name = models.CharField(max_length=100, unique=True)
@@ -191,7 +191,7 @@ class ComplianceFeature(PrimaryModel):
     "relationships",
     "webhooks",
 )
-class ComplianceRule(PrimaryModel):
+class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
     """ComplianceRule details."""
 
     feature = models.ForeignKey(to="ComplianceFeature", on_delete=models.CASCADE, blank=False, related_name="feature")
@@ -271,7 +271,7 @@ class ComplianceRule(PrimaryModel):
     "relationships",
     "webhooks",
 )
-class ConfigCompliance(PrimaryModel):
+class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
     """Configuration compliance details."""
 
     device = models.ForeignKey(to="dcim.Device", on_delete=models.CASCADE, help_text="The device", blank=False)
@@ -295,7 +295,7 @@ class ConfigCompliance(PrimaryModel):
         """Indicates model fields to return as csv."""
         return (self.device.name, self.rule.feature.name, self.compliance)
 
-    def to_objectchange(self, action):
+    def to_objectchange(self, action):  # pylint: disable=arguments-differ
         """Remove actual and intended configuration from changelog."""
         return ObjectChange(
             changed_object=self,
@@ -345,7 +345,7 @@ class ConfigCompliance(PrimaryModel):
     "relationships",
     "webhooks",
 )
-class GoldenConfig(PrimaryModel):
+class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
     """Configuration Management Model."""
 
     device = models.ForeignKey(
@@ -388,7 +388,7 @@ class GoldenConfig(PrimaryModel):
             self.compliance_last_success_date,
         )
 
-    def to_objectchange(self, action):
+    def to_objectchange(self, action):  # pylint: disable=arguments-differ
         """Remove actual and intended configuration from changelog."""
         return ObjectChange(
             changed_object=self,
@@ -410,7 +410,7 @@ class GoldenConfig(PrimaryModel):
 @extras_features(
     "graphql",
 )
-class GoldenConfigSetting(PrimaryModel):
+class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     """GoldenConfigSetting Model defintion. This provides global configs instead of via configs.py."""
 
     name = models.CharField(max_length=100, unique=True, blank=False)
@@ -471,18 +471,17 @@ class GoldenConfigSetting(PrimaryModel):
         verbose_name="Backup Test",
         help_text="Whether or not to pretest the connectivity of the device by verifying there is a resolvable IP that can connect to port 22.",
     )
-    scope = models.JSONField(
-        encoder=DjangoJSONEncoder,
-        blank=True,
-        null=True,
-        help_text="API filter in JSON format matching the list of devices for the scope of devices to be considered.",
-    )
     sot_agg_query = models.ForeignKey(
         to="extras.GraphQLQuery",
         on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name="sot_aggregation",
+    )
+    dynamic_group = models.OneToOneField(
+        to="extras.DynamicGroup",
+        on_delete=models.PROTECT,
+        related_name="golden_config_setting",
     )
 
     def get_absolute_url(self):  # pylint: disable=no-self-use
@@ -492,6 +491,32 @@ class GoldenConfigSetting(PrimaryModel):
     def __str__(self):
         """Return a simple string if model is called."""
         return f"Golden Config Setting - {self.name}"
+
+    @property
+    def scope(self):
+        """Returns filter from DynamicGroup."""
+        if self.dynamic_group:
+            return self.dynamic_group.filter
+        return {}
+
+    @scope.setter
+    def scope(self, value):
+        """Create DynamicGroup based on original scope JSON data."""
+        if hasattr(self, "dynamic_group"):
+            self.dynamic_group.filter = value
+            self.dynamic_group.validated_save()
+        else:
+            name = f"GoldenConfigSetting {self.name} scope"
+            content_type = ContentType.objects.get(app_label="dcim", model="device")
+            dynamic_group = DynamicGroup.objects.create(
+                name=name,
+                slug=slugify(name),
+                filter=value,
+                content_type=content_type,
+                description="Automatically generated for nautobot_golden_config GoldenConfigSetting.",
+            )
+            self.dynamic_group = dynamic_group
+            self.validated_save()
 
     class Meta:
         """Set unique fields for model.
@@ -513,62 +538,17 @@ class GoldenConfigSetting(PrimaryModel):
             if not str(self.sot_agg_query.query).startswith(GRAPHQL_STR_START):
                 raise ValidationError(f"The GraphQL query must start with exactly `{GRAPHQL_STR_START}`")
 
-        if self.scope:
-            filterset_class = get_filterset_for_model(Device)
-            filterset = filterset_class(self.scope, Device.objects.all())
-
-            if filterset.errors:
-                for key in filterset.errors:
-                    error_message = ", ".join(filterset.errors[key])
-                    raise ValidationError({"scope": f"{key}: {error_message}"})
-
-            filterset_params = set(filterset.get_filters().keys())
-            for key in self.scope.keys():
-                if key not in filterset_params:
-                    raise ValidationError({"scope": f"'{key}' is not a valid filter parameter for Device object"})
-
     def get_queryset(self):
         """Generate a Device QuerySet from the filter."""
-        if not self.scope:
-            return Device.objects.all()
-
-        filterset_class = get_filterset_for_model(Device)
-        filterset = filterset_class(self.scope, Device.objects.all())
-
-        return filterset.qs
+        return self.dynamic_group.get_queryset()
 
     def device_count(self):
         """Return the number of devices in the group."""
         return self.get_queryset().count()
 
-    def get_filter_as_string(self):
-        """Get filter as string."""
-        if not self.scope:
-            return None
-
-        result = ""
-
-        for key, value in self.scope.items():
-            if isinstance(value, list):
-                for item in value:
-                    if result != "":
-                        result += "&"
-                    result += f"{key}={item}"
-            else:
-                result += "&"
-                result += f"{key}={value}"
-
-        return result
-
     def get_url_to_filtered_device_list(self):
         """Get url to all devices that are matching the filter."""
-        base_url = reverse("dcim:device_list")
-        filter_str = self.get_filter_as_string()
-
-        if filter_str:
-            return f"{base_url}?{filter_str}"
-
-        return base_url
+        return self.dynamic_group.get_group_members_url()
 
 
 @extras_features(
@@ -580,7 +560,7 @@ class GoldenConfigSetting(PrimaryModel):
     "relationships",
     "webhooks",
 )
-class ConfigRemove(PrimaryModel):
+class ConfigRemove(PrimaryModel):  # pylint: disable=too-many-ancestors
     """ConfigRemove for Regex Line Removals from Backup Configuration Model defintion."""
 
     name = models.CharField(max_length=255, null=False, blank=False)
@@ -632,7 +612,7 @@ class ConfigRemove(PrimaryModel):
     "relationships",
     "webhooks",
 )
-class ConfigReplace(PrimaryModel):
+class ConfigReplace(PrimaryModel):  # pylint: disable=too-many-ancestors
     """ConfigReplace for Regex Line Replacements from Backup Configuration Model defintion."""
 
     name = models.CharField(max_length=255, null=False, blank=False)

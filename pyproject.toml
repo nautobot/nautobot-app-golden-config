@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nautobot-golden-config"
-version = "1.1.0"
+version = "1.2.0-beta.0"
 description = "A plugin for configuration on nautobot"
 authors = ["Network to Code, LLC", "<opensource@networktocode.com>"]
 
@@ -30,29 +30,33 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = "^3.7"
 deepdiff = "^5.5.0"
 django-pivot = "^1.8.1"
 matplotlib = "^3.3.2"
 nautobot-plugin-nornir = ">=0.9.7"
-nautobot = ">=1.2.0"
+
+## Setting as next to test with DynamicGroup changes
+nautobot = "1.4.0b1"
 
 [tool.poetry.dev-dependencies]
 bandit = "*"
-black = {version="^21.10b0", python="^3.6.2"}
+black = "*"
 django-debug-toolbar = "*"
-flake8 = "*"
+# we need to pin flake8 because of package dependencies that cause it to downgrade and 
+# therefore cause issues with linting since older versions do not take .flake8 as config
+flake8 = "^3.9.2"
 invoke = "*"
 pydocstyle = "*"
 pylint = "*"
 pylint-django = "*"
 yamllint = "*"
-Markdown = {version="*", python="^3.6.2"}
+Markdown = "*"
 
 
 [tool.black]
 line-length = 120
-target-version = ['py36']
+target-version = ['py37']
 include = '\.pyi?$'
 exclude = '''
 (

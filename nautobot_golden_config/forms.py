@@ -5,7 +5,7 @@ from django import forms
 import nautobot.extras.forms as extras_forms
 import nautobot.utilities.forms as utilities_forms
 from nautobot.dcim.models import Device, Platform, Region, Site, DeviceRole, DeviceType, Manufacturer, Rack, RackGroup
-from nautobot.extras.models import Status, GitRepository
+from nautobot.extras.models import Status, GitRepository, DynamicGroup
 from nautobot.tenancy.models import Tenant, TenantGroup
 from nautobot.utilities.forms import SlugField
 
@@ -105,7 +105,7 @@ class ConfigComplianceFilterForm(utilities_forms.BootstrapMixin, extras_forms.Cu
 
 
 class ComplianceRuleForm(
-    utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelForm, extras_forms.RelationshipModelForm
+    utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelForm, extras_forms.RelationshipModelFormMixin
 ):
     """Filter Form for ComplianceRule instances."""
 
@@ -164,7 +164,7 @@ class ComplianceRuleCSVForm(extras_forms.CustomFieldModelCSVForm):
 
 
 class ComplianceFeatureForm(
-    utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelForm, extras_forms.RelationshipModelForm
+    utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelForm, extras_forms.RelationshipModelFormMixin
 ):
     """Filter Form for ComplianceFeature instances."""
 
@@ -214,7 +214,7 @@ class ComplianceFeatureCSVForm(extras_forms.CustomFieldModelCSVForm):
 
 
 class ConfigRemoveForm(
-    utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelForm, extras_forms.RelationshipModelForm
+    utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelForm, extras_forms.RelationshipModelFormMixin
 ):
     """Filter Form for Line Removal instances."""
 
@@ -271,7 +271,7 @@ class ConfigRemoveCSVForm(extras_forms.CustomFieldModelCSVForm):
 
 
 class ConfigReplaceForm(
-    utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelForm, extras_forms.RelationshipModelForm
+    utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelForm, extras_forms.RelationshipModelFormMixin
 ):
     """Filter Form for Line Removal instances."""
 
@@ -330,11 +330,12 @@ class ConfigReplaceBulkEditForm(
 
 
 class GoldenConfigSettingFeatureForm(
-    utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelForm, extras_forms.RelationshipModelForm
+    utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelForm, extras_forms.RelationshipModelFormMixin
 ):
     """Filter Form for GoldenConfigSettingFeatureForm instances."""
 
     slug = SlugField()
+    dynamic_group = utilities_forms.DynamicModelChoiceField(queryset=DynamicGroup.objects.all(), required=False)
 
     class Meta:
         """Filter Form Meta Data for GoldenConfigSettingFeatureForm instances."""
@@ -352,8 +353,9 @@ class GoldenConfigSettingFeatureForm(
             "jinja_repository",
             "jinja_path_template",
             "backup_test_connectivity",
-            "scope",
+            "dynamic_group",
             "sot_agg_query",
+            "tags",
         )
 
 

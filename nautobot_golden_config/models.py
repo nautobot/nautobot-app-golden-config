@@ -12,7 +12,7 @@ from django.utils.text import slugify
 
 from nautobot.extras.models import ObjectChange, DynamicGroup
 from nautobot.extras.utils import extras_features
-from nautobot.utilities.utils import serialize_object
+from nautobot.utilities.utils import serialize_object, serialize_object_v2
 from nautobot.core.models.generics import PrimaryModel
 from netutils.config.compliance import feature_compliance
 
@@ -295,13 +295,17 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
         """Indicates model fields to return as csv."""
         return (self.device.name, self.rule.feature.name, self.compliance)
 
-    def to_objectchange(self, action):  # pylint: disable=arguments-differ
+    def to_objectchange(self, action, related_object=None, object_data_extra=None, object_data_exclude=None):
         """Remove actual and intended configuration from changelog."""
+        if not object_data_exclude:
+            object_data_exclude = ["actual", "intended"]
         return ObjectChange(
             changed_object=self,
             object_repr=str(self),
             action=action,
-            object_data=serialize_object(self, exclude=["actual", "intended"]),
+            object_data=serialize_object(self, extra=object_data_extra, exclude=object_data_exclude),
+            object_data_v2=serialize_object_v2(self),
+            related_object=related_object,
         )
 
     class Meta:
@@ -388,13 +392,17 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
             self.compliance_last_success_date,
         )
 
-    def to_objectchange(self, action):  # pylint: disable=arguments-differ
+    def to_objectchange(self, action, related_object=None, object_data_extra=None, object_data_exclude=None):
         """Remove actual and intended configuration from changelog."""
+        if not object_data_exclude:
+            object_data_exclude = ["backup_config", "intended_config", "compliance_config"]
         return ObjectChange(
             changed_object=self,
             object_repr=str(self),
             action=action,
-            object_data=serialize_object(self, exclude=["backup_config", "intended_config", "compliance_config"]),
+            object_data=serialize_object(self, extra=object_data_extra, exclude=object_data_exclude),
+            object_data_v2=serialize_object_v2(self),
+            related_object=related_object,
         )
 
     class Meta:

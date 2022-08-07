@@ -38,9 +38,9 @@ Each Job attempts to provide sane error handling, and respects the `debug` flag 
 
 The golden configuration plugin settings can be found by navigating to `Golden Config -> Settings` button. Select one of the Settings, under the `Golden Configuration` section.
 Since Golden Configuration Plugin version 1.0, the plugin allows for multiple settings to be configured by the User.
-Each of the settings, has the individual repositories and configuration details, as well as the scope.
+Each of the settings, has the individual repositories and configuration details, as well as a Dynamic Group.
 You could use a combination of settings to customize Your Configuration Compliance behavior.
-Settings have a name and a weight. The weight parameter indicates the priority of given Settings - the higher the weight, the device matching the scope defined will be assigned to the scope.
+Settings have a name and a weight. The weight parameter indicates the priority of given Settings - the higher the weight, the device matching the Dynamic Group defined will be assigned to the scope.
 At the same moment, each device will be matched up to maximum of only one `Settings.` In case of the same weight, the sorting is performed by the name.
 
 ![Navigate to Settings](../images/navigate-compliance-rules.png)
@@ -57,15 +57,25 @@ To update existing settings click on one of the `Settings` name.
 |Intended Path|A Jinja template which defines the path and name of intended configuration state files within the intended state repository. e.g. `{{obj.site.slug}}/{{obj.name}}.intended_cfg`|
 |Jinja Repository |The Git Repository where your jinja templates will be found. |
 |Jinja Path|A Jinja template which defines the path (within the repository) and name of the Jinja template file. e.g. `{{obj.platform.slug}}/{{obj.role.slug}}/main.j2`|
-|Scope|The scope of devices on which Golden Config's jobs can operate. |
+|Dynamic Group|The scope of devices on which Golden Config's jobs can operate. |
 |GraphQL Query|A query that is evaluated and used to render the config. The query must start with `query ($device_id: ID!)`.|
 
 !!! note
     Each of these will be further detailed in their respective sections.
 
-#### Scope
+#### Dynamic Group
 
-The scope, is a JSON blob that describes a filter that will provide the list of devices to be allowed whenever a job is ran. A job can optionally further refine the scope, but the outbound would be based on what is defined here. The options are best described by leveraging the Devices list view, search features (the filtering shown on the side of the Devices.) Building a query there, will provide the exact keys expected.
+!!! note
+    Starting in Golden Config v1.2 and onwards the original implementation of scope has been deprecated in favor of Dynamin Groups from Nautobot. During the migrations the Dynamic Groups will be created based on the scope attribute in the Golden Config Setting. All settings require a Dynamic Group, if a scope is not set to allow ALL Devices a Dynamic Group will be created without a filter applied which will translate to all Devices.
+
+The [Dynamic Group](https://nautobot.readthedocs.io/en/stable/additional-features/dynamic-groups/) provides a filter that will limit the list of devices in scope of a Golden Config Setting. In the Golden Config Home view the Dynamic Group is used to limit the Devices that are displayed, if a Device does not match the filter of a Dynamic Group is is considered out of scope for GoldenConfig and will not show on this view. All jobs in Golden Config also use the Dynamic Group to know which Devices are in scope. A job can optionally further refine the scope, but the outbound would be based on what is defined here. The options are best described by leveraging the Devices list view, search features (the filtering shown on the side of the Devices.) Building a query there, will provide the exact keys expected.
+
+##### Scope Of Devices
+
+Within the Detail view of a Golden Config Setting the section to denote the scope of devices links back to the Dynamic Group that is assigned and renders the filter attribute of the Dynamic Group as JSON. All updates to the scope of Devices must be done via the Dynamic Group not directly on the Golden Config Setting.
+
+!!! note
+    The Golden Config Setting API endpoint supports the `scope` attribute as a setter for a Dynamic Group. The attributes `dynamic_group` & `scope` **CANNOT** be used in same PUT/PATCH/POST payload. The use of `scope` will create or update the assigned Dynamic Group if used.
 
 Filtering to specific platforms, based on their slug.
 

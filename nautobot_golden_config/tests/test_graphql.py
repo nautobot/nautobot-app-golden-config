@@ -3,6 +3,7 @@
 import uuid
 
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
 from django.test.client import RequestFactory
 
@@ -10,7 +11,7 @@ from graphql import get_default_backend
 from graphene_django.settings import graphene_settings
 
 from nautobot.dcim.models import Platform, Site, Device, Manufacturer, DeviceRole, DeviceType
-from nautobot.extras.models import GitRepository, GraphQLQuery
+from nautobot.extras.models import GitRepository, GraphQLQuery, DynamicGroup
 
 from nautobot_golden_config.models import (
     ComplianceFeature,
@@ -124,6 +125,15 @@ class TestGraphQLQuery(TestCase):  # pylint: disable=too-many-instance-attribute
         # Since we enforce a singleton pattern on this model, nuke the auto-created object.
         GoldenConfigSetting.objects.all().delete()
 
+        self.content_type = ContentType.objects.get(app_label="dcim", model="device")
+
+        dynamic_group = DynamicGroup.objects.create(
+            name="test1 site site-4",
+            slug="test1-site-site-4",
+            content_type=self.content_type,
+            filter={"platform": ["platform1"]},
+        )
+
         GoldenConfigSetting.objects.create(
             name="test_name",
             slug="test_slug",
@@ -133,7 +143,7 @@ class TestGraphQLQuery(TestCase):  # pylint: disable=too-many-instance-attribute
             intended_path_template="test/intended",
             jinja_path_template="{{jinja_path}}",
             backup_test_connectivity=True,
-            scope={"platform": ["platform1"]},
+            dynamic_group=dynamic_group,
             sot_agg_query=GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1"),
             backup_repository=GitRepository.objects.get(
                 provided_contents__contains="nautobot_golden_config.backupconfigs"

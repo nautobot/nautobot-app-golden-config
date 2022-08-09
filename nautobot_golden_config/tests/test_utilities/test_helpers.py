@@ -3,13 +3,14 @@
 from unittest.mock import patch, MagicMock
 
 from django.test import TestCase
+from django.contrib.contenttypes.models import ContentType
 
 from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.utils.logger import NornirLogger
 from jinja2 import exceptions as jinja_errors
 
 from nautobot.dcim.models import Device, Platform, Site
-from nautobot.extras.models import GitRepository, Status
+from nautobot.extras.models import GitRepository, Status, DynamicGroup
 from nautobot_golden_config.models import GoldenConfigSetting
 from nautobot_golden_config.tests.conftest import create_device, create_orphan_device, create_helper_repo
 from nautobot_golden_config.utilities.helper import (
@@ -46,6 +47,26 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         # Since we enforce a singleton pattern on this model, nuke the auto-created object.
         GoldenConfigSetting.objects.all().delete()
 
+        self.content_type = ContentType.objects.get(app_label="dcim", model="device")
+
+        dynamic_group1 = DynamicGroup.objects.create(
+            name="test1 site site-4",
+            slug="test1-site-site-4",
+            content_type=self.content_type,
+            filter={"site": ["site-4"]},
+        )
+        dynamic_group2 = DynamicGroup.objects.create(
+            name="test2 site site-4",
+            slug="test2-site-site-4",
+            content_type=self.content_type,
+            filter={"site": ["site-4"]},
+        )
+        dynamic_group3 = DynamicGroup.objects.create(
+            name="test3 site site-4",
+            slug="test3-site-site-4",
+            content_type=self.content_type,
+            filter={},
+        )
         self.test_settings_a = GoldenConfigSetting.objects.create(
             name="test_a",
             slug="test_a",
@@ -55,7 +76,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
             intended_repository=GitRepository.objects.get(name="intended-parent_region-1"),
             jinja_repository=GitRepository.objects.get(name="test-jinja-repo"),
             # Limit scope to orphaned device only
-            scope={"site": ["site-4"]},
+            dynamic_group=dynamic_group1,
         )
 
         self.test_settings_b = GoldenConfigSetting.objects.create(
@@ -67,7 +88,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
             intended_repository=GitRepository.objects.get(name="intended-parent_region-2"),
             jinja_repository=GitRepository.objects.get(name="test-jinja-repo-2"),
             # Limit scope to orphaned device only
-            scope={"site": ["site-4"]},
+            dynamic_group=dynamic_group2,
         )
 
         self.test_settings_c = GoldenConfigSetting.objects.create(
@@ -78,6 +99,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
             backup_repository=GitRepository.objects.get(name="backup-parent_region-3"),
             intended_repository=GitRepository.objects.get(name="intended-parent_region-3"),
             jinja_repository=GitRepository.objects.get(name="test-jinja-repo-3"),
+            dynamic_group=dynamic_group3,
         )
 
         # Device.objects.all().delete()
@@ -191,7 +213,13 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         """Verify we get raise for having a base_qs with no objects due to bad Golden Config Setting scope."""
         Platform.objects.create(name="Placeholder Platform", slug="placeholder-platform")
         for golden_settings in GoldenConfigSetting.objects.all():
-            golden_settings.scope = {"platform": ["placeholder-platform"]}
+            dynamic_group = DynamicGroup.objects.create(
+                name=f"{golden_settings.name} group",
+                slug=f"{golden_settings.slug}-group",
+                content_type=self.content_type,
+                filter={"platform": ["placeholder-platform"]},
+            )
+            golden_settings.dynamic_group = dynamic_group
             golden_settings.validated_save()
         with self.assertRaises(NornirNautobotException) as failure:
             get_job_filter()

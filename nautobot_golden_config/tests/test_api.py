@@ -1,12 +1,13 @@
 """Unit tests for nautobot_golden_config."""
 from copy import deepcopy
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
 
 from django.urls import reverse
 from rest_framework import status
 
 from nautobot.utilities.testing import APITestCase
-from nautobot.extras.models import GitRepository, GraphQLQuery
+from nautobot.extras.models import GitRepository, GraphQLQuery, DynamicGroup
 from nautobot_golden_config.models import GoldenConfigSetting
 
 from .conftest import (
@@ -92,7 +93,7 @@ class GoldenConfigAPITest(APITestCase):  # pylint: disable=too-many-ancestors
         self.assertFalse(response.data["compliance"])
 
 
-class GoldenConfigSettingsAPITest(APITestCase):
+class GoldenConfigSettingsAPITest(APITestCase):  # pylint: disable=too-many-ancestors
     """Verify that the combination of values in a GoldenConfigSettings object POST are valid."""
 
     def setUp(self):
@@ -102,7 +103,16 @@ class GoldenConfigSettingsAPITest(APITestCase):
         create_saved_queries()
         self.add_permissions("nautobot_golden_config.add_goldenconfigsetting")
         self.add_permissions("nautobot_golden_config.change_goldenconfigsetting")
+        self.add_permissions("extras.view_dynamicgroup")
         self.base_view = reverse("plugins-api:nautobot_golden_config-api:goldenconfigsetting-list")
+        self.content_type = ContentType.objects.get(app_label="dcim", model="device")
+        self.dynamic_group = DynamicGroup.objects.create(
+            name="test1 site site-4",
+            slug="test1-site-site-4",
+            content_type=self.content_type,
+            filter={"has_primary_ip": "True"},
+        )
+
         self.data = {
             "name": "test-setting-1",
             "slug": "test_setting_1",
@@ -116,7 +126,7 @@ class GoldenConfigSettingsAPITest(APITestCase):
             "intended_path_template": "{{obj.site.region.slug}}/{{obj.site.slug}}/{{obj.name}}.cfg",
             "jinja_path_template": "templates/{{obj.platform.slug}}/{{obj.platform.slug}}_main.j2",
             "backup_test_connectivity": False,
-            "scope": {"has_primary_ip": "True"},
+            "dynamic_group": str(self.dynamic_group.id),
             "sot_agg_query": str(GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1").id),
             "jinja_repository": str(GitRepository.objects.get(name="test-jinja-repo-1").id),
             "backup_repository": str(GitRepository.objects.get(name="test-backup-repo-1").id),
@@ -195,6 +205,65 @@ class GoldenConfigSettingsAPITest(APITestCase):
         GoldenConfigSetting.objects.all().delete()
         self.assertEqual(GoldenConfigSetting.objects.all().count(), 0)
 
+    def test_scope_and_dynamic_group_create(self):
+        """Attempts to create object with both scope & dynamic group set."""
+        new_data = deepcopy(self.data)
+        new_data["scope"] = {"has_primary_ip": "True"}
+        response = self.client.post(
+            self.base_view,
+            data=new_data,
+            format="json",
+            **self.header,
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.json(),
+            {"non_field_errors": ["Payload can only contain `scope` or `dynamic_group`, but both were provided."]},
+        )
+
+    def test_scope_create(self):
+        """Attempts to create object with only scope."""
+        new_data = deepcopy(self.data)
+        new_data["scope"] = {"has_primary_ip": "True"}
+        new_data.pop("dynamic_group")
+        response = self.client.post(
+            self.base_view,
+            data=new_data,
+            format="json",
+            **self.header,
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.json()["dynamic_group"]["name"], f"GoldenConfigSetting {new_data['name']} scope")
+        # Clean up
+        GoldenConfigSetting.objects.all().delete()
+        self.assertEqual(GoldenConfigSetting.objects.all().count(), 0)
+
+    def test_golden_config_settings_update_scope(self):
+        """Verify a PATCH to the valid settings object, with just scope."""
+        response_post = self.client.post(
+            self.base_view,
+            data=self.data,
+            format="json",
+            **self.header,
+        )
+        response = self.client.patch(
+            f"{self.base_view}{response_post.data['id']}/",
+            data={"scope": {"has_primary_ip": "False"}},
+            format="json",
+            **self.header,
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["scope"], {"has_primary_ip": "False"})
+        dg_response = self.client.get(
+            response.json()["dynamic_group"]["url"],
+            format="json",
+            **self.header,
+        )
+        self.assertEqual(dg_response.json()["filter"], {"has_primary_ip": "False"})
+        # Clean up
+        GoldenConfigSetting.objects.all().delete()
+        self.assertEqual(GoldenConfigSetting.objects.all().count(), 0)
+
     def test_settings_api_clean_up(self):
         """Transactional custom model, unable to use `get_or_create`.
 
@@ -204,5 +273,5 @@ class GoldenConfigSettingsAPITest(APITestCase):
         self.assertEqual(GitRepository.objects.all().count(), 0)
 
         # Put back a general GoldenConfigSetting object.
-        global_settings = GoldenConfigSetting.objects.create()
+        global_settings = GoldenConfigSetting.objects.create(dynamic_group=self.dynamic_group)
         global_settings.save()

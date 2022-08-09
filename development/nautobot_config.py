@@ -4,7 +4,7 @@ import os
 import sys
 
 from nautobot.core.settings import *  # noqa: F403
-from nautobot.core.settings_funcs import is_truthy, parse_redis_connection
+from nautobot.core.settings_funcs import parse_redis_connection
 
 
 #
@@ -12,24 +12,35 @@ from nautobot.core.settings_funcs import is_truthy, parse_redis_connection
 #
 
 ALLOWED_HOSTS = os.getenv("NAUTOBOT_ALLOWED_HOSTS", "").split(" ")
-HIDE_RESTRICTED_UI = os.getenv("HIDE_RESTRICTED_UI", False)
 SECRET_KEY = os.getenv("NAUTOBOT_SECRET_KEY", "")
 
-#
-# Databases
-#
 
+nautobot_db_engine = os.getenv("NAUTOBOT_DB_ENGINE", "django.db.backends.postgresql")
+default_db_settings = {
+    "django.db.backends.postgresql": {
+        "NAUTOBOT_DB_PORT": "5432",
+    },
+    "django.db.backends.mysql": {
+        "NAUTOBOT_DB_PORT": "3306",
+    },
+}
 DATABASES = {
     "default": {
-        "NAME": os.getenv("NAUTOBOT_DB_NAME", "nautobot"),
-        "USER": os.getenv("NAUTOBOT_DB_USER", ""),
-        "PASSWORD": os.getenv("NAUTOBOT_DB_PASSWORD", ""),
-        "HOST": os.getenv("NAUTOBOT_DB_HOST", "localhost"),
-        "PORT": os.getenv("NAUTOBOT_DB_PORT", ""),
-        "CONN_MAX_AGE": int(os.getenv("NAUTOBOT_DB_TIMEOUT", 300)),
-        "ENGINE": os.getenv("NAUTOBOT_DB_ENGINE", "django.db.backends.postgresql"),
+        "NAME": os.getenv("NAUTOBOT_DB_NAME", "nautobot"),  # Database name
+        "USER": os.getenv("NAUTOBOT_DB_USER", ""),  # Database username
+        "PASSWORD": os.getenv("NAUTOBOT_DB_PASSWORD", ""),  # Database password
+        "HOST": os.getenv("NAUTOBOT_DB_HOST", "localhost"),  # Database server
+        "PORT": os.getenv(
+            "NAUTOBOT_DB_PORT", default_db_settings[nautobot_db_engine]["NAUTOBOT_DB_PORT"]
+        ),  # Database port, default to postgres
+        "CONN_MAX_AGE": int(os.getenv("NAUTOBOT_DB_TIMEOUT", 300)),  # Database timeout
+        "ENGINE": nautobot_db_engine,
     }
 }
+
+# Ensure proper Unicode handling for MySQL
+if DATABASES["default"]["ENGINE"] == "django.db.backends.mysql":
+    DATABASES["default"]["OPTIONS"] = {"charset": "utf8mb4"}
 
 #
 # Debug
@@ -40,9 +51,9 @@ DEBUG = True
 # Django Debug Toolbar
 DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda _request: DEBUG and not TESTING}
 
-if "debug_toolbar" not in INSTALLED_APPS:  # noqa: F405
+if DEBUG and "debug_toolbar" not in INSTALLED_APPS:  # noqa: F405
     INSTALLED_APPS.append("debug_toolbar")  # noqa: F405
-if "debug_toolbar.middleware.DebugToolbarMiddleware" not in MIDDLEWARE:  # noqa: F405
+if DEBUG and "debug_toolbar.middleware.DebugToolbarMiddleware" not in MIDDLEWARE:  # noqa: F405
     MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")  # noqa: F405
 
 #
@@ -71,22 +82,18 @@ if not TESTING:
         "handlers": {
             "normal_console": {
                 "level": "INFO",
-                "class": "rq.utils.ColorizingStreamHandler",
+                "class": "logging.StreamHandler",
                 "formatter": "normal",
             },
             "verbose_console": {
                 "level": "DEBUG",
-                "class": "rq.utils.ColorizingStreamHandler",
+                "class": "logging.StreamHandler",
                 "formatter": "verbose",
             },
         },
         "loggers": {
             "django": {"handlers": ["normal_console"], "level": "INFO"},
             "nautobot": {
-                "handlers": ["verbose_console" if DEBUG else "normal_console"],
-                "level": LOG_LEVEL,
-            },
-            "rq.worker": {
                 "handlers": ["verbose_console" if DEBUG else "normal_console"],
                 "level": LOG_LEVEL,
             },

@@ -42,7 +42,7 @@ The first thing you need to do is build the necessary Docker image for Nautobot 
 #14 exporting layers
 #14 exporting layers 1.2s done
 #14 writing image sha256:2d524bc1665327faa0d34001b0a9d2ccf450612bf8feeb969312e96a2d3e3503 done
-#14 naming to docker.io/{{ cookiecutter.plugin_slug }}/nautobot:{{ cookiecutter.nautobot_version }}-py3.7 done
+#14 naming to docker.io/nautobot-golden-config/nautobot:latest-py3.7 done
 ```
 
 ### Invoke - Starting the Development Environment
@@ -53,18 +53,18 @@ Next, you need to start up your Docker containers.
 ➜ invoke start
 Starting Nautobot in detached mode...
 Running docker-compose command "up --detach"
-Creating network "{{ cookiecutter.plugin_name }}_default" with the default driver
-Creating volume "{{ cookiecutter.plugin_name }}_postgres_data" with default driver
-Creating {{ cookiecutter.plugin_name }}_redis_1 ...
-Creating {{ cookiecutter.plugin_name }}_docs_1  ...
-Creating {{ cookiecutter.plugin_name }}_postgres_1 ...
-Creating {{ cookiecutter.plugin_name }}_postgres_1 ... done
-Creating {{ cookiecutter.plugin_name }}_redis_1    ... done
-Creating {{ cookiecutter.plugin_name }}_nautobot_1 ...
-Creating {{ cookiecutter.plugin_name }}_docs_1     ... done
-Creating {{ cookiecutter.plugin_name }}_nautobot_1 ... done
-Creating {{ cookiecutter.plugin_name }}_worker_1   ...
-Creating {{ cookiecutter.plugin_name }}_worker_1   ... done
+Creating network "nautobot_golden_config_default" with the default driver
+Creating volume "nautobot_golden_config_postgres_data" with default driver
+Creating nautobot_golden_config_redis_1 ...
+Creating nautobot_golden_config_docs_1  ...
+Creating nautobot_golden_config_postgres_1 ...
+Creating nautobot_golden_config_postgres_1 ... done
+Creating nautobot_golden_config_redis_1    ... done
+Creating nautobot_golden_config_nautobot_1 ...
+Creating nautobot_golden_config_docs_1     ... done
+Creating nautobot_golden_config_nautobot_1 ... done
+Creating nautobot_golden_config_worker_1   ...
+Creating nautobot_golden_config_worker_1   ... done
 Docker Compose is now in the Docker CLI, try `docker compose up`
 ```
 
@@ -76,11 +76,11 @@ This will start all of the Docker containers used for hosting Nautobot. Once the
 ```bash
 ➜ docker ps
 ****CONTAINER ID   IMAGE                            COMMAND                  CREATED          STATUS          PORTS                                       NAMES
-ee90fbfabd77   {{ cookiecutter.plugin_slug }}/nautobot:{{ cookiecutter.nautobot_version }}-py3.7   "nautobot-server rqw…"   16 seconds ago   Up 13 seconds                                               {{ cookiecutter.plugin_name }}_worker_1
-b8adb781d013   {{ cookiecutter.plugin_slug }}/nautobot:{{ cookiecutter.nautobot_version }}-py3.7   "/docker-entrypoint.…"   20 seconds ago   Up 15 seconds   0.0.0.0:8080->8080/tcp, :::8080->8080/tcp   {{ cookiecutter.plugin_name }}_nautobot_1
-d64ebd60675d   {{ cookiecutter.plugin_slug }}/nautobot:{{ cookiecutter.nautobot_version }}-py3.7   "mkdocs serve -v -a …"   25 seconds ago   Up 18 seconds   0.0.0.0:8001->8080/tcp, :::8001->8080/tcp   {{ cookiecutter.plugin_name }}_docs_1
-e72d63129b36   postgres:13-alpine               "docker-entrypoint.s…"   25 seconds ago   Up 19 seconds   0.0.0.0:5432->5432/tcp, :::5432->5432/tcp   {{ cookiecutter.plugin_name }}_postgres_1
-96c6ff66997c   redis:6-alpine                   "docker-entrypoint.s…"   25 seconds ago   Up 21 seconds   0.0.0.0:6379->6379/tcp, :::6379->6379/tcp   {{ cookiecutter.plugin_name }}_redis_1
+ee90fbfabd77   nautobot-golden-config/nautobot:latest-py3.7   "nautobot-server rqw…"   16 seconds ago   Up 13 seconds                                               nautobot_golden_config_worker_1
+b8adb781d013   nautobot-golden-config/nautobot:latest-py3.7   "/docker-entrypoint.…"   20 seconds ago   Up 15 seconds   0.0.0.0:8080->8080/tcp, :::8080->8080/tcp   nautobot_golden_config_nautobot_1
+d64ebd60675d   nautobot-golden-config/nautobot:latest-py3.7   "mkdocs serve -v -a …"   25 seconds ago   Up 18 seconds   0.0.0.0:8001->8080/tcp, :::8001->8080/tcp   nautobot_golden_config_docs_1
+e72d63129b36   postgres:13-alpine               "docker-entrypoint.s…"   25 seconds ago   Up 19 seconds   0.0.0.0:5432->5432/tcp, :::5432->5432/tcp   nautobot_golden_config_postgres_1
+96c6ff66997c   redis:6-alpine                   "docker-entrypoint.s…"   25 seconds ago   Up 21 seconds   0.0.0.0:6379->6379/tcp, :::6379->6379/tcp   nautobot_golden_config_redis_1
 ```
 
 You should see the following containers running after running `invoke start` at this time of writing.
@@ -118,27 +118,27 @@ The last command to know for now is `invoke stop`.
 ➜ invoke stop
 Stopping Nautobot...
 Running docker-compose command "down"
-Stopping {{ cookiecutter.plugin_name }}_worker_1   ...
-Stopping {{ cookiecutter.plugin_name }}_nautobot_1 ...
-Stopping {{ cookiecutter.plugin_name }}_docs_1     ...
-Stopping {{ cookiecutter.plugin_name }}_redis_1    ...
-Stopping {{ cookiecutter.plugin_name }}_postgres_1 ...
-Stopping {{ cookiecutter.plugin_name }}_worker_1   ... done
-Stopping {{ cookiecutter.plugin_name }}_nautobot_1 ... done
-Stopping {{ cookiecutter.plugin_name }}_postgres_1 ... done
-Stopping {{ cookiecutter.plugin_name }}_redis_1    ... done
-Stopping {{ cookiecutter.plugin_name }}_docs_1     ... done
-Removing {{ cookiecutter.plugin_name }}_worker_1   ...
-Removing {{ cookiecutter.plugin_name }}_nautobot_1 ...
-Removing {{ cookiecutter.plugin_name }}_docs_1     ...
-Removing {{ cookiecutter.plugin_name }}_redis_1    ...
-Removing {{ cookiecutter.plugin_name }}_postgres_1 ...
-Removing {{ cookiecutter.plugin_name }}_postgres_1 ... done
-Removing {{ cookiecutter.plugin_name }}_docs_1     ... done
-Removing {{ cookiecutter.plugin_name }}_worker_1   ... done
-Removing {{ cookiecutter.plugin_name }}_redis_1    ... done
-Removing {{ cookiecutter.plugin_name }}_nautobot_1 ... done
-Removing network {{ cookiecutter.plugin_name }}_default
+Stopping nautobot_golden_config_worker_1   ...
+Stopping nautobot_golden_config_nautobot_1 ...
+Stopping nautobot_golden_config_docs_1     ...
+Stopping nautobot_golden_config_redis_1    ...
+Stopping nautobot_golden_config_postgres_1 ...
+Stopping nautobot_golden_config_worker_1   ... done
+Stopping nautobot_golden_config_nautobot_1 ... done
+Stopping nautobot_golden_config_postgres_1 ... done
+Stopping nautobot_golden_config_redis_1    ... done
+Stopping nautobot_golden_config_docs_1     ... done
+Removing nautobot_golden_config_worker_1   ...
+Removing nautobot_golden_config_nautobot_1 ...
+Removing nautobot_golden_config_docs_1     ...
+Removing nautobot_golden_config_redis_1    ...
+Removing nautobot_golden_config_postgres_1 ...
+Removing nautobot_golden_config_postgres_1 ... done
+Removing nautobot_golden_config_docs_1     ... done
+Removing nautobot_golden_config_worker_1   ... done
+Removing nautobot_golden_config_redis_1    ... done
+Removing nautobot_golden_config_nautobot_1 ... done
+Removing network nautobot_golden_config_default
 ```
 
 This will safely shut down all of your running Docker containers for this project. When you are ready to spin containers back up, it is as simple as running `invoke start` again like in [**Invoke - Starting the Development Environment**](#invoke---starting-the-development-environment).
@@ -175,7 +175,7 @@ When trying to debug an issue, one helpful thing you can look at are the logs wi
 !!! note
 	The `-f` tag will keep the logs open, and output them in realtime as they are generated.
 
-So for example, our plugin is named `{{ cookiecutter.plugin_slug }}`, the command would most likely be `docker logs {{ cookiecutter.plugin_name }}_nautobot_1 -f`. You can find the name of all running containers via `docker ps`.
+So for example, our plugin is named `nautobot-golden-config`, the command would most likely be `docker logs nautobot_golden_config_nautobot_1 -f`. You can find the name of all running containers via `docker ps`.
 
 If you want to view the logs specific to the worker container, simply use the name of that container instead.
 
@@ -244,10 +244,10 @@ You can even launch an `ngrok` service locally on your laptop, pointing to port 
 To update the Python version, you can update it within `tasks.py`.
 
 ```python
-namespace = Collection("{{ cookiecutter.plugin_name }}")
+namespace = Collection("nautobot_golden_config")
 namespace.configure(
     {
-        "{{ cookiecutter.plugin_name }}": {
+        "nautobot_golden_config": {
             ...
             "python_ver": "3.7",
 	    ...
@@ -256,17 +256,17 @@ namespace.configure(
 )
 ```
 
-Or set the `INVOKE_{{ cookiecutter.plugin_name.upper() }}_PYTHON_VER` variable
+Or set the `INVOKE_NAUTOBOT_GOLDEN_CONFIG_PYTHON_VER` variable
 
 ### Updating Nautobot Version
 
 To update the Python version, you can update it within `tasks.py`.
 
 ```python
-namespace = Collection("{{ cookiecutter.plugin_name }}")
+namespace = Collection("nautobot_golden_config")
 namespace.configure(
     {
-        "{{ cookiecutter.plugin_name }}": {
+        "nautobot_golden_config": {
             ...
             "nautobot_ver": "1.0.2",
 	    ...
@@ -275,7 +275,7 @@ namespace.configure(
 )
 ```
 
-Or set the `INVOKE_{{ cookiecutter.plugin_name.upper() }}_NAUTOBOT_VER` variable
+Or set the `INVOKE_NAUTOBOT_GOLDEN_CONFIG_NAUTOBOT_VER` variable
 
 ## Local Development Environment
 

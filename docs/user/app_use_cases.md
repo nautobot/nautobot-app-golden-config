@@ -74,8 +74,12 @@ The [Dynamic Group](https://nautobot.readthedocs.io/en/stable/additional-feature
 
 Within the Detail view of a Golden Config Setting the section to denote the scope of devices links back to the Dynamic Group that is assigned and renders the filter attribute of the Dynamic Group as JSON. All updates to the scope of Devices must be done via the Dynamic Group not directly on the Golden Config Setting.
 
+![Dynamic Group](../images/setting-dynamic-group.png)
+
 !!! note
     The Golden Config Setting API endpoint still supports the `scope` attribute as a setter for a Dynamic Group, but this is a deprecated feature and all are encouraged to use the `dynamic_group` attribute. The attributes `dynamic_group` & `scope` **CANNOT** be used in same PUT/PATCH/POST payload. The use of `scope` will create or update the assigned Dynamic Group if used.
+
+The below configurations of scope can either be removed or specified for pre 1.2 only, the same logic applies in 1.2 and onwards but via DynamicGroups.
 
 Filtering to specific platforms, based on their slug.
 

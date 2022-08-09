@@ -6,5 +6,5 @@
 
 ### Added
 
-- #163 Create custom compliance feature 
+- [#163](https://github.com/nautobot/nautobot-plugin-golden-config/issues/163) Create custom compliance feature
 

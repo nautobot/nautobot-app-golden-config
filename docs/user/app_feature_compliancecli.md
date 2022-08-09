@@ -1,12 +1,12 @@
-# Configuration Compliance 
+# Configuration Compliance
 
-> Note:
-This document provides instructions based on `CLI` based compliance.  The other options are `JSON` [structured data compliance](./app_feature_compliancejson.md) and [custom compliance](./app_feature_compliancecustom.md).
+!!! note
+    This document provides instructions based on `CLI` based compliance.  The other options are `JSON` [structured data compliance](./app_feature_compliancejson.md) and [custom compliance](./app_feature_compliancecustom.md).
 
 ## Configuration Compliance Parsing Engine
 
-Configuration compliance is different than a simple UNIX diff. While the UI provides both, the compliance metrics are not influenced by the UNIX diff 
-capabilities. One of the challenges of getting a device into compliance is the ramp up it takes to model and generate configurations for an entire 
+Configuration compliance is different than a simple UNIX diff. While the UI provides both, the compliance metrics are not influenced by the UNIX diff
+capabilities. One of the challenges of getting a device into compliance is the ramp up it takes to model and generate configurations for an entire
 configuration. The compliance engine has several features to better build work through this process.
 
 1. The ability to parse into smaller sections, given a list of root configuration elements.
@@ -20,7 +20,7 @@ no service
 ```
 Specific configurations that start with either of these commands can be grouped together.
 
-In regards to `2`, consider the configurations of SNMP on a nexus switch. 
+In regards to `2`, consider the configurations of SNMP on a nexus switch.
 ```
 snmp-server community secure group network-admin
 snmp-server community networktocode group network-operator
@@ -33,12 +33,12 @@ snmp-server community networktocode group network-operator
 snmp-server community secure group network-admin
 ```
 
-In regards to `3`, consider the following example of BGP configuration. 
+In regards to `3`, consider the following example of BGP configuration.
 ```
 router bgp
 prefix-list
 ```
-All configurations that are a parent and child relationships would be considered within the parsing engine. Additionally, if one configuration line was 
+All configurations that are a parent and child relationships would be considered within the parsing engine. Additionally, if one configuration line was
 wrong, only that line and the parents would be shown, not all lines or only the missing configuration without context of the parents, e.g. Given:
 
 Actual
@@ -71,5 +71,6 @@ router bgp 65250
   router-id 10.0.10.6
 ```
 
-> Note: A platform will not run successfully against a device unless at least one compliance rule is set. 
+!!! note
+    A platform will not run successfully against a device unless at least one compliance rule is set.
 

@@ -1,7 +1,7 @@
-# Configuration Compliance 
+# Configuration Compliance
 
-The following should be noted by what is meant by configuration compliance. Configurations are considered to be compliant if the generated configuration 
-(generally by merging data and Jinja2, will be referred to as the intended configuration from hence forth) matches "exactly" as the actual configuration is 
+The following should be noted by what is meant by configuration compliance. Configurations are considered to be compliant if the generated configuration
+(generally by merging data and Jinja2, will be referred to as the intended configuration from hence forth) matches "exactly" as the actual configuration is
 on the backup. This may confusing to some, as for example to the average network engineer, there is no difference between `int g0/0` and
 `interface GigabitEthernet0/0` but for the purpose of configuration compliance, it is not a match... full stop.
 
@@ -13,7 +13,7 @@ It's helpful to understand what are some common reasons a device is not complian
 * The template used to generate the configuration is incorrect, and created a "false positive".
 * The parser used to obtain the configuration from the feature is incorrect, and created a "false positive".
 
-There is no magic to determine the state of configuration. You still must define what is good configuration and compare it. There are several reasons why 
+There is no magic to determine the state of configuration. You still must define what is good configuration and compare it. There are several reasons why
 configuration may be as a network engineer wants it, but the tool correctly considers it non-compliant, since the tool is only comparing two configurations.
 The tool makes no assumptions to determine what an engineer may want to do, but did not document via the configuration generation process.
 
@@ -49,7 +49,7 @@ Each configuration can be added and edits from this table. When editing/adding t
 ![Configuration Rule Edit](../images/ss_compliance-rule.png)
 
 The platform must refer to a platform with a valid slug supported by the configuration compliance engine. While there is no enforcement of this data from
-a database perspective, the job will never run successfully, rendering the additional configuration ineffective. 
+a database perspective, the job will never run successfully, rendering the additional configuration ineffective.
 
 The Feature is a unique identifier, that should prefer shorter names, as this effects the width of the compliance overview and thus it's readability as a
 best practice.
@@ -57,9 +57,11 @@ best practice.
 The "Configs to Match" section represents the configuration root elements. This would be the parent most key only. Additionally, the match is based on
 what a line starts with only. Meaning, there is an implicit greediness to the matching. All matches must start form the beginning of the line.
 
-> Note: If accidentally the data is "corrupted" with a bad tested match, simply delete the devices an re-run the compliance process.
+!!! note
+    If accidentally the data is "corrupted" with a bad tested match, simply delete the devices an re-run the compliance process.
 
-> Note: The mapping of "network_os" as defined by netutils is provided via the plugin settings in your nautobot_config.py, and documented on the primary Readme.
+!!! note
+    The mapping of "network_os" as defined by netutils is provided via the plugin settings in your nautobot_config.py, and documented on the primary Readme.
 
 ## Compliance View
 

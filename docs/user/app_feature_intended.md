@@ -43,9 +43,7 @@ Nautobot documents using the `@django_jinja.library.filter` decorator to registe
 There are several alternative ways to have functions registered as filters in the `django_jinja` environment; below demonstrates defining decorated functions in a separate file, and then importing them in the `nautobot_config.py` file. This method requires that the file is in a path that is available to Nautobot's python environment.
 
 !!! note
-    `django_jinja` documents adding filters in the `TEMPLATES` config section;
-    since Nautobot sets the `TEMPLATES` config section and does not document this in optional settings,
-    it is recommended to only use the `@django_jinja.library.filter` decorator.
+    `django_jinja` documents adding filters in the `TEMPLATES` config section; since Nautobot sets the `TEMPLATES` config section and does not document this in optional settings, it is recommended to only use the `@django_jinja.library.filter` decorator.
 
 #### custom_jinja_filters/config_templates.py
 

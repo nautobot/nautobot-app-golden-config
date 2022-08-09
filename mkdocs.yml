@@ -7,40 +7,40 @@ site_url: "https://docs.nautobot.com/projects/golden-config/"
 repo_url: "https://github.com/nautobot/nautobot-plugin-golden-config"
 copyright: "Copyright &copy; 2022 The Authors"
 theme:
-  name: material
-  navigation_depth: 4
-  custom_dir: docs/assets/overrides
+  name: "material"
+  navigation_depth: "4"
+  custom_dir: "docs/assets/overrides"
   hljs_languages:
-    - django
-    - yaml
+    - "django"
+    - "yaml"
   features:
-    - navigation.tracking
-    - navigation.tabs
-    - navigation.tabs.sticky
-    - search.suggest
-    - search.highlight
-    - search.share
-    - navigation.indexes
-  favicon: assets/favicon.ico
-  logo: assets/nautobot_logo.svg
+    - "navigation.tracking"
+    - "navigation.tabs"
+    - "navigation.tabs.sticky"
+    - "search.suggest"
+    - "search.highlight"
+    - "search.share"
+    - "navigation.indexes"
+  favicon: "assets/favicon.ico"
+  logo: "assets/nautobot_logo.svg"
   palette:
     # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: black
+      scheme: "default"
+      primary: "black"
       toggle:
-        icon: material/weather-sunny
-        name: Switch to dark mode
+        icon: "material/weather-sunny"
+        name: "Switch to dark mode"
 
     # Palette toggle for dark mode
     - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      primary: black
+      scheme: "slate"
+      primary: "black"
       toggle:
-        icon: material/weather-night
-        name: Switch to light mode
+        icon: "material/weather-night"
+        name: "Switch to light mode"
 extra_css:
-  - assets/extra.css
+  - "assets/extra.css"
 
 # needed for RTD version flyout menu
 # jquery to be loaded by RTD conditionally - remove once merged
@@ -52,39 +52,39 @@ extra:
   generator: false
   ntc_sponsor: true
   social:
-    - icon: fontawesome/solid/rss
-      link: https://blog.networktocode.com/blog/tags/nautobot
-      name: NetworkToCode Blog
-    - icon: fontawesome/brands/youtube
-      link: https://www.youtube.com/playlist?list=PLjA0bhxgryJ2Ts4GJMDA-tPzVWEncv4pb
-      name: Nautobot Videos
-    - icon: fontawesome/brands/slack
-      link: https://www.networktocode.com/community/
-      name: NetworkToCode Community
-    - icon: fontawesome/brands/github
-      link: https://github.com/nautobot/nautobot
-      name: GitHub Repo
-    - icon: fontawesome/brands/twitter
-      link: https://twitter.com/networktocode
-      name: NetworkToCode Twitter
+    - icon: "fontawesome/solid/rss"
+      link: "https://blog.networktocode.com/blog/tags/nautobot"
+      name: "NetworkToCode Blog"
+    - icon: "fontawesome/brands/youtube"
+      link: "https://www.youtube.com/playlist?list=PLjA0bhxgryJ2Ts4GJMDA-tPzVWEncv4pb"
+      name: "Nautobot Videos"
+    - icon: "fontawesome/brands/slack"
+      link: "https://www.networktocode.com/community/"
+      name: "NetworkToCode Community"
+    - icon: "fontawesome/brands/github"
+      link: "https://github.com/nautobot/nautobot"
+      name: "GitHub Repo"
+    - icon: "fontawesome/brands/twitter"
+      link: "https://twitter.com/networktocode"
+      name: "NetworkToCode Twitter"
 markdown_extensions:
-  - admonition
+  - "admonition"
   - toc:
       permalink: true
-  - attr_list
-  - md_in_html
+  - "attr_list"
+  - "md_in_html"
   - pymdownx.highlight:
       anchor_linenums: true
-  - pymdownx.inlinehilite
-  - pymdownx.snippets
-  - pymdownx.superfences
+  - "pymdownx.inlinehilite"
+  - "pymdownx.snippets"
+  - "pymdownx.superfences"
 plugins:
-  - search
+  - "search"
   - mkdocstrings:
-      default_handler: python
+      default_handler: "python"
       handlers:
         python:
-          paths: [.]
+          paths: ["."]
           options:
             show_root_heading: true
             show_category_heading: true
@@ -92,34 +92,34 @@ plugins:
 nav:
   - Overview: "index.md"
   - User Guide:
-    - App Overview: "user/app_overview.md"
-    - Using the App: "user/app_use_cases.md"
-    - Navigate Backup: "user/app_feature_backup.md"
-    - Navigate Compliance: "user/app_feature_compliance.md"
-    - Navigate Compliance CLI: "user/app_feature_compliancecli.md"
-    - Navigate Compliance JSON: "user/app_feature_compliancejson.md"
-    - Navigate Compliance Custom: "user/app_feature_compliancecustom.md"
-    - Navigate Intended: "user/app_feature_intended.md"
-    - Navigate SoT Agg: "user/app_feature_sotagg.md"
-    - Getting Started: "user/app_getting_started.md"
-    - Frequently Asked Questions: "user/app_faq.md"
-    - External Interactions: "user/app_external_interactions.md"
+      - App Overview: "user/app_overview.md"
+      - Using the App: "user/app_use_cases.md"
+      - Navigate Backup: "user/app_feature_backup.md"
+      - Navigate Compliance: "user/app_feature_compliance.md"
+      - Navigate Compliance CLI: "user/app_feature_compliancecli.md"
+      - Navigate Compliance JSON: "user/app_feature_compliancejson.md"
+      - Navigate Compliance Custom: "user/app_feature_compliancecustom.md"
+      - Navigate Intended: "user/app_feature_intended.md"
+      - Navigate SoT Agg: "user/app_feature_sotagg.md"
+      - Getting Started: "user/app_getting_started.md"
+      - Frequently Asked Questions: "user/app_faq.md"
+      - External Interactions: "user/app_external_interactions.md"
   - Administrator Guide:
-    - Install and Configure: "admin/admin_install.md"
-    - Upgrade: "admin/admin_upgrade.md"
-    - Uninstall: "admin/admin_uninstall.md"
-    - Release Notes:
-      - "admin/release_notes/index.md"
-      - v1.1: "admin/release_notes/version_1.1.md"
-      - v1.0: "admin/release_notes/version_1.0.md"
-      - v0.10: "admin/release_notes/version_0.10.md"
-      - v0.9: "admin/release_notes/version_0.9.md"
+      - Install and Configure: "admin/admin_install.md"
+      - Upgrade: "admin/admin_upgrade.md"
+      - Uninstall: "admin/admin_uninstall.md"
+      - Release Notes:
+          - "admin/release_notes/index.md"
+          - v1.1: "admin/release_notes/version_1.1.md"
+          - v1.0: "admin/release_notes/version_1.0.md"
+          - v0.10: "admin/release_notes/version_0.10.md"
+          - v0.9: "admin/release_notes/version_0.9.md"
   - Developer Guide:
-    - Extending the App: "dev/dev_extending.md"
-    - Contributing to the App: "dev/dev_contributing.md"
-    - Development Environment: "dev/dev_environment.md"
-    - Code Reference:
-      - "dev/code_reference/index.md"
-      - Models: "dev/code_reference/models.md"
-      - API: "dev/code_reference/api.md"
+      - Extending the App: "dev/dev_extending.md"
+      - Contributing to the App: "dev/dev_contributing.md"
+      - Development Environment: "dev/dev_environment.md"
+      - Code Reference:
+          - "dev/code_reference/index.md"
+          - Models: "dev/code_reference/models.md"
+          - API: "dev/code_reference/api.md"
   - Nautobot Docs Home ↗︎: "https://docs.nautobot.com/"

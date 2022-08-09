@@ -23,7 +23,7 @@ This plugin enable four (4) key use cases.
 3. **Source of Truth Aggregation** - Is a GraphQL query per device that creates a data structure used in the generation of configuration.
 4. **Configuration Compliance** - Is a process to run comparison of the actual (via backups) and intended (via Jinja file creation) CLI configurations upon saving the actual and intended configuration. This is started by either a Nornir process for cli-like configurations or calling the API for json-like configurations
 
->Notice: The operator's of their own Nautobot instance are welcome to use any combination of these features. Though the appearance may seem like they are tightly 
+>Notice: The operator's of their own Nautobot instance are welcome to use any combination of these features. Though the appearance may seem like they are tightly
 coupled, this isn't actually the case. For example, one can obtain backup configurations from their current RANCID/Oxidized process and simply provide a Git Repo
 of the location of the backup configurations, and the compliance process would work the same way. Also, another user may only want to generate configurations,
 but not want to use other features, which is perfectly fine to do so.
@@ -61,7 +61,7 @@ Full web-based HTML documentation for this app can be found over on the [Nautobo
 - [Administrator Guide](./docs/admin/) - How to Install, Configure, Upgrade, or Uninstall the App.
 - [Developer Guide](./docs/dev/) - Extending the App, API Reference, Contribution Guide.
 - [Release Notes / Changelog](./docs/admin/release_notes)
-- [Frequently Asked Questions](./docs/user/app_faq)
+- [Frequently Asked Questions](./docs/user/app_faq.md)
 
 ### Contributing to the Docs
 

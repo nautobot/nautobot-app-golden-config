@@ -4,7 +4,7 @@
 # See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
 
 # Required
-version: "2"
+version: 2
 
 # Set the version of Python in the build environment.
 build:

@@ -8,7 +8,7 @@ repo_url: "https://github.com/nautobot/nautobot-plugin-golden-config"
 copyright: "Copyright &copy; 2022 The Authors"
 theme:
   name: "material"
-  navigation_depth: "4"
+  navigation_depth: 4
   custom_dir: "docs/assets/overrides"
   hljs_languages:
     - "django"

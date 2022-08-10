@@ -41,4 +41,7 @@ COPY . /source
 RUN cp /tmp/install/* /source/
 RUN poetry install --no-interaction --no-ansi
 
+# TODO: Remove this, once there is a proper local doc hosting strategy
+RUN pip install -r docs/requirements.txt
+
 COPY development/nautobot_config.py ${NAUTOBOT_ROOT}/nautobot_config.py

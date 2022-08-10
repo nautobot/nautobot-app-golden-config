@@ -110,6 +110,7 @@ nav:
       - Uninstall: "admin/admin_uninstall.md"
       - Release Notes:
           - "admin/release_notes/index.md"
+          - v1.2: "admin/release_notes/version_1.2.md"
           - v1.1: "admin/release_notes/version_1.1.md"
           - v1.0: "admin/release_notes/version_1.0.md"
           - v0.10: "admin/release_notes/version_0.10.md"

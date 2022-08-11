@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.1.1 - 2022-09
+
+### Fixed
+
+- #260 Server Error when viewing Compliance Report <Overview>: Cherry picked
+- #309 Fix duplicate entries on home view:  Cherry picked
+
 ## v1.1.0 - 2022-07
 
 ### Announcements

@@ -5,6 +5,8 @@ on: # yamllint disable-line rule:truthy rule:comments
     branches:
       - "main"
       - "develop"
+    tags:
+      - "v*"
   pull_request: ~
 
 env:

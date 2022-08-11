@@ -61,7 +61,6 @@ class GoldenConfigListView(generic.ObjectListView):
             qs = qs | obj.get_queryset().distinct()
 
         return self.queryset.filter(id__in=qs).annotate(
-            config_type=F("configcompliance__rule__config_type"),
             backup_config=F("goldenconfig__backup_config"),
             intended_config=F("goldenconfig__intended_config"),
             compliance_config=F("goldenconfig__compliance_config"),

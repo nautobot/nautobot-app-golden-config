@@ -10,7 +10,7 @@ from nornir_nautobot.utils.logger import NornirLogger
 from jinja2 import exceptions as jinja_errors
 
 from nautobot.dcim.models import Device, Platform, Site
-from nautobot.extras.models import GitRepository, Status, DynamicGroup
+from nautobot.extras.models import GitRepository, Status, DynamicGroup, Tag
 from nautobot_golden_config.models import GoldenConfigSetting
 from nautobot_golden_config.tests.conftest import create_device, create_orphan_device, create_helper_repo
 from nautobot_golden_config.utilities.helper import (
@@ -207,6 +207,11 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
     def test_get_job_filter_device_filter_success(self):
         """Verify we get a single device returned when providing single device filter."""
         result = get_job_filter(data={"device": Device.objects.filter(name="test_device")})
+        self.assertEqual(result.count(), 1)
+
+    def test_get_job_filter_tag_success(self):
+        """Verify we get a single device returned when providing tag filter that matches on device."""
+        result = get_job_filter(data={"tag": Tag.objects.filter(name="Orphaned")})
         self.assertEqual(result.count(), 1)
 
     def test_get_job_filter_base_queryset_raise(self):

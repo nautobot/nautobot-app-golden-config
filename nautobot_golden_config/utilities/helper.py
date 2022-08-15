@@ -39,6 +39,9 @@ def get_job_filter(data=None):
     elif data.get("device"):
         query.update({"id": data["device"].values_list("pk", flat=True)})
 
+    if data.get("tag"):
+        query.update({"tag": data["tag"].values_list("slug", flat=True)})
+
     base_qs = Device.objects.none()
     for obj in models.GoldenConfigSetting.objects.all():
         base_qs = base_qs | obj.get_queryset().distinct()

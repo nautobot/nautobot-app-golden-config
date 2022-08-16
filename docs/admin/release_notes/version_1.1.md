@@ -6,7 +6,7 @@
 
 ### Changed
 
-- [#322](https://github.com/nautobot/nautobot-plugin-golden-config/issues/322) Create release v1.1.2 and remove restrictions enforcing non-usage of beyond Nautobot 1.2.
+- [#322](https://github.com/nautobot/nautobot-plugin-golden-config/issues/322) Create release v1.1.2 and remove restrictions enforcing non-usage of beyond Nautobot 1.3.
 
 ## v1.1.1 - 2022-08
 

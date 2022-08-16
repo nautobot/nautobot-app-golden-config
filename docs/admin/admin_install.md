@@ -86,7 +86,7 @@ The plugin behavior can be controlled with the following list of settings.
 
 ## Deprecation Policy
 
-Support of upstream Nautobot will be announced 1 minor or major version ahead. Deprecation policy will be announced within the [release notes](../release_notes), and updated in the table below. There will be a `stable-<major>.<minor>` branch that will be minimally maintained, for any security enhancements or major bugs will be supported for a limited time.
+Support of upstream Nautobot will be announced 1 minor or major version ahead. Deprecation policy will be announced within the [release notes](../release_notes), and updated in the table below. There will be a `stable-<major>.<minor>` branch that will be minimally maintained, for any security enhancements or major bugs will be supported for a limited time. While that last supported version will not be strictly enforced--via the `max_version` setting, any issues with an updated Nautobot supported version in a minor release, will require a bug and fix in Nautobot core to address, with no fixes expected in this plugin. This allows the Golden Config plugin to quickly take advantage of the latest features.
 
 | Golden Config Version | Nautobot First Support Version | Nautobot Last Support Version |
 | --------------------- | ------------------------------ | ----------------------------- |

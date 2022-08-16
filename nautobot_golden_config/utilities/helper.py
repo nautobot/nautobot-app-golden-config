@@ -1,6 +1,7 @@
 """Helper functions."""
 # pylint: disable=raise-missing-from
 
+from django.db.models import Q
 from jinja2 import exceptions as jinja_errors
 
 from nautobot.dcim.models import Device
@@ -46,21 +47,27 @@ def get_job_filter(data=None):
     elif data.get("device"):
         query.update({"id": data["device"].values_list("pk", flat=True)})
 
-    base_qs = Device.objects.none()
+    raw_qs = Q()
     for obj in models.GoldenConfigSetting.objects.all():
-        base_qs = base_qs | obj.get_queryset().distinct()
+        # If scope is set to {} break out of loop as all devices are in scope.
+        if obj.scope == {}:
+            raw_qs = Q()
+            break
+        raw_qs = raw_qs | obj.dynamic_group.generate_query()
 
-    if base_qs.count() == 0:
+    base_qs = Device.objects.filter(raw_qs)
+
+    if not base_qs.exists():
         raise NornirNautobotException(
             "The base queryset didn't find any devices. Please check the Golden Config Setting scope."
         )
     devices_filtered = DeviceFilterSet(data=query, queryset=base_qs)
-    if devices_filtered.qs.count() == 0:
+    if not devices_filtered.qs.exists():
         raise NornirNautobotException(
             "The provided job parameters didn't match any devices detected by the Golden Config scope. Please check the scope defined within Golden Config Settings or select the correct job parameters to correctly match devices."
         )
     devices_no_platform = devices_filtered.qs.filter(platform__isnull=True)
-    if devices_no_platform.count() > 0:
+    if devices_no_platform.exists():
         raise NornirNautobotException(
             f"The following device(s) {', '.join([device.name for device in devices_no_platform])} have no platform defined. Platform is required."
         )
@@ -127,10 +134,10 @@ def render_jinja_template(obj, logger, template):
 def get_device_to_settings_map(queryset):
     """Helper function to map settings to devices."""
     device_to_settings_map = {}
-    queryset_ids = queryset.values_list("id", flat=True)
-    for golden_config_setting in models.GoldenConfigSetting.objects.all():
-        for device_id in golden_config_setting.get_queryset().values_list("id", flat=True):
-            if (device_id in queryset_ids) and (device_id not in device_to_settings_map):
-                device_to_settings_map[device_id] = golden_config_setting
-
+    for device in queryset:
+        dynamic_group = device.dynamic_groups.exclude(golden_config_setting__isnull=True).order_by(
+            "-golden_config_setting__weight"
+        )
+        if dynamic_group.exists():
+            device_to_settings_map[device.id] = dynamic_group.first().golden_config_setting
     return device_to_settings_map

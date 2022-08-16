@@ -548,11 +548,11 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
 
     def get_queryset(self):
         """Generate a Device QuerySet from the filter."""
-        return self.dynamic_group.get_queryset()
+        return self.dynamic_group.members
 
     def device_count(self):
         """Return the number of devices in the group."""
-        return self.get_queryset().count()
+        return self.dynamic_group.count
 
     def get_url_to_filtered_device_list(self):
         """Get url to all devices that are matching the filter."""

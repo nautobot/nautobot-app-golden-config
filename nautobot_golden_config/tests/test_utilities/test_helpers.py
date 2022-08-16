@@ -191,22 +191,22 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
 
     def test_get_job_filter_no_data_success(self):
         """Verify we get two devices returned when providing no data."""
-        result = get_job_filter()
+        result, _ = get_job_filter()
         self.assertEqual(result.count(), 2)
 
     def test_get_job_filter_site_success(self):
         """Verify we get a single device returned when providing specific site."""
-        result = get_job_filter(data={"site": Site.objects.filter(slug="site-4")})
+        result, _ = get_job_filter(data={"site": Site.objects.filter(slug="site-4")})
         self.assertEqual(result.count(), 1)
 
     def test_get_job_filter_device_object_success(self):
         """Verify we get a single device returned when providing single device object."""
-        result = get_job_filter(data={"device": Device.objects.get(name="test_device")})
+        result, _ = get_job_filter(data={"device": Device.objects.get(name="test_device")})
         self.assertEqual(result.count(), 1)
 
     def test_get_job_filter_device_filter_success(self):
         """Verify we get a single device returned when providing single device filter."""
-        result = get_job_filter(data={"device": Device.objects.filter(name="test_device")})
+        result, _ = get_job_filter(data={"device": Device.objects.filter(name="test_device")})
         self.assertEqual(result.count(), 1)
 
     def test_get_job_filter_base_queryset_raise(self):
@@ -225,7 +225,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
             get_job_filter()
         self.assertEqual(
             failure.exception.args[0],
-            "The base queryset didn't find any devices. Please check the Golden Config Setting scope.",
+            "The provided job parameters didn't match any devices detected by the Golden Config scope. Please check the scope defined within Golden Config Settings or select the correct job parameters to correctly match devices.",
         )
 
     def test_get_job_filter_filtered_devices_raise(self):
@@ -235,7 +235,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
             get_job_filter(data={"site": Site.objects.filter(name="New Site")})
         self.assertEqual(
             failure.exception.args[0],
-            "The provided job parameters didn't match any devices detected by the Golden Config scope. Please check the scope defined within Golden Config Settings or select the correct job parameters to correctly match devices.",
+            "The base queryset didn't find any devices. Please check the Golden Config Setting scope.",
         )
 
     def test_get_job_filter_device_no_platform_raise(self):

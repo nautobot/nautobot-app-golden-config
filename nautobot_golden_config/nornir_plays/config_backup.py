@@ -94,8 +94,7 @@ def config_backup(job_result, data):
     now = datetime.now()
     logger = NornirLogger(__name__, job_result, data.get("debug"))
 
-    qs = get_job_filter(data)
-    device_to_settings_map = get_device_to_settings_map(queryset=qs)
+    qs, device_to_settings_map = get_job_filter(data)
 
     for settings in set(device_to_settings_map.values()):
         verify_settings(logger, settings, ["backup_path_template"])

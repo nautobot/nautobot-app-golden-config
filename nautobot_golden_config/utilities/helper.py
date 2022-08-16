@@ -25,6 +25,18 @@ FIELDS = {
 }
 
 
+def get_device_to_settings_map(queryset):
+    """Helper function to map settings to devices."""
+    device_to_settings_map = {}
+    queryset_ids = queryset.values_list("id", flat=True)
+    for golden_config_setting in models.GoldenConfigSetting.objects.all():
+        for device_id in golden_config_setting.get_queryset().values_list("id", flat=True):
+            if (device_id in queryset_ids) and (device_id not in device_to_settings_map):
+                device_to_settings_map[device_id] = golden_config_setting
+
+    return device_to_settings_map
+
+
 def get_job_filter(data=None):
     """Helper function to return a the filterable list of OS's based on platform.slug and a specific custom value."""
     if not data:
@@ -39,26 +51,28 @@ def get_job_filter(data=None):
     elif data.get("device"):
         query.update({"id": data["device"].values_list("pk", flat=True)})
 
-    base_qs = Device.objects.none()
-    for obj in models.GoldenConfigSetting.objects.all():
-        base_qs = base_qs | obj.get_queryset().distinct()
+    init_qs = DeviceFilterSet(data=query, queryset=Device.objects.all()).qs
 
-    if base_qs.count() == 0:
+    if init_qs.count() == 0:
         raise NornirNautobotException(
             "The base queryset didn't find any devices. Please check the Golden Config Setting scope."
         )
-    devices_filtered = DeviceFilterSet(data=query, queryset=base_qs)
-    if devices_filtered.qs.count() == 0:
+
+    settings_map = get_device_to_settings_map(init_qs)
+    dev_ids = [str(i) for i in set(settings_map.keys())]
+
+    devices_filtered = Device.objects.filter(id__in=dev_ids)
+    if devices_filtered.count() == 0:
         raise NornirNautobotException(
             "The provided job parameters didn't match any devices detected by the Golden Config scope. Please check the scope defined within Golden Config Settings or select the correct job parameters to correctly match devices."
         )
-    devices_no_platform = devices_filtered.qs.filter(platform__isnull=True)
+    devices_no_platform = devices_filtered.filter(platform__isnull=True)
     if devices_no_platform.count() > 0:
         raise NornirNautobotException(
             f"The following device(s) {', '.join([device.name for device in devices_no_platform])} have no platform defined. Platform is required."
         )
 
-    return devices_filtered.qs
+    return devices_filtered, settings_map
 
 
 def null_to_empty(val):
@@ -115,15 +129,3 @@ def render_jinja_template(obj, logger, template):
         )
         logger.log_failure(error_msg)
         raise NornirNautobotException from error
-
-
-def get_device_to_settings_map(queryset):
-    """Helper function to map settings to devices."""
-    device_to_settings_map = {}
-    queryset_ids = queryset.values_list("id", flat=True)
-    for golden_config_setting in models.GoldenConfigSetting.objects.all():
-        for device_id in golden_config_setting.get_queryset().values_list("id", flat=True):
-            if (device_id in queryset_ids) and (device_id not in device_to_settings_map):
-                device_to_settings_map[device_id] = golden_config_setting
-
-    return device_to_settings_map

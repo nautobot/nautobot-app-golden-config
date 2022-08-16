@@ -2,6 +2,12 @@
 - Move GoldenConfigSetting scope to the use of DynamicGroups
 - Drop support of Nautobot <1.4.X
 
+## v1.2.0 - 2022-08
+
+### Fixed
+
+- #314 Fixed Tag filtering not working in job launch form
+
 ## v1.2.0b1 - 2022-08
 
 ### Changed

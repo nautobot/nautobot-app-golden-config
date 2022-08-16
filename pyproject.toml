@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nautobot-golden-config"
-version = "1.2.0-beta.0"
+version = "1.2.0"
 description = "A plugin for configuration on nautobot"
 authors = ["Network to Code, LLC", "<opensource@networktocode.com>"]
 
@@ -35,7 +35,7 @@ deepdiff = "^5.5.0"
 django-pivot = "^1.8.1"
 matplotlib = "^3.3.2"
 ## Setting as next to test with DynamicGroup changes
-nautobot = ">=1.4.0b1"
+nautobot = ">=1.4.0"
 nautobot-plugin-nornir = ">=1.0.0"
 
 [tool.poetry.dev-dependencies]

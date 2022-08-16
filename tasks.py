@@ -38,7 +38,7 @@ namespace = Collection("nautobot_golden_config")
 namespace.configure(
     {
         "nautobot_golden_config": {
-            "nautobot_ver": "1.4.0b1",
+            "nautobot_ver": "1.4.0",
             "project_name": "nautobot_golden_config",
             "python_ver": "3.7",
             "local": False,
@@ -46,7 +46,7 @@ namespace.configure(
             "compose_files": [
                 "docker-compose.base.yml",
                 "docker-compose.redis.yml",
-                "docker-compose.postgres.yml",
+                "docker-compose.mysql.yml",
                 "docker-compose.dev.yml",
             ],
             "compose_http_timeout": "86400",

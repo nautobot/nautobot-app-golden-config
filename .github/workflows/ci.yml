@@ -116,21 +116,21 @@ jobs:
       matrix:
         python-version: ["3.7", "3.8", "3.9", "3.10"]
         db-backend: ["postgresql"]
-        nautobot-version: ["1.4.0b1"] # Change to latest or stable
+        nautobot-version: ["1.4.0", "latest"] # Change to latest or stable
         # The include is a method to limit the amount of jobs ran. This essentially
         # means that in addition to standard postgres and stable, also the lowest
         # supported version and with mysql
         include:
           - python-version: "3.10"
             db-backend: "postgresql"
-            nautobot-version: "1.4.0b1"
+            nautobot-version: "1.4.0"
             # TODO: Include the following, once mysql is working on CI
             # - python-version: "3.7"
             #   db-backend: "mysql"
-            #   nautobot-version: "1.4.0b1"
+            #   nautobot-version: "1.4.0"
             # - python-version: "3.10"
             #   db-backend: "mysql"
-            #   nautobot-version: "stable"
+            #   nautobot-version: "latest"
     runs-on: "ubuntu-20.04"
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_PYTHON_VER: "${{ matrix.python-version }}"

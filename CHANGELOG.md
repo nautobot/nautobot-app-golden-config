@@ -1,6 +1,12 @@
 # Changelog
 
-## v1.1.1 - 2022-09
+## v1.1.2 - 2022-08
+
+### Changed
+
+- #322 Create release v1.1.2 and remove restrictions enforcing non-usage of beyond Nautobot 1.2.
+
+## v1.1.1 - 2022-08
 
 ### Fixed
 

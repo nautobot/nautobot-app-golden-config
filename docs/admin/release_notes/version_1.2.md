@@ -1,6 +1,3 @@
-# v1.2 TODOs Before Official Release
-- Remove static references to 1.4.0b1, in tasks.py, Dockerfile, and pyproject.toml
-
 # v1.2 Release Notes
 - Move GoldenConfigSetting scope to the use of DynamicGroups
 - Drop support of Nautobot <1.4.X

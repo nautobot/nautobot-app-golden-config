@@ -6,7 +6,10 @@
 
 ### Fixed
 
-- #314 Fixed Tag filtering not working in job launch form
+- [#314](https://github.com/nautobot/nautobot-plugin-golden-config/issues/314) Fixed Tag filtering not working in job launch form
+- [#316](https://github.com/nautobot/nautobot-plugin-golden-config/pull/316) & [#313](https://github.com/nautobot/nautobot-plugin-golden-config/pull/313) Update doc links for new read the docs
+- [#306](https://github.com/nautobot/nautobot-plugin-golden-config/pull/306) Fix ability to run docs locally
+- [#304](https://github.com/nautobot/nautobot-plugin-golden-config/pull/304) & [#305](https://github.com/nautobot/nautobot-plugin-golden-config/pull/305) Fix yaml line issues
 
 ## v1.2.0b1 - 2022-08
 

@@ -10,6 +10,7 @@
 - [#316](https://github.com/nautobot/nautobot-plugin-golden-config/pull/316) & [#313](https://github.com/nautobot/nautobot-plugin-golden-config/pull/313) Update doc links for new read the docs
 - [#306](https://github.com/nautobot/nautobot-plugin-golden-config/pull/306) Fix ability to run docs locally
 - [#304](https://github.com/nautobot/nautobot-plugin-golden-config/pull/304) & [#305](https://github.com/nautobot/nautobot-plugin-golden-config/pull/305) Fix yaml line issues
+- [#321](https://github.com/nautobot/nautobot-plugin-golden-config/pull/321) Resolving deprecation warning from upgrading to Nautobot v1.4.0.
 
 ## v1.2.0b1 - 2022-08
 

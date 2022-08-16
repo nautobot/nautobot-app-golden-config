@@ -30,17 +30,21 @@ def get_job_filter(data=None):
     if not data:
         data = {}
     query = {}
+
+    # Translate instances from FIELDS set to list of primary keys
     for field in FIELDS:
         if data.get(field):
             query[f"{field}_id"] = data[field].values_list("pk", flat=True)
+
+    # Build tag query based on slug values for each instance
+    if data.get("tag"):
+        query.update({"tag": data["tag"].values_list("slug", flat=True)})
+
     # Handle case where object is from single device run all.
     if data.get("device") and isinstance(data["device"], Device):
         query.update({"id": [str(data["device"].pk)]})
     elif data.get("device"):
         query.update({"id": data["device"].values_list("pk", flat=True)})
-
-    if data.get("tag"):
-        query.update({"tag": data["tag"].values_list("slug", flat=True)})
 
     base_qs = Device.objects.none()
     for obj in models.GoldenConfigSetting.objects.all():

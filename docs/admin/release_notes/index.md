@@ -2,6 +2,7 @@
 
 The following release notes have been published:
 
+- [v1.2](version_1.2.md)
 - [v1.1](version_1.1.md)
 - [v1.0](version_1.0.md)
 - [v0.10](version_0.10.md)

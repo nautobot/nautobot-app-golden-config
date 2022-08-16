@@ -6,8 +6,8 @@
 
 ### Fixed
 
-- #260 Server Error when viewing Compliance Report <Overview>: Cherry picked
-- #309 Fix duplicate entries on home view:  Cherry picked
+- [#260](https://github.com/nautobot/nautobot-plugin-golden-config/issues/260) Server Error when viewing Compliance Report <Overview>: Cherry picked
+- [#309](https://github.com/nautobot/nautobot-plugin-golden-config/issues/309) Fix duplicate entries on home view:  Cherry picked
 
 ## v1.1.0 - 2022-06
 

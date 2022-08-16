@@ -4,14 +4,14 @@
 
 ### Home
 
-The Home view is a portal to understand what the status of the devices are. 
+The Home view is a portal to understand what the status of the devices are.
 
 ![Home Overview](../images/ss_golden-overview.png)
 
 Some of the information described in this view, may not be immediately obvious.
 
 * The Backup/Intended/Compliance status will always show the last time the job was successfully ran for that device, but there are several conditions it may be in.
-  * Green with a date indicates that the ran was successful, which was the last time the job ran. 
+  * Green with a date indicates that the ran was successful, which was the last time the job ran.
   * Red with a data indicates the last time the job ran successfully, with the last time the job was attempted in be shown when you mouse over the date.
   * A red double-dashed icon indicated the job has never been successful
 * The icons are provided in the following order, that largely matches the status.
@@ -21,7 +21,7 @@ Some of the information described in this view, may not be immediately obvious.
   * SoT aggregation data
   * Run job
 
-The first four bring up a "modal" or "dialogue box" which has a detailed view for a dedicated page. The run job brings the user to a job to run all three 
+The first four bring up a "modal" or "dialogue box" which has a detailed view for a dedicated page. The run job brings the user to a job to run all three
 components against all of the devices.
 
 ### Jobs
@@ -38,9 +38,9 @@ Each Job attempts to provide sane error handling, and respects the `debug` flag 
 
 The golden configuration plugin settings can be found by navigating to `Golden Config -> Settings` button. Select one of the Settings, under the `Golden Configuration` section.
 Since Golden Configuration Plugin version 1.0, the plugin allows for multiple settings to be configured by the User.
-Each of the settings, has the individual repositories and configuration details, as well as the scope.
+Each of the settings, has the individual repositories and configuration details, as well as a Dynamic Group.
 You could use a combination of settings to customize Your Configuration Compliance behavior.
-Settings have a name and a weight. The weight parameter indicates the priority of given Settings - the higher the weight, the device matching the scope defined will be assigned to the scope.
+Settings have a name and a weight. The weight parameter indicates the priority of given Settings - the higher the weight, the device matching the Dynamic Group defined will be assigned to the scope.
 At the same moment, each device will be matched up to maximum of only one `Settings.` In case of the same weight, the sorting is performed by the name.
 
 ![Navigate to Settings](../images/navigate-compliance-rules.png)
@@ -57,14 +57,29 @@ To update existing settings click on one of the `Settings` name.
 |Intended Path|A Jinja template which defines the path and name of intended configuration state files within the intended state repository. e.g. `{{obj.site.slug}}/{{obj.name}}.intended_cfg`|
 |Jinja Repository |The Git Repository where your jinja templates will be found. |
 |Jinja Path|A Jinja template which defines the path (within the repository) and name of the Jinja template file. e.g. `{{obj.platform.slug}}/{{obj.role.slug}}/main.j2`|
-|Scope|The scope of devices on which Golden Config's jobs can operate. |
+|Dynamic Group|The scope of devices on which Golden Config's jobs can operate. |
 |GraphQL Query|A query that is evaluated and used to render the config. The query must start with `query ($device_id: ID!)`.|
 
-> Note: Each of these will be further detailed in their respective sections.
+!!! note
+    Each of these will be further detailed in their respective sections.
 
-#### Scope
+#### Dynamic Group
 
-The scope, is a JSON blob that describes a filter that will provide the list of devices to be allowed whenever a job is ran. A job can optionally further refine the scope, but the outbound would be based on what is defined here. The options are best described by leveraging the Devices list view, search features (the filtering shown on the side of the Devices.) Building a query there, will provide the exact keys expected.
+!!! note
+    Starting in Golden Config v1.2 and onwards the original implementation of scope has been deprecated in favor of Dynamic Groups from Nautobot. During the migrations any Golden Config Setting scope attribute will be migrated to Dynamic Groups. All settings require a Dynamic Group, if the original scope is not set to allow ALL Devices a Dynamic Group will be created without a filter applied which will is the equivalent of all Devices.
+
+The [Dynamic Group](https://nautobot.readthedocs.io/en/stable/additional-features/dynamic-groups/) provides a filter that will limit the list of devices in scope of a Golden Config Setting. In the Golden Config Home view the Dynamic Group is used to limit the Devices that are displayed, if a Device does not match the filter of a Dynamic Group it is considered out of scope for GoldenConfig and will not show on the Golden Config Settings view. All jobs in Golden Config also use the Dynamic Group to know which Devices are in scope. A job can optionally further refine the scope, but the outer bound would be based on what is defined in the Dynamic Group. The options are best described by leveraging the Devices list view, search features (the filtering shown on the side of the Devices.) Building a query there, will provide the exact keys expected.
+
+##### Scope Of Devices
+
+Within the Detail view of a Golden Config Setting the section to denote the scope of devices links back to the Dynamic Group that is assigned and renders the filter attribute of the Dynamic Group as JSON. All updates to the scope of Devices must be done via the Dynamic Group not directly on the Golden Config Setting.
+
+![Dynamic Group](../images/setting-dynamic-group.png)
+
+!!! note
+    The Golden Config Setting API endpoint still supports the `scope` attribute as a setter for a Dynamic Group, but this is a deprecated feature and all are encouraged to use the `dynamic_group` attribute. The attributes `dynamic_group` & `scope` **CANNOT** be used in same PUT/PATCH/POST payload. The use of `scope` will create or update the assigned Dynamic Group if used.
+
+The below configurations of scope can either be removed or specified for pre 1.2 only, the same logic applies in 1.2 and onwards but via DynamicGroups.
 
 Filtering to specific platforms, based on their slug.
 
@@ -79,9 +94,10 @@ Filtering to specific platforms, based on their slug.
 }
 ```
 
-> Note: The Platform slug is an important value, see the [FAQ](./app_faq.md) for further details.
+!!! note
+    The Platform slug is an important value, see the [FAQ](./app_faq.md) for further details.
 
-Adding a "has_primary_ip" check. 
+Adding a "has_primary_ip" check.
 
 ```json
 {
@@ -112,6 +128,7 @@ Click on `Add`.
 You will now be presented with a page to fill in the repository details.
 
 Parameters:
+
 |Field|Explanation|
 |:--|:--|
 |Name|User friendly name for the backup repo.|
@@ -121,9 +138,10 @@ Parameters:
 |Token|The token is a personal access token for the `username` provided.  For more information on generating a personal access token. [Github Personal Access Token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token)
 |Username|The Git username that corresponds with the personal access token above.|
 |Provides|Valid providers for Git Repo.|
-<br>
 
-> Note: If Secret Group is used for the Repositories the secrets type HTTP(S) is required for this plugin.
+
+!!! note
+    If Secret Group is used for the Repositories the secrets type HTTP(S) is required for this plugin.
 
 ![Example Git Backups](../images/backup-git-step2.png)
 
@@ -140,7 +158,7 @@ The plugins buttons provides you with the ability to navigate to Run the script,
 
 ### Run Script
 
-This can be accessed via the Plugins drop-down via `Run Script` button of the `Home` view, the user will be provided a form of the Job (as described 
+This can be accessed via the Plugins drop-down via `Run Script` button of the `Home` view, the user will be provided a form of the Job (as described
 above), which will allow the user to limit the scope of the request.
 
 ### Device Template Content
@@ -149,7 +167,7 @@ The plugin makes use of template content `right_page` in order to use display in
 
 ### Site Template Content
 
-The plugin makes use of template content `right_page` in order to use display in-line the status of that entire site in the traditional Nautobot view. 
+The plugin makes use of template content `right_page` in order to use display in-line the status of that entire site in the traditional Nautobot view.
 
 ### API
 
@@ -174,10 +192,8 @@ This plugin enable four (4) key use cases.
 3. **Source of Truth Aggregation** - Is a GraphQL query per device that creates a data structure used in the generation of configuration.
 4. **Configuration Compliance** - Is a process to run comparison of the actual (via backups) and intended (via Jinja file creation) CLI configurations upon saving the actual and intended configuration. This is started by either a Nornir process for cli-like configurations or calling the API for json-like configurations
 
->Notice: The operator's of their own Nautobot instance are welcome to use any combination of these features. Though the appearance may seem like they are tightly 
-coupled, this isn't actually the case. For example, one can obtain backup configurations from their current RANCID/Oxidized process and simply provide a Git Repo
-of the location of the backup configurations, and the compliance process would work the same way. Also, another user may only want to generate configurations,
-but not want to use other features, which is perfectly fine to do so.
+!!! warning "Notice"
+    The operators of their own Nautobot instance are welcome to use any combination of these features. Though the appearance may seem like they are tightly coupled, this isn't actually the case. For example, one can obtain backup configurations from their current RANCID/Oxidized process and simply provide a Git Repo of the location of the backup configurations, and the compliance process would work the same way. Also, another user may only want to generate configurations, but not want to use other features, which is perfectly fine to do so.
 
 ## Screenshots
 

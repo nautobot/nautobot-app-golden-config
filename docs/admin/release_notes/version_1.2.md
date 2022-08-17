@@ -1,9 +1,16 @@
-# v1.2 TODOs Before Official Release
-- Remove static references to 1.4.0b1, in tasks.py, Dockerfile, and pyproject.toml
-
 # v1.2 Release Notes
 - Move GoldenConfigSetting scope to the use of DynamicGroups
 - Drop support of Nautobot <1.4.X
+
+## v1.2.0 - 2022-08
+
+### Fixed
+
+- [#314](https://github.com/nautobot/nautobot-plugin-golden-config/issues/314) Fixed Tag filtering not working in job launch form
+- [#316](https://github.com/nautobot/nautobot-plugin-golden-config/pull/316) & [#313](https://github.com/nautobot/nautobot-plugin-golden-config/pull/313) Update doc links for new read the docs
+- [#306](https://github.com/nautobot/nautobot-plugin-golden-config/pull/306) Fix ability to run docs locally
+- [#304](https://github.com/nautobot/nautobot-plugin-golden-config/pull/304) & [#305](https://github.com/nautobot/nautobot-plugin-golden-config/pull/305) Fix yaml line issues
+- [#321](https://github.com/nautobot/nautobot-plugin-golden-config/pull/321) Resolving deprecation warning from upgrading to Nautobot v1.4.0.
 
 ## v1.2.0b1 - 2022-08
 

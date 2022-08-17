@@ -2,6 +2,13 @@
 
 - Updates to filters and bug fixes
 
+## v1.1.1 - 2022-09
+
+### Fixed
+
+- [#260](https://github.com/nautobot/nautobot-plugin-golden-config/issues/260) Server Error when viewing Compliance Report <Overview>: Cherry picked
+- [#309](https://github.com/nautobot/nautobot-plugin-golden-config/issues/309) Fix duplicate entries on home view:  Cherry picked
+
 ## v1.1.0 - 2022-06
 
 ### Announcements

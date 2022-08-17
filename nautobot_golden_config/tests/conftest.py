@@ -1,9 +1,11 @@
 """Params for testing."""
+from django.contrib.contenttypes.models import ContentType
+from django.utils.text import slugify
+
 from nautobot.dcim.models import Device, Site, Manufacturer, DeviceType, DeviceRole, Rack, RackGroup, Region, Platform
 from nautobot.tenancy.models import Tenant, TenantGroup
-from nautobot.extras.models import Status, GitRepository, GraphQLQuery
+from nautobot.extras.models import Status, GitRepository, GraphQLQuery, Tag
 from nautobot.extras.datasources.registry import get_datasource_contents
-from django.utils.text import slugify
 
 from nautobot_golden_config.models import ConfigCompliance, ComplianceFeature, ComplianceRule
 from nautobot_golden_config.choices import ComplianceRuleTypeChoice
@@ -159,9 +161,13 @@ def create_orphan_device(name="orphan"):
         manufacturer=manufacturer, model="Device Type 4", slug="device-type-4"
     )
     platform, _ = Platform.objects.get_or_create(manufacturer=manufacturer, name="Platform 4", slug="platform-4")
+    content_type = ContentType.objects.get(app_label="dcim", model="device")
+    tag, _ = Tag.objects.get_or_create(name="Orphaned", slug="orphaned")
+    tag.content_types.add(content_type)
     device = Device.objects.create(
         name=name, platform=platform, site=site, device_role=device_role, device_type=device_type
     )
+    device.tags.add(tag)
     return device
 
 

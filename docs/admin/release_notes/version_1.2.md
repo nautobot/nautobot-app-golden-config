@@ -4,6 +4,10 @@
 
 ## v1.2.0 - 2022-08
 
+### Changed
+
+- [#323](https://github.com/nautobot/nautobot-plugin-golden-config/pull/323) Disable enforcement of `max_version` check and update admin install policy to indicate the same.
+
 ### Fixed
 
 - [#314](https://github.com/nautobot/nautobot-plugin-golden-config/issues/314) Fixed Tag filtering not working in job launch form

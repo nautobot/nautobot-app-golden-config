@@ -166,7 +166,7 @@ cp development/creds.example.env development/creds.env
 
 ### Invoke - Building the Docker Image
 
-The first thing you need to do is build the necessary Docker image for Nautobot that installs the specific `nautobot_ver`. The image is used for Nautobot and the RQ worker service used by Docker Compose.
+The first thing you need to do is build the necessary Docker image for Nautobot that installs the specific `nautobot_ver`. The image is used for Nautobot and the Celery worker service used by Docker Compose.
 
 ```bash
 ➜ invoke build

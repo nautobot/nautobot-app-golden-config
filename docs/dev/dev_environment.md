@@ -82,6 +82,12 @@ Nautobot server can now be accessed at [http://localhost:8080](http://localhost:
 
 It is typically recommended to launch the Nautobot **runserver** command in a separate shell so you can keep developing and manage the webserver separately.
 
+### Updating the Documentation
+
+Documentation dependencies are pinned to exact versions to ensure consistent results. For the development environment, they are defined in the `pyproject.toml` file.
+
+If you need to update any of the documentation dependencies to a newer version, make sure you copy the exact same versions pinned in `pyproject.toml` to the `docs/requirements.txt` file as well. The latter is used in the automated build pipeline on ReadTheDocs to build the live version of the documentation.
+
 ### CLI Helper Commands
 
 The project features a CLI helper based on [Invoke](https://www.pyinvoke.org/) to help setup the development environment. The commands are listed below in 3 categories:
@@ -141,16 +147,18 @@ Follow the directions below for the specific development environment that you ch
 
 ## Poetry
 
-Poetry is used in lieu of the "virtualenv" commands and is leveraged in both environments. The virtual environment will provide most of the Python packages required to manage the development environment such as **Invoke**, but see the [Local Development Environment](#local-poetry-development-environment) section to see how to install Nautobot if you're going to be developing locally. To get started, run the following commands:
+Poetry is used in lieu of the "virtualenv" commands and is leveraged in both environments. The virtual environment will provide all of the Python packages required to manage the development environment such as **Invoke**. See the [Local Development Environment](#local-poetry-development-environment) section to see how to install Nautobot if you're going to be developing locally (i.e. not using the Docker container).
 
-```bash
-➜ poetry install
-➜ poetry shell
-```
+The `pyproject.toml` file outlines all of the relevant dependencies for the project:
 
-The first command creates the virtual environment through Poetry and installs all relevant dependencies, as outlined in the `pyproject.toml` file.
+- `tool.poetry.dependencies` - the main list of dependencies.
+- `tool.poetry.dev-dependencies` - development dependencies, to facilitate linting, testing, and documentation building.
 
-The second command puts your shell session into the virtual environment, so all commands ran going forward are from within the virtual environment. (This is similar to running the `source venv/bin/activate` command with virtualenvs).
+The `poetry shell` command is used to create and enable a virtual environment managed by Poetry, so all commands ran going forward are executed within the virtual environment. This is similar to running the `source venv/bin/activate` command with virtualenvs. To install project dependencies in the virtual environment, you should run `poetry install` - this will install **both** project and development dependencies.
+
+For more details about Poetry and its commands please check out its [online documentation](https://python-poetry.org/docs/).
+
+
 
 ## Full Docker Development Environment
 

@@ -17,8 +17,7 @@ services:
     ports:
       - "8001:8080"
     volumes:
-      - "../docs:/source/docs:ro"
-      - "../mkdocs.yml:/source/mkdocs.yml:ro"
+      - "../:/source"
     image: "nautobot-golden-config/nautobot:${NAUTOBOT_VER}-py${PYTHON_VER}"
     healthcheck:
       disable: true

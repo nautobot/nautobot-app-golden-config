@@ -1,5 +1,5 @@
 ---
-dev_addr: "10.250.0.11:8000"
+dev_addr: "127.0.0.1:8001"
 edit_uri: "edit/main/docs"
 site_dir: "golden-config/static/golden-config/docs"
 site_name: "Golden Configuration Documentation"
@@ -69,18 +69,18 @@ extra:
       name: "NetworkToCode Twitter"
 markdown_extensions:
   - "admonition"
-  - toc:
+  - "toc":
       permalink: true
   - "attr_list"
   - "md_in_html"
-  - pymdownx.highlight:
+  - "pymdownx.highlight":
       anchor_linenums: true
   - "pymdownx.inlinehilite"
   - "pymdownx.snippets"
   - "pymdownx.superfences"
 plugins:
   - "search"
-  - mkdocstrings:
+  - "mkdocstrings":
       default_handler: "python"
       handlers:
         python:
@@ -88,6 +88,8 @@ plugins:
           options:
             show_root_heading: true
             show_category_heading: true
+watch:
+  - "README.md"
 
 nav:
   - Overview: "index.md"

@@ -39,16 +39,17 @@
                 <pre>{{ output }}</pre>
             {% endif %}
         </div>
-        <script type="text/javascript">
-            var str_input = document.getElementById("output").getAttribute("value");
-            document.addEventListener('DOMContentLoaded', () => {
-                var diffHtml = Diff2Html.html(str_input, {
-                    drawFileList: true,
-                    matching: 'lines',
-                    outputFormat: 'side-by-side',
-                });
-            
-            document.getElementById('diff').innerHTML = diffHtml;
-        });
-        </script>
+    </div>
+    <script type="text/javascript">
+        var str_input = document.getElementById("output").getAttribute("value");
+        document.addEventListener('DOMContentLoaded', () => {
+            var diffHtml = Diff2Html.html(str_input, {
+                drawFileList: true,
+                matching: 'lines',
+                outputFormat: 'side-by-side',
+            });
+        
+        document.getElementById('diff').innerHTML = diffHtml;
+    });
+    </script>
 {% endblock %}

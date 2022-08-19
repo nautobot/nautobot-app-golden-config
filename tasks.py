@@ -284,9 +284,11 @@ def post_upgrade(context):
 
     run_command(context, command)
 
+
 # ------------------------------------------------------------------------------
 # DOCS
 # ------------------------------------------------------------------------------
+
 
 @task
 def docs(context):
@@ -298,6 +300,7 @@ def docs(context):
         run_command(context, command)
     else:
         print("Only used when developing locally (i.e. context.nautobot_golden_config.local=True)!")
+
 
 # ------------------------------------------------------------------------------
 # TESTS / LINTING

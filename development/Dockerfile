@@ -41,7 +41,4 @@ COPY . /source
 RUN cp /tmp/install/* /source/
 RUN poetry install --no-interaction --no-ansi
 
-# Install build dependencies for docs generation
-RUN poetry add $(cat docs/requirements.txt)
-
 COPY development/nautobot_config.py ${NAUTOBOT_ROOT}/nautobot_config.py

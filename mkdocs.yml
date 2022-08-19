@@ -1,5 +1,5 @@
 ---
-dev_addr: "10.250.0.11:8000"
+dev_addr: "127.0.0.1:8001"
 edit_uri: "edit/main/docs"
 site_dir: "golden-config/static/golden-config/docs"
 site_name: "Golden Configuration Documentation"

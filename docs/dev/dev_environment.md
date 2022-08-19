@@ -4,7 +4,7 @@
 
 The development environment can be used in two ways:
 
-1. All services are spun up using Docker and a local mount so you can develop locally, but Nautobot is spun up within the Docker container.
+1. `Recommended` All services are spun up using Docker and a local mount so you can develop locally, but Nautobot is spun up within the Docker container.
 2. With a local poetry environment if you wish to develop outside of Docker with the caveat of using external services provided by Docker for PostgresQL and Redis.
 
 This is a quick reference guide if you're already familiar with the development environment provided, which you can read more about later in this document.
@@ -23,6 +23,9 @@ The [Invoke](http://www.pyinvoke.org/) library is used to provide some helper co
 Using **Invoke** these configuration options can be overridden using [several methods](https://docs.pyinvoke.org/en/stable/concepts/configuration.html). Perhaps the simplest is setting an environment variable `INVOKE_NAUTOBOT_GOLDEN_CONFIG_VARIABLE_NAME` where `VARIABLE_NAME` is the variable you are trying to override. The only exception is `compose_files`, because it is a list it must be overridden in a YAML file. There is an example `invoke.yml` (`invoke.example.yml`) in this directory which can be used as a starting point.
 
 ### Docker Development Environment
+
+!!! tip
+    This is the recommended option for development.
 
 This project is managed by [Python Poetry](https://python-poetry.org/) and has a few requirements to setup your development environment:
 

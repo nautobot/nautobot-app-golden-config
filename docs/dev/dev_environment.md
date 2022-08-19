@@ -2,7 +2,7 @@
 
 ## Quickstart
 
-The development environment can be used in 2 ways:
+The development environment can be used in two ways:
 
 1. All services are spun up using Docker and a local mount so you can develop locally, but Nautobot is spun up within the Docker container.
 2. With a local poetry environment if you wish to develop outside of Docker with the caveat of using external services provided by Docker for PostgresQL and Redis.

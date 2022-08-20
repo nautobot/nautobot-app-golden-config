@@ -138,8 +138,8 @@ class ConfigComplianceTable(BaseTable):
         # well as not as expected from user standpoint (e.g. not always the same values on columns depending on
         # filtering)
         features = list(
-            models.ConfigCompliance.objects.order_by("rule__feature__name")
-            .values_list("rule__feature__name", flat=True)
+            models.ConfigCompliance.objects.order_by("rule__feature__slug")
+            .values_list("rule__feature__slug", flat=True)
             .distinct()
         )
         extra_columns = [(feature, ComplianceColumn(verbose_name=feature)) for feature in features]

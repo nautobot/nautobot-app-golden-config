@@ -2,6 +2,17 @@
 
 - Updates to filters and bug fixes
 
+### Announcements
+
+- Nautobot Golden Config `1.2.X` will remove scope as a JSON payload in GoldenConfigSetting to be replaced with DynamicGroups
+- Nautobot Golden Config `1.2.X` will require Nautobot `v1.4.X` or greater
+
+## v1.1.3 - 2022-08
+
+### Fixed
+
+- [#329](https://github.com/nautobot/nautobot-plugin-golden-config/issues/329) Change the pivot to use slug as name could have special characters that cause failures: Cherry picked
+
 ## v1.1.2 - 2022-08
 
 ### Changed
@@ -16,11 +27,6 @@
 - [#309](https://github.com/nautobot/nautobot-plugin-golden-config/issues/309) Fix duplicate entries on home view:  Cherry picked
 
 ## v1.1.0 - 2022-06
-
-### Announcements
-
-- Nautobot Golden Config `2.X.X` will remove scope as a JSON payload in GoldenConfigSetting to be replaced with DynamicGroups
-- Nautobot Golden Config `2.X.X` will require Nautobot `v1.3.X` or greater
 
 ### Fixed
 

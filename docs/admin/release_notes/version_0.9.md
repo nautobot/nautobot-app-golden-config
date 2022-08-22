@@ -2,14 +2,14 @@
 
 - Initial release
 
-## v0.9.10 - 2021-11
-
 ### Announcements
 
 - Nautobot Golden Config 0.9.X will officially not support versions after 1.2.X
 - Nautobot Golden Config 1.0.X will tentatively not support versions after 1.2.X
 - Nautobot Golden Config will maintain a `stable-<major>.<minor>` branch name
 - Nautobot Golden Config branching policy created
+
+## v0.9.10 - 2021-11
 
 ### Added
 
@@ -36,8 +36,8 @@
 
 ### Fixed
 
-- Fixing missing and extra fields, for edge cases.
-- Replace enable_golden with enable_intended in default settings.
+- [#139](https://github.com/nautobot/nautobot-plugin-golden-config/issues/139) Fixing missing and extra fields, for edge cases.
+- [#134](https://github.com/nautobot/nautobot-plugin-golden-config/issues/134) Replace enable_golden with enable_intended in default settings.
 
 ## v0.9.7 - 2021-09
 
@@ -68,13 +68,13 @@
 - [#105](https://github.com/nautobot/nautobot-plugin-golden-config/issues/105) Added structure data config compliance
 - [#119](https://github.com/nautobot/nautobot-plugin-golden-config/issues/119) Migrate to Github Actions
 - [#121](https://github.com/nautobot/nautobot-plugin-golden-config/issues/121) Moved to Celery for development environment
-- Added Mysql to development environment
+    - Added Mysql to development environment
 
 ## v0.9.5 - 2021-07
 
 ### Fixed
 
-- Loosen Nautobot version
+- [#90](https://github.com/nautobot/nautobot-plugin-golden-config/issues/90) Loosen Nautobot version
 
 ## v0.9.4 - 2021-06
 
@@ -90,7 +90,7 @@
 
 ### Added
 
- - Added changelog
+ - [#81](https://github.com/nautobot/nautobot-plugin-golden-config/issues/85) Added changelog
  - [#74](https://github.com/nautobot/nautobot-plugin-golden-config/issues/74) Added hover text to icon on plugin home screen
  - [#84](https://github.com/nautobot/nautobot-plugin-golden-config/issues/84) Added auto-deploy to PyPI
 

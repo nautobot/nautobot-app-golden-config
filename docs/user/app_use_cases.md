@@ -11,15 +11,15 @@ The Home view is a portal to understand what the status of the devices are.
 Some of the information described in this view, may not be immediately obvious.
 
 * The Backup/Intended/Compliance status will always show the last time the job was successfully ran for that device, but there are several conditions it may be in.
-  * Green with a date indicates that the ran was successful, which was the last time the job ran.
-  * Red with a data indicates the last time the job ran successfully, with the last time the job was attempted in be shown when you mouse over the date.
-  * A red double-dashed icon indicated the job has never been successful
+    * Green with a date indicates that the run was successful, which was the last time the job ran.
+    * Red with a date indicates the last time the job ran successfully, with the last time the job was attempted shown when you mouse over the date.
+    * A red double-dashed icon indicated the job has never been successful
 * The icons are provided in the following order, that largely matches the status.
-  * Backups
-  * Intended
-  * Unix Diff
-  * SoT aggregation data
-  * Run job
+    * Backups
+    * Intended
+    * Unix Diff
+    * SoT aggregation data
+    * Run job
 
 The first four bring up a "modal" or "dialogue box" which has a detailed view for a dedicated page. The run job brings the user to a job to run all three
 components against all of the devices.

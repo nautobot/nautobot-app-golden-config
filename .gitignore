@@ -1,6 +1,7 @@
 # Specific ignores
 nautobot_backup.dump
 .creds.env
+creds.env
 nautobot_golden_config/transposer.py
 docker-compose.override.yml
 packages/

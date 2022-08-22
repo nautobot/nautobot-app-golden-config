@@ -1,11 +1,11 @@
 """Unit tests for nautobot_golden_config models."""
 
-from json import loads as json_loads
 from django.test import TestCase
 from django.db.utils import IntegrityError
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from nautobot.dcim.models import Platform
-from nautobot.extras.models import GitRepository, GraphQLQuery
+from nautobot.extras.models import GitRepository, GraphQLQuery, DynamicGroup
 from nautobot_golden_config.tests.conftest import create_git_repos
 
 from nautobot_golden_config.models import (
@@ -93,6 +93,13 @@ class GoldenConfigSettingModelTestCase(TestCase):
 
         # Since we enforce a singleton pattern on this model, nuke the auto-created object.
         GoldenConfigSetting.objects.all().delete()
+        content_type = ContentType.objects.get(app_label="dcim", model="device")
+        dynamic_group = DynamicGroup.objects.create(
+            name="test1 site site-4",
+            slug="test1-site-site-4",
+            content_type=content_type,
+            filter={},
+        )
 
         self.global_settings = GoldenConfigSetting.objects.create(  # pylint: disable=attribute-defined-outside-init
             name="test",
@@ -106,22 +113,13 @@ class GoldenConfigSettingModelTestCase(TestCase):
             jinja_path_template="{{ obj.platform.slug }}/main.j2",
             backup_repository=GitRepository.objects.get(name="test-backup-repo-1"),
             intended_repository=GitRepository.objects.get(name="test-intended-repo-1"),
+            dynamic_group=dynamic_group,
         )
 
     def test_absolute_url_success(self):
         """Verify that get_absolute_url() returns the expected URL."""
         url_string = self.global_settings.get_absolute_url()
         self.assertEqual(url_string, f"/plugins/golden-config/setting/{self.global_settings.slug}/")
-
-    def test_bad_scope(self):
-        """Verify that a bad value in the scope returns the expected error."""
-        self.global_settings.scope = json_loads('{"has_primary_ip": true, "role": ["Apple"]}')
-        with self.assertRaises(ValidationError) as error:
-            self.global_settings.clean()
-        self.assertEqual(
-            error.exception.messages[0],
-            "role: Select a valid choice. Apple is not one of the available choices.",
-        )
 
     def test_good_graphql_query_invalid_starts_with(self):
         """Valid graphql query, however invalid in the usage with golden config plugin."""
@@ -135,11 +133,6 @@ class GoldenConfigSettingModelTestCase(TestCase):
         self.global_settings.sot_agg_query = GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1")
         self.assertEqual(self.global_settings.clean(), None)
 
-    def test_good_scope(self):
-        """Verify that the scope passes validation as expected."""
-        self.global_settings.scope = json_loads('{"has_primary_ip": true}')
-        self.assertEqual(self.global_settings.clean(), None)
-
 
 class GoldenConfigSettingGitModelTestCase(TestCase):
     """Test GoldenConfigSetting Model."""
@@ -150,6 +143,13 @@ class GoldenConfigSettingGitModelTestCase(TestCase):
 
         # Since we enforced a singleton pattern on this model in 0.9 release migrations, nuke any auto-created objects.
         GoldenConfigSetting.objects.all().delete()
+        content_type = ContentType.objects.get(app_label="dcim", model="device")
+        dynamic_group = DynamicGroup.objects.create(
+            name="test1 site site-4",
+            slug="test1-site-site-4",
+            content_type=content_type,
+            filter={},
+        )
 
         # Create fresh new object, populate accordingly.
         self.golden_config = GoldenConfigSetting.objects.create(  # pylint: disable=attribute-defined-outside-init
@@ -164,6 +164,7 @@ class GoldenConfigSettingGitModelTestCase(TestCase):
             jinja_path_template="{{ obj.platform.slug }}/main.j2",
             backup_repository=GitRepository.objects.get(name="test-backup-repo-1"),
             intended_repository=GitRepository.objects.get(name="test-intended-repo-1"),
+            dynamic_group=dynamic_group,
         )
 
     def test_model_success(self):

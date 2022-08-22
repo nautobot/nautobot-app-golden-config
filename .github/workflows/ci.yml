@@ -1,8 +1,16 @@
 ---
 name: "CI"
-on: # yamllint disable
-  - "push"
-  - "pull_request"
+on: # yamllint disable-line rule:truthy rule:comments
+  push:
+    branches:
+      - "main"
+      - "develop"
+    tags:
+      - "v*"
+  pull_request: ~
+
+env:
+  PLUGIN_NAME: "nautobot-plugin-golden-config"
 
 jobs:
   black:
@@ -13,7 +21,7 @@ jobs:
       - name: "Check out repository code"
         uses: "actions/checkout@v2"
       - name: "Setup environment"
-        uses: "networktocode/gh-action-setup-poetry-environment@v1"
+        uses: "networktocode/gh-action-setup-poetry-environment@v2"
       - name: "Linting: black"
         run: "poetry run invoke black"
   bandit:
@@ -24,11 +32,9 @@ jobs:
       - name: "Check out repository code"
         uses: "actions/checkout@v2"
       - name: "Setup environment"
-        uses: "networktocode/gh-action-setup-poetry-environment@v1"
+        uses: "networktocode/gh-action-setup-poetry-environment@v2"
       - name: "Linting: bandit"
         run: "poetry run invoke bandit"
-    needs:
-      - "black"
   pydocstyle:
     runs-on: "ubuntu-20.04"
     env:
@@ -37,11 +43,9 @@ jobs:
       - name: "Check out repository code"
         uses: "actions/checkout@v2"
       - name: "Setup environment"
-        uses: "networktocode/gh-action-setup-poetry-environment@v1"
+        uses: "networktocode/gh-action-setup-poetry-environment@v2"
       - name: "Linting: pydocstyle"
         run: "poetry run invoke pydocstyle"
-    needs:
-      - "black"
   flake8:
     runs-on: "ubuntu-20.04"
     env:
@@ -50,11 +54,9 @@ jobs:
       - name: "Check out repository code"
         uses: "actions/checkout@v2"
       - name: "Setup environment"
-        uses: "networktocode/gh-action-setup-poetry-environment@v1"
+        uses: "networktocode/gh-action-setup-poetry-environment@v2"
       - name: "Linting: flake8"
         run: "poetry run invoke flake8"
-    needs:
-      - "black"
   yamllint:
     runs-on: "ubuntu-20.04"
     env:
@@ -63,44 +65,74 @@ jobs:
       - name: "Check out repository code"
         uses: "actions/checkout@v2"
       - name: "Setup environment"
-        uses: "networktocode/gh-action-setup-poetry-environment@v1"
+        uses: "networktocode/gh-action-setup-poetry-environment@v2"
       - name: "Linting: yamllint"
         run: "poetry run invoke yamllint"
-    needs:
-      - "black"
-  build:
-    runs-on: "ubuntu-20.04"
-    steps:
-      - name: "Check out repository code"
-        uses: "actions/checkout@v2"
-      - name: "Setup environment"
-        uses: "networktocode/gh-action-setup-poetry-environment@v1"
-      - name: "Build Container"
-        run: "poetry run invoke build"
+  pylint:
     needs:
       - "bandit"
       - "pydocstyle"
       - "flake8"
       - "yamllint"
-  pylint:
+      - "black"
     runs-on: "ubuntu-20.04"
+    strategy:
+      fail-fast: true
+      matrix:
+        python-version: ["3.8"]
+        nautobot-version: ["1.4.0"]
+    env:
+      INVOKE_NAUTOBOT_GOLDEN_CONFIG_PYTHON_VER: "${{ matrix.python-version }}"
+      INVOKE_NAUTOBOT_GOLDEN_CONFIG_NAUTOBOT_VER: "${{ matrix.nautobot-version }}"
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v2"
       - name: "Setup environment"
-        uses: "networktocode/gh-action-setup-poetry-environment@v1"
-      - name: "Build Container"
-        run: "poetry run invoke build"
-      - name: "Linting: Pylint"
+        uses: "networktocode/gh-action-setup-poetry-environment@v2"
+      - name: "Set up Docker Buildx"
+        id: "buildx"
+        uses: "docker/setup-buildx-action@v1"
+      - name: "Build"
+        uses: "docker/build-push-action@v2"
+        with:
+          builder: "${{ steps.buildx.outputs.name }}"
+          context: "./"
+          push: false
+          load: true
+          tags: "${{ env.PLUGIN_NAME }}/nautobot:${{ matrix.nautobot-version }}-py${{ matrix.python-version }}"
+          file: "./development/Dockerfile"
+          cache-from: "type=gha,scope=${{ matrix.nautobot-version }}-py${{ matrix.python-version }}"
+          cache-to: "type=gha,scope=${{ matrix.nautobot-version }}-py${{ matrix.python-version }}"
+          build-args: |
+            NAUTOBOT_VER=${{ matrix.nautobot-version }}
+            PYTHON_VER=${{ matrix.python-version }}
+      - name: "Copy credentials"
+        run: "cp development/creds.example.env development/creds.env"
+      - name: "Linting: pylint"
         run: "poetry run invoke pylint"
-    needs:
-      - "build"
   unittest:
+    needs:
+      - "pylint"
     strategy:
       fail-fast: true
       matrix:
-        python-version: ["3.6", "3.7", "3.8", "3.9"]
-        nautobot-version: ["1.2.1"]
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
+        db-backend: ["postgresql"]
+        nautobot-version: ["latest"]
+        # The include is a method to limit the amount of jobs ran. This essentially
+        # means that in addition to standard postgres and stable, also the lowest
+        # supported version and with mysql
+        include:
+          - python-version: "3.10"
+            db-backend: "postgresql"
+            nautobot-version: "1.4.0"
+            # TODO: Include the following, once mysql is working on CI
+            # - python-version: "3.7"
+            #   db-backend: "mysql"
+            #   nautobot-version: "1.4.0"
+            # - python-version: "3.10"
+            #   db-backend: "mysql"
+            #   nautobot-version: "latest"
     runs-on: "ubuntu-20.04"
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_PYTHON_VER: "${{ matrix.python-version }}"
@@ -109,14 +141,34 @@ jobs:
       - name: "Check out repository code"
         uses: "actions/checkout@v2"
       - name: "Setup environment"
-        uses: "networktocode/gh-action-setup-poetry-environment@v1"
-      - name: "Build Container"
-        run: "poetry run invoke build"
+        uses: "networktocode/gh-action-setup-poetry-environment@v2"
+      - name: "Set up Docker Buildx"
+        id: "buildx"
+        uses: "docker/setup-buildx-action@v1"
+      - name: "Build"
+        uses: "docker/build-push-action@v2"
+        with:
+          builder: "${{ steps.buildx.outputs.name }}"
+          context: "./"
+          push: false
+          load: true
+          tags: "${{ env.PLUGIN_NAME }}/nautobot:${{ matrix.nautobot-version }}-py${{ matrix.python-version }}"
+          file: "./development/Dockerfile"
+          cache-from: "type=gha,scope=${{ matrix.nautobot-version }}-py${{ matrix.python-version }}"
+          cache-to: "type=gha,scope=${{ matrix.nautobot-version }}-py${{ matrix.python-version }}"
+          build-args: |
+            NAUTOBOT_VER=${{ matrix.nautobot-version }}
+            PYTHON_VER=${{ matrix.python-version }}
+      - name: "Copy credentials"
+        run: "cp development/creds.example.env development/creds.env"
+      - name: "Use Mysql invoke settings when needed"
+        run: "cp invoke.mysql.yml invoke.yml"
+        if: "matrix.db-backend == 'mysql'"
       - name: "Run Tests"
         run: "poetry run invoke unittest"
-    needs:
-      - "pylint"
   publish_gh:
+    needs:
+      - "unittest"
     name: "Publish to GitHub"
     runs-on: "ubuntu-20.04"
     if: "startsWith(github.ref, 'refs/tags/v')"
@@ -143,9 +195,9 @@ jobs:
           tag: "${{ github.ref }}"
           overwrite: true
           file_glob: true
+  publish_pypi:
     needs:
       - "unittest"
-  publish_pypi:
     name: "Push Package to PyPI"
     runs-on: "ubuntu-20.04"
     if: "startsWith(github.ref, 'refs/tags/v')"
@@ -169,5 +221,3 @@ jobs:
         with:
           user: "__token__"
           password: "${{ secrets.PYPI_API_TOKEN }}"
-    needs:
-      - "unittest"

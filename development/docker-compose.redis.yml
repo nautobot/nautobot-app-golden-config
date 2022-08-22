@@ -1,0 +1,12 @@
+---
+version: "3.8"
+services:
+  redis:
+    image: "redis:6-alpine"
+    command:
+      - "sh"
+      - "-c"  # this is to evaluate the $NAUTOBOT_REDIS_PASSWORD from the env
+      - "redis-server --appendonly yes --requirepass $$NAUTOBOT_REDIS_PASSWORD"
+    env_file:
+      - "development.env"
+      - "creds.env"

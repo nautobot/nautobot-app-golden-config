@@ -1,41 +1,30 @@
-# nautobot-golden-config
+# Nautobot Golden Config
 
-A plugin for [Nautobot](https://github.com/nautobot/nautobot) that intends to provide context around golden configuration.
+<p align="center">
+  <img src="https://raw.githubusercontent.com/nautobot/nautobot-plugin-golden-config/develop/docs/images/icon-NautobotGoldenConfig.png" class="logo" height="200px">
+  <br>
+  <a href="https://github.com/nautobot/nautobot-plugin-golden-config/actions"><img src="https://github.com/nautobot/nautobot-plugin-golden-config/actions/workflows/ci.yml/badge.svg?branch=main"></a>
+  <a href="https://docs.nautobot.com/projects/golden-config/en/latest/"><img src="https://readthedocs.org/projects/nautobot-plugin-golden-config/badge/"></a>
+  <a href="https://pypi.org/project/nautobot-golden-config/"><img src="https://img.shields.io/pypi/v/nautobot-golden-config"></a>
+  <a href="https://pypi.org/project/nautobot-golden-config/"><img src="https://img.shields.io/pypi/dm/nautobot-golden-config"></a>
+  <br>
+  An App for <a href="https://github.com/nautobot/nautobot">Nautobot</a>.
+</p>
 
-# Introduction
+## Overview
 
-## What is the Golden Configuration Plugin?
+The Golden Config plugin is a Nautobot plugin that provides a NetDevOps approach to golden configuration and configuration compliance.
 
-The golden configuration plugin is a Nautobot plugin that aims to solve common configuration management challenges.
-
-## Key Use Cases
+### Key Use Cases
 
 This plugin enable four (4) key use cases.
-
 
 1. **Configuration Backups** - Is a Nornir process to connect to devices, optionally parse out lines/secrets, backup the configuration, and save to a Git repository.
 2. **Intended Configuration** - Is a Nornir process to generate configuration based on a Git repo of Jinja files to combine with a GraphQL generated data and a Git repo to store the intended configuration.
 3. **Source of Truth Aggregation** - Is a GraphQL query per device that creates a data structure used in the generation of configuration.
 4. **Configuration Compliance** - Is a process to run comparison of the actual (via backups) and intended (via Jinja file creation) CLI configurations upon saving the actual and intended configuration. This is started by either a Nornir process for cli-like configurations or calling the API for json-like configurations
 
->Notice: The operator's of their own Nautobot instance are welcome to use any combination of these features. Though the appearance may seem like they are tightly 
-coupled, this isn't actually the case. For example, one can obtain backup configurations from their current RANCID/Oxidized process and simply provide a Git Repo
-of the location of the backup configurations, and the compliance process would work the same way. Also, another user may only want to generate configurations,
-but not want to use other features, which is perfectly fine to do so.
-
-## Documentation
-- [Installation](./docs/installation.md)
-- [Quick Start Guide](./docs/quick-start.md)
-- [Navigating Overview](./docs/navigating-golden.md)
-- [Navigating Backup](./docs/navigating-backup.md)
-- [Navigating Intended](./docs/navigating-intended.md)
-- [Navigating SoTAgg](./docs/navigating-sot-agg.md)
-- [Navigating Compliance](./docs/navigating-compliance.md)
-- [Navigating JSON Compliance](./docs/navigating-compliance-json.md)
-- [Navigating Custom Compliance](./docs/navigating-compliance-custom.md)
-- [FAQ](./docs/FAQ.md)
-- [Upgrade Notes](./docs/upgrade.md)
-
+> Notice: The operators of their own Nautobot instance are welcome to use any combination of these features. Though the appearance may seem like they are tightly coupled, this isn't actually the case. For example, one can obtain backup configurations from their current RANCID/Oxidized process and simply provide a Git Repo of the location of the backup configurations, and the compliance process would work the same way. Also, another user may only want to generate configurations, but not want to use other features, which is perfectly fine to do so.
 
 ## Screenshots
 
@@ -43,117 +32,43 @@ There are many features and capabilities the plugin provides into the Nautobot e
 
 The golden configuration is driven by jobs that run a series of tasks and the result is captured in this overview.
 
-![Overview](./docs/img/golden-overview.png)
+![Overview](https://raw.githubusercontent.com/nautobot/nautobot-plugin-golden-config/develop/docs/images/ss_golden-overview.png)
 
 The compliance report provides a high-level overview on the compliance of your network.
-![Compliance Report](./docs/img/compliance-report.png)
+![Compliance Report](https://raw.githubusercontent.com/nautobot/nautobot-plugin-golden-config/develop/docs/images/ss_compliance-report.png)
 
 The compliance overview will provide a per device and feature overview on the compliance of your network devices.
-![Compliance Overview](./docs/img/compliance-overview.png)
+![Compliance Overview](https://raw.githubusercontent.com/nautobot/nautobot-plugin-golden-config/develop/docs/images/ss_compliance-overview.png)
 
 Drilling into a specific device and feature, you can get an immediate detailed understanding of your device.
-![Compliance Device](./docs/img/compliance-device.png)
+![Compliance Device](https://raw.githubusercontent.com/nautobot/nautobot-plugin-golden-config/develop/docs/images/ss_compliance-device.png)
 
-![Compliance Rule](./docs/img/compliance-rule.png)
+![Compliance Rule](https://raw.githubusercontent.com/nautobot/nautobot-plugin-golden-config/develop/docs/images/ss_compliance-rule.png)
 
-# Contributing
+## Try it out!
 
-Pull requests are welcomed and automatically built and tested against multiple versions of Python and Nautobot through TravisCI.
+This App is installed in the Nautobot Community Sandbox found over at [demo.nautobot.com](https://demo.nautobot.com/)!
 
-The project is packaged with a light development environment based on `docker-compose` to help with the local development of the project and to run tests within TravisCI.
+> For a full list of all the available always-on sandbox environments, head over to the main page on [networktocode.com](https://www.networktocode.com/nautobot/sandbox-environments/).
 
-The project is following Network to Code software development guidelines and are leveraging the following:
-- Black, Pylint, Bandit, flake8, and pydocstyle for Python linting and formatting.
-- Django unit test to ensure the plugin is working properly.
+## Documentation
 
-## Branching Policy
+Full web-based HTML documentation for this app can be found over on the [Nautobot Docs](https://docs.nautobot.com/projects/golden-config/en/latest/) website:
 
-The branching policy includes the following tenets:
+- [User Guide](https://docs.nautobot.com/projects/golden-config/en/latest/user/app_overview/) - Overview, Using the App, Getting Started, Navigating compliance (cli, json, custom), backup, app usage, intended state creation.
+- [Administrator Guide](https://docs.nautobot.com/projects/golden-config/en/latest/admin/admin_install/) - How to Install, Configure, Upgrade, or Uninstall the App.
+- [Developer Guide](https://docs.nautobot.com/projects/golden-config/en/latest/dev/dev_contributing/) - Extending the App, Code Reference, Contribution Guide.
+- [Release Notes / Changelog](https://docs.nautobot.com/projects/golden-config/en/latest/admin/release_notes/)
+- [Frequently Asked Questions](https://docs.nautobot.com/projects/golden-config/en/latest/user/app_faq/)
 
-- The develop branch is the branch of the next major and minor paired version planned.
-- The `stable-<major>.<minor>` branch is the branch of the latest version within that major/minor version.
-- The `stable-<major>.<minor>` branch will have all of the latest bug fixes and security patches, and may or may not represent the released version.
-- PRs intended to add new features should be sourced from the develop branch.
-- PRs intended to add new features that break backward compatability should be discussed before a PR is created.
-- PRs intended to address bug fixes and security patches should be sourced from `stable-<major>.<minor>`.
+### Contributing to the Docs
 
-Nautobot Golden Config will observe semantic versioning, as of 1.0. This may result in an quick turn around in minor versions to keep
-pace with an ever growing feature set.
+You can find all the Markdown source for the App documentation under the [docs](https://github.com/nautobot/nautobot-plugin-golden-config/tree/develop/docs) folder in this repository. For simple edits, a Markdown capable editor is sufficient - clone the repository and edit away.
 
-## Release Policy
+If you need to view the fully generated documentation site, you can generate it with [mkdocs](https://www.mkdocs.org/). A container hosting the docs will be started using the invoke commands (details in the [Development Environment Guide](https://docs.nautobot.com/projects/golden-config/en/latest/dev/dev_environment/#docker-development-environment)) on [http://localhost:8001](http://localhost:8001). As your changes are saved, the live docs will be automatically reloaded.
 
-Nautobot Golden Config has currently no intended scheduled release schedule, and will release new feature in minor versions.
+Any PRs with fixes or improvements are very welcome!
 
-When a new release of any kind (e.g. from develop to main, or a release of a `stable-<major>.<minor>`) is created the following should happen.
-- A release PR is created with:
-  - Update to the CHANGELOG.md file to reflect the changes.
-  - Change the version from `<major>.<minor>.<patch>-beta` to `<major>.<minor>.<patch>` in pyproject.toml.
-  - Set the PR to the proper branch, e.g. either `main` or `stable-<major>.<minor>`.
-- Ensure the tests for the PR pass.
-- Merge the PR.
-- Create a new tag:
-  - The tag should be in the form of `v<major>.<minor>.<patch>`.
-  - The title should be in the form of `v<major>.<minor>.<patch>`.
-  - The description should be the changes that were added to the CHANGELOG.md document.
-- If merged into main, then push from main to develop, in order to retain the merge commit created when the PR was merged
-- If the is a new `<major>.<minor>`, create a `stable-<major>.<minor>` branch and push that to the repo.
-- A post release PR is created with.
-  - Change the version from `<major>.<minor>.<patch>` to `<major>.<minor>.<patch + 1>-beta` in both pyproject.toml and `nautobot.__init__.__version__`.
-  - Set the PR to the proper branch, e.g. either `develop` or `stable-<major>.<minor>`.
-  - Once tests pass, merge. 
+## Questions
 
-## Deprecation Policy
-
-Support of upstream Nautobot will be announced 1 minor or major version ahead. Deprecation policy will be announced within the
-CHANGELOG.md file, and updated in the table below. There will be a `stable-<major>.<minor>` branch that will be minimally maintained, 
-for any security enhancements or major bugs will be supported for a limited time. 
-
-| Golden Config Version | Nautobot First Support Version | Nautobot Last Support Version |
-| --------------------- | ------------------------------ | ----------------------------- |
-| 0.9.X                 | 1.0.0                          | 1.2.99 [Official]             |
-| 0.10.X                | 1.0.0                          | 1.2.99 [Official]             |
-| 1.0.X                 | 1.2.0                          | 1.3.99 [Official]             |
-| 1.1.X                 | 1.2.0                          | 1.3.99 [Official]             |
-
-## CLI Helper Commands
-
-The project features a CLI helper based on [invoke](http://www.pyinvoke.org/) to help setup the development environment. The commands are listed below in 3 categories:
-- `dev environment`
-- `utility`
-- `testing`. 
-
-Each command can be executed with `invoke <command>`. All commands support the arguments `--nautobot-ver` and `--python-ver` if you want to manually define the version of Python and Nautobot to use. Each command also has its own help `invoke <command> --help`
-
-> Note: to run the mysql (mariadb) development environment, set the environment variable as such `export NAUTOBOT_USE_MYSQL=1`.
-
-### Local Development Environment
-
-```
-  build            Build all docker images.
-  debug            Start Nautobot and its dependencies in debug mode.
-  destroy          Destroy all containers and volumes.
-  restart          Restart Nautobot and its dependencies in detached mode.
-  start            Start Nautobot and its dependencies in detached mode.
-  stop             Stop Nautobot and its dependencies.
-```
-
-### Utility 
-
-```
-  cli              Launch a bash shell inside the running Nautobot container.
-  create-user      Create a new user in django (default: admin), will prompt for password.
-  makemigrations   Run Make Migration in Django.
-  nbshell          Launch a nbshell session.
-```
-
-### Testing 
-
-```
-  bandit           Run bandit to validate basic static code security analysis.
-  black            Run black to check that Python files adhere to its style standards.
-  flake8           Run flake8 to check that Python files adhere to its style standards.
-  pydocstyle       Run pydocstyle to validate docstring formatting adheres to NTC defined standards.
-  pylint           Run pylint code analysis.
-  tests            Run all tests for this plugin.
-  unittest         Run Django unit tests for the plugin.
-```
+For any questions or comments, please check the [FAQ](https://docs.nautobot.com/projects/golden-config/en/latest/user/app_faq/) first. Feel free to also swing by the [Network to Code Slack](https://networktocode.slack.com/) (channel `#nautobot`), sign up [here](http://slack.networktocode.com/) if you don't have an account.

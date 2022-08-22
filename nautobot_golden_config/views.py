@@ -61,7 +61,6 @@ class GoldenConfigListView(generic.ObjectListView):
             qs = qs | obj.get_queryset().distinct()
 
         return self.queryset.filter(id__in=qs).annotate(
-            config_type=F("configcompliance__rule__config_type"),
             backup_config=F("goldenconfig__backup_config"),
             intended_config=F("goldenconfig__intended_config"),
             compliance_config=F("goldenconfig__compliance_config"),
@@ -203,7 +202,7 @@ class ConfigComplianceListView(generic.ObjectListView):
         return pivot(
             self.queryset,
             ["device", "device__name"],
-            "rule__feature__name",
+            "rule__feature__slug",
             "compliance_int",
             aggregation=Max,
         )
@@ -509,7 +508,9 @@ class ConfigComplianceOverviewOverviewHelper(ContentTypePermissionRequiredMixin,
     def plot_visual(aggr):
         """Plot aggregation visual."""
         labels = "Compliant", "Non-Compliant"
-        if aggr["compliants"] is not None:
+        # Only Compliants and Non-Compliants values are used to create the diagram
+        # if either of them are True (not 0), create the diagram
+        if any((aggr["compliants"], aggr["non_compliants"])):
             sizes = [aggr["compliants"], aggr["non_compliants"]]
             explode = (0, 0.1)  # only "explode" the 2nd slice (i.e. 'Hogs')
             # colors used for visuals ('compliant','non_compliant')

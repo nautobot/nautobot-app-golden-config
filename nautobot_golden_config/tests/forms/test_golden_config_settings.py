@@ -1,7 +1,7 @@
 """Tests for Golden Configuration Settings Form."""
 
 from django.test import TestCase
-from nautobot.extras.models import GitRepository
+from nautobot.extras.models import GitRepository, DynamicGroup
 from nautobot_golden_config.forms import GoldenConfigSettingFeatureForm
 from nautobot_golden_config.models import GoldenConfigSetting
 from nautobot_golden_config.tests.conftest import create_git_repos, create_device_data
@@ -30,6 +30,7 @@ class GoldenConfigSettingFormTest(TestCase):
                 "intended_repository": GitRepository.objects.get(name="test-intended-repo-1"),
                 "intended_path_template": "{{ obj.site.slug }}/{{ obj.name }}.cfg",
                 "backup_test_connectivity": True,
+                "dynamic_group": DynamicGroup.objects.first()
             }
         )
         self.assertTrue(form.is_valid())

@@ -59,6 +59,22 @@ The following block of code below shows the additional configuration required to
 - append `"nautobot_golden_config"` to the `PLUGINS` list, and `"nautobot_plugin_nornir"` if it was not already there (more info [here](https://github.com/nautobot/nautobot-plugin-nornir)).
 - append the `"nautobot_golden_config"` dictionary to the `PLUGINS_CONFIG` dictionary, and `"nautobot_plugin_nornir"` if it was not already there.
 
+Once the update of the Nautobot configuration, run the Post Upgrade command to run migrations and clear any cache.
+
+```shell
+nautobot-server post_upgrade
+```
+
+Then restart the Nautobot services which may include:
+
+* Nautobot
+* Nautobot Workers
+* Nautobot Scheduler
+
+```shell
+sudo systemctl restart nautobot nautobot-worker nautobot-scheduler
+```
+
 ## App Configuration
 
 The plugin behavior can be controlled with the following list of settings.

@@ -87,7 +87,7 @@ All data created by GraphQL is unpacked with the `**data` operator. There is a n
 
 ## _It seems that Golden Config has caused an issue with migrations_
 
-With the original Git Data Source implementation, passwords were stored in the database, encrypted with you `SECRET_KEY`. If you change your secret key, often the first migration to cause an issue will be Golden Config, as shown here:
+With the original Git Data Source implementation, passwords were stored in the database, encrypted with your `SECRET_KEY`. If you change your secret key, often the first migration that may cause an issue will be Golden Config, as shown here:
 
 ```bash
   Applying ipam.0006_ipaddress_nat_outside_list... OK
@@ -117,4 +117,4 @@ django.core.signing.BadSignature: Signature "b'A9QMEEeCk2+tAc6naf2KDiZBvACNWGNHG
 ERROR: 1
 ```
 
-If you receive this error, the issue is the secret key has been changed, and **does not** have anything to do with Golden Config. You can either delete the entries from your data source and the reference to those in the Golden Config settings or have your secrete key match. Any issues opened to this will be closed and this faq referred to. If you still need help, feel free to join the Slack community.
+If you receive this error, the issue is the secret key has been changed, and **does not** have anything to do with the Golden Config plugin. You can either delete the entries from your data source and the reference to those in the Golden Config settings or revert the secret key back so it matches the original deployment. Any issues opened will be closed and this faq referred to. If you still need help, feel free to join the Slack community.

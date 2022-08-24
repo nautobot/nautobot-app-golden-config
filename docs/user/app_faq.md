@@ -84,3 +84,37 @@ The real estate optimizations is not the best for the configuration compliance o
 ## _Why can't I get access to the name key when generating configuration?_
 
 All data created by GraphQL is unpacked with the `**data` operator. There is a namespace issue with Nornir using name as a keyword as well. The recommended approach is to use GraphQL aliasing. An example would be `hostname: name` or `inventory_hostname: name` to workaround this issue.
+
+## _It seems that Golden Config has caused an issue with migrations_
+
+With the original Git Data Source implementation, passwords were stored in the database, encrypted with you `SECRET_KEY`. If you change your secret key, often the first migration to cause an issue will be Golden Config, as shown here:
+
+```bash
+  Applying ipam.0006_ipaddress_nat_outside_list... OK
+  Applying ipam.0007_add_natural_indexing... OK
+  Applying nautobot_golden_config.0006_multi_repo_support_temp_field...Traceback (most recent call last):
+  File "/usr/local/lib/python3.8/site-packages/django/db/models/fields/related_descriptors.py", line 173, in __get__
+    rel_obj = self.field.get_cached_value(instance)
+  File "/usr/local/lib/python3.8/site-packages/django/db/models/fields/mixins.py", line 15, in get_cached_value
+    return instance._state.fields_cache[cache_name]
+KeyError: 'backup_repository'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+<omitted>
+  File "/usr/local/lib/python3.8/site-packages/cryptography/hazmat/backends/openssl/hmac.py", line 85, in verify
+    raise InvalidSignature("Signature did not match digest.")
+cryptography.exceptions.InvalidSignature: Signature did not match digest.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+<omitted>
+  File "/usr/local/lib/python3.8/site-packages/django_cryptography/core/signing.py", line 239, in unsign
+    raise BadSignature(
+django.core.signing.BadSignature: Signature "b'A9QMEEeCk2+tAc6naf2KDiZBvACNWGNHGMPJ/SHOYY8=\n'" does not match
+ERROR: 1
+```
+
+If you receive this error, the issue is the secret key has been changed, and **does not** have anything to do with Golden Config. You can either delete the entries from your data source and the reference to those in the Golden Config settings or have your secrete key match. Any issues opened to this will be closed and this faq referred to. If you still need help, feel free to join the Slack community.

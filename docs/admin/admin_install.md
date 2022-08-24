@@ -59,7 +59,7 @@ The following block of code below shows the additional configuration required to
 - append `"nautobot_golden_config"` to the `PLUGINS` list, and `"nautobot_plugin_nornir"` if it was not already there (more info [here](https://github.com/nautobot/nautobot-plugin-nornir)).
 - append the `"nautobot_golden_config"` dictionary to the `PLUGINS_CONFIG` dictionary, and `"nautobot_plugin_nornir"` if it was not already there.
 
-Once the update of the Nautobot configuration, run the Post Upgrade command to run migrations and clear any cache.
+Once the Nautobot configuration is updated, run the Post Upgrade command (`nautobot-server post_upgrade`) to run migrations and clear any cache.
 
 ```shell
 nautobot-server post_upgrade

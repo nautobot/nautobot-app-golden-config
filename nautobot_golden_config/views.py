@@ -29,7 +29,7 @@ from nautobot.utilities.views import ContentTypePermissionRequiredMixin
 from nautobot_golden_config import filters, forms, models, tables
 from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_COMPLIANCE, PLUGIN_CFG
 from nautobot_golden_config.utilities.graphql import graph_ql_query
-from nautobot_golden_config.utilities.helper import get_device_to_settings_map
+from nautobot_golden_config.utilities.helper import get_device_to_settings_map, render_secrets
 
 LOGGER = logging.getLogger(__name__)
 
@@ -421,6 +421,8 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
             output = config_details.backup_config
         elif config_type == "intended":
             output = config_details.intended_config
+        elif config_type == "intended_secrets":
+            output = render_secrets(config_details.intended_config, request.user)
         # Compliance type is broken up into JSON(json_compliance) and CLI(compliance) compliance.
         elif "compliance" in config_type:
             if config_type == "compliance":

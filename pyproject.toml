@@ -12,7 +12,6 @@ repository = "https://github.com/nautobot/nautobot-plugin-golden-config"
 documentation = "https://github.com/nautobot/nautobot-plugin-golden-config"
 keywords = ["nautobot", "nautobot-plugin"]
 include = [
-    "CHANGELOG.md",
     "LICENSE",
     "README.md",
 ]

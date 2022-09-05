@@ -1,18 +1,24 @@
 """View for Golden Config APIs."""
 import json
+import logging
 
+from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.routers import APIRootView
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
+
 from nautobot.extras.api.views import CustomFieldModelViewSet
 from nautobot.dcim.models import Device
+from nautobot.dcim.filters import DeviceFilterSet
 
 from nautobot_golden_config.api import serializers
 from nautobot_golden_config import models
 from nautobot_golden_config import filters
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import get_device_to_settings_map
+
+LOGGER = logging.getLogger(__name__)
 
 
 class GoldenConfigRootView(APIRootView):
@@ -91,3 +97,13 @@ class ConfigReplaceViewSet(CustomFieldModelViewSet):  # pylint:disable=too-many-
     queryset = models.ConfigReplace.objects.all()
     serializer_class = serializers.ConfigReplaceSerializer
     filterset_class = filters.ConfigReplaceFilterSet
+
+
+class IntendedConfigSecretsViewSet(viewsets.ReadOnlyModelViewSet):  # pylint:disable=too-many-ancestors
+    """Detail REST API view showing configuration to push to appliances, with secrets rendered."""
+
+    permission_classes = [IsAuthenticated]
+    queryset = Device.objects.all()
+    model = Device
+    serializer_class = serializers.IntendedConfigSecretsSerializer
+    filterset_class = DeviceFilterSet

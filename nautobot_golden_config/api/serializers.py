@@ -5,8 +5,11 @@ from rest_framework import serializers
 from nautobot.extras.api.customfields import CustomFieldModelSerializer
 from nautobot.extras.api.serializers import TaggedObjectSerializer
 from nautobot.extras.api.nested_serializers import NestedDynamicGroupSerializer
+from nautobot.dcim.api.serializers import DeviceSerializer
+from nautobot.dcim.models import Device
 
 from nautobot_golden_config import models
+from nautobot_golden_config.utilities.helper import render_secrets
 
 
 class GraphQLSerializer(serializers.Serializer):  # pylint: disable=abstract-method
@@ -126,3 +129,30 @@ class ConfigReplaceSerializer(TaggedObjectSerializer, CustomFieldModelSerializer
 
         model = models.ConfigReplace
         fields = "__all__"
+
+
+class IntendedConfigSecretsSerializer(DeviceSerializer):
+    """Serializer for IntendedConfigSecrets view."""
+
+    config = serializers.SerializerMethodField()
+
+    class Meta(DeviceSerializer):
+        """Extend the Device serializer with the intended configuration."""
+
+        # TODO: would we like to limit the output of the Device related info?
+        # With this configuration, the whole device serializer is returned
+        fields = DeviceSerializer.Meta.fields + ["config"]
+        model = Device
+
+    def get_config(self, obj):
+        """Provide the intended configuration with secrets to the config field."""
+        request = self.context.get("request")
+        if request and hasattr(request, "user"):
+            user = request.user
+        else:
+            return None
+
+        config_details = models.GoldenConfig.objects.filter(device=obj).first()
+        if config_details and config_details.intended_config:
+            return render_secrets(config_details.intended_config, user)
+        return None

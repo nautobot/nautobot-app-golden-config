@@ -137,7 +137,7 @@ class ConfigToPushSerializer(DeviceSerializer):
     config = serializers.SerializerMethodField()
 
     class Meta(DeviceSerializer):
-        """Extend the Device serializer with the intended configuration."""
+        """Extend the Device serializer with the configuration to push."""
 
         # TODO: would we like to limit the output of the Device related info?
         # With this configuration, the whole device serializer is returned

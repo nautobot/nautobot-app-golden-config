@@ -132,7 +132,7 @@ Notice that the `get_secrets` takes arguments, the first one being the data mode
 
 Also remember that to render these secrets, the user requesting it via UI or API should have enough privileges to these secrets.
 
-### Extended Configuration post processing
+### Extended Configuration with Post Processing
 
 Before creating the final configuration artifact, there is an optional step that will check if you have some custom `config_push_processing` function defined in your plugin configuration.
 

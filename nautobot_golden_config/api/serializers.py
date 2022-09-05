@@ -9,7 +9,7 @@ from nautobot.dcim.api.serializers import DeviceSerializer
 from nautobot.dcim.models import Device
 
 from nautobot_golden_config import models
-from nautobot_golden_config.utilities.helper import render_secrets
+from nautobot_golden_config.utilities.helper import get_config_to_push
 
 
 class GraphQLSerializer(serializers.Serializer):  # pylint: disable=abstract-method
@@ -131,8 +131,8 @@ class ConfigReplaceSerializer(TaggedObjectSerializer, CustomFieldModelSerializer
         fields = "__all__"
 
 
-class IntendedConfigSecretsSerializer(DeviceSerializer):
-    """Serializer for IntendedConfigSecrets view."""
+class ConfigToPushSerializer(DeviceSerializer):
+    """Serializer for ConfigToPush view."""
 
     config = serializers.SerializerMethodField()
 
@@ -145,7 +145,7 @@ class IntendedConfigSecretsSerializer(DeviceSerializer):
         model = Device
 
     def get_config(self, obj):
-        """Provide the intended configuration with secrets to the config field."""
+        """Provide the intended configuration ready to push to the config field."""
         request = self.context.get("request")
         if request and hasattr(request, "user"):
             user = request.user
@@ -154,5 +154,5 @@ class IntendedConfigSecretsSerializer(DeviceSerializer):
 
         config_details = models.GoldenConfig.objects.filter(device=obj).first()
         if config_details and config_details.intended_config:
-            return render_secrets(config_details.intended_config, user)
+            return get_config_to_push(config_details.intended_config, user, obj)
         return None

@@ -14,8 +14,7 @@ router.register("golden-config", views.GoldenConfigViewSet)
 router.register("golden-config-settings", views.GoldenConfigSettingViewSet)
 router.register("config-remove", views.ConfigRemoveViewSet)
 router.register("config-replace", views.ConfigReplaceViewSet)
-router.register("intended-config-secrets", views.IntendedConfigSecretsViewSet)
-
+router.register("config-to-push", views.ConfigToPushViewSet)
 urlpatterns = router.urls
 urlpatterns.append(
     path(
@@ -24,10 +23,3 @@ urlpatterns.append(
         name="device_detail",
     )
 )
-# urlpatterns.append(
-#     path(
-#         "intended-config-secrets/",
-#         views.IntendedConfigSecretsViewSet.as_view(),
-#         name="intended_config_secrets",
-#     )
-# )

@@ -19,6 +19,7 @@ There can only be a single Jinja template per device. Device configurations can 
 {% include os ~ '/ntp.j2' %}
 !
 ```
+
 or
 
 ```jinja
@@ -43,7 +44,7 @@ Nautobot documents using the `@django_jinja.library.filter` decorator to registe
 There are several alternative ways to have functions registered as filters in the `django_jinja` environment; below demonstrates defining decorated functions in a separate file, and then importing them in the `nautobot_config.py` file. This method requires that the file is in a path that is available to Nautobot's python environment.
 
 !!! note
-    `django_jinja` documents adding filters in the `TEMPLATES` config section; since Nautobot sets the `TEMPLATES` config section and does not document this in optional settings, it is recommended to only use the `@django_jinja.library.filter` decorator.
+`django_jinja` documents adding filters in the `TEMPLATES` config section; since Nautobot sets the `TEMPLATES` config section and does not document this in optional settings, it is recommended to only use the `@django_jinja.library.filter` decorator.
 
 #### custom_jinja_filters/config_templates.py
 
@@ -95,7 +96,7 @@ In order to generate the intended configurations at least two repositories are n
 ### Intended Repository Matching Rule
 
 !!! note
-    Only use a Intended Repository Matching Rule if you have **more than one** intended repository. It is **not needed"" if you only have one repository. The operator is expected to ensure that every device results in a successful matching rule (or that device will fail to render a config).
+Only use a Intended Repository Matching Rule if you have **more than one** intended repository. It is \*\*not needed"" if you only have one repository. The operator is expected to ensure that every device results in a successful matching rule (or that device will fail to render a config).
 
 The `intended_match_rule` setting allows you to match a given `Device` Django ORM object to a backup Git repository. This field should contain a Jinja2-formatted template. The plugin populates the variables in the Jinja2 template via the GraphQL query configured on the plugin.
 
@@ -104,3 +105,35 @@ This is exactly the same concept as described in [Backup Repository Matching Rul
 ## Data
 
 The data provided while rendering the configuration of a device is described in the [SoT Aggregation](./app_feature_sotagg.md) overview.
+
+## Render Intended Configuration as a final push artifact
+
+The Intended Configuration Job doesn't produce a final configuration artifact ready to use to update a network device. You should understand it as the "intended" running configuration, because the main purpose is to be compared against the current running configuration (retrieved in the "backup" job).
+
+Aside of enabling the "compliance" feature, there are some other limitations on the intended configuration:
+
+- Because the intended configuration is stored in the Database, and in an external Git repository, it SHOULD NOT contain any secret (or derivative).
+- The format of the running configuration is not exactly the same as the configuration to push in some devices.
+
+However, Golden Config following the purpose to become the cornerstone configuration management application is providing an advanced feature to render the intended configuration in the final format your device is expecting to.
+
+In the `Device` detail view, and in the API endpoint `config-to-push`, you can obtain the final configuration artifacts for the devices. By default, there is a function to render secrets using a `get_secrets` filter, and also a custom hook can be attached in the post-processing process.
+
+### Get Secrets filter
+
+The `get_secrets` filter uses Nautobot Secrets object to render as text. Because this render happens not in the first one to generate the intended configuration, but on a second one, you must use the `{% raw %}` Jinja syntax to avoid being processed on the first one. For example:
+
+```jinja
+password {{ id | get_secret("dcim.Device", "password") | encrypt_type5 }}
+ ppp pap sent-username {{ interface["connected_circuit_termination"]["circuit"]["id"] | get_secret("circuits.Circuit", "username") }} password {{ interface["connected_circuit_termination"]["circuit"]["id"] | get_secret("circuits.Circuit", "password") | encrypt_type7 }}
+```
+
+Notice that the `get_secrets` takes arguments, the first one being the data model, and the second the Secret attribute linked to this Model (you can create custom ones via `Relationships`).
+
+Also remember that to render these secrets, the user requesting it via UI or API should have enough privileges to these secrets.
+
+### Extended Configuration post processing
+
+Before creating the final configuration artifact, there is an optional step that will check if you have some custom `config_push_processing` function defined in your plugin configuration.
+
+This function should match the function signature: `my_method(intended_config: str, device: Device): str`, and its purpose is to adapt the final configuration to push.

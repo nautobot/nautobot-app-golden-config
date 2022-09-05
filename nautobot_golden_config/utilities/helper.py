@@ -18,8 +18,10 @@ from nautobot.extras.choices import SecretsGroupAccessTypeChoices
 from nautobot.utilities.permissions import permission_is_exempt
 
 from nornir_nautobot.exceptions import NornirNautobotException
+from netutils.utils import jinja2_convenience_function
 
 from nautobot_golden_config import models
+from nautobot_golden_config.utilities.constant import PLUGIN_CFG
 
 FIELDS = {
     "platform",
@@ -225,13 +227,26 @@ def get_secret(
 
 
 def render_secrets(config_to_render: str, user: User):
-    """Renders secrets."""
+    """Renders secrets using the get_secrets filter, and Netutils ones."""
     jinja_env = jinja2.Environment(autoescape=True)
 
     # Wrapper for get_secret filter that includes user argument to ensure
     # that secrets are only rendered by authorized users.
     user_gets_secret = partial(get_secret, user)
 
+    for name, func in jinja2_convenience_function().items():
+        jinja_env.filters[name] = func
+
     jinja_env.filters["get_secret"] = user_gets_secret
     template = jinja_env.from_string(config_to_render)
     return template.render()
+
+
+def get_config_to_push(config_to_render: str, user: User, device: Device):
+    """Renders final configuration push artifact from intended configuration."""
+    config_to_push = render_secrets(config_to_render, user)
+
+    if PLUGIN_CFG.get("config_push_processing"):
+        config_to_push = PLUGIN_CFG.get("config_push_processing")(config_to_push, device)
+
+    return config_to_push

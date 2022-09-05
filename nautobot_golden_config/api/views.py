@@ -99,11 +99,11 @@ class ConfigReplaceViewSet(CustomFieldModelViewSet):  # pylint:disable=too-many-
     filterset_class = filters.ConfigReplaceFilterSet
 
 
-class IntendedConfigSecretsViewSet(viewsets.ReadOnlyModelViewSet):  # pylint:disable=too-many-ancestors
+class ConfigToPushViewSet(viewsets.ReadOnlyModelViewSet):  # pylint:disable=too-many-ancestors
     """Detail REST API view showing configuration to push to appliances, with secrets rendered."""
 
     permission_classes = [IsAuthenticated]
     queryset = Device.objects.all()
     model = Device
-    serializer_class = serializers.IntendedConfigSecretsSerializer
+    serializer_class = serializers.ConfigToPushSerializer
     filterset_class = DeviceFilterSet

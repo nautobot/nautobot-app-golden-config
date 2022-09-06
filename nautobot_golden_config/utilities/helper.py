@@ -8,6 +8,7 @@ from jinja2 import exceptions as jinja_errors
 from django.db.models import Q
 from django.apps import apps
 from django.core.exceptions import ObjectDoesNotExist
+from django.http import HttpRequest
 
 from nautobot.dcim.models import Device
 from nautobot.dcim.filters import DeviceFilterSet
@@ -22,6 +23,7 @@ from netutils.utils import jinja2_convenience_function
 
 from nautobot_golden_config import models
 from nautobot_golden_config.utilities.constant import PLUGIN_CFG
+from nautobot_golden_config.utilities.graphql import graph_ql_query
 
 FIELDS = {
     "platform",
@@ -226,7 +228,7 @@ def get_secret(
     return None
 
 
-def render_secrets(config_to_render: str, user: User):
+def render_secrets(config_to_push: str, configs: models.GoldenConfig, request: HttpRequest):
     """Renders secrets using the get_secrets filter.
 
     This method is defined to render an already rendered intended configuration, but which have used the Jinja
@@ -234,34 +236,82 @@ def render_secrets(config_to_render: str, user: User):
     It also support chaining with some Netutils encrypt filters.
 
     Example:
-    `{% raw %}password {{ id | get_secret("dcim.Device", "password") | encrypt_type5 }}{% endraw %}`
+        `{% raw %}password {{ id | get_secret("dcim.Device", "password") | encrypt_type5 }}{% endraw %}`
 
     - `id` is the `Device` object identifier, and it's the first argv passed to the `get_secret` filter
     - `"dcim.Device"` is the Nautobot model
     - `"password` is the secret type (check the `get_secret` for more details)
     - `encrypt_type` is another Jinja filter from Neutils that creates a non-secure secret expected by the configuration
     """
+    device = configs.device
     jinja_env = jinja2.Environment(autoescape=True)
 
     # Wrapper for get_secret filter that includes user argument to ensure
     # that secrets are only rendered by authorized users.
-    user_gets_secret = partial(get_secret, user)
+    # To call this method, the view verifies that it's an authenticated request.
+    user_gets_secret = partial(get_secret, request.user)
 
     for name, func in jinja2_convenience_function().items():
         # Only importing the encrypt helpers as complements to get_secrets filter
         if name in ["encrypt_type5", "encrypt_type7"]:
             jinja_env.filters[name] = func
-
     jinja_env.filters["get_secret"] = user_gets_secret
-    template = jinja_env.from_string(config_to_render)
-    return template.render()
+
+    # Defining the starting intended configuration reference
+    # either a config_to_push, or the default configs.intended_config
+    config_to_render = config_to_push or configs.intended_config
+
+    if not config_to_render:
+        return "No reference Intended configuration to render secrets from"
+
+    try:
+        template = jinja_env.from_string(config_to_render)
+    except jinja_errors.TemplateAssertionError as tae:
+        return f"Jinja encountered an TemplateAssertionError: '{tae}'; check the template for correctness"
+
+    settings = get_device_to_settings_map(Device.objects.filter(pk=device.pk))[device.id]
+    _, device_data = graph_ql_query(request, device, settings.sot_agg_query.query)
+
+    # TODO: remove only for testing
+    # Adding for testing the template
+    # device_data["id"] = str(device.id)
+    ###################################
+
+    try:
+        return template.render(device_data)
+
+    except jinja_errors.UndefinedError:
+        return "Jinja encountered and UndefinedError, check the template for missing variable definitions.\n"
+    except jinja_errors.TemplateSyntaxError as error:  # Also catches subclass of TemplateAssertionError
+        return (
+            f"Jinja encountered a SyntaxError at line number {error.lineno},"
+            f"check the template for invalid Jinja syntax.\n"
+        )
+    except jinja_errors.TemplateError:  # Catches all remaining Jinja errors
+        return "Jinja encountered an unexpected TemplateError; check the template for correctness\n"
 
 
-def get_config_to_push(config_to_render: str, user: User, device: Device):
-    """Renders final configuration push artifact from intended configuration."""
-    config_to_push = render_secrets(config_to_render, user)
+def get_config_to_push(configs: models.GoldenConfig, request: HttpRequest):
+    """Renders final configuration push artifact from intended configuration.
 
-    if PLUGIN_CFG.get("config_push_processing"):
-        config_to_push = PLUGIN_CFG.get("config_push_processing")(config_to_push, device)
+    It chains multiple callables to transform an intended configuration into a configuration that can be pushed.
+    Each callable should match the following signature:
+    `my_callable_function(config_to_push: str, configs: models.GoldenConfig, request: HttpRequest)`
+    """
+    config_to_push = ""
+
+    # Available functions to create the final intended configuration to push
+    config_push_callable = [render_secrets]
+    if PLUGIN_CFG.get("config_push_callable"):
+        config_push_callable = PLUGIN_CFG["config_push_callable"]
+
+    # Actual callable subscribed to post processing the intended configuration
+    config_push_subscribed = [render_secrets]
+    if PLUGIN_CFG.get("config_push_subscribed"):
+        config_push_subscribed = PLUGIN_CFG["config_push_subscribed"]
+
+    for func in config_push_callable:
+        if func in config_push_subscribed:
+            config_to_push = func(config_to_push, configs, request)
 
     return config_to_push

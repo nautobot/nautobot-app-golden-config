@@ -1,0 +1,13 @@
+---
+name: "Nautobot Upstream Monitor"
+
+on: # yamllint disable-line rule:truthy rule:comments
+  schedule:
+    - cron: '0 4 * * *'  # every day at midnight
+
+jobs:
+  upstream-test:
+    uses: ./.github/workflows/upstream-base.yml # TODO: Update to core base once available
+    with: # Below could potentially be collapsed into a single argument if a concrete relationship between both is enforced
+      invoke_context_name: "NAUTOBOT_GOLDEN_CONFIG"
+      plugin_name: "nautobot-plugin-golden-config"

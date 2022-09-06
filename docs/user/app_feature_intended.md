@@ -108,14 +108,17 @@ The data provided while rendering the configuration of a device is described in 
 
 ## Render Intended Configuration as a final push artifact
 
-The Intended Configuration Job doesn't produce a final configuration artifact ready to use to update a network device. You should understand it as the "intended" running configuration, because the main purpose is to be compared against the current running configuration (retrieved in the "backup" job).
+The Intended Configuration Job doesn't produce a final configuration artifact ready to use to update a network device. You should understand it as the "intended" running configuration, because the intended configuration attempts to generate what is in the final running configuration and not the steps to what it takes to get to that running configuration.
 
 Aside of enabling the "compliance" feature, there are some other limitations on the intended configuration:
 
 - Because the intended configuration is stored in the Database, and in an external Git repository, it SHOULD NOT contain any secret (or derivative).
-- The format of the running configuration is not exactly the same as the configuration to push in some devices.
+- The format of the running configuration is not always the same as the configuration to push in some devices, examples include:
+    - Pushing snmpv3 configurations
+    - VTP configurations
+    - Implicit configurations like a "no shutdown" on an interface
 
-However, Golden Config following the purpose to become the cornerstone configuration management application is providing an advanced feature to render the intended configuration in the final format your device is expecting to.
+However, Golden Config following intends to become an all encompassing configuration management application, is providing an advanced feature to render the intended configuration in the final format your device is expecting to.
 
 In the `Device` detail view, and in the API endpoint `config-to-push`, you can obtain the final configuration artifacts for the devices. By default, there is a function to render secrets using a `get_secrets` filter, and also a custom hook can be attached in the post-processing process.
 

@@ -227,7 +227,20 @@ def get_secret(
 
 
 def render_secrets(config_to_render: str, user: User):
-    """Renders secrets using the get_secrets filter, and Netutils ones."""
+    """Renders secrets using the get_secrets filter.
+
+    This method is defined to render an already rendered intended configuration, but which have used the Jinja
+    `{% raw %}` tag to skip the first render (because the first one gets persisted, and for secrets we don't want it).
+    It also support chaining with some Netutils encrypt filters.
+
+    Example:
+    `{% raw %}password {{ id | get_secret("dcim.Device", "password") | encrypt_type5 }}{% endraw %}`
+
+    - `id` is the `Device` object identifier, and it's the first argv passed to the `get_secret` filter
+    - `"dcim.Device"` is the Nautobot model
+    - `"password` is the secret type (check the `get_secret` for more details)
+    - `encrypt_type` is another Jinja filter from Neutils that creates a non-secure secret expected by the configuration
+    """
     jinja_env = jinja2.Environment(autoescape=True)
 
     # Wrapper for get_secret filter that includes user argument to ensure
@@ -235,7 +248,9 @@ def render_secrets(config_to_render: str, user: User):
     user_gets_secret = partial(get_secret, user)
 
     for name, func in jinja2_convenience_function().items():
-        jinja_env.filters[name] = func
+        # Only importing the encrypt helpers as complements to get_secrets filter
+        if name in ["encrypt_type5", "encrypt_type7"]:
+            jinja_env.filters[name] = func
 
     jinja_env.filters["get_secret"] = user_gets_secret
     template = jinja_env.from_string(config_to_render)

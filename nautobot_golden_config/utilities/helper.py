@@ -6,8 +6,6 @@ import jinja2
 from jinja2 import exceptions as jinja_errors
 
 from django.db.models import Q
-from django.apps import apps
-from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpRequest
 
 from nautobot.dcim.models import Device
@@ -154,50 +152,31 @@ def get_device_to_settings_map(queryset):
     return device_to_settings_map
 
 
-def get_secret(
+def get_secret_by_secret_group_slug(
     user: User,
-    obj_id: str,
-    obj_type: str,
+    secrets_group_slug: str,
     secret_type: str,
     secret_access_type: Optional[str] = SecretsGroupAccessTypeChoices.TYPE_GENERIC,
 ) -> Optional[str]:
-    """Gets the secrets attached to an object based on an ORM relationship. To be used as a Jinja filter.
+    """Gets the secret from a Secret Group slug. To be used as a Jinja filter.
 
     We assume that there is only one secret group corresponding to a model.
 
     Args:
         user (User): User object that performs API call to render push template with secrets.
-        obj_id (str): Primary key returned for the specific object in the template. The id needs to be part of the GraphQL query.
-        obj_type (str): Type of the object in the form of <module_name>.<model_name>, for example: circuits.Circuit
+        secrets_group_slug (str): Secrets Group slug. It needs to be part of the GraphQL query.
         secret_type (str): Type of secret, such as "username", "password", "token", "secret", or "key".
         secret_access_type (Optional[str], optional): Type of secret such as "Generic", "gNMI", "HTTP(S)". Defaults to "Generic".
     .. rubric:: Example Jinja get_secret filter usage
     .. highlight:: jinja
     .. code-block:: jinja
-    password {{ id | get_secret("dcim.Device", "password") | encrypt_type5 }}
-    ppp pap sent-username {{ interface["connected_circuit_termination"]["circuit"]["id"] | get_secret("circuits.Circuit", "username") }} password {{ interface["connected_circuit_termination"]["circuit"]["id"] | get_secret("circuits.Circuit", "password") | encrypt_type7 }}
 
     Returns:
         Optional[str] : Secret value. None if there is no match. An error string if there is an error.
     """
-    try:
-        module_name, model_name = obj_type.split(".")
-    except ValueError:  # not enough values to unpack (expected 2, got 1). We get this error if there is no "." in the obj_type
-        return f"Incorrect object type format {obj_type}. The correct format is 'module_name.model_name'."
-    try:
-        model = apps.get_model(module_name, model_name)
-    except ObjectDoesNotExist:
-        return f"Model {model_name} does not exist."
-    # get the object behind the model using the pk
-    try:
-        obj = model.objects.get(id=obj_id)
-    except ObjectDoesNotExist:
-        return f"Object wit ID {obj_id} does not exist."
+    # TODO: check this work as expected
+    permission_required = "extras.view_secretsgroup"
 
-    # Get user permissions, terminate early if they do not have permission to view
-    app_label = obj._meta.app_label
-    model_name = obj._meta.model_name
-    permission_required = f"{app_label}.view_{model_name}"
     # Bypass restriction for superusers and exempt views
     if user.is_superuser or permission_is_exempt(permission_required):
         pass
@@ -205,24 +184,11 @@ def get_secret(
     elif not user.is_authenticated or permission_required not in user.get_all_permissions():
         return "You have no permission to read secrets. This incident will be reported."
 
-    # look through the attributes of the model to find if it has an id relationship
-    secrets_group = None
-    secrets_group_id = obj.__dict__.get("secrets_group_id")
-    if secrets_group_id:
-        secrets_group = SecretsGroup.objects.get(id=secrets_group_id)
-
-    # if the secret is not in the attributes, it may be in the relationships
-    for value in obj.get_relationships_data()["destination"].values():
-        # Find the relationship to secrets group
-        if isinstance(value["value"], SecretsGroup):
-            secrets_group = SecretsGroup.objects.get(slug=value["value"])
-            break
-
+    secrets_group = SecretsGroup.objects.get(slug=secrets_group_slug)
     if secrets_group:
         return secrets_group.get_secret_value(
             access_type=secret_access_type,
             secret_type=secret_type,
-            obj=obj,
         )
 
     return None
@@ -236,26 +202,23 @@ def render_secrets(config_to_push: str, configs: models.GoldenConfig, request: H
     It also support chaining with some Netutils encrypt filters.
 
     Example:
-        `{% raw %}password {{ id | get_secret("dcim.Device", "password") | encrypt_type5 }}{% endraw %}`
+        ppp pap sent-username {{ secrets_group["slug"] | get_secret_by_secret_group_slug("password") | encrypt_type7 }}
 
-    - `id` is the `Device` object identifier, and it's the first argv passed to the `get_secret` filter
-    - `"dcim.Device"` is the Nautobot model
     - `"password` is the secret type (check the `get_secret` for more details)
-    - `encrypt_type` is another Jinja filter from Neutils that creates a non-secure secret expected by the configuration
+    - `encrypt_type` is another Jinja filter from Netutils that creates a non-secure secret expected by the configuration
     """
     device = configs.device
     jinja_env = jinja2.Environment(autoescape=True)
-
-    # Wrapper for get_secret filter that includes user argument to ensure
-    # that secrets are only rendered by authorized users.
-    # To call this method, the view verifies that it's an authenticated request.
-    user_gets_secret = partial(get_secret, request.user)
 
     for name, func in jinja2_convenience_function().items():
         # Only importing the encrypt helpers as complements to get_secrets filter
         if name in ["encrypt_type5", "encrypt_type7"]:
             jinja_env.filters[name] = func
-    jinja_env.filters["get_secret"] = user_gets_secret
+
+    # Wrapper for get_secret filter that includes user argument to ensure
+    # that secrets are only rendered by authorized users.
+    # To call this method, the view verifies that it's an authenticated request.
+    jinja_env.filters["get_secret_by_secret_group_slug"] = partial(get_secret_by_secret_group_slug, request.user)
 
     # Defining the starting intended configuration reference
     # either a config_to_push, or the default configs.intended_config
@@ -272,16 +235,11 @@ def render_secrets(config_to_push: str, configs: models.GoldenConfig, request: H
     settings = get_device_to_settings_map(Device.objects.filter(pk=device.pk))[device.id]
     _, device_data = graph_ql_query(request, device, settings.sot_agg_query.query)
 
-    # TODO: remove only for testing
-    # Adding for testing the template
-    # device_data["id"] = str(device.id)
-    ###################################
-
     try:
         return template.render(device_data)
 
-    except jinja_errors.UndefinedError:
-        return "Jinja encountered and UndefinedError, check the template for missing variable definitions.\n"
+    except jinja_errors.UndefinedError as error:
+        return f"Jinja encountered and UndefinedError: {error}, check the template for missing variable definitions.\n"
     except jinja_errors.TemplateSyntaxError as error:  # Also catches subclass of TemplateAssertionError
         return (
             f"Jinja encountered a SyntaxError at line number {error.lineno},"

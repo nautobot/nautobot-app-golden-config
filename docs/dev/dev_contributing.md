@@ -17,7 +17,7 @@ The branching policy includes the following tenets:
 - The `stable-<major>.<minor>` branch is the branch of the latest version within that major/minor version.
 - The `stable-<major>.<minor>` branch will have all of the latest bug fixes and security patches, and may or may not represent the released version.
 - PRs intended to add new features should be sourced from the develop branch.
-- PRs intended to add new features that break backward compatability should be discussed before a PR is created.
+- PRs intended to add new features that break backward compatibility should be discussed before a PR is created.
 - PRs intended to address bug fixes and security patches should be sourced from `stable-<major>.<minor>`.
 
 Nautobot Golden Config will observe semantic versioning, as of 1.0. This may result in an quick turn around in minor versions to keep pace with an ever growing feature set.

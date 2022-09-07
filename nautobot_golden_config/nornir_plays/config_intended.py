@@ -68,7 +68,9 @@ def run_template(  # pylint: disable=too-many-arguments
     status, device_data = graph_ql_query(nautobot_job.request, obj, settings.sot_agg_query.query)
     if status != 200:
         logger.log_failure(obj, f"The GraphQL query return a status of {str(status)} with error of {str(device_data)}")
-        raise NornirNautobotException()
+        raise NornirNautobotException(
+            f"The GraphQL query return a status of {str(status)} with error of {str(device_data)}"
+        )
     task.host.data.update(device_data)
 
     generated_config = task.run(

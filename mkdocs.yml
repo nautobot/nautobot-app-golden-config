@@ -3,7 +3,7 @@ dev_addr: "127.0.0.1:8001"
 edit_uri: "edit/main/docs"
 site_dir: "golden-config/static/golden-config/docs"
 site_name: "Golden Configuration Documentation"
-site_url: "https://docs.nautobot.com/projects/golden-config/"
+site_url: "https://docs.nautobot.com/projects/golden-config/en/latest/"
 repo_url: "https://github.com/nautobot/nautobot-plugin-golden-config"
 copyright: "Copyright &copy; 2022 The Authors"
 theme:
@@ -43,8 +43,8 @@ extra_css:
   - "assets/extra.css"
 
 # needed for RTD version flyout menu
-# jquery to be loaded by RTD conditionally - remove once merged
-# https://github.com/readthedocs/readthedocs.org/pull/9359
+# jquery is not (yet) injected by RTD automatically and it might be dropped
+# as a dependency in the future
 extra_javascript:
   - "https://code.jquery.com/jquery-3.6.0.min.js"
 
@@ -110,6 +110,7 @@ nav:
       - Install and Configure: "admin/admin_install.md"
       - Upgrade: "admin/admin_upgrade.md"
       - Uninstall: "admin/admin_uninstall.md"
+      - Compatibility Matrix: "admin/compatibility_matrix.md"
       - Release Notes:
           - "admin/release_notes/index.md"
           - v1.2: "admin/release_notes/version_1.2.md"

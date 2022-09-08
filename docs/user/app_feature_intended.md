@@ -105,38 +105,3 @@ This is exactly the same concept as described in [Backup Repository Matching Rul
 ## Data
 
 The data provided while rendering the configuration of a device is described in the [SoT Aggregation](./app_feature_sotagg.md) overview.
-
-## Render Intended Configuration as a final push artifact
-
-The Intended Configuration Job doesn't produce a final configuration artifact ready to use to update a network device. You should understand it as the "intended" running configuration, because the intended configuration attempts to generate what is in the final running configuration and not the steps to what it takes to get to that running configuration.
-
-Aside of enabling the "compliance" feature, there are some other limitations on the intended configuration:
-
-- Because the intended configuration is stored in the Database, and in an external Git repository, it SHOULD NOT contain any secret (or derivative).
-- The format of the running configuration is not always the same as the configuration to push in some devices, examples include:
-    - Pushing snmpv3 configurations
-    - VTP configurations
-    - Implicit configurations like a "no shutdown" on an interface
-
-However, Golden Config following intends to become an all encompassing configuration management application, is providing an advanced feature to render the intended configuration in the final format your device is expecting to.
-
-In the `Device` detail view, and in the API endpoint `config-to-push`, you can obtain the final configuration artifacts for the devices. By default, there is a function to render secrets using a `get_secrets` filter, and also a custom hook can be attached in the post-processing process.
-
-### Get Secrets filter
-
-The `get_secrets` filter uses Nautobot Secrets object to render as text. Because this render happens not in the first one to generate the intended configuration, but on a second one, you must use the `{% raw %}` Jinja syntax to avoid being processed on the first one. For example:
-
-```jinja
-password {{ id | get_secret("dcim.Device", "password") | encrypt_type5 }}
- ppp pap sent-username {{ interface["connected_circuit_termination"]["circuit"]["id"] | get_secret("circuits.Circuit", "username") }} password {{ interface["connected_circuit_termination"]["circuit"]["id"] | get_secret("circuits.Circuit", "password") | encrypt_type7 }}
-```
-
-Notice that the `get_secrets` takes arguments, the first one being the data model, and the second the Secret attribute linked to this Model (you can create custom ones via `Relationships`).
-
-Also remember that to render these secrets, the user requesting it via UI or API should have enough privileges to these secrets.
-
-### Extended Configuration with Post Processing
-
-Before creating the final configuration artifact, there is an optional step that will check if you have some custom `config_push_processing` function defined in your plugin configuration.
-
-This function should match the function signature: `my_method(intended_config: str, device: Device): str`, and its purpose is to adapt the final configuration to push.

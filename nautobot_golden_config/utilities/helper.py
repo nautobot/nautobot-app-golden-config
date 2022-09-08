@@ -1,7 +1,7 @@
 """Helper functions."""
 # pylint: disable=raise-missing-from
 from functools import partial
-from typing import Optional
+from typing import Optional, List
 import jinja2
 from jinja2 import exceptions as jinja_errors
 
@@ -167,22 +167,18 @@ def get_secret_by_secret_group_slug(
         secrets_group_slug (str): Secrets Group slug. It needs to be part of the GraphQL query.
         secret_type (str): Type of secret, such as "username", "password", "token", "secret", or "key".
         secret_access_type (Optional[str], optional): Type of secret such as "Generic", "gNMI", "HTTP(S)". Defaults to "Generic".
-    .. rubric:: Example Jinja get_secret filter usage
-    .. highlight:: jinja
-    .. code-block:: jinja
 
     Returns:
         Optional[str] : Secret value. None if there is no match. An error string if there is an error.
     """
-    # TODO: check this work as expected
-    permission_required = "extras.view_secretsgroup"
+    permission_secrets_group = "extras.view_secretsgroup"
 
     # Bypass restriction for superusers and exempt views
-    if user.is_superuser or permission_is_exempt(permission_required):
+    if user.is_superuser or permission_is_exempt(permission_secrets_group):
         pass
     # User is anonymous or has not been granted the requisite permission
-    elif not user.is_authenticated or permission_required not in user.get_all_permissions():
-        return "You have no permission to read secrets. This incident will be reported."
+    elif not user.is_authenticated or permission_secrets_group not in user.get_all_permissions():
+        return f"You have no permission to read this secret {secrets_group_slug}."
 
     secrets_group = SecretsGroup.objects.get(slug=secrets_group_slug)
     if secrets_group:
@@ -194,18 +190,25 @@ def get_secret_by_secret_group_slug(
     return None
 
 
-def render_secrets(config_to_push: str, configs: models.GoldenConfig, request: HttpRequest):
+class RenderConfigToPushError(Exception):
+    """Exception related to Render Configuration to Push operations."""
+
+
+def render_secrets(config_to_push: str, configs: models.GoldenConfig, request: HttpRequest) -> str:
     """Renders secrets using the get_secrets filter.
 
     This method is defined to render an already rendered intended configuration, but which have used the Jinja
     `{% raw %}` tag to skip the first render (because the first one gets persisted, and for secrets we don't want it).
     It also support chaining with some Netutils encrypt filters.
 
-    Example:
+    .. rubric:: Example Jinja render_secrets filters usage
+    .. highlight:: jinja
+    .. code-block:: jinja
         ppp pap sent-username {{ secrets_group["slug"] | get_secret_by_secret_group_slug("password") | encrypt_type7 }}
 
-    - `"password` is the secret type (check the `get_secret` for more details)
-    - `encrypt_type` is another Jinja filter from Netutils that creates a non-secure secret expected by the configuration
+    Returns:
+        str : Return a string, with the rendered intended configuration with secrets, or an error message.
+
     """
     device = configs.device
     jinja_env = jinja2.Environment(autoescape=True)
@@ -225,7 +228,7 @@ def render_secrets(config_to_push: str, configs: models.GoldenConfig, request: H
     config_to_render = config_to_push or configs.intended_config
 
     if not config_to_render:
-        return "No reference Intended configuration to render secrets from"
+        raise RenderConfigToPushError("No reference Intended configuration to render secrets from")
 
     try:
         template = jinja_env.from_string(config_to_render)
@@ -239,37 +242,83 @@ def render_secrets(config_to_push: str, configs: models.GoldenConfig, request: H
         return template.render(device_data)
 
     except jinja_errors.UndefinedError as error:
-        return f"Jinja encountered and UndefinedError: {error}, check the template for missing variable definitions.\n"
+        raise RenderConfigToPushError(
+            f"Jinja encountered and UndefinedError: {error}, check the template for missing variable definitions.\n"
+        ) from error
     except jinja_errors.TemplateSyntaxError as error:  # Also catches subclass of TemplateAssertionError
-        return (
+        raise RenderConfigToPushError(
             f"Jinja encountered a SyntaxError at line number {error.lineno},"
             f"check the template for invalid Jinja syntax.\n"
-        )
-    except jinja_errors.TemplateError:  # Catches all remaining Jinja errors
-        return "Jinja encountered an unexpected TemplateError; check the template for correctness\n"
+        ) from error
+    except jinja_errors.TemplateError as error:  # Catches all remaining Jinja errors
+        raise RenderConfigToPushError(
+            "Jinja encountered an unexpected TemplateError; check the template for correctness\n"
+        ) from error
 
 
-def get_config_to_push(configs: models.GoldenConfig, request: HttpRequest):
+# TODO: Remove it's the previous implementation
+# def get_config_to_push(configs: models.GoldenConfig, request: HttpRequest) -> str:
+#     """Renders final configuration push artifact from intended configuration.
+
+#     It chains multiple callables to transform an intended configuration into a configuration that can be pushed.
+#     Each callable should match the following signature:
+#     `my_callable_function(config_to_push: str, configs: models.GoldenConfig, request: HttpRequest)`
+#     """
+#     config_to_push = ""
+
+#     # Available functions to create the final intended configuration to push
+#     config_push_callable = [render_secrets]
+#     if PLUGIN_CFG.get("config_push_callable"):
+#         config_push_callable = PLUGIN_CFG["config_push_callable"]
+
+#     # Actual callable subscribed to post processing the intended configuration
+#     config_push_subscribed = [render_secrets]
+#     if PLUGIN_CFG.get("config_push_subscribed"):
+#         config_push_subscribed = PLUGIN_CFG["config_push_subscribed"]
+
+#     for func in config_push_callable:
+#         if func in config_push_subscribed:
+#             try:
+#                 config_to_push = func(config_to_push, configs, request)
+#             except RenderConfigToPushError as error:
+#                 return f"Find an error rendering the configuration to push: {error}"
+
+#     return config_to_push
+
+
+def get_config_to_push(
+    configs: models.GoldenConfig, request: HttpRequest, custom_subscribed: Optional[List[str]] = None
+) -> str:
     """Renders final configuration push artifact from intended configuration.
 
     It chains multiple callables to transform an intended configuration into a configuration that can be pushed.
     Each callable should match the following signature:
-    `my_callable_function(config_to_push: str, configs: models.GoldenConfig, request: HttpRequest)`
+    `my_callable_function(config_to_push: str, configs: models.GoldenConfig, request: HttpRequest, custom_subscribed: Optional[List[str]])`
+
+    Args:
+        configs (models.GoldenConfig): Golden Config object per device, to retrieve device info, and related configs.
+        request (HttpRequest): HTTP request for context.
+        custom_subscribed (List[str]): List with the order of the callables to be processed.
     """
     config_to_push = ""
 
     # Available functions to create the final intended configuration to push
-    config_push_callable = [render_secrets]
-    if PLUGIN_CFG.get("config_push_callable"):
-        config_push_callable = PLUGIN_CFG["config_push_callable"]
+    config_push_callable = [render_secrets] + PLUGIN_CFG.get("config_push_callable", [])
 
     # Actual callable subscribed to post processing the intended configuration
-    config_push_subscribed = [render_secrets]
-    if PLUGIN_CFG.get("config_push_subscribed"):
-        config_push_subscribed = PLUGIN_CFG["config_push_subscribed"]
+    if custom_subscribed:
+        config_push_subscribed = custom_subscribed
+    else:
+        config_push_subscribed = ["render_secrets"]
+        if PLUGIN_CFG.get("config_push_subscribed"):
+            config_push_subscribed = PLUGIN_CFG["config_push_subscribed"]
 
-    for func in config_push_callable:
-        if func in config_push_subscribed:
-            config_to_push = func(config_to_push, configs, request)
+    for func_name in config_push_subscribed:
+        for func in config_push_callable:
+            if func.__name__ == func_name:
+                try:
+                    config_to_push = func(config_to_push, configs, request)
+                except RenderConfigToPushError as error:
+                    return f"Find an error rendering the configuration to push: {error}"
 
     return config_to_push

@@ -4,9 +4,11 @@ from unittest import mock
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.contrib.contenttypes.models import ContentType
 
 from nautobot.extras.models import SecretsGroup, Secret, SecretsGroupAssociation
 from nautobot.extras.choices import SecretsGroupAccessTypeChoices, SecretsGroupSecretTypeChoices
+from nautobot.users.models import ObjectPermission
 
 from nautobot_golden_config.utilities.helper import get_secret_by_secret_group_slug
 
@@ -39,6 +41,13 @@ class GetSecretFilterTestCase(TestCase):
         self.user_admin_1 = User.objects.create(username="User_Admin_1", is_superuser=True)
         self.user_2 = User.objects.create(username="User_2")
 
+        self.permission, _ = ObjectPermission.objects.update_or_create(
+            name="my_permissions",
+            defaults={"actions": ["view"]},
+        )
+        self.permission.object_types.set([ContentType.objects.get(app_label="extras", model="secretsgroup")])
+        self.permission.validated_save()
+
     @mock.patch.dict(os.environ, {"NAUTOBOT_TEST_ENVIRONMENT_VARIABLE": "supersecretvalue"})
     def test_get_secret_by_secret_group_slug_superuser(self):
         """A super user admin should get the secret rendered."""
@@ -49,6 +58,7 @@ class GetSecretFilterTestCase(TestCase):
             "supersecretvalue",
         )
 
+    @mock.patch.dict(os.environ, {"NAUTOBOT_TEST_ENVIRONMENT_VARIABLE": "supersecretvalue"})
     def test_get_secret_by_secret_group_slug_user_without_permission(self):
         """A normal user without permissions, should not get the secret rendered."""
         self.assertEqual(
@@ -58,4 +68,15 @@ class GetSecretFilterTestCase(TestCase):
             f"You have no permission to read this secret {self.secrets_group.slug}.",
         )
 
-    # TODO: tests for user with permissions for the secret
+    @mock.patch.dict(os.environ, {"NAUTOBOT_TEST_ENVIRONMENT_VARIABLE": "supersecretvalue"})
+    def test_get_secret_by_secret_group_slug_user_with_permission(self):
+        """A normal user with permissions, should get the secret rendered."""
+        self.permission.users.set([self.user_2])
+        self.permission.validated_save()
+
+        self.assertEqual(
+            get_secret_by_secret_group_slug(
+                self.user_2, self.secrets_group.slug, SecretsGroupSecretTypeChoices.TYPE_SECRET
+            ),
+            "supersecretvalue",
+        )

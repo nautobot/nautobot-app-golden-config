@@ -21,7 +21,7 @@ The expected view required expected is something like:
 | nyc-rt01 | True  | False | False |
 | nyc-rt02 | True  |       | False |
 
-In order to accommodate this, `django-pivot` is used, which greatly simplifies building the query. However, `django-pivot` requires the ability to "count" vs a boolean. Because of that, there is a "shadow" field created that sets to 0 if False, and 1 if True. This is enforced on the `save` method of the `ConfigCompliance` model.
+In order to accommodate this, `django-pivot` is used, which greatly simplifies building the query. However, `django-pivot` requires the ability to "count" versus a boolean. Because of that, there is a "shadow" field created that is set to 0 if False, and 1 if True. This is enforced on the `save` method of the `ConfigCompliance` model.
 
 ## Compliance View
 
@@ -56,7 +56,7 @@ jobs.extend([AllGoldenConfig, AllDevicesGoldenConfig])
 
 ## Home View
 
-The Home view is generally based on the model `GoldenConfig`, however, in reality the view that shows up is based on the core `Device` model. This is because, when a device is included in the Dynamic Group, this does not mean that there is an entry in `GoldenConfig` yet. So there is nothing to see yet, such as the ability to click and run job on a device. It was confusing to users as to what was shown in the view vs what is in scope currently.
+The Home view is generally based on the model `GoldenConfig`; however, in reality the view that shows up is based on the core `Device` model. This is because, when a device is included in the Dynamic Group, this does not mean that there is an entry in `GoldenConfig` yet. So there is nothing to see yet, such as the ability to click and run job on a device. It was confusing to users as to what was shown in the view vs what is in scope currently.
 
 This complicates things such that the view data is one level nested, from the Model. Meaning, the query is based on `Device`, but the data is primarily in `GoldenConfig`. Do accommodate, there is an annotated query, similar to:
 

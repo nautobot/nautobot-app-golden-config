@@ -23,6 +23,7 @@ class ProcessGoldenConfig(BaseLoggingProcessor):
         Returns:
             None
         """
+        host.close_connections()
         # Complex logic to see if the task exception is expected, which is depicted by
         # a sub task raising a NornirNautobotException.
         if result.failed:

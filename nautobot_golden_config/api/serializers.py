@@ -148,7 +148,5 @@ class ConfigToPushSerializer(DeviceSerializer):
         """Provide the intended configuration ready to push to the config field."""
         request = self.context.get("request")
 
-        config_details = models.GoldenConfig.objects.filter(device=obj).first()
-        if config_details and config_details.intended_config:
-            return get_config_to_push(config_details, request)
-        return None
+        config_details = models.GoldenConfig.objects.get(device=obj)
+        return get_config_to_push(config_details, request)

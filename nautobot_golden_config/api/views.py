@@ -1,13 +1,14 @@
 """View for Golden Config APIs."""
 import json
 
-from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.routers import APIRootView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from nautobot.extras.api.views import CustomFieldModelViewSet
+from nautobot.core.api.views import ReadOnlyModelViewSet
+
 from nautobot.dcim.models import Device
 from nautobot.dcim.filters import DeviceFilterSet
 
@@ -96,7 +97,7 @@ class ConfigReplaceViewSet(CustomFieldModelViewSet):  # pylint:disable=too-many-
     filterset_class = filters.ConfigReplaceFilterSet
 
 
-class ConfigToPushViewSet(viewsets.ReadOnlyModelViewSet):  # pylint:disable=too-many-ancestors
+class ConfigToPushViewSet(ReadOnlyModelViewSet):  # pylint:disable=too-many-ancestors
     """Detail REST API view showing configuration to push to appliances."""
 
     permission_classes = [IsAuthenticated]

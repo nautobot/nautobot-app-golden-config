@@ -223,17 +223,13 @@ def render_secrets(config_to_push: str, configs: models.GoldenConfig, request: H
     # To call this method, the view verifies that it's an authenticated request.
     jinja_env.filters["get_secret_by_secret_group_slug"] = partial(get_secret_by_secret_group_slug, request.user)
 
-    # Defining the starting intended configuration reference
-    # either a config_to_push, or the default configs.intended_config
-    config_to_render = config_to_push or configs.intended_config
-
-    if not config_to_render:
+    if not config_to_push:
         raise RenderConfigToPushError("No reference Intended configuration to render secrets from")
 
     try:
-        template = jinja_env.from_string(config_to_render)
-    except jinja_errors.TemplateAssertionError as tae:
-        return f"Jinja encountered an TemplateAssertionError: '{tae}'; check the template for correctness"
+        template = jinja_env.from_string(config_to_push)
+    except jinja_errors.TemplateAssertionError as error:
+        return f"Jinja encountered an TemplateAssertionError: '{error}'; check the template for correctness"
 
     settings = get_device_to_settings_map(Device.objects.filter(pk=device.pk))[device.id]
     _, device_data = graph_ql_query(request, device, settings.sot_agg_query.query)
@@ -300,7 +296,9 @@ def get_config_to_push(
         request (HttpRequest): HTTP request for context.
         custom_subscribed (List[str]): List with the order of the callables to be processed.
     """
-    config_to_push = ""
+    config_to_push = configs.intended_config
+    if not config_to_push:
+        return config_to_push
 
     # Available functions to create the final intended configuration to push
     config_push_callable = [render_secrets] + PLUGIN_CFG.get("config_push_callable", [])
@@ -319,6 +317,6 @@ def get_config_to_push(
                 try:
                     config_to_push = func(config_to_push, configs, request)
                 except RenderConfigToPushError as error:
-                    return f"Find an error rendering the configuration to push: {error}"
+                    return f"Found an error rendering the configuration to push: {error}"
 
     return config_to_push

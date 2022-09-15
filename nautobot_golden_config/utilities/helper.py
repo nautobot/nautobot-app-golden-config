@@ -190,6 +190,13 @@ def get_secret_by_secret_group_slug(
     return None
 
 
+def get_device_agg_data(device, request):
+    """Helper method to retrieve GraphQL data from a device."""
+    settings = get_device_to_settings_map(Device.objects.filter(pk=device.pk))[device.id]
+    _, device_data = graph_ql_query(request, device, settings.sot_agg_query.query)
+    return device_data
+
+
 class RenderConfigToPushError(Exception):
     """Exception related to Render Configuration to Push operations."""
 
@@ -210,7 +217,9 @@ def render_secrets(config_to_push: str, configs: models.GoldenConfig, request: H
         str : Return a string, with the rendered intended configuration with secrets, or an error message.
 
     """
-    device = configs.device
+    if not config_to_push:
+        raise RenderConfigToPushError("No reference intended configuration to render secrets from")
+
     jinja_env = jinja2.Environment(autoescape=True)
 
     for name, func in jinja2_convenience_function().items():
@@ -223,16 +232,12 @@ def render_secrets(config_to_push: str, configs: models.GoldenConfig, request: H
     # To call this method, the view verifies that it's an authenticated request.
     jinja_env.filters["get_secret_by_secret_group_slug"] = partial(get_secret_by_secret_group_slug, request.user)
 
-    if not config_to_push:
-        raise RenderConfigToPushError("No reference Intended configuration to render secrets from")
-
     try:
         template = jinja_env.from_string(config_to_push)
     except jinja_errors.TemplateAssertionError as error:
         return f"Jinja encountered an TemplateAssertionError: '{error}'; check the template for correctness"
 
-    settings = get_device_to_settings_map(Device.objects.filter(pk=device.pk))[device.id]
-    _, device_data = graph_ql_query(request, device, settings.sot_agg_query.query)
+    device_data = get_device_agg_data(configs.device, request)
 
     try:
         return template.render(device_data)
@@ -250,36 +255,6 @@ def render_secrets(config_to_push: str, configs: models.GoldenConfig, request: H
         raise RenderConfigToPushError(
             "Jinja encountered an unexpected TemplateError; check the template for correctness\n"
         ) from error
-
-
-# TODO: Remove it's the previous implementation
-# def get_config_to_push(configs: models.GoldenConfig, request: HttpRequest) -> str:
-#     """Renders final configuration push artifact from intended configuration.
-
-#     It chains multiple callables to transform an intended configuration into a configuration that can be pushed.
-#     Each callable should match the following signature:
-#     `my_callable_function(config_to_push: str, configs: models.GoldenConfig, request: HttpRequest)`
-#     """
-#     config_to_push = ""
-
-#     # Available functions to create the final intended configuration to push
-#     config_push_callable = [render_secrets]
-#     if PLUGIN_CFG.get("config_push_callable"):
-#         config_push_callable = PLUGIN_CFG["config_push_callable"]
-
-#     # Actual callable subscribed to post processing the intended configuration
-#     config_push_subscribed = [render_secrets]
-#     if PLUGIN_CFG.get("config_push_subscribed"):
-#         config_push_subscribed = PLUGIN_CFG["config_push_subscribed"]
-
-#     for func in config_push_callable:
-#         if func in config_push_subscribed:
-#             try:
-#                 config_to_push = func(config_to_push, configs, request)
-#             except RenderConfigToPushError as error:
-#                 return f"Find an error rendering the configuration to push: {error}"
-
-#     return config_to_push
 
 
 def get_config_to_push(
@@ -312,11 +287,15 @@ def get_config_to_push(
             config_push_subscribed = PLUGIN_CFG["config_push_subscribed"]
 
     for func_name in config_push_subscribed:
-        for func in config_push_callable:
-            if func.__name__ == func_name:
-                try:
-                    config_to_push = func(config_to_push, configs, request)
-                except RenderConfigToPushError as error:
-                    return f"Found an error rendering the configuration to push: {error}"
+        try:
+            func = [x for x in config_push_callable if x.__name__ == func_name][0]
+        except IndexError:
+            raise ValueError(
+                f"{func_name} is not included in the available callables: {[x.__name__ for x in config_push_callable]}"
+            )
+        try:
+            config_to_push = func(config_to_push, configs, request)
+        except RenderConfigToPushError as error:
+            return f"Found an error rendering the configuration to push: {error}"
 
     return config_to_push

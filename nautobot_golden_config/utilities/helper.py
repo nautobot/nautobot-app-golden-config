@@ -171,13 +171,18 @@ def get_secret_by_secret_group_slug(
     Returns:
         Optional[str] : Secret value. None if there is no match. An error string if there is an error.
     """
-    permission_secrets_group = "extras.view_secretsgroup"
+    permission_groups = [
+        "extras.view_secretsgroup",
+        "nautobot_golden_config.view_goldenconfig",
+    ]
 
     # Bypass restriction for superusers and exempt views
-    if user.is_superuser or permission_is_exempt(permission_secrets_group):
+    if user.is_superuser or all(permission_is_exempt(permission_group) for permission_group in permission_groups):
         pass
     # User is anonymous or has not been granted the requisite permission
-    elif not user.is_authenticated or permission_secrets_group not in user.get_all_permissions():
+    elif not user.is_authenticated or any(
+        permission_group not in user.get_all_permissions() for permission_group in permission_groups
+    ):
         return f"You have no permission to read this secret {secrets_group_slug}."
 
     secrets_group = SecretsGroup.objects.get(slug=secrets_group_slug)
@@ -190,7 +195,7 @@ def get_secret_by_secret_group_slug(
     return None
 
 
-def get_device_agg_data(device, request):
+def _get_device_agg_data(device, request):
     """Helper method to retrieve GraphQL data from a device."""
     settings = get_device_to_settings_map(Device.objects.filter(pk=device.pk))[device.id]
     _, device_data = graph_ql_query(request, device, settings.sot_agg_query.query)
@@ -218,7 +223,7 @@ def render_secrets(config_to_push: str, configs: models.GoldenConfig, request: H
 
     """
     if not config_to_push:
-        raise RenderConfigToPushError("No reference intended configuration to render secrets from")
+        return ""
 
     jinja_env = jinja2.Environment(autoescape=True)
 
@@ -237,7 +242,7 @@ def render_secrets(config_to_push: str, configs: models.GoldenConfig, request: H
     except jinja_errors.TemplateAssertionError as error:
         return f"Jinja encountered an TemplateAssertionError: '{error}'; check the template for correctness"
 
-    device_data = get_device_agg_data(configs.device, request)
+    device_data = _get_device_agg_data(configs.device, request)
 
     try:
         return template.render(device_data)
@@ -276,7 +281,7 @@ def get_config_to_push(
         return config_to_push
 
     # Available functions to create the final intended configuration to push
-    config_push_callable = [render_secrets] + PLUGIN_CFG.get("config_push_callable", [])
+    config_push_callable = PLUGIN_CFG.get("config_push_callable", [render_secrets])
 
     # Actual callable subscribed to post processing the intended configuration
     if custom_subscribed:

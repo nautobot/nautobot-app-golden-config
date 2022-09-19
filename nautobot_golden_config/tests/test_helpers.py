@@ -46,13 +46,19 @@ class GetSecretFilterTestCase(TestCase):
         )
 
         self.user_admin = User.objects.create(username="user_admin", is_superuser=True)
+
         self.user_2 = User.objects.create(username="User_2")
 
         self.permission, _ = ObjectPermission.objects.update_or_create(
             name="my_permissions",
             defaults={"actions": ["view"]},
         )
-        self.permission.object_types.set([ContentType.objects.get(app_label="extras", model="secretsgroup")])
+        self.permission.object_types.set(
+            [
+                ContentType.objects.get(app_label="extras", model="secretsgroup"),
+                ContentType.objects.get(app_label="nautobot_golden_config", model="goldenconfig"),
+            ]
+        )
         self.permission.validated_save()
 
     @mock.patch.dict(os.environ, {"NAUTOBOT_TEST_ENVIRONMENT_VARIABLE": "supersecretvalue"})
@@ -90,7 +96,7 @@ class GetSecretFilterTestCase(TestCase):
 
     @mock.patch.dict(os.environ, {"NAUTOBOT_TEST_ENVIRONMENT_VARIABLE": "supersecretvalue"})
     @mock.patch(
-        "nautobot_golden_config.utilities.helper.get_device_agg_data",
+        "nautobot_golden_config.utilities.helper._get_device_agg_data",
         mock.MagicMock(return_value={"group_slug": "secrets-group-1"}),
     )
     def test_get_secret_end_to_end(self):

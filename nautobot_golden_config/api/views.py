@@ -5,9 +5,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.routers import APIRootView
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework import mixins, viewsets
 
 from nautobot.extras.api.views import CustomFieldModelViewSet
-from nautobot.core.api.views import ReadOnlyModelViewSet
 
 from nautobot.dcim.models import Device
 from nautobot.dcim.filters import DeviceFilterSet
@@ -16,7 +16,7 @@ from nautobot_golden_config.api import serializers
 from nautobot_golden_config import models
 from nautobot_golden_config import filters
 from nautobot_golden_config.utilities.graphql import graph_ql_query
-from nautobot_golden_config.utilities.helper import get_device_to_settings_map, validate_permissions
+from nautobot_golden_config.utilities.helper import get_device_to_settings_map
 
 
 class GoldenConfigRootView(APIRootView):
@@ -102,15 +102,14 @@ class ConfigPushPermissions(IsAuthenticated):
 
     def has_permission(self, request, view):
         """Method to validated permissions to API view."""
-        permission_groups = [
-            "dcim.view_device",
-            "nautobot_golden_config.view_goldenconfffig",
-        ]
+        return request.user.has_perm("nautobot_golden_config.view_goldenconfig")
 
-        return validate_permissions(request.user, permission_groups)
+    def has_object_permission(self, request, view, obj):
+        """Validate user access to the object, taking into account constraints."""
+        return request.user.has_perm("dcim.view_device", obj=obj)
 
 
-class ConfigToPushViewSet(ReadOnlyModelViewSet):  # pylint:disable=too-many-ancestors
+class ConfigToPushViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):  # pylint:disable=too-many-ancestors
     """Detail REST API view showing configuration to push to appliances."""
 
     permission_classes = [ConfigPushPermissions]

@@ -1,7 +1,7 @@
 """Helper functions."""
 # pylint: disable=raise-missing-from
 from functools import partial
-from typing import Optional, List
+from typing import Optional
 import jinja2
 from jinja2 import exceptions as jinja_errors
 
@@ -14,7 +14,6 @@ from nautobot.utilities.utils import render_jinja2
 from nautobot.users.models import User
 from nautobot.extras.models.secrets import SecretsGroup
 from nautobot.extras.choices import SecretsGroupAccessTypeChoices
-from nautobot.utilities.permissions import permission_is_exempt
 
 from nornir_nautobot.exceptions import NornirNautobotException
 from netutils.utils import jinja2_convenience_function
@@ -153,20 +152,6 @@ def get_device_to_settings_map(queryset):
     return device_to_settings_map
 
 
-def validate_permissions(user: User, permission_groups: List[str]) -> bool:
-    """Validate User membership to a list of permission_groups."""
-    # Bypass restriction for superusers and exempt views
-    if user.is_superuser or all(permission_is_exempt(permission_group) for permission_group in permission_groups):
-        pass
-    # User is anonymous or has not been granted the requisite permission
-    elif not user.is_authenticated or any(
-        permission_group not in user.get_all_permissions() for permission_group in permission_groups
-    ):
-        return False
-
-    return True
-
-
 def get_secret_by_secret_group_slug(
     user: User,
     secrets_group_slug: str,
@@ -186,14 +171,11 @@ def get_secret_by_secret_group_slug(
     Returns:
         Optional[str] : Secret value. None if there is no match. An error string if there is an error.
     """
-    permission_groups = [
-        "extras.view_secretsgroup",
-    ]
+    secrets_group = SecretsGroup.objects.get(slug=secrets_group_slug)
 
-    if not validate_permissions(user, permission_groups):
+    if secrets_group and not user.has_perm("extras.view_secretsgroup", secrets_group):
         return f"You have no permission to read this secret {secrets_group_slug}."
 
-    secrets_group = SecretsGroup.objects.get(slug=secrets_group_slug)
     if secrets_group:
         return secrets_group.get_secret_value(
             access_type=secret_access_type,

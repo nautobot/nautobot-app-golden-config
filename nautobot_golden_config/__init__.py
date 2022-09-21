@@ -28,6 +28,7 @@ class GoldenConfig(PluginConfig):
         "enable_compliance": True,
         "enable_intended": True,
         "enable_sotagg": True,
+        "enable_push": True,
         "per_feature_bar_width": 0.3,
         "per_feature_width": 13,
         "per_feature_height": 4,

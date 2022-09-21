@@ -1,7 +1,7 @@
 """Helper functions."""
 # pylint: disable=raise-missing-from
 from functools import partial
-from typing import Optional, List
+from typing import Optional
 import jinja2
 from jinja2 import exceptions as jinja_errors
 
@@ -22,6 +22,7 @@ from netutils.utils import jinja2_convenience_function
 from nautobot_golden_config import models
 from nautobot_golden_config.utilities.constant import PLUGIN_CFG
 from nautobot_golden_config.utilities.graphql import graph_ql_query
+from nautobot_golden_config.utilities.constant import ENABLE_PUSH
 
 FIELDS = {
     "platform",
@@ -262,9 +263,7 @@ def render_secrets(config_to_push: str, configs: models.GoldenConfig, request: H
         ) from error
 
 
-def get_config_to_push(
-    configs: models.GoldenConfig, request: HttpRequest, custom_subscribed: Optional[List[str]] = None
-) -> str:
+def get_config_to_push(configs: models.GoldenConfig, request: HttpRequest) -> str:
     """Renders final configuration push artifact from intended configuration.
 
     It chains multiple callables to transform an intended configuration into a configuration that can be pushed.
@@ -274,22 +273,25 @@ def get_config_to_push(
     Args:
         configs (models.GoldenConfig): Golden Config object per device, to retrieve device info, and related configs.
         request (HttpRequest): HTTP request for context.
-        custom_subscribed (List[str]): List with the order of the callables to be processed.
     """
+    if not ENABLE_PUSH:
+        return "Generation of intended configurations to push it is not enable, check your plugin configuration."
+
     config_to_push = configs.intended_config
     if not config_to_push:
-        return config_to_push
+        return (
+            "No intended configuration is available. Before rendering the configuration to push, "
+            "you need to generate the intended configuration."
+        )
 
     # Available functions to create the final intended configuration to push
-    config_push_callable = PLUGIN_CFG.get("config_push_callable", [render_secrets])
+    default_config_push_callables = [render_secrets]
+    config_push_callable = PLUGIN_CFG.get("config_push_callable", default_config_push_callables)
 
     # Actual callable subscribed to post processing the intended configuration
-    if custom_subscribed:
-        config_push_subscribed = custom_subscribed
-    else:
-        config_push_subscribed = ["render_secrets"]
-        if PLUGIN_CFG.get("config_push_subscribed"):
-            config_push_subscribed = PLUGIN_CFG["config_push_subscribed"]
+    config_push_subscribed = [func.__name__ for func in default_config_push_callables]
+    if PLUGIN_CFG.get("config_push_subscribed"):
+        config_push_subscribed = PLUGIN_CFG["config_push_subscribed"]
 
     for func_name in config_push_subscribed:
         try:

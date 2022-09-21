@@ -13,6 +13,8 @@ from nautobot.users.models import ObjectPermission
 
 from nautobot_golden_config.utilities.helper import get_secret_by_secret_group_slug, render_secrets, get_config_to_push
 from nautobot_golden_config.models import GoldenConfig
+from nautobot_golden_config.utilities.constant import PLUGIN_CFG
+
 from .conftest import create_device
 
 
@@ -124,10 +126,11 @@ class GetSecretFilterTestCase(TestCase):
 
     def test_config_to_push_with_wrong_function_name(self):
         """Test that config_to_push when called with an unexistent function name, raises ValueError exception."""
+        PLUGIN_CFG["config_push_subscribed"] = ["whatever"]
         self.configs.intended_config = "something"
+
         with self.assertRaises(ValueError):
             get_config_to_push(
                 self.configs,
                 mock.Mock(),
-                ["whatever"],
             )

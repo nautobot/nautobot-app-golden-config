@@ -21,14 +21,14 @@ In the UI `Device` detail view, and in the API endpoint `config-to-push`, you ca
 
 In the Golden Plugin configuration, you have two options to modify the behavior of the `get_config_to_push`:
 
-- `config_push_callable`: is a list of methods that could be chained, in a specific order, to modify the intended configuration. Check the development guide to know how to create new methods.
-- `config_push_subscribed`: is a list of methods names (strings) that define their order in the processing chain. It could reference to your custom callables included in `config_push_callable`, or the default ones available (see next section). This will become the default in your environment, but could be overwritten if needed.
+- `config_push_callable`: is a list of methods that could be chained, in a specific order, to modify the intended configuration.
+- `config_push_subscribed`: is a list of methods names (strings) that define their order in the processing chain. It could reference to your custom callables included in `config_push_callable`, or the default ones available (see next section). 
 
 ## Existing functions to transform intended configuration
 
 Current available methods:
 
-- **render_secrets**: enables rendering secrets from its `Secrets Group` slug. You need permissions to access these secrets.
+- **render_secrets**: enables rendering secrets from its `Secrets Group` slug. You need read permissions to Secrets Groups, Golden Config and the Device object.
 
 ### Render Secrets
 
@@ -36,14 +36,16 @@ The `render_secrets` function does an extra render of the original intended conf
 
 - `get_secret_by_secret_group_slug`
 
-> Other default Django or Netutils filters are not available in this Jinja environment. Only `encrypt_type5` and `encrypt_type7` can be used together with the `get_secret` filters.
+!!! note 
+    Other default Django or Netutils filters are not available in this Jinja environment. Only `encrypt_type5` and `encrypt_type7` can be used together with the `get_secret` filters.
 
 Because this render happens not in the first one to generate the intended configuration, but on a second one, you must use the `{% raw %}` Jinja syntax to avoid being processed on the first one.
 
 1. For example, an original template like this, `{% raw %}ppp pap sent-username {{ secrets_group["slug"] | get_secret_by_secret_group_slug("username")}}{% endraw %}`
 2. Produces an intended configuration as `ppp pap sent-username {{ secrets_group["slug"] | get_secret_by_secret_group_slug("username") }}`
-3. After the `render_secrets`, it will become `ppp pap sent-username my_username`.
+3. After the `render_secrets`, it becomes `ppp pap sent-username my_username`.
 
-Notice that the `get_secret` filters takes arguments. In the example, the `Secret_group` slug is passed, together with the type of the `Secret`. Check every signature for more customization.
+Notice that the `get_secret` filters take arguments. In the example, the `Secret_group` slug is passed, together with the type of the `Secret`. Check every signature for extra customization.
 
-> Remember that to render these secrets, the user requesting it via UI or API should have read permission to these secret groups.
+!!! note 
+    Remember that to render these secrets, the user requesting it via UI or API should have read permissions to Secrets Groups, Golden Config and Device object.

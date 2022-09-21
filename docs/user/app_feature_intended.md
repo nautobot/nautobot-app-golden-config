@@ -44,7 +44,7 @@ Nautobot documents using the `@django_jinja.library.filter` decorator to registe
 There are several alternative ways to have functions registered as filters in the `django_jinja` environment; below demonstrates defining decorated functions in a separate file, and then importing them in the `nautobot_config.py` file. This method requires that the file is in a path that is available to Nautobot's python environment.
 
 !!! note
-`django_jinja` documents adding filters in the `TEMPLATES` config section; since Nautobot sets the `TEMPLATES` config section and does not document this in optional settings, it is recommended to only use the `@django_jinja.library.filter` decorator.
+    `django_jinja` documents adding filters in the `TEMPLATES` config section; since Nautobot sets the `TEMPLATES` config section and does not document this in optional settings, it is recommended to only use the `@django_jinja.library.filter` decorator.
 
 #### custom_jinja_filters/config_templates.py
 
@@ -96,7 +96,7 @@ In order to generate the intended configurations at least two repositories are n
 ### Intended Repository Matching Rule
 
 !!! note
-Only use a Intended Repository Matching Rule if you have **more than one** intended repository. It is \*\*not needed"" if you only have one repository. The operator is expected to ensure that every device results in a successful matching rule (or that device will fail to render a config).
+    Only use a Intended Repository Matching Rule if you have **more than one** intended repository. It is **not needed** if you only have one repository. The operator is expected to ensure that every device results in a successful matching rule (or that device will fail to render a config).
 
 The `intended_match_rule` setting allows you to match a given `Device` Django ORM object to a backup Git repository. This field should contain a Jinja2-formatted template. The plugin populates the variables in the Jinja2 template via the GraphQL query configured on the plugin.
 

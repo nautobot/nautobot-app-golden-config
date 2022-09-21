@@ -1,8 +1,9 @@
 # Configuration to Push
 
-> NOTE: current implementation **only renders the configuration to push, it doesn't actually update the configuration** in the target devices.
+!!! note 
+    current implementation **only renders the configuration to push, it doesn't actually update the configuration** in the target devices.
 
-The Intended Configuration Job doesn't produce a final configuration artifact ready to use to update a network device. You should understand it as the "intended" running configuration, because the intended configuration attempts to generate what is in the final running configuration and not the steps to what it takes to get to that running configuration.
+The Intended Configuration Job doesn't produce a final configuration artifact ready to use to update a network device. You should understand it as the "intended" **running** configuration, because the intended configuration job attempts to generate what is in the final running configuration, and not the configuration artifact that generates the running configuration.
 
 Aside of enabling the "compliance" feature, there are some other limitations on the intended configuration:
 

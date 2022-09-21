@@ -1,7 +1,7 @@
 """Helper functions."""
 # pylint: disable=raise-missing-from
 from functools import partial
-from typing import Optional
+from typing import Optional, List
 import jinja2
 from jinja2 import exceptions as jinja_errors
 
@@ -153,6 +153,20 @@ def get_device_to_settings_map(queryset):
     return device_to_settings_map
 
 
+def validate_permissions(user: User, permission_groups: List[str]) -> bool:
+    """Validate User membership to a list of permission_groups."""
+    # Bypass restriction for superusers and exempt views
+    if user.is_superuser or all(permission_is_exempt(permission_group) for permission_group in permission_groups):
+        pass
+    # User is anonymous or has not been granted the requisite permission
+    elif not user.is_authenticated or any(
+        permission_group not in user.get_all_permissions() for permission_group in permission_groups
+    ):
+        return False
+
+    return True
+
+
 def get_secret_by_secret_group_slug(
     user: User,
     secrets_group_slug: str,
@@ -174,16 +188,9 @@ def get_secret_by_secret_group_slug(
     """
     permission_groups = [
         "extras.view_secretsgroup",
-        "nautobot_golden_config.view_goldenconfig",
     ]
 
-    # Bypass restriction for superusers and exempt views
-    if user.is_superuser or all(permission_is_exempt(permission_group) for permission_group in permission_groups):
-        pass
-    # User is anonymous or has not been granted the requisite permission
-    elif not user.is_authenticated or any(
-        permission_group not in user.get_all_permissions() for permission_group in permission_groups
-    ):
+    if not validate_permissions(user, permission_groups):
         return f"You have no permission to read this secret {secrets_group_slug}."
 
     secrets_group = SecretsGroup.objects.get(slug=secrets_group_slug)

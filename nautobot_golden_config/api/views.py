@@ -16,7 +16,7 @@ from nautobot_golden_config.api import serializers
 from nautobot_golden_config import models
 from nautobot_golden_config import filters
 from nautobot_golden_config.utilities.graphql import graph_ql_query
-from nautobot_golden_config.utilities.helper import get_device_to_settings_map
+from nautobot_golden_config.utilities.helper import get_device_to_settings_map, validate_permissions
 
 
 class GoldenConfigRootView(APIRootView):
@@ -97,10 +97,23 @@ class ConfigReplaceViewSet(CustomFieldModelViewSet):  # pylint:disable=too-many-
     filterset_class = filters.ConfigReplaceFilterSet
 
 
+class ConfigPushPermissions(IsAuthenticated):
+    """Permissions class to validate access to Devices and GoldenConfig view."""
+
+    def has_permission(self, request, view):
+        """Method to validated permissions to API view."""
+        permission_groups = [
+            "dcim.view_device",
+            "nautobot_golden_config.view_goldenconfffig",
+        ]
+
+        return validate_permissions(request.user, permission_groups)
+
+
 class ConfigToPushViewSet(ReadOnlyModelViewSet):  # pylint:disable=too-many-ancestors
     """Detail REST API view showing configuration to push to appliances."""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [ConfigPushPermissions]
     queryset = Device.objects.all()
     model = Device
     serializer_class = serializers.ConfigToPushSerializer

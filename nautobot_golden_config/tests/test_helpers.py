@@ -58,7 +58,6 @@ class GetSecretFilterTestCase(TestCase):
         self.permission.object_types.set(
             [
                 ContentType.objects.get(app_label="extras", model="secretsgroup"),
-                ContentType.objects.get(app_label="nautobot_golden_config", model="goldenconfig"),
             ]
         )
         self.permission.validated_save()

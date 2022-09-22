@@ -9,7 +9,7 @@ from nautobot.dcim.api.serializers import DeviceSerializer
 from nautobot.dcim.models import Device
 
 from nautobot_golden_config import models
-from nautobot_golden_config.utilities.helper import get_config_to_push
+from nautobot_golden_config.utilities.config_to_push import get_config_to_push
 
 
 class GraphQLSerializer(serializers.Serializer):  # pylint: disable=abstract-method
@@ -139,7 +139,6 @@ class ConfigToPushSerializer(DeviceSerializer):
     class Meta(DeviceSerializer):
         """Extend the Device serializer with the configuration to push."""
 
-        # With this configuration, the whole device serializer is returned
         fields = DeviceSerializer.Meta.fields + ["config"]
         model = Device
 

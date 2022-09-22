@@ -29,7 +29,8 @@ from nautobot.utilities.views import ContentTypePermissionRequiredMixin
 from nautobot_golden_config import filters, forms, models, tables
 from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_COMPLIANCE, PLUGIN_CFG
 from nautobot_golden_config.utilities.graphql import graph_ql_query
-from nautobot_golden_config.utilities.helper import get_device_to_settings_map, get_config_to_push
+from nautobot_golden_config.utilities.helper import get_device_to_settings_map
+from nautobot_golden_config.utilities.config_to_push import get_config_to_push
 
 LOGGER = logging.getLogger(__name__)
 

@@ -8,9 +8,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, BasePermission
 from rest_framework import mixins, viewsets
 
 from nautobot.extras.api.views import CustomFieldModelViewSet
-
 from nautobot.dcim.models import Device
-from nautobot.dcim.filters import DeviceFilterSet
+
 
 from nautobot_golden_config.api import serializers
 from nautobot_golden_config import models
@@ -109,11 +108,9 @@ class ConfigPushPermissions(BasePermission):
         return request.user.has_perm("dcim.view_device", obj=obj)
 
 
-class ConfigToPushViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):  # pylint:disable=too-many-ancestors
+class ConfigToPushViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     """Detail REST API view showing configuration to push to appliances."""
 
     permission_classes = [IsAuthenticated & ConfigPushPermissions]
     queryset = Device.objects.all()
-    model = Device
     serializer_class = serializers.ConfigToPushSerializer
-    filterset_class = DeviceFilterSet

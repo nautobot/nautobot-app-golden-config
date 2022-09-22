@@ -1,9 +1,13 @@
 """Nautobot Golden Config Exceptions."""
 
 
-class MissingReference(Exception):
+class GoldenConfigError(Exception):
+    """Parent Exception class for all the Golden Config custom errors."""
+
+
+class MissingReference(GoldenConfigError):
     """Custom error to signal a missing FK reference when looking up."""
 
 
-class RenderConfigToPushError(Exception):
+class RenderConfigToPushError(GoldenConfigError):
     """Exception related to Render Configuration to Push operations."""

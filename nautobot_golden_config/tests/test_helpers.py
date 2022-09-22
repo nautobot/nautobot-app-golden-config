@@ -11,7 +11,11 @@ from nautobot.extras.models import SecretsGroup, Secret, SecretsGroupAssociation
 from nautobot.extras.choices import SecretsGroupAccessTypeChoices, SecretsGroupSecretTypeChoices
 from nautobot.users.models import ObjectPermission
 
-from nautobot_golden_config.utilities.helper import get_secret_by_secret_group_slug, render_secrets, get_config_to_push
+from nautobot_golden_config.utilities.config_to_push import (
+    get_secret_by_secret_group_slug,
+    render_secrets,
+    get_config_to_push,
+)
 from nautobot_golden_config.models import GoldenConfig
 from nautobot_golden_config.utilities.constant import PLUGIN_CFG
 
@@ -97,7 +101,7 @@ class GetSecretFilterTestCase(TestCase):
 
     @mock.patch.dict(os.environ, {"NAUTOBOT_TEST_ENVIRONMENT_VARIABLE": "supersecretvalue"})
     @mock.patch(
-        "nautobot_golden_config.utilities.helper._get_device_agg_data",
+        "nautobot_golden_config.utilities.config_to_push._get_device_agg_data",
         mock.MagicMock(return_value={"group_slug": "secrets-group-1"}),
     )
     def test_get_secret_end_to_end(self):

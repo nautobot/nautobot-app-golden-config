@@ -4,7 +4,7 @@ import json
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.routers import APIRootView
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, BasePermission
 from rest_framework import mixins, viewsets
 
 from nautobot.extras.api.views import CustomFieldModelViewSet
@@ -97,7 +97,7 @@ class ConfigReplaceViewSet(CustomFieldModelViewSet):  # pylint:disable=too-many-
     filterset_class = filters.ConfigReplaceFilterSet
 
 
-class ConfigPushPermissions(IsAuthenticated):
+class ConfigPushPermissions(BasePermission):
     """Permissions class to validate access to Devices and GoldenConfig view."""
 
     def has_permission(self, request, view):
@@ -112,7 +112,7 @@ class ConfigPushPermissions(IsAuthenticated):
 class ConfigToPushViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):  # pylint:disable=too-many-ancestors
     """Detail REST API view showing configuration to push to appliances."""
 
-    permission_classes = [ConfigPushPermissions]
+    permission_classes = [IsAuthenticated & ConfigPushPermissions]
     queryset = Device.objects.all()
     model = Device
     serializer_class = serializers.ConfigToPushSerializer

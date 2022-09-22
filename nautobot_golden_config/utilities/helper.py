@@ -19,9 +19,9 @@ from nornir_nautobot.exceptions import NornirNautobotException
 from netutils.utils import jinja2_convenience_function
 
 from nautobot_golden_config import models
-from nautobot_golden_config.utilities.constant import PLUGIN_CFG
+from nautobot_golden_config.utilities.constant import PLUGIN_CFG, ENABLE_PUSH
 from nautobot_golden_config.utilities.graphql import graph_ql_query
-from nautobot_golden_config.utilities.constant import ENABLE_PUSH
+from nautobot_golden_config.exceptions import RenderConfigToPushError
 
 FIELDS = {
     "platform",
@@ -192,10 +192,6 @@ def _get_device_agg_data(device, request):
     return device_data
 
 
-class RenderConfigToPushError(Exception):
-    """Exception related to Render Configuration to Push operations."""
-
-
 def render_secrets(config_to_push: str, configs: models.GoldenConfig, request: HttpRequest) -> str:
     """Renders secrets using the get_secrets filter.
 
@@ -278,7 +274,7 @@ def get_config_to_push(configs: models.GoldenConfig, request: HttpRequest) -> st
     config_push_callable = PLUGIN_CFG.get("config_push_callable", default_config_push_callables)
 
     # Actual callable subscribed to post processing the intended configuration
-    config_push_subscribed = [func.__name__ for func in default_config_push_callables]
+    config_push_subscribed = [func.__name__ for func in config_push_callable]
     if PLUGIN_CFG.get("config_push_subscribed"):
         config_push_subscribed = PLUGIN_CFG["config_push_subscribed"]
 

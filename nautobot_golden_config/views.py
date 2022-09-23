@@ -12,7 +12,15 @@ import numpy as np
 import yaml
 from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Count, ExpressionWrapper, F, FloatField, Max, ProtectedError, Q
+from django.db.models import (
+    Count,
+    ExpressionWrapper,
+    F,
+    FloatField,
+    Max,
+    ProtectedError,
+    Q,
+)
 from django.forms import ModelMultipleChoiceField, MultipleHiddenInput
 from django.shortcuts import redirect, render
 from django_pivot.pivot import pivot
@@ -27,7 +35,11 @@ from nautobot.utilities.utils import csv_format
 from nautobot.utilities.views import ContentTypePermissionRequiredMixin
 
 from nautobot_golden_config import filters, forms, models, tables
-from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_COMPLIANCE, PLUGIN_CFG
+from nautobot_golden_config.utilities.constant import (
+    CONFIG_FEATURES,
+    ENABLE_COMPLIANCE,
+    PLUGIN_CFG,
+)
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import get_device_to_settings_map
 
@@ -264,13 +276,15 @@ class ConfigComplianceBulkDeleteView(generic.BulkDeleteView):
                 pk_list = [obj.pk for obj in self.filterset(request.GET, model.objects.only("pk")).qs]
             else:
                 pk_list = model.objects.values_list("pk", flat=True)
+            # When selecting *all* the resulting request args are ConfigCompliance object PKs
+            obj_to_del = [item[0] for item in self.queryset.filter(pk__in=pk_list).values_list("id")]
         else:
             pk_list = request.POST.getlist("pk")
+            # When selecting individual rows the resulting request args are Device object PKs
+            obj_to_del = [item[0] for item in self.queryset.filter(device__pk__in=pk_list).values_list("id")]
 
         form_cls = self.get_form()
 
-        # The difference between nautobot core is the creation and usage of obj_to_del
-        obj_to_del = [item[0] for item in self.queryset.filter(device__pk__in=pk_list).values_list("id")]
         if "_confirm" in request.POST:
             form = form_cls(request.POST)
             if form.is_valid():

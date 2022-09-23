@@ -1,4 +1,4 @@
-"""Functions related to prepare configuration to push."""
+"""Functions related to prepare configuration with postprocessing."""
 from functools import partial
 from typing import Optional
 import jinja2
@@ -15,7 +15,7 @@ from nautobot.extras.choices import SecretsGroupAccessTypeChoices
 from netutils.utils import jinja2_convenience_function
 
 from nautobot_golden_config import models
-from nautobot_golden_config.utilities.constant import PLUGIN_CFG, ENABLE_PUSH
+from nautobot_golden_config.utilities.constant import PLUGIN_CFG, ENABLE_CONFIG_POSTPROCESSING
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.exceptions import RenderConfigToPushError
 from nautobot_golden_config.utilities.helper import get_device_to_settings_map
@@ -61,7 +61,7 @@ def _get_device_agg_data(device, request):
     return device_data
 
 
-def render_secrets(config_to_push: str, configs: models.GoldenConfig, request: HttpRequest) -> str:
+def render_secrets(config_postprocessing: str, configs: models.GoldenConfig, request: HttpRequest) -> str:
     """Renders secrets using the get_secrets filter.
 
     This method is defined to render an already rendered intended configuration, but which have used the Jinja
@@ -77,7 +77,7 @@ def render_secrets(config_to_push: str, configs: models.GoldenConfig, request: H
         str : Return a string, with the rendered intended configuration with secrets, or an error message.
 
     """
-    if not config_to_push:
+    if not config_postprocessing:
         return ""
 
     jinja_env = jinja2.Environment(autoescape=True)
@@ -93,7 +93,7 @@ def render_secrets(config_to_push: str, configs: models.GoldenConfig, request: H
     jinja_env.filters["get_secret_by_secret_group_slug"] = partial(get_secret_by_secret_group_slug, request.user)
 
     try:
-        template = jinja_env.from_string(config_to_push)
+        template = jinja_env.from_string(config_postprocessing)
     except jinja_errors.TemplateAssertionError as error:
         return f"Jinja encountered an TemplateAssertionError: '{error}'; check the template for correctness"
 
@@ -117,46 +117,50 @@ def render_secrets(config_to_push: str, configs: models.GoldenConfig, request: H
         ) from error
 
 
-def get_config_to_push(configs: models.GoldenConfig, request: HttpRequest) -> str:
-    """Renders final configuration push artifact from intended configuration.
+def get_config_postprocessing(configs: models.GoldenConfig, request: HttpRequest) -> str:
+    """Renders final configuration  artifact from intended configuration.
 
     It chains multiple callables to transform an intended configuration into a configuration that can be pushed.
     Each callable should match the following signature:
-    `my_callable_function(config_to_push: str, configs: models.GoldenConfig, request: HttpRequest)`
+    `my_callable_function(config_postprocessing: str, configs: models.GoldenConfig, request: HttpRequest)`
 
     Args:
         configs (models.GoldenConfig): Golden Config object per device, to retrieve device info, and related configs.
         request (HttpRequest): HTTP request for context.
     """
-    if not ENABLE_PUSH:
-        return "Generation of intended configurations to push it is not enabled, check your plugin configuration."
-
-    config_to_push = configs.intended_config
-    if not config_to_push:
+    if not ENABLE_CONFIG_POSTPROCESSING:
         return (
-            "No intended configuration is available. Before rendering the configuration to push, "
+            "Generation of intended configurations postprocessing it is not enabled, check your plugin configuration."
+        )
+
+    config_postprocessing = configs.intended_config
+    if not config_postprocessing:
+        return (
+            "No intended configuration is available. Before rendering the configuration with postprocessing, "
             "you need to generate the intended configuration."
         )
 
-    # Available functions to create the final intended configuration to push
-    default_config_push_callables = [render_secrets]
-    config_push_callable = PLUGIN_CFG.get("config_push_callable", default_config_push_callables)
+    # Available functions to create the final intended configuration
+    default_config_postprocessing_callables = [render_secrets]
+    config_postprocessing_callable = PLUGIN_CFG.get(
+        "config_postprocessing_callable", default_config_postprocessing_callables
+    )
 
     # Subscribed callables to post-process the intended configuration
-    config_push_subscribed = [func.__name__ for func in config_push_callable]
-    if PLUGIN_CFG.get("config_push_subscribed"):
-        config_push_subscribed = PLUGIN_CFG["config_push_subscribed"]
+    config_postprocessing_subscribed = [func.__name__ for func in config_postprocessing_callable]
+    if PLUGIN_CFG.get("config_postprocessing_subscribed"):
+        config_postprocessing_subscribed = PLUGIN_CFG["config_postprocessing_subscribed"]
 
-    for func_name in config_push_subscribed:
+    for func_name in config_postprocessing_subscribed:
         try:
-            func = [x for x in config_push_callable if x.__name__ == func_name][0]
+            func = [x for x in config_postprocessing_callable if x.__name__ == func_name][0]
         except IndexError:
             raise ValueError(
-                f"{func_name} is not included in the available callables: {[x.__name__ for x in config_push_callable]}"
+                f"{func_name} is not included in the available callables: {[x.__name__ for x in config_postprocessing_callable]}"
             ) from IndexError
         try:
-            config_to_push = func(config_to_push, configs, request)
+            config_postprocessing = func(config_postprocessing, configs, request)
         except RenderConfigToPushError as error:
             return f"Found an error rendering the configuration to push: {error}"
 
-    return config_to_push
+    return config_postprocessing

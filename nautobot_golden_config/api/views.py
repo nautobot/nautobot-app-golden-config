@@ -109,7 +109,7 @@ class ConfigPushPermissions(BasePermission):
 
 
 class ConfigToPushViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
-    """Detail REST API view showing configuration to push to appliances."""
+    """Detail REST API view showing configuration after postprocessing."""
 
     permission_classes = [IsAuthenticated & ConfigPushPermissions]
     queryset = Device.objects.all()

@@ -46,10 +46,10 @@ ALL_ACTIONS = """
         {% endif %}
     {% endif %}
 {% endif %}
-{% if push == True %}
+{% if config_postprocessing == True %}
     {% if record.intended_config %}
-        <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='config_to_push' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='config_to_push' %}?modal=true">
-            <i class="mdi mdi-text-box-check" title="Configuration to Push"></i>
+        <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='config_postprocessing' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='config_postprocessing' %}?modal=true">
+            <i class="mdi mdi-text-box-check" title="Configuration after Postprocessing"></i>
         </a>
     {% else %}
         <i class="mdi mdi-circle-small"></i>

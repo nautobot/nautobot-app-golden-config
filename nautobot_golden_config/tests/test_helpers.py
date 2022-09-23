@@ -11,10 +11,10 @@ from nautobot.extras.models import SecretsGroup, Secret, SecretsGroupAssociation
 from nautobot.extras.choices import SecretsGroupAccessTypeChoices, SecretsGroupSecretTypeChoices
 from nautobot.users.models import ObjectPermission
 
-from nautobot_golden_config.utilities.config_to_push import (
+from nautobot_golden_config.utilities.config_postprocessing import (
     get_secret_by_secret_group_slug,
     render_secrets,
-    get_config_to_push,
+    get_config_postprocessing,
 )
 from nautobot_golden_config.models import GoldenConfig
 from nautobot_golden_config.utilities.constant import PLUGIN_CFG
@@ -101,7 +101,7 @@ class GetSecretFilterTestCase(TestCase):
 
     @mock.patch.dict(os.environ, {"NAUTOBOT_TEST_ENVIRONMENT_VARIABLE": "supersecretvalue"})
     @mock.patch(
-        "nautobot_golden_config.utilities.config_to_push._get_device_agg_data",
+        "nautobot_golden_config.utilities.config_postprocessing._get_device_agg_data",
         mock.MagicMock(return_value={"group_slug": "secrets-group-1"}),
     )
     def test_get_secret_end_to_end(self):
@@ -127,13 +127,13 @@ class GetSecretFilterTestCase(TestCase):
             "supersecretvalue",
         )
 
-    def test_config_to_push_with_wrong_function_name(self):
-        """Test that config_to_push when called with an unexistent function name, raises ValueError exception."""
-        PLUGIN_CFG["config_push_subscribed"] = ["whatever"]
+    def test_config_postprocessing_with_wrong_function_name(self):
+        """Test that config_postprocessing when called with an unexistent function name, raises ValueError exception."""
+        PLUGIN_CFG["config_postprocessing_subscribed"] = ["whatever"]
         self.configs.intended_config = "something"
 
         with self.assertRaises(ValueError):
-            get_config_to_push(
+            get_config_postprocessing(
                 self.configs,
                 mock.Mock(),
             )

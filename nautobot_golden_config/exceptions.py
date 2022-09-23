@@ -10,4 +10,4 @@ class MissingReference(GoldenConfigError):
 
 
 class RenderConfigToPushError(GoldenConfigError):
-    """Exception related to Render Configuration to Push operations."""
+    """Exception related to Render Configuration Postprocessing operations."""

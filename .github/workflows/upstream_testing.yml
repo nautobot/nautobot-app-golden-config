@@ -8,7 +8,7 @@ on: # yamllint disable-line rule:truthy rule:comments
 
 jobs:
   upstream-test:
-    uses: nautobot/nautobot/.github/workflows/upstream-base.yml@2023-app-ecosystem-ci-testing-against-core  # TODO: Update to core base once available
+    uses: nautobot/nautobot/.github/workflows/plugin_upstream_testing_base.yml@2023-app-ecosystem-ci-testing-against-core  # TODO: Update to core base once available
     with:  # Below could potentially be collapsed into a single argument if a concrete relationship between both is enforced
       invoke_context_name: "NAUTOBOT_GOLDEN_CONFIG"
       plugin_name: "nautobot-plugin-golden-config"

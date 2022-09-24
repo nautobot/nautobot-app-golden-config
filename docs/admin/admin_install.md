@@ -65,7 +65,7 @@ The following block of code below shows the additional configuration required to
 The plugin behavior can be controlled with the following list of settings.
 
 !!! note
-The `enable_backup`, `enable_compliance`, `enable_intended`, `enable_sotagg` and `enable_config_postprocessing` will toggle inclusion of the entire component.
+    The `enable_backup`, `enable_compliance`, `enable_intended`, `enable_sotagg` and `enable_config_postprocessing` will toggle inclusion of the entire component.
 
 | Key                          | Example                       | Default | Description                                                                                                                                              |
 | ---------------------------- | ----------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -81,10 +81,10 @@ The `enable_backup`, `enable_compliance`, `enable_intended`, `enable_sotagg` and
 | per_feature_height           | 4                             | 4       | The height in inches that the overview table can be.                                                                                                     |
 
 !!! note
-Over time the compliance report will become more dynamic, but for now allow users to configure the `per_*` configs in a way that fits best for them.
+    Over time the compliance report will become more dynamic, but for now allow users to configure the `per_*` configs in a way that fits best for them.
 
 !!! note
-Review [`nautobot_plugin_nornir`](https://pypi.org/project/nautobot-plugin-nornir/) for Nornir and dispatcher configuration options.
+    Review [`nautobot_plugin_nornir`](https://pypi.org/project/nautobot-plugin-nornir/) for Nornir and dispatcher configuration options.
 
 ## Deprecation Policy
 

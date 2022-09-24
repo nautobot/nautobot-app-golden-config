@@ -1,7 +1,7 @@
 # Configuration Postprocessing
 
 !!! note
-current implementation **only renders the configuration to push, it doesn't update the configuration** into the target devices.
+    current implementation **only renders the configuration to push, it doesn't update the configuration** into the target devices.
 
 The intended configuration job doesn't produce a final configuration artifact(see below for reasons why). Actually, you should understand it as the "intended" **running** configuration, because the intended configuration job generates what is in the final running configuration. This works well for the "compliance" feature, but not to create a configuration artifact that is ready to push.
 
@@ -40,7 +40,7 @@ The `render_secrets` function performs an extra Jinja rendering on top of an int
 - `get_secret_by_secret_group_slug`: as the name suggests, it returns the secret_group value, for a secret type, from its `slug`.
 
 !!! note
-Other default Django or Netutils filters are not available in this Jinja environment. Only `encrypt_type5` and `encrypt_type7` can be used together with the `get_secret` filters.
+    Other default Django or Netutils filters are not available in this Jinja environment. Only `encrypt_type5` and `encrypt_type7` can be used together with the `get_secret` filters.
 
 Because this rendering is separated from the standard generation of the intended configuration, you must use the `{% raw %}` Jinja syntax to avoid being processed by the initial generation stage.
 
@@ -51,7 +51,7 @@ Because this rendering is separated from the standard generation of the intended
 Notice that the `get_secret` filters take arguments. In the example, the `Secret_group` slug is passed, together with the type of the `Secret`. Check every signature for extra customization.
 
 !!! note
-Remember that to render these secrets, the user requesting it via UI or API, MUST have read permissions to Secrets Groups, Golden Config, and the specific Device object.
+    Remember that to render these secrets, the user requesting it via UI or API, MUST have read permissions to Secrets Groups, Golden Config, and the specific Device object.
 
 #### Render Secrets Example
 

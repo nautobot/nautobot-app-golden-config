@@ -12,15 +12,7 @@ import numpy as np
 import yaml
 from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import (
-    Count,
-    ExpressionWrapper,
-    F,
-    FloatField,
-    Max,
-    ProtectedError,
-    Q,
-)
+from django.db.models import Count, ExpressionWrapper, F, FloatField, Max, ProtectedError, Q
 from django.forms import ModelMultipleChoiceField, MultipleHiddenInput
 from django.shortcuts import redirect, render
 from django_pivot.pivot import pivot
@@ -35,11 +27,7 @@ from nautobot.utilities.utils import csv_format
 from nautobot.utilities.views import ContentTypePermissionRequiredMixin
 
 from nautobot_golden_config import filters, forms, models, tables
-from nautobot_golden_config.utilities.constant import (
-    CONFIG_FEATURES,
-    ENABLE_COMPLIANCE,
-    PLUGIN_CFG,
-)
+from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_COMPLIANCE, PLUGIN_CFG
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import get_device_to_settings_map
 

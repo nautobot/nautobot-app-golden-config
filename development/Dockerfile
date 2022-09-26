@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------------------
-# Nautobot Plugin Developement Dockerfile Template
+# Nautobot Plugin Development Dockerfile Template
 # Version: 0.0.1
 #
 # Plugins that need to add additional steps or packages can do in the section below.
@@ -33,7 +33,7 @@ RUN poetry config virtualenvs.create false \
 # -------------------------------------------------------------------------------------
 # --> Start safe to modify section
 
-# Uncomment the line below if you are apt-installing any package. Extra step if no packages requries.
+# Uncomment the line below if you are apt-installing any package.
 # RUN apt update
 # RUN apt install libldap2-dev
 

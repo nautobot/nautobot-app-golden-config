@@ -3,15 +3,17 @@
 !!! note
     current implementation **only renders the configuration to push, it doesn't update the configuration** into the target devices.
 
-The intended configuration job doesn't produce a final configuration artifact(see below for reasons why). Actually, you should understand it as the "intended" **running** configuration, because the intended configuration job generates what is in the final running configuration. This works well for the "compliance" feature, but not to create a configuration artifact that is ready to push.
+The intended configuration job doesn't produce a final configuration artifact (see below for reasons why). The intended configuration is the "intended" **running** configuration, because the intended configuration job generates what is in the final running configuration. This works well for the "compliance" feature, but not as well to create a configuration artifact that is ready to push.
 
-Limitations of the intended configuration feature:
+Challenging use cases when using the running configuration as intended :
 
-- Because the intended configuration is stored in the database, and in an external Git repository, it SHOULD NOT contain any secret (or derivative).
+- Because the intended configuration is stored in the database, and in an external Git repository, it should **not** contain any secret.
 - The format of the running configuration is not always the same as the configuration to push, examples include:
-  - Pushing snmpv3 configurations
-  - VTP configurations
+  - Pushing snmpv3 configurations, which do not show up in the running config
+  - VTP configurations where the configurations is not in the running config at all
   - Implicit configurations like a "no shutdown" on an interface
+- The configurations used to get the configuration to the intended state may require to be ordered to not cause an outage.
+
 
 As the Golden Config application becomes more mature in delivering an all encompassing configuration management solution, it requires an advanced feature to render a configuration artifact. That artifact must be in the final format your device is expecting, from the intended configuration.
 

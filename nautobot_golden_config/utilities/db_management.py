@@ -7,9 +7,10 @@ def close_threaded_db_connections(func):
 
     def inner(*args, **kwargs):
         """Inner function."""
-        func(*args, **kwargs)
+        try:
+            func(*args, **kwargs)
 
-        for c in connections.all():
-            c.connection.close()
+        finally:
+            connections.close_all()
 
     return inner

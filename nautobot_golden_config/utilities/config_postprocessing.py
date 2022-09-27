@@ -6,6 +6,7 @@ from jinja2 import exceptions as jinja_errors
 
 from django.http import HttpRequest
 from django.core.exceptions import ObjectDoesNotExist
+from django.utils.module_loading import import_string
 
 from nautobot.dcim.models import Device
 from nautobot.users.models import User
@@ -140,24 +141,34 @@ def get_config_postprocessing(configs: models.GoldenConfig, request: HttpRequest
             "you need to generate the intended configuration."
         )
 
-    # Available functions to create the final intended configuration
-    default_config_postprocessing_callables = [render_secrets]
-    config_postprocessing_callable = PLUGIN_CFG.get(
-        "config_postprocessing_callable", default_config_postprocessing_callables
+    # Available functions to create the final intended configuration, in string dotted format
+    # The order is important because, if not changed by the `config_postprocessing_subscribed`, is going
+    # to be used to process the intended configuration in this specific order
+    default_config_postprocessing_callables = [
+        "nautobot_golden_config.utilities.config_postprocessing.render_secrets",
+    ]
+    # The available methods can be extended by configuration settings from config_postprocessing_callables
+    config_postprocessing_callables = default_config_postprocessing_callables + PLUGIN_CFG.get(
+        "config_postprocessing_callables", []
     )
 
-    # Subscribed callables to post-process the intended configuration
-    config_postprocessing_subscribed = [func.__name__ for func in config_postprocessing_callable]
+    # Subscribed callables to post-process the intended configuration, in a specific order. With this option, you could
+    # skip some default callables, such as `render_secrets` if not desired.
+    # In the future, this could be taken from query parameters.
+    config_postprocessing_subscribed = config_postprocessing_callables
     if PLUGIN_CFG.get("config_postprocessing_subscribed"):
         config_postprocessing_subscribed = PLUGIN_CFG["config_postprocessing_subscribed"]
 
-    for func_name in config_postprocessing_subscribed:
-        try:
-            func = [x for x in config_postprocessing_callable if x.__name__ == func_name][0]
-        except IndexError:
+    for func_name_subscribed in config_postprocessing_subscribed:
+        if func_name_subscribed in config_postprocessing_callables:
+            try:
+                func = import_string(func_name_subscribed)
+            except ImportError as error:
+                raise ValueError(f"{func_name_subscribed} doesn't look a valid function. {error}") from error
+        else:
             raise ValueError(
-                f"{func_name} is not included in the available callables: {[x.__name__ for x in config_postprocessing_callable]}"
-            ) from IndexError
+                f"{func_name_subscribed} is not included in the available callables: {', '.join(config_postprocessing_callables)}"
+            )
         try:
             config_postprocessing = func(config_postprocessing, configs, request)
         except RenderConfigToPushError as error:

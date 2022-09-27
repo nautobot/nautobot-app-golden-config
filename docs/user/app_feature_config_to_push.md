@@ -30,8 +30,8 @@ From the user perspective, you can retrieve this configuration via two methods:
 
 There are two different ways to customize the default behavior of `get_config_postprocessing` method:
 
-- `config_postprocessing_callable`: is the list of **available methods** for processing the intended configuration. It contains some default implemented methods, currently `render_secrets`. But it could be extended via configuration options (see next section).
-- `config_postprocessing_subscribed`: is the list of **methods names** (strings) that define the **order** in the processing chain. The defined methods MUST exist in the `config_postprocessing_callable` list. This list can be customized via configuration options, and eventually, it could be extended to accept HTTP query parameters.
+- `config_postprocessing_callables`: is the list of **available methods** for processing the intended configuration. It contains some default implemented methods, currently `render_secrets`. But it could be extended via configuration options (see next section).
+- `config_postprocessing_subscribed`: is the list of **methods names** (strings) that define the **order** in the processing chain. The defined methods MUST exist in the `config_postprocessing_callables` list. This list can be customized via configuration options, and eventually, it could be extended to accept HTTP query parameters.
 
 ## Existing Default Processors
 

@@ -6,9 +6,13 @@
 - The plugin is compatible with Nautobot 1.4.0 and higher.
 - Databases supported: PostgreSQL, MySQL
 
+!!! note
+    Please check the [dedicated page](compatibility_matrix.md) for a full compatibility matrix and the deprecation policy.
+
 ## Install Guide
 
-Plugins can be installed manually or use Python's `pip`. See the [nautobot documentation](https://nautobot.readthedocs.io/en/latest/plugins/#install-the-package) for more details. The pip package name for this plugin is [`nautobot-golden-config`](https://pypi.org/project/nautobot-golden-config/).
+!!! note
+    Plugins can be installed manually or using Python's `pip`. See the [nautobot documentation](https://nautobot.readthedocs.io/en/latest/plugins/#install-the-package) for more details. The pip package name for this plugin is [`nautobot-golden-config`](https://pypi.org/project/nautobot-golden-config/).
 
 The plugin is available as a Python package via PyPI and can be installed with `pip`:
 
@@ -22,7 +26,10 @@ To ensure Nautobot Golden Config is automatically re-installed during future upg
 echo nautobot-golden-config >> local_requirements.txt
 ```
 
-Once installed, the plugin needs to be enabled in your `nautobot_config.py`
+Once installed, the plugin needs to be enabled in your Nautobot configuration. The following block of code below shows the additional configuration required to be added to your `nautobot_config.py` file:
+
+- Append `"nautobot_golden_config"` to the `PLUGINS` list, and `"nautobot_plugin_nornir"` if it was not already there (more info [here](https://github.com/nautobot/nautobot-plugin-nornir)).
+- Append the `"nautobot_golden_config"` dictionary to the `PLUGINS_CONFIG` dictionary, and `"nautobot_plugin_nornir"` if it was not already there.
 
 ```python
 PLUGINS = ["nautobot_plugin_nornir", "nautobot_golden_config"]
@@ -60,6 +67,22 @@ The following block of code below shows the additional configuration required to
 - append `"nautobot_golden_config"` to the `PLUGINS` list, and `"nautobot_plugin_nornir"` if it was not already there (more info [here](https://github.com/nautobot/nautobot-plugin-nornir)).
 - append the `"nautobot_golden_config"` dictionary to the `PLUGINS_CONFIG` dictionary, and `"nautobot_plugin_nornir"` if it was not already there.
 
+Once the Nautobot configuration is updated, run the Post Upgrade command (`nautobot-server post_upgrade`) to run migrations and clear any cache.
+
+```shell
+nautobot-server post_upgrade
+```
+
+Then restart the Nautobot services which may include:
+
+* Nautobot
+* Nautobot Workers
+* Nautobot Scheduler
+
+```shell
+sudo systemctl restart nautobot nautobot-worker nautobot-scheduler
+```
+
 ## App Configuration
 
 The plugin behavior can be controlled with the following list of settings.
@@ -85,15 +108,3 @@ The plugin behavior can be controlled with the following list of settings.
 
 !!! note
     Review [`nautobot_plugin_nornir`](https://pypi.org/project/nautobot-plugin-nornir/) for Nornir and dispatcher configuration options.
-
-## Deprecation Policy
-
-Support of upstream Nautobot will be announced 1 minor or major version ahead. Deprecation policy will be announced within the [release notes](../release_notes), and updated in the table below. There will be a `stable-<major>.<minor>` branch that will be minimally maintained, for any security enhancements or major bugs will be supported for a limited time. While that last supported version will not be strictly enforced--via the `max_version` setting, any issues with an updated Nautobot supported version in a minor release, will require a bug to be raised and a fix in Nautobot core to address, with no fixes expected in this plugin. This allows the Golden Config plugin the ability to quickly take advantage of the latest features.
-
-| Golden Config Version | Nautobot First Support Version | Nautobot Last Support Version |
-| --------------------- | ------------------------------ | ----------------------------- |
-| 0.9.X                 | 1.0.0                          | 1.2.99 [Official]             |
-| 0.10.X                | 1.0.0                          | 1.2.99 [Official]             |
-| 1.0.X                 | 1.2.0                          | 1.3.99 [Official]             |
-| 1.1.X                 | 1.2.0                          | 1.3.99 [Official]             |
-| 1.2.X                 | 1.4.0                          | 1.5.99 [Official]             |

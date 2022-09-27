@@ -15,7 +15,7 @@ from nautobot.extras.choices import SecretsGroupAccessTypeChoices
 from netutils.utils import jinja2_convenience_function
 
 from nautobot_golden_config import models
-from nautobot_golden_config.utilities.constant import PLUGIN_CFG, ENABLE_CONFIG_POSTPROCESSING
+from nautobot_golden_config.utilities.constant import PLUGIN_CFG, ENABLE_POSTPROCESSING
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.exceptions import RenderConfigToPushError
 from nautobot_golden_config.utilities.helper import get_device_to_settings_map
@@ -128,7 +128,7 @@ def get_config_postprocessing(configs: models.GoldenConfig, request: HttpRequest
         configs (models.GoldenConfig): Golden Config object per device, to retrieve device info, and related configs.
         request (HttpRequest): HTTP request for context.
     """
-    if not ENABLE_CONFIG_POSTPROCESSING:
+    if not ENABLE_POSTPROCESSING:
         return (
             "Generation of intended configurations postprocessing it is not enabled, check your plugin configuration."
         )

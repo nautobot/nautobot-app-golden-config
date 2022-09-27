@@ -46,9 +46,9 @@ ALL_ACTIONS = """
         {% endif %}
     {% endif %}
 {% endif %}
-{% if config_postprocessing == True %}
+{% if postprocessing == True %}
     {% if record.intended_config %}
-        <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='config_postprocessing' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='config_postprocessing' %}?modal=true">
+        <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='postprocessing' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='postprocessing' %}?modal=true">
             <i class="mdi mdi-text-box-check" title="Configuration after Postprocessing"></i>
         </a>
     {% else %}

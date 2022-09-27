@@ -422,7 +422,7 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
             output = config_details.backup_config
         elif config_type == "intended":
             output = config_details.intended_config
-        elif config_type == "config_postprocessing":
+        elif config_type == "postprocessing":
             output = get_config_postprocessing(config_details, request)
         # Compliance type is broken up into JSON(json_compliance) and CLI(compliance) compliance.
         elif "compliance" in config_type:

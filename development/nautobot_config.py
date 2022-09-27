@@ -169,7 +169,7 @@ PLUGINS_CONFIG = {
         "enable_intended": is_truthy(os.environ.get("ENABLE_INTENDED", True)),
         "enable_sotagg": is_truthy(os.environ.get("ENABLE_SOTAGG", True)),
         "sot_agg_transposer": os.environ.get("SOT_AGG_TRANSPOSER"),
-        "enable_config_postprocessing": is_truthy(os.environ.get("ENABLE_CONFIG_POSTPROCESSING", True)),
+        "enable_postprocessing": is_truthy(os.environ.get("ENABLE_POSTPROCESSING", True)),
         # The platform_slug_map maps an arbitrary platform slug to its corresponding parser.
         # Use this if the platform slug names in your Nautobot instance don't correspond exactly
         # to the Nornir driver names ("arista_eos", "cisco_ios", etc.).

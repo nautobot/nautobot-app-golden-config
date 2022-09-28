@@ -151,7 +151,7 @@ The files within these folders can follow any naming pattern or nested folder st
 │   ├── config_replaces
 │   │   ├── cisco_ios.yml
 │   │   └── juniper_junos.yml
-``
+````
 
 The `YAML` files will contain all the attributes necessary to identify an object (for instance, a `ComplianceRule` is identified by the `feature_slug` and the `platform_slug` together) and the other attributes (the ones that are not used to identify the object). For example:
 

@@ -17,6 +17,7 @@ from nornir_nautobot.utils.logger import NornirLogger
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 
+from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.models import ComplianceRule, ConfigCompliance, GoldenConfigSetting, GoldenConfig
 from nautobot_golden_config.utilities.helper import (
     get_device_to_settings_map,
@@ -53,6 +54,7 @@ def diff_files(backup_file, intended_file):
         yield line
 
 
+@close_threaded_db_connections
 def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     task: Task,
     logger,

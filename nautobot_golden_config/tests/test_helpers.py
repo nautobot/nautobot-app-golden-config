@@ -129,7 +129,7 @@ class GetSecretFilterTestCase(TestCase):
 
     def test_config_postprocessing_with_wrong_function_name(self):
         """Test that postprocessing when called with an unexistent function name, raises ValueError exception."""
-        PLUGIN_CFG["config_postprocessing_subscribed"] = ["whatever"]
+        PLUGIN_CFG["postprocessing_subscribed"] = ["whatever"]
         self.configs.intended_config = "something"
 
         with self.assertRaises(ValueError):

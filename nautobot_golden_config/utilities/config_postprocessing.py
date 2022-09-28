@@ -142,32 +142,35 @@ def get_config_postprocessing(configs: models.GoldenConfig, request: HttpRequest
         )
 
     # Available functions to create the final intended configuration, in string dotted format
-    # The order is important because, if not changed by the `config_postprocessing_subscribed`, is going
+    # The order is important because, if not changed by the `postprocessing_subscribed`, is going
     # to be used to process the intended configuration in this specific order
-    default_config_postprocessing_callables = [
+    default_postprocessing_callables = [
         "nautobot_golden_config.utilities.config_postprocessing.render_secrets",
     ]
-    # The available methods can be extended by configuration settings from config_postprocessing_callables
-    config_postprocessing_callables = default_config_postprocessing_callables + PLUGIN_CFG.get(
-        "config_postprocessing_callables", []
-    )
+    # The available methods can be extended by configuration settings from postprocessing_callables
+    postprocessing_callables = default_postprocessing_callables + PLUGIN_CFG.get("postprocessing_callables", [])
 
     # Subscribed callables to post-process the intended configuration, in a specific order. With this option, you could
     # skip some default callables, such as `render_secrets` if not desired.
     # In the future, this could be taken from query parameters.
-    config_postprocessing_subscribed = config_postprocessing_callables
-    if PLUGIN_CFG.get("config_postprocessing_subscribed"):
-        config_postprocessing_subscribed = PLUGIN_CFG["config_postprocessing_subscribed"]
+    postprocessing_subscribed = postprocessing_callables
+    if PLUGIN_CFG.get("postprocessing_subscribed"):
+        postprocessing_subscribed = PLUGIN_CFG["postprocessing_subscribed"]
 
-    for func_name_subscribed in config_postprocessing_subscribed:
-        if func_name_subscribed in config_postprocessing_callables:
+    for func_name_subscribed in postprocessing_subscribed:
+        if func_name_subscribed in postprocessing_callables:
             try:
                 func = import_string(func_name_subscribed)
             except ImportError as error:
-                raise ValueError(f"{func_name_subscribed} doesn't look a valid function. {error}") from error
+                msg = (
+                    "There was an issue attempting to import a `postprocessing_callables` function of "
+                    f"{func_name_subscribed}, this is expected with a local configuration issue and not related to"
+                    " the Golden Configuration Plugin, please contact your system admin for further details.\n"
+                )
+                raise ValueError(msg + str(error)) from error
         else:
             raise ValueError(
-                f"{func_name_subscribed} is not included in the available callables: {', '.join(config_postprocessing_callables)}"
+                f"{func_name_subscribed} is not included in the available callables: {', '.join(postprocessing_callables)}"
             )
         try:
             config_postprocessing = func(config_postprocessing, configs, request)

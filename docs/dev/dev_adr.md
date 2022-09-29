@@ -136,4 +136,4 @@ The API view, under the path `config-postprocessing`, uses custom permissions, n
 
 It was decided to restrict the usage of Jinja filters to only the ones related to getting Nautobot secrets values (defined here), plus the `encrypt_type5` and `encrypt_type7` from Netutils. Remember that this function is not defined to replace the regular Jinja rendering done for creating the Intended configuration, only to add secrets information on the fly. This avoids undesired behavior on this synchronous operation.
 
-This functions does an extra permission validation, to check if the requesting user has permissions to view the `SecretsGroup` requested.
+This function performs an additional permission validation, to check if the requesting user has permissions to view the `SecretsGroup` requested.

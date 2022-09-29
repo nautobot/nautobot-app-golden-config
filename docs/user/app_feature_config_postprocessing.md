@@ -1,4 +1,4 @@
-# Configuration Postprocessing
+# Navigating Configuration Post-processing
 
 !!! note
     current implementation **only renders the configuration to push, it doesn't update the configuration** into the target devices.
@@ -9,9 +9,9 @@ Challenging use cases when using the running configuration as intended :
 
 - Because the intended configuration is stored in the database, and in an external Git repository, it should **not** contain any secret.
 - The format of the running configuration is not always the same as the configuration to push, examples include:
-  - Pushing snmpv3 configurations, which do not show up in the running config
-  - VTP configurations where the configurations is not in the running config at all
-  - Implicit configurations like a "no shutdown" on an interface
+    - Pushing snmpv3 configurations, which do not show up in the running config
+    - VTP configurations where the configurations is not in the running config at all
+    - Implicit configurations like a "no shutdown" on an interface
 - The configurations used to get the configuration to the intended state may require to be ordered to not cause an outage.
 
 As the Golden Config application becomes more mature in delivering an all encompassing configuration management solution, it requires an advanced feature to render a configuration artifact. That artifact must be in the final format your device is expecting, from the intended configuration.

@@ -58,6 +58,9 @@ class GitRepo:  # pylint: disable=too-many-instance-attributes
             LOGGER.debug("Git path `%s` does not exists, clone", self.path)
             self.repo = Repo.clone_from(self.url, to_path=self.path)
 
+        # Disable prompting for credentials
+        self.repo.git.update_environment(GIT_TERMINAL_PROMPT="0")
+
         if self.url not in self.repo.remotes.origin.urls:
             LOGGER.debug("URL `%s` was not currently set, setting", self.url)
             self.repo.remotes.origin.set_url(self.url)

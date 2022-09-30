@@ -103,7 +103,7 @@ nav:
       - Navigate Compliance Custom: "user/app_feature_compliancecustom.md"
       - Navigate Intended: "user/app_feature_intended.md"
       - Navigate SoT Agg: "user/app_feature_sotagg.md"
-      - Navigate Configuration Post-processing: "user/app_feature_config_postprocessing.md"
+      - Navigate Configuration Post-Processing: "user/app_feature_config_postprocessing.md"
       - Getting Started: "user/app_getting_started.md"
       - Frequently Asked Questions: "user/app_faq.md"
       - External Interactions: "user/app_external_interactions.md"

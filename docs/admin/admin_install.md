@@ -55,7 +55,7 @@ PLUGINS_CONFIG = {
         "enable_intended": True,
         "enable_sotagg": True,
         "sot_agg_transposer": None,
-        "enable_postprocessing": True,
+        "enable_postprocessing": False,
         "postprocessing_callables": [],
         "postprocessing_subscribed": [],
         "platform_slug_map": None,

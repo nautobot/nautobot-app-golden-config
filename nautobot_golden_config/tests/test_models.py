@@ -7,6 +7,7 @@ from django.core.exceptions import ValidationError
 from nautobot.dcim.models import Platform
 from nautobot.extras.models import GitRepository, GraphQLQuery, DynamicGroup
 from nautobot_golden_config.tests.conftest import create_git_repos
+from nautobot_golden_config.signals import dynamic_group_validation_callback
 
 from nautobot_golden_config.models import (
     ConfigCompliance,
@@ -193,6 +194,13 @@ class GoldenConfigSettingGitModelTestCase(TestCase):
         """Delete all objects created of GoldenConfigSetting type."""
         GoldenConfigSetting.objects.all().delete()
         self.assertEqual(GoldenConfigSetting.objects.all().count(), 0)
+
+    def test_dynamic_group_validation(self):
+        """Edit DynamicGroup to simulate an invalid scope used in migration."""
+        self.golden_config.dynamic_group.filter = {"invalid_filter": "invalid value"}
+        self.golden_config.dynamic_group.save()
+        with self.assertRaises(ValidationError):
+            dynamic_group_validation_callback()
 
 
 class ConfigRemoveModelTestCase(TestCase):

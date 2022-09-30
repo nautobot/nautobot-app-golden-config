@@ -8,7 +8,10 @@ except ImportError:
 
 __version__ = metadata.version(__name__)
 
+from nautobot.core.signals import nautobot_database_ready
 from nautobot.extras.plugins import PluginConfig
+
+from nautobot_golden_config.signals import dynamic_group_validation_callback
 
 
 class GoldenConfig(PluginConfig):
@@ -33,6 +36,13 @@ class GoldenConfig(PluginConfig):
         "per_feature_height": 4,
         "get_custom_compliance": None,
     }
+
+    def ready(self):
+        """Callback when this plugin is loaded."""
+        super().ready()
+        # Run DynamicGroup validation to endsure an invalid scope was not used to create
+        # a DynamicGroup in the v1.2.0 migration.
+        nautobot_database_ready.connect(dynamic_group_validation_callback, sender=self)
 
 
 config = GoldenConfig  # pylint:disable=invalid-name

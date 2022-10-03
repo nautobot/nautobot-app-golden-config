@@ -4,6 +4,21 @@
 - Drop support of Nautobot <1.4.X
 - Update docs to mkdocs and read the docs hosting
 
+## v1.2.1 - 2022-10
+
+### Fixed
+
+- [#350](https://github.com/nautobot/nautobot-plugin-golden-config/pull/350) Fix lingering ssh connections by adding a close_connections in completed stage of processor.
+- [#317](https://github.com/nautobot/nautobot-plugin-golden-config/issues/317) Fix The CI builds the Nautobot container two times in the unittests step.
+- [#307](https://github.com/nautobot/nautobot-plugin-golden-config/issues/307) Fix `Bulk Delete` not always working on config compliance objects.
+- [#358](https://github.com/nautobot/nautobot-plugin-golden-config/pull/358) Fix code block formatting in app_getting_started.md.
+- [#352](https://github.com/nautobot/nautobot-plugin-golden-config/pull/352) Fix clearing DB connections between threads.
+
+### Changed
+
+- [#361](https://github.com/nautobot/nautobot-plugin-golden-config/pull/361) Adds environment variable to disable git prompts.
+- [#362](https://github.com/nautobot/nautobot-plugin-golden-config/pull/362) Optimizing refreshing of repos when running jobs.
+
 ## v1.2.0 - 2022-08
 
 ### Changed

@@ -264,13 +264,15 @@ class ConfigComplianceBulkDeleteView(generic.BulkDeleteView):
                 pk_list = [obj.pk for obj in self.filterset(request.GET, model.objects.only("pk")).qs]
             else:
                 pk_list = model.objects.values_list("pk", flat=True)
+            # When selecting *all* the resulting request args are ConfigCompliance object PKs
+            obj_to_del = [item[0] for item in self.queryset.filter(pk__in=pk_list).values_list("id")]
         else:
             pk_list = request.POST.getlist("pk")
+            # When selecting individual rows the resulting request args are Device object PKs
+            obj_to_del = [item[0] for item in self.queryset.filter(device__pk__in=pk_list).values_list("id")]
 
         form_cls = self.get_form()
 
-        # The difference between nautobot core is the creation and usage of obj_to_del
-        obj_to_del = [item[0] for item in self.queryset.filter(device__pk__in=pk_list).values_list("id")]
         if "_confirm" in request.POST:
             form = form_cls(request.POST)
             if form.is_valid():

@@ -56,7 +56,7 @@ To update existing settings click on one of the `Settings` name.
 |Intended Repositories |The Git Repository where your intended configuration state files will be found. |
 |Intended Path|A Jinja template which defines the path and name of intended configuration state files within the intended state repository. e.g. `{{obj.site.slug}}/{{obj.name}}.intended_cfg`|
 |Jinja Repository |The Git Repository where your jinja templates will be found. |
-|Jinja Path|A Jinja template which defines the path (within the repository) and name of the Jinja template file. e.g. `{{obj.platform.slug}}/{{obj.role.slug}}/main.j2`|
+|Jinja Path|A Jinja template which defines the path (within the repository) and name of the Jinja template file. e.g. `{{obj.platform.slug}}/{{obj.device_role.slug}}/main.j2`|
 |Dynamic Group|The scope of devices on which Golden Config's jobs can operate. |
 |GraphQL Query|A query that is evaluated and used to render the config. The query must start with `query ($device_id: ID!)`.|
 

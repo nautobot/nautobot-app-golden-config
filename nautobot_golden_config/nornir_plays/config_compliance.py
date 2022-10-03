@@ -17,6 +17,7 @@ from nornir_nautobot.utils.logger import NornirLogger
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 
+from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.models import ComplianceRule, ConfigCompliance, GoldenConfigSetting, GoldenConfig
 from nautobot_golden_config.utilities.helper import (
     get_device_to_settings_map,
@@ -53,6 +54,7 @@ def diff_files(backup_file, intended_file):
         yield line
 
 
+@close_threaded_db_connections
 def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     task: Task,
     logger,
@@ -81,25 +83,36 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     intended_file = os.path.join(intended_directory, intended_path_template_obj)
 
     if not os.path.exists(intended_file):
-        logger.log_failure(obj, f"Unable to locate intended file for device at {intended_file}")
-        raise NornirNautobotException()
+        logger.log_failure(obj, f"Unable to locate intended file for device at {intended_file}, preemptively failed.")
+        raise NornirNautobotException(
+            f"Unable to locate intended file for device at {intended_file}, preemptively failed."
+        )
 
     backup_directory = settings.backup_repository.filesystem_path
     backup_template = render_jinja_template(obj, logger, settings.backup_path_template)
     backup_file = os.path.join(backup_directory, backup_template)
 
     if not os.path.exists(backup_file):
-        logger.log_failure(obj, f"Unable to locate backup file for device at {backup_file}")
-        raise NornirNautobotException()
+        logger.log_failure(obj, f"Unable to locate backup file for device at {backup_file}, preemptively failed.")
+        raise NornirNautobotException(f"Unable to locate backup file for device at {backup_file}, preemptively failed.")
 
     platform = obj.platform.slug
     if not rules.get(platform):
-        logger.log_failure(obj, f"There is no defined `Configuration Rule` for platform slug `{platform}`.")
-        raise NornirNautobotException()
+        logger.log_failure(
+            obj, f"There is no defined `Configuration Rule` for platform slug `{platform}`, preemptively failed."
+        )
+        raise NornirNautobotException(
+            f"There is no defined `Configuration Rule` for platform slug `{platform}`, preemptively failed."
+        )
 
     if get_platform(platform) not in parser_map.keys():
-        logger.log_failure(obj, f"There is currently no parser support for platform slug `{get_platform(platform)}`.")
-        raise NornirNautobotException()
+        logger.log_failure(
+            obj,
+            f"There is currently no parser support for platform slug `{get_platform(platform)}`, preemptively failed.",
+        )
+        raise NornirNautobotException(
+            f"There is currently no parser support for platform slug `{get_platform(platform)}`, preemptively failed."
+        )
 
     backup_cfg = _open_file_config(backup_file)
     intended_cfg = _open_file_config(intended_file)

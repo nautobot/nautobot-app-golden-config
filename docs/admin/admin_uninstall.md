@@ -2,8 +2,8 @@
 
 ## Uninstall Guide
 
-Remove the configuration from `PLUGINS` & `PLUGINS_CONFIG`.
+Remove the configuration you added in `nautobot_config.py` from `PLUGINS` & `PLUGINS_CONFIG`.
 
 ## Database Cleanup
 
-Drop all tables from the plugin, `nautobot_plugin_goldenconfig*`.
+Drop all tables from the plugin: `nautobot_plugin_goldenconfig*`.

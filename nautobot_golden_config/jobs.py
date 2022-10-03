@@ -5,7 +5,7 @@ import logging
 from datetime import datetime
 
 from nautobot.extras.jobs import Job, MultiObjectVar, ObjectVar, BooleanVar
-from nautobot.extras.models import Tag, DynamicGroup
+from nautobot.extras.models import Tag, DynamicGroup, GitRepository
 from nautobot.extras.datasources.git import ensure_git_repository
 from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Site, Platform, Region, Rack, RackGroup
 from nautobot.tenancy.models import Tenant, TenantGroup
@@ -25,16 +25,20 @@ name = "Golden Configuration"  # pylint: disable=invalid-name
 
 def get_refreshed_repos(job_obj, repo_type, data=None):
     """Small wrapper to pull latest branch, and return a GitRepo plugin specific object."""
-    device_ids = get_job_filter(data).values_list("id").distinct()
+    devices = get_job_filter(data)
+    dynamic_groups = DynamicGroup.objects.exclude(golden_config_setting__isnull=True)
     repository_records = set()
-    for group in DynamicGroup.objects.exclude(golden_config_setting__isnull=True):
-        if getattr(group.golden_config_setting, repo_type, None) and group.get_queryset().filter(id__in=device_ids):
-            repository_records.add(getattr(group.golden_config_setting, repo_type))
+    # Iterate through DynamicGroups then apply the DG's filter to the devices filtered by job.
+    for group in dynamic_groups:
+        repo = getattr(group.golden_config_setting, repo_type, None)
+        if repo and devices.filter(group.generate_query()).exists():
+            repository_records.add(repo.id)
 
     repositories = []
     for repository_record in repository_records:
-        ensure_git_repository(repository_record, job_obj.job_result)
-        git_repo = GitRepo(repository_record)
+        repo = GitRepository.objects.get(id=repository_record)
+        ensure_git_repository(repo, job_obj.job_result)
+        git_repo = GitRepo(repo)
         repositories.append(git_repo)
 
     return repositories

@@ -1,11 +1,11 @@
 # Navigating Configuration Post-processing
 
 !!! note
-    current implementation **only renders the configuration to push, it doesn't update the configuration** into the target devices.
+    Current implementation **only renders the configuration to push, it doesn't update the configuration** into the target devices.
 
 The intended configuration job doesn't produce a final configuration artifact (see below for reasons why). The intended configuration is the "intended" **running** configuration, because the intended configuration job generates what is in the final running configuration. This works well for the "compliance" feature, but not as well to create a configuration artifact that is ready to push.
 
-Challenging use cases when using the running configuration as intended :
+Challenging use cases when using the running configuration as intended:
 
 - Because the intended configuration is stored in the database, and in an external Git repository, it should **not** contain any secret.
 - The format of the running configuration is not always the same as the configuration to push, examples include:

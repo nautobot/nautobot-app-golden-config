@@ -40,7 +40,7 @@ class GoldenConfig(PluginConfig):
     def ready(self):
         """Callback when this plugin is loaded."""
         super().ready()
-        # Run DynamicGroup validation to endsure an invalid scope was not used to create
+        # Run DynamicGroup validation to ensure an invalid scope was not used to create
         # a DynamicGroup in the v1.2.0 migration.
         nautobot_database_ready.connect(dynamic_group_validation_callback, sender=self)
 

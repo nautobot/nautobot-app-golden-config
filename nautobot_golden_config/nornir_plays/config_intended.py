@@ -18,6 +18,7 @@ from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInv
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.utils import get_dispatcher
 
+from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.models import GoldenConfigSetting, GoldenConfig
 from nautobot_golden_config.utilities.helper import (
     get_device_to_settings_map,
@@ -35,6 +36,7 @@ jinja_settings = Jinja2.get_default()
 jinja_env = jinja_settings.env
 
 
+@close_threaded_db_connections
 def run_template(  # pylint: disable=too-many-arguments
     task: Task, logger, device_to_settings_map, nautobot_job
 ) -> Result:

@@ -14,7 +14,7 @@ from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInv
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.utils import get_dispatcher
 
-
+from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.utilities.helper import (
     get_device_to_settings_map,
     get_job_filter,
@@ -31,6 +31,7 @@ from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 
 
+@close_threaded_db_connections
 def run_backup(  # pylint: disable=too-many-arguments
     task: Task, logger, device_to_settings_map, remove_regex_dict, replace_regex_dict
 ) -> Result:

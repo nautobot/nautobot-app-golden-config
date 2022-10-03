@@ -1,8 +1,8 @@
 """Helper functions."""
 # pylint: disable=raise-missing-from
+from jinja2 import exceptions as jinja_errors
 
 from django.db.models import Q
-from jinja2 import exceptions as jinja_errors
 
 from nautobot.dcim.models import Device
 from nautobot.dcim.filters import DeviceFilterSet
@@ -11,6 +11,7 @@ from nautobot.utilities.utils import render_jinja2
 from nornir_nautobot.exceptions import NornirNautobotException
 
 from nautobot_golden_config import models
+
 
 FIELDS = {
     "platform",

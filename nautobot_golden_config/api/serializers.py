@@ -5,8 +5,11 @@ from rest_framework import serializers
 from nautobot.extras.api.customfields import CustomFieldModelSerializer
 from nautobot.extras.api.serializers import TaggedObjectSerializer
 from nautobot.extras.api.nested_serializers import NestedDynamicGroupSerializer
+from nautobot.dcim.api.serializers import DeviceSerializer
+from nautobot.dcim.models import Device
 
 from nautobot_golden_config import models
+from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
 
 
 class GraphQLSerializer(serializers.Serializer):  # pylint: disable=abstract-method
@@ -126,3 +129,22 @@ class ConfigReplaceSerializer(TaggedObjectSerializer, CustomFieldModelSerializer
 
         model = models.ConfigReplace
         fields = "__all__"
+
+
+class ConfigToPushSerializer(DeviceSerializer):
+    """Serializer for ConfigToPush view."""
+
+    config = serializers.SerializerMethodField()
+
+    class Meta(DeviceSerializer):
+        """Extend the Device serializer with the configuration after postprocessing."""
+
+        fields = DeviceSerializer.Meta.fields + ["config"]
+        model = Device
+
+    def get_config(self, obj):
+        """Provide the intended configuration ready after postprocessing to the config field."""
+        request = self.context.get("request")
+
+        config_details = models.GoldenConfig.objects.get(device=obj)
+        return get_config_postprocessing(config_details, request)

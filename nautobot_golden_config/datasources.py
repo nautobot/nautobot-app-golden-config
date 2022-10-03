@@ -8,6 +8,7 @@ from nautobot.dcim.models.devices import Platform
 
 from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
 from nautobot_golden_config.models import ComplianceFeature, ComplianceRule, ConfigReplace, ConfigRemove
+from nautobot_golden_config.exceptions import MissingReference
 
 
 def refresh_git_jinja(repository_record, job_result, delete=False):  # pylint: disable=unused-argument
@@ -97,10 +98,6 @@ def refresh_git_gc_properties(repository_record, job_result, delete=False):  # p
         "Successfully Completed sync of Golden Config properties",
         level_choice=LogLevelChoices.LOG_SUCCESS,
     )
-
-
-class MissingReference(Exception):
-    """Custom error to signal a missing FK reference when looking up."""
 
 
 def get_id_kwargs(gc_config_item_dict, id_keys, job_result):

@@ -7,10 +7,12 @@ ENABLE_INTENDED = PLUGIN_CFG["enable_intended"]
 ENABLE_COMPLIANCE = PLUGIN_CFG["enable_compliance"]
 ENABLE_BACKUP = PLUGIN_CFG["enable_backup"]
 ENABLE_SOTAGG = PLUGIN_CFG["enable_sotagg"]
+ENABLE_POSTPROCESSING = PLUGIN_CFG["enable_postprocessing"]
 
 CONFIG_FEATURES = {
     "intended": ENABLE_INTENDED,
     "compliance": ENABLE_COMPLIANCE,
     "backup": ENABLE_BACKUP,
     "sotagg": ENABLE_SOTAGG,
+    "postprocessing": ENABLE_POSTPROCESSING,
 }

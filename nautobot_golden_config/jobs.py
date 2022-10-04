@@ -13,7 +13,14 @@ from nautobot.tenancy.models import Tenant, TenantGroup
 from nautobot_golden_config.nornir_plays.config_intended import config_intended
 from nautobot_golden_config.nornir_plays.config_backup import config_backup
 from nautobot_golden_config.nornir_plays.config_compliance import config_compliance
-from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
+from nautobot_golden_config.nornir_plays.config_provisioning import config_provision
+
+from nautobot_golden_config.utilities.constant import (
+    ENABLE_BACKUP,
+    ENABLE_COMPLIANCE,
+    ENABLE_INTENDED,
+    ENABLE_PROVISIONING,
+)
 from nautobot_golden_config.utilities.git import GitRepo
 from nautobot_golden_config.utilities.helper import get_job_filter
 
@@ -73,6 +80,7 @@ class FormEntry:  # pylint disable=too-few-public-method
     device = MultiObjectVar(model=Device, required=False)
     tag = MultiObjectVar(model=Tag, required=False)
     debug = BooleanVar(description="Enable for more verbose debug logging")
+    dry_run = BooleanVar(required=False)
     # TODO: Add status
 
 
@@ -256,6 +264,45 @@ class AllDevicesGoldenConfig(Job):
             ComplianceJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
 
 
+class ProvisioningJob(Job):
+    """Job used to push candidate configurations to devices."""
+
+    tenant_group = FormEntry.tenant_group
+    tenant = FormEntry.tenant
+    region = FormEntry.region
+    site = FormEntry.site
+    device = FormEntry.device
+    debug = FormEntry.debug
+    dry_run = FormEntry.dry_run
+
+    class Meta:
+        """Meta object boilerplate for provision configurations."""
+
+        name = "Provision Configurations"
+        description = "Provision the candidate configuration to the corresponding network devices."
+
+    @commit_check
+    def run(self, data, commit):
+        """Run config provisioning process."""
+        # TODO: adapt this to different modes, full replace or remediation
+        sites_from_regions = Site.objects.filter(region__in=data.get("region", []))
+        tenants_from_group = Tenant.objects.filter(group__in=data.get("tenant_group", []))
+        devices_from_filter = Device.objects.filter(
+            site__in=(data.get("site", []) and sites_from_regions),
+            tenant__in=(data.get("tenants", []) and tenants_from_group),
+        )
+        if devices_from_filter:
+            devices = list(set(data.get("device", [])).intersection(set()))
+        else:
+            devices = data.get("device", [])
+
+        for device in devices:
+            config_provision(
+                self,
+                data,
+            )
+
+
 # Conditionally allow jobs based on whether or not turned on.
 jobs = []
 if ENABLE_BACKUP:
@@ -264,4 +311,6 @@ if ENABLE_INTENDED:
     jobs.append(IntendedJob)
 if ENABLE_COMPLIANCE:
     jobs.append(ComplianceJob)
+if ENABLE_PROVISIONING:
+    jobs.append(ProvisioningJob)
 jobs.extend([AllGoldenConfig, AllDevicesGoldenConfig])

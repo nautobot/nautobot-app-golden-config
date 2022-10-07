@@ -87,7 +87,6 @@ plugins:
           paths: ["."]
           options:
             show_root_heading: true
-            show_category_heading: true
 watch:
   - "README.md"
 

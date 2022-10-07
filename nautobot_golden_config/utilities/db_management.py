@@ -1,5 +1,9 @@
 """Functions to manage DB related tasks."""
 from django.db import connections
+from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
+
+
+RUNNER_SETTINGS = NORNIR_SETTINGS.get("runner", {})
 
 
 def close_threaded_db_connections(func):
@@ -11,6 +15,8 @@ def close_threaded_db_connections(func):
             func(*args, **kwargs)
 
         finally:
-            connections.close_all()
+            # Only clear DB connections if plays are threaded
+            if RUNNER_SETTINGS.get("plugin") == "threaded":
+                connections.close_all()
 
     return inner

@@ -4,6 +4,16 @@
 - Drop support of Nautobot <1.4.X
 - Update docs to mkdocs and read the docs hosting
 
+## v1.2.2 - 2022-10
+
+### Fixed
+
+- [#369](https://github.com/nautobot/nautobot-plugin-golden-config/issues/369) Using of runner plugin serial is causing an "InterfaceError: connection already closed" error.
+
+### Changed
+
+- [#367](https://github.com/nautobot/nautobot-plugin-golden-config/pull/367) Add suggested custom CSS for mkdocstrings indentation.
+
 ## v1.2.1 - 2022-10
 
 ### Fixed

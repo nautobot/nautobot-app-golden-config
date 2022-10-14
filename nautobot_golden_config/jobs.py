@@ -104,9 +104,12 @@ class ComplianceJob(Job, FormEntry):
         """Run config compliance report script."""
         # pylint: disable=unused-argument
 
+        self.log_debug("Refreshing intended configuration git repository.")
         get_refreshed_repos(job_obj=self, repo_type="intended_repository", data=data)
+        self.log_debug("Refreshing backup configuration git repository.")
         get_refreshed_repos(job_obj=self, repo_type="backup_repository", data=data)
 
+        self.log_debug("Starting config compliance nornir play, this could take a while if you have a large number of devices.")
         config_compliance(self, data)
 
 
@@ -138,19 +141,19 @@ class IntendedJob(Job, FormEntry):
         """Run config generation script."""
         now = datetime.now()
 
-        LOGGER.debug("Pull Jinja template repos.")
+        self.log_debug("Pull Jinja template repos.")
         get_refreshed_repos(job_obj=self, repo_type="jinja_repository", data=data)
 
-        LOGGER.debug("Pull Intended config repos.")
+        self.log_debug("Pull Intended config repos.")
         # Instantiate a GitRepo object for each GitRepository in GoldenConfigSettings.
         intended_repos = get_refreshed_repos(job_obj=self, repo_type="intended_repository", data=data)
 
-        LOGGER.debug("Run config intended nornir play.")
+        self.log_debug("Building device settings mapping and running intended config nornir play, this could take a while if you have a large number of devices.")
         config_intended(self, data)
 
         # Commit / Push each repo after job is completed.
         for intended_repo in intended_repos:
-            LOGGER.debug("Push new intended configs to repo %s.", intended_repo.url)
+            self.log_debug("Push new intended configs to repo %s.", intended_repo.url)
             intended_repo.commit_with_added(f"INTENDED CONFIG CREATION JOB - {now}")
             intended_repo.push()
 
@@ -182,19 +185,19 @@ class BackupJob(Job, FormEntry):
     def run(self, data, commit):
         """Run config backup process."""
         now = datetime.now()
-        LOGGER.debug("Pull Backup config repo.")
+        self.log_debug("Pull Backup config repo.")
 
         # Instantiate a GitRepo object for each GitRepository in GoldenConfigSettings.
         backup_repos = get_refreshed_repos(job_obj=self, repo_type="backup_repository", data=data)
 
-        LOGGER.debug("Starting backup jobs to the following repos: %s", backup_repos)
+        self.log_debug("Starting backup jobs to the following repos: %s", backup_repos)
 
-        LOGGER.debug("Run nornir play.")
+        self.log_debug("Starting config backup nornir play, this could take a while if you have a large number of devices.")
         config_backup(self, data)
 
         # Commit / Push each repo after job is completed.
         for backup_repo in backup_repos:
-            LOGGER.debug("Pushing Backup config repo %s.", backup_repo.url)
+            self.log_debug("Pushing Backup config repo %s.", backup_repo.url)
             backup_repo.commit_with_added(f"BACKUP JOB {now}")
             backup_repo.push()
 
@@ -215,10 +218,13 @@ class AllGoldenConfig(Job):
     def run(self, data, commit):
         """Run all jobs."""
         if ENABLE_INTENDED:
+            self.log_debug("Starting intended job.")
             IntendedJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
         if ENABLE_BACKUP:
+            self.log_debug("Starting backup job.")
             BackupJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
         if ENABLE_COMPLIANCE:
+            self.log_debug("Starting compliance job.")
             ComplianceJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
 
 
@@ -249,10 +255,13 @@ class AllDevicesGoldenConfig(Job):
     def run(self, data, commit):
         """Run all jobs."""
         if ENABLE_INTENDED:
+            self.log_debug("Starting intended job.")
             IntendedJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
         if ENABLE_BACKUP:
+            self.log_debug("Starting backup job.")
             BackupJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
         if ENABLE_COMPLIANCE:
+            self.log_debug("Starting compliance job.")
             ComplianceJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
 
 

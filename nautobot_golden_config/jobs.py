@@ -17,8 +17,6 @@ from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMP
 from nautobot_golden_config.utilities.git import GitRepo
 from nautobot_golden_config.utilities.helper import get_job_filter
 
-LOGGER = logging.getLogger(__name__)
-
 
 name = "Golden Configuration"  # pylint: disable=invalid-name
 
@@ -79,6 +77,8 @@ class FormEntry:  # pylint disable=too-few-public-method
 class ComplianceJob(Job, FormEntry):
     """Job to to run the compliance engine."""
 
+    self.log_debug("Starting compliance job.")
+
     tenant_group = FormEntry.tenant_group
     tenant = FormEntry.tenant
     region = FormEntry.region
@@ -115,6 +115,8 @@ class ComplianceJob(Job, FormEntry):
 
 class IntendedJob(Job, FormEntry):
     """Job to to run generation of intended configurations."""
+
+    self.log_debug("Starting intended job.")
 
     tenant_group = FormEntry.tenant_group
     tenant = FormEntry.tenant
@@ -160,6 +162,8 @@ class IntendedJob(Job, FormEntry):
 
 class BackupJob(Job, FormEntry):
     """Job to to run the backup job."""
+
+    self.log_debug("Starting backup job.")
 
     tenant_group = FormEntry.tenant_group
     tenant = FormEntry.tenant
@@ -218,13 +222,10 @@ class AllGoldenConfig(Job):
     def run(self, data, commit):
         """Run all jobs."""
         if ENABLE_INTENDED:
-            self.log_debug("Starting intended job.")
             IntendedJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
         if ENABLE_BACKUP:
-            self.log_debug("Starting backup job.")
             BackupJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
         if ENABLE_COMPLIANCE:
-            self.log_debug("Starting compliance job.")
             ComplianceJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
 
 
@@ -255,13 +256,10 @@ class AllDevicesGoldenConfig(Job):
     def run(self, data, commit):
         """Run all jobs."""
         if ENABLE_INTENDED:
-            self.log_debug("Starting intended job.")
             IntendedJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
         if ENABLE_BACKUP:
-            self.log_debug("Starting backup job.")
             BackupJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
         if ENABLE_COMPLIANCE:
-            self.log_debug("Starting compliance job.")
             ComplianceJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
 
 

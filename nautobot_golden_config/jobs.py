@@ -196,7 +196,7 @@ class BackupJob(Job, FormEntry):
 
         self.log_debug("Starting backup jobs to the following repos: %s", backup_repos)
 
-        self.log_debug("Starting config backup nornir play, this could take a while if you have a large number of devices.")
+        self.log_debug("Starting config backup nornir play.")
         config_backup(self, data)
 
         # Commit / Push each repo after job is completed.

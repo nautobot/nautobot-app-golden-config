@@ -109,7 +109,7 @@ class ComplianceJob(Job, FormEntry):
         self.log_debug("Refreshing backup configuration git repository.")
         get_refreshed_repos(job_obj=self, repo_type="backup_repository", data=data)
 
-        self.log_debug("Starting config compliance nornir play, this could take a while if you have a large number of devices.")
+        self.log_debug("Starting config compliance nornir play.")
         config_compliance(self, data)
 
 
@@ -150,7 +150,7 @@ class IntendedJob(Job, FormEntry):
         # Instantiate a GitRepo object for each GitRepository in GoldenConfigSettings.
         intended_repos = get_refreshed_repos(job_obj=self, repo_type="intended_repository", data=data)
 
-        self.log_debug("Building device settings mapping and running intended config nornir play, this could take a while if you have a large number of devices.")
+        self.log_debug("Building device settings mapping and running intended config nornir play.")
         config_intended(self, data)
 
         # Commit / Push each repo after job is completed.

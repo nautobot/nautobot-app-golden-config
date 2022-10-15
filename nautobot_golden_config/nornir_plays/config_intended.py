@@ -111,7 +111,7 @@ def config_intended(nautobot_job, data):
     logger = NornirLogger(__name__, nautobot_job, data.get("debug"))
 
     qs = get_job_filter(data)
-    logger.log_debug("Mapping devices to config context data. This may take a while with a large number of devices.")
+    logger.log_debug("Compiling device data for intended configuration.")
     device_to_settings_map = get_device_to_settings_map(queryset=qs)
 
     for settings in set(device_to_settings_map.values()):

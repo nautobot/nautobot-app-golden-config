@@ -146,7 +146,7 @@ def config_compliance(job_result, data):
     logger = NornirLogger(__name__, job_result, data.get("debug"))
 
     qs = get_job_filter(data)
-    logger.log_debug("Mapping devices to config context data. This may take a while with a large number of devices.")
+    logger.log_debug("Compiling device data for compliance job.")
     device_to_settings_map = get_device_to_settings_map(queryset=qs)
 
     for settings in set(device_to_settings_map.values()):

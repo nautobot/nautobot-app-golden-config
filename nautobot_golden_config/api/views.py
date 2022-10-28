@@ -4,9 +4,12 @@ import json
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.routers import APIRootView
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated, BasePermission
+from rest_framework import mixins, viewsets
+
 from nautobot.extras.api.views import CustomFieldModelViewSet
 from nautobot.dcim.models import Device
+
 
 from nautobot_golden_config.api import serializers
 from nautobot_golden_config import models
@@ -91,3 +94,23 @@ class ConfigReplaceViewSet(CustomFieldModelViewSet):  # pylint:disable=too-many-
     queryset = models.ConfigReplace.objects.all()
     serializer_class = serializers.ConfigReplaceSerializer
     filterset_class = filters.ConfigReplaceFilterSet
+
+
+class ConfigPushPermissions(BasePermission):
+    """Permissions class to validate access to Devices and GoldenConfig view."""
+
+    def has_permission(self, request, view):
+        """Method to validated permissions to API view."""
+        return request.user.has_perm("nautobot_golden_config.view_goldenconfig")
+
+    def has_object_permission(self, request, view, obj):
+        """Validate user access to the object, taking into account constraints."""
+        return request.user.has_perm("dcim.view_device", obj=obj)
+
+
+class ConfigToPushViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    """Detail REST API view showing configuration after postprocessing."""
+
+    permission_classes = [IsAuthenticated & ConfigPushPermissions]
+    queryset = Device.objects.all()
+    serializer_class = serializers.ConfigToPushSerializer

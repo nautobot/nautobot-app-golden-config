@@ -111,7 +111,7 @@
             <tr>
                 <td style="width:250px">Intended Configuration</td>
                 <td class="config_hover">
-                    <span id="{{ item.rule|slugify }}_intended"><pre>{{ item.in_intended|placeholder }}</pre></span>
+                    <span id="{{ item.rule|slugify }}_intended"><pre>{{ item.intended|placeholder }}</pre></span>
                     <span class="config_hover_button">
                         <button class="btn btn-inline btn-default hover_copy_button" data-clipboard-target="#{{ item.rule|slugify }}_intended">
                             <span class="mdi mdi-content-copy"></span>
@@ -122,7 +122,7 @@
             <tr>
                 <td style="width:250px">Actual Configuration</td>
                 <td class="config_hover">
-                    <span id="{{ item.rule|slugify }}_intended"><pre>{{ item.intended|placeholder }}</pre></span>
+                    <span id="{{ item.rule|slugify }}_actual"><pre>{{ item.actual|placeholder }}</pre></span>
                     <span class="config_hover_button">
                         <button class="btn btn-inline btn-default hover_copy_button" data-clipboard-target="#{{ item.rule|slugify }}_intended">
                             <span class="mdi mdi-content-copy"></span>

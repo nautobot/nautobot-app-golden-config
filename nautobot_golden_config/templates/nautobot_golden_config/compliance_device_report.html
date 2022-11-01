@@ -107,7 +107,7 @@
             {% endif %}
 
         </tr>
-        {% if item.compliance and not item.rule.config_ordered %}
+        {% if not item.compliance %}
             <tr>
                 <td style="width:250px">Intended Configuration</td>
                 <td class="config_hover">

@@ -99,6 +99,8 @@ if not TESTING:
             },
         },
     }
+else:
+    LOGGING = {}
 
 #
 # Redis

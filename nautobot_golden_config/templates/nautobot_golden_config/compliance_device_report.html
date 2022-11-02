@@ -107,30 +107,8 @@
             {% endif %}
 
         </tr>
-        {% if item.compliance and not item.rule.config_ordered %}
-            <tr>
-                <td style="width:250px">Intended Configuration</td>
-                <td class="config_hover">
-                    <span id="{{ item.rule|slugify }}_intended"><pre>{{ item.in_intended|placeholder }}</pre></span>
-                    <span class="config_hover_button">
-                        <button class="btn btn-inline btn-default hover_copy_button" data-clipboard-target="#{{ item.rule|slugify }}_intended">
-                            <span class="mdi mdi-content-copy"></span>
-                        </button>
-                    </span>
-                </td>
-            </tr>
-            <tr>
-                <td style="width:250px">Actual Configuration</td>
-                <td class="config_hover">
-                    <span id="{{ item.rule|slugify }}_intended"><pre>{{ item.intended|placeholder }}</pre></span>
-                    <span class="config_hover_button">
-                        <button class="btn btn-inline btn-default hover_copy_button" data-clipboard-target="#{{ item.rule|slugify }}_intended">
-                            <span class="mdi mdi-content-copy"></span>
-                        </button>
-                    </span>
-                </td>
-            </tr>
-        {% elif item.compliance %}
+        
+        {% if item.compliance %}
             <tr>
                 <td style="width:250px">Configuration</td>
                 <td class="config_hover">

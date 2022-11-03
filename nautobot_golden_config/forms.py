@@ -131,7 +131,10 @@ class ComplianceRuleFilterForm(utilities_forms.BootstrapMixin, extras_forms.Cust
     model = models.ComplianceRule
 
     q = forms.CharField(required=False, label="Search")
-    platform = utilities_forms.DynamicModelMultipleChoiceField(queryset=Platform.objects.all(), required=False)
+    platform = utilities_forms.DynamicModelMultipleChoiceField(
+        queryset=Platform.objects.all(), to_field_name="slug", required=False, null_option="None"
+    )
+
     feature = utilities_forms.DynamicModelMultipleChoiceField(
         queryset=models.ComplianceFeature.objects.all(), required=False
     )
@@ -237,7 +240,7 @@ class ConfigRemoveFeatureFilterForm(utilities_forms.BootstrapMixin, extras_forms
 
     model = models.ConfigRemove
     platform = utilities_forms.DynamicModelMultipleChoiceField(
-        queryset=Platform.objects.all(), required=False, null_option="None"
+        queryset=Platform.objects.all(), to_field_name="slug", required=False, null_option="None"
     )
     name = utilities_forms.DynamicModelChoiceField(
         queryset=models.ConfigRemove.objects.all(), to_field_name="name", required=False

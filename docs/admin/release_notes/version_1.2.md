@@ -4,6 +4,15 @@
 - Drop support of Nautobot <1.4.X
 - Update docs to mkdocs and read the docs hosting
 
+## v1.2.3 - 2022-11
+
+### Fixed
+
+- [#356](https://github.com/nautobot/nautobot-plugin-golden-config/issues/356) Fix Compliance Rule list view filtering on platform is broken.
+- [#385](https://github.com/nautobot/nautobot-plugin-golden-config/pull/385) Fix Compliance Export not working.
+- [#384](https://github.com/nautobot/nautobot-plugin-golden-config/pull/384) Fix issue where not correctly rendering intended actual configs on compliance view
+- [#387](https://github.com/nautobot/nautobot-plugin-golden-config/pull/387) Fix filter to be in line with Nautobot 1.4, make logging optional in testing.
+
 ## v1.2.2 - 2022-10
 
 ### Fixed

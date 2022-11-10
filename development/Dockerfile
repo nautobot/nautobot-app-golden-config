@@ -22,8 +22,6 @@ ENV prometheus_multiproc_dir=/prom_cache
 ENV NAUTOBOT_ROOT ${NAUTOBOT_ROOT}
 
 # Don't need virtual environments in container, parallelized installer has inconsistent behavior
-RUN poetry --version
-
 RUN poetry config virtualenvs.create false \
     && poetry config installer.parallel false
 
@@ -50,7 +48,7 @@ WORKDIR /source
 COPY . /source
 
 # Get container's installed Nautobot version as a forced constraint
-# NAUTOBOT_VER May be a branch name and not a published release therefor we need to get the installed version
+# NAUTOBOT_VER may be a branch name and not a published release therefor we need to get the installed version
 #  so pip can use it to recognize local constraints.
 RUN pip show nautobot | grep "^Version: " | sed -e 's/Version: /nautobot==/' > constraints.txt
 

@@ -89,7 +89,7 @@ class GoldenConfigListView(generic.ObjectListView):
         csv_data.append(",".join(headers))
 
         # Iterate through the queryset appending each object
-        for obj in models.GoldenConfig.objects.all():
+        for obj in self.alter_queryset(None):
             data = obj.to_csv()
 
             for custom_field in custom_fields:

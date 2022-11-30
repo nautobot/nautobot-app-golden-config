@@ -77,8 +77,6 @@ class FormEntry:  # pylint disable=too-few-public-method
 class ComplianceJob(Job, FormEntry):
     """Job to to run the compliance engine."""
 
-    self.log_debug("Starting compliance job.")  # noqa: F821
-
     tenant_group = FormEntry.tenant_group
     tenant = FormEntry.tenant
     region = FormEntry.region
@@ -103,6 +101,7 @@ class ComplianceJob(Job, FormEntry):
     def run(self, data, commit):  # pylint: disable=too-many-branches
         """Run config compliance report script."""
         # pylint: disable=unused-argument
+        self.log_debug("Starting compliance job.")
 
         self.log_debug("Refreshing intended configuration git repository.")
         get_refreshed_repos(job_obj=self, repo_type="intended_repository", data=data)
@@ -115,8 +114,6 @@ class ComplianceJob(Job, FormEntry):
 
 class IntendedJob(Job, FormEntry):
     """Job to to run generation of intended configurations."""
-
-    self.log_debug("Starting intended job.")  # noqa: F821
 
     tenant_group = FormEntry.tenant_group
     tenant = FormEntry.tenant
@@ -141,6 +138,8 @@ class IntendedJob(Job, FormEntry):
     @commit_check
     def run(self, data, commit):
         """Run config generation script."""
+        self.log_debug("Starting intended job.")
+
         now = datetime.now()
 
         self.log_debug("Pull Jinja template repos.")
@@ -162,8 +161,6 @@ class IntendedJob(Job, FormEntry):
 
 class BackupJob(Job, FormEntry):
     """Job to to run the backup job."""
-
-    self.log_debug("Starting backup job.")  # noqa: F821
 
     tenant_group = FormEntry.tenant_group
     tenant = FormEntry.tenant
@@ -188,6 +185,8 @@ class BackupJob(Job, FormEntry):
     @commit_check
     def run(self, data, commit):
         """Run config backup process."""
+        self.log_debug("Starting backup job.")
+
         now = datetime.now()
         self.log_debug("Pull Backup config repo.")
 

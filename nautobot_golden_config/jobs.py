@@ -77,7 +77,7 @@ class FormEntry:  # pylint disable=too-few-public-method
 class ComplianceJob(Job, FormEntry):
     """Job to to run the compliance engine."""
 
-    self.log_debug("Starting compliance job.")
+    self.log_debug("Starting compliance job.")  # noqa: F821
 
     tenant_group = FormEntry.tenant_group
     tenant = FormEntry.tenant
@@ -116,7 +116,7 @@ class ComplianceJob(Job, FormEntry):
 class IntendedJob(Job, FormEntry):
     """Job to to run generation of intended configurations."""
 
-    self.log_debug("Starting intended job.")
+    self.log_debug("Starting intended job.")  # noqa: F821
 
     tenant_group = FormEntry.tenant_group
     tenant = FormEntry.tenant
@@ -163,7 +163,7 @@ class IntendedJob(Job, FormEntry):
 class BackupJob(Job, FormEntry):
     """Job to to run the backup job."""
 
-    self.log_debug("Starting backup job.")
+    self.log_debug("Starting backup job.")  # noqa: F821
 
     tenant_group = FormEntry.tenant_group
     tenant = FormEntry.tenant

@@ -96,6 +96,7 @@ def config_backup(job_result, data):
     logger = NornirLogger(__name__, job_result, data.get("debug"))
 
     qs = get_job_filter(data)
+    logger.log_debug("Compiling device data for backup.")
     device_to_settings_map = get_device_to_settings_map(queryset=qs)
 
     for settings in set(device_to_settings_map.values()):
@@ -131,6 +132,7 @@ def config_backup(job_result, data):
 
             nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
 
+            logger.log_debug("Run nornir backup tasks.")
             nr_with_processors.run(
                 task=run_backup,
                 name="BACKUP CONFIG",

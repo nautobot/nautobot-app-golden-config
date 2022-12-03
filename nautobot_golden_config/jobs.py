@@ -1,6 +1,5 @@
 """Jobs to run backups, intended config, and compliance."""
 # pylint: disable=too-many-function-args
-import logging
 
 from datetime import datetime
 
@@ -16,8 +15,6 @@ from nautobot_golden_config.nornir_plays.config_compliance import config_complia
 from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
 from nautobot_golden_config.utilities.git import GitRepo
 from nautobot_golden_config.utilities.helper import get_job_filter
-
-LOGGER = logging.getLogger(__name__)
 
 
 name = "Golden Configuration"  # pylint: disable=invalid-name
@@ -103,10 +100,14 @@ class ComplianceJob(Job, FormEntry):
     def run(self, data, commit):  # pylint: disable=too-many-branches
         """Run config compliance report script."""
         # pylint: disable=unused-argument
+        self.log_debug("Starting compliance job.")
 
+        self.log_debug("Refreshing intended configuration git repository.")
         get_refreshed_repos(job_obj=self, repo_type="intended_repository", data=data)
+        self.log_debug("Refreshing backup configuration git repository.")
         get_refreshed_repos(job_obj=self, repo_type="backup_repository", data=data)
 
+        self.log_debug("Starting config compliance nornir play.")
         config_compliance(self, data)
 
 
@@ -136,21 +137,23 @@ class IntendedJob(Job, FormEntry):
     @commit_check
     def run(self, data, commit):
         """Run config generation script."""
+        self.log_debug("Starting intended job.")
+
         now = datetime.now()
 
-        LOGGER.debug("Pull Jinja template repos.")
+        self.log_debug("Pull Jinja template repos.")
         get_refreshed_repos(job_obj=self, repo_type="jinja_repository", data=data)
 
-        LOGGER.debug("Pull Intended config repos.")
+        self.log_debug("Pull Intended config repos.")
         # Instantiate a GitRepo object for each GitRepository in GoldenConfigSettings.
         intended_repos = get_refreshed_repos(job_obj=self, repo_type="intended_repository", data=data)
 
-        LOGGER.debug("Run config intended nornir play.")
+        self.log_debug("Building device settings mapping and running intended config nornir play.")
         config_intended(self, data)
 
         # Commit / Push each repo after job is completed.
         for intended_repo in intended_repos:
-            LOGGER.debug("Push new intended configs to repo %s.", intended_repo.url)
+            self.log_debug("Push new intended configs to repo %s.", intended_repo.url)
             intended_repo.commit_with_added(f"INTENDED CONFIG CREATION JOB - {now}")
             intended_repo.push()
 
@@ -181,20 +184,22 @@ class BackupJob(Job, FormEntry):
     @commit_check
     def run(self, data, commit):
         """Run config backup process."""
+        self.log_debug("Starting backup job.")
+
         now = datetime.now()
-        LOGGER.debug("Pull Backup config repo.")
+        self.log_debug("Pull Backup config repo.")
 
         # Instantiate a GitRepo object for each GitRepository in GoldenConfigSettings.
         backup_repos = get_refreshed_repos(job_obj=self, repo_type="backup_repository", data=data)
 
-        LOGGER.debug("Starting backup jobs to the following repos: %s", backup_repos)
+        self.log_debug("Starting backup jobs to the following repos: %s", backup_repos)
 
-        LOGGER.debug("Run nornir play.")
+        self.log_debug("Starting config backup nornir play.")
         config_backup(self, data)
 
         # Commit / Push each repo after job is completed.
         for backup_repo in backup_repos:
-            LOGGER.debug("Pushing Backup config repo %s.", backup_repo.url)
+            self.log_debug("Pushing Backup config repo %s.", backup_repo.url)
             backup_repo.commit_with_added(f"BACKUP JOB {now}")
             backup_repo.push()
 

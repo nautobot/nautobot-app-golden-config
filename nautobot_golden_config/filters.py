@@ -38,14 +38,12 @@ class GoldenConfigFilterSet(CustomFieldModelFilterSet):
     tenant_group_id = TreeNodeMultipleChoiceFilter(
         queryset=TenantGroup.objects.all(),
         field_name="device__tenant__group",
-        lookup_expr="in",
         label="Tenant Group (ID)",
     )
     tenant_group = TreeNodeMultipleChoiceFilter(
         queryset=TenantGroup.objects.all(),
         field_name="device__tenant__group",
         to_field_name="slug",
-        lookup_expr="in",
         label="Tenant Group (slug)",
     )
     tenant_id = django_filters.ModelMultipleChoiceFilter(
@@ -62,13 +60,11 @@ class GoldenConfigFilterSet(CustomFieldModelFilterSet):
     region_id = TreeNodeMultipleChoiceFilter(
         queryset=Region.objects.all(),
         field_name="device__site__region",
-        lookup_expr="in",
         label="Region (ID)",
     )
     region = TreeNodeMultipleChoiceFilter(
         queryset=Region.objects.all(),
         field_name="device__site__region",
-        lookup_expr="in",
         to_field_name="slug",
         label="Region (slug)",
     )
@@ -86,7 +82,6 @@ class GoldenConfigFilterSet(CustomFieldModelFilterSet):
     rack_group_id = TreeNodeMultipleChoiceFilter(
         queryset=RackGroup.objects.all(),
         field_name="device__rack__group",
-        lookup_expr="in",
         label="Rack group (ID)",
     )
     rack_group = django_filters.ModelMultipleChoiceFilter(

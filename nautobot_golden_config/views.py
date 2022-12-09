@@ -90,7 +90,7 @@ class GoldenConfigListView(generic.ObjectListView):
         csv_data.append(",".join(headers))
 
         # Iterate through the queryset appending each object
-        for obj in models.GoldenConfig.objects.all():
+        for obj in self.alter_queryset(None):
             data = obj.to_csv()
 
             for custom_field in custom_fields:
@@ -225,7 +225,7 @@ class ConfigComplianceListView(generic.ObjectListView):
             raise ValueError(f"Expecting one of 'N/A', 0, or 1, got {val}")
 
         csv_data = []
-        headers = sorted(list(models.ComplianceFeature.objects.values_list("name", flat=True).distinct()))
+        headers = sorted(list(models.ComplianceFeature.objects.values_list("slug", flat=True).distinct()))
         csv_data.append(",".join(list(["Device name"] + headers)))
         for obj in self.alter_queryset(None):
             # From all of the unique fields, obtain the columns, using list comprehension, add values per column,

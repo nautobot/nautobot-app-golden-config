@@ -4,6 +4,14 @@
 - Drop support of Nautobot <1.4.X
 - Update docs to mkdocs and read the docs hosting
 
+
+## v1.2.4 - 2022-12
+
+### Fixed
+
+- [#382](https://github.com/nautobot/nautobot-plugin-golden-config/issues/382) Fixed issue on Golden Config Home Export Inconsistent on filtering.
+- [#390](https://github.com/nautobot/nautobot-plugin-golden-config/pull/390) Update ordered compliant view to only show "config" vs both intended and actual.
+
 ## v1.2.3 - 2022-11
 
 ### Fixed

@@ -7,8 +7,8 @@
 
 ### Added
 
-- [#344](https://github.com/nautobot/nautobot-plugin-golden-config/issues/344) - Enable Routine Testing Against Upstream Nautobot versions to ensure continuous compatibility.
-- [#339](https://github.com/nautobot/nautobot-plugin-golden-config/issues/339) - Add the ability to update Intended Configuration for multiple use cases, supporting rendering of secrets out of the box.
+- [#344](https://github.com/nautobot/nautobot-plugin-golden-config/issues/344) - Enable routine testing against upstream Nautobot versions to ensure continuous compatibility.
+- [#339](https://github.com/nautobot/nautobot-plugin-golden-config/issues/339) - Add the ability to post-process Intended Configuration for multiple use cases, supporting rendering of secrets out of the box.
 
 ### Changed
 

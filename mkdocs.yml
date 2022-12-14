@@ -102,6 +102,7 @@ nav:
       - Navigate Compliance Custom: "user/app_feature_compliancecustom.md"
       - Navigate Intended: "user/app_feature_intended.md"
       - Navigate SoT Agg: "user/app_feature_sotagg.md"
+      - Navigate Configuration Post-Processing: "user/app_feature_config_postprocessing.md"
       - Getting Started: "user/app_getting_started.md"
       - Frequently Asked Questions: "user/app_faq.md"
       - External Interactions: "user/app_external_interactions.md"
@@ -112,6 +113,7 @@ nav:
       - Compatibility Matrix: "admin/compatibility_matrix.md"
       - Release Notes:
           - "admin/release_notes/index.md"
+          - v1.3: "admin/release_notes/version_1.3.md"
           - v1.2: "admin/release_notes/version_1.2.md"
           - v1.1: "admin/release_notes/version_1.1.md"
           - v1.0: "admin/release_notes/version_1.0.md"

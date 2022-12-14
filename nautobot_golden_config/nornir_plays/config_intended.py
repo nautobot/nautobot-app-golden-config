@@ -111,6 +111,7 @@ def config_intended(nautobot_job, data):
     logger = NornirLogger(__name__, nautobot_job, data.get("debug"))
 
     qs = get_job_filter(data)
+    logger.log_debug("Compiling device data for intended configuration.")
     device_to_settings_map = get_device_to_settings_map(queryset=qs)
 
     for settings in set(device_to_settings_map.values()):
@@ -133,6 +134,7 @@ def config_intended(nautobot_job, data):
 
             nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
 
+            logger.log_debug("Run nornir render config tasks.")
             # Run the Nornir Tasks
             nr_with_processors.run(
                 task=run_template,

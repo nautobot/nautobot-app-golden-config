@@ -146,6 +146,7 @@ def config_compliance(job_result, data):
     logger = NornirLogger(__name__, job_result, data.get("debug"))
 
     qs = get_job_filter(data)
+    logger.log_debug("Compiling device data for compliance job.")
     device_to_settings_map = get_device_to_settings_map(queryset=qs)
 
     for settings in set(device_to_settings_map.values()):
@@ -168,6 +169,7 @@ def config_compliance(job_result, data):
 
             nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
 
+            logger.log_debug("Run nornir compliance tasks.")
             nr_with_processors.run(
                 task=run_compliance,
                 name="RENDER COMPLIANCE TASK GROUP",

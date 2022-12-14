@@ -1,0 +1,13 @@
+---
+name: "Nautobot Upstream Testing"
+
+on: # yamllint disable-line rule:truthy rule:comments
+  schedule:
+    - cron: "0 4 */2 * *"  # every other day at midnight
+
+jobs:
+  upstream-test:
+    uses: "nautobot/nautobot/.github/workflows/plugin_upstream_testing_base.yml@develop"
+    with:  # Below could potentially be collapsed into a single argument if a concrete relationship between both is enforced
+      invoke_context_name: "NAUTOBOT_GOLDEN_CONFIG"
+      plugin_name: "nautobot-golden-config"

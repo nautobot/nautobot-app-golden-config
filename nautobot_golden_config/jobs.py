@@ -153,7 +153,7 @@ class IntendedJob(Job, FormEntry):
 
         # Commit / Push each repo after job is completed.
         for intended_repo in intended_repos:
-            self.log_debug("Push new intended configs to repo %s.", intended_repo.url)
+            self.log_debug(f"Push new intended configs to repo {intended_repo.url}.")
             intended_repo.commit_with_added(f"INTENDED CONFIG CREATION JOB - {now}")
             intended_repo.push()
 
@@ -192,14 +192,14 @@ class BackupJob(Job, FormEntry):
         # Instantiate a GitRepo object for each GitRepository in GoldenConfigSettings.
         backup_repos = get_refreshed_repos(job_obj=self, repo_type="backup_repository", data=data)
 
-        self.log_debug("Starting backup jobs to the following repos: %s", backup_repos)
+        self.log_debug(f"Starting backup jobs to the following repos: {backup_repos}")
 
         self.log_debug("Starting config backup nornir play.")
         config_backup(self, data)
 
         # Commit / Push each repo after job is completed.
         for backup_repo in backup_repos:
-            self.log_debug("Pushing Backup config repo %s.", backup_repo.url)
+            self.log_debug(f"Pushing Backup config repo {backup_repo.url}.")
             backup_repo.commit_with_added(f"BACKUP JOB {now}")
             backup_repo.push()
 

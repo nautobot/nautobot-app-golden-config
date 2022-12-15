@@ -3,6 +3,10 @@
 - Add the ability to update Intended Configuration for multiple use cases, supporting rendering of secrets out of the box.
 - Enable Routine Testing Against Upstream Nautobot versions to ensure continuous compatibility.
 
+## v1.3.1 - 2022-12
+
+- [#411](https://github.com/nautobot/nautobot-plugin-golden-config/issues/411) - Fix issue where logs were causing an issue.
+
 ## v1.3.0 - 2022-12
 
 ### Added

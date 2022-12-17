@@ -14,7 +14,7 @@ Documentation is built using [mkdocs](https://www.mkdocs.org/). The [Docker base
 The branching policy includes the following tenets:
 
 - The `develop` branch is the branch for bug fixes.
-- The next branch is the branch the next major and minor paired version planned.
+- The `next` branch is the branch for new features.
 - The `stable-<major>.<minor>` branch is the branch of the latest version within that major/minor version.
 - The `stable-<major>.<minor>` branch will have all of the latest bug fixes and security patches, and may or may not represent the released version.
 - PRs intended to add new features should be branched from and merged to the `next` branch.

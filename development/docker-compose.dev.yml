@@ -26,6 +26,8 @@ services:
     volumes:
       - "./nautobot_config.py:/opt/nautobot/nautobot_config.py"
       - "../:/source"
+    ports:
+      - "8081:8080"
 # To expose postgres or redis to the host uncomment the following
 # postgres:
 #   ports:

@@ -37,6 +37,7 @@ Once you have Poetry and Docker installed you can run the following commands (in
 ```shell
 poetry shell
 poetry install
+cp development/dev.example.env development/dev.env
 cp development/creds.example.env development/creds.env
 invoke build
 invoke start

@@ -67,7 +67,7 @@ The current supported platform and the associated *default* platform slug names 
 * arista_eos
 * cisco_asa
 * cisco_ios
-* cisco_ios_xr
+* cisco_xr
 * cisco_nxos
 * juniper_junos
 

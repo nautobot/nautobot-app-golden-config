@@ -1,5 +1,6 @@
 """Django Models for tracking the configuration compliance per feature and device."""
 
+from datetime import datetime
 import logging
 import json
 from deepdiff import DeepDiff
@@ -284,6 +285,7 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
     ordered = models.BooleanField(default=True)
     # Used for django-pivot, both compliance and compliance_int should be set.
     compliance_int = models.IntegerField(null=True, blank=True)
+    last_compliance_change = models.DateTimeField(null=True)
 
     csv_headers = ["Device Name", "Feature", "Compliance"]
 
@@ -330,6 +332,13 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
         compliance_details = FUNC_MAPPER[self.rule.config_type](obj=self)
         if self.rule.config_type == ComplianceRuleTypeChoice.TYPE_CUSTOM:
             _verify_get_custom_compliance_data(compliance_details)
+
+        if self.last_compliance_change is None:
+            self.last_compliance_change = datetime.now()
+        else:
+            # if the compliance changes, update the last_compliance_change timestamp to now
+            if self.compliance != compliance_details["compliance"]:
+                self.last_compliance_change = datetime.now()
 
         self.compliance = compliance_details["compliance"]
         self.compliance_int = compliance_details["compliance_int"]

@@ -22,13 +22,14 @@ ENV prometheus_multiproc_dir=/prom_cache
 ENV NAUTOBOT_ROOT ${NAUTOBOT_ROOT}
 
 # Don't need virtual environments in container, parallelized installer has inconsistent behavior
-RUN poetry config virtualenvs.create false \
+RUN poetry self update \
+    && poetry config virtualenvs.create false \
     && poetry config installer.parallel false
 
 # !!! USE CAUTION WHEN MODIFYING LINES ABOVE
 # -------------------------------------------------------------------------------------
 # Plugin-specific system build/test dependencies.
-# 
+#
 # Example: LDAP requires `libldap2-dev` to be apt-installed before the Python package.
 # -------------------------------------------------------------------------------------
 # --> Start safe to modify section

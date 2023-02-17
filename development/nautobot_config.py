@@ -134,6 +134,8 @@ CACHEOPS_REDIS = parse_redis_connection(redis_database=1)
 #
 
 
+CELERY_WORKER_PROMETHEUS_PORT = [8080]
+
 # Enable installed plugins. Add the name of each plugin to the list.
 PLUGINS = ["nautobot_plugin_nornir", "nautobot_golden_config"]
 

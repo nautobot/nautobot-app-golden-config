@@ -24,6 +24,7 @@ FIELDS = {
     "rack_group",
     "manufacturer",
     "device_type",
+    "device_status",
 }
 
 

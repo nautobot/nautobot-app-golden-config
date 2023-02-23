@@ -4,7 +4,8 @@
 from datetime import datetime
 
 from nautobot.extras.jobs import Job, MultiObjectVar, ObjectVar, BooleanVar
-from nautobot.extras.models import Tag, DynamicGroup, GitRepository
+from nautobot.extras.models import Tag, DynamicGroup, GitRepository, Status
+from nautobot.extras.filters import StatusFilter
 from nautobot.extras.datasources.git import ensure_git_repository
 from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Site, Platform, Region, Rack, RackGroup
 from nautobot.tenancy.models import Tenant, TenantGroup
@@ -69,6 +70,7 @@ class FormEntry:  # pylint disable=too-few-public-method
     device_type = MultiObjectVar(model=DeviceType, required=False, display_field="display_name")
     device = MultiObjectVar(model=Device, required=False)
     tag = MultiObjectVar(model=Tag, required=False)
+    device_status = MultiObjectVar(model=Status, required=False)
     debug = BooleanVar(description="Enable for more verbose debug logging")
     # TODO: Add status
 
@@ -88,6 +90,7 @@ class ComplianceJob(Job, FormEntry):
     device_type = FormEntry.device_type
     device = FormEntry.device
     tag = FormEntry.tag
+    device_status = FormEntry.device_status
     debug = FormEntry.debug
 
     class Meta:
@@ -126,6 +129,7 @@ class IntendedJob(Job, FormEntry):
     device_type = FormEntry.device_type
     device = FormEntry.device
     tag = FormEntry.tag
+    device_status = FormEntry.device_status
     debug = FormEntry.debug
 
     class Meta:
@@ -173,6 +177,7 @@ class BackupJob(Job, FormEntry):
     device_type = FormEntry.device_type
     device = FormEntry.device
     tag = FormEntry.tag
+    device_status = FormEntry.device_status
     debug = FormEntry.debug
 
     class Meta:
@@ -242,6 +247,7 @@ class AllDevicesGoldenConfig(Job):
     device_type = FormEntry.device_type
     device = FormEntry.device
     tag = FormEntry.tag
+    device_status = FormEntry.device_status
     debug = FormEntry.debug
 
     class Meta:

@@ -92,7 +92,7 @@ class ConfigComplianceFilterForm(utilities_forms.BootstrapMixin, extras_forms.Cu
         super().__init__(*args, **kwargs)
         self.fields["device_status"] = utilities_forms.DynamicModelMultipleChoiceField(
             required=False,
-            queryset=Status.objects.all(), # Status.objects.get_for_model(Device)
+            queryset=Status.objects.all(),
             query_params={"content_types": Device._meta.label_lower},
             display_field="label",
             label="Device Status",

@@ -5,7 +5,6 @@ from datetime import datetime
 
 from nautobot.extras.jobs import Job, MultiObjectVar, ObjectVar, BooleanVar
 from nautobot.extras.models import Tag, DynamicGroup, GitRepository, Status
-from nautobot.extras.filters import StatusFilter
 from nautobot.extras.datasources.git import ensure_git_repository
 from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Site, Platform, Region, Rack, RackGroup
 from nautobot.tenancy.models import Tenant, TenantGroup

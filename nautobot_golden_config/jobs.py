@@ -69,7 +69,7 @@ class FormEntry:  # pylint disable=too-few-public-method
     device_type = MultiObjectVar(model=DeviceType, required=False, display_field="display_name")
     device = MultiObjectVar(model=Device, required=False)
     tag = MultiObjectVar(model=Tag, required=False)
-    device_status = MultiObjectVar(model=Status, required=False, query_params={"content_types":Device._meta.label_lower})
+    device_status = MultiObjectVar(model=Status, required=False, query_params={"content_types":Device._meta.label_lower}, display_field="label", label="Device Status")
     debug = BooleanVar(description="Enable for more verbose debug logging")
 
 

@@ -35,6 +35,7 @@ class GoldenConfig(PluginConfig):
         "per_feature_width": 13,
         "per_feature_height": 4,
         "get_custom_compliance": None,
+        "task_queues": None,
     }
 
 

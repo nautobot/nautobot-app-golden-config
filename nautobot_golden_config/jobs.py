@@ -12,7 +12,7 @@ from nautobot.tenancy.models import Tenant, TenantGroup
 from nautobot_golden_config.nornir_plays.config_intended import config_intended
 from nautobot_golden_config.nornir_plays.config_backup import config_backup
 from nautobot_golden_config.nornir_plays.config_compliance import config_compliance
-from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
+from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED, TASK_QUEUES
 from nautobot_golden_config.utilities.git import GitRepo
 from nautobot_golden_config.utilities.helper import get_job_filter
 
@@ -95,6 +95,8 @@ class ComplianceJob(Job, FormEntry):
 
         name = "Perform Configuration Compliance"
         description = "Run configuration compliance on your network infrastructure."
+        if TASK_QUEUES:
+            task_queues = TASK_QUEUES
 
     @commit_check
     def run(self, data, commit):  # pylint: disable=too-many-branches
@@ -133,6 +135,8 @@ class IntendedJob(Job, FormEntry):
 
         name = "Generate Intended Configurations"
         description = "Generate the configuration for your intended state."
+        if TASK_QUEUES:
+            task_queues = TASK_QUEUES
 
     @commit_check
     def run(self, data, commit):
@@ -180,6 +184,8 @@ class BackupJob(Job, FormEntry):
 
         name = "Backup Configurations"
         description = "Backup the configurations of your network devices."
+        if TASK_QUEUES:
+            task_queues = TASK_QUEUES
 
     @commit_check
     def run(self, data, commit):
@@ -215,6 +221,8 @@ class AllGoldenConfig(Job):
 
         name = "Execute All Golden Configuration Jobs - Single Device"
         description = "Process to run all Golden Configuration jobs configured."
+        if TASK_QUEUES:
+            task_queues = TASK_QUEUES
 
     @commit_check
     def run(self, data, commit):
@@ -249,6 +257,8 @@ class AllDevicesGoldenConfig(Job):
 
         name = "Execute All Golden Configuration Jobs - Multiple Device"
         description = "Process to run all Golden Configuration jobs configured against multiple devices."
+        if TASK_QUEUES:
+            task_queues = TASK_QUEUES
 
     @commit_check
     def run(self, data, commit):

@@ -59,6 +59,7 @@ PLUGINS_CONFIG = {
         "postprocessing_callables": [],
         "postprocessing_subscribed": [],
         "platform_slug_map": None,
+        "task_queues": []
         # "get_custom_compliance": "my.custom_compliance.func"
     },
 }
@@ -98,7 +99,7 @@ The plugin behavior can be controlled with the following list of settings.
 | enable_compliance         | True                          | True    | A boolean to represent whether or not to run the compliance process within the plugin.                                                                                     |
 | enable_intended           | True                          | True    | A boolean to represent whether or not to generate intended configurations within the plugin.                                                                               |
 | enable_sotagg             | True                          | True    | A boolean to represent whether or not to provide a GraphQL query per device to allow the intended configuration to provide data variables to the plugin.                   |
-| enable_postprocessing     | True                          | False    | A boolean to represent whether or not to generate intended configurations to push, with extra processing such as secrets rendering.                                        |
+| enable_postprocessing     | True                          | False   | A boolean to represent whether or not to generate intended configurations to push, with extra processing such as secrets rendering.                                        |
 | postprocessing_callables  | ['mypackage.myfunction']      | []      | A list of function paths, in dotted format, that are appended to the available methods for post-processing the intended configuration, for instance, the `render_secrets`. |
 | postprocessing_subscribed | ['mypackage.myfunction']      | []      | A list of function paths, that should exist as postprocessing_callables, that defines the order of application of during the post-processing process.                      |
 | platform_slug_map         | {"cisco_wlc": "cisco_aireos"} | None    | A dictionary in which the key is the platform slug and the value is what netutils uses in any "network_os" parameter.                                                      |
@@ -106,6 +107,7 @@ The plugin behavior can be controlled with the following list of settings.
 | per_feature_bar_width     | 0.15                          | 0.15    | The width of the table bar within the overview report                                                                                                                      |
 | per_feature_width         | 13                            | 13      | The width in inches that the overview table can be.                                                                                                                        |
 | per_feature_height        | 4                             | 4       | The height in inches that the overview table can be.                                                                                                                       |
+| task_queues               | ["red", "green", "blue"]      | None    | The queues that can be selected to route tasks to Celery.                                                                                                                  |
 
 !!! note
     Over time the compliance report will become more dynamic, but for now allow users to configure the `per_*` configs in a way that fits best for them.

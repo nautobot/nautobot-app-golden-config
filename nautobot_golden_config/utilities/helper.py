@@ -75,7 +75,7 @@ def get_job_filter(data=None):
             f"The following device(s) {', '.join([device.name for device in devices_no_platform])} have no platform defined. Platform is required."
         )
 
-    if query.get("device_status_id", None):
+    if query.get("device_status_id"):
         devices_status_filtered = None
         for status_query in query["device_status_id"].values():
             if not devices_status_filtered:

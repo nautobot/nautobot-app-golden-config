@@ -188,7 +188,6 @@ class BackupJob(Job, FormEntry):
     def run(self, data, commit):
         """Run config backup process."""
         self.log_debug("Starting backup job.")
-
         now = datetime.now()
         self.log_debug("Pull Backup config repo.")
 

@@ -5,6 +5,7 @@ from jinja2 import exceptions as jinja_errors
 from django.db.models import Q
 
 from nautobot.dcim.models import Device
+from nautobot.extras.models import Status
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.utilities.utils import render_jinja2
 
@@ -33,7 +34,7 @@ def get_job_filter(data=None):
     if not data:
         data = {}
     query = {}
-
+    
     # Translate instances from FIELDS set to list of primary keys
     for field in FIELDS:
         if data.get(field):
@@ -61,7 +62,9 @@ def get_job_filter(data=None):
         raise NornirNautobotException(
             "The base queryset didn't find any devices. Please check the Golden Config Setting scope."
         )
+    
     devices_filtered = DeviceFilterSet(data=query, queryset=base_qs)
+
     if not devices_filtered.qs.exists():
         raise NornirNautobotException(
             "The provided job parameters didn't match any devices detected by the Golden Config scope. Please check the scope defined within Golden Config Settings or select the correct job parameters to correctly match devices."
@@ -71,6 +74,19 @@ def get_job_filter(data=None):
         raise NornirNautobotException(
             f"The following device(s) {', '.join([device.name for device in devices_no_platform])} have no platform defined. Platform is required."
         )
+
+    if query.get("device_status_id", None):
+        devices_status_filtered = None
+        for status_query in query["device_status_id"].values():
+            if not devices_status_filtered:
+                devices_status_filtered = devices_filtered.qs.filter(status__exact=status_query["id"])
+            else:
+                devices_status_filtered.union(devices_filtered.qs.filter(status__exact=status_query["id"]))
+        if not devices_status_filtered:
+            raise NornirNautobotException(
+                    "The status queryset didn't find any devices. Please check the device statuses."
+                )
+        return devices_status_filtered
 
     return devices_filtered.qs
 

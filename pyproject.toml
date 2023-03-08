@@ -30,7 +30,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.7"
-deepdiff = "^5.5.0"
+deepdiff = ">=5.5.0,>=6.2.0"
 django-pivot = "^1.8.1"
 matplotlib = "^3.3.2"
 ## Setting as next to test with DynamicGroup changes
@@ -39,7 +39,8 @@ nautobot-plugin-nornir = ">=1.0.0"
 
 [tool.poetry.dev-dependencies]
 bandit = "*"
-black = "*"
+# Black 23.x.x configuration changes and migration files are taken into account
+black = "^22.6.0"
 django-debug-toolbar = "*"
 # we need to pin flake8 because of package dependencies that cause it to downgrade and
 # therefore cause issues with linting since older versions do not take .flake8 as config

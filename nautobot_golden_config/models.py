@@ -18,7 +18,7 @@ from netutils.config.compliance import feature_compliance
 
 from nautobot_golden_config.choices import ComplianceRuleTypeChoice
 from nautobot_golden_config.utilities.utils import get_platform
-from nautobot_golden_config.utilities.constant import PLUGIN_CFG
+from nautobot_golden_config.utilities.constant import PLUGIN_CFG, ENABLE_SOTAGG
 
 
 LOGGER = logging.getLogger(__name__)
@@ -540,6 +540,9 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     def clean(self):
         """Validate the scope and GraphQL query."""
         super().clean()
+
+        if ENABLE_SOTAGG and not self.sot_agg_query:
+            raise ValidationError("A GraphQL query must be defined when `ENABLE_SOTAGG` is True")
 
         if self.sot_agg_query:
             LOGGER.debug("GraphQL - test  query start with: `%s`", GRAPHQL_STR_START)

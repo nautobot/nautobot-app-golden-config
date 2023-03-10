@@ -410,7 +410,11 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
 
             settings = get_device_to_settings_map(queryset=Device.objects.filter(pk=device.pk))
             if device.id in settings:
-                _, output = graph_ql_query(request, device, settings[device.id].sot_agg_query.query)
+                sot_agg_query_setting = settings[device.id].sot_agg_query
+                if sot_agg_query_setting is not None:
+                    _, output = graph_ql_query(request, device, sot_agg_query_setting.query)
+                else:
+                    output = None
             else:
                 raise ObjectDoesNotExist(f"{device.name} does not map to a Golden Config Setting.")
 

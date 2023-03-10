@@ -49,7 +49,8 @@
             <div class="modal-body">
             </div>
             <div class="modal-footer">
-                <a id="detail_view" class="btn btn-primary">Detailed View</a>
+                <!-- If the output is empty, then the detail view href will not be resolvable -->
+                {% if output %}<a id="detail_view" class="btn btn-primary">Detailed View</a>{% endif %}
                 <button id="close" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
             </div>
         </div>

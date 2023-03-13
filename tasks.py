@@ -13,6 +13,7 @@ limitations under the License.
 """
 
 from distutils.util import strtobool
+from time import sleep
 from invoke import Collection, task as invoke_task
 import os
 
@@ -298,6 +299,26 @@ def post_upgrade(context):
     command = "nautobot-server post_upgrade"
 
     run_command(context, command)
+
+
+@task
+def db_import(context, filename="nautobot_backup.dump"):
+    """Install the backup of Nautobot db into development environment."""
+    print("Importing Database into Development...\n")
+
+    print("Starting Postgres for DB import...\n")
+    docker_compose(context, "up -d db")
+    sleep(2)
+
+    print("Copying DB Dump to DB container...\n")
+    copy_cmd = f"docker cp {filename} {context.nautobot_golden_config.project_name}-db-1:/tmp/{filename}"
+    context.run(copy_cmd)
+
+    print("Importing DB...\n")
+    import_cmd = 'exec db sh -c "psql -h localhost -U \${} < /tmp/{}"'.format(
+        "{NAUTOBOT_DB_USER}", filename
+    )  # noqa: W605 pylint: disable=anomalous-backslash-in-string
+    docker_compose(context, import_cmd, pty=True)
 
 
 # ------------------------------------------------------------------------------

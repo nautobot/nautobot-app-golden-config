@@ -1,23 +1,25 @@
 """Django Models for tracking the configuration compliance per feature and device."""
 
-import json
 import logging
-
+import json
 from deepdiff import DeepDiff
+from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.db import models
 from django.shortcuts import reverse
 from django.utils.module_loading import import_string
 from django.utils.text import slugify
-from nautobot.core.models.generics import PrimaryModel
-from nautobot.extras.models import DynamicGroup, ObjectChange
+from hier_config import Host
+
+from nautobot.extras.models import ObjectChange, DynamicGroup
 from nautobot.extras.utils import extras_features
 from nautobot.utilities.utils import serialize_object, serialize_object_v2
+from nautobot.core.models.generics import PrimaryModel
 from netutils.config.compliance import feature_compliance
+
 from nautobot_golden_config.choices import ComplianceRuleTypeChoice
-from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
 from nautobot_golden_config.utilities.utils import get_platform
+from nautobot_golden_config.utilities.constant import PLUGIN_CFG
 
 
 LOGGER = logging.getLogger(__name__)
@@ -34,6 +36,13 @@ MISSING_MSG = (
 VALIDATION_MSG = (
     ERROR_MSG + "Specifically the key {} was expected to be of type(s) {} and the value of {} was not that type(s)."
 )
+PLATFORM_LOOKUP_TABLE = {
+    "cisco_ios": "ios",
+    "cisco_xe": "iosxe",
+    "cisco_xr": "iosxr",
+    "cisco_nxos": "nxos",
+    "arista": "eos",
+}
 
 
 def _is_jsonable(val):
@@ -134,7 +143,7 @@ FUNC_MAPPER = {
     ComplianceRuleTypeChoice.TYPE_CLI: _get_cli_compliance,
     ComplianceRuleTypeChoice.TYPE_JSON: _get_json_compliance,
 }
-# The below conditionally add the custom provided compliance type
+# The below conditionally add the cusom provided compliance type
 if PLUGIN_CFG.get("get_custom_compliance"):
     try:
         FUNC_MAPPER[ComplianceRuleTypeChoice.TYPE_CUSTOM] = import_string(PLUGIN_CFG["get_custom_compliance"])
@@ -294,9 +303,7 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
         """Indicates model fields to return as csv."""
         return (self.device.name, self.rule.feature.name, self.compliance)
 
-    def to_objectchange(
-        self, action, *, related_object=None, object_data_extra=None, object_data_exclude=None
-    ):  # pylint: disable=arguments-differ
+    def to_objectchange(self, action, related_object=None, object_data_extra=None, object_data_exclude=None):
         """Remove actual and intended configuration from changelog."""
         if not object_data_exclude:
             object_data_exclude = ["actual", "intended"]
@@ -312,7 +319,7 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
     class Meta:
         """Set unique together fields for model."""
 
-        ordering = ["device", "rule"]
+        ordering = ["device"]
         unique_together = ("device", "rule")
 
     def __str__(self):
@@ -371,6 +378,8 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
     compliance_last_attempt_date = models.DateTimeField(null=True)
     compliance_last_success_date = models.DateTimeField(null=True)
 
+    remediation = models.TextField(blank=True, help_text="Configuration commands to bring device into compliance")
+
     csv_headers = [
         "Device Name",
         "backup attempt",
@@ -379,6 +388,7 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
         "intended successful",
         "compliance attempt",
         "compliance successful",
+        "config remediation",
     ]
 
     def to_csv(self):
@@ -391,14 +401,13 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
             self.intended_last_success_date,
             self.compliance_last_attempt_date,
             self.compliance_last_success_date,
+            self.remediation,
         )
 
-    def to_objectchange(
-        self, action, *, related_object=None, object_data_extra=None, object_data_exclude=None
-    ):  # pylint: disable=arguments-differ
+    def to_objectchange(self, action, related_object=None, object_data_extra=None, object_data_exclude=None):
         """Remove actual and intended configuration from changelog."""
         if not object_data_exclude:
-            object_data_exclude = ["backup_config", "intended_config", "compliance_config"]
+            object_data_exclude = ["backup_config", "intended_config", "compliance_config", "remediation"]
         return ObjectChange(
             changed_object=self,
             object_repr=str(self),
@@ -407,6 +416,16 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
             object_data_v2=serialize_object_v2(self),
             related_object=related_object,
         )
+
+    def save(self, *args, **kwargs):
+        if PLATFORM_LOOKUP_TABLE.get(self.device.platform.slug):
+            if self.backup_config and self.intended_config:
+                host = Host(hostname=self.device.name, os=PLATFORM_LOOKUP_TABLE.get(self.device.platform.slug))
+                host.load_generated_config(self.intended_config)
+                host.load_running_config(self.backup_config)
+                host.remediation_config()
+                self.remediation = host.remediation_config_filtered_text(include_tags={}, exclude_tags={})
+        super().save(*args, **kwargs)
 
     class Meta:
         """Set unique together fields for model."""
@@ -422,7 +441,7 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
     "graphql",
 )
 class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
-    """GoldenConfigSetting Model definition. This provides global configs instead of via configs.py."""
+    """GoldenConfigSetting Model defintion. This provides global configs instead of via configs.py."""
 
     name = models.CharField(max_length=100, unique=True, blank=False)
     slug = models.SlugField(max_length=100, unique=True, blank=False)
@@ -495,25 +514,9 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         related_name="golden_config_setting",
     )
 
-    csv_headers = [
-        "name",
-        "slug",
-        "weight",
-        "description",
-    ]
-
-    def to_csv(self):
-        """Indicates model fields to return as csv."""
-        return (
-            self.name,
-            self.slug,
-            self.weight,
-            self.description,
-        )
-
     def get_absolute_url(self):  # pylint: disable=no-self-use
         """Return absolute URL for instance."""
-        return reverse("plugins:nautobot_golden_config:goldenconfigsetting", args=[self.pk])
+        return reverse("plugins:nautobot_golden_config:goldenconfigsetting", args=[self.slug])
 
     def __str__(self):
         """Return a simple string if model is called."""
@@ -560,12 +563,9 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         """Validate the scope and GraphQL query."""
         super().clean()
 
-        if ENABLE_SOTAGG and not self.sot_agg_query:
-            raise ValidationError("A GraphQL query must be defined when `ENABLE_SOTAGG` is True")
-
         if self.sot_agg_query:
             LOGGER.debug("GraphQL - test  query start with: `%s`", GRAPHQL_STR_START)
-            if not str(self.sot_agg_query.query.lstrip()).startswith(GRAPHQL_STR_START):
+            if not str(self.sot_agg_query.query).startswith(GRAPHQL_STR_START):
                 raise ValidationError(f"The GraphQL query must start with exactly `{GRAPHQL_STR_START}`")
 
     def get_queryset(self):
@@ -591,7 +591,7 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     "webhooks",
 )
 class ConfigRemove(PrimaryModel):  # pylint: disable=too-many-ancestors
-    """ConfigRemove for Regex Line Removals from Backup Configuration Model definition."""
+    """ConfigRemove for Regex Line Removals from Backup Configuration Model defintion."""
 
     name = models.CharField(max_length=255, null=False, blank=False)
     platform = models.ForeignKey(
@@ -643,7 +643,7 @@ class ConfigRemove(PrimaryModel):  # pylint: disable=too-many-ancestors
     "webhooks",
 )
 class ConfigReplace(PrimaryModel):  # pylint: disable=too-many-ancestors
-    """ConfigReplace for Regex Line Replacements from Backup Configuration Model definition."""
+    """ConfigReplace for Regex Line Replacements from Backup Configuration Model defintion."""
 
     name = models.CharField(max_length=255, null=False, blank=False)
     platform = models.ForeignKey(
@@ -688,3 +688,64 @@ class ConfigReplace(PrimaryModel):  # pylint: disable=too-many-ancestors
     def __str__(self):
         """Return a simple string if model is called."""
         return self.name
+
+
+# class HConfigOptions(PrimaryModel):
+#     """Options for customizing hier_config remediations"""
+
+#     pass
+
+
+# class PerLineSub(PrimaryModel):
+#     """Per line sub allows for substitutions of individual lines.
+#     This is commonly used to remove artifacts from a running configuration that don't provide any value
+#     when creating remediation steps."""
+
+#     search = models.TextField(blank=False, help_text="Regex Pattern to Substitute")
+#     replace = models.TextField(blank=False, help_text="Text that will be inserted in place of Regex pattern match.")
+
+#     csv_headers = ["search", "replace"]
+
+#     def to_csv(self):
+#         """Indicates model fields to return as csv."""
+#         return (self.search, self.replace)
+
+#     class Meta:
+#         """Meta information for PerLineSub model."""
+
+#         ordering = ("search", "replace")
+#         unique_together = ("search", "replace")
+
+#     def get_absolute_url(self):
+#         """Return absolute URL for instance."""
+#         return reverse("plugins:nautobot_golden_config:perlinesub", args=[self.pk])
+
+#     def __str__(self):
+#         return f"Search: {self.search}; Replace: {self.replace}"
+
+
+# class FullTextSub(PrimaryModel):
+#     """Allows for substitutions of multi-line strings.
+#     This is commonly used to remove artifacts from a running configuration that don't provide any value"""
+
+#     search = models.TextField(blank=False, help_text="Regex Pattern to Substitute")
+#     replace = models.TextField(blank=False, help_text="Text that will be inserted in place of Regex pattern match.")
+
+#     csv_headers = ["search", "replace"]
+
+#     def to_csv(self):
+#         """Indicates model fields to return as csv."""
+#         return (self.search, self.replace)
+
+#     class Meta:
+#         """Meta information for FullTextSub model."""
+
+#         ordering = ("search", "replace")
+#         unique_together = ("search", "replace")
+
+#     def get_absolute_url(self):
+#         """Return absolute URL for instance."""
+#         return reverse("plugins:nautobot_golden_config:fulltextsub", args=[self.pk])
+
+#     def __str__(self):
+#         return f"Search: {self.search}; Replace: {self.replace}"

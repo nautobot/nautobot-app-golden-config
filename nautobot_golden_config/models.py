@@ -43,6 +43,12 @@ PLATFORM_LOOKUP_TABLE = {
     "cisco_nxos": "nxos",
     "arista": "eos",
 }
+LINEAGE_CHOICES = (
+    ("startswith", "startswith"),
+    ("endswith", "endswith"),
+    ("contains", "contains"),
+    ("equals", "equals"),
+)
 
 
 def _is_jsonable(val):
@@ -749,3 +755,11 @@ class ConfigReplace(PrimaryModel):  # pylint: disable=too-many-ancestors
 
 #     def __str__(self):
 #         return f"Search: {self.search}; Replace: {self.replace}"
+
+# class Lineage(PrimaryModel):
+#     """Lineage Rules make up most hconfig option lists, and determine the level of hierarchical nesting to apply an option"""
+
+#     parent = models.ForeignKey(to="HConfigOptions", on_delete=models.CASCADE)
+#     key = models.CharField(choices=LINEAGE_CHOICES, blank=False, null=False, max_length=255)
+#     value = models.CharField(max_length=500, blank=False, null=False)
+#     order = models.IntegerField(null=False, blank=True)

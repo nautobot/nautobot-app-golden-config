@@ -75,7 +75,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
                   name
                 }
               }
-            """
+            """,
         )
         self.test_settings_a = GoldenConfigSetting.objects.create(
             name="test_a",

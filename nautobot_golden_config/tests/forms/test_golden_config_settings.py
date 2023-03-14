@@ -2,7 +2,6 @@
 from unittest import mock
 
 from django.test import TestCase
-from django.core.exceptions import ValidationError
 
 from nautobot.extras.models import GitRepository, DynamicGroup
 from nautobot_golden_config.forms import GoldenConfigSettingFeatureForm

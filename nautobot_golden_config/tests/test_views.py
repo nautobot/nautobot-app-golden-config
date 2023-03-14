@@ -66,8 +66,10 @@ class ConfigComplianceOverviewOverviewHelperTestCase(TestCase):
     @mock.patch.object(views, "graph_ql_query")
     @mock.patch.object(views, "get_device_to_settings_map")
     @mock.patch("nautobot_golden_config.models.GoldenConfigSetting")
-    def test_config_compliance_details_sotagg_error(self, mock_gc_setting, mock_get_device_to_settings_map, mock_graphql_query):
-        device =  Device.objects.first()
+    def test_config_compliance_details_sotagg_error(
+        self, mock_gc_setting, mock_get_device_to_settings_map, mock_graphql_query
+    ):
+        device = Device.objects.first()
         mock_gc_setting.sot_agg_query = None
         mock_get_device_to_settings_map.return_value = {device.id: mock_gc_setting}
         request = self.client.get(f"/plugins/golden-config/config-compliance/details/{device.pk}/sotagg/")
@@ -78,8 +80,10 @@ class ConfigComplianceOverviewOverviewHelperTestCase(TestCase):
     @mock.patch.object(views, "graph_ql_query")
     @mock.patch.object(views, "get_device_to_settings_map")
     @mock.patch("nautobot_golden_config.models.GoldenConfigSetting")
-    def test_config_compliance_details_sotagg_error(self, mock_gc_setting, mock_get_device_to_settings_map, mock_graph_ql_query):
-        device =  Device.objects.first()
+    def test_config_compliance_details_sotagg_no_error(
+        self, mock_gc_setting, mock_get_device_to_settings_map, mock_graph_ql_query
+    ):
+        device = Device.objects.first()
         mock_get_device_to_settings_map.return_value = {device.id: mock_gc_setting}
         mock_graph_ql_query.return_value = ("discard value", "This is a mock graphql result")
         request = self.client.get(f"/plugins/golden-config/config-compliance/details/{device.pk}/sotagg/")

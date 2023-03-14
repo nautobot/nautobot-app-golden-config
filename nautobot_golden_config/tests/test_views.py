@@ -80,7 +80,6 @@ class ConfigComplianceOverviewOverviewHelperTestCase(TestCase):
     @mock.patch("nautobot_golden_config.models.GoldenConfigSetting")
     def test_config_compliance_details_sotagg_error(self, mock_gc_setting, mock_get_device_to_settings_map, mock_graph_ql_query):
         device =  Device.objects.first()
-        #mock_gc_setting.sot_agg_query = "This is a mock query"
         mock_get_device_to_settings_map.return_value = {device.id: mock_gc_setting}
         mock_graph_ql_query.return_value = ("discard value", "This is a mock graphql result")
         request = self.client.get(f"/plugins/golden-config/config-compliance/details/{device.pk}/sotagg/")

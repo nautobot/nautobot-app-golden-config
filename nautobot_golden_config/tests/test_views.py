@@ -73,7 +73,7 @@ class ConfigComplianceOverviewOverviewHelperTestCase(TestCase):
         mock_gc_setting.sot_agg_query = None
         mock_get_device_to_settings_map.return_value = {device.id: mock_gc_setting}
         request = self.client.get(f"/plugins/golden-config/config-compliance/details/{device.pk}/sotagg/")
-        expected = '{\n    &quot;Error&quot;: &quot;No saved `GraphQL Query` query was configured in the `Golden Config Setting`&quot;\n}'
+        expected = "{\n    &quot;Error&quot;: &quot;No saved `GraphQL Query` query was configured in the `Golden Config Setting`&quot;\n}"
         self.assertContains(request, expected)
         mock_graphql_query.assert_not_called()
 

@@ -414,7 +414,7 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
                 if sot_agg_query_setting is not None:
                     _, output = graph_ql_query(request, device, sot_agg_query_setting.query)
                 else:
-                    output = None
+                    output = {"Error": "No saved `GraphQL Query` query was configured in the `Golden Config Setting`"}
             else:
                 raise ObjectDoesNotExist(f"{device.name} does not map to a Golden Config Setting.")
 

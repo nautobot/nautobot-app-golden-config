@@ -546,7 +546,7 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
 
         if self.sot_agg_query:
             LOGGER.debug("GraphQL - test  query start with: `%s`", GRAPHQL_STR_START)
-            if not str(self.sot_agg_query.query).startswith(GRAPHQL_STR_START):
+            if not str(self.sot_agg_query.query.lstrip()).startswith(GRAPHQL_STR_START):
                 raise ValidationError(f"The GraphQL query must start with exactly `{GRAPHQL_STR_START}`")
 
     def get_queryset(self):

@@ -1,6 +1,8 @@
 """Tests for Golden Configuration Settings Form."""
+from unittest import mock
 
 from django.test import TestCase
+
 from nautobot.extras.models import GitRepository, DynamicGroup
 from nautobot_golden_config.forms import GoldenConfigSettingFeatureForm
 from nautobot_golden_config.models import GoldenConfigSetting
@@ -19,22 +21,43 @@ class GoldenConfigSettingFormTest(TestCase):
 
     def test_no_query_no_scope_success(self):
         """Testing GoldenConfigForm without specifying a unique scope or GraphQL Query."""
-        form = GoldenConfigSettingFeatureForm(
-            data={
-                "name": "test",
-                "slug": "test",
-                "weight": 1000,
-                "description": "Test description.",
-                "backup_repository": GitRepository.objects.get(name="test-backup-repo-1"),
-                "backup_path_template": "{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg",
-                "intended_repository": GitRepository.objects.get(name="test-intended-repo-1"),
-                "intended_path_template": "{{ obj.site.slug }}/{{ obj.name }}.cfg",
-                "backup_test_connectivity": True,
-                "dynamic_group": DynamicGroup.objects.first()
-            }
-        )
-        self.assertTrue(form.is_valid())
-        self.assertTrue(form.save())
+        with mock.patch("nautobot_golden_config.models.ENABLE_SOTAGG", False):
+            form = GoldenConfigSettingFeatureForm(
+                data={
+                    "name": "test",
+                    "slug": "test",
+                    "weight": 1000,
+                    "description": "Test description.",
+                    "backup_repository": GitRepository.objects.get(name="test-backup-repo-1"),
+                    "backup_path_template": "{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg",
+                    "intended_repository": GitRepository.objects.get(name="test-intended-repo-1"),
+                    "intended_path_template": "{{ obj.site.slug }}/{{ obj.name }}.cfg",
+                    "backup_test_connectivity": True,
+                    "dynamic_group": DynamicGroup.objects.first()
+                }
+            )
+            self.assertTrue(form.is_valid())
+            self.assertTrue(form.save())
+
+    def test_no_query_fail(self):
+        """Testing GoldenConfigForm without specifying a unique scope or GraphQL Query."""
+        with mock.patch("nautobot_golden_config.models.ENABLE_SOTAGG", True):
+            form = GoldenConfigSettingFeatureForm(
+                data={
+                    "name": "test",
+                    "slug": "test",
+                    "weight": 1000,
+                    "description": "Test description.",
+                    "backup_repository": GitRepository.objects.get(name="test-backup-repo-1"),
+                    "backup_path_template": "{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg",
+                    "intended_repository": GitRepository.objects.get(name="test-intended-repo-1"),
+                    "intended_path_template": "{{ obj.site.slug }}/{{ obj.name }}.cfg",
+                    "backup_test_connectivity": True,
+                    "dynamic_group": DynamicGroup.objects.first()
+                }
+            )
+            self.assertFalse(form.is_valid())
+            self.assertEqual(form.errors["__all__"][0], "A GraphQL query must be defined when `ENABLE_SOTAGG` is True")
 
     def test_clean_up(self):
         """Transactional custom model, unable to use `get_or_create`.

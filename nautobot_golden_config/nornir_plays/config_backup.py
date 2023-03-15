@@ -14,6 +14,7 @@ from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInv
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.utils import get_dispatcher
 
+from nautobot_golden_config.metrics import number_of_devices_metric
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.utilities.helper import (
     get_device_to_settings_map,
@@ -96,6 +97,7 @@ def config_backup(job_result, data):
     logger = NornirLogger(__name__, job_result, data.get("debug"))
 
     qs = get_job_filter(data)
+    number_of_devices_metric.labels("backup").set(qs.count())
     logger.log_debug("Compiling device data for backup.")
     device_to_settings_map = get_device_to_settings_map(queryset=qs)
 

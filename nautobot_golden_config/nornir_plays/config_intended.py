@@ -113,40 +113,40 @@ def config_intended(nautobot_job, data):
     logger = NornirLogger(__name__, nautobot_job, data.get("debug"))
 
     qs = get_job_filter(data)
-    number_of_devices_metric.labels(["intended"]).set(qs.count())
-    # logger.log_debug("Compiling device data for intended configuration.")
-    # device_to_settings_map = get_device_to_settings_map(queryset=qs)
-    #
-    # for settings in set(device_to_settings_map.values()):
-    #     verify_settings(logger, settings, ["jinja_path_template", "intended_path_template", "sot_agg_query"])
-    #
-    # try:
-    #     with InitNornir(
-    #         runner=NORNIR_SETTINGS.get("runner"),
-    #         logging={"enabled": False},
-    #         inventory={
-    #             "plugin": "nautobot-inventory",
-    #             "options": {
-    #                 "credentials_class": NORNIR_SETTINGS.get("credentials"),
-    #                 "params": NORNIR_SETTINGS.get("inventory_params"),
-    #                 "queryset": qs,
-    #                 "defaults": {"now": now},
-    #             },
-    #         },
-    #     ) as nornir_obj:
-    #
-    #         nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
-    #
-    #         logger.log_debug("Run nornir render config tasks.")
-    #         # Run the Nornir Tasks
-    #         nr_with_processors.run(
-    #             task=run_template,
-    #             name="RENDER CONFIG",
-    #             logger=logger,
-    #             device_to_settings_map=device_to_settings_map,
-    #             nautobot_job=nautobot_job,
-    #         )
-    #
-    # except Exception as err:
-    #     logger.log_failure(None, err)
-    #     raise
+    number_of_devices_metric.labels("intended").set(qs.count())
+    logger.log_debug("Compiling device data for intended configuration.")
+    device_to_settings_map = get_device_to_settings_map(queryset=qs)
+
+    for settings in set(device_to_settings_map.values()):
+        verify_settings(logger, settings, ["jinja_path_template", "intended_path_template", "sot_agg_query"])
+
+    try:
+        with InitNornir(
+            runner=NORNIR_SETTINGS.get("runner"),
+            logging={"enabled": False},
+            inventory={
+                "plugin": "nautobot-inventory",
+                "options": {
+                    "credentials_class": NORNIR_SETTINGS.get("credentials"),
+                    "params": NORNIR_SETTINGS.get("inventory_params"),
+                    "queryset": qs,
+                    "defaults": {"now": now},
+                },
+            },
+        ) as nornir_obj:
+
+            nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
+
+            logger.log_debug("Run nornir render config tasks.")
+            # Run the Nornir Tasks
+            nr_with_processors.run(
+                task=run_template,
+                name="RENDER CONFIG",
+                logger=logger,
+                device_to_settings_map=device_to_settings_map,
+                nautobot_job=nautobot_job,
+            )
+
+    except Exception as err:
+        logger.log_failure(None, err)
+        raise

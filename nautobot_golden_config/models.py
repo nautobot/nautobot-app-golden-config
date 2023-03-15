@@ -41,7 +41,7 @@ PLATFORM_LOOKUP_TABLE = {
     "cisco_xe": "iosxe",
     "cisco_xr": "iosxr",
     "cisco_nxos": "nxos",
-    "arista": "eos",
+    "arista_eos": "eos",
 }
 LINEAGE_CHOICES = (
     ("startswith", "startswith"),

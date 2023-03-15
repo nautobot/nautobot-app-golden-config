@@ -76,6 +76,16 @@
             ></a>
           </td>
         </tr>
+        {% endif %} {% if config_features.compliance and golden_config.remediation %}
+        <tr>
+          <td>Remediation</td>
+          <td>
+            <a
+              href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=device.pk config_type='remediation' %}"
+              ><i class="mdi mdi-file-compare"></i
+            ></a>
+          </td>
+        </tr>
         {% endif %} {% if config_features.intended and golden_config.intended_config %}
         <tr>
           <td>Intended</td>

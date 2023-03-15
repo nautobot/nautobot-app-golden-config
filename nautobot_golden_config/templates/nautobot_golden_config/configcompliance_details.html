@@ -15,6 +15,8 @@
     <h1>Aggregate Data - {{ device_name }}</h1>
 {% elif config_type in "compliance,json_compliance" %}
     <h1>Compliance Details - {{ device_name }}</h1>
+{% elif config_type == "remediation" %}
+    <h1>Remediation Config - {{ device_name }}</h1>
 {% elif config_type == "backup" %}
     <h1>Backup Configuration Details - {{ device_name }}</h1>
 {% else %}

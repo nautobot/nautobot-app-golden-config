@@ -27,10 +27,9 @@ def get_secret_by_secret_group_slug(
     secrets_group_slug: str,
     secret_type: str,
     secret_access_type: Optional[str] = SecretsGroupAccessTypeChoices.TYPE_GENERIC,
+    **kwargs,
 ) -> Optional[str]:
     """Gets the secret from a Secret Group slug. To be used as a Jinja filter.
-
-    We assume that there is only one secret group corresponding to a model.
 
     Args:
         user (User): User object that performs API call to render push template with secrets.
@@ -52,6 +51,7 @@ def get_secret_by_secret_group_slug(
     return secrets_group.get_secret_value(
         access_type=secret_access_type,
         secret_type=secret_type,
+        **kwargs,
     )
 
 

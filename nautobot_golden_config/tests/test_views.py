@@ -3,6 +3,7 @@
 from unittest import mock
 
 from django.test import TestCase
+from django.urls import reverse
 from django.contrib.auth import get_user_model
 
 from nautobot.dcim.models import Device
@@ -48,7 +49,6 @@ class ConfigComplianceOverviewOverviewHelperTestCase(TestCase):
         self.client.login(username="views", password="incredible")
 
     def test_plot_visual_no_devices(self):
-
         aggr = {"comp_percents": 0, "compliants": 0, "non_compliants": 0, "total": 0}
 
         self.assertEqual(self.ccoh.plot_visual(aggr), None)
@@ -90,3 +90,79 @@ class ConfigComplianceOverviewOverviewHelperTestCase(TestCase):
         expected = "This is a mock graphql result"
         self.assertContains(request, expected)
         mock_graph_ql_query.assert_called()
+
+
+class ConfigReplaceListViewTestCase(TestCase):
+    """Test ConfigReplaceListView."""
+
+    def setUp(self):
+        """Set up base objects."""
+        create_device_data()
+        User.objects.create_superuser(username="views", password="incredible")
+        self.client.login(username="views", password="incredible")
+        self._delete_test_entry()
+        models.ConfigReplace.objects.create(
+            name=self._entry_name,
+            platform=Device.objects.first().platform,
+            description=self._entry_description,
+            regex=self._entry_regex,
+            replace=self._entry_replace,
+        )
+
+    @property
+    def _url(self):
+        return reverse("plugins:nautobot_golden_config:configreplace_list")
+
+    def _delete_test_entry(self):
+        try:
+            entry = models.ConfigReplace.objects.get(name=self._entry_name)
+            entry.delete()
+        except models.ConfigReplace.DoesNotExist:
+            pass
+
+    @property
+    def _csv_headers(self):
+        return "name,platform,description,regex,replace"
+
+    @property
+    def _entry_name(self):
+        return "test name"
+
+    @property
+    def _entry_description(self):
+        return "test description"
+
+    @property
+    def _entry_regex(self):
+        return "^startswiththeend$"
+
+    @property
+    def _entry_replace(self):
+        return "<dontlookatme>"
+
+    def test_configreplace_export(self):
+        response = self.client.get(f"{self._url}?export")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["Content-Type"], "text/csv")
+        last_entry = models.ConfigReplace.objects.last()
+        csv_data = response.content.decode().splitlines()
+        expected_last_entry = f"{last_entry.name},{last_entry.platform.id},{last_entry.description},{last_entry.regex},{last_entry.replace}"
+        self.assertEqual(csv_data[0], self._csv_headers)
+        self.assertEqual(csv_data[-1], expected_last_entry)
+        self.assertEqual(len(csv_data) - 1, models.ConfigReplace.objects.count())
+
+    def test_configreplace_import(self):
+        self._delete_test_entry()
+        platform = Device.objects.first().platform
+        import_entry = (
+            f"{self._entry_name},{platform.id},{self._entry_description},{self._entry_regex},{self._entry_replace}"
+        )
+        form_data = {"csv_data": f"{self._csv_headers}\n{import_entry}"}
+        response = self.client.post(f"{self._url}import/", data=form_data, follow=True)
+        last_entry = models.ConfigReplace.objects.last()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(last_entry.name, self._entry_name)
+        self.assertEqual(last_entry.platform, platform)
+        self.assertEqual(last_entry.description, self._entry_description)
+        self.assertEqual(last_entry.regex, self._entry_regex)
+        self.assertEqual(last_entry.replace, self._entry_replace)

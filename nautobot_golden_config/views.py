@@ -975,6 +975,14 @@ class ConfigReplaceListView(generic.ObjectListView):
     filterset = filters.ConfigReplaceFilterSet
     filterset_form = forms.ConfigReplaceFeatureFilterForm
 
+    def queryset_to_csv(self):
+        """Export queryset of objects as comma-separated value (CSV)."""
+        csv_data = ["name,platform,description,regex,replace"]
+        for record in self.queryset:
+            csv_data.append(f"{record.name},{record.platform.id},{record.description},{record.regex},{record.replace}")
+
+        return "\n".join(csv_data)
+
 
 class ConfigReplaceView(generic.ObjectView):
     """View for single ConfigReplace instance."""

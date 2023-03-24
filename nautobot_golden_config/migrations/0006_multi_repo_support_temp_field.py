@@ -18,7 +18,6 @@ def convert_many_repos(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("extras", "0013_default_fallback_value_computedfield"),
         ("nautobot_golden_config", "0005_json_compliance_rule"),

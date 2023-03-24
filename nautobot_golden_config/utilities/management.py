@@ -49,7 +49,6 @@ def job_runner(handle_class, job_class, device=None, user=None):
 
     # Report on success/failure
     for test_name, attrs in job_result.data.items():
-
         if test_name in ["total", "output"]:
             continue
 

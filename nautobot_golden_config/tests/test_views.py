@@ -40,7 +40,6 @@ class ConfigComplianceOverviewOverviewHelperTestCase(TestCase):
         self.ccoh = views.ConfigComplianceOverviewOverviewHelper
 
     def test_plot_visual_no_devices(self):
-
         aggr = {"comp_percents": 0, "compliants": 0, "non_compliants": 0, "total": 0}
 
         self.assertEqual(self.ccoh.plot_visual(aggr), None)

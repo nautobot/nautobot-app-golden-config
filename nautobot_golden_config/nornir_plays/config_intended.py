@@ -131,7 +131,6 @@ def config_intended(nautobot_job, data):
                 },
             },
         ) as nornir_obj:
-
             nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
 
             logger.log_debug("Run nornir render config tasks.")

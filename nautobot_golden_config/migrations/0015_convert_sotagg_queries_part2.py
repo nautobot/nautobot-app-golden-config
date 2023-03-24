@@ -14,7 +14,6 @@ def save_existing_sotagg_queries(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("nautobot_golden_config", "0014_convert_sotagg_queries_part1"),
     ]

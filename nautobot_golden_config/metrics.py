@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 from django.conf import settings
 from prometheus_client import Gauge
 from prometheus_client.core import GaugeMetricFamily
-
-from nautobot_golden_config.models import GoldenConfig
+from nautobot.dcim.models import Device
+from nautobot_golden_config.models import GoldenConfig, ComplianceFeature, ComplianceRule, ConfigCompliance
 
 PLUGIN_SETTINGS = settings.PLUGINS_CONFIG.get("nautobot_golden_config", {})
 
@@ -14,7 +14,7 @@ number_of_devices_metric = Gauge(
 )
 
 
-def metric_backup():
+def metric_gc_jobs():
     backup_gauges = GaugeMetricFamily(
         "nautobot_gc_backup_total", "Nautobot Golden Config Backups", labels=["seconds", "status"]
     )
@@ -73,4 +73,24 @@ def metric_backup():
     yield compliance_gauges
 
 
-metrics = [metric_backup]
+def metric_golden_config():
+
+    features = ComplianceFeature.objects.all()
+
+    devices_gauge = GaugeMetricFamily(
+        "nautobot_gc_devices_per_feature", "Nautobot Golden Config Devices per feature", labels=["device"]
+    )
+
+    for feature in features:
+        rules_per_feature = ComplianceRule.objects.filter(feature=feature)
+        if rules_per_feature:
+            devices_gauge.add_metric(
+                labels=[feature.name], value=Device.objects.filter(platform=rules_per_feature.first().platform).count()
+            )
+        else:
+            devices_gauge.add_metric(labels=[feature.name], value=0)
+
+    yield devices_gauge
+
+
+metrics = [metric_gc_jobs, metric_golden_config]

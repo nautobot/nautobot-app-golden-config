@@ -16,9 +16,7 @@ number_of_devices_metric = Gauge(
 
 def metric_backup():
     backup_gauges = GaugeMetricFamily(
-        "nautobot_gc_backup_total",
-        "Nautobot Golden Config Backups",
-        labels=["seconds", "status"]
+        "nautobot_gc_backup_total", "Nautobot Golden Config Backups", labels=["seconds", "status"]
     )
     time_delta_to_include = PLUGIN_SETTINGS.get("metrics", {}).get("time_delta", timedelta(days=1))
     start_inclusion_date = datetime.now() - time_delta_to_include
@@ -38,9 +36,7 @@ def metric_backup():
     yield backup_gauges
 
     intended_gauges = GaugeMetricFamily(
-        "nautobot_gc_intended_total",
-        "Nautobot Golden Config Intended",
-        labels=["seconds", "status"]
+        "nautobot_gc_intended_total", "Nautobot Golden Config Intended", labels=["seconds", "status"]
     )
 
     successful_intended = GoldenConfig.objects.filter(intended_last_success_date__gte=start_inclusion_date)
@@ -56,6 +52,23 @@ def metric_backup():
     )
 
     yield intended_gauges
+
+    compliance_gauges = GaugeMetricFamily(
+        "nautobot_gc_compliance_total", "Nautobot Golden Config Compliance", labels=["seconds", "status"]
+    )
+
+    successful_compliance = GoldenConfig.objects.filter(compliance_last_success_date__gte=start_inclusion_date)
+    attempted_compliance = GoldenConfig.objects.filter(compliance_last_attempt_date__gte=start_inclusion_date)
+
+    compliance_gauges.add_metric(
+        labels=[str(int(time_delta_to_include.total_seconds())), "success"],
+        value=successful_compliance.count(),
+    )
+
+    compliance_gauges.add_metric(
+        labels=[str(int(time_delta_to_include.total_seconds())), "failure"],
+        value=attempted_compliance.count() - successful_compliance.count(),
+    )
 
 
 metrics = [metric_backup]

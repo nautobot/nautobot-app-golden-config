@@ -2,11 +2,12 @@
 from datetime import datetime, timedelta
 
 from django.conf import settings
-from prometheus_client import Gauge
 from django.db.models import Count, Q
-from prometheus_client.core import GaugeMetricFamily
 from nautobot.dcim.models import Device
-from nautobot_golden_config.models import GoldenConfig, ComplianceFeature, ComplianceRule, ConfigCompliance
+from prometheus_client import Gauge
+from prometheus_client.core import GaugeMetricFamily
+
+from nautobot_golden_config.models import ComplianceFeature, ComplianceRule, ConfigCompliance, GoldenConfig
 
 PLUGIN_SETTINGS = settings.PLUGINS_CONFIG.get("nautobot_golden_config", {})
 

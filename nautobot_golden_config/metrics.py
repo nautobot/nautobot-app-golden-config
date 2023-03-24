@@ -70,5 +70,7 @@ def metric_backup():
         value=attempted_compliance.count() - successful_compliance.count(),
     )
 
+    yield compliance_gauges
+
 
 metrics = [metric_backup]

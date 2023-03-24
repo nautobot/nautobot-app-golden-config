@@ -17,9 +17,7 @@ from nornir_nautobot.utils.logger import NornirLogger
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.utils import get_dispatcher
-from prometheus_client import Gauge
 
-from nautobot_golden_config.metrics import number_of_devices_metric
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.models import GoldenConfigSetting, GoldenConfig
 from nautobot_golden_config.utilities.helper import (
@@ -113,7 +111,6 @@ def config_intended(nautobot_job, data):
     logger = NornirLogger(__name__, nautobot_job, data.get("debug"))
 
     qs = get_job_filter(data)
-    number_of_devices_metric.labels("intended").set(qs.count())
     logger.log_debug("Compiling device data for intended configuration.")
     device_to_settings_map = get_device_to_settings_map(queryset=qs)
 

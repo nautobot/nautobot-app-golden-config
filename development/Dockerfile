@@ -50,7 +50,7 @@ COPY . /source
 # Get container's installed Nautobot version as a forced constraint
 # NAUTOBOT_VER may be a branch name and not a published release therefor we need to get the installed version
 #  so pip can use it to recognize local constraints.
-#RUN pip show nautobot | grep "^Version: " | sed -e 's/Version: /nautobot==/' > constraints.txt
+RUN pip show nautobot | grep "^Version: " | sed -e 's/Version: /nautobot==/' > constraints.txt
 
 # Use Poetry to grab dev dependencies from the lock file
 # Can be improved in Poetry 1.2 which allows `poetry install --only dev`
@@ -63,11 +63,11 @@ RUN sort poetry_freeze_base.txt poetry_freeze_all.txt | uniq -u > poetry_freeze_
 
 # Install all local project as editable, constrained on Nautobot version, to get any additional
 #   direct dependencies of the plugin
-RUN pip install -e .
+RUN pip install -c constraints.txt -e .
 
 # Install any dev dependencies frozen from Poetry
 # Can be improved in Poetry 1.2 which allows `poetry install --only dev`
-RUN pip install  -r poetry_freeze_dev.txt
+RUN pip install -c constraints.txt -r poetry_freeze_dev.txt
 
 COPY development/nautobot_config.py ${NAUTOBOT_ROOT}/nautobot_config.py
 # !!! USE CAUTION WHEN MODIFYING LINES ABOVE

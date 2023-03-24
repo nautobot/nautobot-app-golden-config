@@ -134,8 +134,6 @@ CACHEOPS_REDIS = parse_redis_connection(redis_database=1)
 #
 
 
-CELERY_WORKER_PROMETHEUS_PORTS = [8080]
-
 # Enable installed plugins. Add the name of each plugin to the list.
 PLUGINS = ["nautobot_plugin_nornir", "nautobot_golden_config"]
 
@@ -152,13 +150,6 @@ PLUGINS_CONFIG = {
                 },
             },
         },
-        "connection_options": {
-            "napalm": {
-                "extras": {
-                    "optional_args": {"path": "/tmp/mock_napalm_results"},
-                },
-            },
-        }
         # dispatcher_mapping may be necessary if you get an error `Cannot import "<foo>". Is the library installed?`
         # when you run a backup job, and <foo> is the name of the platform applied to the device.
         # to the Nornir driver names ("arista_eos", "cisco_ios", etc.).
@@ -183,9 +174,6 @@ PLUGINS_CONFIG = {
         "enable_postprocessing": is_truthy(os.environ.get("ENABLE_POSTPROCESSING", True)),
         "postprocessing_callables": os.environ.get("POSTPROCESSING_CALLABLES", []),
         "postprocessing_subscribed": os.environ.get("POSTPROCESSING_SUBSCRIBED", []),
-        "metrics": {
-            "enable": True
-        }
         # The platform_slug_map maps an arbitrary platform slug to its corresponding parser.
         # Use this if the platform slug names in your Nautobot instance don't correspond exactly
         # to the Nornir driver names ("arista_eos", "cisco_ios", etc.).
@@ -200,8 +188,6 @@ PLUGINS_CONFIG = {
         # "get_custom_compliance": "my.custom_compliance.func",
     },
 }
-if PLUGINS_CONFIG.get("nautobot_golden_config", {}).get("metrics", {}).get("enable", False):
-    PLUGINS.append("nautobot_capacity_metrics")
 
 # Modify django_jinja Environment for test cases
 django_jinja_config = None

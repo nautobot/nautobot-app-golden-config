@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from prometheus_client import Gauge
+from django.db.models import Count, Q
 from prometheus_client.core import GaugeMetricFamily
 from nautobot.dcim.models import Device
 from nautobot_golden_config.models import GoldenConfig, ComplianceFeature, ComplianceRule, ConfigCompliance
@@ -15,6 +16,11 @@ number_of_devices_metric = Gauge(
 
 
 def metric_gc_jobs():
+    """Calculate the successful vs the failed GC jobs for backups, intended & compliance.
+
+    Yields:
+        GaugeMetricFamily: Prometheus Metrics
+    """
     backup_gauges = GaugeMetricFamily(
         "nautobot_gc_backup_total", "Nautobot Golden Config Backups", labels=["seconds", "status"]
     )
@@ -74,7 +80,11 @@ def metric_gc_jobs():
 
 
 def metric_golden_config():
+    """Calculate number of devices configured for GC Compliance feature.
 
+    Yields:
+        GaugeMetricFamily: Prometheus Metrics
+    """
     features = ComplianceFeature.objects.all()
 
     devices_gauge = GaugeMetricFamily(
@@ -93,4 +103,27 @@ def metric_golden_config():
     yield devices_gauge
 
 
-metrics = [metric_gc_jobs, metric_golden_config]
+def metric_compliance():
+    """Calculate Compliant & Non-Compliant total number of devices per feature.
+
+    Yields:
+        GaugeMetricFamily: Prometheus Metrics
+    """
+    compliance_gauge = GaugeMetricFamily(
+        "nautobot_gc_compliant_devices_by_feature_total",
+        "Nautobot Golden Config Compliance",
+        labels=["feature", "compliant"],
+    )
+    queryset = ConfigCompliance.objects.values("rule__feature__slug").annotate(
+        compliant=Count("rule__feature__slug", filter=Q(compliance=True)),
+        non_compliant=Count("rule__feature__slug", filter=~Q(compliance=True)),
+    )
+
+    for feature in queryset:
+        compliance_gauge.add_metric(labels=[feature["rule__feature__slug"], "true"], value=feature["compliant"])
+        compliance_gauge.add_metric(labels=[feature["rule__feature__slug"], "false"], value=feature["non_compliant"])
+
+    yield compliance_gauge
+
+
+metrics = [metric_gc_jobs, metric_golden_config, metric_compliance]

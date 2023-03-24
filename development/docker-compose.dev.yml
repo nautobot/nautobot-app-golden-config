@@ -12,7 +12,6 @@ services:
     volumes:
       - "./nautobot_config.py:/opt/nautobot/nautobot_config.py"
       - "../:/source"
-      - "./napalm_mock_data:/tmp/mock_napalm_results/"
   docs:
     entrypoint: "mkdocs serve -v -a 0.0.0.0:8080"
     ports:
@@ -27,9 +26,9 @@ services:
     volumes:
       - "./nautobot_config.py:/opt/nautobot/nautobot_config.py"
       - "../:/source"
-      - "./napalm_mock_data:/tmp/mock_napalm_results/"
     ports:
       - "8081:8080"
+
 # To expose postgres or redis to the host uncomment the following
 # postgres:
 #   ports:

@@ -1,7 +1,7 @@
 """Functions related to prepare configuration with postprocessing."""
 from functools import partial
 from typing import Optional
-import jinja2
+from jinja2.sandbox import SandboxedEnvironment
 from jinja2 import exceptions as jinja_errors
 
 from django.http import HttpRequest
@@ -81,17 +81,20 @@ def render_secrets(config_postprocessing: str, configs: models.GoldenConfig, req
     if not config_postprocessing:
         return ""
 
-    jinja_env = jinja2.Environment(autoescape=True)
+    # Based on https://docs.nautobot.com/projects/golden-config/en/latest/dev/dev_adr/#renders-secrets
+    # the Jinja2 environment that starts with Nautobot should not be used.
+    jinja_env = SandboxedEnvironment(autoescape=True)
 
-    for name, func in jinja2_convenience_function().items():
-        # Only importing the encrypt helpers as complements to get_secrets filter
-        if name in ["encrypt_type5", "encrypt_type7"]:
-            jinja_env.filters[name] = func
-
-    # Wrapper for get_secret filter that includes user argument to ensure
-    # that secrets are only rendered by authorized users.
-    # To call this method, the view verifies that it's an authenticated request.
+    # This can only be done safely since the Jinja2 environment does not persist beyond this function.
+    # If the code is changed to use the Nautobot Jinja2 environment, then the request's user must be passed
+    # in via the template code.
     jinja_env.filters["get_secret_by_secret_group_slug"] = partial(get_secret_by_secret_group_slug, request.user)
+
+    netutils_filters = jinja2_convenience_function()
+    for template_name in ["encrypt_type5", "encrypt_type7"]:
+        template_filter = netutils_filters.get(template_name)
+        if template_filter is not None:
+            jinja_env.filters[template_name] = template_filter
 
     try:
         template = jinja_env.from_string(config_postprocessing)
@@ -102,7 +105,6 @@ def render_secrets(config_postprocessing: str, configs: models.GoldenConfig, req
 
     try:
         return template.render(device_data)
-
     except jinja_errors.UndefinedError as error:
         raise RenderConfigToPushError(
             f"Jinja encountered and UndefinedError: {error}, check the template for missing variable definitions.\n"

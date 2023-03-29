@@ -40,7 +40,7 @@ nautobot-plugin-nornir = ">=1.0.0"
 [tool.poetry.dev-dependencies]
 bandit = "*"
 # Black 23.x.x configuration changes and migration files are taken into account
-black = "^22.6.0"
+black = "*"
 django-debug-toolbar = "*"
 # we need to pin flake8 because of package dependencies that cause it to downgrade and
 # therefore cause issues with linting since older versions do not take .flake8 as config
@@ -51,9 +51,13 @@ pylint = "*"
 pylint-django = "*"
 yamllint = "*"
 Markdown = "*"
-# documentation dependencies
+# Rendering docs to HTML
 mkdocs = "1.3.1"
-mkdocs-material = "8.3.9"
+# Material for MkDocs theme
+mkdocs-material = "8.4.2"
+# Render custom markdown for version added/changed/remove notes
+mkdocs-version-annotations = "1.0.0"
+# Automatic documentation from sources, for MkDocs
 mkdocstrings = "0.19"
 mkdocstrings-python = "0.7.1"
 

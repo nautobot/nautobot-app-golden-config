@@ -17,7 +17,6 @@ def jsonify(apps, schedma_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("nautobot_golden_config", "0004_auto_20210616_2234"),
     ]

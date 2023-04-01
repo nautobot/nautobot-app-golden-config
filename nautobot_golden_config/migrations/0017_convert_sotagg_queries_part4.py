@@ -39,7 +39,6 @@ def create_and_link_gql_queries(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("nautobot_golden_config", "0016_convert_sotagg_queries_part3"),
     ]

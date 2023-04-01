@@ -132,6 +132,7 @@ class ComplianceColumn(Column):
 # Tables
 #
 
+
 # ConfigCompliance
 class ConfigComplianceTable(BaseTable):
     """Table for rendering a listing of Device entries and their associated ConfigCompliance record status."""

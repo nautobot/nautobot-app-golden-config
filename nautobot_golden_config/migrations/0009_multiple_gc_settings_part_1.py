@@ -3,7 +3,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("extras", "0018_joblog_data_migration"),
         ("nautobot_golden_config", "0008_multi_repo_support_final"),

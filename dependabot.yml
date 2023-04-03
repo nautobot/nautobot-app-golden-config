@@ -10,3 +10,4 @@ updates:
     directory: "/"
     ignore:
       - dependency-type: "indirect"
+    open-pull-requests-limit: 0

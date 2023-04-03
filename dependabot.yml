@@ -5,9 +5,11 @@ updates:
     directory: "/"
     allow:
       - dependency-type: "direct"
+    ignore:
+      - dependency-type: "indirect"
     versioning-strategy: "increase"
   - package-ecosystem: "pip"
     directory: "/"
-    ignore:
+    allow:
       - dependency-type: "indirect"
     open-pull-requests-limit: 0

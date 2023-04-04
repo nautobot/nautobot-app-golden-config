@@ -49,6 +49,21 @@ LINEAGE_CHOICES = (
     ("contains", "contains"),
     ("equals", "equals"),
 )
+HCONFIG_BASE_OPTIONS = {
+    "style": "",
+    "sectional_overwrite": [],
+    "sectional_overwrite_no_negate": [],
+    "ordering": [],
+    "indent_adjust": [],
+    "parent_allows_duplicate_child": [],
+    "sectional_exiting": [],
+    "full_text_sub": [],
+    "per_line_sub": [],
+    "idempotent_commands_blacklist": [],
+    "idempotent_commands": [],
+    "negation_default_when": [],
+    "negation_negate_with": [],
+}
 
 
 def _is_jsonable(val):
@@ -696,70 +711,8 @@ class ConfigReplace(PrimaryModel):  # pylint: disable=too-many-ancestors
         return self.name
 
 
-# class HConfigOptions(PrimaryModel):
-#     """Options for customizing hier_config remediations"""
+class HConfigOptions(PrimaryModel):
+    """Options for customizing the behavior of hier_config remediation."""
 
-#     pass
-
-
-# class PerLineSub(PrimaryModel):
-#     """Per line sub allows for substitutions of individual lines.
-#     This is commonly used to remove artifacts from a running configuration that don't provide any value
-#     when creating remediation steps."""
-
-#     search = models.TextField(blank=False, help_text="Regex Pattern to Substitute")
-#     replace = models.TextField(blank=False, help_text="Text that will be inserted in place of Regex pattern match.")
-
-#     csv_headers = ["search", "replace"]
-
-#     def to_csv(self):
-#         """Indicates model fields to return as csv."""
-#         return (self.search, self.replace)
-
-#     class Meta:
-#         """Meta information for PerLineSub model."""
-
-#         ordering = ("search", "replace")
-#         unique_together = ("search", "replace")
-
-#     def get_absolute_url(self):
-#         """Return absolute URL for instance."""
-#         return reverse("plugins:nautobot_golden_config:perlinesub", args=[self.pk])
-
-#     def __str__(self):
-#         return f"Search: {self.search}; Replace: {self.replace}"
-
-
-# class FullTextSub(PrimaryModel):
-#     """Allows for substitutions of multi-line strings.
-#     This is commonly used to remove artifacts from a running configuration that don't provide any value"""
-
-#     search = models.TextField(blank=False, help_text="Regex Pattern to Substitute")
-#     replace = models.TextField(blank=False, help_text="Text that will be inserted in place of Regex pattern match.")
-
-#     csv_headers = ["search", "replace"]
-
-#     def to_csv(self):
-#         """Indicates model fields to return as csv."""
-#         return (self.search, self.replace)
-
-#     class Meta:
-#         """Meta information for FullTextSub model."""
-
-#         ordering = ("search", "replace")
-#         unique_together = ("search", "replace")
-
-#     def get_absolute_url(self):
-#         """Return absolute URL for instance."""
-#         return reverse("plugins:nautobot_golden_config:fulltextsub", args=[self.pk])
-
-#     def __str__(self):
-#         return f"Search: {self.search}; Replace: {self.replace}"
-
-# class Lineage(PrimaryModel):
-#     """Lineage Rules make up most hconfig option lists, and determine the level of hierarchical nesting to apply an option"""
-
-#     parent = models.ForeignKey(to="HConfigOptions", on_delete=models.CASCADE)
-#     key = models.CharField(choices=LINEAGE_CHOICES, blank=False, null=False, max_length=255)
-#     value = models.CharField(max_length=500, blank=False, null=False)
-#     order = models.IntegerField(null=False, blank=True)
+    name = models.CharField(max_length=255, blank=False, null=False)
+    options = models.JSONField(default=HCONFIG_BASE_OPTIONS, blank=False, null=False)

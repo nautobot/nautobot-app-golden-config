@@ -6,12 +6,12 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('nautobot_golden_config', '0021_convert_dynamicgroup_part_3'),
+        ("nautobot_golden_config", "0021_convert_dynamicgroup_part_3"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='configcompliance',
-            options={'ordering': ['device', 'rule']},
+            name="configcompliance",
+            options={"ordering": ["device", "rule"]},
         ),
     ]

@@ -311,7 +311,7 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
     class Meta:
         """Set unique together fields for model."""
 
-        ordering = ["device"]
+        ordering = ["device", "rule"]
         unique_together = ("device", "rule")
 
     def __str__(self):

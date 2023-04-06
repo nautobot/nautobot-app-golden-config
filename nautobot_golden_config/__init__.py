@@ -37,5 +37,20 @@ class GoldenConfig(PluginConfig):
         "get_custom_compliance": None,
     }
 
+    def ready(self):
+        super().ready()
+        from . import models
+        from . import signals
+
+        if not models.GoldenConfig.objects.count():
+            try:
+                gc_setting = models.GoldenConfigSetting.objects.first()
+            except models.GoldenConfigSetting.DoesNotExist:
+                return  # TODO: Log a message
+            dynamic_group = gc_setting.dynamic_group
+            if dynamic_group:
+                for device in dynamic_group.members.all():
+                    models.GoldenConfig.objects.create(device=device)
+
 
 config = GoldenConfig  # pylint:disable=invalid-name

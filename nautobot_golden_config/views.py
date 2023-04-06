@@ -48,139 +48,20 @@ class GoldenConfigListView(generic.ObjectListView):
     table = tables.GoldenConfigTable
     filterset = DeviceFilterSet
     filterset_form = DeviceFilterForm
-    queryset = Device.objects.all()
+    queryset = models.GoldenConfig.objects.all()
     template_name = "nautobot_golden_config/goldenconfig_list.html"
+    action_buttons = ("export",)
 
     def extra_context(self):
         """Boilerplace code to modify data before returning."""
         return CONFIG_FEATURES
 
-    def alter_queryset(self, request):
-        """Build actual runtime queryset as the build time queryset provides no information."""
-        qs = Device.objects.none()
-        for obj in models.GoldenConfigSetting.objects.all():
-            qs = qs | obj.get_queryset().distinct()
-
-        return self.queryset.filter(id__in=qs).annotate(
-            backup_config=F("goldenconfig__backup_config"),
-            intended_config=F("goldenconfig__intended_config"),
-            compliance_config=F("goldenconfig__compliance_config"),
-            backup_last_success_date=F("goldenconfig__backup_last_success_date"),
-            intended_last_success_date=F("goldenconfig__intended_last_success_date"),
-            compliance_last_success_date=F("goldenconfig__compliance_last_success_date"),
-            backup_last_attempt_date=F("goldenconfig__backup_last_attempt_date"),
-            intended_last_attempt_date=F("goldenconfig__intended_last_attempt_date"),
-            compliance_last_attempt_date=F("goldenconfig__compliance_last_attempt_date"),
-        )
-
-    def queryset_to_csv(self):
-        """Override nautobot default to account for using Device model for GoldenConfig data."""
-        csv_data = []
-        custom_fields = []
-
-        # Start with the column headers
-        headers = models.GoldenConfig.csv_headers.copy()
-
-        # Add custom field headers, if any
-        if hasattr(models.GoldenConfig, "_custom_field_data"):
-            for custom_field in CustomField.objects.get_for_model(models.GoldenConfig):
-                headers.append(custom_field.name)
-                custom_fields.append(custom_field.name)
-
-        csv_data.append(",".join(headers))
-
-        # Iterate through the queryset appending each object
-        for obj in self.alter_queryset(None):
-            data = obj.to_csv()
-
-            for custom_field in custom_fields:
-                data += (obj.cf.get(custom_field, ""),)
-
-            csv_data.append(csv_format(data))
-
-        return "\n".join(csv_data)
-
 
 class GoldenConfigBulkDeleteView(generic.BulkDeleteView):
     """Standard view for bulk deletion of data."""
 
-    queryset = Device.objects.all()
+    queryset = models.GoldenConfig.objects.all()
     table = tables.GoldenConfigTable
-    filterset = DeviceFilterSet
-
-    def post(self, request, **kwargs):
-        """Delete instances based on post request data."""
-        # This is a deviation from standard Nautobot, since the objectlistview is shown on devices, but
-        # displays elements from GoldenConfig model. We have to override attempting to delete from the Device model.
-
-        model = self.queryset.model
-
-        pk_list = request.POST.getlist("pk")
-
-        form_cls = self.get_form()
-
-        if "_confirm" in request.POST:
-            form = form_cls(request.POST)
-            if form.is_valid():
-                LOGGER.debug("Form validation was successful")
-
-                # Delete objects
-                queryset = models.GoldenConfig.objects.filter(pk__in=pk_list)
-                try:
-                    deleted_count = queryset.delete()[1][models.GoldenConfig._meta.label]
-                except ProtectedError as error:
-                    LOGGER.info("Caught ProtectedError while attempting to delete objects")
-                    handle_protectederror(queryset, request, error)
-                    return redirect(self.get_return_url(request))
-
-                msg = f"Deleted {deleted_count} {models.GoldenConfig._meta.verbose_name_plural}"
-                LOGGER.info(msg)
-                messages.success(request, msg)
-                return redirect(self.get_return_url(request))
-
-            LOGGER.debug("Form validation failed")
-
-        else:
-            # From the list of Device IDs, get the GoldenConfig IDs
-            obj_to_del = [
-                item[0] for item in models.GoldenConfig.objects.filter(device__pk__in=pk_list).values_list("id")
-            ]
-
-            form = form_cls(
-                initial={
-                    "pk": obj_to_del,
-                    "return_url": self.get_return_url(request),
-                }
-            )
-        # Levarge a custom table just for deleting
-        table = tables.DeleteGoldenConfigTable(models.GoldenConfig.objects.filter(pk__in=obj_to_del), orderable=False)
-        if not table.rows:
-            messages.warning(
-                request,
-                f"No {model._meta.verbose_name_plural} were selected for deletion.",
-            )
-            return redirect(self.get_return_url(request))
-
-        context = {
-            "form": form,
-            "obj_type_plural": model._meta.verbose_name_plural,
-            "table": table,
-            "return_url": self.get_return_url(request),
-        }
-        return render(request, self.template_name, context)
-
-    def get_form(self):
-        """Override standard form."""
-
-        class BulkDeleteForm(ConfirmationForm):
-            """Local class override."""
-
-            pk = ModelMultipleChoiceField(queryset=models.GoldenConfig.objects.all(), widget=MultipleHiddenInput)
-
-        if self.form:
-            return self.form
-
-        return BulkDeleteForm
 
 
 #
@@ -397,7 +278,8 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
             for line in difflib.unified_diff(backup_yaml.splitlines(), intend_yaml.splitlines(), lineterm=""):
                 yield line
 
-        device = Device.objects.get(pk=pk)
+        gc_entry = models.GoldenConfig.objects.get(pk=pk)
+        device = gc_entry.device
         config_details = models.GoldenConfig.objects.filter(device=device).first()
         if not config_details and config_type == "json_compliance":
             # Create the GoldenConfig object for the device only for JSON compliance.

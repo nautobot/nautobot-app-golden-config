@@ -132,6 +132,7 @@ class ComplianceColumn(Column):
 # Tables
 #
 
+
 # ConfigCompliance
 class ConfigComplianceTable(BaseTable):
     """Table for rendering a listing of Device entries and their associated ConfigCompliance record status."""
@@ -247,7 +248,7 @@ class GoldenConfigTable(BaseTable):
 
     pk = ToggleColumn()
     name = TemplateColumn(
-        template_code="""<a href="{% url 'dcim:device' pk=record.pk %}">{{ record.name }}</a>""",
+        template_code="""<a href="{% url 'dcim:device' pk=record.device.pk %}">{{ record.device.name }}</a>""",
         verbose_name="Device",
     )
 
@@ -303,7 +304,7 @@ class GoldenConfigTable(BaseTable):
     class Meta(BaseTable.Meta):
         """Meta for class GoldenConfigTable."""
 
-        model = Device
+        model = models.GoldenConfig
         fields = actual_fields()
 
 

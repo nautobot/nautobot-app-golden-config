@@ -94,9 +94,15 @@ def metric_compliance_devices():
         non_compliant=Count("rule__feature__slug", filter=~Q(compliance=True)),
     )
 
+    counters = {item["rule__feature__slug"]: {"compliant": 0, "non_compliant": 0} for item in queryset}
+
     for feature in queryset:
-        compliance_gauge.add_metric(labels=[feature["rule__feature__slug"], "true"], value=feature["compliant"])
-        compliance_gauge.add_metric(labels=[feature["rule__feature__slug"], "false"], value=feature["non_compliant"])
+        counters[feature["rule__feature__slug"]]["compliant"] += feature["compliant"]
+        counters[feature["rule__feature__slug"]]["non_compliant"] += feature["non_compliant"]
+
+    for feature, counter_value in counters.items():
+        compliance_gauge.add_metric(labels=[feature, "true"], value=counter_value["compliant"])
+        compliance_gauge.add_metric(labels=[feature, "false"], value=counter_value["non_compliant"])
 
     yield compliance_gauge
 

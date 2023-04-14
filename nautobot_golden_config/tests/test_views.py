@@ -1,12 +1,17 @@
 """Unit tests for nautobot_golden_config views."""
 
+import datetime
 from unittest import mock
+
+from lxml import html
 
 from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
 
 from nautobot.dcim.models import Device
+from nautobot.extras.models import Relationship, RelationshipAssociation
 from nautobot_golden_config import views, models
 
 from .conftest import create_feature_rule_json, create_device_data
@@ -166,3 +171,112 @@ class ConfigReplaceListViewTestCase(TestCase):
         self.assertEqual(last_entry.description, self._entry_description)
         self.assertEqual(last_entry.regex, self._entry_regex)
         self.assertEqual(last_entry.replace, self._entry_replace)
+
+
+class GoldenConfigListViewTestCase(TestCase):
+    """Test GoldenConfigListView."""
+
+    def setUp(self):
+        """Set up base objects."""
+        create_device_data()
+        User.objects.create_superuser(username="views", password="incredible")
+        self.client.login(username="views", password="incredible")
+        self.gc_settings = models.GoldenConfigSetting.objects.first()
+        self.gc_dynamic_group = self.gc_settings.dynamic_group
+        self.gc_dynamic_group.filter = {"name": [dev.name for dev in Device.objects.all()]}
+        self.gc_dynamic_group.validated_save()
+
+    def _get_golden_config_table(self):
+        response = self.client.get(f"{self._url}")
+        html_parsed = html.fromstring(response.content.decode())
+        golden_config_table = html_parsed.find_class("table")[0]
+        return golden_config_table.iterchildren()
+
+    @property
+    def _text_table_headers(self):
+        return ["Device", "Backup Status", "Intended Status", "Compliance Status", "Actions"]
+
+    @property
+    def _url(self):
+        return reverse("plugins:nautobot_golden_config:goldenconfig_list")
+
+    def test_page_ok(self):
+        response = self.client.get(f"{self._url}")
+        self.assertEqual(response.status_code, 200)
+
+    def test_headers_in_table(self):
+        table_header, _ = self._get_golden_config_table()
+        headers = table_header.iterdescendants("th")
+        checkbox_header = next(headers)
+        checkbox_element = checkbox_header.find("input")
+        self.assertEqual(checkbox_element.type, "checkbox")
+        text_headers = [header.text_content() for header in headers]
+        self.assertEqual(text_headers, self._text_table_headers)
+
+    def test_device_relationship_not_included_in_golden_config_table(self):
+        # Create a RelationshipAssociation to Device Model to setup test case
+        device_content_type = ContentType.objects.get_for_model(Device)
+        platform_content_type = ContentType.objects.get(app_label="dcim", model="platform")
+        device = Device.objects.first()
+        relationship = Relationship.objects.create(
+            name="test platform to dev",
+            type="one-to-many",
+            source_type_id=platform_content_type.id,
+            destination_type_id=device_content_type.id,
+        )
+        RelationshipAssociation.objects.create(
+            source_type_id=platform_content_type.id,
+            source_id=device.platform.id,
+            destination_type_id=device_content_type.id,
+            destination_id=device.id,
+            relationship_id=relationship.id,
+        )
+        table_header, _ = self._get_golden_config_table()
+        # xpath expression excludes the pk checkbox column (i.e. the first column)
+        text_headers = [header.text_content() for header in table_header.xpath("tr/th[position()>1]")]
+        # This will fail if the Relationships to Device objects showed up in the Golden Config table
+        self.assertEqual(text_headers, self._text_table_headers)
+
+    def test_table_entries_based_on_dynamic_group_scope(self):
+        self.assertEqual(models.GoldenConfig.objects.count(), 0)
+        _, table_body = self._get_golden_config_table()
+        devices_in_table = [device_column.text for device_column in table_body.xpath("tr/td[2]/a")]
+        device_names = [device.name for device in self.gc_dynamic_group.members]
+        self.assertEqual(devices_in_table, device_names)
+
+    def test_scope_change_affects_table_entries(self):
+        last_device = self.gc_dynamic_group.members.last()
+        _, table_body = self._get_golden_config_table()
+        devices_in_table = [device_column.text for device_column in table_body.xpath("tr/td[2]/a")]
+        self.assertIn(last_device.name, devices_in_table)
+        self.gc_dynamic_group.filter["name"] = [dev.name for dev in Device.objects.exclude(pk=last_device.pk)]
+        self.gc_dynamic_group.validated_save()
+        _, table_body = self._get_golden_config_table()
+        devices_in_table = [device_column.text for device_column in table_body.xpath("tr/td[2]/a")]
+        self.assertNotIn(last_device.name, devices_in_table)
+
+    def test_csv_export(self):
+        # verify GoldenConfig table is empty
+        self.assertEqual(models.GoldenConfig.objects.count(), 0)
+        intended_datetime = datetime.datetime.now()
+        first_device = self.gc_dynamic_group.members.first()
+        models.GoldenConfig.objects.create(
+            device=first_device,
+            intended_last_attempt_date=intended_datetime,
+            intended_last_success_date=intended_datetime,
+        )
+        response = self.client.get(f"{self._url}?export")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["Content-Type"], "text/csv")
+        csv_data = response.content.decode().splitlines()
+        csv_headers = "Device Name,backup attempt,backup successful,intended attempt,intended successful,compliance attempt,compliance successful"
+        self.assertEqual(csv_headers, csv_data[0])
+        intended_datetime_formated = intended_datetime.strftime("%Y-%m-%dT%H:%M:%S.%f+00:00")
+        # Test single entry in GoldenConfig table has data
+        expected_first_row = f"{first_device.name},,,{intended_datetime_formated},{intended_datetime_formated},,"
+        self.assertEqual(expected_first_row, csv_data[1])
+        # Test Devices in scope but without entries in GoldenConfig have empty entries
+        empty_csv_rows = [
+            f"{device.name},,,,,," for device in self.gc_dynamic_group.members.exclude(pk=first_device.pk)
+        ]
+        self.assertEqual(empty_csv_rows, csv_data[2:])

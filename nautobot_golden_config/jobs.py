@@ -3,19 +3,17 @@
 
 from datetime import datetime
 
-from nautobot.extras.jobs import Job, MultiObjectVar, ObjectVar, BooleanVar
-from nautobot.extras.models import Tag, DynamicGroup, GitRepository, Status
+from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Platform, Rack, RackGroup, Region, Site
 from nautobot.extras.datasources.git import ensure_git_repository
-from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Site, Platform, Region, Rack, RackGroup
+from nautobot.extras.jobs import BooleanVar, Job, MultiObjectVar, ObjectVar
+from nautobot.extras.models import DynamicGroup, GitRepository, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
-
-from nautobot_golden_config.nornir_plays.config_intended import config_intended
 from nautobot_golden_config.nornir_plays.config_backup import config_backup
 from nautobot_golden_config.nornir_plays.config_compliance import config_compliance
+from nautobot_golden_config.nornir_plays.config_intended import config_intended
 from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
 from nautobot_golden_config.utilities.git import GitRepo
 from nautobot_golden_config.utilities.helper import get_job_filter
-
 
 name = "Golden Configuration"  # pylint: disable=invalid-name
 
@@ -69,7 +67,13 @@ class FormEntry:  # pylint disable=too-few-public-method
     device_type = MultiObjectVar(model=DeviceType, required=False, display_field="display_name")
     device = MultiObjectVar(model=Device, required=False)
     tag = MultiObjectVar(model=Tag, required=False)
-    device_status = MultiObjectVar(model=Status, required=False, query_params={"content_types":Device._meta.label_lower}, display_field="label", label="Device Status")
+    status = MultiObjectVar(
+        model=Status,
+        required=False,
+        query_params={"content_types": Device._meta.label_lower},
+        display_field="label",
+        label="Device Status",
+    )
     debug = BooleanVar(description="Enable for more verbose debug logging")
 
 
@@ -88,7 +92,7 @@ class ComplianceJob(Job, FormEntry):
     device_type = FormEntry.device_type
     device = FormEntry.device
     tag = FormEntry.tag
-    device_status = FormEntry.device_status
+    status = FormEntry.status
     debug = FormEntry.debug
 
     class Meta:
@@ -127,7 +131,7 @@ class IntendedJob(Job, FormEntry):
     device_type = FormEntry.device_type
     device = FormEntry.device
     tag = FormEntry.tag
-    device_status = FormEntry.device_status
+    status = FormEntry.status
     debug = FormEntry.debug
 
     class Meta:
@@ -175,7 +179,7 @@ class BackupJob(Job, FormEntry):
     device_type = FormEntry.device_type
     device = FormEntry.device
     tag = FormEntry.tag
-    device_status = FormEntry.device_status
+    status = FormEntry.status
     debug = FormEntry.debug
 
     class Meta:
@@ -244,7 +248,7 @@ class AllDevicesGoldenConfig(Job):
     device_type = FormEntry.device_type
     device = FormEntry.device
     tag = FormEntry.tag
-    device_status = FormEntry.device_status
+    status = FormEntry.status
     debug = FormEntry.debug
 
     class Meta:

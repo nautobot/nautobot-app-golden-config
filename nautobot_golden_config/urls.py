@@ -1,10 +1,18 @@
 """Django urlpatterns declaration for config compliance plugin."""
 from django.urls import path
 
-from nautobot.extras.views import ObjectChangeLogView
+from nautobot.extras.views import ObjectChangeLogView, ObjectNotesView
+from nautobot.core.views.routers import NautobotUIViewSetRouter
 from nautobot_golden_config import views, models
 
 app_name = "nautobot_golden_config"
+
+router = NautobotUIViewSetRouter()
+router.register("compliance-feature", views.ComplianceFeatureUIViewSet)
+router.register("compliance-rule", views.ComplianceRuleUIViewSet)
+router.register("golden-config-setting", views.GoldenConfigSettingUIViewSet)
+router.register("config-remove", views.ConfigRemoveUIViewSet)
+router.register("config-replace", views.ConfigReplaceUIViewSet)
 
 urlpatterns = [
     path("golden/", views.GoldenConfigListView.as_view(), name="goldenconfig_list"),
@@ -39,48 +47,11 @@ urlpatterns = [
         name="configcompliance_changelog",
         kwargs={"model": models.ConfigCompliance},
     ),
-    path("compliance-rule/", views.ComplianceRuleListView.as_view(), name="compliancerule_list"),
-    path("compliance-rule/add/", views.ComplianceRuleEditView.as_view(), name="compliancerule_add"),
-    path(
-        "compliance-rule/import/",
-        views.ComplianceRuleBulkImportView.as_view(),
-        name="compliancerule_import",
-    ),
-    path(
-        "compliance-rule/delete/",
-        views.ComplianceRuleBulkDeleteView.as_view(),
-        name="compliancerule_bulk_delete",
-    ),
-    path("compliance-rule/<uuid:pk>/", views.ComplianceRuleView.as_view(), name="compliancerule"),
-    path("compliance-rule/edit/", views.ConfigReplaceBulkEditView.as_view(), name="compliancerule_bulk_edit"),
-    path("compliance-rule/<uuid:pk>/edit/", views.ComplianceRuleEditView.as_view(), name="compliancerule_edit"),
-    path(
-        "compliance-rule/<uuid:pk>/delete/",
-        views.ComplianceRuleDeleteView.as_view(),
-        name="compliancerule_delete",
-    ),
     path(
         "compliance-rule/<uuid:pk>/changelog/",
         ObjectChangeLogView.as_view(),
         name="compliancerule_changelog",
         kwargs={"model": models.ComplianceRule},
-    ),
-    path("compliance-feature/", views.ComplianceFeatureListView.as_view(), name="compliancefeature_list"),
-    path("compliance-feature/add/", views.ComplianceFeatureEditView.as_view(), name="compliancefeature_add"),
-    path(
-        "compliance-feature/delete/",
-        views.ComplianceFeatureBulkDeleteView.as_view(),
-        name="compliancefeature_bulk_delete",
-    ),
-    path("compliance-feature/<uuid:pk>/", views.ComplianceFeatureView.as_view(), name="compliancefeature"),
-    path("compliance-feature/edit/", views.ComplianceFeatureBulkEditView.as_view(), name="compliancefeature_bulk_edit"),
-    path(
-        "compliance-feature/<uuid:pk>/edit/", views.ComplianceFeatureEditView.as_view(), name="compliancefeature_edit"
-    ),
-    path(
-        "compliance-feature/<uuid:pk>/delete/",
-        views.ComplianceFeatureDeleteView.as_view(),
-        name="compliancefeature_delete",
     ),
     path(
         "compliance-feature/<uuid:pk>/changelog/",
@@ -88,47 +59,11 @@ urlpatterns = [
         name="compliancefeature_changelog",
         kwargs={"model": models.ComplianceFeature},
     ),
-    path("setting/", views.GoldenConfigSettingListView.as_view(), name="goldenconfigsetting_list"),
-    path("setting/add/", views.GoldenConfigSettingCreateView.as_view(), name="goldenconfigsetting_add"),
-    path("setting/delete/", views.GoldenConfigSettingBulkDeleteView.as_view(), name="goldenconfigsetting_bulk_delete"),
     path(
-        "setting/<slug:slug>/delete/", views.GoldenConfigSettingDeleteView.as_view(), name="goldenconfigsetting_delete"
-    ),
-    path("setting/<slug:slug>/edit/", views.GoldenConfigSettingEditView.as_view(), name="goldenconfigsetting_edit"),
-    path(
-        "setting/<slug:slug>/changelog/",
+        "golden-config-setting/<uuid:pk>/changelog/",
         ObjectChangeLogView.as_view(),
         name="goldenconfigsetting_changelog",
         kwargs={"model": models.GoldenConfigSetting},
-    ),
-    path("setting/<slug:slug>/", views.GoldenConfigSettingView.as_view(), name="goldenconfigsetting"),
-    path("config-remove/", views.ConfigRemoveListView.as_view(), name="configremove_list"),
-    path("config-remove/add/", views.ConfigRemoveEditView.as_view(), name="configremove_add"),
-    path(
-        "config-remove/import/",
-        views.ConfigRemoveBulkImportView.as_view(),
-        name="configremove_import",
-    ),
-    path(
-        "config-remove/edit/",
-        views.ConfigRemoveBulkEditView.as_view(),
-        name="configremove_bulk_edit",
-    ),
-    path(
-        "config-remove/delete/",
-        views.ConfigRemoveBulkDeleteView.as_view(),
-        name="configremove_bulk_delete",
-    ),
-    path(
-        "config-remove/<uuid:pk>/delete/",
-        views.ConfigRemoveDeleteView.as_view(),
-        name="configremove_delete",
-    ),
-    path("config-remove/<uuid:pk>/", views.ConfigRemoveView.as_view(), name="configremove"),
-    path(
-        "config-remove/<uuid:pk>/edit/",
-        views.ConfigRemoveEditView.as_view(),
-        name="configremove_edit",
     ),
     path(
         "config-remove/<uuid:pk>/changelog/",
@@ -136,26 +71,42 @@ urlpatterns = [
         name="configremove_changelog",
         kwargs={"model": models.ConfigRemove},
     ),
-    path("config-replace/", views.ConfigReplaceListView.as_view(), name="configreplace_list"),
-    path("config-replace/add/", views.ConfigReplaceEditView.as_view(), name="configreplace_add"),
-    path("config-replace/import/", views.ConfigReplaceBulkImportView.as_view(), name="configreplace_import"),
-    path("config-replace/edit/", views.ConfigReplaceBulkEditView.as_view(), name="configreplace_bulk_edit"),
-    path(
-        "config-replace/delete/",
-        views.ConfigReplaceBulkDeleteView.as_view(),
-        name="configreplace_bulk_delete",
-    ),
-    path("config-replace/<uuid:pk>/", views.ConfigReplaceView.as_view(), name="configreplace"),
-    path("config-replace/<uuid:pk>/edit/", views.ConfigReplaceEditView.as_view(), name="configreplace_edit"),
-    path(
-        "config-replace/<uuid:pk>/delete/",
-        views.ConfigReplaceDeleteView.as_view(),
-        name="configreplace_delete",
-    ),
     path(
         "config-replace/<uuid:pk>/changelog/",
         ObjectChangeLogView.as_view(),
         name="configreplace_changelog",
         kwargs={"model": models.ConfigReplace},
     ),
-]
+    path(
+        "compliance-rule/<uuid:pk>/notes/",
+        ObjectNotesView.as_view(),
+        name="compliancerule_notes",
+        kwargs={"model": models.ComplianceRule},
+    ),
+    path(
+        "compliance-feature/<uuid:pk>/notes/",
+        ObjectNotesView.as_view(),
+        name="compliancefeature_notes",
+        kwargs={"model": models.ComplianceFeature},
+    ),
+    path(
+        "golden-config-setting/<uuid:pk>/notes/",
+        ObjectNotesView.as_view(),
+        name="goldenconfigsetting_notes",
+        kwargs={"model": models.GoldenConfigSetting},
+    ),
+    path(
+        "config-remove/<uuid:pk>/notes/",
+        ObjectNotesView.as_view(),
+        name="configremove_notes",
+        kwargs={"model": models.ConfigRemove},
+    ),
+    path(
+        "config-replace/<uuid:pk>/notes/",
+        ObjectNotesView.as_view(),
+        name="configreplace_notes",
+        kwargs={"model": models.ConfigReplace},
+    ),
+] + router.urls
+
+print([i for i in urlpatterns])

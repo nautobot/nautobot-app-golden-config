@@ -492,9 +492,25 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         related_name="golden_config_setting",
     )
 
+    csv_headers = [
+        "name",
+        "slug",
+        "weight",
+        "description",
+    ]
+
+    def to_csv(self):
+        """Indicates model fields to return as csv."""
+        return (
+            self.name,
+            self.slug,
+            self.weight,
+            self.description,
+        )
+
     def get_absolute_url(self):  # pylint: disable=no-self-use
         """Return absolute URL for instance."""
-        return reverse("plugins:nautobot_golden_config:goldenconfigsetting", args=[self.slug])
+        return reverse("plugins:nautobot_golden_config:goldenconfigsetting", args=[self.pk])
 
     def __str__(self):
         """Return a simple string if model is called."""

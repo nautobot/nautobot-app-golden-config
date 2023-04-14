@@ -16,9 +16,12 @@
       <td>{{ object.description|placeholder }}</td>
     </tr>
     <tr>
+      <td>Dynamic Group</td>
+      <td><a href="{{ object.dynamic_group.get_absolute_url }}">{{ object.dynamic_group.name }}</a></td>
+    </tr>
+    <tr>
       <td>
         <a href="{{ object.get_url_to_filtered_device_list }}">Scope of Devices</a>
-        <br/>via <a href="{{ object.dynamic_group.get_absolute_url }}">{{ object.dynamic_group.name }}</a>
       </td>
       <td>
         <pre>{{ object.scope|render_json }}</pre></a>

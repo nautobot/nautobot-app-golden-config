@@ -20,7 +20,6 @@ def convert_many_repos_part1(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("nautobot_golden_config", "0009_multiple_gc_settings_part_1"),
     ]

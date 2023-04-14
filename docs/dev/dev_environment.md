@@ -66,7 +66,7 @@ Run the following commands:
 ```shell
 poetry shell
 poetry install --extras nautobot
-export $(cat development/dev.env | xargs)
+export $(cat development/development.env | xargs)
 export $(cat development/creds.env | xargs)
 invoke start && sleep 5
 nautobot-server migrate

@@ -20,7 +20,6 @@ from nautobot.core.views import generic
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.dcim.forms import DeviceFilterForm
 from nautobot.dcim.models import Device
-from nautobot.extras.models import CustomField
 from nautobot.utilities.error_handlers import handle_protectederror
 from nautobot.utilities.forms import ConfirmationForm
 from nautobot.utilities.utils import csv_format
@@ -50,6 +49,7 @@ class GoldenConfigListView(generic.ObjectListView):
     filterset_form = DeviceFilterForm
     queryset = Device.objects.all()
     template_name = "nautobot_golden_config/goldenconfig_list.html"
+    action_buttons = ("export",)
 
     def extra_context(self):
         """Boilerplace code to modify data before returning."""
@@ -73,30 +73,31 @@ class GoldenConfigListView(generic.ObjectListView):
             compliance_last_attempt_date=F("goldenconfig__compliance_last_attempt_date"),
         )
 
+    @property
+    def dynamic_group_queryset(self):
+        """Return queryset of DynamicGroups associated with all GoldenConfigSettings."""
+        golden_config_device_queryset = Device.objects.none()
+        for setting in models.GoldenConfigSetting.objects.all():
+            golden_config_device_queryset = golden_config_device_queryset | setting.dynamic_group.members
+        return golden_config_device_queryset
+
     def queryset_to_csv(self):
         """Override nautobot default to account for using Device model for GoldenConfig data."""
-        csv_data = []
-        custom_fields = []
-
-        # Start with the column headers
-        headers = models.GoldenConfig.csv_headers.copy()
-
-        # Add custom field headers, if any
-        if hasattr(models.GoldenConfig, "_custom_field_data"):
-            for custom_field in CustomField.objects.get_for_model(models.GoldenConfig):
-                headers.append(custom_field.name)
-                custom_fields.append(custom_field.name)
-
-        csv_data.append(",".join(headers))
-
-        # Iterate through the queryset appending each object
-        for obj in self.alter_queryset(None):
-            data = obj.to_csv()
-
-            for custom_field in custom_fields:
-                data += (obj.cf.get(custom_field, ""),)
-
-            csv_data.append(csv_format(data))
+        golden_config_devices_in_scope = self.dynamic_group_queryset
+        csv_headers = models.GoldenConfig.csv_headers.copy()
+        # Exclude GoldenConfig entries no longer in scope
+        golden_config_entries_in_scope = models.GoldenConfig.objects.filter(device__in=golden_config_devices_in_scope)
+        golden_config_entries_as_csv = [csv_format(entry.to_csv()) for entry in golden_config_entries_in_scope]
+        # Account for devices in scope without GoldenConfig entries
+        commas = "," * (len(csv_headers) - 1)
+        devices_in_scope_without_golden_config_entries_as_csv = [
+            f"{device.name}{commas}" for device in golden_config_devices_in_scope.filter(goldenconfig__isnull=True)
+        ]
+        csv_data = (
+            [",".join(csv_headers)]
+            + golden_config_entries_as_csv
+            + devices_in_scope_without_golden_config_entries_as_csv
+        )
 
         return "\n".join(csv_data)
 
@@ -410,7 +411,11 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
 
             settings = get_device_to_settings_map(queryset=Device.objects.filter(pk=device.pk))
             if device.id in settings:
-                _, output = graph_ql_query(request, device, settings[device.id].sot_agg_query.query)
+                sot_agg_query_setting = settings[device.id].sot_agg_query
+                if sot_agg_query_setting is not None:
+                    _, output = graph_ql_query(request, device, sot_agg_query_setting.query)
+                else:
+                    output = {"Error": "No saved `GraphQL Query` query was configured in the `Golden Config Setting`"}
             else:
                 raise ObjectDoesNotExist(f"{device.name} does not map to a Golden Config Setting.")
 
@@ -970,6 +975,14 @@ class ConfigReplaceListView(generic.ObjectListView):
     table = tables.ConfigReplaceTable
     filterset = filters.ConfigReplaceFilterSet
     filterset_form = forms.ConfigReplaceFeatureFilterForm
+
+    def queryset_to_csv(self):
+        """Export queryset of objects as comma-separated value (CSV)."""
+        csv_data = ["name,platform,description,regex,replace"]
+        for record in self.queryset:
+            csv_data.append(f"{record.name},{record.platform.id},{record.description},{record.regex},{record.replace}")
+
+        return "\n".join(csv_data)
 
 
 class ConfigReplaceView(generic.ObjectView):

@@ -6,7 +6,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
 from jinja2 import exceptions as jinja_errors
 from nautobot.dcim.models import Device, Platform, Site
-from nautobot.extras.models import DynamicGroup, GitRepository, Status, Tag
+from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status, Tag
 from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.utils.logger import NornirLogger
 from nautobot_golden_config.models import GoldenConfigSetting
@@ -64,6 +64,16 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
             content_type=self.content_type,
             filter={},
         )
+        graphql_query = GraphQLQuery.objects.create(
+            name="testing",
+            query="""
+              query ($device_id: ID!) {
+                device(id: $device_id){
+                  name
+                }
+              }
+            """,
+        )
         self.test_settings_a = GoldenConfigSetting.objects.create(
             name="test_a",
             slug="test_a",
@@ -74,6 +84,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
             jinja_repository=GitRepository.objects.get(name="test-jinja-repo"),
             # Limit scope to orphaned device only
             dynamic_group=dynamic_group1,
+            sot_agg_query=graphql_query,
         )
 
         self.test_settings_b = GoldenConfigSetting.objects.create(
@@ -86,6 +97,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
             jinja_repository=GitRepository.objects.get(name="test-jinja-repo-2"),
             # Limit scope to orphaned device only
             dynamic_group=dynamic_group2,
+            sot_agg_query=graphql_query,
         )
 
         self.test_settings_c = GoldenConfigSetting.objects.create(
@@ -97,6 +109,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
             intended_repository=GitRepository.objects.get(name="intended-parent_region-3"),
             jinja_repository=GitRepository.objects.get(name="test-jinja-repo-3"),
             dynamic_group=dynamic_group3,
+            sot_agg_query=graphql_query,
         )
 
         # Device.objects.all().delete()

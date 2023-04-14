@@ -26,7 +26,6 @@ def create_dynamic_groups(apps, schedma_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("nautobot_golden_config", "0019_convert_dynamicgroup_part_1"),
     ]

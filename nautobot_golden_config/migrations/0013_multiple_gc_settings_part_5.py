@@ -2,7 +2,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("nautobot_golden_config", "0012_multiple_gc_settings_part_4"),
     ]

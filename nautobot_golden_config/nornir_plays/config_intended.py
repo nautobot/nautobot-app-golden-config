@@ -8,7 +8,7 @@ from nornir import InitNornir
 from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir.core.task import Result, Task
 
-from django_jinja.backend import Jinja2
+from django.template import engines
 
 from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
@@ -32,8 +32,7 @@ from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 LOGGER = logging.getLogger(__name__)
 
-jinja_settings = Jinja2.get_default()
-jinja_env = jinja_settings.env
+jinja_env = engines["jinja"].env
 
 
 @close_threaded_db_connections
@@ -131,7 +130,6 @@ def config_intended(nautobot_job, data):
                 },
             },
         ) as nornir_obj:
-
             nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
 
             logger.log_debug("Run nornir render config tasks.")

@@ -1,25 +1,25 @@
 """Unit tests for nautobot_golden_config utilities helpers."""
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-from django.test import TestCase
 from django.contrib.contenttypes.models import ContentType
-
+from django.test import TestCase
+from jinja2 import exceptions as jinja_errors
+from nautobot.dcim.models import Device, Platform, Site
+from nautobot.extras.models import DynamicGroup, GitRepository, Status, Tag
 from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.utils.logger import NornirLogger
-from jinja2 import exceptions as jinja_errors
 
 from nautobot.dcim.models import Device, Platform, Site
 from nautobot.extras.models import GitRepository, Status, DynamicGroup, Tag, GraphQLQuery
 from nautobot_golden_config.models import GoldenConfigSetting
-from nautobot_golden_config.tests.conftest import create_device, create_orphan_device, create_helper_repo
+from nautobot_golden_config.tests.conftest import create_device, create_helper_repo, create_orphan_device
 from nautobot_golden_config.utilities.helper import (
+    get_device_to_settings_map,
+    get_job_filter,
     null_to_empty,
     render_jinja_template,
-    get_job_filter,
-    get_device_to_settings_map,
 )
-
 
 # pylint: disable=no-self-use
 
@@ -226,6 +226,31 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         """Verify we get a single device returned when providing tag filter that matches on device."""
         result = get_job_filter(data={"tag": Tag.objects.filter(name="Orphaned")})
         self.assertEqual(result.count(), 1)
+
+    def test_get_job_filter_tag_success_and_logic(self):
+        """Verify we get a single device returned when providing multiple tag filter that matches on device."""
+        device = Device.objects.get(name="orphan_device")
+        device_2 = Device.objects.get(name="test_device")
+        content_type = ContentType.objects.get(app_label="dcim", model="device")
+        tag, _ = Tag.objects.get_or_create(name="second-tag", slug="second-tag")
+        tag.content_types.add(content_type)
+        device.tags.add(tag)
+        device_2.tags.add(tag)
+        # Default tag logic is an `AND` not and `OR`.
+        result = get_job_filter(data={"tag": Tag.objects.filter(name__in=["second-tag", "Orphaned"])})
+        self.assertEqual(device.tags.count(), 2)
+        self.assertEqual(device_2.tags.count(), 1)
+        self.assertEqual(result.count(), 1)
+
+    def test_get_job_filter_status_success(self):
+        """Verify we get a single device returned when providing status filter that matches on device."""
+        result = get_job_filter(data={"status": Status.objects.filter(name="Offline")})
+        self.assertEqual(result.count(), 1)
+
+    def test_get_job_filter_multiple_status_success(self):
+        """Verify we get a0 devices returned matching multiple status'."""
+        result = get_job_filter(data={"status": Status.objects.filter(name__in=["Offline", "Failed"])})
+        self.assertEqual(result.count(), 2)
 
     def test_get_job_filter_base_queryset_raise(self):
         """Verify we get raise for having a base_qs with no objects due to bad Golden Config Setting scope."""

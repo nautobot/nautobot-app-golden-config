@@ -151,7 +151,7 @@ class ConfigReplaceListViewTestCase(TestCase):
         self.assertEqual(response.headers["Content-Type"], "text/csv")
         last_entry = models.ConfigReplace.objects.last()
         csv_data = response.content.decode().splitlines()
-        expected_last_entry = f"{last_entry.name},{last_entry.platform.id},{last_entry.description},{last_entry.regex},{last_entry.replace}"
+        expected_last_entry = f"{last_entry.name},{last_entry.platform.slug},{last_entry.description},{last_entry.regex},{last_entry.replace}"
         self.assertEqual(csv_data[0], self._csv_headers)
         self.assertEqual(csv_data[-1], expected_last_entry)
         self.assertEqual(len(csv_data) - 1, models.ConfigReplace.objects.count())

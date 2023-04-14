@@ -1,4 +1,5 @@
 """Forms for Device Configuration Backup."""
+# pylint: disable=too-many-ancestors
 
 from django import forms
 
@@ -380,7 +381,9 @@ class GoldenConfigSettingCSVForm(extras_forms.CustomFieldModelCSVForm):
 class GoldenConfigSettingBulkEditForm(NautobotBulkEditForm):
     """BulkEdit form for GoldenConfigSetting instances."""
 
-    pk = forms.ModelMultipleChoiceField(queryset=models.GoldenConfigSetting.objects.all(), widget=forms.MultipleHiddenInput)
+    pk = forms.ModelMultipleChoiceField(
+        queryset=models.GoldenConfigSetting.objects.all(), widget=forms.MultipleHiddenInput
+    )
 
     class Meta:
         """Boilerplate form Meta data for GoldenConfigSetting."""

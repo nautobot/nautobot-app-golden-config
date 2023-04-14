@@ -492,9 +492,9 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
                     + output[second_occurence + 2 :]
                 )
 
-        template_name = "nautobot_golden_config/configcompliancedetails.html"
+        template_name = "nautobot_golden_config/configcompliance_details.html"
         if request.GET.get("modal") == "true":
-            template_name = "nautobot_golden_config/configcompliancedetails_modal.html"
+            template_name = "nautobot_golden_config/configcompliance_detailsmodal.html"
 
         return render(
             request,
@@ -724,6 +724,8 @@ class ConfigComplianceOverview(generic.ObjectListView):
 
 
 class ComplianceFeatureUIViewSet(NautobotUIViewSet):
+    """Views for the ComplianceFeature model."""
+
     bulk_create_form_class = forms.ComplianceFeatureCSVForm
     bulk_update_form_class = forms.ComplianceFeatureBulkEditForm
     filterset_class = filters.ComplianceFeatureFilterSet
@@ -732,9 +734,12 @@ class ComplianceFeatureUIViewSet(NautobotUIViewSet):
     queryset = models.ComplianceFeature.objects.all()
     serializer_class = serializers.ComplianceFeatureSerializer
     table_class = tables.ComplianceFeatureTable
+    lookup_field = "pk"
 
 
 class ComplianceRuleUIViewSet(NautobotUIViewSet):
+    """Views for the ComplianceRule model."""
+
     bulk_create_form_class = forms.ComplianceRuleCSVForm
     bulk_update_form_class = forms.ComplianceRuleBulkEditForm
     filterset_class = filters.ComplianceRuleFilterSet
@@ -743,9 +748,12 @@ class ComplianceRuleUIViewSet(NautobotUIViewSet):
     queryset = models.ComplianceRule.objects.all()
     serializer_class = serializers.ComplianceRuleSerializer
     table_class = tables.ComplianceRuleTable
+    lookup_field = "pk"
 
 
 class GoldenConfigSettingUIViewSet(NautobotUIViewSet):
+    """Views for the GoldenConfigSetting model."""
+
     bulk_create_form_class = forms.GoldenConfigSettingCSVForm
     bulk_update_form_class = forms.GoldenConfigSettingBulkEditForm
     filterset_class = filters.GoldenConfigSettingFilterSet
@@ -754,9 +762,12 @@ class GoldenConfigSettingUIViewSet(NautobotUIViewSet):
     queryset = models.GoldenConfigSetting.objects.all()
     serializer_class = serializers.GoldenConfigSettingSerializer
     table_class = tables.GoldenConfigSettingTable
+    lookup_field = "pk"
 
 
 class ConfigRemoveUIViewSet(NautobotUIViewSet):
+    """Views for the ConfigRemove model."""
+
     bulk_create_form_class = forms.ConfigRemoveCSVForm
     bulk_update_form_class = forms.ConfigRemoveBulkEditForm
     filterset_class = filters.ConfigRemoveFilterSet
@@ -765,9 +776,12 @@ class ConfigRemoveUIViewSet(NautobotUIViewSet):
     queryset = models.ConfigRemove.objects.all()
     serializer_class = serializers.ConfigRemoveSerializer
     table_class = tables.ConfigRemoveTable
+    lookup_field = "pk"
 
 
 class ConfigReplaceUIViewSet(NautobotUIViewSet):
+    """Views for the ConfigReplace model."""
+
     bulk_create_form_class = forms.ConfigReplaceCSVForm
     bulk_update_form_class = forms.ConfigReplaceBulkEditForm
     filterset_class = filters.ConfigReplaceFilterSet
@@ -776,21 +790,4 @@ class ConfigReplaceUIViewSet(NautobotUIViewSet):
     queryset = models.ConfigReplace.objects.all()
     serializer_class = serializers.ConfigReplaceSerializer
     table_class = tables.ConfigReplaceTable
-
-
-# TODO: Verify not needed
-# class ConfigReplaceListView(generic.ObjectListView):
-#     """View for displaying the current Line Replacements."""
-
-#     queryset = models.ConfigReplace.objects.all()
-#     table = tables.ConfigReplaceTable
-#     filterset = filters.ConfigReplaceFilterSet
-#     filterset_form = forms.ConfigReplaceFeatureFilterForm
-
-#     def queryset_to_csv(self):
-#         """Export queryset of objects as comma-separated value (CSV)."""
-#         csv_data = ["name,platform,description,regex,replace"]
-#         for record in self.queryset:
-#             csv_data.append(f"{record.name},{record.platform.id},{record.description},{record.regex},{record.replace}")
-
-#         return "\n".join(csv_data)
+    lookup_field = "pk"

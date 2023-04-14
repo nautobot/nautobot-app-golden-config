@@ -1,9 +1,8 @@
 """Django urlpatterns declaration for config compliance plugin."""
 from django.urls import path
 
-from nautobot.extras.views import ObjectChangeLogView, ObjectNotesView
 from nautobot.core.views.routers import NautobotUIViewSetRouter
-from nautobot_golden_config import views, models
+from nautobot_golden_config import views
 
 app_name = "nautobot_golden_config"
 
@@ -13,6 +12,7 @@ router.register("compliance-rule", views.ComplianceRuleUIViewSet)
 router.register("golden-config-setting", views.GoldenConfigSettingUIViewSet)
 router.register("config-remove", views.ConfigRemoveUIViewSet)
 router.register("config-replace", views.ConfigReplaceUIViewSet)
+
 
 urlpatterns = [
     path("golden/", views.GoldenConfigListView.as_view(), name="goldenconfig_list"),
@@ -41,72 +41,4 @@ urlpatterns = [
         views.ComplianceDeviceFilteredReport.as_view(),
         name="configcompliance_filter_report",
     ),
-    path(
-        "config-compliance/<uuid:pk>/changelog/",
-        ObjectChangeLogView.as_view(),
-        name="configcompliance_changelog",
-        kwargs={"model": models.ConfigCompliance},
-    ),
-    path(
-        "compliance-rule/<uuid:pk>/changelog/",
-        ObjectChangeLogView.as_view(),
-        name="compliancerule_changelog",
-        kwargs={"model": models.ComplianceRule},
-    ),
-    path(
-        "compliance-feature/<uuid:pk>/changelog/",
-        ObjectChangeLogView.as_view(),
-        name="compliancefeature_changelog",
-        kwargs={"model": models.ComplianceFeature},
-    ),
-    path(
-        "golden-config-setting/<uuid:pk>/changelog/",
-        ObjectChangeLogView.as_view(),
-        name="goldenconfigsetting_changelog",
-        kwargs={"model": models.GoldenConfigSetting},
-    ),
-    path(
-        "config-remove/<uuid:pk>/changelog/",
-        ObjectChangeLogView.as_view(),
-        name="configremove_changelog",
-        kwargs={"model": models.ConfigRemove},
-    ),
-    path(
-        "config-replace/<uuid:pk>/changelog/",
-        ObjectChangeLogView.as_view(),
-        name="configreplace_changelog",
-        kwargs={"model": models.ConfigReplace},
-    ),
-    path(
-        "compliance-rule/<uuid:pk>/notes/",
-        ObjectNotesView.as_view(),
-        name="compliancerule_notes",
-        kwargs={"model": models.ComplianceRule},
-    ),
-    path(
-        "compliance-feature/<uuid:pk>/notes/",
-        ObjectNotesView.as_view(),
-        name="compliancefeature_notes",
-        kwargs={"model": models.ComplianceFeature},
-    ),
-    path(
-        "golden-config-setting/<uuid:pk>/notes/",
-        ObjectNotesView.as_view(),
-        name="goldenconfigsetting_notes",
-        kwargs={"model": models.GoldenConfigSetting},
-    ),
-    path(
-        "config-remove/<uuid:pk>/notes/",
-        ObjectNotesView.as_view(),
-        name="configremove_notes",
-        kwargs={"model": models.ConfigRemove},
-    ),
-    path(
-        "config-replace/<uuid:pk>/notes/",
-        ObjectNotesView.as_view(),
-        name="configreplace_notes",
-        kwargs={"model": models.ConfigReplace},
-    ),
 ] + router.urls
-
-print([i for i in urlpatterns])

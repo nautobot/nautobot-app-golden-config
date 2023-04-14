@@ -295,7 +295,7 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
         """Indicates model fields to return as csv."""
         return (self.device.name, self.rule.feature.name, self.compliance)
 
-    def to_objectchange(self, action, related_object=None, object_data_extra=None, object_data_exclude=None):
+    def to_objectchange(self, action, *, related_object=None, object_data_extra=None, object_data_exclude=None):
         """Remove actual and intended configuration from changelog."""
         if not object_data_exclude:
             object_data_exclude = ["actual", "intended"]
@@ -392,7 +392,7 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
             self.compliance_last_success_date,
         )
 
-    def to_objectchange(self, action, related_object=None, object_data_extra=None, object_data_exclude=None):
+    def to_objectchange(self, action, *, related_object=None, object_data_extra=None, object_data_exclude=None):
         """Remove actual and intended configuration from changelog."""
         if not object_data_exclude:
             object_data_exclude = ["backup_config", "intended_config", "compliance_config"]

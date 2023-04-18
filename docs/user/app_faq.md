@@ -2,7 +2,7 @@
 
 ## _Why doesn't the compliance behaviour work the way I expected it to?_
 
-There are many ways to consider golden configs as shown in this [blog](https://blog.networktocode.com/post/journey-in-golden-config/). We cannot provide accomodations for all versions as it will both bloat the system, create a more complex system, and ultimately run into conflicting interpretations. Keeping the process focused but allowing anyone to override their interpretation of how compliance should work is both a powerful (via sane defaults) and complete (via custom compliance) solution.
+There are many ways to consider golden configs as shown in this [blog](https://blog.networktocode.com/post/journey-in-golden-config/). We cannot provide accommodations for all versions as it will both bloat the system, create a more complex system, and ultimately run into conflicting interpretations. Keeping the process focused but allowing anyone to override their interpretation of how compliance should work is both a powerful (via sane defaults) and complete (via custom compliance) solution.
 
 Any other interpretations of how compliance should be viewed are encouraged to use custom compliance option.
 

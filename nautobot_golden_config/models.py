@@ -135,7 +135,7 @@ FUNC_MAPPER = {
     ComplianceRuleTypeChoice.TYPE_CLI: _get_cli_compliance,
     ComplianceRuleTypeChoice.TYPE_JSON: _get_json_compliance,
 }
-# The below conditionally add the cusom provided compliance type
+# The below conditionally add the custom provided compliance type
 if PLUGIN_CFG.get("get_custom_compliance"):
     try:
         FUNC_MAPPER[ComplianceRuleTypeChoice.TYPE_CUSTOM] = import_string(PLUGIN_CFG["get_custom_compliance"])
@@ -419,7 +419,7 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
     "graphql",
 )
 class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
-    """GoldenConfigSetting Model defintion. This provides global configs instead of via configs.py."""
+    """GoldenConfigSetting Model definition. This provides global configs instead of via configs.py."""
 
     name = models.CharField(max_length=100, unique=True, blank=False)
     slug = models.SlugField(max_length=100, unique=True, blank=False)
@@ -572,7 +572,7 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     "webhooks",
 )
 class ConfigRemove(PrimaryModel):  # pylint: disable=too-many-ancestors
-    """ConfigRemove for Regex Line Removals from Backup Configuration Model defintion."""
+    """ConfigRemove for Regex Line Removals from Backup Configuration Model definition."""
 
     name = models.CharField(max_length=255, null=False, blank=False)
     platform = models.ForeignKey(
@@ -624,7 +624,7 @@ class ConfigRemove(PrimaryModel):  # pylint: disable=too-many-ancestors
     "webhooks",
 )
 class ConfigReplace(PrimaryModel):  # pylint: disable=too-many-ancestors
-    """ConfigReplace for Regex Line Replacements from Backup Configuration Model defintion."""
+    """ConfigReplace for Regex Line Replacements from Backup Configuration Model definition."""
 
     name = models.CharField(max_length=255, null=False, blank=False)
     platform = models.ForeignKey(

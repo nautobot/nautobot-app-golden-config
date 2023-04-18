@@ -84,7 +84,7 @@ The filtering logic happens in the `get_job_filter` function. Any consumer (job/
 
 ## Diff logic
 
-There is a function mapper for the diff logic. This allows for the diff logic to take on different proccesses for cli, json, and custom. This is enforced on the save method of `ConfigCompliance`.
+There is a function mapper for the diff logic. This allows for the diff logic to take on different processes for cli, json, and custom. This is enforced on the save method of `ConfigCompliance`.
 
 ## Dynamic Group
 
@@ -121,7 +121,7 @@ The PROCESSING feature, that is enabled as a Dynamic Application Feature, expose
 
 Both API views, as commented, are only targeting ONE single device because being a synchronous operation (versus the rest of the features that are run asynchronously as Jobs), it could take too much time, and have an undesired impact in Nautobot performance.
 
-All the functions used in the post-processing chain require a consitent signature:
+All the functions used in the post-processing chain require a consistent signature:
 `func(config_postprocessing: str, configs: models.GoldenConfig, request: HttpRequest) -> str`.
 
 - `config_postprocessing: str`: it's the reference configuration to use as template to render.

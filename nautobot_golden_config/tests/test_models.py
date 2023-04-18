@@ -182,7 +182,7 @@ class GoldenConfigSettingGitModelTestCase(TestCase):
         self.assertEqual(self.golden_config.intended_repository, GitRepository.objects.get(name="test-intended-repo-1"))
 
     def test_removing_git_repos(self):
-        """Ensure we can remove the Git Repository obejcts from GoldenConfigSetting."""
+        """Ensure we can remove the Git Repository objects from GoldenConfigSetting."""
         GitRepository.objects.all().delete()
         gc = GoldenConfigSetting.objects.all().first()  # pylint: disable=invalid-name
         self.assertEqual(gc.intended_repository, None)

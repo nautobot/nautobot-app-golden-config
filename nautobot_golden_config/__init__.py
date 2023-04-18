@@ -8,6 +8,7 @@ except ImportError:
 
 __version__ = metadata.version(__name__)
 
+from django.db.models.signals import post_migrate
 from nautobot.extras.plugins import PluginConfig
 
 
@@ -36,6 +37,15 @@ class GoldenConfig(PluginConfig):
         "per_feature_height": 4,
         "get_custom_compliance": None,
     }
+
+    def ready(self):
+        """Register custom signals."""
+        from nautobot_golden_config.models import ConfigCompliance  # pylint: disable=import-outside-toplevel
+
+        from .signals import config_compliance_platform_cleanup  # pylint: disable=import-outside-toplevel
+
+        super().ready()
+        post_migrate.connect(config_compliance_platform_cleanup, sender=ConfigCompliance)
 
 
 config = GoldenConfig  # pylint:disable=invalid-name

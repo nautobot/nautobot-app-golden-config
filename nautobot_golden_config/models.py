@@ -36,6 +36,7 @@ MISSING_MSG = (
 VALIDATION_MSG = (
     ERROR_MSG + "Specifically the key {} was expected to be of type(s) {} and the value of {} was not that type(s)."
 )
+
 PLATFORM_LOOKUP_TABLE = {
     "cisco_ios": "ios",
     "cisco_xe": "iosxe",
@@ -714,5 +715,5 @@ class ConfigReplace(PrimaryModel):  # pylint: disable=too-many-ancestors
 class HConfigOptions(PrimaryModel):
     """Options for customizing the behavior of hier_config remediation."""
 
-    name = models.CharField(max_length=255, blank=False, null=False)
-    options = models.JSONField(default=HCONFIG_BASE_OPTIONS, blank=False, null=False)
+    name = models.CharField(max_length=255)
+    hier_options = models.JSONField(default=dict())

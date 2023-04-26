@@ -59,6 +59,13 @@ if ENABLE_COMPLIANCE:
             ),
         )
     )
+    items.append(
+        NavMenuItem(
+            link="plugins:nautobot_golden_config:hconfigoptions_import",
+            name="Remediation Options Import",
+            permissions=["nautobot_golden_config.add_hconfigoptions"],
+        )
+    )
 
 if ENABLE_BACKUP:
     items.append(

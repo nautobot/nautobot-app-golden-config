@@ -17,6 +17,7 @@ from nornir_nautobot.utils.logger import NornirLogger
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 
+from nautobot_golden_config.choices import ComplianceRuleTypeChoice
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.models import ComplianceRule, ConfigCompliance, GoldenConfigSetting, GoldenConfig
 from nautobot_golden_config.utilities.helper import (
@@ -24,6 +25,7 @@ from nautobot_golden_config.utilities.helper import (
     get_job_filter,
     verify_settings,
     render_jinja_template,
+    get_json_config,
 )
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.utils import get_platform
@@ -43,6 +45,47 @@ def get_rules():
             rules[platform] = []
         rules[platform].append({"ordered": obj.config_ordered, "obj": obj, "section": obj.match_config.splitlines()})
     return rules
+
+
+def get_config_element(rule, config, obj, logger):
+    """
+    Helper function to yield elements of the configuration as defined in the `config_match` under ComplianceRule.
+
+    Returns:
+       - a configuration section for `CLI` based config types
+       - top level JSON key for `JSON` based config types
+    """
+    if rule["obj"].config_type == ComplianceRuleTypeChoice.TYPE_JSON:
+        config_json = get_json_config(config)
+
+        if not config_json:
+            logger.log_failure(obj, "Unable to interpret configuration as JSON.")
+            raise NornirNautobotException("Unable to interpret configuration as JSON.")
+
+        if rule["obj"].config_to_match:
+            config_element = {
+                k: config_json.get(k) for k in rule["obj"].config_to_match.splitlines() if k in config_json
+            }
+        else:
+            config_element = config_json
+
+    elif rule["obj"].config_type == ComplianceRuleTypeChoice.TYPE_CLI:
+        if get_platform(obj.platform.slug) not in parser_map.keys():
+            logger.log_failure(
+                obj,
+                f"There is currently no CLI-config parser support for platform slug `{get_platform(obj.platform.slug)}`, preemptively failed.",
+            )
+            raise NornirNautobotException(
+                f"There is currently no CLI-config parser support for platform slug `{get_platform(obj.platform.slug)}`, preemptively failed."
+            )
+
+        config_element = section_config(rule, config, get_platform(obj.platform.slug))
+
+    else:
+        logger.log_failure(obj, f"There rule type ({rule['obj'].config_type}) is not recognized.")
+        raise NornirNautobotException(f"There rule type ({rule['obj'].config_type}) is not recognized.")
+
+    return config_element
 
 
 def diff_files(backup_file, intended_file):
@@ -105,27 +148,20 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
             f"There is no defined `Configuration Rule` for platform slug `{platform}`, preemptively failed."
         )
 
-    if get_platform(platform) not in parser_map.keys():
-        logger.log_failure(
-            obj,
-            f"There is currently no parser support for platform slug `{get_platform(platform)}`, preemptively failed.",
-        )
-        raise NornirNautobotException(
-            f"There is currently no parser support for platform slug `{get_platform(platform)}`, preemptively failed."
-        )
-
     backup_cfg = _open_file_config(backup_file)
     intended_cfg = _open_file_config(intended_file)
 
-    # TODO: Make this atomic with compliance_obj step.
     for rule in rules[obj.platform.slug]:
+        _actual = get_config_element(rule, backup_cfg, obj, logger)
+        _intended = get_config_element(rule, intended_cfg, obj, logger)
+
         # using update_or_create() method to conveniently update actual obj or create new one.
         ConfigCompliance.objects.update_or_create(
             device=obj,
             rule=rule["obj"],
             defaults={
-                "actual": section_config(rule, backup_cfg, get_platform(platform)),
-                "intended": section_config(rule, intended_cfg, get_platform(platform)),
+                "actual": _actual,
+                "intended": _intended,
                 "missing": "",
                 "extra": "",
             },

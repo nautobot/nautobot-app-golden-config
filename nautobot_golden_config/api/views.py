@@ -7,7 +7,7 @@ from rest_framework.routers import APIRootView
 from rest_framework.permissions import AllowAny, IsAuthenticated, BasePermission
 from rest_framework import mixins, viewsets
 
-from nautobot.extras.api.views import CustomFieldModelViewSet
+from nautobot.extras.api.views import NautobotModelViewSet
 from nautobot.dcim.models import Device
 
 
@@ -40,7 +40,7 @@ class SOTAggDeviceDetailView(APIView):
         return Response(serializers.GraphQLSerializer(data=data).initial_data, status=status_code)
 
 
-class ComplianceRuleViewSet(CustomFieldModelViewSet):  # pylint:disable=too-many-ancestors
+class ComplianceRuleViewSet(NautobotModelViewSet):  # pylint:disable=too-many-ancestors
     """API viewset for interacting with ComplianceRule objects."""
 
     queryset = models.ComplianceRule.objects.all()
@@ -48,7 +48,7 @@ class ComplianceRuleViewSet(CustomFieldModelViewSet):  # pylint:disable=too-many
     filterset_class = filters.ComplianceRuleFilterSet
 
 
-class ComplianceFeatureViewSet(CustomFieldModelViewSet):  # pylint:disable=too-many-ancestors
+class ComplianceFeatureViewSet(NautobotModelViewSet):  # pylint:disable=too-many-ancestors
     """API viewset for interacting with ComplianceFeature objects."""
 
     queryset = models.ComplianceFeature.objects.all()
@@ -56,7 +56,7 @@ class ComplianceFeatureViewSet(CustomFieldModelViewSet):  # pylint:disable=too-m
     filterset_class = filters.ComplianceFeatureFilterSet
 
 
-class ConfigComplianceViewSet(CustomFieldModelViewSet):  # pylint:disable=too-many-ancestors
+class ConfigComplianceViewSet(NautobotModelViewSet):  # pylint:disable=too-many-ancestors
     """API viewset for interacting with ConfigCompliance objects."""
 
     queryset = models.ConfigCompliance.objects.all()
@@ -64,7 +64,7 @@ class ConfigComplianceViewSet(CustomFieldModelViewSet):  # pylint:disable=too-ma
     filterset_class = filters.ConfigComplianceFilterSet
 
 
-class GoldenConfigViewSet(CustomFieldModelViewSet):  # pylint:disable=too-many-ancestors
+class GoldenConfigViewSet(NautobotModelViewSet):  # pylint:disable=too-many-ancestors
     """API viewset for interacting with GoldenConfig objects."""
 
     queryset = models.GoldenConfig.objects.all()
@@ -72,7 +72,7 @@ class GoldenConfigViewSet(CustomFieldModelViewSet):  # pylint:disable=too-many-a
     filterset_class = filters.GoldenConfigFilterSet
 
 
-class GoldenConfigSettingViewSet(CustomFieldModelViewSet):  # pylint:disable=too-many-ancestors
+class GoldenConfigSettingViewSet(NautobotModelViewSet):  # pylint:disable=too-many-ancestors
     """API viewset for interacting with GoldenConfigSetting objects."""
 
     queryset = models.GoldenConfigSetting.objects.all()
@@ -80,7 +80,7 @@ class GoldenConfigSettingViewSet(CustomFieldModelViewSet):  # pylint:disable=too
     filterset_class = filters.GoldenConfigSettingFilterSet
 
 
-class ConfigRemoveViewSet(CustomFieldModelViewSet):  # pylint:disable=too-many-ancestors
+class ConfigRemoveViewSet(NautobotModelViewSet):  # pylint:disable=too-many-ancestors
     """API viewset for interacting with ConfigRemove objects."""
 
     queryset = models.ConfigRemove.objects.all()
@@ -88,7 +88,7 @@ class ConfigRemoveViewSet(CustomFieldModelViewSet):  # pylint:disable=too-many-a
     filterset_class = filters.ConfigRemoveFilterSet
 
 
-class ConfigReplaceViewSet(CustomFieldModelViewSet):  # pylint:disable=too-many-ancestors
+class ConfigReplaceViewSet(NautobotModelViewSet):  # pylint:disable=too-many-ancestors
     """API viewset for interacting with ConfigReplace objects."""
 
     queryset = models.ConfigReplace.objects.all()

@@ -4,7 +4,7 @@ from unittest import mock
 from django.test import TestCase
 
 from nautobot.extras.models import GitRepository, DynamicGroup
-from nautobot_golden_config.forms import GoldenConfigSettingFeatureForm
+from nautobot_golden_config.forms import GoldenConfigSettingForm
 from nautobot_golden_config.models import GoldenConfigSetting
 from nautobot_golden_config.tests.conftest import create_git_repos, create_device_data
 
@@ -22,7 +22,7 @@ class GoldenConfigSettingFormTest(TestCase):
     def test_no_query_no_scope_success(self):
         """Testing GoldenConfigForm without specifying a unique scope or GraphQL Query."""
         with mock.patch("nautobot_golden_config.models.ENABLE_SOTAGG", False):
-            form = GoldenConfigSettingFeatureForm(
+            form = GoldenConfigSettingForm(
                 data={
                     "name": "test",
                     "slug": "test",
@@ -42,7 +42,7 @@ class GoldenConfigSettingFormTest(TestCase):
     def test_no_query_fail(self):
         """Testing GoldenConfigForm without specifying a unique scope or GraphQL Query."""
         with mock.patch("nautobot_golden_config.models.ENABLE_SOTAGG", True):
-            form = GoldenConfigSettingFeatureForm(
+            form = GoldenConfigSettingForm(
                 data={
                     "name": "test",
                     "slug": "test",

@@ -141,3 +141,5 @@ This function performs an additional permission validation, to check if the requ
 ### Configuration Compliance 
 
 Over time device(s) platform may change; whether this is a device refresh or full replacement. A Django `post_save` signal is used on the `ConfigCompliance` model and provides a reliable and efficient way to manage configuration compliance objects. This signal deletes any `ConfigCompliance` objects that don't match the current platform. This decision was made to avoid compliance reporting inconsistencies that can arise when outdated or irrelevant objects remain in the database which were generated with the previous platform.
+
+This has a computational impact when updating a Device object's platform. This is similar to the computational impact of an SQL `cascade` option on a delete. This is largely unavoidable and should be limited in impact, such that it will only be the removal of the number of `ConfigCompliance` objects, which is no bigger than the number of  `Config Features`, which is generally intended to be a small amount.

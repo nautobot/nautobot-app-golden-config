@@ -84,7 +84,7 @@ The filtering logic happens in the `get_job_filter` function. Any consumer (job/
 
 ## Diff logic
 
-There is a function mapper for the diff logic. This allows for the diff logic to take on different proccesses for cli, json, and custom. This is enforced on the save method of `ConfigCompliance`.
+There is a function mapper for the diff logic. This allows for the diff logic to take on different processes for cli, json, and custom. This is enforced on the save method of `ConfigCompliance`.
 
 ## Dynamic Group
 
@@ -121,7 +121,7 @@ The PROCESSING feature, that is enabled as a Dynamic Application Feature, expose
 
 Both API views, as commented, are only targeting ONE single device because being a synchronous operation (versus the rest of the features that are run asynchronously as Jobs), it could take too much time, and have an undesired impact in Nautobot performance.
 
-All the functions used in the post-processing chain require a consitent signature:
+All the functions used in the post-processing chain require a consistent signature:
 `func(config_postprocessing: str, configs: models.GoldenConfig, request: HttpRequest) -> str`.
 
 - `config_postprocessing: str`: it's the reference configuration to use as template to render.
@@ -137,3 +137,7 @@ The API view, under the path `config-postprocessing`, uses custom permissions, n
 It was decided to restrict the usage of Jinja filters to only the ones related to getting Nautobot secrets values (defined here), plus the `encrypt_type5` and `encrypt_type7` filters from Netutils. Remember that this function is not defined to replace the regular Jinja rendering done for creating the Intended configuration, only to add secrets information on the fly. This avoids undesired behavior on this synchronous operation.
 
 This function performs an additional permission validation, to check if the requesting user has permissions to view the `SecretsGroup` requested.
+
+### Configuration Compliance 
+
+Over time device(s) platform may change; whether this is a device refresh or full replacement. A Django `post_save` signal is used on the `ConfigCompliance` model and provides a reliable and efficient way to manage configuration compliance objects. This signal deletes any `ConfigCompliance` objects that don't match the current platform. This decision was made to avoid compliance reporting inconsistencies that can arise when outdated or irrelevant objects remain in the database which were generated with the previous platform.

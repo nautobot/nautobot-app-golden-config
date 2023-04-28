@@ -67,6 +67,11 @@ HCONFIG_BASE_OPTIONS = {
 }
 
 
+def get_default_hconfig_options_id():
+    """Get a default HConfigOptions object."""
+    return HConfigOptions.objects.get_or_create(name="Base Options", hier_options=HCONFIG_BASE_OPTIONS)[0].id
+
+
 def _is_jsonable(val):
     """Check is value can be converted to json."""
     try:
@@ -401,6 +406,9 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
     compliance_last_success_date = models.DateTimeField(null=True)
 
     remediation = models.TextField(blank=True, help_text="Configuration commands to bring device into compliance")
+    remediation_settings = models.ForeignKey(
+        to="HConfigOptions", on_delete=models.SET_DEFAULT, default=get_default_hconfig_options_id
+    )
 
     csv_headers = [
         "Device Name",
@@ -410,7 +418,6 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
         "intended successful",
         "compliance attempt",
         "compliance successful",
-        "config remediation",
     ]
 
     def to_csv(self):
@@ -423,7 +430,6 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
             self.intended_last_success_date,
             self.compliance_last_attempt_date,
             self.compliance_last_success_date,
-            self.remediation,
         )
 
     def to_objectchange(self, action, related_object=None, object_data_extra=None, object_data_exclude=None):
@@ -440,9 +446,18 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
         )
 
     def save(self, *args, **kwargs):
-        if PLATFORM_LOOKUP_TABLE.get(self.device.platform.slug):
+        # If the remediation settings are the default, then we can generate the remediation config if it matches one of our default supported platforms
+        if self.remediation_settings.id == get_default_hconfig_options_id():
+            if PLATFORM_LOOKUP_TABLE.get(self.device.platform.slug):
+                if self.backup_config and self.intended_config:
+                    host = Host(hostname=self.device.name, os=PLATFORM_LOOKUP_TABLE.get(self.device.platform.slug))
+                    host.load_generated_config(self.intended_config)
+                    host.load_running_config(self.backup_config)
+                    host.remediation_config()
+                    self.remediation = host.remediation_config_filtered_text(include_tags={}, exclude_tags={})
+        else:
             if self.backup_config and self.intended_config:
-                host = Host(hostname=self.device.name, os=PLATFORM_LOOKUP_TABLE.get(self.device.platform.slug))
+                host = Host(hostname=self.device.name, hconfig_options=self.remediation_settings.hconfig_options)
                 host.load_generated_config(self.intended_config)
                 host.load_running_config(self.backup_config)
                 host.remediation_config()
@@ -716,4 +731,4 @@ class HConfigOptions(PrimaryModel):
     """Options for customizing the behavior of hier_config remediation."""
 
     name = models.CharField(max_length=255)
-    hier_options = models.JSONField(default=dict())
+    hier_options = models.JSONField(default=dict)

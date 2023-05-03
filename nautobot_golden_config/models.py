@@ -1,24 +1,23 @@
 """Django Models for tracking the configuration compliance per feature and device."""
 
-import logging
 import json
+import logging
+
 from deepdiff import DeepDiff
-from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.db import models
 from django.shortcuts import reverse
 from django.utils.module_loading import import_string
 from django.utils.text import slugify
-
-from nautobot.extras.models import ObjectChange, DynamicGroup
+from nautobot.core.models.generics import PrimaryModel
+from nautobot.extras.models import DynamicGroup, ObjectChange
 from nautobot.extras.utils import extras_features
 from nautobot.utilities.utils import serialize_object, serialize_object_v2
-from nautobot.core.models.generics import PrimaryModel
 from netutils.config.compliance import feature_compliance
-
 from nautobot_golden_config.choices import ComplianceRuleTypeChoice
+from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
 from nautobot_golden_config.utilities.utils import get_platform
-from nautobot_golden_config.utilities.constant import PLUGIN_CFG, ENABLE_SOTAGG
 
 
 LOGGER = logging.getLogger(__name__)

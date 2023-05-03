@@ -137,3 +137,9 @@ The API view, under the path `config-postprocessing`, uses custom permissions, n
 It was decided to restrict the usage of Jinja filters to only the ones related to getting Nautobot secrets values (defined here), plus the `encrypt_type5` and `encrypt_type7` filters from Netutils. Remember that this function is not defined to replace the regular Jinja rendering done for creating the Intended configuration, only to add secrets information on the fly. This avoids undesired behavior on this synchronous operation.
 
 This function performs an additional permission validation, to check if the requesting user has permissions to view the `SecretsGroup` requested.
+
+### Configuration Compliance 
+
+Over time device(s) platform may change; whether this is a device refresh or full replacement. A Django `post_save` signal is used on the `ConfigCompliance` model and provides a reliable and efficient way to manage configuration compliance objects. This signal deletes any `ConfigCompliance` objects that don't match the current platform. This decision was made to avoid compliance reporting inconsistencies that can arise when outdated or irrelevant objects remain in the database which were generated with the previous platform.
+
+This has a computational impact when updating a Device object's platform. This is similar to the computational impact of an SQL `cascade` option on a delete. This is largely unavoidable and should be limited in impact, such that it will only be the removal of the number of `ConfigCompliance` objects, which is no bigger than the number of  `Config Features`, which is generally intended to be a small amount.

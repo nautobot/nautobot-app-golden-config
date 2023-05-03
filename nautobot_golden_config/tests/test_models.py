@@ -1,21 +1,15 @@
 """Unit tests for nautobot_golden_config models."""
 
-from django.test import TestCase
-from django.db.utils import IntegrityError
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.db.utils import IntegrityError
+from django.test import TestCase
 from nautobot.dcim.models import Platform
-from nautobot.extras.models import GitRepository, GraphQLQuery, DynamicGroup
+from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery
+from nautobot_golden_config.models import ConfigCompliance, ConfigRemove, ConfigReplace, GoldenConfigSetting
 from nautobot_golden_config.tests.conftest import create_git_repos
 
-from nautobot_golden_config.models import (
-    ConfigCompliance,
-    GoldenConfigSetting,
-    ConfigRemove,
-    ConfigReplace,
-)
-
-from .conftest import create_device, create_feature_rule_json, create_config_compliance, create_saved_queries
+from .conftest import create_config_compliance, create_device, create_feature_rule_json, create_saved_queries
 
 
 class ConfigComplianceModelTestCase(TestCase):
@@ -73,6 +67,26 @@ class ConfigComplianceModelTestCase(TestCase):
         self.assertTrue(cc_obj.compliance)
         self.assertEqual(cc_obj.missing, "")
         self.assertEqual(cc_obj.extra, "")
+
+    def test_config_compliance_signal_change_platform(self):
+        """Make sure signal is working."""
+        ConfigCompliance.objects.create(
+            device=self.device,
+            rule=self.compliance_rule_json,
+            actual={"foo": {"bar-1": "baz"}},
+            intended={"foo": {"bar-1": "baz"}},
+        )
+        self.assertEqual(ConfigCompliance.objects.filter(device=self.device).count(), 1)
+        self.device.platform = Platform.objects.create(name="Platform Change", slug="platform-change")
+        new_rule_json = create_feature_rule_json(self.device)
+
+        ConfigCompliance.objects.create(
+            device=self.device,
+            rule=new_rule_json,
+            actual={"foo": {"bar-1": "baz"}},
+            intended={"foo": {"bar-1": "baz"}},
+        )
+        self.assertEqual(ConfigCompliance.objects.filter(device=self.device).count(), 1)
 
 
 class GoldenConfigTestCase(TestCase):

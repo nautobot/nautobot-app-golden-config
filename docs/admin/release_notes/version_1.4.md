@@ -1,5 +1,7 @@
 # v1.4 Release Notes
 
+- Change min version of Nautobot from 1.4.0 to 1.5.3 which is required for the use of NautobotUIViewset, Notes mixins etc.
+
 ## v1.4.0 - 2023-05
 
 ### Added

@@ -12,9 +12,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from distutils.util import strtobool
-from invoke import Collection, task as invoke_task
 import os
+from distutils.util import strtobool
+
+from invoke import Collection
+from invoke import task as invoke_task
 
 
 def is_truthy(arg):
@@ -38,7 +40,7 @@ namespace = Collection("nautobot_golden_config")
 namespace.configure(
     {
         "nautobot_golden_config": {
-            "nautobot_ver": "1.4.0",
+            "nautobot_ver": "1.5.3",
             "project_name": "nautobot_golden_config",
             "python_ver": "3.8",
             "local": False,

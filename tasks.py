@@ -315,7 +315,8 @@ def db_import(context, filename="nautobot_backup.dump"):
     context.run(copy_cmd)
 
     print("Importing DB...\n")
-    import_cmd = 'exec db sh -c "psql -h localhost -U \${} < /tmp/{}"'.format( # noqa: W605 pylint: disable=anomalous-backslash-in-string
+    # pylint: disable=consider-using-f-string
+    import_cmd = 'exec db sh -c "psql -h localhost -U \${} < /tmp/{}"'.format(  # noqa: W605 pylint: disable=anomalous-backslash-in-string
         "{NAUTOBOT_DB_USER}", filename
     )
     docker_compose(context, import_cmd, pty=True)

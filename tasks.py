@@ -12,10 +12,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import os
 from distutils.util import strtobool
 from time import sleep
 from invoke import Collection, task as invoke_task
-import os
 
 
 def is_truthy(arg):
@@ -315,9 +315,9 @@ def db_import(context, filename="nautobot_backup.dump"):
     context.run(copy_cmd)
 
     print("Importing DB...\n")
-    import_cmd = 'exec db sh -c "psql -h localhost -U \${} < /tmp/{}"'.format(
+    import_cmd = 'exec db sh -c "psql -h localhost -U \${} < /tmp/{}"'.format( # noqa: W605 pylint: disable=anomalous-backslash-in-string
         "{NAUTOBOT_DB_USER}", filename
-    )  # noqa: W605 pylint: disable=anomalous-backslash-in-string
+    )
     docker_compose(context, import_cmd, pty=True)
 
 

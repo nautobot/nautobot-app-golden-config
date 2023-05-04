@@ -424,6 +424,7 @@ class HConfigOptionsTable(BaseTable):
 
     pk = ToggleColumn()
     name = LinkColumn("plugins:nautobot_golden_config:hconfigoptions", args=[A("pk")])
+    target_platform = Column(verbose_name="Target Platform")
 
     class Meta(BaseTable.Meta):
         """Meta attributes."""

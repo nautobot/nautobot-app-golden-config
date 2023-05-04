@@ -311,7 +311,7 @@ def db_import(context, filename="nautobot_backup.dump"):
     sleep(2)
 
     print("Copying DB Dump to DB container...\n")
-    copy_cmd = f"docker cp {filename} {context.nautobot_golden_config.project_name}-db-1:/tmp/{filename}"
+    copy_cmd = f"docker cp {filename} {context.nautobot_golden_config.project_name}_db_1:/tmp/{filename}"
     context.run(copy_cmd)
 
     print("Importing DB...\n")

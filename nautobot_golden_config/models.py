@@ -50,26 +50,6 @@ LINEAGE_CHOICES = (
     ("contains", "contains"),
     ("equals", "equals"),
 )
-HCONFIG_BASE_OPTIONS = {
-    "style": "",
-    "sectional_overwrite": [],
-    "sectional_overwrite_no_negate": [],
-    "ordering": [],
-    "indent_adjust": [],
-    "parent_allows_duplicate_child": [],
-    "sectional_exiting": [],
-    "full_text_sub": [],
-    "per_line_sub": [],
-    "idempotent_commands_blacklist": [],
-    "idempotent_commands": [],
-    "negation_default_when": [],
-    "negation_negate_with": [],
-}
-
-
-def get_default_hconfig_options_id():
-    """Get a default HConfigOptions object."""
-    return HConfigOptions.objects.get_or_create(name="Base Options", hier_options=HCONFIG_BASE_OPTIONS)[0].id
 
 
 def _is_jsonable(val):
@@ -406,9 +386,6 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
     compliance_last_success_date = models.DateTimeField(null=True)
 
     remediation = models.TextField(blank=True, help_text="Configuration commands to bring device into compliance")
-    remediation_settings = models.ForeignKey(
-        to="HConfigOptions", on_delete=models.SET_DEFAULT, default=get_default_hconfig_options_id
-    )
 
     csv_headers = [
         "Device Name",
@@ -446,18 +423,23 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
         )
 
     def save(self, *args, **kwargs):
-        # If the remediation settings are the default, then we can generate the remediation config if it matches one of our default supported platforms
-        if self.remediation_settings.id == get_default_hconfig_options_id():
-            if PLATFORM_LOOKUP_TABLE.get(self.device.platform.slug):
-                if self.backup_config and self.intended_config:
+        """Save method is overloaded here to attempt generating the remediation config if the backup and intended configs are present."""
+        if self.backup_config and self.intended_config:
+            h_config_options = None
+            try:
+                # Get the remediation settings for the device platform
+                h_config_options = HConfigOptions.objects.get(target_platform=self.device.platform.id)
+            except HConfigOptions.DoesNotExist:
+                # If we don't have a remediation settings for the device platform, then we can attempt to generate the remediation config if it matches one of our default supported platforms
+                if self.device.platform.slug in PLATFORM_LOOKUP_TABLE.keys():
                     host = Host(hostname=self.device.name, os=PLATFORM_LOOKUP_TABLE.get(self.device.platform.slug))
                     host.load_generated_config(self.intended_config)
                     host.load_running_config(self.backup_config)
                     host.remediation_config()
                     self.remediation = host.remediation_config_filtered_text(include_tags={}, exclude_tags={})
-        else:
-            if self.backup_config and self.intended_config:
-                host = Host(hostname=self.device.name, hconfig_options=self.remediation_settings.hconfig_options)
+            # If we can match a remediation settings to the device platform, then we can generate the remediation config with those custom settings
+            if h_config_options and h_config_options.target_platform == self.device.platform:
+                host = Host(hostname=self.device.name, hconfig_options=h_config_options.hier_options)
                 host.load_generated_config(self.intended_config)
                 host.load_running_config(self.backup_config)
                 host.remediation_config()
@@ -730,15 +712,16 @@ class ConfigReplace(PrimaryModel):  # pylint: disable=too-many-ancestors
 class HConfigOptions(PrimaryModel):
     """Options for customizing the behavior of hier_config remediation."""
 
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, unique=True)
     hier_options = models.JSONField(default=dict)
-    target_platform = models.ForeignKey(to="dcim.Platform", on_delete=models.SET_NULL, related_name="hconfigoptions", null=True, blank=True)
+    target_platform = models.OneToOneField(
+        to="dcim.Platform", on_delete=models.CASCADE, related_name="h_config_options", null=True, blank=True
+    )
 
     class Meta:
         """Meta information for HConfigOptions model."""
 
         ordering = ["name"]
-        unique_together = ["name"]
 
     def get_absolute_url(self):
         """Return absolute URL for instance."""

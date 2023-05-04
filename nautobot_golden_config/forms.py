@@ -120,8 +120,9 @@ class ComplianceRuleForm(NautobotModelForm):
             "feature",
             "description",
             "config_ordered",
-            "match_config",
             "config_type",
+            "match_config",
+            "custom_compliance",
         )
 
 

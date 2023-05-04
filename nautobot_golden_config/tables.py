@@ -430,6 +430,4 @@ class HConfigOptionsTable(BaseTable):
         """Meta attributes."""
 
         model = models.HConfigOptions
-        fields = (
-            "name",
-        )
+        fields = ("name",)

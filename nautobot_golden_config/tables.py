@@ -418,3 +418,17 @@ class GoldenConfigSettingTable(BaseTable):
             "intended_repository",
             "jinja_repository",
         )
+
+class HConfigOptionsTable(BaseTable):
+    """Table for list view."""
+
+    pk = ToggleColumn()
+    name = LinkColumn("plugins:nautobot_golden_config:hconfigoptions", args=[A("pk")])
+
+    class Meta(BaseTable.Meta):
+        """Meta attributes."""
+
+        model = models.HConfigOptions
+        fields = (
+            "name",
+        )

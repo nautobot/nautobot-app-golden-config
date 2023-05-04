@@ -732,3 +732,18 @@ class HConfigOptions(PrimaryModel):
 
     name = models.CharField(max_length=255)
     hier_options = models.JSONField(default=dict)
+    target_platform = models.ForeignKey(to="dcim.Platform", on_delete=models.SET_NULL, related_name="hconfigoptions", null=True, blank=True)
+
+    class Meta:
+        """Meta information for HConfigOptions model."""
+
+        ordering = ["name"]
+        unique_together = ["name"]
+
+    def get_absolute_url(self):
+        """Return absolute URL for instance."""
+        return reverse("plugins:nautobot_golden_config:hconfigoptions", args=[self.pk])
+
+    def __str__(self):
+        """Return a simple string if model is called."""
+        return self.name

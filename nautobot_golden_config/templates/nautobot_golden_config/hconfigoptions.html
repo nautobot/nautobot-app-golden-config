@@ -1,0 +1,25 @@
+{% extends 'generic/object_detail.html' %}
+{% load buttons %}
+{% load static %}
+{% load custom_links %}
+{% load helpers %}
+
+{% block title %}{{ object }}{% endblock %}
+
+{% block content_left_page %}
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <strong>Config Remediation Settings</strong>
+  </div>
+  <table class="table table-hover panel-body attr-table">
+    <tr>
+      <td>Name</td>
+      <td>{{ object.name }}</td>
+    </tr>
+    <tr>
+      <td>Settings</td>
+      <td>{{ object.hier_options | pprint }}</td>
+    </tr>
+  </table>
+</div>
+{% endblock content_left_page %}

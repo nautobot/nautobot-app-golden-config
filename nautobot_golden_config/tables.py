@@ -419,6 +419,7 @@ class GoldenConfigSettingTable(BaseTable):
             "jinja_repository",
         )
 
+
 class HConfigOptionsTable(BaseTable):
     """Table for list view."""
 

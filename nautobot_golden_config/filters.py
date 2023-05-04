@@ -285,6 +285,7 @@ class GoldenConfigSettingFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
         model = models.GoldenConfigSetting
         fields = ["id", "name", "slug", "weight", "backup_repository", "intended_repository", "jinja_repository"]
 
+
 class HConfigOptionsFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
     """Inherits Base Class BaseFilterSet."""
 

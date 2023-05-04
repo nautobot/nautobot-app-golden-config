@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('nautobot_golden_config', '0021_convert_dynamicgroup_part_3'),
+        ("nautobot_golden_config", "0021_convert_dynamicgroup_part_3"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='goldenconfig',
-            name='remediation',
+            model_name="goldenconfig",
+            name="remediation",
             field=models.TextField(blank=True),
         ),
     ]

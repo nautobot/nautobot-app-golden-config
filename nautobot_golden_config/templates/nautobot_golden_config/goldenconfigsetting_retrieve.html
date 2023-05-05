@@ -40,8 +40,7 @@
     </tr>
     <tr>
       <td>Scope of Devices</td>
-      <td><a href="{{ object.get_url_to_filtered_device_list }}">{{ object.get_url_to_filtered_device_list | length
-          }}</a></td>
+      <td><a href="{{ object.get_url_to_filtered_device_list }}">{{ object.get_url_to_filtered_device_list | length }}</a></td>
     </tr>
   </table>
 </div>
@@ -59,9 +58,9 @@
       </td>
       <td>
         {% if object.backup_repository %}
-        <a href="{{ object.backup_repository.get_absolute_url }}">{{ object.backup_repository }}</a>
+          <a href="{{ object.backup_repository.get_absolute_url }}">{{ object.backup_repository }}</a>
         {% else %}
-        <span class="text-muted">None</span>
+          <span class="text-muted">None</span>
         {% endif %}
       </td>
     </tr>
@@ -94,9 +93,9 @@
       </td>
       <td>
         {% if object.intended_repository %}
-        <a href="{{ object.intended_repository.get_absolute_url }}">{{ object.intended_repository }}</a>
+          <a href="{{ object.intended_repository.get_absolute_url }}">{{ object.intended_repository }}</a>
         {% else %}
-        <span class="text-muted">None</span>
+          <span class="text-muted">None</span>
         {% endif %}
       </td>
     </tr>
@@ -121,9 +120,9 @@
       </td>
       <td>
         {% if object.jinja_repository %}
-        <a href="{{ object.jinja_repository.get_absolute_url }}">{{ object.jinja_repository }}</a>
+          <a href="{{ object.jinja_repository.get_absolute_url }}">{{ object.jinja_repository }}</a>
         {% else %}
-        <span class="text-muted">None</span>
+          <span class="text-muted">None</span>
         {% endif %}
       </td>
     </tr>
@@ -139,9 +138,9 @@
       <td>GraphQL Query</td>
       <td>
         {% if object.sot_agg_query %}
-        <a href="{{ object.sot_agg_query.get_absolute_url }}">{{ object.sot_agg_query }}</a>
+          <a href="{{ object.sot_agg_query.get_absolute_url }}">{{ object.sot_agg_query }}</a>
         {% else %}
-        <span class="text-muted">None</span>
+          <span class="text-muted">None</span>
         {% endif %}
       </td>
     </tr>

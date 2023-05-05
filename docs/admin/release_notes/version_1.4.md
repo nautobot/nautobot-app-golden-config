@@ -2,6 +2,12 @@
 
 - Change min version of Nautobot from 1.4.0 to 1.5.3 which is required for the use of NautobotUIViewset, Notes mixins etc.
 
+## v1.4.1 - 2023-05
+
+### Fixed
+
+- [488](https://github.com/nautobot/nautobot-plugin-golden-config/pull/488) - Fix Golden Config Settings Buttons.
+
 ## v1.4.0 - 2023-05
 
 ### Added

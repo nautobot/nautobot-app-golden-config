@@ -2,9 +2,8 @@
 from django.db.models import Count, Q
 from nautobot.dcim.models import Device
 from nautobot.extras.plugins import PluginTemplateExtension
-
 from nautobot_golden_config.models import ConfigCompliance, GoldenConfig
-from nautobot_golden_config.utilities.constant import ENABLE_COMPLIANCE, CONFIG_FEATURES
+from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_COMPLIANCE
 from nautobot_golden_config.utilities.helper import get_device_to_settings_map
 
 
@@ -87,9 +86,40 @@ class ConfigDeviceDetails(PluginTemplateExtension):  # pylint: disable=abstract-
         )
 
 
+class ConfigComplianceTenantCheck(PluginTemplateExtension):  # pylint: disable=abstract-method
+    """Plugin extension class for config compliance."""
+
+    model = "tenancy.tenant"
+
+    def get_tenant(self):
+        """Get tenant object."""
+        return self.context["object"]
+
+    def right_page(self):
+        """Content to add to the configuration compliance."""
+        comp_obj = (
+            ConfigCompliance.objects.values("rule__feature__name")
+            .filter(device__tenant=self.get_tenant().id)
+            .annotate(
+                count=Count("rule__feature__name"),
+                compliant=Count("rule__feature__name", filter=Q(compliance=True)),
+                non_compliant=Count("rule__feature__name", filter=~Q(compliance=True)),
+            )
+            .order_by("rule__feature__name")
+            .values("rule__feature__name", "compliant", "non_compliant")
+        )
+        extra_context = {"compliance": comp_obj, "template_type": "site"}
+        return self.render(
+            "nautobot_golden_config/content_template.html",
+            extra_context=extra_context,
+        )
+
+
 extensions = [ConfigDeviceDetails]
 if ENABLE_COMPLIANCE:
     extensions.append(ConfigComplianceDeviceCheck)
     extensions.append(ConfigComplianceSiteCheck)
+    extensions.append(ConfigComplianceTenantCheck)
+
 
 template_extensions = extensions

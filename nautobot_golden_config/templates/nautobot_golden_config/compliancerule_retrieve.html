@@ -1,0 +1,36 @@
+{% extends 'generic/object_detail.html' %}
+{% load helpers %}
+
+{% block content_left_page %}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <strong>Compliance Rule Details</strong>
+        </div>
+        <table class="table table-hover panel-body attr-table">
+            <tr>
+                <td>Platform</td>
+                <td>{{ object.platform.name }}</td>
+            </tr>
+            <tr>
+                <td>Feature</td>
+                <td>{{ object.feature.name }}</td>
+            </tr>
+            <tr>
+                <td>Description</td>
+                <td>{{ object.description|placeholder }}</td>
+            </tr>
+            <tr>
+                <td>Config Ordered</td>
+                <td>{{ object.config_ordered }}</td>
+            </tr>
+            <tr>
+                <td>Match Config</td>
+                <td><pre>{{ object.match_config }}</pre></td>
+            </tr>
+            <tr>
+                <td>Config Type</td>
+                <td>{{ object.config_type }}</td>
+            </tr>
+        </table>
+    </div>
+{% endblock %}

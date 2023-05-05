@@ -3,7 +3,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("nautobot_golden_config", "0010_multiple_gc_settings_part_2"),
     ]

@@ -1,4 +1,5 @@
 """Forms for Device Configuration Backup."""
+# pylint: disable=too-many-ancestors
 
 from django import forms
 
@@ -8,6 +9,7 @@ from nautobot.dcim.models import Device, Platform, Region, Site, DeviceRole, Dev
 from nautobot.extras.models import Status, GitRepository, DynamicGroup
 from nautobot.tenancy.models import Tenant, TenantGroup
 from nautobot.utilities.forms import SlugField
+from nautobot.extras.forms import NautobotFilterForm, NautobotBulkEditForm, NautobotModelForm
 
 
 from nautobot_golden_config import models
@@ -15,7 +17,7 @@ from nautobot_golden_config import models
 # ConfigCompliance
 
 
-class ConfigComplianceFilterForm(utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelFilterFormMixin):
+class ConfigComplianceFilterForm(NautobotFilterForm):
     """Filter Form for ConfigCompliance instances."""
 
     model = models.ConfigCompliance
@@ -104,9 +106,7 @@ class ConfigComplianceFilterForm(utilities_forms.BootstrapMixin, extras_forms.Cu
 # ComplianceRule
 
 
-class ComplianceRuleForm(
-    utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelFormMixin, extras_forms.RelationshipModelFormMixin
-):
+class ComplianceRuleForm(NautobotModelForm):
     """Filter Form for ComplianceRule instances."""
 
     platform = utilities_forms.DynamicModelChoiceField(queryset=Platform.objects.all())
@@ -125,7 +125,7 @@ class ComplianceRuleForm(
         )
 
 
-class ComplianceRuleFilterForm(utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelFilterFormMixin):
+class ComplianceRuleFilterForm(NautobotFilterForm):
     """Form for ComplianceRule instances."""
 
     model = models.ComplianceRule
@@ -140,9 +140,7 @@ class ComplianceRuleFilterForm(utilities_forms.BootstrapMixin, extras_forms.Cust
     )
 
 
-class ComplianceRuleBulkEditForm(
-    utilities_forms.BootstrapMixin, extras_forms.TagsBulkEditFormMixin, extras_forms.CustomFieldModelBulkEditFormMixin
-):
+class ComplianceRuleBulkEditForm(NautobotBulkEditForm):
     """BulkEdit form for ComplianceRule instances."""
 
     pk = forms.ModelMultipleChoiceField(queryset=models.ComplianceRule.objects.all(), widget=forms.MultipleHiddenInput)
@@ -166,9 +164,7 @@ class ComplianceRuleCSVForm(extras_forms.CustomFieldModelCSVForm):
 # ComplianceFeature
 
 
-class ComplianceFeatureForm(
-    utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelFormMixin, extras_forms.RelationshipModelFormMixin
-):
+class ComplianceFeatureForm(NautobotModelForm):
     """Filter Form for ComplianceFeature instances."""
 
     slug = SlugField()
@@ -180,7 +176,7 @@ class ComplianceFeatureForm(
         fields = ("name", "slug", "description")
 
 
-class ComplianceFeatureFilterForm(utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelFilterFormMixin):
+class ComplianceFeatureFilterForm(NautobotFilterForm):
     """Form for ComplianceFeature instances."""
 
     model = models.ComplianceFeature
@@ -188,9 +184,7 @@ class ComplianceFeatureFilterForm(utilities_forms.BootstrapMixin, extras_forms.C
     name = utilities_forms.DynamicModelChoiceField(queryset=models.ComplianceFeature.objects.all(), required=False)
 
 
-class ComplianceFeatureBulkEditForm(
-    utilities_forms.BootstrapMixin, extras_forms.TagsBulkEditFormMixin, extras_forms.CustomFieldModelBulkEditFormMixin
-):
+class ComplianceFeatureBulkEditForm(NautobotBulkEditForm):
     """BulkEdit form for ComplianceFeature instances."""
 
     pk = forms.ModelMultipleChoiceField(
@@ -216,9 +210,7 @@ class ComplianceFeatureCSVForm(extras_forms.CustomFieldModelCSVForm):
 # ConfigRemove
 
 
-class ConfigRemoveForm(
-    utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelFormMixin, extras_forms.RelationshipModelFormMixin
-):
+class ConfigRemoveForm(NautobotModelForm):
     """Filter Form for Line Removal instances."""
 
     platform = utilities_forms.DynamicModelChoiceField(queryset=Platform.objects.all())
@@ -235,7 +227,7 @@ class ConfigRemoveForm(
         )
 
 
-class ConfigRemoveFeatureFilterForm(utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelFilterFormMixin):
+class ConfigRemoveFilterForm(NautobotFilterForm):
     """Filter Form for Line Removal."""
 
     model = models.ConfigRemove
@@ -247,9 +239,7 @@ class ConfigRemoveFeatureFilterForm(utilities_forms.BootstrapMixin, extras_forms
     )
 
 
-class ConfigRemoveBulkEditForm(
-    utilities_forms.BootstrapMixin, extras_forms.TagsBulkEditFormMixin, extras_forms.CustomFieldModelBulkEditFormMixin
-):
+class ConfigRemoveBulkEditForm(NautobotBulkEditForm):
     """BulkEdit form for ConfigRemove instances."""
 
     pk = forms.ModelMultipleChoiceField(queryset=models.ConfigRemove.objects.all(), widget=forms.MultipleHiddenInput)
@@ -273,9 +263,7 @@ class ConfigRemoveCSVForm(extras_forms.CustomFieldModelCSVForm):
 # ConfigReplace
 
 
-class ConfigReplaceForm(
-    utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelFormMixin, extras_forms.RelationshipModelFormMixin
-):
+class ConfigReplaceForm(NautobotModelForm):
     """Filter Form for Line Removal instances."""
 
     platform = utilities_forms.DynamicModelChoiceField(queryset=Platform.objects.all())
@@ -293,7 +281,7 @@ class ConfigReplaceForm(
         )
 
 
-class ConfigReplaceFeatureFilterForm(utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelFilterFormMixin):
+class ConfigReplaceFilterForm(NautobotFilterForm):
     """Filter Form for Line Replacement."""
 
     model = models.ConfigReplace
@@ -316,9 +304,7 @@ class ConfigReplaceCSVForm(extras_forms.CustomFieldModelCSVForm):
         fields = models.ConfigReplace.csv_headers
 
 
-class ConfigReplaceBulkEditForm(
-    utilities_forms.BootstrapMixin, extras_forms.TagsBulkEditFormMixin, extras_forms.CustomFieldModelBulkEditFormMixin
-):
+class ConfigReplaceBulkEditForm(NautobotBulkEditForm):
     """BulkEdit form for ConfigReplace instances."""
 
     pk = forms.ModelMultipleChoiceField(queryset=models.ConfigReplace.objects.all(), widget=forms.MultipleHiddenInput)
@@ -332,16 +318,14 @@ class ConfigReplaceBulkEditForm(
 # GoldenConfigSetting
 
 
-class GoldenConfigSettingFeatureForm(
-    utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelFormMixin, extras_forms.RelationshipModelFormMixin
-):
-    """Filter Form for GoldenConfigSettingFeatureForm instances."""
+class GoldenConfigSettingForm(NautobotModelForm):
+    """Filter Form for GoldenConfigSettingForm instances."""
 
     slug = SlugField()
     dynamic_group = utilities_forms.DynamicModelChoiceField(queryset=DynamicGroup.objects.all(), required=False)
 
     class Meta:
-        """Filter Form Meta Data for GoldenConfigSettingFeatureForm instances."""
+        """Filter Form Meta Data for GoldenConfigSettingForm instances."""
 
         model = models.GoldenConfigSetting
         fields = (
@@ -362,7 +346,7 @@ class GoldenConfigSettingFeatureForm(
         )
 
 
-class GoldenConfigSettingFilterForm(utilities_forms.BootstrapMixin, extras_forms.CustomFieldModelFilterFormMixin):
+class GoldenConfigSettingFilterForm(NautobotFilterForm):
     """Form for GoldenConfigSetting instances."""
 
     model = models.GoldenConfigSetting
@@ -382,3 +366,26 @@ class GoldenConfigSettingFilterForm(utilities_forms.BootstrapMixin, extras_forms
         queryset=GitRepository.objects.filter(provided_contents__contains="nautobot_golden_config.jinjatemplate"),
         required=False,
     )
+
+
+class GoldenConfigSettingCSVForm(extras_forms.CustomFieldModelCSVForm):
+    """CSV Form for GoldenConfigSetting instances."""
+
+    class Meta:
+        """Boilerplate form Meta data for GoldenConfigSetting."""
+
+        model = models.GoldenConfigSetting
+        fields = models.GoldenConfigSetting.csv_headers
+
+
+class GoldenConfigSettingBulkEditForm(NautobotBulkEditForm):
+    """BulkEdit form for GoldenConfigSetting instances."""
+
+    pk = forms.ModelMultipleChoiceField(
+        queryset=models.GoldenConfigSetting.objects.all(), widget=forms.MultipleHiddenInput
+    )
+
+    class Meta:
+        """Boilerplate form Meta data for GoldenConfigSetting."""
+
+        nullable_fields = []

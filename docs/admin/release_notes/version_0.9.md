@@ -80,7 +80,7 @@
 
 ### Added
 
-- [#87](https://github.com/nautobot/nautobot-plugin-golden-config/issues/87) Added the ability to map arbitraty slug to proper netutils expected network_os
+- [#87](https://github.com/nautobot/nautobot-plugin-golden-config/issues/87) Added the ability to map arbitrary slug to proper netutils expected network_os
 
 ### Fixed
 

@@ -5,7 +5,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("extras", "0004_populate_default_status_records"),
         ("nautobot_golden_config", "0003_auto_20210510_2356"),

@@ -77,7 +77,7 @@ The replace lines setting is based on `Platform`.  An example is shown below.
 
 ![Config Replacements View](../images/01-navigating-backup.png)
 
-The line replace uses Python's `re.sub` method. As shown, a common pattern is to obtain the non-confidential data in a capture group e.g. `()`, and return the rest of the string returned in the backrefence, e.g. `\2`.
+The line replace uses Python's `re.sub` method. As shown, a common pattern is to obtain the non-confidential data in a capture group e.g. `()`, and return the rest of the string returned in the backreference, e.g. `\2`.
 
 ```python
 re.sub(r"(username\s+\S+\spassword\s+5\s+)\S+(\s+role\s+\S+)", r"\1<redacted_config>\2", config, flags=re.MULTILINE))

@@ -2,11 +2,12 @@
 # pylint: disable=too-many-ancestors
 from rest_framework import serializers
 
-from nautobot.extras.api.customfields import CustomFieldModelSerializer
 from nautobot.extras.api.serializers import TaggedObjectSerializer
 from nautobot.extras.api.nested_serializers import NestedDynamicGroupSerializer
 from nautobot.dcim.api.serializers import DeviceSerializer
 from nautobot.dcim.models import Device
+from nautobot.extras.api.serializers import NautobotModelSerializer
+
 
 from nautobot_golden_config import models
 from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
@@ -18,7 +19,7 @@ class GraphQLSerializer(serializers.Serializer):  # pylint: disable=abstract-met
     data = serializers.JSONField()
 
 
-class ComplianceFeatureSerializer(TaggedObjectSerializer, CustomFieldModelSerializer):
+class ComplianceFeatureSerializer(NautobotModelSerializer, TaggedObjectSerializer):
     """Serializer for ComplianceFeature object."""
 
     url = serializers.HyperlinkedIdentityField(
@@ -32,7 +33,7 @@ class ComplianceFeatureSerializer(TaggedObjectSerializer, CustomFieldModelSerial
         fields = "__all__"
 
 
-class ComplianceRuleSerializer(TaggedObjectSerializer, CustomFieldModelSerializer):
+class ComplianceRuleSerializer(NautobotModelSerializer, TaggedObjectSerializer):
     """Serializer for ComplianceRule object."""
 
     url = serializers.HyperlinkedIdentityField(view_name="plugins-api:nautobot_golden_config-api:compliancerule-detail")
@@ -44,7 +45,7 @@ class ComplianceRuleSerializer(TaggedObjectSerializer, CustomFieldModelSerialize
         fields = "__all__"
 
 
-class ConfigComplianceSerializer(TaggedObjectSerializer, CustomFieldModelSerializer):
+class ConfigComplianceSerializer(NautobotModelSerializer, TaggedObjectSerializer):
     """Serializer for ConfigCompliance object."""
 
     class Meta:
@@ -54,7 +55,7 @@ class ConfigComplianceSerializer(TaggedObjectSerializer, CustomFieldModelSeriali
         fields = "__all__"
 
 
-class GoldenConfigSerializer(TaggedObjectSerializer, CustomFieldModelSerializer):
+class GoldenConfigSerializer(NautobotModelSerializer, TaggedObjectSerializer):
     """Serializer for GoldenConfig object."""
 
     url = serializers.HyperlinkedIdentityField(view_name="plugins-api:nautobot_golden_config-api:goldenconfig-detail")
@@ -66,7 +67,7 @@ class GoldenConfigSerializer(TaggedObjectSerializer, CustomFieldModelSerializer)
         fields = "__all__"
 
 
-class GoldenConfigSettingSerializer(TaggedObjectSerializer, CustomFieldModelSerializer):
+class GoldenConfigSettingSerializer(NautobotModelSerializer, TaggedObjectSerializer):
     """Serializer for GoldenConfigSetting object."""
 
     url = serializers.HyperlinkedIdentityField(
@@ -107,7 +108,7 @@ class GoldenConfigSettingSerializer(TaggedObjectSerializer, CustomFieldModelSeri
         return setting
 
 
-class ConfigRemoveSerializer(TaggedObjectSerializer, CustomFieldModelSerializer):
+class ConfigRemoveSerializer(NautobotModelSerializer, TaggedObjectSerializer):
     """Serializer for ConfigRemove object."""
 
     url = serializers.HyperlinkedIdentityField(view_name="plugins-api:nautobot_golden_config-api:configremove-detail")
@@ -119,7 +120,7 @@ class ConfigRemoveSerializer(TaggedObjectSerializer, CustomFieldModelSerializer)
         fields = "__all__"
 
 
-class ConfigReplaceSerializer(TaggedObjectSerializer, CustomFieldModelSerializer):
+class ConfigReplaceSerializer(NautobotModelSerializer, TaggedObjectSerializer):
     """Serializer for ConfigReplace object."""
 
     url = serializers.HyperlinkedIdentityField(view_name="plugins-api:nautobot_golden_config-api:configreplace-detail")

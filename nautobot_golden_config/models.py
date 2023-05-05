@@ -1,24 +1,23 @@
 """Django Models for tracking the configuration compliance per feature and device."""
 
-import logging
 import json
+import logging
+
 from deepdiff import DeepDiff
-from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.db import models
 from django.shortcuts import reverse
 from django.utils.module_loading import import_string
 from django.utils.text import slugify
-
-from nautobot.extras.models import ObjectChange, DynamicGroup
+from nautobot.core.models.generics import PrimaryModel
+from nautobot.extras.models import DynamicGroup, ObjectChange
 from nautobot.extras.utils import extras_features
 from nautobot.utilities.utils import serialize_object, serialize_object_v2
-from nautobot.core.models.generics import PrimaryModel
 from netutils.config.compliance import feature_compliance
-
 from nautobot_golden_config.choices import ComplianceRuleTypeChoice
+from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
 from nautobot_golden_config.utilities.utils import get_platform
-from nautobot_golden_config.utilities.constant import PLUGIN_CFG
 
 
 LOGGER = logging.getLogger(__name__)
@@ -135,7 +134,7 @@ FUNC_MAPPER = {
     ComplianceRuleTypeChoice.TYPE_CLI: _get_cli_compliance,
     ComplianceRuleTypeChoice.TYPE_JSON: _get_json_compliance,
 }
-# The below conditionally add the cusom provided compliance type
+# The below conditionally add the custom provided compliance type
 if PLUGIN_CFG.get("get_custom_compliance"):
     try:
         FUNC_MAPPER[ComplianceRuleTypeChoice.TYPE_CUSTOM] = import_string(PLUGIN_CFG["get_custom_compliance"])
@@ -295,7 +294,9 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
         """Indicates model fields to return as csv."""
         return (self.device.name, self.rule.feature.name, self.compliance)
 
-    def to_objectchange(self, action, related_object=None, object_data_extra=None, object_data_exclude=None):
+    def to_objectchange(
+        self, action, *, related_object=None, object_data_extra=None, object_data_exclude=None
+    ):  # pylint: disable=arguments-differ
         """Remove actual and intended configuration from changelog."""
         if not object_data_exclude:
             object_data_exclude = ["actual", "intended"]
@@ -311,7 +312,7 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
     class Meta:
         """Set unique together fields for model."""
 
-        ordering = ["device"]
+        ordering = ["device", "rule"]
         unique_together = ("device", "rule")
 
     def __str__(self):
@@ -392,7 +393,9 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
             self.compliance_last_success_date,
         )
 
-    def to_objectchange(self, action, related_object=None, object_data_extra=None, object_data_exclude=None):
+    def to_objectchange(
+        self, action, *, related_object=None, object_data_extra=None, object_data_exclude=None
+    ):  # pylint: disable=arguments-differ
         """Remove actual and intended configuration from changelog."""
         if not object_data_exclude:
             object_data_exclude = ["backup_config", "intended_config", "compliance_config"]
@@ -419,7 +422,7 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
     "graphql",
 )
 class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
-    """GoldenConfigSetting Model defintion. This provides global configs instead of via configs.py."""
+    """GoldenConfigSetting Model definition. This provides global configs instead of via configs.py."""
 
     name = models.CharField(max_length=100, unique=True, blank=False)
     slug = models.SlugField(max_length=100, unique=True, blank=False)
@@ -492,9 +495,25 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         related_name="golden_config_setting",
     )
 
+    csv_headers = [
+        "name",
+        "slug",
+        "weight",
+        "description",
+    ]
+
+    def to_csv(self):
+        """Indicates model fields to return as csv."""
+        return (
+            self.name,
+            self.slug,
+            self.weight,
+            self.description,
+        )
+
     def get_absolute_url(self):  # pylint: disable=no-self-use
         """Return absolute URL for instance."""
-        return reverse("plugins:nautobot_golden_config:goldenconfigsetting", args=[self.slug])
+        return reverse("plugins:nautobot_golden_config:goldenconfigsetting", args=[self.pk])
 
     def __str__(self):
         """Return a simple string if model is called."""
@@ -541,9 +560,12 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         """Validate the scope and GraphQL query."""
         super().clean()
 
+        if ENABLE_SOTAGG and not self.sot_agg_query:
+            raise ValidationError("A GraphQL query must be defined when `ENABLE_SOTAGG` is True")
+
         if self.sot_agg_query:
             LOGGER.debug("GraphQL - test  query start with: `%s`", GRAPHQL_STR_START)
-            if not str(self.sot_agg_query.query).startswith(GRAPHQL_STR_START):
+            if not str(self.sot_agg_query.query.lstrip()).startswith(GRAPHQL_STR_START):
                 raise ValidationError(f"The GraphQL query must start with exactly `{GRAPHQL_STR_START}`")
 
     def get_queryset(self):
@@ -569,7 +591,7 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     "webhooks",
 )
 class ConfigRemove(PrimaryModel):  # pylint: disable=too-many-ancestors
-    """ConfigRemove for Regex Line Removals from Backup Configuration Model defintion."""
+    """ConfigRemove for Regex Line Removals from Backup Configuration Model definition."""
 
     name = models.CharField(max_length=255, null=False, blank=False)
     platform = models.ForeignKey(
@@ -621,7 +643,7 @@ class ConfigRemove(PrimaryModel):  # pylint: disable=too-many-ancestors
     "webhooks",
 )
 class ConfigReplace(PrimaryModel):  # pylint: disable=too-many-ancestors
-    """ConfigReplace for Regex Line Replacements from Backup Configuration Model defintion."""
+    """ConfigReplace for Regex Line Replacements from Backup Configuration Model definition."""
 
     name = models.CharField(max_length=255, null=False, blank=False)
     platform = models.ForeignKey(

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nautobot-golden-config"
-version = "1.3.1"
+version = "1.4.0"
 description = "A plugin for configuration on nautobot"
 authors = ["Network to Code, LLC", "<opensource@networktocode.com>"]
 
@@ -30,15 +30,15 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.7"
-deepdiff = "^5.5.0"
+deepdiff = ">=5.5.0,>=6.2.0"
 django-pivot = "^1.8.1"
 matplotlib = "^3.3.2"
-## Setting as next to test with DynamicGroup changes
-nautobot = ">=1.4.0"
+nautobot = ">=1.5.3"
 nautobot-plugin-nornir = ">=1.0.0"
 
 [tool.poetry.dev-dependencies]
 bandit = "*"
+# Black 23.x.x configuration changes and migration files are taken into account
 black = "*"
 django-debug-toolbar = "*"
 # we need to pin flake8 because of package dependencies that cause it to downgrade and
@@ -50,9 +50,13 @@ pylint = "*"
 pylint-django = "*"
 yamllint = "*"
 Markdown = "*"
-# documentation dependencies
+# Rendering docs to HTML
 mkdocs = "1.3.1"
-mkdocs-material = "8.3.9"
+# Material for MkDocs theme
+mkdocs-material = "8.4.2"
+# Render custom markdown for version added/changed/remove notes
+mkdocs-version-annotations = "1.0.0"
+# Automatic documentation from sources, for MkDocs
 mkdocstrings = "0.19"
 mkdocstrings-python = "0.7.1"
 

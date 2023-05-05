@@ -3,13 +3,13 @@
 {% load buttons %}
 
 {% block buttons %}
-    {% if perms.nautobot_golden_config.add_compliancefeature %}
+    {% if perms.nautobot_golden_config.add_goldenconfigsetting %}
         {% clone_button object %}
     {% endif %}
-    {% if perms.nautobot_golden_config.change_compliancefeature %}
+    {% if perms.nautobot_golden_config.change_goldenconfigsetting %}
         {% edit_button object key="pk" %}
     {% endif %}
-    {% if perms.nautobot_golden_config.delete_compliancefeature %}
+    {% if perms.nautobot_golden_config.delete_goldenconfigsetting %}
         {% delete_button object key="pk" %}
     {% endif %}
 {% endblock buttons %}

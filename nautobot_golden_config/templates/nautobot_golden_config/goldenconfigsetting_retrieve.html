@@ -2,15 +2,15 @@
 {% load helpers %}
 
 {% block buttons %}
-{% if perms.nautobot_golden_config.add_compliancefeature %}
-{% clone_button object %}
-{% endif %}
-{% if perms.nautobot_golden_config.change_compliancefeature %}
-{% edit_button object key="pk" %}
-{% endif %}
-{% if perms.nautobot_golden_config.delete_compliancefeature %}
-{% delete_button object key="pk" %}
-{% endif %}
+    {% if perms.nautobot_golden_config.add_compliancefeature %}
+        {% clone_button object %}
+    {% endif %}
+    {% if perms.nautobot_golden_config.change_compliancefeature %}
+        {% edit_button object key="pk" %}
+    {% endif %}
+    {% if perms.nautobot_golden_config.delete_compliancefeature %}
+        {% delete_button object key="pk" %}
+    {% endif %}
 {% endblock buttons %}
 
 {% block content_left_page %}

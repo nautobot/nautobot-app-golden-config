@@ -9,7 +9,6 @@ import uuid
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("extras", "0047_enforce_custom_field_slug"),
         ("dcim", "0014_location_status_data_migration"),

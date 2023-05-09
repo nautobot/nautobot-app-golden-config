@@ -1,6 +1,6 @@
 # Navigating Compliance Using Structured Data
 
-JSON based compliance allows to understand device configurations stored in JSON format and compare between them.
+JSON based compliance provides a mechanism to understand device configurations stored in JSON format and compare between them.
 
 ## Caveats
 - The `Compliance Rule` need to be defined as JSON `config-type`.

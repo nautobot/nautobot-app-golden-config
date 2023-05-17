@@ -4,6 +4,7 @@ import difflib
 import logging
 import os
 
+from collections import defaultdict
 from datetime import datetime
 
 from netutils.config.compliance import parser_map, section_config, _open_file_config
@@ -36,12 +37,16 @@ LOGGER = logging.getLogger(__name__)
 def get_rules():
     """A serializer of sorts to return rule mappings as a dictionary."""
     # TODO: Review if creating a proper serializer is the way to go.
-    rules = {}
-    for obj in ComplianceRule.objects.exclude(match_config__exact=""):
-        platform = str(obj.platform.slug)
-        if not rules.get(platform):
-            rules[platform] = []
-        rules[platform].append({"ordered": obj.config_ordered, "obj": obj, "section": obj.match_config.splitlines()})
+    rules = defaultdict(list)
+    for compliance_rule in ComplianceRule.objects.all():
+        platform = str(compliance_rule.platform.slug)
+        rules[platform].append(
+            {
+                "ordered": compliance_rule.config_ordered,
+                "obj": compliance_rule,
+                "section": compliance_rule.match_config.splitlines(),
+            }
+        )
     return rules
 
 

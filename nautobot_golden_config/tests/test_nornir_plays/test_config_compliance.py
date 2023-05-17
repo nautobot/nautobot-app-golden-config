@@ -15,9 +15,9 @@ class ConfigComplianceTest(unittest.TestCase):
         mock_obj = Mock(**features)
         mock_obj.name = "test_name"
         mock_obj.platform = Mock(slug="test_slug")
-        mock_compliance_rule.objects.exclude.return_value = [mock_obj]
+        mock_compliance_rule.objects.all.return_value = [mock_obj]
         features = get_rules()
-        mock_compliance_rule.objects.exclude.assert_called_once()
+        mock_compliance_rule.objects.all.assert_called_once()
         self.assertEqual(
             features, {"test_slug": [{"obj": mock_obj, "ordered": "test_ordered", "section": ["aaa", "snmp"]}]}
         )

@@ -1,0 +1,37 @@
+{% extends 'generic/object_detail.html' %}
+{% load helpers %}
+{% load buttons %}
+
+{% block buttons %}
+    {% if perms.nautobot_golden_config.add_compliancefeature %}
+        {% clone_button object %}
+    {% endif %}
+    {% if perms.nautobot_golden_config.change_compliancefeature %}
+        {% edit_button object key="pk" %}
+    {% endif %}
+    {% if perms.nautobot_golden_config.delete_compliancefeature %}
+        {% delete_button object key="pk" %}
+    {% endif %}
+{% endblock buttons %}
+
+{% block content_left_page %}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <strong>Compliance Feature Details</strong>
+        </div>
+        <table class="table table-hover panel-body attr-table">
+            <tr>
+                <td>Name</td>
+                <td>{{ object.name }}</td>
+            </tr>
+            <tr>
+                <td>Slug</td>
+                <td>{{ object.slug }}</td>
+            </tr>
+            <tr>
+                <td>Description</td>
+                <td>{{ object.description|placeholder }}</td>
+            </tr>
+        </table>
+    </div>
+{% endblock %}

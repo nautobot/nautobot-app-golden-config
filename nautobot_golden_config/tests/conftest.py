@@ -1,14 +1,12 @@
 """Params for testing."""
 from django.contrib.contenttypes.models import ContentType
 from django.utils.text import slugify
-
-from nautobot.dcim.models import Device, Site, Manufacturer, DeviceType, DeviceRole, Rack, RackGroup, Region, Platform
-from nautobot.tenancy.models import Tenant, TenantGroup
-from nautobot.extras.models import Status, GitRepository, GraphQLQuery, Tag
+from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Platform, Rack, RackGroup, Region, Site
 from nautobot.extras.datasources.registry import get_datasource_contents
-
-from nautobot_golden_config.models import ConfigCompliance, ComplianceFeature, ComplianceRule
-from nautobot_golden_config.choices import ComplianceRuleTypeChoice
+from nautobot.extras.models import GitRepository, GraphQLQuery, Status, Tag
+from nautobot.tenancy.models import Tenant, TenantGroup
+from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
+from nautobot_golden_config.models import ComplianceFeature, ComplianceRule, ConfigCompliance
 
 
 def create_device_data():
@@ -144,8 +142,9 @@ def create_device(name="foobaz"):
         manufacturer=manufacturer, model="Device Type 1", slug="device-type-1"
     )
     platform, _ = Platform.objects.get_or_create(manufacturer=manufacturer, name="Platform 1", slug="platform-1")
+    status, _ = Status.objects.get_or_create(name="Failed")
     device = Device.objects.create(
-        name=name, platform=platform, site=site, device_role=device_role, device_type=device_type
+        name=name, platform=platform, site=site, device_role=device_role, device_type=device_type, status=status
     )
     return device
 
@@ -164,8 +163,9 @@ def create_orphan_device(name="orphan"):
     content_type = ContentType.objects.get(app_label="dcim", model="device")
     tag, _ = Tag.objects.get_or_create(name="Orphaned", slug="orphaned")
     tag.content_types.add(content_type)
+    status, _ = Status.objects.get_or_create(name="Offline")
     device = Device.objects.create(
-        name=name, platform=platform, site=site, device_role=device_role, device_type=device_type
+        name=name, platform=platform, site=site, device_role=device_role, device_type=device_type, status=status
     )
     device.tags.add(tag)
     return device
@@ -177,7 +177,7 @@ def create_feature_rule_json(device, feature="foo", rule="json"):
     rule = ComplianceRule(
         feature=feature_obj,
         platform=device.platform,
-        config_type=ComplianceRuleTypeChoice.TYPE_JSON,
+        config_type=ComplianceRuleConfigTypeChoice.TYPE_JSON,
         config_ordered=False,
     )
     rule.save()

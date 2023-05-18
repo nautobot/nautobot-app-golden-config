@@ -3,19 +3,17 @@
 
 from datetime import datetime
 
-from nautobot.extras.jobs import Job, MultiObjectVar, ObjectVar, BooleanVar
-from nautobot.extras.models import Tag, DynamicGroup, GitRepository
+from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Platform, Rack, RackGroup, Region, Site
 from nautobot.extras.datasources.git import ensure_git_repository
-from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Site, Platform, Region, Rack, RackGroup
+from nautobot.extras.jobs import BooleanVar, Job, MultiObjectVar, ObjectVar
+from nautobot.extras.models import DynamicGroup, GitRepository, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
-
-from nautobot_golden_config.nornir_plays.config_intended import config_intended
 from nautobot_golden_config.nornir_plays.config_backup import config_backup
 from nautobot_golden_config.nornir_plays.config_compliance import config_compliance
+from nautobot_golden_config.nornir_plays.config_intended import config_intended
 from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
 from nautobot_golden_config.utilities.git import GitRepo
 from nautobot_golden_config.utilities.helper import get_job_filter
-
 
 name = "Golden Configuration"  # pylint: disable=invalid-name
 
@@ -69,8 +67,14 @@ class FormEntry:  # pylint disable=too-few-public-method
     device_type = MultiObjectVar(model=DeviceType, required=False, display_field="display_name")
     device = MultiObjectVar(model=Device, required=False)
     tag = MultiObjectVar(model=Tag, required=False)
+    status = MultiObjectVar(
+        model=Status,
+        required=False,
+        query_params={"content_types": Device._meta.label_lower},
+        display_field="label",
+        label="Device Status",
+    )
     debug = BooleanVar(description="Enable for more verbose debug logging")
-    # TODO: Add status
 
 
 class ComplianceJob(Job, FormEntry):
@@ -88,6 +92,7 @@ class ComplianceJob(Job, FormEntry):
     device_type = FormEntry.device_type
     device = FormEntry.device
     tag = FormEntry.tag
+    status = FormEntry.status
     debug = FormEntry.debug
 
     class Meta:
@@ -126,6 +131,7 @@ class IntendedJob(Job, FormEntry):
     device_type = FormEntry.device_type
     device = FormEntry.device
     tag = FormEntry.tag
+    status = FormEntry.status
     debug = FormEntry.debug
 
     class Meta:
@@ -153,7 +159,7 @@ class IntendedJob(Job, FormEntry):
 
         # Commit / Push each repo after job is completed.
         for intended_repo in intended_repos:
-            self.log_debug("Push new intended configs to repo %s.", intended_repo.url)
+            self.log_debug(f"Push new intended configs to repo {intended_repo.url}.")
             intended_repo.commit_with_added(f"INTENDED CONFIG CREATION JOB - {now}")
             intended_repo.push()
 
@@ -173,6 +179,7 @@ class BackupJob(Job, FormEntry):
     device_type = FormEntry.device_type
     device = FormEntry.device
     tag = FormEntry.tag
+    status = FormEntry.status
     debug = FormEntry.debug
 
     class Meta:
@@ -185,21 +192,20 @@ class BackupJob(Job, FormEntry):
     def run(self, data, commit):
         """Run config backup process."""
         self.log_debug("Starting backup job.")
-
         now = datetime.now()
         self.log_debug("Pull Backup config repo.")
 
         # Instantiate a GitRepo object for each GitRepository in GoldenConfigSettings.
         backup_repos = get_refreshed_repos(job_obj=self, repo_type="backup_repository", data=data)
 
-        self.log_debug("Starting backup jobs to the following repos: %s", backup_repos)
+        self.log_debug(f"Starting backup jobs to the following repos: {backup_repos}")
 
         self.log_debug("Starting config backup nornir play.")
         config_backup(self, data)
 
         # Commit / Push each repo after job is completed.
         for backup_repo in backup_repos:
-            self.log_debug("Pushing Backup config repo %s.", backup_repo.url)
+            self.log_debug(f"Pushing Backup config repo {backup_repo.url}.")
             backup_repo.commit_with_added(f"BACKUP JOB {now}")
             backup_repo.push()
 
@@ -242,6 +248,7 @@ class AllDevicesGoldenConfig(Job):
     device_type = FormEntry.device_type
     device = FormEntry.device
     tag = FormEntry.tag
+    status = FormEntry.status
     debug = FormEntry.debug
 
     class Meta:

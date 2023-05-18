@@ -1,12 +1,17 @@
 # Navigating Compliance With Custom Logic
 
+## Introduction
+Custom compliance is a powerful method to alter the default behaviour and results of the natively provided `CLI` and `JSON` config type based configuration compliance.
+The high level idea is to provide a Python code containing custom logic defined by the User. This code is called by the Golden Configuration Plugin in the compliance process,
+allowing the user to change the default behaviour of the Golden Configuration Plugin.
+
+
+
 ## Caveats
 
-- The compliance `rule` must be unique for the Custom `config-type`.
 - The data provided can come from either setting via the API like JSON or via match_config like CLI. It is up to the operator to enforce.
 - Does not make any accommodations for adding to git.
 - Mixing/Matching string (or CLI type) and JSON type compliance rules is **NOT** supported. A device should only have compliance rules from one or the other, and it is up to the operator to enforce.
-    - Applying a `match_config` presumes it is CLI type and not having one presumes it is JSON type.
 - If the developer of the `get_custom_compliance` is not cognizant, the UI experience of the details may not always be obvious what the issues are.
     - As an example, if the developer simply returns a `True` or `False` into the missing or extra dictionary, it will not be obvious to the user.
 - The developer is responsible for ensuring the proper data structure is maintained for the given rule.
@@ -49,6 +54,8 @@ There is validation to ensure the data structure returned is compliant to the ab
 The function provided in string path format, must be installed in the same environment as nautobot and the workers.
 
 ## Configuration
+
+To enable the custom compliance, navigate to the respective `Compliance Rule` and enable option "Custom Compliance" on this rule.
 
 The path to the function is set in the `get_custom_compliance` configuration parameter. This is the string representation of the function and must be in
 Python importable into Nautobot and the workers. This is a callable function and not a class or other object type.

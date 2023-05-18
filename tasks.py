@@ -12,9 +12,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from distutils.util import strtobool
-from invoke import Collection, task as invoke_task
 import os
+from distutils.util import strtobool
+
+from invoke import Collection
+from invoke import task as invoke_task
 
 
 def is_truthy(arg):
@@ -40,7 +42,7 @@ namespace.configure(
         "nautobot_golden_config": {
             "nautobot_ver": "1.5.13",
             "project_name": "nautobot_golden_config",
-            "python_ver": "3.7",
+            "python_ver": "3.8",
             "local": False,
             "compose_dir": os.path.join(os.path.dirname(__file__), "development"),
             "compose_files": [
@@ -89,12 +91,26 @@ def docker_compose(context, command, **kwargs):
         "NAUTOBOT_VER": context.nautobot_golden_config.nautobot_ver,
         "PYTHON_VER": context.nautobot_golden_config.python_ver,
     }
-    compose_command = f'docker-compose --project-name {context.nautobot_golden_config.project_name} --project-directory "{context.nautobot_golden_config.compose_dir}"'
+    compose_command_tokens = [
+        "docker-compose",
+        f"--project-name {context.nautobot_golden_config.project_name}",
+        f'--project-directory "{context.nautobot_golden_config.compose_dir}"',
+    ]
+
     for compose_file in context.nautobot_golden_config.compose_files:
         compose_file_path = os.path.join(context.nautobot_golden_config.compose_dir, compose_file)
-        compose_command += f' -f "{compose_file_path}"'
-    compose_command += f" {command}"
+        compose_command_tokens.append(f' -f "{compose_file_path}"')
+
+    compose_command_tokens.append(command)
+
+    # If `service` was passed as a kwarg, add it to the end.
+    service = kwargs.pop("service", None)
+    if service is not None:
+        compose_command_tokens.append(service)
+
     print(f'Running docker-compose command "{command}"')
+    compose_command = " ".join(compose_command_tokens)
+
     return context.run(compose_command, env=build_env, **kwargs)
 
 
@@ -153,11 +169,11 @@ def debug(context):
     docker_compose(context, "up")
 
 
-@task
-def start(context):
+@task(help={"service": "If specified, only affect this service."})
+def start(context, service=None):
     """Start Nautobot and its dependencies in detached mode."""
     print("Starting Nautobot in detached mode...")
-    docker_compose(context, "up --detach")
+    docker_compose(context, "up --detach", service=service)
 
 
 @task
@@ -263,6 +279,7 @@ def makemigrations(context, name=""):
 def migrate(context):
     """Perform migrate operation in Django."""
     command = "nautobot-server migrate"
+
     run_command(context, command)
 
 
@@ -288,61 +305,16 @@ def post_upgrade(context):
 # ------------------------------------------------------------------------------
 # DOCS
 # ------------------------------------------------------------------------------
-
-
 @task
 def docs(context):
     """Build and serve docs locally for development."""
     command = "mkdocs serve -v"
 
     if is_truthy(context.nautobot_golden_config.local):
-        print("Serving Documentation...")
+        print(">>> Serving Documentation at http://localhost:8001")
         run_command(context, command)
     else:
-        print("Only used when developing locally (i.e. context.nautobot_golden_config.local=True)!")
-
-
-# ------------------------------------------------------------------------------
-# TESTS / LINTING
-# ------------------------------------------------------------------------------
-@task(
-    help={
-        "keepdb": "save and re-use test database between test runs for faster re-testing.",
-        "label": "specify a directory or module to test instead of running all Nautobot tests",
-        "failfast": "fail as soon as a single test fails don't run the entire test suite",
-        "buffer": "Discard output from passing tests",
-    }
-)
-def unittest(context, keepdb=False, label="nautobot_golden_config", failfast=False, buffer=True):
-    """Run Nautobot unit tests."""
-    command = f"coverage run --module nautobot.core.cli test {label}"
-
-    if keepdb:
-        command += " --keepdb"
-    if failfast:
-        command += " --failfast"
-    if buffer:
-        command += " --buffer"
-    run_command(context, command)
-
-
-@task(help={})
-def post_upgrade(context):
-    """
-    Performs Nautobot common post-upgrade operations using a single entrypoint.
-
-    This will run the following management commands with default settings, in order:
-
-    - migrate
-    - trace_paths
-    - collectstatic
-    - remove_stale_contenttypes
-    - clearsessions
-    - invalidate all
-    """
-    command = "nautobot-server post_upgrade"
-
-    run_command(context, command)
+        start(context, service="docs")
 
 
 # ------------------------------------------------------------------------------
@@ -403,7 +375,7 @@ def bandit(context):
 
 @task
 def yamllint(context):
-    """Run yamllint to validate formating adheres to NTC defined YAML standards.
+    """Run yamllint to validate formatting adheres to NTC defined YAML standards.
 
     Args:
         context (obj): Used to run specific commands

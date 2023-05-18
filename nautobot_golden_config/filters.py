@@ -1,15 +1,12 @@
 """Filters for UI and API Views."""
 
 import django_filters
-
 from django.db.models import Q
-
-from nautobot.dcim.models import Device, Platform, Region, Site, DeviceRole, DeviceType, Manufacturer, Rack, RackGroup
+from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Platform, Rack, RackGroup, Region, Site
+from nautobot.extras.filters import CustomFieldModelFilterSet, StatusFilter
 from nautobot.extras.models import Status
-from nautobot.extras.filters import StatusFilter, CustomFieldModelFilterSet
 from nautobot.tenancy.models import Tenant, TenantGroup
-from nautobot.utilities.filters import TreeNodeMultipleChoiceFilter, BaseFilterSet, NameSlugSearchFilterSet
-
+from nautobot.utilities.filters import BaseFilterSet, NameSlugSearchFilterSet, TreeNodeMultipleChoiceFilter
 from nautobot_golden_config import models
 
 
@@ -84,10 +81,9 @@ class GoldenConfigFilterSet(CustomFieldModelFilterSet):
         field_name="device__rack__group",
         label="Rack group (ID)",
     )
-    rack_group = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__rack__group__slug",
+    rack_group = TreeNodeMultipleChoiceFilter(
+        field_name="device__rack__group",
         queryset=RackGroup.objects.all(),
-        to_field_name="slug",
         label="Rack group (slug)",
     )
     rack_id = django_filters.ModelMultipleChoiceFilter(

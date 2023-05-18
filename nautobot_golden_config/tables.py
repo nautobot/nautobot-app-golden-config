@@ -5,7 +5,6 @@ from django.utils.html import format_html
 from django_tables2 import Column, LinkColumn, TemplateColumn
 from django_tables2.utils import A
 
-from nautobot.dcim.models import Device
 from nautobot.utilities.tables import (
     BaseTable,
     ToggleColumn,
@@ -238,14 +237,6 @@ class DeleteGoldenConfigTable(BaseTable):
 class GoldenConfigTable(BaseTable):
     """Table to display Config Management Status."""
 
-    def __init__(self, *args, **kwargs):
-        """Remove custom field columns from showing."""
-        super().__init__(*args, **kwargs)
-        for feature in list(self.base_columns.keys()):  # pylint: disable=no-member
-            if feature.startswith("cf_"):
-                self.base_columns.pop(feature)  # pylint: disable=no-member
-                self.sequence.remove(feature)
-
     pk = ToggleColumn()
     name = TemplateColumn(
         template_code="""<a href="{% url 'dcim:device' pk=record.pk %}">{{ record.name }}</a>""",
@@ -304,7 +295,7 @@ class GoldenConfigTable(BaseTable):
     class Meta(BaseTable.Meta):
         """Meta for class GoldenConfigTable."""
 
-        model = Device
+        model = models.GoldenConfig
         fields = actual_fields()
 
 
@@ -339,8 +330,26 @@ class ComplianceRuleTable(BaseTable):
         """Table to display Compliance Rules Meta Data."""
 
         model = models.ComplianceRule
-        fields = ("pk", "feature", "platform", "description", "config_ordered", "match_config", "config_type")
-        default_columns = ("pk", "feature", "platform", "description", "config_ordered", "match_config", "config_type")
+        fields = (
+            "pk",
+            "feature",
+            "platform",
+            "description",
+            "config_ordered",
+            "match_config",
+            "config_type",
+            "custom_compliance",
+        )
+        default_columns = (
+            "pk",
+            "feature",
+            "platform",
+            "description",
+            "config_ordered",
+            "match_config",
+            "config_type",
+            "custom_compliance",
+        )
 
 
 # ConfigRemove

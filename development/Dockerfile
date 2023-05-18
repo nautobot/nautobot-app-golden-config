@@ -6,8 +6,8 @@
 # -------------------------------------------------------------------------------------
 # !!! USE CAUTION WHEN MODIFYING LINES BELOW
 
-# Accepts a desired Nautobot version as build argument, default to 1.4.0
-ARG NAUTOBOT_VER="1.4.0"
+# Accepts a desired Nautobot version as build argument, default to 1.5.3
+ARG NAUTOBOT_VER="1.5.3"
 
 # Accepts a desired Python version as build argument, default to 3.7
 ARG PYTHON_VER="3.7"
@@ -21,14 +21,20 @@ ARG NAUTOBOT_ROOT=/opt/nautobot
 ENV prometheus_multiproc_dir=/prom_cache
 ENV NAUTOBOT_ROOT ${NAUTOBOT_ROOT}
 
-# Don't need virtual environments in container, parallelized installer has inconsistent behavior
-RUN poetry config virtualenvs.create false \
-    && poetry config installer.parallel false
+# Install Poetry manually via its installer script;
+# We might be using an older version of Nautobot that includes an older version of Poetry
+# and CI and local development may have a newer version of Poetry
+# Since this is only used for development and we don't ship this container, pinning Poetry back is not expressly necessary
+# We also don't need virtual environments in container
+RUN curl -sSL https://install.python-poetry.org -o /tmp/install-poetry.py && \
+    python /tmp/install-poetry.py && \
+    rm -f /tmp/install-poetry.py && \
+    poetry config virtualenvs.create false
 
 # !!! USE CAUTION WHEN MODIFYING LINES ABOVE
 # -------------------------------------------------------------------------------------
 # Plugin-specific system build/test dependencies.
-# 
+#
 # Example: LDAP requires `libldap2-dev` to be apt-installed before the Python package.
 # -------------------------------------------------------------------------------------
 # --> Start safe to modify section
@@ -48,7 +54,7 @@ WORKDIR /source
 COPY . /source
 
 # Get container's installed Nautobot version as a forced constraint
-# NAUTOBOT_VER may be a branch name and not a published release therefor we need to get the installed version
+# NAUTOBOT_VER may be a branch name and not a published release therefore we need to get the installed version
 #  so pip can use it to recognize local constraints.
 RUN pip show nautobot | grep "^Version: " | sed -e 's/Version: /nautobot==/' > constraints.txt
 

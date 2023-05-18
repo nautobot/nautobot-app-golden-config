@@ -1,5 +1,11 @@
 # Frequently Asked Questions
 
+## _Why doesn't the compliance behaviour work the way I expected it to?_
+
+There are many ways to consider golden configs as shown in this [blog](https://blog.networktocode.com/post/journey-in-golden-config/). We cannot provide accommodations for all versions as it will both bloat the system, create a more complex system, and ultimately run into conflicting interpretations. Keeping the process focused but allowing anyone to override their interpretation of how compliance should work is both a powerful (via sane defaults) and complete (via custom compliance) solution.
+
+Any other interpretations of how compliance should be viewed are encouraged to use custom compliance option.
+
 ## _Why don't the configurations match like the vendor cli?_
 
 A vendor processes configuration understanding constructs such as knowing that `int g0/0` and `interface GigabitEthernet0/0` are the same. Each one of these rules a subject to a given vendor's OS implementation. The ability to track these changes for all vendors/OS/versions is nearly impossible. Additionally, this practice would be error prone and not follow the principal of least astonishment. Notwithstanding a major change in the network industry, adjusting this strategy is outside the scope of the plugin.
@@ -67,7 +73,7 @@ The current supported platform and the associated *default* platform slug names 
 * arista_eos
 * cisco_asa
 * cisco_ios
-* cisco_ios_xr
+* cisco_xr
 * cisco_nxos
 * juniper_junos
 

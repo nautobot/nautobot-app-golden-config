@@ -82,7 +82,7 @@
 - [#288](https://github.com/nautobot/nautobot-plugin-golden-config/issues/288) GoldenConfigSetting.scope now has a setter method to create a DynamicGroup
     - Scope of Device objects can only be updated via the DynamicGroup is using the UI
     - The setter is for backwards compantibility for existing automation against the API
-- [#280](https://github.com/nautobot/nautobot-plugin-golden-config/issues/280) Updated docs in preperation for doc centralization process
+- [#280](https://github.com/nautobot/nautobot-plugin-golden-config/issues/280) Updated docs in preparation for doc centralization process
 - [#289](https://github.com/nautobot/nautobot-plugin-golden-config/issues/289) Update Environment setup to NTC Standards
 - [#287](https://github.com/nautobot/nautobot-plugin-golden-config/issues/287) Updated copy button to use Nautobot's standard copy functionality rather than one off
 

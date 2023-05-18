@@ -310,7 +310,6 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
     def to_objectchange(
         self, action, *, related_object=None, object_data_extra=None, object_data_exclude=None
     ):  # pylint: disable=arguments-differ
-
         """Remove actual and intended configuration from changelog."""
         if not object_data_exclude:
             object_data_exclude = ["actual", "intended"]

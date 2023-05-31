@@ -18,7 +18,7 @@ from nornir_nautobot.utils.logger import NornirLogger
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 
-from nautobot_golden_config.choices import ComplianceRuleTypeChoice
+from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.models import ComplianceRule, ConfigCompliance, GoldenConfigSetting, GoldenConfig
 from nautobot_golden_config.utilities.helper import (
@@ -60,7 +60,7 @@ def get_config_element(rule, config, obj, logger):
        - a configuration section for `CLI` based config types
        - top level JSON key for `JSON` based config types
     """
-    if rule["obj"].config_type == ComplianceRuleTypeChoice.TYPE_JSON:
+    if rule["obj"].config_type == ComplianceRuleConfigTypeChoice.TYPE_JSON:
         config_json = get_json_config(config)
 
         if not config_json:
@@ -74,7 +74,7 @@ def get_config_element(rule, config, obj, logger):
         else:
             config_element = config_json
 
-    elif rule["obj"].config_type == ComplianceRuleTypeChoice.TYPE_CLI:
+    elif rule["obj"].config_type == ComplianceRuleConfigTypeChoice.TYPE_CLI:
         if get_platform(obj.platform.slug) not in parser_map.keys():
             logger.log_failure(
                 obj,

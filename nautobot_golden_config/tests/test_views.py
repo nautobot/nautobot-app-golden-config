@@ -280,3 +280,15 @@ class GoldenConfigListViewTestCase(TestCase):
             f"{device.name},,,,,," for device in self.gc_dynamic_group.members.exclude(pk=first_device.pk)
         ]
         self.assertEqual(empty_csv_rows, csv_data[2:])
+
+    def test_csv_export_with_filter(self):
+        devices_in_site_1 = Device.objects.filter(site__name="Site 1")
+        golden_config_devices = self.gc_dynamic_group.members.all()
+        # Test that there are Devices in GC that are not related to Site 1
+        self.assertNotEqual(devices_in_site_1, golden_config_devices)
+        response = self.client.get(f"{self._url}?site={Device.objects.first().site.slug}&export")
+        self.assertEqual(response.status_code, 200)
+        csv_data = response.content.decode().splitlines()
+        device_names_in_export = [entry.split(",")[0] for entry in csv_data[1:]]
+        device_names_in_site_1 = [device.name for device in devices_in_site_1]
+        self.assertEqual(device_names_in_export, device_names_in_site_1)

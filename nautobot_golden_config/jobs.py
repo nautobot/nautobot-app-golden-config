@@ -11,7 +11,12 @@ from nautobot.tenancy.models import Tenant, TenantGroup
 from nautobot_golden_config.nornir_plays.config_backup import config_backup
 from nautobot_golden_config.nornir_plays.config_compliance import config_compliance
 from nautobot_golden_config.nornir_plays.config_intended import config_intended
-from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
+from nautobot_golden_config.utilities.constant import (
+    ENABLE_BACKUP,
+    ENABLE_COMPLIANCE,
+    ENABLE_INTENDED,
+    SYNC_CONFIG_CONTEXT_REPOS,
+)
 from nautobot_golden_config.utilities.git import GitRepo
 from nautobot_golden_config.utilities.helper import get_job_filter
 
@@ -37,6 +42,14 @@ def get_refreshed_repos(job_obj, repo_type, data=None):
         repositories.append(git_repo)
 
     return repositories
+
+
+def update_config_context_repos(job_obj):
+    """Simple helper method to update all configured Config Context git repositories."""
+    repos = GitRepository.objects.filter(provided_contents__icontains="extras.configcontext")
+    for repo in repos:
+        job_obj.log_debug(f"Pulling config context repo {repo.name}.")
+        ensure_git_repository(repository_record=repo, job_result=job_obj.job_result)
 
 
 def commit_check(method):
@@ -146,6 +159,10 @@ class IntendedJob(Job, FormEntry):
         self.log_debug("Starting intended job.")
 
         now = datetime.now()
+
+        if SYNC_CONFIG_CONTEXT_REPOS:
+            self.log_debug("Pull Config Context repos.")
+            update_config_context_repos(job_obj=self)
 
         self.log_debug("Pull Jinja template repos.")
         get_refreshed_repos(job_obj=self, repo_type="jinja_repository", data=data)

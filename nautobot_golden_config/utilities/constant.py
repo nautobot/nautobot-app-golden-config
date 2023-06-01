@@ -16,3 +16,5 @@ CONFIG_FEATURES = {
     "sotagg": ENABLE_SOTAGG,
     "postprocessing": ENABLE_POSTPROCESSING,
 }
+
+SYNC_CONFIG_CONTEXT_REPOS = PLUGIN_CFG.get("sync_config_context_repos")

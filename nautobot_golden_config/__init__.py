@@ -36,6 +36,7 @@ class GoldenConfig(PluginConfig):
         "per_feature_width": 13,
         "per_feature_height": 4,
         "get_custom_compliance": None,
+        "sync_config_context_repos": False,
     }
 
     def ready(self):

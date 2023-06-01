@@ -58,6 +58,7 @@ PLUGINS_CONFIG = {
         "enable_postprocessing": False,
         "postprocessing_callables": [],
         "postprocessing_subscribed": [],
+        "sync_config_context_repos": False,
         "platform_slug_map": None,
         # "get_custom_compliance": "my.custom_compliance.func"
     },
@@ -102,6 +103,7 @@ The plugin behavior can be controlled with the following list of settings.
 | postprocessing_callables  | ['mypackage.myfunction']      | []      | A list of function paths, in dotted format, that are appended to the available methods for post-processing the intended configuration, for instance, the `render_secrets`. |
 | postprocessing_subscribed | ['mypackage.myfunction']      | []      | A list of function paths, that should exist as postprocessing_callables, that defines the order of application of during the post-processing process.                      |
 | platform_slug_map         | {"cisco_wlc": "cisco_aireos"} | None    | A dictionary in which the key is the platform slug and the value is what netutils uses in any "network_os" parameter.                                                      |
+| sync_config_context_repos | False                         | False   | A boolean to represent whether to synchronize all configured Config Context git repositories during the intended generation.                                                                                               |
 | sot_agg_transposer        | "mypkg.transposer"            | None    | A string representation of a function that can post-process the graphQL data.                                                                                              |
 | per_feature_bar_width     | 0.15                          | 0.15    | The width of the table bar within the overview report                                                                                                                      |
 | per_feature_width         | 13                            | 13      | The width in inches that the overview table can be.                                                                                                                        |

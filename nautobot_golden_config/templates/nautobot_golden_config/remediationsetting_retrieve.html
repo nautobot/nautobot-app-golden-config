@@ -1,0 +1,16 @@
+{% extends 'generic/object_detail.html' %}
+{% load helpers %}
+
+{% block content_left_page %}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <strong>Remediation Setting Details</strong>
+        </div>
+        <table class="table table-hover panel-body attr-table">
+            <tr>
+                <td>Name</td>
+                <td>{{ object.name }}</td>
+            </tr>
+        </table>
+    </div>
+{% endblock %}

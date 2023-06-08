@@ -284,3 +284,25 @@ class GoldenConfigSettingFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
 
         model = models.GoldenConfigSetting
         fields = ["id", "name", "slug", "weight", "backup_repository", "intended_repository", "jinja_repository"]
+
+
+class RemediationSettingFilterSet(GenericPlatformFilterSet):
+    """Inherits Base Class CustomFieldModelFilterSet."""
+
+    q = django_filters.CharFilter(
+        method="search",
+        label="Search",
+    )
+
+    def search(self, queryset, name, value):  # pylint: disable=unused-argument,no-self-use
+        """Perform the filtered search."""
+        if not value.strip():
+            return queryset
+        qs_filter = Q(platform__icontains=value)
+        return queryset.filter(qs_filter)
+
+    class Meta:
+        """Boilerplate filter Meta data for Config Replace."""
+
+        model = models.RemediationSetting
+        fields = ["id", "platform"]

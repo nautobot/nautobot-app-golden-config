@@ -15,10 +15,12 @@ from nautobot.extras.models import DynamicGroup, ObjectChange
 from nautobot.extras.utils import extras_features
 from nautobot.utilities.utils import serialize_object, serialize_object_v2
 from netutils.config.compliance import feature_compliance
-from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
+from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, RemediationTypeChoice
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
 from nautobot_golden_config.utilities.utils import get_platform
 
+from hier_config import Host as HierConfigHost
+from netutils.lib_mapper import HIERCONFIG_LIB_MAPPER_REVERSE
 
 LOGGER = logging.getLogger(__name__)
 GRAPHQL_STR_START = "query ($device_id: ID!)"
@@ -129,10 +131,36 @@ def _verify_get_custom_compliance_data(compliance_details):
             raise ValidationError(VALIDATION_MSG.format(val, "String or Json", compliance_details[val]))
 
 
+def _get_hierconfig_remediation(obj):
+    """Returns the remediation plan."""
+    hierconfig_os = HIERCONFIG_LIB_MAPPER_REVERSE.get(obj.device.platform.slug)
+    if not hierconfig_os:
+        raise Exception(f"platform {obj.device.platform.slug} not supported by hier config")  # TODO(Patricio): Figure out right exception
+
+    try:
+        host = HierConfigHost(
+            hostname=obj.device.name,
+            hconfig_options=obj.rule.remediation_setting.remediation_options,
+            os=hierconfig_os,
+        )
+    except:
+        raise Exception("invalid config")  # TODO(Patricio) - add validation and raise exception if HierConfigHost fails due to invalid options.
+
+    host.load_generated_config(obj.intended_config)
+    host.load_running_config(obj.backup_config)
+    host.remediation_config()
+
+    # TODO : check if this can fail ?
+    remediation_config = host.remediation_config_filtered_text(include_tags={}, exclude_tags={})
+
+    return remediation_config
+
+
 # The below maps the provided compliance types
 FUNC_MAPPER = {
     ComplianceRuleConfigTypeChoice.TYPE_CLI: _get_cli_compliance,
     ComplianceRuleConfigTypeChoice.TYPE_JSON: _get_json_compliance,
+    RemediationTypeChoice.TYPE_HIERCONFIG: _get_hierconfig_remediation,
 }
 # The below conditionally add the custom provided compliance type
 if PLUGIN_CFG.get("get_custom_compliance"):
@@ -142,6 +170,17 @@ if PLUGIN_CFG.get("get_custom_compliance"):
         msg = (
             "There was an issue attempting to import the get_custom_compliance function of"
             f"{PLUGIN_CFG['get_custom_compliance']}, this is expected with a local configuration issue "
+            "and not related to the Golden Configuration Plugin, please contact your system admin for further details"
+        )
+        raise Exception(msg).with_traceback(error.__traceback__)
+
+if PLUGIN_CFG.get("get_custom_remediation"):  # TODO(mzb): duplicated code.
+    try:
+        FUNC_MAPPER[RemediationTypeChoice.TYPE_CUSTOM] = import_string(PLUGIN_CFG["get_custom_remediation"])
+    except Exception as error:  # pylint: disable=broad-except
+        msg = (
+            "There was an issue attempting to import the get_custom_remediation function of"
+            f"{PLUGIN_CFG['get_custom_remediation']}, this is expected with a local configuration issue "
             "and not related to the Golden Configuration Plugin, please contact your system admin for further details"
         )
         raise Exception(msg).with_traceback(error.__traceback__)
@@ -212,6 +251,16 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
         verbose_name="Configured Ordered",
         help_text="Whether or not the configuration order matters, such as in ACLs.",
     )
+
+    # config remediation boolean is set on the `ComplianceRule`
+    config_remediation = models.BooleanField(
+        default=False,
+        null=False,
+        blank=False,
+        verbose_name="Config Remediation",
+        help_text="Whether or not the config remediation is executed for this compliance rule.",
+    )
+
     match_config = models.TextField(
         null=True,
         blank=True,
@@ -291,6 +340,8 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
     compliance = models.BooleanField(null=True, blank=True)
     actual = models.JSONField(blank=True, help_text="Actual Configuration for feature")
     intended = models.JSONField(blank=True, help_text="Intended Configuration for feature")
+    # these three are config snippets exposed for the ConfigDeployment.
+    remediation = models.JSONField(blank=True, help_text="Remediation Configuration for the device")
     missing = models.JSONField(blank=True, help_text="Configuration that should be on the device.")
     extra = models.JSONField(blank=True, help_text="Configuration that should not be on the device.")
     ordered = models.BooleanField(default=True)
@@ -332,23 +383,43 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
         """String representation of a the compliance."""
         return f"{self.device} -> {self.rule} -> {self.compliance}"
 
-    def save(self, *args, **kwargs):
-        """The actual configuration compliance happens here, but the details for actual compliance job would be found in FUNC_MAPPER."""
-        if self.rule.custom_compliance:
-            if not FUNC_MAPPER.get("custom"):
-                raise ValidationError(
-                    "Custom type provided, but no `get_custom_compliance` config set, please contact system admin."
-                )
-            compliance_details = FUNC_MAPPER["custom"](obj=self)
+    def compliance_on_save(self):
+        if self.rule.config_type == ComplianceRuleTypeChoice.TYPE_CUSTOM and not FUNC_MAPPER.get(
+            ComplianceRuleTypeChoice.TYPE_CUSTOM
+        ):
+            raise ValidationError(
+                "Custom type provided, but no `get_custom_compliance` config set, please contact system admin."
+            )
+
+        compliance_details = FUNC_MAPPER[self.rule.config_type](obj=self)
+        if self.rule.config_type == ComplianceRuleTypeChoice.TYPE_CUSTOM:
             _verify_get_custom_compliance_data(compliance_details)
-        else:
-            compliance_details = FUNC_MAPPER[self.rule.config_type](obj=self)
 
         self.compliance = compliance_details["compliance"]
         self.compliance_int = compliance_details["compliance_int"]
         self.ordered = compliance_details["ordered"]
         self.missing = compliance_details["missing"]
         self.extra = compliance_details["extra"]
+
+    def remediation_on_save(self):
+        """The actual remediation happens here, before saving the object."""
+
+        # Perform remediation only if not compliant.
+        if self.compliance:
+            return
+
+        # check if remediation for the rule is enabled
+        if not self.rule.config_remediation:
+            return
+
+        remediation_config = FUNC_MAPPER[self.rule.remediation_setting.remediation_type](obj=self)
+        self.remediation = remediation_config
+
+    def save(self, *args, **kwargs):
+        """The actual configuration compliance happens here, but the details for actual compliance job would be found in FUNC_MAPPER."""
+
+        self.compliance_on_save()
+        self.remediation_on_save()
 
         super().save(*args, **kwargs)
 
@@ -700,3 +771,57 @@ class ConfigReplace(PrimaryModel):  # pylint: disable=too-many-ancestors
     def __str__(self):
         """Return a simple string if model is called."""
         return self.name
+
+
+@extras_features(
+    "custom_fields",
+    "custom_validators",
+    "export_templates",
+    "graphql",
+    "relationships",
+    "webhooks",
+)
+class RemediationSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
+    """RemediationSetting details."""
+
+    # Remediation points to the platform
+    platform = models.ForeignKey(
+        to="dcim.Platform",
+        on_delete=models.CASCADE,
+        related_name="remediation_settings",
+        null=False,
+        blank=False,
+        unique=True,
+    )
+
+    remediation_type = models.CharField(
+        max_length=50,
+        default=RemediationTypeChoice.TYPE_HIERCONFIG,
+        choices=RemediationTypeChoice,
+        help_text="Whether the remediation setting is type HC or custom.",
+    )
+
+    # takes options.yaml.
+    remediation_options = models.JSONField(default=dict)
+
+    csv_headers = ["platform", "remediation_type", "remediation_options"]
+
+    def to_csv(self):
+        """Indicates model fields to return as csv."""
+        return (
+            self.platform,
+            self.remediation_type,
+        )
+
+    def __str__(self):
+        """Return a sane string representation of the instance."""
+        return self.platform.slug
+
+    def get_absolute_url(self):
+        """Absolute url for the RemediationRule instance."""
+        return reverse("plugins:nautobot_golden_config:remediationsetting", args=[self.pk])
+
+    def clean(self):
+        # TODO(mzb): decide if to force specify config_options for hierConfig - probably not, use defaults if not provided. if provided overload ALL.
+        # TODO(mzb): validate `if TYPE_HIERCONFIG`, then schema-check / enforce non-empty `remediation_options`.
+        pass

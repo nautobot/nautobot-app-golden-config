@@ -436,3 +436,19 @@ class GoldenConfigSettingTable(BaseTable):
             "intended_repository",
             "jinja_repository",
         )
+
+# RemediationSetting
+
+
+class RemediationSettingTable(BaseTable):
+    """Table to display RemediationSetting Rules."""
+
+    pk = ToggleColumn()
+    # name = LinkColumn("plugins:nautobot_golden_config:remediationsetting", args=[A("pk")])
+
+    class Meta(BaseTable.Meta):
+        """Table to display RemediationSetting Meta Data."""
+
+        model = models.RemediationSetting
+        fields = ("pk", "platform", "remediation_type")
+        default_columns = ("pk", "platform", "remediation_type")

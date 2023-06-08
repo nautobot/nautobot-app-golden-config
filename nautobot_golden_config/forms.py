@@ -390,3 +390,45 @@ class GoldenConfigSettingBulkEditForm(NautobotBulkEditForm):
         """Boilerplate form Meta data for GoldenConfigSetting."""
 
         nullable_fields = []
+
+
+# Remediation Setting
+class RemediationSettingForm(NautobotModelForm):
+    """Filter Form for Line Removal instances."""
+
+    class Meta:
+        """Boilerplate form Meta data for removal feature."""
+
+        model = models.RemediationSetting
+        fields = (
+            "platform",
+            "remediation_type",
+            "remediation_options",
+        )
+
+
+class RemediationSettingFilterForm(NautobotFilterForm):
+    """Filter Form for Line Replacement."""
+
+    model = models.RemediationSetting
+
+
+class RemediationSettingCSVForm(extras_forms.CustomFieldModelCSVForm):
+    """CSV Form for RemediationSetting instances."""
+
+    class Meta:
+        """Boilerplate form Meta data for RemediationSetting."""
+
+        model = models.RemediationSetting
+        fields = models.RemediationSetting.csv_headers
+
+
+class RemediationSettingBulkEditForm(NautobotBulkEditForm):
+    """BulkEdit form for RemediationSetting instances."""
+
+    pk = forms.ModelMultipleChoiceField(queryset=models.RemediationSetting.objects.all(), widget=forms.MultipleHiddenInput)
+
+    class Meta:
+        """Boilerplate form Meta data for RemediationSetting."""
+
+        nullable_fields = []

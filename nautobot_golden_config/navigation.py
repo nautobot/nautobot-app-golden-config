@@ -59,6 +59,22 @@ if ENABLE_COMPLIANCE:
             ),
         )
     )
+    items.append(
+        NavMenuItem(
+            link="plugins:nautobot_golden_config:hconfigoptions_list",
+            name="Config Remediation Options",
+            permissions=["nautobot_golden_config.view_hconfigoptions"],
+            buttons=(
+                NavMenuButton(
+                    link="plugins:nautobot_golden_config:hconfigoptions_import",
+                    title="Import Options",
+                    icon_class="mdi mdi-plus-thick",
+                    button_class=ButtonColorChoices.GREEN,
+                    permissions=["nautobot_golden_config.add_hconfigoptions"],
+                ),
+            ),
+        )
+    )
 
 if ENABLE_BACKUP:
     items.append(

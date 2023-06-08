@@ -114,3 +114,11 @@ class ConfigToPushViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     permission_classes = [IsAuthenticated & ConfigPushPermissions]
     queryset = Device.objects.all()
     serializer_class = serializers.ConfigToPushSerializer
+
+
+class RemediationSettingViewSet(NautobotModelViewSet):  # pylint:disable=too-many-ancestors
+    """API viewset for interacting with ConfigRemove objects."""
+
+    queryset = models.RemediationSetting.objects.all()
+    serializer_class = serializers.RemediationSettingSerializer
+    filterset_class = filters.RemediationSettingFilterSet

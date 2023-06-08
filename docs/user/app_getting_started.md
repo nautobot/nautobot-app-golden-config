@@ -162,7 +162,7 @@ The `YAML` files will contain all the attributes necessary to identify an object
 - name: "aaa"
   slug: "aaa"
   description: "aaa feature"
-````
+```
 
 `compliance_rules` example:
 
@@ -198,6 +198,18 @@ The `YAML` files will contain all the attributes necessary to identify an object
   description: "username"
   regex: '(username\s+\S+\spassword\s+5\s+)\S+(\s+role\s+\S+)'
   replace: '\1<redacted_config>\2'
+```
+
+CustomField data can be added using the `_custom_field_data` attribute, that takes a dictionary mapping custom_field names to their values:
+
+```yaml
+---
+- name: "aaa"
+  slug: "aaa"
+  description: "aaa feature"
+  _custom_field_data:
+    custom_field_a: "abc"
+    custom_field_b: 123
 ```
 
 !!! note

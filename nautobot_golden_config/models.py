@@ -286,6 +286,7 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
         "match_config",
         "config_type",
         "custom_compliance",
+        "config_remediation",
     ]
 
     def to_csv(self):
@@ -298,6 +299,7 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
             self.match_config,
             self.config_type,
             self.custom_compliance,
+            self.config_remediation,
         )
 
     class Meta:
@@ -804,7 +806,10 @@ class RemediationSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     # takes options.yaml.
     remediation_options = models.JSONField(default=dict)
 
-    csv_headers = ["platform", "remediation_type", "remediation_options"]
+    csv_headers = [
+        "platform",
+        "remediation_type",
+    ]
 
     def to_csv(self):
         """Indicates model fields to return as csv."""

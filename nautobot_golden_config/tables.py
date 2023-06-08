@@ -339,6 +339,7 @@ class ComplianceRuleTable(BaseTable):
             "match_config",
             "config_type",
             "custom_compliance",
+            "config_remediation",
         )
         default_columns = (
             "pk",
@@ -349,6 +350,7 @@ class ComplianceRuleTable(BaseTable):
             "match_config",
             "config_type",
             "custom_compliance",
+            "config_remediation",
         )
 
 

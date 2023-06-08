@@ -11,7 +11,6 @@ class ComplianceRuleConfigTypeChoice(ChoiceSet):
     CHOICES = (
         (TYPE_CLI, "CLI"),
         (TYPE_JSON, "JSON"),
-        (TYPE_CUSTOM, "CUSTOM"),
     )
 
 

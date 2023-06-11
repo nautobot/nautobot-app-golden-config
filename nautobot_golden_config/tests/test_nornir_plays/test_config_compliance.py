@@ -42,7 +42,7 @@ class ConfigComplianceTest(unittest.TestCase):
         mock_obj = MagicMock(name="Device")
         mock_obj.platform = Mock(slug="test_slug")
         mock_rule = MagicMock(name="ComplianceRule")
-        mock_rule["obj"].match_config = "key1"
+        mock_rule["obj"].match_config = ""
         mock_rule["obj"].config_ordered = True
         mock_rule["obj"].config_type = ComplianceRuleConfigTypeChoice.TYPE_JSON
         return_config = get_config_element(mock_rule, mock_config, mock_obj, None)

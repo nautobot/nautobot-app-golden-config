@@ -24,28 +24,26 @@ class ConfigComplianceTest(unittest.TestCase):
             features, {"test_slug": [{"obj": mock_obj, "ordered": "test_ordered", "section": ["aaa", "snmp"]}]}
         )
 
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.ComplianceRule", autospec=True)
     def test_get_config_element_match_config_present(self):
         """Test proper return when Config JSON is returned with match_config"""
         mock_config = json.dumps({"key1": "value1", "key2": "value2", "key3": "value3"})
         mock_obj = MagicMock(name="Device")
         mock_obj.platform = Mock(slug="test_slug")
-        mock_compliance_rule = MagicMock(name="ComplianceRule")
-        mock_compliance_rule["obj"].match_config = "key1"
-        mock_compliance_rule["obj"].config_ordered = True
-        mock_compliance_rule["obj"].config_type = ComplianceRuleConfigTypeChoice.TYPE_JSON
-        return_config = get_config_element(mock_compliance_rule, mock_config, mock_obj, None)
+        mock_rule = MagicMock(name="ComplianceRule")
+        mock_rule["obj"].match_config = "key1"
+        mock_rule["obj"].config_ordered = True
+        mock_rule["obj"].config_type = ComplianceRuleConfigTypeChoice.TYPE_JSON
+        return_config = get_config_element(mock_rule, mock_config, mock_obj, None)
         self.assertEqual(return_config, {"key1": "value1"})
 
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.ComplianceRule", autospec=True)
     def test_get_config_element_match_config_absent(self):
         """Test proper return when Config JSON is returned without match_config"""
         mock_config = json.dumps({"key1": "value1", "key2": "value2", "key3": "value3"})
         mock_obj = MagicMock(name="Device")
         mock_obj.platform = Mock(slug="test_slug")
-        mock_compliance_rule = MagicMock(name="ComplianceRule")
-        mock_compliance_rule["obj"].match_config = ""
-        mock_compliance_rule["obj"].config_ordered = True
-        mock_compliance_rule["obj"].config_type = ComplianceRuleConfigTypeChoice.TYPE_JSON
-        return_config = get_config_element(mock_compliance_rule, mock_config, mock_obj, None)
+        mock_rule = MagicMock(name="ComplianceRule")
+        mock_rule["obj"].match_config = "key1"
+        mock_rule["obj"].config_ordered = True
+        mock_rule["obj"].config_type = ComplianceRuleConfigTypeChoice.TYPE_JSON
+        return_config = get_config_element(mock_rule, mock_config, mock_obj, None)
         self.assertEqual(return_config, mock_config)

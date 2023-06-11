@@ -34,7 +34,7 @@ class ConfigComplianceTest(unittest.TestCase):
         mock_rule["obj"].config_ordered = True
         mock_rule["obj"].config_type = ComplianceRuleConfigTypeChoice.TYPE_JSON
         return_config = get_config_element(mock_rule, mock_config, mock_obj, None)
-        self.assertEqual(return_config, {"key1": "value1"})
+        self.assertEqual(return_config, {'key1': 'value1'})
 
     def test_get_config_element_match_config_absent(self):
         """Test proper return when Config JSON is returned without match_config"""
@@ -45,5 +45,5 @@ class ConfigComplianceTest(unittest.TestCase):
         mock_rule["obj"].match_config = ""
         mock_rule["obj"].config_ordered = True
         mock_rule["obj"].config_type = ComplianceRuleConfigTypeChoice.TYPE_JSON
-        return_config = get_config_element(mock_rule, mock_config, mock_obj, None)
+        return_config = json.dumps(get_config_element(mock_rule, mock_config, mock_obj, None))
         self.assertEqual(return_config, mock_config)

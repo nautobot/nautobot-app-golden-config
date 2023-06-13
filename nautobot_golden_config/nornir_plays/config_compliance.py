@@ -67,10 +67,8 @@ def get_config_element(rule, config, obj, logger):
             logger.log_failure(obj, "Unable to interpret configuration as JSON.")
             raise NornirNautobotException("Unable to interpret configuration as JSON.")
 
-        if rule["obj"].config_to_match:
-            config_element = {
-                k: config_json.get(k) for k in rule["obj"].config_to_match.splitlines() if k in config_json
-            }
+        if rule["obj"].match_config:
+            config_element = {k: config_json.get(k) for k in rule["obj"].match_config.splitlines() if k in config_json}
         else:
             config_element = config_json
 

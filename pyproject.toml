@@ -48,6 +48,7 @@ invoke = "*"
 pydocstyle = "*"
 pylint = "*"
 pylint-django = "*"
+pylint-nautobot = "^0.1.0"
 yamllint = "*"
 Markdown = "*"
 # Rendering docs to HTML
@@ -85,7 +86,7 @@ exclude = '''
 
 [tool.pylint.master]
 # Include the pylint_django plugin to avoid spurious warnings about Django patterns
-load-plugins="pylint_django"
+load-plugins="pylint_django, pylint_nautobot"
 ignore=["jinja_filters.py", ".venv"]
 
 [tool.pylint.basic]
@@ -108,6 +109,12 @@ notes = """,
     FIXME,
     XXX,
     """
+
+[tool.pylint-nautobot]
+supported_nautobot_versions = [
+    "1",
+    "2"
+]
 
 [tool.pydocstyle]
 convention = "google"

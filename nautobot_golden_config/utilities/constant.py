@@ -17,4 +17,4 @@ CONFIG_FEATURES = {
     "postprocessing": ENABLE_POSTPROCESSING,
 }
 
-SYNC_CONFIG_CONTEXT_REPOS = PLUGIN_CFG.get("sync_config_context_repos")
+ENABLE_CONFIG_CONTEXT_SYNC = PLUGIN_CFG.get("enable_config_context_sync")

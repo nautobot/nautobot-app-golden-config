@@ -15,7 +15,7 @@ from nautobot_golden_config.utilities.constant import (
     ENABLE_BACKUP,
     ENABLE_COMPLIANCE,
     ENABLE_INTENDED,
-    SYNC_CONFIG_CONTEXT_REPOS,
+    ENABLE_CONFIG_CONTEXT_SYNC,
 )
 from nautobot_golden_config.utilities.git import GitRepo
 from nautobot_golden_config.utilities.helper import get_job_filter
@@ -160,7 +160,7 @@ class IntendedJob(Job, FormEntry):
 
         now = datetime.now()
 
-        if SYNC_CONFIG_CONTEXT_REPOS:
+        if ENABLE_CONFIG_CONTEXT_SYNC:
             self.log_debug("Pull Config Context repos.")
             update_config_context_repos(job_obj=self)
 

@@ -30,7 +30,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.7"
-deepdiff = ">=5.5.0,>=6.2.0"
+deepdiff = ">=5.5.0,!=6.0,!=6.1,<7"
 django-pivot = "^1.8.1"
 matplotlib = "^3.3.2"
 nautobot = ">=1.5.3"

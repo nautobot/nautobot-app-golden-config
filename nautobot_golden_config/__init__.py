@@ -41,6 +41,7 @@ class GoldenConfig(PluginConfig):
 
     def ready(self):
         """Register custom signals."""
+        import nautobot_golden_config.jobs  # pylint: disable=unused-import, import-outside-toplevel
         from nautobot_golden_config.models import ConfigCompliance  # pylint: disable=import-outside-toplevel
 
         from .signals import config_compliance_platform_cleanup  # pylint: disable=import-outside-toplevel

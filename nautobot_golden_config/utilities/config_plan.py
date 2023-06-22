@@ -32,7 +32,7 @@ def generate_config_plan_from_compliance_feature(
     # Grab the config compliance for the feature
     feature_compliance = device.configcompliance_set.filter(rule__feature=feature).first()
     # If the config compliance exists and has the plan type generated, create the config plan
-    if feature_compliance and hasattr(feature_compliance, plan_type):
+    if feature_compliance and hasattr(feature_compliance, plan_type) and getattr(feature_compliance, plan_type):
         status = status or DEFAULT_STATUS
         return ConfigPlan.objects.create(
             plan_type=plan_type,

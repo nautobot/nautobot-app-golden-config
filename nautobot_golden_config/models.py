@@ -20,7 +20,14 @@ from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
 from nautobot_golden_config.utilities.utils import get_platform
 
 from hier_config import Host as HierConfigHost
-from netutils.lib_mapper import HIERCONFIG_LIB_MAPPER_REVERSE
+
+HIERCONFIG_LIB_MAPPER = {
+    "ios": "cisco_ios",
+    "iosxe": "cisco_xe",
+    "iosxr": "cisco_xr",
+    "nxos": "cisco_nxos",
+    "eos": "arista_eos",
+}
 
 LOGGER = logging.getLogger(__name__)
 GRAPHQL_STR_START = "query ($device_id: ID!)"
@@ -133,7 +140,9 @@ def _verify_get_custom_compliance_data(compliance_details):
 
 def _get_hierconfig_remediation(obj):
     """Returns the remediation plan."""
-    hierconfig_os = HIERCONFIG_LIB_MAPPER_REVERSE.get(obj.device.platform.slug)
+    # implement HIERCONFIG_LIB_MAPPER_REVERSE in Netutils
+    find_hier_os = lambda dictionary, value: next((key for key, val in dictionary.items() if val == value), None)
+    hierconfig_os = find_hier_os(HIERCONFIG_LIB_MAPPER, obj.device.platform.slug)
     if not hierconfig_os:
         raise Exception(f"platform {obj.device.platform.slug} not supported by hier config")  # TODO(Patricio): Figure out right exception
 
@@ -146,8 +155,8 @@ def _get_hierconfig_remediation(obj):
     except:
         raise Exception("invalid config")  # TODO(Patricio) - add validation and raise exception if HierConfigHost fails due to invalid options.
 
-    host.load_generated_config(obj.intended_config)
-    host.load_running_config(obj.backup_config)
+    host.load_generated_config(obj.intended)
+    host.load_running_config(obj.actual)
     host.remediation_config()
 
     # TODO : check if this can fail ?
@@ -274,6 +283,8 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
         help_text="Whether the configuration is in CLI or JSON/structured format.",
     )
 
+    remediation_setting = models.ForeignKey(to="RemediationSetting", on_delete=models.CASCADE, blank=False, null=True, related_name="remediation_setting")
+
     custom_compliance = models.BooleanField(
         default=False, help_text="Whether this Compliance Rule is proceeded as custom."
     )
@@ -343,7 +354,7 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
     actual = models.JSONField(blank=True, help_text="Actual Configuration for feature")
     intended = models.JSONField(blank=True, help_text="Intended Configuration for feature")
     # these three are config snippets exposed for the ConfigDeployment.
-    remediation = models.JSONField(blank=True, help_text="Remediation Configuration for the device")
+    remediation = models.JSONField(blank=True, null=True, help_text="Remediation Configuration for the device")
     missing = models.JSONField(blank=True, help_text="Configuration that should be on the device.")
     extra = models.JSONField(blank=True, help_text="Configuration that should not be on the device.")
     ordered = models.BooleanField(default=True)
@@ -386,16 +397,16 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
         return f"{self.device} -> {self.rule} -> {self.compliance}"
 
     def compliance_on_save(self):
-        if self.rule.config_type == ComplianceRuleTypeChoice.TYPE_CUSTOM and not FUNC_MAPPER.get(
-            ComplianceRuleTypeChoice.TYPE_CUSTOM
-        ):
-            raise ValidationError(
-                "Custom type provided, but no `get_custom_compliance` config set, please contact system admin."
-            )
-
-        compliance_details = FUNC_MAPPER[self.rule.config_type](obj=self)
-        if self.rule.config_type == ComplianceRuleTypeChoice.TYPE_CUSTOM:
+        """The actual configuration compliance happens here, but the details for actual compliance job would be found in FUNC_MAPPER."""
+        if self.rule.custom_compliance:
+            if not FUNC_MAPPER.get("custom"):
+                raise ValidationError(
+                    "Custom type provided, but no `get_custom_compliance` config set, please contact system admin."
+                )
+            compliance_details = FUNC_MAPPER["custom"](obj=self)
             _verify_get_custom_compliance_data(compliance_details)
+        else:
+            compliance_details = FUNC_MAPPER[self.rule.config_type](obj=self)
 
         self.compliance = compliance_details["compliance"]
         self.compliance_int = compliance_details["compliance_int"]
@@ -413,7 +424,11 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
         # check if remediation for the rule is enabled
         if not self.rule.config_remediation:
             return
-
+        
+        if not FUNC_MAPPER.get(self.rule.remediation_setting.remediation_type):
+            raise ValidationError(
+                f"Remediation {self.rule.remediation_setting.remediation_type} has no associated function set."
+            ) 
         remediation_config = FUNC_MAPPER[self.rule.remediation_setting.remediation_type](obj=self)
         self.remediation = remediation_config
 
@@ -804,7 +819,10 @@ class RemediationSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     )
 
     # takes options.yaml.
-    remediation_options = models.JSONField(default=dict)
+    remediation_options = models.JSONField(
+        blank=True,
+        default={},
+        help_text="Remediation Configuration for the device")
 
     csv_headers = [
         "platform",

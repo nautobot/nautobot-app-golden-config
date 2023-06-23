@@ -396,16 +396,16 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
         return f"{self.device} -> {self.rule} -> {self.compliance}"
 
     def compliance_on_save(self):
-        if self.rule.config_type == ComplianceRuleConfigTypeChoice.TYPE_CUSTOM and not FUNC_MAPPER.get(
-            ComplianceRuleConfigTypeChoice.TYPE_CUSTOM
-        ):
-            raise ValidationError(
-                "Custom type provided, but no `get_custom_compliance` config set, please contact system admin."
-            )
-
-        compliance_details = FUNC_MAPPER[self.rule.config_type](obj=self)
-        if self.rule.config_type == ComplianceRuleConfigTypeChoice.TYPE_CUSTOM:
+        """The actual configuration compliance happens here, but the details for actual compliance job would be found in FUNC_MAPPER."""
+        if self.rule.custom_compliance:
+            if not FUNC_MAPPER.get("custom"):
+                raise ValidationError(
+                    "Custom type provided, but no `get_custom_compliance` config set, please contact system admin."
+                )
+            compliance_details = FUNC_MAPPER["custom"](obj=self)
             _verify_get_custom_compliance_data(compliance_details)
+        else:
+            compliance_details = FUNC_MAPPER[self.rule.config_type](obj=self)
 
         self.compliance = compliance_details["compliance"]
         self.compliance_int = compliance_details["compliance_int"]

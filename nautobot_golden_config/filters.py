@@ -3,14 +3,14 @@
 import django_filters
 from django.db.models import Q
 from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Platform, Rack, RackGroup, Region, Site
-from nautobot.extras.filters import CustomFieldModelFilterSet, StatusFilter
+from nautobot.extras.filters import CustomFieldModelFilterSetMixin, StatusFilter
 from nautobot.extras.models import Status
 from nautobot.tenancy.models import Tenant, TenantGroup
 from nautobot.utilities.filters import BaseFilterSet, NameSlugSearchFilterSet, TreeNodeMultipleChoiceFilter
 from nautobot_golden_config import models
 
 
-class GenericPlatformFilterSet(CustomFieldModelFilterSet):
+class GenericPlatformFilterSet(CustomFieldModelFilterSetMixin):
     """Generic method to reuse common FilterSet."""
 
     platform_id = django_filters.ModelMultipleChoiceFilter(
@@ -25,7 +25,7 @@ class GenericPlatformFilterSet(CustomFieldModelFilterSet):
     )
 
 
-class GoldenConfigFilterSet(CustomFieldModelFilterSet):
+class GoldenConfigFilterSet(CustomFieldModelFilterSetMixin):
     """Filter capabilities for GoldenConfig instances."""
 
     q = django_filters.CharFilter(
@@ -188,8 +188,8 @@ class ConfigComplianceFilterSet(GoldenConfigFilterSet):
         fields = ["id"]
 
 
-class ComplianceFeatureFilterSet(CustomFieldModelFilterSet):
-    """Inherits Base Class CustomFieldModelFilterSet."""
+class ComplianceFeatureFilterSet(CustomFieldModelFilterSetMixin):
+    """Inherits Base Class CustomFieldModelFilterSetMixin."""
 
     q = django_filters.CharFilter(
         method="search",
@@ -211,7 +211,7 @@ class ComplianceFeatureFilterSet(CustomFieldModelFilterSet):
 
 
 class ComplianceRuleFilterSet(GenericPlatformFilterSet):
-    """Inherits Base Class CustomFieldModelFilterSet."""
+    """Inherits Base Class CustomFieldModelFilterSetMixin."""
 
     q = django_filters.CharFilter(
         method="search",
@@ -233,7 +233,7 @@ class ComplianceRuleFilterSet(GenericPlatformFilterSet):
 
 
 class ConfigRemoveFilterSet(GenericPlatformFilterSet):
-    """Inherits Base Class CustomFieldModelFilterSet."""
+    """Inherits Base Class CustomFieldModelFilterSetMixin."""
 
     q = django_filters.CharFilter(
         method="search",
@@ -255,7 +255,7 @@ class ConfigRemoveFilterSet(GenericPlatformFilterSet):
 
 
 class ConfigReplaceFilterSet(GenericPlatformFilterSet):
-    """Inherits Base Class CustomFieldModelFilterSet."""
+    """Inherits Base Class CustomFieldModelFilterSetMixin."""
 
     q = django_filters.CharFilter(
         method="search",

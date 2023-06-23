@@ -20,13 +20,14 @@ from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
 from nautobot_golden_config.utilities.utils import get_platform
 
 from hier_config import Host as HierConfigHost
+# from netutils.lib_mapper import HIERCONFIG_LIB_MAPPER_REVERSE
 
-HIERCONFIG_LIB_MAPPER = {
-    "ios": "cisco_ios",
-    "iosxe": "cisco_xe",
-    "iosxr": "cisco_xr",
-    "nxos": "cisco_nxos",
-    "eos": "arista_eos",
+HIERCONFIG_LIB_MAPPER_REVERSE = {
+    "cisco_ios": "ios",
+    "cisco_xe": "iosxe",
+    "cisco_xr": "iosxr",
+    "cisco_nxos": "nxos",
+    "arista_eos": "eos",
 }
 
 LOGGER = logging.getLogger(__name__)
@@ -140,9 +141,7 @@ def _verify_get_custom_compliance_data(compliance_details):
 
 def _get_hierconfig_remediation(obj):
     """Returns the remediation plan."""
-    # implement HIERCONFIG_LIB_MAPPER_REVERSE in Netutils
-    find_hier_os = lambda dictionary, value: next((key for key, val in dictionary.items() if val == value), None)
-    hierconfig_os = find_hier_os(HIERCONFIG_LIB_MAPPER, obj.device.platform.slug)
+    hierconfig_os = HIERCONFIG_LIB_MAPPER_REVERSE.get(obj.device.platform.slug)
     if not hierconfig_os:
         raise Exception(f"platform {obj.device.platform.slug} not supported by hier config")  # TODO(Patricio): Figure out right exception
 
@@ -397,16 +396,16 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
         return f"{self.device} -> {self.rule} -> {self.compliance}"
 
     def compliance_on_save(self):
-        """The actual configuration compliance happens here, but the details for actual compliance job would be found in FUNC_MAPPER."""
-        if self.rule.custom_compliance:
-            if not FUNC_MAPPER.get("custom"):
-                raise ValidationError(
-                    "Custom type provided, but no `get_custom_compliance` config set, please contact system admin."
-                )
-            compliance_details = FUNC_MAPPER["custom"](obj=self)
+        if self.rule.config_type == ComplianceRuleConfigTypeChoice.TYPE_CUSTOM and not FUNC_MAPPER.get(
+            ComplianceRuleConfigTypeChoice.TYPE_CUSTOM
+        ):
+            raise ValidationError(
+                "Custom type provided, but no `get_custom_compliance` config set, please contact system admin."
+            )
+
+        compliance_details = FUNC_MAPPER[self.rule.config_type](obj=self)
+        if self.rule.config_type == ComplianceRuleConfigTypeChoice.TYPE_CUSTOM:
             _verify_get_custom_compliance_data(compliance_details)
-        else:
-            compliance_details = FUNC_MAPPER[self.rule.config_type](obj=self)
 
         self.compliance = compliance_details["compliance"]
         self.compliance_int = compliance_details["compliance_int"]

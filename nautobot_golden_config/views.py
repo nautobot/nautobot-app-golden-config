@@ -82,7 +82,7 @@ class GoldenConfigListView(generic.ObjectListView):
         golden_config_device_queryset = Device.objects.none()
         for setting in models.GoldenConfigSetting.objects.all():
             golden_config_device_queryset = golden_config_device_queryset | setting.dynamic_group.members
-        return golden_config_device_queryset
+        return golden_config_device_queryset & self.queryset.distinct()
 
     def queryset_to_csv(self):
         """Override nautobot default to account for using Device model for GoldenConfig data."""

@@ -61,16 +61,16 @@ if ENABLE_COMPLIANCE:
     )
     items.append(
         NavMenuItem(
-            link="plugins:nautobot_golden_config:hconfigoptions_list",
+            link="plugins:nautobot_golden_config:remediationsetting_list",
             name="Config Remediation Options",
-            permissions=["nautobot_golden_config.view_hconfigoptions"],
+            permissions=["nautobot_golden_config.view_remediationsetting"],
             buttons=(
                 NavMenuButton(
-                    link="plugins:nautobot_golden_config:hconfigoptions_import",
+                    link="plugins:nautobot_golden_config:remediationsetting_import",
                     title="Import Options",
                     icon_class="mdi mdi-plus-thick",
                     button_class=ButtonColorChoices.GREEN,
-                    permissions=["nautobot_golden_config.add_hconfigoptions"],
+                    permissions=["nautobot_golden_config.add_remediatinosetting"],
                 ),
             ),
         )

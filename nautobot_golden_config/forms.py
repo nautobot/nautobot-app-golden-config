@@ -123,6 +123,7 @@ class ComplianceRuleForm(NautobotModelForm):
             "config_type",
             "match_config",
             "custom_compliance",
+            "config_remediation",
         )
 
 

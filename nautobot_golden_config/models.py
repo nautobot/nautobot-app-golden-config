@@ -146,10 +146,28 @@ def _get_hierconfig_remediation(obj):
         raise Exception(f"platform {obj.device.platform.slug} not supported by hier config")  # TODO(Patricio): Figure out right exception
 
     try:
+        remediation_setting_obj = RemediationSetting.objects.get(
+            platform=obj.rule.platform
+        )
+
+        if remediation_setting_obj.remediation_options:
+            remediation_options = remediation_setting_obj.remediation_options
+        else:
+            remediation_options = None # TODO(Patricio): validate exceptions
+    except:
+        remediation_options = None # TODO(Patricio): validate exceptions
+
+    try:
+        hc_kwargs = {
+            "hostname": obj.device.name,
+            "os": hierconfig_os
+        }
+
+        if remediation_options:
+            hc_kwargs.update(hconfig_options=remediation_options)
+
         host = HierConfigHost(
-            hostname=obj.device.name,
-            hconfig_options=obj.rule.remediation_setting.remediation_options,
-            os=hierconfig_os,
+            **hc_kwargs
         )
     except:
         raise Exception("invalid config")  # TODO(Patricio) - add validation and raise exception if HierConfigHost fails due to invalid options.
@@ -282,7 +300,14 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
         help_text="Whether the configuration is in CLI or JSON/structured format.",
     )
 
-    remediation_setting = models.ForeignKey(to="RemediationSetting", on_delete=models.CASCADE, blank=False, null=True, related_name="remediation_setting")
+    # remediation_setting = models.ForeignKey(to="RemediationSetting", on_delete=models.CASCADE, blank=False, null=True, related_name="remediation_setting")
+    @property
+    def remediation_setting(self):
+        """TODO: @Patricio: this should be read-only.
+
+        1 remediation setting per platform is expected.
+        """
+        return None
 
     custom_compliance = models.BooleanField(
         default=False, help_text="Whether this Compliance Rule is proceeded as custom."

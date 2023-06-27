@@ -1,6 +1,7 @@
 """Django Models for tracking the configuration compliance per feature and device."""
 
 import json
+import yaml
 import logging
 
 from deepdiff import DeepDiff
@@ -28,6 +29,7 @@ HIERCONFIG_LIB_MAPPER_REVERSE = {
     "cisco_xr": "iosxr",
     "cisco_nxos": "nxos",
     "arista_eos": "eos",
+    "ruckus_fastiron": "fastiron",
 }
 
 LOGGER = logging.getLogger(__name__)
@@ -146,14 +148,33 @@ def _get_hierconfig_remediation(obj):
         raise Exception(f"platform {obj.device.platform.slug} not supported by hier config")  # TODO(Patricio): Figure out right exception
 
     try:
-        host = HierConfigHost(
-            hostname=obj.device.name,
-            hconfig_options=obj.rule.remediation_setting.remediation_options,
-            os=hierconfig_os,
+        remediation_setting_obj = RemediationSetting.objects.get(
+            platform=obj.rule.platform
         )
+
+        if remediation_setting_obj.remediation_options:
+            remediation_options = yaml.dump(
+                remediation_setting_obj.remediation_options,
+                Dumper=yaml.SafeDumper
+                )
+        else:
+            remediation_options = None # TODO(Patricio): validate exceptions
+    except:
+        remediation_options = None # TODO(Patricio): validate exceptions
+
+    try:
+        hc_kwargs = {
+            "hostname": obj.device.name,
+            "os": hierconfig_os
+        }
+
+        if remediation_options:
+            hc_kwargs.update(hconfig_options=remediation_options)
+    
+        host = HierConfigHost(**hc_kwargs)
     except:
         raise Exception("invalid config")  # TODO(Patricio) - add validation and raise exception if HierConfigHost fails due to invalid options.
-
+    
     host.load_generated_config(obj.intended)
     host.load_running_config(obj.actual)
     host.remediation_config()
@@ -282,8 +303,6 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
         help_text="Whether the configuration is in CLI or JSON/structured format.",
     )
 
-    remediation_setting = models.ForeignKey(to="RemediationSetting", on_delete=models.CASCADE, blank=False, null=True, related_name="remediation_setting")
-
     custom_compliance = models.BooleanField(
         default=False, help_text="Whether this Compliance Rule is proceeded as custom."
     )
@@ -298,7 +317,21 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
         "custom_compliance",
         "config_remediation",
     ]
+    
+    @property
+    def remediation_setting(self):
+        """TODO: @Patricio: this should be read-only.
+        1 remediation setting per platform is expected.
+        """
+        remediation_setting_obj = RemediationSetting.objects.get(
+            platform=self.platform
+        )
+        if remediation_setting_obj:
+            return remediation_setting_obj
+        else:
+            raise Exception("Platform has no remediation Settings defined") 
 
+    
     def to_csv(self):
         """Indicates model fields to return as csv."""
         return (
@@ -820,7 +853,7 @@ class RemediationSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     # takes options.yaml.
     remediation_options = models.JSONField(
         blank=True,
-        default={},
+        default=dict,
         help_text="Remediation Configuration for the device")
 
     csv_headers = [

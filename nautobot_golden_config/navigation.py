@@ -62,7 +62,7 @@ if ENABLE_COMPLIANCE:
     items.append(
         NavMenuItem(
             link="plugins:nautobot_golden_config:remediationsetting_list",
-            name="Remediation Settings",
+            name="Config Remediation Options",
             permissions=["nautobot_golden_config.view_remediationsetting"],
             buttons=(
                 NavMenuButton(

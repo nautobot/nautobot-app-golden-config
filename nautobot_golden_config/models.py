@@ -329,7 +329,7 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
         if remediation_setting_obj:
             return remediation_setting_obj
         else:
-            raise Exception("Platform has no remediation Settings defined") 
+            raise Exception(f"Platform {self.platform} has no remediation Settings defined") 
 
     
     def to_csv(self):

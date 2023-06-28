@@ -446,7 +446,7 @@ class RemediationSettingTable(BaseTable):
     """Table to display RemediationSetting Rules."""
 
     pk = ToggleColumn()
-    name = LinkColumn("plugins:nautobot_golden_config:remediationsetting", args=[A("pk")])
+    platform = LinkColumn("plugins:nautobot_golden_config:remediationsetting", args=[A("pk")])
 
     class Meta(BaseTable.Meta):
         """Table to display RemediationSetting Meta Data."""

@@ -153,10 +153,11 @@ def _get_hierconfig_remediation(obj):
         )
 
         if remediation_setting_obj.remediation_options:
-            remediation_options = yaml.dump(
-                remediation_setting_obj.remediation_options,
-                Dumper=yaml.SafeDumper
-                )
+            #remediation_options = yaml.dump(
+            #    remediation_setting_obj.remediation_options,
+            #    Dumper=yaml.SafeDumper
+            #    )
+            remediation_options = json.loads(remediation_setting_obj.remediation_options)
         else:
             remediation_options = None # TODO(Patricio): validate exceptions
     except:

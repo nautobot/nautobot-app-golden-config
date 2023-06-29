@@ -805,3 +805,4 @@ class RemediationSettingUIViewSet(NautobotUIViewSet):
     serializer_class = serializers.RemediationSettingSerializer
     table_class = tables.RemediationSettingTable
     lookup_field = "pk"
+

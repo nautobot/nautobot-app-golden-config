@@ -20,6 +20,9 @@ Thankfully, this issue can be addressed without making any changes on your devic
 - Configuration Intended
 - Configuration Compliance
 
+!!! info
+    The four components are not hard requirements, the application is flexible and can be updated to leverage any of these components if they already exist in another system or automated process.
+
 Utilizing these components, you can define the Golden Configuration standard for each of your devices and compare their adherence to that standard, otherwise known as their configuration compliance.
 
 ## Audience (User Personas) - Who should use this App?

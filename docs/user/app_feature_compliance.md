@@ -58,7 +58,7 @@ The "Configs to Match" section represents the configuration root elements. This 
 what a line starts with only. Meaning, there is an implicit greediness to the matching. All matches must start form the beginning of the line.
 
 !!! note
-    If accidentally the data is "corrupted" with a bad tested match, simply delete the devices an re-run the compliance process.
+    If the data is accidentally "corrupted" with a bad tested match, simply delete the devices an re-run the compliance process.
 
 !!! note
     The mapping of "network_os" as defined by netutils is provided via the plugin settings in your nautobot_config.py, and documented on the primary Readme.
@@ -85,7 +85,7 @@ Please note the following about the compliance details page.
 
 ## Supported Platforms
 
-Platforms support technically come from the options provided by [nornir-nautobot](https://github.com/nautobot/nornir-nautobot) for nornir dispatcher tasks and
+Platforms support technically come from the options provided by [nornir-nautobot](https://github.com/nautobot/nornir-nautobot) for Nornir dispatcher tasks and
 [netutils](https://github.com/networktocode/netutils) for configuration compliance and parsing. However, for reference, the valid slug's of the platforms are
 provided in the [FAQ](./app_faq).
 

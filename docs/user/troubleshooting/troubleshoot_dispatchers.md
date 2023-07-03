@@ -26,12 +26,12 @@ Some steps to consider to troubleshooting this:
 
 1. PIP install the NAPALM plugin into the Nautobot environment from PYPI. 
 
-As an example if you wanted to use NAPALMs Palo Alto plugin you'd need that library installed in the environment.
+    As an example if you wanted to use NAPALMs Palo Alto plugin you'd need that library installed in the environment.
 
-```
-pip install napalm-panos
-```
+    ```
+    pip install napalm-panos
+    ```
 
 2. Is the platform slug being used something that is handled by default?
 
-Check the default dispatcher network os driver name. Change your platforms slug to match the default naming which is following the driver names from Netmiko.
+    Check the default dispatcher network os driver name. Change your platforms slug to match the default naming which is following the driver names from Netmiko.

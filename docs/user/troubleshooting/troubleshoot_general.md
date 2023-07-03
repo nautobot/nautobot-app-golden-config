@@ -10,6 +10,7 @@ Golden config logs to the nautobot-worker facility. Where those logs are on spec
 If you attempt to run any of the components of golden config and you see `This job is not enabled to be run.` on the job execution page this means you simply do not have the job enabled in Nautobot.
 
 To fix this follow the steps below:
+
 1. Navigate to **Jobs -> Jobs**.
 2. Click on the job you're attempting to execute. Click `edit`.
 3. Toggle the `enabled` field button.
@@ -32,6 +33,7 @@ Golden config relies on multiple application specific settings to function. In m
 ![global settings error](../../images/00-troubleshooting.png)
 
 To fix this follow the steps below:
+
 1. Navigate to **Golden Config -> Settings**.
 2. Click on the specific setting in use. Note: `Default Settings` is auto created upon application installation.
 3. Ensure all settings and `paths` are configured.

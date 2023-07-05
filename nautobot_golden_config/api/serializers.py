@@ -149,3 +149,15 @@ class ConfigToPushSerializer(DeviceSerializer):
 
         config_details = models.GoldenConfig.objects.get(device=obj)
         return get_config_postprocessing(config_details, request)
+
+
+class ConfigPlanSerializer(NautobotModelSerializer, TaggedObjectSerializer):
+    """Serializer for ConfigPlan object."""
+
+    url = serializers.HyperlinkedIdentityField(view_name="plugins-api:nautobot_golden_config-api:configplan-detail")
+
+    class Meta:
+        """Set Meta Data for ConfigPlan, will serialize all fields."""
+
+        model = models.ConfigPlan
+        fields = "__all__"

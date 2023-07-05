@@ -1,0 +1,62 @@
+{% extends 'generic/object_create.html' %}
+{% load form_helpers %}
+
+{% block title %}Generate Config Plans{% endblock %}
+
+{% block form %}
+  <div class="panel panel-default">
+    <div class="panel-heading"><strong>Plan Type</strong></div>
+    <div class="panel-body">
+      <div class="form-group">
+          <label class="col-md-3 control-label required" for="id_plan_type">Choose a plan type</label>
+          <div class="col-md-9">
+            <select class="form-control"
+                onchange="if (this.value) {javascript:location.href = './?plan_type=' + this.value;}">
+                <option value="">Please select a plan type</option>
+                {% for type in type_choices %}
+                <option value="{{ type.0 }}" {% if plan_type == type.0 %}selected{% endif %}>
+                    {{ type.1 }}
+                </option>
+                {% endfor %}
+            </select>
+          </div>
+      </div>
+    </div>
+    {% if plan_type %}
+      <div class="panel-heading"><strong>Plan Parameters</strong></div>
+      <div class="panel-body">
+        {% if plan_type in 'intended,missing,remediation' %}
+          {% render_field form.features %}
+        {% endif %}
+        {% if plan_type in 'manual' %}
+          {% render_field form.commands %}
+        {% endif %}
+        {% render_field form.change_control_id %}
+      </div>
+      <div class="panel-heading"><strong>Plan Filters</strong></div>
+      <div class="panel-body">
+        <span class="help-block">
+          <p>Note: Selecting no filters will generate plans for all applicable devices.</p>
+        </span>
+        {% render_field form.tenant_group %}
+        {% render_field form.tenant %}
+        {% render_field form.region %}
+        {% render_field form.site %}
+        {% render_field form.rack_group %}
+        {% render_field form.rack %}
+        {% render_field form.role %}
+        {% render_field form.manufacturer %}
+        {% render_field form.platform %}
+        {% render_field form.device_type %}
+        {% render_field form.device %}
+        {% render_field form.tag %}
+        {% render_field form.status %}
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}
+
+{% block buttons %}
+<button type="submit" name="_create" class="btn btn-primary" onclick="javascript:onclick.apply = $(this).addClass('disabled');">Generate</button>
+<a href="{{ return_url }}" class="btn btn-default">Cancel</a>
+{% endblock %}

@@ -713,7 +713,7 @@ class ConfigReplace(PrimaryModel):  # pylint: disable=too-many-ancestors
     "webhooks",
     "statuses",
 )
-class ConfigPlan(PrimaryModel):
+class ConfigPlan(PrimaryModel):  # pylint: disable=too-many-ancestors
     """ConfigPlan for Golden Configuration Plan Model definition."""
 
     plan_type = models.CharField(max_length=20, choices=ConfigPlanTypeChoice)

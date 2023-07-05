@@ -9,7 +9,7 @@ from nautobot_golden_config.models import ConfigPlan, ComplianceFeature
 
 # TODO: Make the default Status configurable
 CONFIG_PLAN_DEFAULT_STATUS = Status.objects.filter(
-    content_types=ContentType.objects.get_for_model(ConfigPlan),
+    content_types__model="configplan",
     slug="not-accepted",
 ).first()
 

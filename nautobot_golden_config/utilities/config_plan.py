@@ -1,11 +1,9 @@
 """Functions to support config plan."""
-from django.contrib.contenttypes.models import ContentType
-
 from nautobot.dcim.models import Device
 from nautobot.extras.models import Status
 from nautobot.utilities.utils import render_jinja2
 
-from nautobot_golden_config.models import ConfigPlan, ComplianceFeature
+from nautobot_golden_config.models import ComplianceFeature
 
 # TODO: Make the default Status configurable
 CONFIG_PLAN_DEFAULT_STATUS = Status.objects.filter(

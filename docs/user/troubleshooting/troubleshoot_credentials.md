@@ -15,7 +15,7 @@ These are documented in the [Nautobot Plugin Nornir](https://docs.nautobot.com/p
 This will cover some things to check for each of the credentials classes supported.
 
 - Environment Variables
-    - Make sure the `PLUGIN_CONFIG` is correct and the credentials class is not typo'd.
+    - Make sure the `PLUGIN_CONFIG` is correct and the credentials class do not have a typo.
 
     ```python
     PLUGINS_CONFIG = {
@@ -27,13 +27,14 @@ This will cover some things to check for each of the credentials classes support
     }
     ```
 
-    - Make sure the the three environment variables are defined and accessible in the worker node.
+    - Make sure the three environment variables are defined and accessible in the worker node. Please refer [here](https://docs.nautobot.com/projects/plugin-nornir/en/latest/user/app_feature_credentials/#environment-variables) for details:
         - NAPALM_USERNAME
         - NAPALM_PASSWORD
         - DEVICE_SECRET
 
 - Configuration Settings Variables
-    - Make sure the `PLUGIN_CONFIG` is correct and the credentials class is not typo'd.
+    - Make sure the `PLUGIN_CONFIG` is correct and the credentials class do not have a typo.
+    - Make sure the `username`, `password`, and `secret` is nested under `nautobot_plugin_nornir` and not under `nornir_settings`.
 
     ```python
     PLUGINS_CONFIG = {
@@ -49,13 +50,13 @@ This will cover some things to check for each of the credentials classes support
     ```
 
     !!! info
-        A common pattern is to have these username/password/secrets reference "other" environment variables using the `os.getenv()` python function. This is fine, but the environment variables **MUST** be resolvable from within the workers environment.
+        A common pattern is to have these username/password/secrets reference "other" environment variables using the `os.getenv()` python function. This pattern works well, but the environment variables **MUST** be resolvable from within the workers environment.
 
 - Nautobot Integrated Secrets Group Functionality
 
     This credentials class uses the Nautobot core functionality for [secrets/secret_groups](https://docs.nautobot.com/projects/core/en/stable/core-functionality/secrets/). There is some caveats to this feature and some troubleshooting tips are provided below.
 
-    - Make sure the `PLUGIN_CONFIG` is correct and the credentials class is not typo'd.
+    - Make sure the `PLUGIN_CONFIG` is correct and the credentials class do not have a typo.
 
     ```python
     PLUGINS_CONFIG = {

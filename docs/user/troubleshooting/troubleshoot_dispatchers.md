@@ -1,6 +1,6 @@
 # Troubleshooting Dispatchers
 
-At a high-level the default dispatchers that Golden Config uses are actually housed in another open source repository. [nornir-nautobot](https://docs.nautobot.com/projects/nornir-nautobot/en/latest/) holds the Nornir tasks that define the methods that Golden Config utilizes.
+At a high-level the default dispatchers that Golden Config uses are actually sourced from another open source library. [nornir-nautobot](https://docs.nautobot.com/projects/nornir-nautobot/en/latest/) contains the Nornir tasks that define the methods that Golden Config utilizes.
 
 This dispatcher task is explained in the [nornir-nautobot docs](https://docs.nautobot.com/projects/nornir-nautobot/en/latest/task/task/)
 

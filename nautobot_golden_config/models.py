@@ -269,7 +269,6 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
         help_text="Whether or not the configuration order matters, such as in ACLs.",
     )
 
-    # config remediation boolean is set on the `ComplianceRule`
     config_remediation = models.BooleanField(
         default=False,
         null=False,
@@ -436,10 +435,12 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
 
         # Perform remediation only if not compliant.
         if self.compliance:
+            self.remediation = None
             return
 
         # check if remediation for the rule is enabled
         if not self.rule.config_remediation:
+            self.remediation = None
             return
         
         if not FUNC_MAPPER.get(self.rule.remediation_setting.remediation_type):

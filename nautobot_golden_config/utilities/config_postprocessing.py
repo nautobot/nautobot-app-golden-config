@@ -11,12 +11,12 @@ from nautobot.dcim.models import Device
 from nautobot.extras.choices import SecretsGroupAccessTypeChoices
 from nautobot.extras.models.secrets import SecretsGroup
 from nautobot.users.models import User
+from netutils.utils import jinja2_convenience_function
 from nautobot_golden_config import models
 from nautobot_golden_config.exceptions import RenderConfigToPushError
 from nautobot_golden_config.utilities.constant import ENABLE_POSTPROCESSING, PLUGIN_CFG
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import get_device_to_settings_map
-from netutils.utils import jinja2_convenience_function
 
 
 def get_secret_by_secret_group_slug(
@@ -89,7 +89,7 @@ def render_secrets(config_postprocessing: str, configs: models.GoldenConfig, req
 
     netutils_filters = jinja2_convenience_function()
     for template_name in [
-        encrypt_templates for encrypt_templates in netutils_filters.keys() if "encrypt" in encrypt_templates
+        encrypt_templates for encrypt_templates in netutils_filters if encrypt_templates.startswith("encrypt")
     ]:
         template_filter = netutils_filters.get(template_name)
         if template_filter is not None:

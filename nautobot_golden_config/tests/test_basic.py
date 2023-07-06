@@ -1,6 +1,7 @@
 """Basic tests that do not require Django."""
 import os
 import unittest
+
 import toml
 
 
@@ -18,4 +19,4 @@ class TestDocsPackaging(unittest.TestCase):
                 pkg, version = pkg.split("==")
             else:
                 version = "*"
-            self.assertEqual(poetry_details[pkg], version)
+            self.assertEqual(poetry_details[pkg].lstrip("~"), version)

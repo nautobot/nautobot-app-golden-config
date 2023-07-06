@@ -152,9 +152,11 @@ class ConfigToPushSerializer(DeviceSerializer):
 
 
 class RemediationSettingSerializer(NautobotModelSerializer, TaggedObjectSerializer):
-    """Serializer for ConfigReplace object."""
+    """Serializer for RemediationSetting object."""
 
-    url = serializers.HyperlinkedIdentityField(view_name="plugins-api:nautobot_golden_config-api:remediationsetting-detail")
+    url = serializers.HyperlinkedIdentityField(
+        view_name="plugins-api:nautobot_golden_config-api:remediationsetting-detail"
+    )
 
     class Meta:
         """Set Meta Data for RemediationSetting, will serialize all fields."""

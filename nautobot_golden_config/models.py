@@ -21,6 +21,7 @@ from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
 from nautobot_golden_config.utilities.utils import get_platform
 
 from hier_config import Host as HierConfigHost
+
 # temporal implementation until MAPPERS operational in netutils, and netutils > 1.4.0
 try:
     from netutils.lib_mapper import HIERCONFIG_LIB_MAPPER_REVERSE
@@ -155,26 +156,21 @@ def _get_hierconfig_remediation(obj):
         raise ValidationError(f"platform {obj.device.platform.slug} is not supported by hierconfig.")
 
     try:
-        remediation_setting_obj = RemediationSetting.objects.get(
-            platform=obj.rule.platform
-        )
-    except:
+        remediation_setting_obj = RemediationSetting.objects.get(platform=obj.rule.platform)
+    except Exception as error:  # pylint: disable=broad-except:
         raise ValidationError(f"Platform {obj.device.platform.slug} has no Remediation Settings defined.")
 
     remediation_options = remediation_setting_obj.remediation_options or None
 
     try:
-        hc_kwargs = {
-            "hostname": obj.device.name,
-            "os": hierconfig_os
-        }
+        hc_kwargs = {"hostname": obj.device.name, "os": hierconfig_os}
         if remediation_options:           
             hc_kwargs.update(hconfig_options=remediation_options)   
         host = HierConfigHost(**hc_kwargs)
 
-    except:
+    except Exception as error:  # pylint: disable=broad-except:
         raise Exception(f"Cannot instantiate HierConfig on {obj.device.name}, check Device, Platform and Hier Options.")
-    
+
     host.load_generated_config(obj.intended)
     host.load_running_config(obj.actual)
     host.remediation_config()
@@ -304,18 +300,16 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
         "custom_compliance",
         "config_remediation",
     ]
-    
+
     @property
     def remediation_setting(self):
         """Returns remediation settings for a particular platform."""
         try:
-            remediation_setting = RemediationSetting.objects.get(
-                platform=self.platform
-            )
-        except:
+            remediation_setting = RemediationSetting.objects.get(platform=self.platform)
+        except Exception as error:  # pylint: disable=broad-except:
             raise ValidationError(f"Platform {self.platform.slug} has no Remediation Settings defined.")
         return remediation_setting
-  
+
     def to_csv(self):
         """Indicates model fields to return as csv."""
         return (
@@ -432,17 +426,14 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
 
     def remediation_on_save(self):
         """The actual remediation happens here, before saving the object."""
-
-        # Perform remediation only if not compliant.
         if self.compliance:
             self.remediation = None
             return
 
-        # check if remediation for the rule is enabled
         if not self.rule.config_remediation:
             self.remediation = None
             return
-        
+
         if not FUNC_MAPPER.get(self.rule.remediation_setting.remediation_type):
             raise ValidationError(
                 f"Remediation {self.rule.remediation_setting.remediation_type} has no associated function set."
@@ -452,7 +443,6 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
 
     def save(self, *args, **kwargs):
         """The actual configuration compliance happens here, but the details for actual compliance job would be found in FUNC_MAPPER."""
-
         self.compliance_on_save()
         self.remediation_on_save()
 
@@ -839,7 +829,8 @@ class RemediationSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     remediation_options = models.JSONField(
         blank=True,
         default=dict,
-        help_text="Remediation Configuration for the device")
+        help_text="Remediation Configuration for the device"
+    )
 
     csv_headers = [
         "platform",
@@ -862,6 +853,7 @@ class RemediationSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         return reverse("plugins:nautobot_golden_config:remediationsetting", args=[self.pk])
 
     def clean(self):
+        """Clean method for Remediation Setting object."""
         # TODO(mzb): decide if to force specify config_options for hierConfig - probably not, use defaults if not provided. if provided overload ALL.
         # TODO(mzb): validate `if TYPE_HIERCONFIG`, then schema-check / enforce non-empty `remediation_options`.
-        pass
+        super().clean()

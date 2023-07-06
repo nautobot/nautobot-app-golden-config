@@ -439,8 +439,6 @@ class GoldenConfigSettingTable(BaseTable):
             "jinja_repository",
         )
 
-# RemediationSetting
-
 
 class RemediationSettingTable(BaseTable):
     """Table to display RemediationSetting Rules."""

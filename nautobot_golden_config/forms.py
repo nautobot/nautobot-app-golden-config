@@ -427,7 +427,9 @@ class RemediationSettingCSVForm(extras_forms.CustomFieldModelCSVForm):
 class RemediationSettingBulkEditForm(NautobotBulkEditForm):
     """BulkEdit form for RemediationSetting instances."""
 
-    pk = forms.ModelMultipleChoiceField(queryset=models.RemediationSetting.objects.all(), widget=forms.MultipleHiddenInput)
+    pk = forms.ModelMultipleChoiceField(
+        queryset=models.RemediationSetting.objects.all(), widget=forms.MultipleHiddenInput
+    )
 
     class Meta:
         """Boilerplate form Meta data for RemediationSetting."""

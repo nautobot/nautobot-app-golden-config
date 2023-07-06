@@ -22,7 +22,7 @@ from nautobot_golden_config.utilities.utils import get_platform
 
 # temporal implementation until MAPPERS operational in netutils, and netutils > 1.4.0
 try:
-    from netutils.lib_mapper import HIERCONFIG_LIB_MAPPER_REVERSE
+    from netutils.lib_mapper import HIERCONFIG_LIB_MAPPER_REVERSE  # pylint: disable=C0412: 
 except ImportError:
     HIERCONFIG_LIB_MAPPER_REVERSE = {  # pylint: disable=C0412:
         "cisco_ios": "ios",
@@ -851,9 +851,3 @@ class RemediationSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     def get_absolute_url(self):
         """Absolute url for the RemediationRule instance."""
         return reverse("plugins:nautobot_golden_config:remediationsetting", args=[self.pk])
-
-    def clean(self):
-        """Clean method for Remediation Setting object."""
-        # TODO(mzb): decide if to force specify config_options for hierConfig - probably not, use defaults if not provided. if provided overload ALL.
-        # TODO(mzb): validate `if TYPE_HIERCONFIG`, then schema-check / enforce non-empty `remediation_options`.
-        pass

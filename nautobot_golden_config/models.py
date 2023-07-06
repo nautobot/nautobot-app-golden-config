@@ -1,10 +1,10 @@
 """Django Models for tracking the configuration compliance per feature and device."""
 
 import json
-import yaml
 import logging
 
 from deepdiff import DeepDiff
+from hier_config import Host as HierConfigHost
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -20,13 +20,11 @@ from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, Remed
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
 from nautobot_golden_config.utilities.utils import get_platform
 
-from hier_config import Host as HierConfigHost
-
 # temporal implementation until MAPPERS operational in netutils, and netutils > 1.4.0
 try:
     from netutils.lib_mapper import HIERCONFIG_LIB_MAPPER_REVERSE
 except ImportError:
-    HIERCONFIG_LIB_MAPPER_REVERSE = {
+    HIERCONFIG_LIB_MAPPER_REVERSE = {  # pylint: disable=C0412:
         "cisco_ios": "ios",
         "cisco_xe": "iosxe",
         "cisco_xr": "iosxr",
@@ -157,8 +155,8 @@ def _get_hierconfig_remediation(obj):
 
     try:
         remediation_setting_obj = RemediationSetting.objects.get(platform=obj.rule.platform)
-    except Exception:  # pylint: disable=broad-except:
-        raise ValidationError(f"Platform {obj.device.platform.slug} has no Remediation Settings defined.")
+    except Exception as err:  # pylint: disable=broad-except:
+        raise ValidationError(f"Platform {obj.device.platform.slug} has no Remediation Settings defined.") from err
 
     remediation_options = remediation_setting_obj.remediation_options or None
 
@@ -168,8 +166,8 @@ def _get_hierconfig_remediation(obj):
             hc_kwargs.update(hconfig_options=remediation_options)
         host = HierConfigHost(**hc_kwargs)
 
-    except Exception:  # pylint: disable=broad-except:
-        raise Exception(f"Cannot instantiate HierConfig on {obj.device.name}, check Device, Platform and Hier Options.")
+    except Exception as err:  # pylint: disable=broad-except:
+        raise Exception(f"Cannot instantiate HierConfig on {obj.device.name}, check Device, Platform and Hier Options.") from err
 
     host.load_generated_config(obj.intended)
     host.load_running_config(obj.actual)
@@ -306,8 +304,8 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
         """Returns remediation settings for a particular platform."""
         try:
             remediation_setting = RemediationSetting.objects.get(platform=self.platform)
-        except Exception:  # pylint: disable=broad-except:
-            raise ValidationError(f"Platform {self.platform.slug} has no Remediation Settings defined.")
+        except Exception as err:  # pylint: disable=broad-except:
+            raise ValidationError(f"Platform {self.platform.slug} has no Remediation Settings defined.") from err
         return remediation_setting
 
     def to_csv(self):
@@ -856,4 +854,4 @@ class RemediationSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         """Clean method for Remediation Setting object."""
         # TODO(mzb): decide if to force specify config_options for hierConfig - probably not, use defaults if not provided. if provided overload ALL.
         # TODO(mzb): validate `if TYPE_HIERCONFIG`, then schema-check / enforce non-empty `remediation_options`.
-        super().clean()
+        pass

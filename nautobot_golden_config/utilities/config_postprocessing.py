@@ -1,25 +1,22 @@
 """Functions related to prepare configuration with postprocessing."""
 from functools import partial
 from typing import Optional
-from jinja2.sandbox import SandboxedEnvironment
-from jinja2 import exceptions as jinja_errors
 
-from django.http import HttpRequest
 from django.core.exceptions import ObjectDoesNotExist
+from django.http import HttpRequest
 from django.utils.module_loading import import_string
-
+from jinja2 import exceptions as jinja_errors
+from jinja2.sandbox import SandboxedEnvironment
 from nautobot.dcim.models import Device
-from nautobot.users.models import User
-from nautobot.extras.models.secrets import SecretsGroup
 from nautobot.extras.choices import SecretsGroupAccessTypeChoices
-
-from netutils.utils import jinja2_convenience_function
-
+from nautobot.extras.models.secrets import SecretsGroup
+from nautobot.users.models import User
 from nautobot_golden_config import models
-from nautobot_golden_config.utilities.constant import PLUGIN_CFG, ENABLE_POSTPROCESSING
-from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.exceptions import RenderConfigToPushError
+from nautobot_golden_config.utilities.constant import ENABLE_POSTPROCESSING, PLUGIN_CFG
+from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import get_device_to_settings_map
+from netutils.utils import jinja2_convenience_function
 
 
 def get_secret_by_secret_group_slug(
@@ -91,7 +88,9 @@ def render_secrets(config_postprocessing: str, configs: models.GoldenConfig, req
     jinja_env.filters["get_secret_by_secret_group_slug"] = partial(get_secret_by_secret_group_slug, request.user)
 
     netutils_filters = jinja2_convenience_function()
-    for template_name in ["encrypt_type5", "encrypt_type7"]:
+    for template_name in [
+        encrypt_templates for encrypt_templates in netutils_filters.keys() if "encrypt" in encrypt_templates
+    ]:
         template_filter = netutils_filters.get(template_name)
         if template_filter is not None:
             jinja_env.filters[template_name] = template_filter

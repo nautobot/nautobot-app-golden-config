@@ -19,4 +19,4 @@ class TestDocsPackaging(unittest.TestCase):
                 pkg, version = pkg.split("==")
             else:
                 version = "*"
-            self.assertEqual(poetry_details[pkg].lstrip("~"), version)
+            self.assertEqual(poetry_details[pkg], version)

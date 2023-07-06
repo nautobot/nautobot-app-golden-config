@@ -167,7 +167,9 @@ def _get_hierconfig_remediation(obj):
         host = HierConfigHost(**hc_kwargs)
 
     except Exception as err:  # pylint: disable=broad-except:
-        raise Exception(f"Cannot instantiate HierConfig on {obj.device.name}, check Device, Platform and Hier Options.") from err
+        raise Exception(
+            f"Cannot instantiate HierConfig on {obj.device.name}, check Device, Platform and Hier Options."
+        ) from err
 
     host.load_generated_config(obj.intended)
     host.load_running_config(obj.actual)

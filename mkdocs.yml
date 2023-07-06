@@ -106,6 +106,10 @@ nav:
       - Getting Started: "user/app_getting_started.md"
       - Frequently Asked Questions: "user/app_faq.md"
       - External Interactions: "user/app_external_interactions.md"
+      - Troubleshooting:
+          - General: "user/troubleshooting/troubleshoot_general.md"
+          - Credentials: "user/troubleshooting/troubleshoot_credentials.md"
+          - Dispatchers: "user/troubleshooting/troubleshoot_dispatchers.md"
   - Administrator Guide:
       - Install and Configure: "admin/admin_install.md"
       - Upgrade: "admin/admin_upgrade.md"

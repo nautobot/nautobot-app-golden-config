@@ -46,9 +46,17 @@ The `backup_path_template` can be set in the UI.  For navigation details [see](.
 
 ### Device Login Credentials
 
-The credentials/secrets management is further described within the [nautbot-plugin-nornir](https://github.com/nautobot/nautobot-plugin-nornir)
-repository. For the simplest use case you can set environment variables for `NAPALM_USERNAME`, `NAPALM_PASSWORD`, and `DEVICE_SECRET`. For more
-complicated use cases, please refer to the plugin documentation linked above.
+The credentials/secrets management occurs within the [nautobot-plugin-nornir](https://github.com/nautobot/nautobot-plugin-nornir) library and is described in the [Navigating Credentials](https://docs.nautobot.com/projects/plugin-nornir/en/latest/user/app_feature_credentials/) documentation. For the simplest use case you can set environment variables for `NAPALM_USERNAME`, `NAPALM_PASSWORD`, and `DEVICE_SECRET` in conjunction with the `credentials` string shown below in your configuration for `nautobot-plugin-nornir`.
+
+```python
+PLUGINS_CONFIG = {
+    "nautobot_plugin_nornir": {
+        "nornir_settings": {
+           "credentials": "nautobot_plugin_nornir.plugins.credentials.env_vars.CredentialsEnvVars"
+        },
+    }
+}
+```
 
 ## Starting a Backup Job
 

@@ -39,7 +39,7 @@ Each Job attempts to provide sane error handling, and respects the `debug` flag 
 The golden configuration plugin settings can be found by navigating to `Golden Config -> Settings` button. Select one of the Settings, under the `Golden Configuration` section.
 Since Golden Configuration Plugin version 1.0, the plugin allows for multiple settings to be configured by the User.
 Each of the settings, has the individual repositories and configuration details, as well as a Dynamic Group.
-You could use a combination of settings to customize Your Configuration Compliance behavior.
+You could use a combination of settings to customize your Configuration Compliance behavior.
 Settings have a name and a weight. The weight parameter indicates the priority of given Settings - the higher the weight, the device matching the Dynamic Group defined will be assigned to the scope.
 At the same moment, each device will be matched up to maximum of only one `Settings.` In case of the same weight, the sorting is performed by the name.
 
@@ -68,7 +68,7 @@ To update existing settings click on one of the `Settings` name.
 !!! note
     Starting in Golden Config v1.2 and onwards the original implementation of scope has been deprecated in favor of Dynamic Groups from Nautobot. During the migrations any Golden Config Setting scope attribute will be migrated to Dynamic Groups. All settings require a Dynamic Group, if the original scope is not set to allow ALL Devices a Dynamic Group will be created without a filter applied which will is the equivalent of all Devices.
 
-The [Dynamic Group](https://nautobot.readthedocs.io/en/stable/additional-features/dynamic-groups/) provides a filter that will limit the list of devices in scope of a Golden Config Setting. In the Golden Config Home view the Dynamic Group is used to limit the Devices that are displayed, if a Device does not match the filter of a Dynamic Group it is considered out of scope for GoldenConfig and will not show on the Golden Config Settings view. All jobs in Golden Config also use the Dynamic Group to know which Devices are in scope. A job can optionally further refine the scope, but the outer bound would be based on what is defined in the Dynamic Group. The options are best described by leveraging the Devices list view, search features (the filtering shown on the side of the Devices.) Building a query there, will provide the exact keys expected.
+The [Dynamic Group](https://docs.nautobot.com/projects/core/en/stable/models/extras/dynamicgroup/) provides a filter that will limit the list of devices in scope of a Golden Config Setting. In the Golden Config Home view the Dynamic Group is used to limit the Devices that are displayed, if a Device does not match the filter of a Dynamic Group it is considered out of scope for GoldenConfig and will not show on the Golden Config Settings view. All jobs in Golden Config also use the Dynamic Group to know which Devices are in scope. A job can optionally further refine the scope, but the outer bound would be based on what is defined in the Dynamic Group. The options are best described by leveraging the Devices list view, search features (the filtering shown on the side of the Devices.) Building a query there, will provide the exact keys expected.
 
 ##### Scope Of Devices
 
@@ -171,7 +171,7 @@ The plugin makes use of template content `right_page` in order to use display in
 
 ### API
 
-To run the job programmactially, reference the [nautobot documentation](https://nautobot.readthedocs.io/en/stable/additional-features/jobs/#via-the-api) for the proper API call. Pay special attention to the `class_path` definition.
+To run the job programmatically, reference the [nautobot documentation](https://docs.nautobot.com/projects/core/en/stable/additional-features/jobs/#via-the-api) for the proper API call. Pay special attention to the `class_path` definition.
 
 ### Feature Enablement
 

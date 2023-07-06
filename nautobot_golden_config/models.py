@@ -22,7 +22,7 @@ from nautobot_golden_config.utilities.utils import get_platform
 
 # temporal implementation until MAPPERS operational in netutils, and netutils > 1.4.0
 try:
-    from netutils.lib_mapper import HIERCONFIG_LIB_MAPPER_REVERSE  # pylint: disable=C0412: 
+    from netutils.lib_mapper import HIERCONFIG_LIB_MAPPER_REVERSE  # pylint: disable=C0412:
 except ImportError:
     HIERCONFIG_LIB_MAPPER_REVERSE = {  # pylint: disable=C0412:
         "cisco_ios": "ios",

@@ -21,7 +21,7 @@ from nautobot_golden_config.utilities.constant import (
     ENABLE_CONFIG_CONTEXT_SYNC,
 )
 from nautobot_golden_config.utilities.config_plan import (
-    CONFIG_PLAN_DEFAULT_STATUS,
+    config_plan_default_status,
     generate_config_set_from_compliance_feature,
     generate_config_set_from_manual,
 )
@@ -334,7 +334,7 @@ class GenerateConfigPlans(Job, FormEntry):
         self._change_control_id = None
         self._commands = None
         self._device_qs = Device.objects.none()
-        self._status = CONFIG_PLAN_DEFAULT_STATUS
+        self._status = config_plan_default_status()
 
     def _validate_inputs(self, data):
         self._plan_type = data["plan_type"]

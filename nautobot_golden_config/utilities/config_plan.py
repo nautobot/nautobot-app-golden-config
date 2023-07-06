@@ -5,11 +5,14 @@ from nautobot.utilities.utils import render_jinja2
 
 from nautobot_golden_config.models import ComplianceFeature
 
+
 # TODO: Make the default Status configurable
-CONFIG_PLAN_DEFAULT_STATUS = Status.objects.filter(
-    content_types__model="configplan",
-    slug="not-accepted",
-).first()
+def config_plan_default_status():
+    """Return the default status for config plan."""
+    return Status.objects.filter(
+        content_types__model="configplan",
+        slug="not-accepted",
+    ).first()
 
 
 def generate_config_set_from_compliance_feature(device: Device, plan_type: str, feature: ComplianceFeature):

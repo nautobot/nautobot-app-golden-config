@@ -157,18 +157,18 @@ def _get_hierconfig_remediation(obj):
 
     try:
         remediation_setting_obj = RemediationSetting.objects.get(platform=obj.rule.platform)
-    except Exception as error:  # pylint: disable=broad-except:
+    except Exception:  # pylint: disable=broad-except:
         raise ValidationError(f"Platform {obj.device.platform.slug} has no Remediation Settings defined.")
 
     remediation_options = remediation_setting_obj.remediation_options or None
 
     try:
         hc_kwargs = {"hostname": obj.device.name, "os": hierconfig_os}
-        if remediation_options:           
-            hc_kwargs.update(hconfig_options=remediation_options)   
+        if remediation_options:
+            hc_kwargs.update(hconfig_options=remediation_options)
         host = HierConfigHost(**hc_kwargs)
 
-    except Exception as error:  # pylint: disable=broad-except:
+    except Exception:  # pylint: disable=broad-except:
         raise Exception(f"Cannot instantiate HierConfig on {obj.device.name}, check Device, Platform and Hier Options.")
 
     host.load_generated_config(obj.intended)
@@ -306,7 +306,7 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
         """Returns remediation settings for a particular platform."""
         try:
             remediation_setting = RemediationSetting.objects.get(platform=self.platform)
-        except Exception as error:  # pylint: disable=broad-except:
+        except Exception:  # pylint: disable=broad-except:
             raise ValidationError(f"Platform {self.platform.slug} has no Remediation Settings defined.")
         return remediation_setting
 
@@ -437,7 +437,7 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
         if not FUNC_MAPPER.get(self.rule.remediation_setting.remediation_type):
             raise ValidationError(
                 f"Remediation {self.rule.remediation_setting.remediation_type} has no associated function set."
-            ) 
+            )
         remediation_config = FUNC_MAPPER[self.rule.remediation_setting.remediation_type](obj=self)
         self.remediation = remediation_config
 
@@ -825,11 +825,11 @@ class RemediationSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         help_text="Whether the remediation setting is type HC or custom.",
     )
 
-    # takes options.yaml.
+    # takes options.json.
     remediation_options = models.JSONField(
         blank=True,
         default=dict,
-        help_text="Remediation Configuration for the device"
+        help_text="Remediation Configuration for the device",
     )
 
     csv_headers = [

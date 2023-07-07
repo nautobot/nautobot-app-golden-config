@@ -165,6 +165,8 @@ jobs:
         if: "matrix.db-backend == 'mysql'"
       - name: "DRF Make migrations" # TO be removed
         run: "poetry run invoke makemigrations"
+      - name: "DRF migrate" # TO be removed
+        run: "poetry run invoke migrate"
       - name: "Run Tests"
         run: "poetry run invoke unittest"
   publish_gh:

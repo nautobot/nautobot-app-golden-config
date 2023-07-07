@@ -2,8 +2,11 @@
 # pylint: disable=too-many-ancestors
 from rest_framework import serializers
 
+from nautobot.apps.api import WritableNestedSerializer
+from nautobot.core.api import SerializedPKRelatedField
 from nautobot.extras.api.serializers import TaggedObjectSerializer
 from nautobot.extras.api.nested_serializers import NestedDynamicGroupSerializer
+from nautobot.dcim.api.nested_serializers import NestedDeviceSerializer
 from nautobot.dcim.api.serializers import DeviceSerializer
 from nautobot.dcim.models import Device
 from nautobot.extras.api.serializers import NautobotModelSerializer
@@ -155,9 +158,22 @@ class ConfigPlanSerializer(NautobotModelSerializer, TaggedObjectSerializer):
     """Serializer for ConfigPlan object."""
 
     url = serializers.HyperlinkedIdentityField(view_name="plugins-api:nautobot_golden_config-api:configplan-detail")
+    device = SerializedPKRelatedField(queryset=Device.objects.all(), serializer=NestedDeviceSerializer, required=False)
 
     class Meta:
         """Set Meta Data for ConfigPlan, will serialize all fields."""
 
         model = models.ConfigPlan
         fields = "__all__"
+
+
+class NestedConfigPlanSerializer(WritableNestedSerializer):
+    """Nested serializer for ConfigPlan object."""
+
+    url = serializers.HyperlinkedIdentityField(view_name="plugins-api:nautobot_golden_config-api:configplan-detail")
+
+    class Meta:
+        """Set Meta Data for ConfigPlan, will serialize all fields."""
+
+        model = models.ConfigPlan
+        fields = ["id", "url", "device", "plan_type"]

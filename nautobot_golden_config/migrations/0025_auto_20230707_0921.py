@@ -21,11 +21,6 @@ class Migration(migrations.Migration):
             name="config_remediation",
             field=models.BooleanField(default=False),
         ),
-        migrations.AddField(
-            model_name="configcompliance",
-            name="remediation",
-            field=models.JSONField(blank=True, null=True),
-        ),
         migrations.CreateModel(
             name="RemediationSetting",
             fields=[

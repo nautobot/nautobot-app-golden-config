@@ -7,7 +7,7 @@ from nautobot_golden_config.models import ConfigCompliance
 def jsonify(apps, schedma_editor):
     """Converts textfield to json in preparation for migration."""
     queryset = ConfigCompliance.objects.all()
-    attrs = ["actual", "extra", "intended", "missing"]
+    attrs = ["actual", "extra", "intended", "missing", "remediation"]
     for i in queryset:
         for attr in attrs:
             value = getattr(i, attr)
@@ -22,7 +22,11 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(code=jsonify),
+        migrations.AddField(
+            model_name="configcompliance",
+            name="remediation",
+            field=models.JSONField(blank=True, null=True),
+        ),
         migrations.AlterField(
             model_name="compliancerule",
             name="match_config",
@@ -48,4 +52,5 @@ class Migration(migrations.Migration):
             name="missing",
             field=models.JSONField(blank=True),
         ),
+        migrations.RunPython(code=jsonify),
     ]

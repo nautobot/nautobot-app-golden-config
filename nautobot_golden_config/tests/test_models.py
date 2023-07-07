@@ -5,8 +5,8 @@ from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
 from django.test import TestCase
 from nautobot.dcim.models import Platform
-from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery
-from nautobot_golden_config.models import ConfigCompliance, ConfigRemove, ConfigReplace, GoldenConfigSetting
+from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status
+from nautobot_golden_config.models import ConfigCompliance, ConfigRemove, ConfigReplace, GoldenConfigSetting, ConfigPlan
 from nautobot_golden_config.tests.conftest import create_git_repos
 
 from .conftest import create_config_compliance, create_device, create_feature_rule_json, create_saved_queries
@@ -275,3 +275,76 @@ class ConfigReplaceModelTestCase(TestCase):
         self.assertEqual(self.line_replace.description, new_desc)
         self.assertEqual(self.line_replace.regex, new_regex)
         self.assertEqual(self.line_replace.replace, "<redacted>")
+
+
+class ConfigPlanModelTestCase(TestCase):
+    """Test ConfigPlan Model."""
+
+    def setUp(self):
+        """Setup Object."""
+        self.device = create_device()
+        self.rule = create_feature_rule_json(self.device)
+        self.feature = self.rule.feature
+        self.status = Status.objects.get(slug="not-accepted")
+
+    def test_create_config_plan_intended(self):
+        """Test Create Object."""
+        config_plan = ConfigPlan.objects.create(
+            device=self.device,
+            plan_type="intended",
+            feature=self.feature,
+            config_set="test intended config",
+            change_control_id="1234",
+            status=self.status,
+        )
+        self.assertEqual(config_plan.device, self.device)
+        self.assertEqual(config_plan.feature, self.feature)
+        self.assertEqual(config_plan.config_set, "test intended config")
+        self.assertEqual(config_plan.change_control_id, "1234")
+        self.assertEqual(config_plan.status, self.status)
+        self.assertEqual(config_plan.plan_type, "intended")
+
+    def test_create_config_plan_missing(self):
+        """Test Create Object."""
+        config_plan = ConfigPlan.objects.create(
+            device=self.device,
+            plan_type="missing",
+            feature=self.feature,
+            config_set="test missing config",
+            change_control_id="2345",
+            status=self.status,
+        )
+        self.assertEqual(config_plan.device, self.device)
+        self.assertEqual(config_plan.feature, self.feature)
+        self.assertEqual(config_plan.config_set, "test missing config")
+        self.assertEqual(config_plan.change_control_id, "2345")
+        self.assertEqual(config_plan.status, self.status)
+        self.assertEqual(config_plan.plan_type, "missing")
+
+    def test_create_config_plan_remediation(self):
+        """Test Create Object."""
+        config_plan = ConfigPlan.objects.create(
+            device=self.device,
+            plan_type="remediation",
+            feature=self.feature,
+            config_set="test remediation config",
+            change_control_id="3456",
+            status=self.status,
+        )
+        self.assertEqual(config_plan.device, self.device)
+        self.assertEqual(config_plan.feature, self.feature)
+        self.assertEqual(config_plan.config_set, "test remediation config")
+        self.assertEqual(config_plan.change_control_id, "3456")
+        self.assertEqual(config_plan.status, self.status)
+        self.assertEqual(config_plan.plan_type, "remediation")
+
+    def test_create_config_plan_manual(self):
+        """Test Create Object."""
+        config_plan = ConfigPlan.objects.create(
+            device=self.device,
+            plan_type="manual",
+            config_set="test manual config",
+        )
+        self.assertEqual(config_plan.device, self.device)
+        self.assertEqual(config_plan.config_set, "test manual config")
+        self.assertEqual(config_plan.plan_type, "manual")

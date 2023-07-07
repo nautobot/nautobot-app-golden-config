@@ -483,9 +483,9 @@ class ConfigPlanCreateCommandsForm(ConfigPlanCreateForm):
     commands = forms.CharField(
         widget=forms.Textarea,
         help_text=(
-            "Enter your manual commands here.<br>"
+            "Enter your configuration template here representing CLI configuration.<br>"
             'You may use Jinja2 templating. Example: <code>{% if "foo" in bar %}foo{% endif %}</code><br>'
-            "You can also reference the device object with <code>obj</code>. Example: <code>{{ obj.name }}</code>"
+            "You can also reference the device object with <code>obj</code>. Example: <code>hostname {{ obj.name }}</code> or <code>ip address {{ obj.primary_ip4.host }}</code>"
         ),
         required=True,
     )

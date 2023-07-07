@@ -184,6 +184,19 @@ def create_feature_rule_json(device, feature="foo", rule="json"):
     return rule
 
 
+def create_feature_rule_cli(device, feature="foo_cli"):
+    """Creates a Feature/Rule Mapping and Returns the rule."""
+    feature_obj, _ = ComplianceFeature.objects.get_or_create(slug=feature, name=feature)
+    rule, _ = ComplianceRule.objects.get_or_create(
+        feature=feature_obj,
+        platform=device.platform,
+        config_type=ComplianceRuleTypeChoice.TYPE_CLI,
+        config_ordered=False,
+    )
+    rule.save()
+    return rule
+
+
 def create_config_compliance(device, compliance_rule=None, actual=None, intended=None):
     """Creates a ConfigCompliance to be used with tests."""
     config_compliance = ConfigCompliance.objects.create(

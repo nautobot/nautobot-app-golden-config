@@ -1,10 +1,12 @@
 """Unit tests for nautobot_golden_config views."""
 
 import datetime
-from unittest import mock
+from unittest import mock, skipIf
+from packaging import version
 
 from lxml import html
 
+from django.conf import settings
 from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth import get_user_model
@@ -354,3 +356,8 @@ class ConfigPlanTestCase(
             "change_control_id": "Test Change Control ID 4",
             "status": status.pk,
         }
+
+    @skipIf(version.parse(settings.VERSION) <= version.parse("1.5.5"), "Bug in 1.5.4 and below")
+    def test_list_objects_with_permission(self):
+        """Overriding test for versions < 1.5.5."""
+        super().test_list_objects_with_permission()

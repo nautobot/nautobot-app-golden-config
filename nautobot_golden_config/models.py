@@ -306,7 +306,7 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
         """Returns remediation settings for a particular platform."""
         try:
             remediation_setting = RemediationSetting.objects.get(platform=self.platform)
-        except Exception as err:  # pylint: disable=broad-except:
+        except RemediationSetting.DoesNotExist as err:
             raise ValidationError(f"Platform {self.platform.slug} has no Remediation Settings defined.") from err
         return remediation_setting
 

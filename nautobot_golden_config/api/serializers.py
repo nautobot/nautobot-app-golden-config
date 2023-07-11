@@ -177,7 +177,7 @@ class NestedConfigPlanSerializer(WritableNestedSerializer):
     url = serializers.HyperlinkedIdentityField(view_name="plugins-api:nautobot_golden_config-api:configplan-detail")
 
     class Meta:
-        """Set Meta Data for ConfigPlan, will serialize all fields."""
+        """Set Meta Data for ConfigPlan, will serialize brief fields."""
 
         model = models.ConfigPlan
         fields = ["id", "url", "device", "plan_type"]

@@ -314,7 +314,7 @@ class GenerateConfigPlans(Job, FormEntry):
 
     # Config Plan generation fields
     plan_type = ChoiceVar(choices=ConfigPlanTypeChoice.CHOICES)
-    features = MultiObjectVar(model=ComplianceFeature, required=False)
+    feature = MultiObjectVar(model=ComplianceFeature, required=False)
     change_control_id = StringVar(required=False)
     commands = TextVar(required=False)
 
@@ -330,7 +330,7 @@ class GenerateConfigPlans(Job, FormEntry):
         """Initialize the job."""
         super().__init__(*args, **kwargs)
         self._plan_type = None
-        self._features = None
+        self._feature = None
         self._change_control_id = None
         self._commands = None
         self._device_qs = Device.objects.none()
@@ -338,21 +338,21 @@ class GenerateConfigPlans(Job, FormEntry):
 
     def _validate_inputs(self, data):
         self._plan_type = data["plan_type"]
-        self._features = data.get("features", [])
+        self._feature = data.get("feature", [])
         self._change_control_id = data.get("change_control_id", "")
         self._commands = data.get("commands", "")
         if self._plan_type in ["intended", "missing", "remediation"]:
-            if not self._features:
-                self._features = ComplianceFeature.objects.all()
+            if not self._feature:
+                self._feature = ComplianceFeature.objects.all()
         if self._plan_type in ["manual"]:
             if not self._commands:
                 self.log_failure("No commands entered for config plan generation.")
                 return False
         return True
 
-    def _generate_config_plan_from_features(self):
+    def _generate_config_plan_from_feature(self):
         """Generate config plans from features."""
-        for feature in self._features:
+        for feature in self._feature:
             for device in self._device_qs:
                 config_set = generate_config_set_from_compliance_feature(device, self._plan_type, feature)
                 if not config_set:
@@ -400,10 +400,16 @@ class GenerateConfigPlans(Job, FormEntry):
             return
         if self._plan_type in ["intended", "missing", "remediation"]:
             self.log_debug("Starting config plan generation for compliance features.")
-            self._generate_config_plan_from_features()
+            self._generate_config_plan_from_feature()
         elif self._plan_type in ["manual"]:
             self.log_debug("Starting config plan generation for manual commands.")
             self._generate_config_plan_from_manual()
+        elif self._plan_type in ["full"]:
+            self.log_failure("Full config plan generation is not yet supported.")
+            return
+        else:
+            self.log_failure(f"Unknown config plan type {self._plan_type}.")
+            return
 
 
 # Conditionally allow jobs based on whether or not turned on.

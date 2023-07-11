@@ -469,7 +469,7 @@ class ConfigPlanCreateForm(BootstrapMixin, forms.Form):
 class ConfigPlanCreateFeatureForm(ConfigPlanCreateForm):
     """Create Form for ConfigPlan with features instances."""
 
-    features = utilities_forms.DynamicModelMultipleChoiceField(
+    feature = utilities_forms.DynamicModelMultipleChoiceField(
         queryset=models.ComplianceFeature.objects.all(),
         display_field="name",
         required=False,

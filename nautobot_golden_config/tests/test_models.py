@@ -285,7 +285,7 @@ class ConfigPlanModelTestCase(TestCase):
         self.device = create_device()
         self.rule = create_feature_rule_json(self.device)
         self.feature = self.rule.feature
-        self.status = Status.objects.get(slug="not-accepted")
+        self.status = Status.objects.get(slug="not-approved")
 
     def test_create_config_plan_intended(self):
         """Test Create Object."""

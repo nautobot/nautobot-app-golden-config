@@ -12,18 +12,18 @@ def post_migrate_create_statuses(sender, apps=global_apps, **kwargs):  # pylint:
     ContentType = apps.get_model("contenttypes", "ContentType")  # pylint: disable=invalid-name
     for status_config in [
         {
-            "name": "Accepted",
-            "slug": "accepted",
+            "name": "Approved",
+            "slug": "approved",
             "defaults": {
-                "description": "Config plan is accepted",
+                "description": "Config plan is approved",
                 "color": "4caf50",  # Green
             },
         },
         {
-            "name": "Not Accepted",
-            "slug": "not-accepted",
+            "name": "Not Approved",
+            "slug": "not-approved",
             "defaults": {
-                "description": "Config plan is not accepted",
+                "description": "Config plan is not approved",
                 "color": "f44336",  # Red
             },
         },

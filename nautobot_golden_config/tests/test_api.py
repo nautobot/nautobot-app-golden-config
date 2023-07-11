@@ -301,8 +301,8 @@ class ConfigPlanTest(APIViewTestCases.APIViewTestCase):
 
         features = [rule1.feature, rule2.feature, rule3.feature]
         plan_types = ["intended", "missing", "remediation"]
-        not_accepted_status = Status.objects.get(slug="not-accepted")
-        accepted_status = Status.objects.get(slug="accepted")
+        not_approved_status = Status.objects.get(slug="not-approved")
+        approved_status = Status.objects.get(slug="approved")
 
         for cont in range(1, 4):
             ConfigPlan.objects.create(
@@ -311,17 +311,17 @@ class ConfigPlanTest(APIViewTestCases.APIViewTestCase):
                 feature=features[cont - 1],
                 config_set=f"Test Config Set {cont}",
                 change_control_id=f"Test Change Control ID {cont}",
-                status=not_accepted_status,
+                status=not_approved_status,
             )
 
         cls.update_data = {
             "change_control_id": "Test Change Control ID 4",
-            "status": accepted_status.slug,
+            "status": approved_status.slug,
         }
 
         cls.bulk_update_data = {
             "change_control_id": "Test Change Control ID 5",
-            "status": accepted_status.slug,
+            "status": approved_status.slug,
         }
 
     def test_create_object(self):

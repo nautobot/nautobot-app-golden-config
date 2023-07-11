@@ -11,7 +11,7 @@ def config_plan_default_status():
     """Return the default status for config plan."""
     return Status.objects.filter(
         content_types__model="configplan",
-        slug="not-accepted",
+        slug="not-approved",
     ).first()
 
 

@@ -320,8 +320,8 @@ class ConfigPlanModelTestCase(FilterTestCases.FilterTestCase):
         self.feature1 = self.rule1.feature
         self.rule2 = create_feature_rule_cli(self.device2, feature="Feature 2")
         self.feature2 = self.rule2.feature
-        self.status1 = Status.objects.get(name="Not Accepted")
-        self.status2 = Status.objects.get(name="Accepted")
+        self.status1 = Status.objects.get(name="Not Approved")
+        self.status2 = Status.objects.get(name="Approved")
         self.tag1, _ = Tag.objects.get_or_create(name="Tag 1")
         self.tag2, _ = Tag.objects.get_or_create(name="Tag 2")
         self.config_plan1 = models.ConfigPlan.objects.create(

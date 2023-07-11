@@ -322,7 +322,7 @@ class ConfigPlanTestCase(
         rule2 = create_feature_rule_json(device2, feature="Test Feature 2")
         rule3 = create_feature_rule_json(device3, feature="Test Feature 3")
 
-        status = Status.objects.get(slug="not-accepted")
+        status = Status.objects.get(slug="not-approved")
 
         models.ConfigPlan.objects.create(
             device=device1,

@@ -746,7 +746,7 @@ class ConfigPlan(PrimaryModel):  # pylint: disable=too-many-ancestors
 
     def __str__(self):
         """Return a simple string if model is called."""
-        return f"{self.device.name}-{self.created}"
+        return f"{self.device.name}-{self.plan_type}-{self.created}"
 
     def get_absolute_url(self):
         """Return absolute URL for instance."""

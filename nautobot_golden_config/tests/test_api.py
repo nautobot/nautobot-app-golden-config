@@ -285,7 +285,8 @@ class ConfigPlanTest(APIViewTestCases.APIViewTestCase):
 
     model = ConfigPlan
     brief_fields = ["device", "display", "id", "plan_type", "url"]
-    choices_fields = ["plan_type"]
+    # The Status serializer field requires slug, but the model field returns the UUID.
+    validation_excluded_fields = ["status"]
 
     @classmethod
     def setUpTestData(cls):
@@ -293,16 +294,15 @@ class ConfigPlanTest(APIViewTestCases.APIViewTestCase):
         device1 = Device.objects.get(name="Device 1")
         device2 = Device.objects.get(name="Device 2")
         device3 = Device.objects.get(name="Device 3")
-        device4 = Device.objects.get(name="Device 4")
 
         rule1 = create_feature_rule_json(device1, feature="Test Feature 1")
         rule2 = create_feature_rule_json(device2, feature="Test Feature 2")
         rule3 = create_feature_rule_json(device3, feature="Test Feature 3")
-        rule4 = create_feature_rule_json(device4, feature="Test Feature 4")
 
         features = [rule1.feature, rule2.feature, rule3.feature]
         plan_types = ["intended", "missing", "remediation"]
-        config_plan_status = Status.objects.get(slug="not-accepted")
+        not_accepted_status = Status.objects.get(slug="not-accepted")
+        accepted_status = Status.objects.get(slug="accepted")
 
         for cont in range(1, 4):
             ConfigPlan.objects.create(
@@ -311,23 +311,24 @@ class ConfigPlanTest(APIViewTestCases.APIViewTestCase):
                 feature=features[cont - 1],
                 config_set=f"Test Config Set {cont}",
                 change_control_id=f"Test Change Control ID {cont}",
-                status=config_plan_status,
+                status=not_accepted_status,
             )
 
-        cls.create_data = [
-            {
-                "device": device4.id,
-                "plan_type": "intended",
-                "feature": rule4.feature.id,
-                "config_set": "Test Config Set 4",
-                "change_control_id": "Test Change Control ID 4",
-                "status": config_plan_status.id,
-            },
-            {
-                "device": device4.id,
-                "plan_type": "manual",
-                "config_set": "Test Config Set 5",
-                "change_control_id": "Test Change Control ID 5",
-                "status": config_plan_status.id,
-            },
-        ]
+        cls.update_data = {
+            "change_control_id": "Test Change Control ID 4",
+            "status": accepted_status.slug,
+        }
+
+        cls.bulk_update_data = {
+            "change_control_id": "Test Change Control ID 5",
+            "status": accepted_status.slug,
+        }
+
+    def test_create_object(self):
+        """Skipping test due to POST method not allowed."""
+
+    def test_create_object_without_permission(self):
+        """Skipping test due to POST method not allowed."""
+
+    def test_bulk_create_objects(self):
+        """Skipping test due to POST method not allowed."""

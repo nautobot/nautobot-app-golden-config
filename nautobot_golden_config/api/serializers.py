@@ -4,12 +4,14 @@ from rest_framework import serializers
 
 from nautobot.apps.api import WritableNestedSerializer
 from nautobot.core.api import SerializedPKRelatedField
+from nautobot.extras.api.fields import StatusSerializerField
 from nautobot.extras.api.serializers import TaggedObjectSerializer
 from nautobot.extras.api.nested_serializers import NestedDynamicGroupSerializer
+from nautobot.extras.models import Status
 from nautobot.dcim.api.nested_serializers import NestedDeviceSerializer
 from nautobot.dcim.api.serializers import DeviceSerializer
 from nautobot.dcim.models import Device
-from nautobot.extras.api.serializers import NautobotModelSerializer
+from nautobot.extras.api.serializers import NautobotModelSerializer, StatusModelSerializerMixin
 
 
 from nautobot_golden_config import models
@@ -154,17 +156,19 @@ class ConfigToPushSerializer(DeviceSerializer):
         return get_config_postprocessing(config_details, request)
 
 
-class ConfigPlanSerializer(NautobotModelSerializer, TaggedObjectSerializer):
+class ConfigPlanSerializer(NautobotModelSerializer, TaggedObjectSerializer, StatusModelSerializerMixin):
     """Serializer for ConfigPlan object."""
 
     url = serializers.HyperlinkedIdentityField(view_name="plugins-api:nautobot_golden_config-api:configplan-detail")
     device = SerializedPKRelatedField(queryset=Device.objects.all(), serializer=NestedDeviceSerializer, required=False)
+    status = StatusSerializerField(required=False, queryset=Status.objects.all())
 
     class Meta:
         """Set Meta Data for ConfigPlan, will serialize all fields."""
 
         model = models.ConfigPlan
         fields = "__all__"
+        read_only_fields = ["device", "plan_type", "feature", "config_set"]
 
 
 class NestedConfigPlanSerializer(WritableNestedSerializer):

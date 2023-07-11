@@ -57,6 +57,8 @@
 {% endblock %}
 
 {% block buttons %}
+{% if plan_type %}
 <button type="submit" name="_create" class="btn btn-primary" onclick="javascript:onclick.apply = $(this).addClass('disabled');">Generate</button>
+{% endif %}
 <a href="{{ return_url }}" class="btn btn-default">Cancel</a>
 {% endblock %}

@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ("dcim", "0019_device_redundancy_group_data_migration"),
         ("extras", "0053_relationship_required_on"),
-        ("nautobot_golden_config", "0022_alter_configcompliance_options"),
+        ("nautobot_golden_config", "0024_convert_custom_compliance_rules"),
     ]
 
     operations = [

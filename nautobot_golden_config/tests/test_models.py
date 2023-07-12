@@ -133,7 +133,8 @@ class GoldenConfigSettingModelTestCase(TestCase):
     def test_absolute_url_success(self):
         """Verify that get_absolute_url() returns the expected URL."""
         url_string = self.global_settings.get_absolute_url()
-        self.assertEqual(url_string, f"/plugins/golden-config/golden-config-setting/{self.global_settings.pk}")
+        # Changed from assertEqual to assertIn to account for trailing slash added in later versions.
+        self.assertIn(f"/plugins/golden-config/golden-config-setting/{self.global_settings.pk}", url_string)
 
     def test_good_graphql_query_invalid_starts_with(self):
         """Valid graphql query, however invalid in the usage with golden config plugin."""

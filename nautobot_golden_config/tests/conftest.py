@@ -190,7 +190,7 @@ def create_feature_rule_cli(device, feature="foo_cli"):
     rule, _ = ComplianceRule.objects.get_or_create(
         feature=feature_obj,
         platform=device.platform,
-        config_type=ComplianceRuleTypeChoice.TYPE_CLI,
+        config_type=ComplianceRuleConfigTypeChoice.TYPE_CLI,
         config_ordered=False,
     )
     rule.save()

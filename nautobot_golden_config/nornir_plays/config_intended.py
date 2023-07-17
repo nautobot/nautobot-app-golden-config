@@ -9,6 +9,8 @@ from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir.core.task import Result, Task
 
 from django.template import engines
+from jinja2 import StrictUndefined
+from jinja2.sandbox import SandboxedEnvironment
 
 from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
@@ -18,6 +20,7 @@ from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInv
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.utils import get_dispatcher
 
+from nautobot_golden_config.utilities.constant import PLUGIN_CFG
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.models import GoldenConfigSetting, GoldenConfig
 from nautobot_golden_config.utilities.helper import (
@@ -32,7 +35,22 @@ from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 LOGGER = logging.getLogger(__name__)
 
-jinja_env = engines["jinja"].env
+# Use a custom Jinja2 environment instead of Django's to avoid HTML escaping
+# Trim_blocks option defaulted to True to match nornir's default environment
+OPTION_LSTRIP_BLOCKS = False
+OPTION_TRIM_BLOCKS = True
+if PLUGIN_CFG.get("jinja_env_trim_blocks"):
+    OPTION_TRIM_BLOCKS = PLUGIN_CFG.get("jinja_env_trim_blocks")
+if PLUGIN_CFG.get("jinja_env_lstrip_blocks"):
+    OPTION_LSTRIP_BLOCKS = PLUGIN_CFG.get("jinja_env_lstrip_blocks")
+
+jinja_env = SandboxedEnvironment(
+    undefined=StrictUndefined,
+    trim_blocks=OPTION_TRIM_BLOCKS,
+    lstrip_blocks=OPTION_LSTRIP_BLOCKS,
+)
+# Retrieve filters from the Djanog jinja template engine
+jinja_env.filters = engines["jinja"].env.filters
 
 
 @close_threaded_db_connections
@@ -85,6 +103,7 @@ def run_template(  # pylint: disable=too-many-arguments
         output_file_location=output_file_location,
         default_drivers_mapping=get_dispatcher(),
         jinja_filters=jinja_env.filters,
+        jinja_env=jinja_env,
     )[1].result["config"]
     intended_obj.intended_last_success_date = task.host.defaults.data["now"]
     intended_obj.intended_config = generated_config

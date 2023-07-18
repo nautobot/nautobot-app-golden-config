@@ -309,7 +309,7 @@ class RemediationSettingFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
         to_field_name="remediation_type",
         label="Remediation Type",
     )
-
+    
     def search(self, queryset, name, value):  # pylint: disable=unused-argument,no-self-use
         """Perform the filtered search."""
         if not value.strip():
@@ -318,7 +318,7 @@ class RemediationSettingFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
         return queryset.filter(qs_filter)
 
     class Meta:
-        """Boilerplate filter Meta data for Config Replace."""
+        """Boilerplate filter Meta data for Remediation Setting."""
 
         model = models.RemediationSetting
         fields = ["id", "platform", "remediation_type"]

@@ -309,7 +309,7 @@ class RemediationSettingFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
         to_field_name="remediation_type",
         label="Remediation Type",
     )
-    
+
     def search(self, queryset, name, value):  # pylint: disable=unused-argument,no-self-use
         """Perform the filtered search."""
         if not value.strip():

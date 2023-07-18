@@ -148,7 +148,7 @@ def _verify_get_custom_compliance_data(compliance_details):
 
 
 def _get_hierconfig_remediation(obj):
-    """Returns the remediation plan."""
+    """Returns the remediating config."""
     hierconfig_os = HIERCONFIG_LIB_MAPPER_REVERSE.get(obj.device.platform.slug)
     if not hierconfig_os:
         raise ValidationError(f"platform {obj.device.platform.slug} is not supported by hierconfig.")
@@ -158,7 +158,7 @@ def _get_hierconfig_remediation(obj):
     except Exception as err:  # pylint: disable=broad-except:
         raise ValidationError(f"Platform {obj.device.platform.slug} has no Remediation Settings defined.") from err
 
-    remediation_options = remediation_setting_obj.remediation_options or None
+    remediation_options = remediation_setting_obj.remediation_options
 
     try:
         hc_kwargs = {"hostname": obj.device.name, "os": hierconfig_os}
@@ -822,7 +822,7 @@ class RemediationSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         max_length=50,
         default=RemediationTypeChoice.TYPE_HIERCONFIG,
         choices=RemediationTypeChoice,
-        help_text="Whether the remediation setting is type HC or custom.",
+        help_text="Whether the remediation setting is type HierConfig or custom.",
     )
 
     # takes options.json.

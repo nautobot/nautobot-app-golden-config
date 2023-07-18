@@ -6,7 +6,14 @@ from django.db.utils import IntegrityError
 from django.test import TestCase
 from nautobot.dcim.models import Platform
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery
-from nautobot_golden_config.models import ConfigCompliance, ConfigRemove, ConfigReplace, GoldenConfigSetting
+from nautobot_golden_config.choices import RemediationTypeChoice
+from nautobot_golden_config.models import (
+    ConfigCompliance,
+    ConfigRemove,
+    ConfigReplace,
+    GoldenConfigSetting,
+    RemediationSetting,
+)
 from nautobot_golden_config.tests.conftest import create_git_repos
 
 from .conftest import create_config_compliance, create_device, create_feature_rule_json, create_saved_queries
@@ -277,3 +284,47 @@ class ConfigReplaceModelTestCase(TestCase):
         self.assertEqual(self.line_replace.description, new_desc)
         self.assertEqual(self.line_replace.regex, new_regex)
         self.assertEqual(self.line_replace.replace, "<redacted>")
+
+
+class RemediationSettingModelTestCase(TestCase):
+    """Test Remediation Setting Model."""
+
+    def setUp(self):
+        """Setup Object."""
+        self.platform = Platform.objects.create(slug="cisco_ios")
+        self.remediation_options = {
+            "optionA": "someValue",
+            "optionB": "someotherValue",
+            "optionC": "anotherValue",
+        }
+
+    def test_create_remediation_setting_hier(self):
+        """Test Create Hier Remediation Setting."""
+        remediation_setting = RemediationSetting.objects.create(
+            platform=self.platform,
+            remediation_type=RemediationTypeChoice.TYPE_HIERCONFIG,
+            remediation_options=self.remediation_options,
+        )
+        self.assertEqual(remediation_setting.platform, self.platform)
+        self.assertEqual(remediation_setting.remediation_type, RemediationTypeChoice.TYPE_HIERCONFIG)
+        self.assertEqual(remediation_setting.remediation_options, self.remediation_options)
+
+    def test_create_remediation_setting_custom(self):
+        """Test Create Custom Remediation Setting."""
+        remediation_setting = RemediationSetting.objects.create(
+            platform=self.platform,
+            remediation_type=RemediationTypeChoice.TYPE_CUSTOM,
+            remediation_options=self.remediation_options,
+        )
+        self.assertEqual(remediation_setting.platform, self.platform)
+        self.assertEqual(remediation_setting.remediation_type, RemediationTypeChoice.TYPE_CUSTOM)
+        self.assertEqual(remediation_setting.remediation_options, self.remediation_options)
+
+    def test_create_remediation_setting_default_values(self):
+        """Test Create Default Remediation Setting"""
+        remediation_setting = RemediationSetting.objects.create(
+            platform=self.platform,
+        )
+        self.assertEqual(remediation_setting.platform, self.platform)
+        self.assertEqual(remediation_setting.remediation_type, RemediationTypeChoice.TYPE_HIERCONFIG)
+        self.assertEqual(remediation_setting.remediation_options, dict())

@@ -286,12 +286,28 @@ class GoldenConfigSettingFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
         fields = ["id", "name", "slug", "weight", "backup_repository", "intended_repository", "jinja_repository"]
 
 
-class RemediationSettingFilterSet(GenericPlatformFilterSet):
+class RemediationSettingFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
     """Inherits Base Class CustomFieldModelFilterSet."""
 
     q = django_filters.CharFilter(
         method="search",
         label="Search",
+    )
+    remediationsetting_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=models.RemediationSetting.objects.all(),
+        label="RemediationSetting ID",
+    )
+    platform = django_filters.ModelMultipleChoiceFilter(
+        field_name="platform__name",
+        queryset=Platform.objects.all(),
+        to_field_name="name",
+        label="Platform Name",
+    )
+    remediation_type = django_filters.ModelMultipleChoiceFilter(
+        field_name="remediationsetting__remediation_type",
+        queryset=models.RemediationSetting.objects.all(),
+        to_field_name="remediation_type",
+        label="Remediation Type",
     )
 
     def search(self, queryset, name, value):  # pylint: disable=unused-argument,no-self-use
@@ -305,4 +321,4 @@ class RemediationSettingFilterSet(GenericPlatformFilterSet):
         """Boilerplate filter Meta data for Config Replace."""
 
         model = models.RemediationSetting
-        fields = ["id", "platform"]
+        fields = ["id", "platform", "remediation_type"]

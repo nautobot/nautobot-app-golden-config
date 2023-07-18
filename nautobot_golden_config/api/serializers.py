@@ -162,4 +162,5 @@ class RemediationSettingSerializer(NautobotModelSerializer, TaggedObjectSerializ
         """Set Meta Data for RemediationSetting, will serialize all fields."""
 
         model = models.RemediationSetting
+        choices_fields = ["remediation_type"]
         fields = "__all__"

@@ -327,4 +327,4 @@ class RemediationSettingModelTestCase(TestCase):
         )
         self.assertEqual(remediation_setting.platform, self.platform)
         self.assertEqual(remediation_setting.remediation_type, RemediationTypeChoice.TYPE_HIERCONFIG)
-        self.assertEqual(remediation_setting.remediation_options, dict())
+        self.assertEqual(remediation_setting.remediation_options, {})

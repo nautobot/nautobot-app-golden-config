@@ -1,6 +1,6 @@
 # Navigating Config Plans
 
-The natural progression for the Golden Config application is providing the ability do execute config deployments. One specific example is to work toward making one or more devices configuration compliant. To aid in this effort, the Golden Config application has the ability to generate plans containing sets of configuration commands from various sources with the intent of deploying them to devices.
+The natural progression for the Golden Config application is providing the ability to execute config deployments. One specific example is to work toward making one or more devices configuration compliant. To aid in this effort, the Golden Config application has the ability to generate plans containing sets of configuration commands from various sources with the intent of deploying them to devices.
 
 The current sources of these plans (i.e. plan types) are as follows:
 

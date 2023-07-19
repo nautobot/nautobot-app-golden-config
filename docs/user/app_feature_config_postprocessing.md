@@ -9,7 +9,7 @@ Challenging use cases when using the running configuration as intended:
 
 - Because the intended configuration is stored in the database, and in an external Git repository, it should **not** contain any secret.
 - The format of the running configuration is not always the same as the configuration to push, examples include:
-    - Pushing snmpv3 configurations, which do not show up in the running config
+    - Pushing SNMPv3 configurations, which do not show up in the running config
     - VTP configurations where the configurations is not in the running config at all
     - Implicit configurations like a "no shutdown" on an interface
 - The configurations used to get the configuration to the intended state may require to be ordered to not cause an outage.
@@ -41,7 +41,7 @@ The `render_secrets` function performs an extra Jinja rendering on top of an int
 - `get_secret_by_secret_group_slug`: as the name suggests, it returns the secret_group value, for a secret type, from its `slug`.
 
 !!! note
-    Other default Django or Netutils filters are not available in this Jinja environment. Only `encrypt_type5` and `encrypt_type7` can be used together with the `get_secret` filters.
+    Other default Django or Netutils filters are not available in this Jinja environment. Only `encrypt_<vendor>_type5` and `encrypt_<vendor>_type7` can be used together with the `get_secret` filters.
 
 Because this rendering is separated from the standard generation of the intended configuration, you must use the `{% raw %}` Jinja syntax to avoid being processed by the initial generation stage.
 

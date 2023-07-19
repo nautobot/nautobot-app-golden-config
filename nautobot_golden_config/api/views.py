@@ -123,6 +123,7 @@ class RemediationSettingViewSet(NautobotModelViewSet):  # pylint:disable=too-man
     serializer_class = serializers.RemediationSettingSerializer
     filterset_class = filters.RemediationSettingFilterSet
 
+
 class ConfigPlanViewSet(NautobotModelViewSet):  # pylint:disable=too-many-ancestors
     """API viewset for interacting with ConfigPlan objects."""
 

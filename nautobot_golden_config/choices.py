@@ -23,6 +23,9 @@ class RemediationTypeChoice(ChoiceSet):
     CHOICES = (
         (TYPE_HIERCONFIG, "HIERCONFIG"),
         (TYPE_CUSTOM, "CUSTOM_REMEDIATION"),
+    )
+
+
 class ConfigPlanTypeChoice(ChoiceSet):
     """Choiceset used by ConfigPlan."""
 

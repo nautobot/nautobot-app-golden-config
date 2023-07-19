@@ -288,6 +288,11 @@ class GoldenConfigSettingFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
 
 class RemediationSettingFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
     """Inherits Base Class CustomFieldModelFilterSet."""
+
+    q = django_filters.CharFilter(
+        method="search",
+        label="Search",
+    )
     remediationsetting_id = django_filters.ModelMultipleChoiceFilter(
         queryset=models.RemediationSetting.objects.all(),
         label="RemediationSetting ID",
@@ -303,6 +308,12 @@ class RemediationSettingFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
         queryset=models.RemediationSetting.objects.all(),
         to_field_name="remediation_type",
         label="Remediation Type",
+    )
+
+    def search(self, queryset, name, value):  # pylint: disable=unused-argument,no-self-use
+        """Perform the filtered search."""
+        if not value.strip():
+            return queryset
         qs_filter = Q(platform__icontains=value)
         return queryset.filter(qs_filter)
 
@@ -311,7 +322,7 @@ class RemediationSettingFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
 
         model = models.RemediationSetting
         fields = ["id", "platform", "remediation_type"]
-      
+
 
 class ConfigPlanFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
     """Inherits Base Class BaseFilterSet."""

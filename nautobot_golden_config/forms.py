@@ -447,7 +447,7 @@ class RemediationSettingBulkEditForm(NautobotBulkEditForm):
 
         nullable_fields = []
 
-        
+
 # ConfigPlan
 
 

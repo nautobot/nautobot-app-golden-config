@@ -358,6 +358,7 @@ class ConfigPlanModelTestCase(TestCase):
         self.assertEqual(config_plan.config_set, "test manual config")
         self.assertEqual(config_plan.plan_type, "manual")
 
+
 class RemediationSettingModelTestCase(TestCase):
     """Test Remediation Setting Model."""
 

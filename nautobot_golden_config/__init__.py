@@ -23,7 +23,7 @@ class GoldenConfig(PluginConfig):
     author_email = "opensource@networktocode.com"
     description = "Nautobot Apps that embraces NetDevOps and automates configuration backups, performs configuration compliance, and generates intended configurations. Includes native Git integration and gives users the flexibility to mix and match the supported features."
     base_url = "golden-config"
-    min_version = "1.5.3"
+    min_version = "1.5.13"
     max_version = "1.99"
     default_settings = {
         "enable_backup": True,

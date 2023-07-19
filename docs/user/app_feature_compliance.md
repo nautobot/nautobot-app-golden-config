@@ -54,8 +54,12 @@ a database perspective, the job will never run successfully, rendering the addit
 The Feature is a unique identifier, that should prefer shorter names, as this effects the width of the compliance overview and thus it's readability as a
 best practice.
 
-The "Configs to Match" section represents the configuration root elements. This would be the parent most key only. Additionally, the match is based on
-what a line starts with only. Meaning, there is an implicit greediness to the matching. All matches must start form the beginning of the line.
+The "Config to Match" section represents the configuration root elements. This would be the parent most key only. Additionally, the match is based on
+"Config Type", which could be JSON or CLI. For CLI based configs, the match is based on what a line starts with only. Meaning, there is an implicit greediness to the matching. All matches must start form the beginning of the line.
+For JSON based configs, the match is based on JSON's structure top level key name.
+
+!!! note
+    "Config to Match" is mandatory for CLI configurations. If config to match is not defined for JSON, the complete JSON configuration will be compared. If the config to match is defined, comparison will take place only for defined keys.
 
 !!! note
     If the data is accidentally "corrupted" with a bad tested match, simply delete the devices an re-run the compliance process.

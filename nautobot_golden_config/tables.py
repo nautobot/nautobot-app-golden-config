@@ -330,8 +330,26 @@ class ComplianceRuleTable(BaseTable):
         """Table to display Compliance Rules Meta Data."""
 
         model = models.ComplianceRule
-        fields = ("pk", "feature", "platform", "description", "config_ordered", "match_config", "config_type")
-        default_columns = ("pk", "feature", "platform", "description", "config_ordered", "match_config", "config_type")
+        fields = (
+            "pk",
+            "feature",
+            "platform",
+            "description",
+            "config_ordered",
+            "match_config",
+            "config_type",
+            "custom_compliance",
+        )
+        default_columns = (
+            "pk",
+            "feature",
+            "platform",
+            "description",
+            "config_ordered",
+            "match_config",
+            "config_type",
+            "custom_compliance",
+        )
 
 
 # ConfigRemove

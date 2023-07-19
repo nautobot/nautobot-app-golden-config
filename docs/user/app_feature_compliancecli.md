@@ -1,7 +1,7 @@
 # Configuration Compliance
 
 !!! note
-    This document provides instructions based on `CLI` based compliance.  The other options are `JSON` [structured data compliance](./app_feature_compliancejson.md) and [custom compliance](./app_feature_compliancecustom.md).
+    This document provides instructions for `CLI` configuration type based compliance.  The other option is `JSON` based [structured data compliance](./app_feature_compliancejson.md).
 
 ## Configuration Compliance Parsing Engine
 

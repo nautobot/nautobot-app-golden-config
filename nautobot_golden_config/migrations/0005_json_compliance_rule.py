@@ -1,11 +1,10 @@
 from django.db import migrations, models
 import json
 
-from nautobot_golden_config.models import ConfigCompliance
-
 
 def jsonify(apps, schedma_editor):
     """Converts textfield to json in preparation for migration."""
+    ConfigCompliance = apps.get_model("nautobot_golden_config", "ConfigCompliance")
     queryset = ConfigCompliance.objects.all()
     attrs = ["actual", "extra", "intended", "missing"]
     for i in queryset:

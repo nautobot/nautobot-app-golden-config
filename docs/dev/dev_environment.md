@@ -4,7 +4,7 @@
 
 The development environment can be used in two ways:
 
-1. `Recommended` All services are spun up using Docker and a local mount so you can develop locally, but Nautobot is spun up within the Docker container.
+1. `Recommended` All services are spun up using Docker and a local volume mount attached so you can develop locally, but Nautobot is spun up within the Docker container.
 2. With a local poetry environment if you wish to develop outside of Docker with the caveat of using external services provided by Docker for PostgresQL and Redis.
 
 This is a quick reference guide if you're already familiar with the development environment provided, which you can read more about later in this document.
@@ -320,6 +320,9 @@ When trying to debug an issue, one helpful thing you can look at are the logs wi
 
 !!! note
 	The `-f` tag will keep the logs open, and output them in realtime as they are generated.
+
+!!! info
+    Want to limit the log output even further? Use the `--tail <#>` command line argument in conjunction with `-f`.
 
 So for example, our plugin is named `nautobot-golden-config`, the command would most likely be `docker logs nautobot_golden_config_nautobot_1 -f`. You can find the name of all running containers via `docker ps`.
 

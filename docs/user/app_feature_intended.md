@@ -2,13 +2,13 @@
 
 ## Configuration Generation
 
-The Golden Config plugin **Intended Configuration** job generates intended state files for each device in the plugin setting's configured Dynamic Group. An intended state file contains the output from rendering the device's Source of Truth Aggregation values through the Jinja templates used by the plugin.
+The Golden Config plugin **Intended Configuration** job generates intended state files for each device in the plugin setting's configured Dynamic Group. An intended state files contain the output from rendering the device's Source of Truth Aggregation values through the Jinja2 templates used by the plugin.
 
-The job itself is a Nornir play which uses a single Jinja template per device. Source of Truth Aggregation data comes from the GraphQL query configured in the Golden Config plugin's settings. An important component of the SoT Aggregation data are the `config_context` values. `config_context` should contain a vendor-neutral, JSON structured representation of a device's configuration values: a list of NTP/AAA/Syslog servers, common VRFs, etc. See [Config Contexts](https://nautobot.readthedocs.io/en/latest/additional-features/config-contexts/#configuration-contexts) for more information.
+The job itself is a Nornir play which uses a single Jinja2 template per device. Source of Truth Aggregation data comes from the GraphQL query configured in the Golden Config plugin's settings. An important component of the SoT Aggregation data are the `config_context` values. `config_context` should contain a vendor-neutral, JSON structured representation of a device's configuration values: a list of NTP/AAA/Syslog servers, common VRFs, etc. See [Config Contexts](https://docs.nautobot.com/projects/core/en/latest/additional-features/config-contexts/#configuration-contexts) for more information.
 
 The Source of Truth Aggregation feature of the plugin must be enabled for the plugin to generate intended configuration state output.
 
-There can only be a single Jinja template per device. Device configurations can become daunting to create via a Jinja template, if you try to place all of the logic for a device's configuration inside a single Jinja2 file. These template files can quickly become too complex to maintain. So, it is often advantageous to break configurations into smaller feature-oriented snippets, each contained in their own discrete template file. Operators often keep their main, top-level, template simple and easy to maintain by only placing include statements in it:
+There can only be a single Jinja2 template per device. Device configurations can become daunting to create via a template, if you try to place all of the logic for a device's configuration inside a single Jinja2 file. These template files can quickly become too complex to maintain. So, it is often advantageous to break configurations into smaller feature-oriented snippets, each contained in their own discrete template file. Operators often keep their main, top-level, template simple and easy to maintain by only placing include statements in it:
 
 ```jinja
 !
@@ -35,7 +35,7 @@ In these examples, `/services.j2`, `/ntp.j2`, etc. could contain the actual Jinj
 
 ## Adding Jinja2 Filters to the Environment.
 
-This plugin follows [Nautobot](https://nautobot.readthedocs.io/en/stable/plugins/development/#including-jinja2-filters) in relying on [django_jinja](https://niwinz.github.io/django-jinja/latest/) for customizing the Jinja2 Environment. Currently, only filters in the `django_jinja` Environment are passed along to the Jinja2 Template Environment used by Nornir to render the config template.
+This plugin follows [Nautobot](https://docs.nautobot.com/projects/core/en/stable/plugins/development/#including-jinja2-filters) in relying on [django_jinja](https://niwinz.github.io/django-jinja/latest/) for customizing the Jinja2 Environment. Currently, only filters in the `django_jinja` Environment are passed along to the Jinja2 Template Environment used by Nornir to render the config template.
 
 ### Adding Filters In Nautobot Config
 

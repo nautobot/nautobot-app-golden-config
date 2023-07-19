@@ -798,6 +798,20 @@ class ConfigReplaceUIViewSet(NautobotUIViewSet):
     lookup_field = "pk"
 
 
+class RemediationSettingUIViewSet(NautobotUIViewSet):
+    """Views for the RemediationSetting model."""
+
+    bulk_create_form_class = forms.RemediationSettingCSVForm
+    bulk_update_form_class = forms.RemediationSettingBulkEditForm
+    filterset_class = filters.RemediationSettingFilterSet
+    filterset_form_class = forms.RemediationSettingFilterForm
+    form_class = forms.RemediationSettingForm
+    queryset = models.RemediationSetting.objects.all()
+    serializer_class = serializers.RemediationSettingSerializer
+    table_class = tables.RemediationSettingTable
+    lookup_field = "pk"
+
+
 class ConfigPlanUIViewSet(NautobotUIViewSet):
     """Views for the ConfigPlan model."""
 

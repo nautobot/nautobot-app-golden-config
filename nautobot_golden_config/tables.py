@@ -341,6 +341,7 @@ class ComplianceRuleTable(BaseTable):
             "match_config",
             "config_type",
             "custom_compliance",
+            "config_remediation",
         )
         default_columns = (
             "pk",
@@ -351,6 +352,7 @@ class ComplianceRuleTable(BaseTable):
             "match_config",
             "config_type",
             "custom_compliance",
+            "config_remediation",
         )
 
 
@@ -438,6 +440,20 @@ class GoldenConfigSettingTable(BaseTable):
             "intended_repository",
             "jinja_repository",
         )
+
+
+class RemediationSettingTable(BaseTable):
+    """Table to display RemediationSetting Rules."""
+
+    pk = ToggleColumn()
+    platform = LinkColumn("plugins:nautobot_golden_config:remediationsetting", args=[A("pk")])
+
+    class Meta(BaseTable.Meta):
+        """Table to display RemediationSetting Meta Data."""
+
+        model = models.RemediationSetting
+        fields = ("pk", "platform", "remediation_type")
+        default_columns = ("pk", "platform", "remediation_type")
 
 
 # ConfigPlan

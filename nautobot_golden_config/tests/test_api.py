@@ -6,10 +6,11 @@ from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from rest_framework import status
 
-from nautobot.dcim.models import Device
+from nautobot.dcim.models import Device, Platform
 from nautobot.utilities.testing import APITestCase, APIViewTestCases
 from nautobot.extras.models import GitRepository, GraphQLQuery, DynamicGroup, Status
-from nautobot_golden_config.models import GoldenConfigSetting, ConfigPlan
+from nautobot_golden_config.choices import RemediationTypeChoice
+from nautobot_golden_config.models import ConfigPlan, GoldenConfigSetting, RemediationSetting
 
 from .conftest import (
     create_device,
@@ -277,6 +278,58 @@ class GoldenConfigSettingsAPITest(APITestCase):  # pylint: disable=too-many-ance
         # Put back a general GoldenConfigSetting object.
         global_settings = GoldenConfigSetting.objects.create(dynamic_group=self.dynamic_group)
         global_settings.save()
+
+
+# pylint: disable=too-many-ancestors
+class RemediationSettingTest(APIViewTestCases.APIViewTestCase):
+    """Test API for Remediation Settings."""
+
+    model = RemediationSetting
+    choices_fields = ["remediation_type"]
+
+    @classmethod
+    def setUpTestData(cls):
+        create_device_data()
+        platform1 = Platform.objects.get(name="Platform 1")
+        platform2 = Platform.objects.get(name="Platform 2")
+        platform3 = Platform.objects.get(name="Platform 3")
+        type_cli = RemediationTypeChoice.TYPE_HIERCONFIG
+        type_custom = RemediationTypeChoice.TYPE_CUSTOM
+
+        # RemediationSetting type Hier with default values.
+        RemediationSetting.objects.create(
+            platform=platform1,
+            remediation_type=type_cli,
+        )
+        # RemediationSetting type Hier with custom options.
+        RemediationSetting.objects.create(
+            platform=platform2, remediation_type=type_cli, remediation_options={"some_option": "some_value"}
+        )
+        # RemediationSetting type Custom with custom options.
+        RemediationSetting.objects.create(
+            platform=platform3,
+            remediation_type=type_custom,
+        )
+
+        cls.update_data = {
+            "remediation_type": type_custom,
+        }
+
+        cls.bulk_update_data = {
+            "remediation_type": type_cli,
+        }
+
+    def test_list_objects_brief(self):
+        """Skipping test due to brief_fields not implemented."""
+
+    def test_create_object(self):
+        """Skipping test due to POST method not allowed."""
+
+    def test_create_object_without_permission(self):
+        """Skipping test due to POST method not allowed."""
+
+    def test_bulk_create_objects(self):
+        """Skipping test due to POST method not allowed."""
 
 
 # pylint: disable=too-many-ancestors

@@ -286,6 +286,33 @@ class GoldenConfigSettingFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
         fields = ["id", "name", "slug", "weight", "backup_repository", "intended_repository", "jinja_repository"]
 
 
+class RemediationSettingFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
+    """Inherits Base Class CustomFieldModelFilterSet."""
+    remediationsetting_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=models.RemediationSetting.objects.all(),
+        label="RemediationSetting ID",
+    )
+    platform = django_filters.ModelMultipleChoiceFilter(
+        field_name="platform__name",
+        queryset=Platform.objects.all(),
+        to_field_name="name",
+        label="Platform Name",
+    )
+    remediation_type = django_filters.ModelMultipleChoiceFilter(
+        field_name="remediationsetting__remediation_type",
+        queryset=models.RemediationSetting.objects.all(),
+        to_field_name="remediation_type",
+        label="Remediation Type",
+        qs_filter = Q(platform__icontains=value)
+        return queryset.filter(qs_filter)
+
+    class Meta:
+        """Boilerplate filter Meta data for Remediation Setting."""
+
+        model = models.RemediationSetting
+        fields = ["id", "platform", "remediation_type"]
+      
+
 class ConfigPlanFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
     """Inherits Base Class BaseFilterSet."""
 

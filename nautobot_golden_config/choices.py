@@ -14,6 +14,15 @@ class ComplianceRuleConfigTypeChoice(ChoiceSet):
     )
 
 
+class RemediationTypeChoice(ChoiceSet):
+    """Choiceset used by RemediationSetting."""
+
+    TYPE_HIERCONFIG = "hierconfig"
+    TYPE_CUSTOM = "custom_remediation"
+
+    CHOICES = (
+        (TYPE_HIERCONFIG, "HIERCONFIG"),
+        (TYPE_CUSTOM, "CUSTOM_REMEDIATION"),
 class ConfigPlanTypeChoice(ChoiceSet):
     """Choiceset used by ConfigPlan."""
 

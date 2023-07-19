@@ -170,6 +170,19 @@
                 </td>
             </tr>
         {% endif %}
+        {% if item.remediation != None %}
+        <tr>
+            <td style="color:red;width:250px">Remediating Configuration</td>
+            <td class="config_hover">
+                <span id="{{ item.rule|slugify }}_remediation"><pre>{{ item.remediation|condition_render_json }}</pre></span>
+                <span class="config_hover_button">
+                    <button class="btn btn-inline btn-default hover_copy_button" data-clipboard-target="#{{ item.rule|slugify }}_remediation">
+                        <span class="mdi mdi-content-copy"></span>
+                    </button>
+                </span>
+            </td>
+        </tr>
+    {% endif %}
     </table>
     </div>
 {% endfor %}

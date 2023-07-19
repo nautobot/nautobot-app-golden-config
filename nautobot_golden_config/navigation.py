@@ -59,6 +59,22 @@ if ENABLE_COMPLIANCE:
             ),
         )
     )
+    items.append(
+        NavMenuItem(
+            link="plugins:nautobot_golden_config:remediationsetting_list",
+            name="Remediation Settings",
+            permissions=["nautobot_golden_config.view_remediationsetting"],
+            buttons=(
+                NavMenuButton(
+                    link="plugins:nautobot_golden_config:remediationsetting_add",
+                    title="Remediation Settings",
+                    icon_class="mdi mdi-plus-thick",
+                    button_class=ButtonColorChoices.GREEN,
+                    permissions=["nautobot_golden_config.add_remediationsetting"],
+                ),
+            ),
+        )
+    )
 
 if ENABLE_BACKUP:
     items.append(

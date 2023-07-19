@@ -156,6 +156,20 @@ class ConfigToPushSerializer(DeviceSerializer):
         return get_config_postprocessing(config_details, request)
 
 
+class RemediationSettingSerializer(NautobotModelSerializer, TaggedObjectSerializer):
+    """Serializer for RemediationSetting object."""
+
+    url = serializers.HyperlinkedIdentityField(
+        view_name="plugins-api:nautobot_golden_config-api:remediationsetting-detail"
+    )
+
+    class Meta:
+        """Set Meta Data for RemediationSetting, will serialize all fields."""
+
+        model = models.RemediationSetting
+        choices_fields = ["remediation_type"]
+        fields = "__all__"
+
 class ConfigPlanSerializer(NautobotModelSerializer, TaggedObjectSerializer, StatusModelSerializerMixin):
     """Serializer for ConfigPlan object."""
 

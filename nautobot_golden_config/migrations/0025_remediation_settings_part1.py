@@ -7,20 +7,6 @@ import nautobot.extras.models.mixins
 import taggit.managers
 import uuid
 
-def add_remediation_field_if_not_exists(apps, schema_editor):
-    """
-    Add Remediation Field to ConfigCompliance model if it was not added before by 0005.
-    """
-    ConfigCompliance = apps.get_model('nautobot_golden_config', 'ConfigCompliance')
-
-    # Check if the field already exists in the database
-    if not ConfigCompliance._meta.get_field('remediation'):
-        # If the field does not exist, add it using the migrations.AddField operation
-        migrations.AddField(
-            model_name="configcompliance",
-            name="remediation",
-            field=models.JSONField(blank=True, null=True),
-        )
 
 class Migration(migrations.Migration):
     dependencies = [
@@ -30,7 +16,11 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(add_remediation_field_if_not_exists),
+        migrations.AddField(
+            model_name="configcompliance",
+            name="remediation",
+            field=models.JSONField(blank=True, null=True),
+        ),
         migrations.AddField(
             model_name="compliancerule",
             name="config_remediation",

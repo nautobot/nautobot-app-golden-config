@@ -5,9 +5,11 @@ from django.utils.html import format_html
 from django_tables2 import Column, LinkColumn, TemplateColumn
 from django_tables2.utils import A
 
+from nautobot.extras.tables import StatusTableMixin
 from nautobot.utilities.tables import (
     BaseTable,
     ToggleColumn,
+    TagColumn,
 )
 from nautobot_golden_config import models
 from nautobot_golden_config.utilities.constant import (
@@ -452,3 +454,24 @@ class RemediationSettingTable(BaseTable):
         model = models.RemediationSetting
         fields = ("pk", "platform", "remediation_type")
         default_columns = ("pk", "platform", "remediation_type")
+
+
+# ConfigPlan
+
+
+class ConfigPlanTable(StatusTableMixin, BaseTable):
+    """Table to display Config Plans."""
+
+    pk = ToggleColumn()
+    device = LinkColumn("plugins:nautobot_golden_config:configplan", args=[A("pk")])
+    feature = LinkColumn(
+        "plugins:nautobot_golden_config:compliancefeature", args=[A("feature__pk")], text=lambda record: record.feature
+    )
+    tags = TagColumn(url_name="plugins:nautobot_golden_config:configplan_list")
+
+    class Meta(BaseTable.Meta):
+        """Table to display Config Plans Meta Data."""
+
+        model = models.ConfigPlan
+        fields = ("pk", "device", "created", "plan_type", "feature", "change_control_id", "status", "tags")
+        default_columns = ("pk", "device", "created", "plan_type", "feature", "change_control_id", "status")

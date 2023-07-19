@@ -13,6 +13,7 @@ router.register("golden-config-setting", views.GoldenConfigSettingUIViewSet)
 router.register("config-remove", views.ConfigRemoveUIViewSet)
 router.register("config-replace", views.ConfigReplaceUIViewSet)
 router.register("remediation-setting", views.RemediationSettingUIViewSet)
+router.register("config-plan", views.ConfigPlanUIViewSet)
 
 
 urlpatterns = [

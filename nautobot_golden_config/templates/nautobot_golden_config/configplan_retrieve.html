@@ -1,0 +1,42 @@
+{% extends 'generic/object_detail.html' %}
+{% load helpers %}
+
+{% block content_left_page %}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <strong>Config Plan Details</strong>
+        </div>
+        <table class="table table-hover panel-body attr-table">
+            <tr>
+                <td>Device</td>
+                <td><a href="{{ object.device.get_absolute_url }}">{{ object.device }}</a></td>
+            </tr>
+            <tr>
+                <td>Date Created</td>
+                <td>{{ object.created }}</td>
+            </tr>
+            <tr>
+                <td>Plan Type</td>
+                <td>{{ object.plan_type | title }}</td>
+            </tr>
+            <tr>
+                <td>Feature</td>
+                <td>{% if object.feature %}<a href="{{ object.feature.get_absolute_url }}">{{ object.feature }}</a>{% else %}{{ None | placeholder }}{% endif %}</td>
+            </tr>
+            <tr>
+                <td>Change Control ID</td>
+                <td>{{ object.change_control_id | placeholder }}</td>
+            </tr>
+            <tr>
+                <td>Status</td>
+                <td>
+                    <span class="label" style="color: {{ object.status.color|fgcolor }}; background-color: #{{ object.status.color }}">{{ object.get_status_display }}</span>
+                </td>
+            </tr>
+            <tr>
+                <td>Config Set</td>
+                <td><pre>{{ object.config_set }}</pre></td>
+            </tr>
+        </table>
+    </div>
+{% endblock %}

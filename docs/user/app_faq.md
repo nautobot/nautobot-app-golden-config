@@ -43,19 +43,26 @@ Understanding that there will never be consensus on what should go into a featur
 The current supported platform and the associated *default* platform slug names are the following for:
 
 * arista_eos
+* aruba_aoscx
 * bigip_f5
 * cisco_aireos
 * cisco_asa
 * cisco_ios
+* cisco_ios_xr
+* citrix_netscaler
 * cisco_nxos
+* extreme_netiron
 * fortinet_fortios
 * juniper_junos
 * linux
+* mikrotik_routeros
+* mrv_optiswitch
 * nokia_sros
+* paloalto_panos
 
 The expected "network_os" parameter must be as defined by netutils and golden config uses the platform slug to map from the device to the appropriate "network_os" that netutils expects. However, there an ability to map the actual platform slug for compliance and parsing tasks via the plugin settings in your "nautobot_config.py", and documented on the primary Readme.
 
-To provide a concrete example of this, note the following example that demonstrates how you can transpose any platform slug name to the expected one, as well as map multiple keys to a single netutils expected key.
+To provide a concrete example of this, note the following example that demonstrates how you can transpose any platform slug name to the expected one, as well as map multiple keys to a single netutils expected key. The `platform_slug_map` is only used for configuration compliance job. The json key is the Nautobot platform slug, and the json value is the "network_os" parameter defined in `netutils.config.compliance.parser_map`.
 ```json
 {
     "platform_slug_map":  {
@@ -73,9 +80,13 @@ The current supported platform and the associated *default* platform slug names 
 * arista_eos
 * cisco_asa
 * cisco_ios
-* cisco_xr
+* cisco_ios_xr
 * cisco_nxos
 * juniper_junos
+* mikrotik_routeros
+* mikrotik_routeros_api
+* ruckus_fastiron
+* ruckus_smartzone_api
 
 In many use cases, this can be extended with a custom dispatcher for nornir tasks, which is controlled in the [nornir-nautobot](https://github.com/nautobot/nornir-nautobot) repository. Additionally the [`nautobot_plugin_nornir`](https://pypi.org/project/nautobot-plugin-nornir/) provide the ability to leverage the `dispatcher_mapping` configuration parameter to map and/or extend for your environment. Please see the instructions there for further details.
 

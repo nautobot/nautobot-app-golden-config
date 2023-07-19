@@ -6,7 +6,7 @@ from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, P
 from nautobot.extras.filters import CustomFieldModelFilterSetMixin, StatusFilter
 from nautobot.extras.models import Status
 from nautobot.tenancy.models import Tenant, TenantGroup
-from nautobot.utilities.filters import BaseFilterSet, NameSlugSearchFilterSet, TreeNodeMultipleChoiceFilter
+from nautobot.utilities.filters import BaseFilterSet, NameSlugSearchFilterSet, TreeNodeMultipleChoiceFilter, TagFilter
 from nautobot_golden_config import models
 
 
@@ -288,11 +288,6 @@ class GoldenConfigSettingFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
 
 class RemediationSettingFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
     """Inherits Base Class CustomFieldModelFilterSet."""
-
-    q = django_filters.CharFilter(
-        method="search",
-        label="Search",
-    )
     remediationsetting_id = django_filters.ModelMultipleChoiceFilter(
         queryset=models.RemediationSetting.objects.all(),
         label="RemediationSetting ID",
@@ -308,12 +303,6 @@ class RemediationSettingFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
         queryset=models.RemediationSetting.objects.all(),
         to_field_name="remediation_type",
         label="Remediation Type",
-    )
-
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument,no-self-use
-        """Perform the filtered search."""
-        if not value.strip():
-            return queryset
         qs_filter = Q(platform__icontains=value)
         return queryset.filter(qs_filter)
 
@@ -322,3 +311,60 @@ class RemediationSettingFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
 
         model = models.RemediationSetting
         fields = ["id", "platform", "remediation_type"]
+      
+
+class ConfigPlanFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
+    """Inherits Base Class BaseFilterSet."""
+
+    q = django_filters.CharFilter(
+        method="search",
+        label="Search",
+    )
+    device_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=Device.objects.all(),
+        label="Device ID",
+    )
+    device = django_filters.ModelMultipleChoiceFilter(
+        field_name="device__name",
+        queryset=Device.objects.all(),
+        to_field_name="name",
+        label="Device Name",
+    )
+    feature_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=models.ComplianceFeature.objects.all(),
+        label="Feature ID",
+    )
+    feature = django_filters.ModelMultipleChoiceFilter(
+        field_name="feature__name",
+        queryset=models.ComplianceFeature.objects.all(),
+        to_field_name="name",
+        label="Feature Name",
+    )
+    change_control_id = django_filters.CharFilter(
+        field_name="change_control_id",
+        lookup_expr="exact",
+    )
+    status_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=Status.objects.all(),
+        label="Status ID",
+    )
+    status = django_filters.ModelMultipleChoiceFilter(
+        field_name="status__name",
+        queryset=Status.objects.all(),
+        to_field_name="name",
+        label="Status",
+    )
+    tag = TagFilter()
+
+    def search(self, queryset, name, value):  # pylint: disable=unused-argument,no-self-use
+        """Perform the filtered search."""
+        if not value.strip():
+            return queryset
+        qs_filter = Q(device__name__icontains=value) | Q(change_control_id__icontains=value)
+        return queryset.filter(qs_filter)
+
+    class Meta:
+        """Boilerplate filter Meta data for Config Plan."""
+
+        model = models.ConfigPlan
+        fields = ["id", "device", "created", "plan_type", "feature", "change_control_id", "status"]

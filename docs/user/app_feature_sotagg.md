@@ -22,7 +22,7 @@ It is helpful to make adjustments to the query, and then view the data from the 
 
 ## Transposer Function
 
-The transposer function is an optional function to make arbitrary changes to the data after the fact. There is a Plugin configuration that allows the
+The transposer function is an optional function to make arbitrary changes to the data after the fact. There is a plugin configuration that allows the
 operator to point to a function within the python path by a string. The function will receive a single variable, that by convention should be called `data`. The function should return a valid Python json serializable data structure.
 
 ```python
@@ -37,7 +37,7 @@ def transposer(data):
 
 While the example transposer is silly and untested, it provides the structure for which a transposer can be used. The possibilities are obviously endless, such as reaching out to an external system, but operators should use caution not to overload complexity into the transposer.
 
-The configuration required in the Plugin configuration is as described below.
+The configuration required in the plugin configuration is as described below.
 
 ```python
 PLUGINS_CONFIG["nautobot_golden_config"]["sot_agg_transposer"] = "nautobot_golden_config.transposer.transposer"
@@ -51,7 +51,7 @@ While outside the scope of this document, it is worth mentioning the power that 
 that would not normally be available within Nautobot Core Django ORM models or within a Nautobot plugin's custom models. A common use case is to model "global configuration" like data, such as NTP, DNS, SNMP, etc.
 
 For more information, please refer to the Nautobot Core documentation on
-[Config Contexts](https://nautobot.readthedocs.io/en/latest/additional-features/config-contexts/#configuration-contexts) and leveraging [Git Data Sources](https://nautobot.readthedocs.io/en/stable/user-guides/git-data-source/#using-git-data-sources).
+[Config Contexts](https://docs.nautobot.com/projects/core/en/latest/additional-features/config-contexts/#configuration-contexts) and leveraging [Git Data Sources](https://docs.nautobot.com/projects/core/en/stable/user-guides/git-data-source/#using-git-data-sources).
 
 ## Performance
 
@@ -70,7 +70,7 @@ Example: Query Variables
 ```
 
 GraphQL may be new to many users, and while the GraphiQL interface is great way to get started, the following query is for reference. It is
-highly recommended to alias name (as in `hostname: name` shown below), as there will be a namespace issue with nornir tasks, which often
+highly recommended to alias name (as in `hostname: name` shown below), as there will be a namespace issue with Nornir tasks, which often
 take in name as a parameter.
 
 ```

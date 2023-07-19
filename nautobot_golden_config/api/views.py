@@ -122,3 +122,13 @@ class RemediationSettingViewSet(NautobotModelViewSet):  # pylint:disable=too-man
     queryset = models.RemediationSetting.objects.all()
     serializer_class = serializers.RemediationSettingSerializer
     filterset_class = filters.RemediationSettingFilterSet
+
+class ConfigPlanViewSet(NautobotModelViewSet):  # pylint:disable=too-many-ancestors
+    """API viewset for interacting with ConfigPlan objects."""
+
+    queryset = models.ConfigPlan.objects.all()
+    serializer_class = serializers.ConfigPlanSerializer
+    filterset_class = filters.ConfigPlanFilterSet
+
+    # Disabling POST as these should only be created via Job.
+    http_method_names = ["get", "put", "patch", "delete", "head", "options"]

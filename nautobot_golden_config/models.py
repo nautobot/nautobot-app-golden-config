@@ -848,6 +848,7 @@ class RemediationSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         """Absolute url for the RemediationRule instance."""
         return reverse("plugins:nautobot_golden_config:remediationsetting", args=[self.pk])
 
+
 @extras_features(
     "custom_fields",
     "custom_links",

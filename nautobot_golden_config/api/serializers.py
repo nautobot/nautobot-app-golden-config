@@ -170,6 +170,7 @@ class RemediationSettingSerializer(NautobotModelSerializer, TaggedObjectSerializ
         choices_fields = ["remediation_type"]
         fields = "__all__"
 
+
 class ConfigPlanSerializer(NautobotModelSerializer, TaggedObjectSerializer, StatusModelSerializerMixin):
     """Serializer for ConfigPlan object."""
 

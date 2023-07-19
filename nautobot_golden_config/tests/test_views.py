@@ -302,9 +302,10 @@ class ConfigPlanTestCase(
     ViewTestCases.GetObjectViewTestCase,
     ViewTestCases.GetObjectChangelogViewTestCase,
     ViewTestCases.ListObjectsViewTestCase,
+    # Disabling Create tests because ConfigPlans are created via Job
     # ViewTestCases.CreateObjectViewTestCase,
     ViewTestCases.DeleteObjectViewTestCase,
-    # ViewTestCases.EditObjectViewTestCase,
+    ViewTestCases.EditObjectViewTestCase,
 ):
     """Test ConfigPlan views."""
 
@@ -316,13 +317,13 @@ class ConfigPlanTestCase(
         device1 = Device.objects.get(name="Device 1")
         device2 = Device.objects.get(name="Device 2")
         device3 = Device.objects.get(name="Device 3")
-        device4 = Device.objects.get(name="Device 4")
 
         rule1 = create_feature_rule_json(device1, feature="Test Feature 1")
         rule2 = create_feature_rule_json(device2, feature="Test Feature 2")
         rule3 = create_feature_rule_json(device3, feature="Test Feature 3")
 
-        status = Status.objects.get(slug="not-approved")
+        not_approved_status = Status.objects.get(slug="not-approved")
+        approved_status = Status.objects.get(slug="approved")
 
         models.ConfigPlan.objects.create(
             device=device1,
@@ -330,7 +331,7 @@ class ConfigPlanTestCase(
             feature=rule1.feature,
             config_set="Test Config Set 1",
             change_control_id="Test Change Control ID 1",
-            status=status,
+            status=not_approved_status,
         )
         models.ConfigPlan.objects.create(
             device=device2,
@@ -338,7 +339,7 @@ class ConfigPlanTestCase(
             feature=rule2.feature,
             config_set="Test Config Set 2",
             change_control_id="Test Change Control ID 2",
-            status=status,
+            status=not_approved_status,
         )
         models.ConfigPlan.objects.create(
             device=device3,
@@ -346,15 +347,13 @@ class ConfigPlanTestCase(
             feature=rule3.feature,
             config_set="Test Config Set 3",
             change_control_id="Test Change Control ID 3",
-            status=status,
+            status=not_approved_status,
         )
 
+        # Used for EditObjectViewTestCase
         cls.form_data = {
-            "device": device4.pk,
-            "plan_type": "manual",
-            "config_set": "Test Config Set 4",
             "change_control_id": "Test Change Control ID 4",
-            "status": status.pk,
+            "status": approved_status.pk,
         }
 
     @skipIf(version.parse(settings.VERSION) <= version.parse("1.5.5"), "Bug in 1.5.4 and below")

@@ -114,3 +114,14 @@ class ConfigToPushViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     permission_classes = [IsAuthenticated & ConfigPushPermissions]
     queryset = Device.objects.all()
     serializer_class = serializers.ConfigToPushSerializer
+
+
+class ConfigPlanViewSet(NautobotModelViewSet):  # pylint:disable=too-many-ancestors
+    """API viewset for interacting with ConfigPlan objects."""
+
+    queryset = models.ConfigPlan.objects.all()
+    serializer_class = serializers.ConfigPlanSerializer
+    filterset_class = filters.ConfigPlanFilterSet
+
+    # Disabling POST as these should only be created via Job.
+    http_method_names = ["get", "put", "patch", "delete", "head", "options"]

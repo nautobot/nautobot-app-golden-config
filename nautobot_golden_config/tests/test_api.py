@@ -6,9 +6,10 @@ from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from rest_framework import status
 
-from nautobot.utilities.testing import APITestCase
-from nautobot.extras.models import GitRepository, GraphQLQuery, DynamicGroup
-from nautobot_golden_config.models import GoldenConfigSetting
+from nautobot.dcim.models import Device
+from nautobot.utilities.testing import APITestCase, APIViewTestCases
+from nautobot.extras.models import GitRepository, GraphQLQuery, DynamicGroup, Status
+from nautobot_golden_config.models import GoldenConfigSetting, ConfigPlan
 
 from .conftest import (
     create_device,
@@ -16,6 +17,7 @@ from .conftest import (
     create_config_compliance,
     create_git_repos,
     create_saved_queries,
+    create_device_data,
 )
 
 
@@ -275,3 +277,58 @@ class GoldenConfigSettingsAPITest(APITestCase):  # pylint: disable=too-many-ance
         # Put back a general GoldenConfigSetting object.
         global_settings = GoldenConfigSetting.objects.create(dynamic_group=self.dynamic_group)
         global_settings.save()
+
+
+# pylint: disable=too-many-ancestors
+class ConfigPlanTest(APIViewTestCases.APIViewTestCase):
+    """Test API for ConfigPlan."""
+
+    model = ConfigPlan
+    brief_fields = ["device", "display", "id", "plan_type", "url"]
+    # The Status serializer field requires slug, but the model field returns the UUID.
+    validation_excluded_fields = ["status"]
+
+    @classmethod
+    def setUpTestData(cls):
+        create_device_data()
+        device1 = Device.objects.get(name="Device 1")
+        device2 = Device.objects.get(name="Device 2")
+        device3 = Device.objects.get(name="Device 3")
+
+        rule1 = create_feature_rule_json(device1, feature="Test Feature 1")
+        rule2 = create_feature_rule_json(device2, feature="Test Feature 2")
+        rule3 = create_feature_rule_json(device3, feature="Test Feature 3")
+
+        features = [rule1.feature, rule2.feature, rule3.feature]
+        plan_types = ["intended", "missing", "remediation"]
+        not_approved_status = Status.objects.get(slug="not-approved")
+        approved_status = Status.objects.get(slug="approved")
+
+        for cont in range(1, 4):
+            ConfigPlan.objects.create(
+                device=Device.objects.get(name=f"Device {cont}"),
+                plan_type=plan_types[cont - 1],
+                feature=features[cont - 1],
+                config_set=f"Test Config Set {cont}",
+                change_control_id=f"Test Change Control ID {cont}",
+                status=not_approved_status,
+            )
+
+        cls.update_data = {
+            "change_control_id": "Test Change Control ID 4",
+            "status": approved_status.slug,
+        }
+
+        cls.bulk_update_data = {
+            "change_control_id": "Test Change Control ID 5",
+            "status": approved_status.slug,
+        }
+
+    def test_create_object(self):
+        """Skipping test due to POST method not allowed."""
+
+    def test_create_object_without_permission(self):
+        """Skipping test due to POST method not allowed."""
+
+    def test_bulk_create_objects(self):
+        """Skipping test due to POST method not allowed."""

@@ -1,17 +1,20 @@
 """Unit tests for nautobot_golden_config views."""
 
 import datetime
-from unittest import mock
+from unittest import mock, skipIf
+from packaging import version
 
 from lxml import html
 
+from django.conf import settings
 from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 
 from nautobot.dcim.models import Device
-from nautobot.extras.models import Relationship, RelationshipAssociation
+from nautobot.extras.models import Relationship, RelationshipAssociation, Status
+from nautobot.utilities.testing import ViewTestCases
 from nautobot_golden_config import views, models
 
 from .conftest import create_feature_rule_json, create_device_data
@@ -292,3 +295,68 @@ class GoldenConfigListViewTestCase(TestCase):
         device_names_in_export = [entry.split(",")[0] for entry in csv_data[1:]]
         device_names_in_site_1 = [device.name for device in devices_in_site_1]
         self.assertEqual(device_names_in_export, device_names_in_site_1)
+
+
+# pylint: disable=too-many-ancestors
+class ConfigPlanTestCase(
+    ViewTestCases.GetObjectViewTestCase,
+    ViewTestCases.GetObjectChangelogViewTestCase,
+    ViewTestCases.ListObjectsViewTestCase,
+    # Disabling Create tests because ConfigPlans are created via Job
+    # ViewTestCases.CreateObjectViewTestCase,
+    ViewTestCases.DeleteObjectViewTestCase,
+    ViewTestCases.EditObjectViewTestCase,
+):
+    """Test ConfigPlan views."""
+
+    model = models.ConfigPlan
+
+    @classmethod
+    def setUpTestData(cls):
+        create_device_data()
+        device1 = Device.objects.get(name="Device 1")
+        device2 = Device.objects.get(name="Device 2")
+        device3 = Device.objects.get(name="Device 3")
+
+        rule1 = create_feature_rule_json(device1, feature="Test Feature 1")
+        rule2 = create_feature_rule_json(device2, feature="Test Feature 2")
+        rule3 = create_feature_rule_json(device3, feature="Test Feature 3")
+
+        not_approved_status = Status.objects.get(slug="not-approved")
+        approved_status = Status.objects.get(slug="approved")
+
+        models.ConfigPlan.objects.create(
+            device=device1,
+            plan_type="intended",
+            feature=rule1.feature,
+            config_set="Test Config Set 1",
+            change_control_id="Test Change Control ID 1",
+            status=not_approved_status,
+        )
+        models.ConfigPlan.objects.create(
+            device=device2,
+            plan_type="missing",
+            feature=rule2.feature,
+            config_set="Test Config Set 2",
+            change_control_id="Test Change Control ID 2",
+            status=not_approved_status,
+        )
+        models.ConfigPlan.objects.create(
+            device=device3,
+            plan_type="remediation",
+            feature=rule3.feature,
+            config_set="Test Config Set 3",
+            change_control_id="Test Change Control ID 3",
+            status=not_approved_status,
+        )
+
+        # Used for EditObjectViewTestCase
+        cls.form_data = {
+            "change_control_id": "Test Change Control ID 4",
+            "status": approved_status.pk,
+        }
+
+    @skipIf(version.parse(settings.VERSION) <= version.parse("1.5.5"), "Bug in 1.5.4 and below")
+    def test_list_objects_with_permission(self):
+        """Overriding test for versions < 1.5.5."""
+        super().test_list_objects_with_permission()

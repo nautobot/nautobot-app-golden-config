@@ -12,6 +12,7 @@ router.register("compliance-rule", views.ComplianceRuleUIViewSet)
 router.register("golden-config-setting", views.GoldenConfigSettingUIViewSet)
 router.register("config-remove", views.ConfigRemoveUIViewSet)
 router.register("config-replace", views.ConfigReplaceUIViewSet)
+router.register("config-plan", views.ConfigPlanUIViewSet)
 
 
 urlpatterns = [

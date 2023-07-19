@@ -94,6 +94,22 @@ if ENABLE_BACKUP:
         )
     )
 
+items.append(
+    NavMenuItem(
+        link="plugins:nautobot_golden_config:configplan_list",
+        name="Config Plans",
+        permissions=["nautobot_golden_config.view_configplan"],
+        buttons=(
+            NavMenuButton(
+                link="plugins:nautobot_golden_config:configplan_add",
+                title="Generate Config Plan",
+                icon_class="mdi mdi-plus-thick",
+                button_class=ButtonColorChoices.GREEN,
+                permissions=["nautobot_golden_config.add_configplan"],
+            ),
+        ),
+    )
+)
 
 items.append(
     NavMenuItem(

@@ -12,10 +12,11 @@ from django.utils.module_loading import import_string
 from django.utils.text import slugify
 from nautobot.core.models.generics import PrimaryModel
 from nautobot.extras.models import DynamicGroup, ObjectChange
+from nautobot.extras.models.statuses import StatusField
 from nautobot.extras.utils import extras_features
 from nautobot.utilities.utils import serialize_object, serialize_object_v2
 from netutils.config.compliance import feature_compliance
-from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
+from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
 from nautobot_golden_config.utilities.utils import get_platform
 
@@ -700,3 +701,53 @@ class ConfigReplace(PrimaryModel):  # pylint: disable=too-many-ancestors
     def __str__(self):
         """Return a simple string if model is called."""
         return self.name
+
+
+@extras_features(
+    "custom_fields",
+    "custom_links",
+    "custom_validators",
+    "export_templates",
+    "graphql",
+    "relationships",
+    "webhooks",
+    "statuses",
+)
+class ConfigPlan(PrimaryModel):  # pylint: disable=too-many-ancestors
+    """ConfigPlan for Golden Configuration Plan Model definition."""
+
+    plan_type = models.CharField(max_length=20, choices=ConfigPlanTypeChoice)
+    device = models.ForeignKey(
+        to="dcim.Device",
+        on_delete=models.CASCADE,
+        related_name="config_plan",
+    )
+    config_set = models.TextField(help_text="Configuration set to be applied to device.")
+    feature = models.ForeignKey(
+        to="ComplianceFeature",
+        on_delete=models.CASCADE,
+        related_name="config_plan",
+        null=True,
+        blank=True,
+    )
+    change_control_id = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        verbose_name="Change Control ID",
+        help_text="Change Control ID for this configuration plan.",
+    )
+    status = StatusField(blank=True, null=True, on_delete=models.PROTECT)
+
+    class Meta:
+        """Meta information for ConfigPlan model."""
+
+        ordering = ("device",)
+
+    def __str__(self):
+        """Return a simple string if model is called."""
+        return f"{self.device.name}-{self.plan_type}-{self.created}"
+
+    def get_absolute_url(self):
+        """Return absolute URL for instance."""
+        return reverse("plugins:nautobot_golden_config:configplan", args=[self.pk])

@@ -5,14 +5,25 @@ from django import forms
 
 import nautobot.extras.forms as extras_forms
 import nautobot.utilities.forms as utilities_forms
-from nautobot.dcim.models import Device, Platform, Region, Site, DeviceRole, DeviceType, Manufacturer, Rack, RackGroup
-from nautobot.extras.models import Status, GitRepository, DynamicGroup
+from nautobot.dcim.models import (
+    Device,
+    Platform,
+    Region,
+    Site,
+    DeviceRole,
+    DeviceType,
+    Manufacturer,
+    Rack,
+    RackGroup,
+    Location,
+)
+from nautobot.extras.models import Status, GitRepository, DynamicGroup, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
-from nautobot.utilities.forms import SlugField
+from nautobot.utilities.forms import SlugField, BootstrapMixin, DatePicker, add_blank_choice, TagFilterField
 from nautobot.extras.forms import NautobotFilterForm, NautobotBulkEditForm, NautobotModelForm
 
-
 from nautobot_golden_config import models
+from nautobot_golden_config.choices import ConfigPlanTypeChoice
 
 # ConfigCompliance
 
@@ -390,3 +401,126 @@ class GoldenConfigSettingBulkEditForm(NautobotBulkEditForm):
         """Boilerplate form Meta data for GoldenConfigSetting."""
 
         nullable_fields = []
+
+
+# ConfigPlan
+
+
+class ConfigPlanFilterForm(NautobotFilterForm):
+    """Filter Form for ConfigPlan."""
+
+    model = models.ConfigPlan
+
+    q = forms.CharField(required=False, label="Search")
+    device_id = utilities_forms.DynamicModelMultipleChoiceField(
+        queryset=Device.objects.all(), required=False, null_option="None", label="Device"
+    )
+    created__lte = forms.DateTimeField(label="Created Before", required=False, widget=DatePicker())
+    created__gte = forms.DateTimeField(label="Created After", required=False, widget=DatePicker())
+    plan_type = forms.ChoiceField(
+        choices=add_blank_choice(ConfigPlanTypeChoice), required=False, widget=forms.Select(), label="Plan Type"
+    )
+    feature = utilities_forms.DynamicModelMultipleChoiceField(
+        queryset=models.ComplianceFeature.objects.all(),
+        required=False,
+        null_option="None",
+        label="Feature",
+        to_field_name="name",
+    )
+    change_control_id = forms.CharField(required=False, label="Change Control ID")
+    status = utilities_forms.DynamicModelMultipleChoiceField(
+        required=False,
+        queryset=Status.objects.all(),
+        query_params={"content_types": models.ConfigPlan._meta.label_lower},
+        display_field="label",
+        label="Status",
+        to_field_name="name",
+    )
+    tag = TagFilterField(model)
+
+
+class ConfigPlanCreateForm(BootstrapMixin, forms.Form):
+    """Create Form for ConfigPlan instances."""
+
+    # Common create fields
+    change_control_id = forms.CharField(required=False, label="Change Control ID")
+
+    # Common filter fields
+    tenant_group = utilities_forms.DynamicModelMultipleChoiceField(queryset=TenantGroup.objects.all(), required=False)
+    tenant = utilities_forms.DynamicModelMultipleChoiceField(queryset=Tenant.objects.all(), required=False)
+    location = utilities_forms.DynamicModelMultipleChoiceField(queryset=Location.objects.all(), required=False)
+    region = utilities_forms.DynamicModelMultipleChoiceField(queryset=Region.objects.all(), required=False)
+    site = utilities_forms.DynamicModelMultipleChoiceField(queryset=Site.objects.all(), required=False)
+    rack_group = utilities_forms.DynamicModelMultipleChoiceField(queryset=RackGroup.objects.all(), required=False)
+    rack = utilities_forms.DynamicModelMultipleChoiceField(queryset=Rack.objects.all(), required=False)
+    role = utilities_forms.DynamicModelMultipleChoiceField(queryset=DeviceRole.objects.all(), required=False)
+    manufacturer = utilities_forms.DynamicModelMultipleChoiceField(queryset=Manufacturer.objects.all(), required=False)
+    platform = utilities_forms.DynamicModelMultipleChoiceField(queryset=Platform.objects.all(), required=False)
+    device_type = utilities_forms.DynamicModelMultipleChoiceField(queryset=DeviceType.objects.all(), required=False)
+    device = utilities_forms.DynamicModelMultipleChoiceField(queryset=Device.objects.all(), required=False)
+    tag = utilities_forms.DynamicModelMultipleChoiceField(
+        queryset=Tag.objects.all(), query_params={"content_types": "dcim.device"}, required=False
+    )
+    status = utilities_forms.DynamicModelMultipleChoiceField(
+        queryset=Status.objects.all(), query_params={"content_types": "dcim.device"}, required=False
+    )
+
+
+class ConfigPlanCreateFeatureForm(ConfigPlanCreateForm):
+    """Create Form for ConfigPlan with features instances."""
+
+    feature = utilities_forms.DynamicModelMultipleChoiceField(
+        queryset=models.ComplianceFeature.objects.all(),
+        display_field="name",
+        required=False,
+        help_text="Note: Selecting no features will generate plans for all applicable features.",
+    )
+
+
+class ConfigPlanCreateCommandsForm(ConfigPlanCreateForm):
+    """Create Form for ConfigPlan with commands instances."""
+
+    commands = forms.CharField(
+        widget=forms.Textarea,
+        help_text=(
+            "Enter your configuration template here representing CLI configuration.<br>"
+            'You may use Jinja2 templating. Example: <code>{% if "foo" in bar %}foo{% endif %}</code><br>'
+            "You can also reference the device object with <code>obj</code>.<br>"
+            "For example: <code>hostname {{ obj.name }}</code> or <code>ip address {{ obj.primary_ip4.host }}</code>"
+        ),
+        required=True,
+    )
+
+
+class ConfigPlanUpdateForm(NautobotModelForm):
+    """Form for ConfigPlan instances."""
+
+    class Meta:
+        """Boilerplate form Meta data for ConfigPlan."""
+
+        model = models.ConfigPlan
+        fields = (
+            "change_control_id",
+            "tags",
+            "status",
+        )
+
+
+class ConfigPlanBulkEditForm(extras_forms.TagsBulkEditFormMixin, NautobotBulkEditForm):
+    """BulkEdit form for ConfigPlan instances."""
+
+    pk = forms.ModelMultipleChoiceField(queryset=models.ConfigPlan.objects.all(), widget=forms.MultipleHiddenInput)
+    status = utilities_forms.DynamicModelChoiceField(
+        queryset=Status.objects.all(),
+        query_params={"content_types": models.ConfigPlan._meta.label_lower},
+        required=False,
+    )
+    change_control_id = forms.CharField(required=False, label="Change Control ID")
+
+    class Meta:
+        """Boilerplate form Meta data for ConfigPlan."""
+
+        nullable_fields = [
+            "change_control_id",
+            "tags",
+        ]

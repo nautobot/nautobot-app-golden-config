@@ -5,9 +5,12 @@ from datetime import datetime
 
 from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Platform, Rack, RackGroup, Region, Site
 from nautobot.extras.datasources.git import ensure_git_repository
-from nautobot.extras.jobs import BooleanVar, Job, MultiObjectVar, ObjectVar
+from nautobot.extras.jobs import BooleanVar, Job, MultiObjectVar, ObjectVar, ChoiceVar, StringVar, TextVar
 from nautobot.extras.models import DynamicGroup, GitRepository, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
+from nornir_nautobot.exceptions import NornirNautobotException
+from nautobot_golden_config.choices import ConfigPlanTypeChoice
+from nautobot_golden_config.models import ComplianceFeature, ConfigPlan
 from nautobot_golden_config.nornir_plays.config_backup import config_backup
 from nautobot_golden_config.nornir_plays.config_compliance import config_compliance
 from nautobot_golden_config.nornir_plays.config_intended import config_intended
@@ -16,6 +19,11 @@ from nautobot_golden_config.utilities.constant import (
     ENABLE_COMPLIANCE,
     ENABLE_INTENDED,
     ENABLE_CONFIG_CONTEXT_SYNC,
+)
+from nautobot_golden_config.utilities.config_plan import (
+    config_plan_default_status,
+    generate_config_set_from_compliance_feature,
+    generate_config_set_from_manual,
 )
 from nautobot_golden_config.utilities.git import GitRepo
 from nautobot_golden_config.utilities.helper import get_job_filter
@@ -285,6 +293,125 @@ class AllDevicesGoldenConfig(Job):
             ComplianceJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
 
 
+class GenerateConfigPlans(Job, FormEntry):
+    """Job to generate config plans."""
+
+    # Device QS Filters
+    tenant_group = FormEntry.tenant_group
+    tenant = FormEntry.tenant
+    region = FormEntry.region
+    site = FormEntry.site
+    rack_group = FormEntry.rack_group
+    rack = FormEntry.rack
+    role = FormEntry.role
+    manufacturer = FormEntry.manufacturer
+    platform = FormEntry.platform
+    device_type = FormEntry.device_type
+    device = FormEntry.device
+    tag = FormEntry.tag
+    status = FormEntry.status
+    debug = FormEntry.debug
+
+    # Config Plan generation fields
+    plan_type = ChoiceVar(choices=ConfigPlanTypeChoice.CHOICES)
+    feature = MultiObjectVar(model=ComplianceFeature, required=False)
+    change_control_id = StringVar(required=False)
+    commands = TextVar(required=False)
+
+    class Meta:
+        """Meta object boilerplate for config plan generation."""
+
+        name = "Generate Config Plans"
+        description = "Generate config plans for devices."
+        # Defaulting to hidden as this should be primarily called by the View
+        hidden = True
+
+    def __init__(self, *args, **kwargs):
+        """Initialize the job."""
+        super().__init__(*args, **kwargs)
+        self._plan_type = None
+        self._feature = None
+        self._change_control_id = None
+        self._commands = None
+        self._device_qs = Device.objects.none()
+        self._status = config_plan_default_status()
+
+    def _validate_inputs(self, data):
+        self._plan_type = data["plan_type"]
+        self._feature = data.get("feature", [])
+        self._change_control_id = data.get("change_control_id", "")
+        self._commands = data.get("commands", "")
+        if self._plan_type in ["intended", "missing", "remediation"]:
+            if not self._feature:
+                self._feature = ComplianceFeature.objects.all()
+        if self._plan_type in ["manual"]:
+            if not self._commands:
+                self.log_failure("No commands entered for config plan generation.")
+                return False
+        return True
+
+    def _generate_config_plan_from_feature(self):
+        """Generate config plans from features."""
+        for feature in self._feature:
+            for device in self._device_qs:
+                config_set = generate_config_set_from_compliance_feature(device, self._plan_type, feature)
+                if not config_set:
+                    self.log_debug(f"Device {device} does not have {self._plan_type} config for {feature}.")
+                    continue
+                config_plan = ConfigPlan.objects.create(
+                    device=device,
+                    plan_type=self._plan_type,
+                    feature=feature,
+                    config_set=config_set,
+                    change_control_id=self._change_control_id,
+                    status=self._status,
+                )
+                self.log_success(obj=config_plan, message=f"Config plan created for {device} with feature {feature}.")
+
+    def _generate_config_plan_from_manual(self):
+        """Generate config plans from manual."""
+        default_context = {
+            "request": self.request,
+            "user": self.request.user,
+        }
+        for device in self._device_qs:
+            config_set = generate_config_set_from_manual(device, self._commands, context=default_context)
+            if not config_set:
+                self.log_debug(f"Device {self.device} did not return a rendered config set from the provided commands.")
+                continue
+            config_plan = ConfigPlan.objects.create(
+                device=device,
+                plan_type=self._plan_type,
+                config_set=config_set,
+                change_control_id=self._change_control_id,
+                status=self._status,
+            )
+            self.log_success(obj=config_plan, message=f"Config plan created for {device} with manual commands.")
+
+    def run(self, data, commit):
+        """Run config plan generation process."""
+        self.log_debug("Starting config plan generation job.")
+        if not self._validate_inputs(data):
+            return
+        try:
+            self._device_qs = get_job_filter(data)
+        except NornirNautobotException as exc:
+            self.log_failure(str(exc))
+            return
+        if self._plan_type in ["intended", "missing", "remediation"]:
+            self.log_debug("Starting config plan generation for compliance features.")
+            self._generate_config_plan_from_feature()
+        elif self._plan_type in ["manual"]:
+            self.log_debug("Starting config plan generation for manual commands.")
+            self._generate_config_plan_from_manual()
+        elif self._plan_type in ["full"]:
+            self.log_failure("Full config plan generation is not yet supported.")
+            return
+        else:
+            self.log_failure(f"Unknown config plan type {self._plan_type}.")
+            return
+
+
 # Conditionally allow jobs based on whether or not turned on.
 jobs = []
 if ENABLE_BACKUP:
@@ -293,4 +420,4 @@ if ENABLE_INTENDED:
     jobs.append(IntendedJob)
 if ENABLE_COMPLIANCE:
     jobs.append(ComplianceJob)
-jobs.extend([AllGoldenConfig, AllDevicesGoldenConfig])
+jobs.extend([AllGoldenConfig, AllDevicesGoldenConfig, GenerateConfigPlans])

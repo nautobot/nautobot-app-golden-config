@@ -9,6 +9,7 @@ except ImportError:
 __version__ = metadata.version(__name__)
 
 from django.db.models.signals import post_migrate
+from nautobot.core.signals import nautobot_database_ready
 from nautobot.extras.plugins import PluginConfig
 
 
@@ -44,7 +45,13 @@ class GoldenConfig(PluginConfig):
         import nautobot_golden_config.jobs  # pylint: disable=unused-import, import-outside-toplevel
         from nautobot_golden_config.models import ConfigCompliance  # pylint: disable=import-outside-toplevel
 
-        from .signals import config_compliance_platform_cleanup  # pylint: disable=import-outside-toplevel
+        # pylint: disable=import-outside-toplevel
+        from .signals import (
+            config_compliance_platform_cleanup,
+            post_migrate_create_statuses,
+        )
+
+        nautobot_database_ready.connect(post_migrate_create_statuses, sender=self)
 
         super().ready()
         post_migrate.connect(config_compliance_platform_cleanup, sender=ConfigCompliance)

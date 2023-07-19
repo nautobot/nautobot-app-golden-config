@@ -1,13 +1,12 @@
 from django.db import migrations, models
 import json
 
-from nautobot_golden_config.models import ConfigCompliance
-
 
 def jsonify(apps, schedma_editor):
     """Converts textfield to json in preparation for migration."""
+    ConfigCompliance = apps.get_model("nautobot_golden_config", "ConfigCompliance")
     queryset = ConfigCompliance.objects.all()
-    attrs = ["actual", "extra", "intended", "missing", "remediation"]
+    attrs = ["actual", "extra", "intended", "missing"]
     for i in queryset:
         for attr in attrs:
             value = getattr(i, attr)
@@ -22,11 +21,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name="configcompliance",
-            name="remediation",
-            field=models.JSONField(blank=True, null=True),
-        ),
+        migrations.RunPython(code=jsonify),
         migrations.AlterField(
             model_name="compliancerule",
             name="match_config",
@@ -52,5 +47,4 @@ class Migration(migrations.Migration):
             name="missing",
             field=models.JSONField(blank=True),
         ),
-        migrations.RunPython(code=jsonify),
     ]

@@ -499,7 +499,7 @@ class ConfigPlanTable(StatusTableMixin, BaseTable):
     feature = LinkColumn(
         "plugins:nautobot_golden_config:compliancefeature", args=[A("feature__pk")], text=lambda record: record.feature
     )
-    config_set = TemplateColumn(template_code=CONFIG_SET_BUTTON, verbose_name="Config Sets", orderable=False)
+    config_set = TemplateColumn(template_code=CONFIG_SET_BUTTON, verbose_name="Config Set", orderable=False)
     tags = TagColumn(url_name="plugins:nautobot_golden_config:configplan_list")
 
     class Meta(BaseTable.Meta):

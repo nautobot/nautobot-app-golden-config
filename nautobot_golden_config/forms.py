@@ -23,7 +23,7 @@ from nautobot.utilities.forms import SlugField, BootstrapMixin, DatePicker, add_
 from nautobot.extras.forms import NautobotFilterForm, NautobotBulkEditForm, NautobotModelForm
 
 from nautobot_golden_config import models
-from nautobot_golden_config.choices import ConfigPlanTypeChoice
+from nautobot_golden_config.choices import ConfigPlanTypeChoice, ComplianceRuleConfigTypeChoice
 
 # ConfigCompliance
 
@@ -157,6 +157,14 @@ class ComplianceRuleBulkEditForm(NautobotBulkEditForm):
     """BulkEdit form for ComplianceRule instances."""
 
     pk = forms.ModelMultipleChoiceField(queryset=models.ComplianceRule.objects.all(), widget=forms.MultipleHiddenInput)
+    description = forms.CharField(max_length=200, required=False)
+    config_type = forms.ChoiceField(
+        required=False,
+        choices=utilities_forms.add_blank_choice(ComplianceRuleConfigTypeChoice),
+    )
+    config_ordered = forms.NullBooleanField(required=False, widget=utilities_forms.BulkEditNullBooleanSelect())
+    custom_compliance = forms.NullBooleanField(required=False, widget=utilities_forms.BulkEditNullBooleanSelect())
+    config_remediation = forms.NullBooleanField(required=False, widget=utilities_forms.BulkEditNullBooleanSelect())
 
     class Meta:
         """Boilerplate form Meta data for ComplianceRule."""
@@ -203,6 +211,7 @@ class ComplianceFeatureBulkEditForm(NautobotBulkEditForm):
     pk = forms.ModelMultipleChoiceField(
         queryset=models.ComplianceFeature.objects.all(), widget=forms.MultipleHiddenInput
     )
+    description = forms.CharField(max_length=200, required=False)
 
     class Meta:
         """Boilerplate form Meta data for ComplianceFeature."""
@@ -256,6 +265,7 @@ class ConfigRemoveBulkEditForm(NautobotBulkEditForm):
     """BulkEdit form for ConfigRemove instances."""
 
     pk = forms.ModelMultipleChoiceField(queryset=models.ConfigRemove.objects.all(), widget=forms.MultipleHiddenInput)
+    description = forms.CharField(max_length=200, required=False)
 
     class Meta:
         """Boilerplate form Meta data for ConfigRemove."""
@@ -321,6 +331,7 @@ class ConfigReplaceBulkEditForm(NautobotBulkEditForm):
     """BulkEdit form for ConfigReplace instances."""
 
     pk = forms.ModelMultipleChoiceField(queryset=models.ConfigReplace.objects.all(), widget=forms.MultipleHiddenInput)
+    description = forms.CharField(max_length=200, required=False)
 
     class Meta:
         """Boilerplate form Meta data for ConfigReplace."""

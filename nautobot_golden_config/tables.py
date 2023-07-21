@@ -87,6 +87,38 @@ ALL_ACTIONS = """
 {% endif %}
 """
 
+CONFIG_SET_BUTTON = """
+<a href="#" class="openBtn" data-toggle="modal" data-target="#codeModal-{{ record.pk }}">
+    <i class="mdi mdi-file-document-outline"></i>
+</a>
+
+<div class="modal" id="codeModal-{{ record.pk }}">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <!-- Modal Header -->
+            <div class="modal-header">
+                <h3 class="modal-title">Config Set - {{ record.device }}</h3>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+
+            <!-- Modal body -->
+            <div class="modal-body">
+                <span id="config_set_{{ record.pk }}"><pre>{{ record.config_set }}</pre></span>
+                <span class="config_hover_button">
+                    <button type="button" class="btn btn-inline btn-default hover_copy_button" data-clipboard-action='copy' data-clipboard-target="#config_set_{{ record.pk }}">
+                        <span class="mdi mdi-content-copy"></span>
+                    </button>
+                </span>
+            </div>
+
+            <!-- Modal footer -->
+            <div class="modal-footer">
+                <button id="close" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>"""
+
 MATCH_CONFIG = """{{ record.match_config|linebreaksbr }}"""
 
 
@@ -467,11 +499,31 @@ class ConfigPlanTable(StatusTableMixin, BaseTable):
     feature = LinkColumn(
         "plugins:nautobot_golden_config:compliancefeature", args=[A("feature__pk")], text=lambda record: record.feature
     )
+    config_set = TemplateColumn(template_code=CONFIG_SET_BUTTON, verbose_name="Config Set", orderable=False)
     tags = TagColumn(url_name="plugins:nautobot_golden_config:configplan_list")
 
     class Meta(BaseTable.Meta):
         """Table to display Config Plans Meta Data."""
 
         model = models.ConfigPlan
-        fields = ("pk", "device", "created", "plan_type", "feature", "change_control_id", "status", "tags")
-        default_columns = ("pk", "device", "created", "plan_type", "feature", "change_control_id", "status")
+        fields = (
+            "pk",
+            "device",
+            "created",
+            "plan_type",
+            "feature",
+            "change_control_id",
+            "config_set",
+            "status",
+            "tags",
+        )
+        default_columns = (
+            "pk",
+            "device",
+            "created",
+            "plan_type",
+            "feature",
+            "change_control_id",
+            "config_set",
+            "status",
+        )

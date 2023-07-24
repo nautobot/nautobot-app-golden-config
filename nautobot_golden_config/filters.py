@@ -352,7 +352,7 @@ class ConfigPlanFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
         label="Feature Name",
     )
     job_result_id = django_filters.ModelMultipleChoiceFilter(
-        queryset=JobResult.objects.all(),
+        queryset=JobResult.objects.filter(config_plan__isnull=False).distinct(),
         label="JobResult ID",
     )
     change_control_id = django_filters.CharFilter(

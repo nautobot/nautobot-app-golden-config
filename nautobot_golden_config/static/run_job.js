@@ -1,11 +1,11 @@
 
 /**
  * Used in conjuction with `job_result_modal` to pop up the modal, start the job, provide progress spinner, 
- * and provide job status, job results link, redirect link, and error message. 
+ * provide job status, job results link, redirect link, and error message.
  *
  * @requires nautobot_csrf_token - The CSRF token obtained from Nautobot.
- * @param {string} jobClass - The jobs `class_path` as defined on the job detail page. 
- * @param {Object} data - The object containing payload data to replace the job.
+ * @param {string} jobClass - The jobs `class_path` as defined on the job detail page.
+ * @param {Object} data - The object containing payload data to send to the job.
  * @param {string} redirectUrlTemplate - The redirect url to provide, you have access to jobData with the syntax like `{jobData.someKey}`, leave `undefined` if none is required.
  */
 function startJob(jobClass, data, redirectUrlTemplate) {
@@ -104,7 +104,7 @@ function pollJobStatus(jobId) {
 /**
  * Converts a list of form data objects to a dictionary.
  *
- * @param {FormData} formData - The list of form data objects to be converted.
+ * @param {FormData} formData - The form data object to be converted.
  * @param {string[]} listKeys - The list of keys for which values should be collected as lists.
  * @returns {Object} - The dictionary representation of the form data.
  */

@@ -507,7 +507,7 @@ class ConfigPlanForm(NautobotModelForm):
     )
 
     def __init__(self, *args, **kwargs):
-        """Method to provide provide data be used in django template -> JS to toggle form fields."""
+        """Method to get data from Python -> Django template -> JS  in support of toggle form fields."""
         super().__init__(*args, **kwargs)
         hide_form_data = [
             {
@@ -598,7 +598,8 @@ class ConfigPlanFilterForm(NautobotFilterForm):
     )
     change_control_id = forms.CharField(required=False, label="Change Control ID")
     job_result_id = utilities_forms.DynamicModelMultipleChoiceField(
-        queryset=JobResult.objects.all(),
+        queryset=JobResult.objects.filter(config_plan__isnull=False).distinct(),
+        query_params={"nautobot_golden_config_config_plan_null": True},
         label="Job Result",
         required=False,
         display_field="id",

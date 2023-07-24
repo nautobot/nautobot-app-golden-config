@@ -466,7 +466,7 @@ class RemediationSettingBulkEditForm(NautobotBulkEditForm):
 class ConfigPlanForm(NautobotModelForm):
     """Form for ConfigPlan instances."""
 
-    plan_type = forms.ChoiceField(choices=add_blank_choice(ConfigPlanTypeChoice), required=False, label="Plan Type")
+    plan_type = forms.ChoiceField(choices=add_blank_choice(ConfigPlanTypeChoice), required=True, label="Plan Type")
     change_control_id = forms.CharField(required=False, label="Change Control ID")
     change_control_url = forms.URLField(required=False, label="Change Control URL")
 
@@ -489,7 +489,7 @@ class ConfigPlanForm(NautobotModelForm):
 
     tenant_group = utilities_forms.DynamicModelMultipleChoiceField(queryset=TenantGroup.objects.all(), required=False)
     tenant = utilities_forms.DynamicModelMultipleChoiceField(queryset=Tenant.objects.all(), required=False)
-    location = utilities_forms.DynamicModelMultipleChoiceField(queryset=Location.objects.all(), required=False)
+    # location = utilities_forms.DynamicModelMultipleChoiceField(queryset=Location.objects.all(), required=False)
     region = utilities_forms.DynamicModelMultipleChoiceField(queryset=Region.objects.all(), required=False)
     site = utilities_forms.DynamicModelMultipleChoiceField(queryset=Site.objects.all(), required=False)
     rack_group = utilities_forms.DynamicModelMultipleChoiceField(queryset=RackGroup.objects.all(), required=False)

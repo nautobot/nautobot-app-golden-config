@@ -379,7 +379,7 @@ class GenerateConfigPlans(Job, FormEntry):
                 job_result=self.job_result,
             )
             config_plan.feature.set(features)
-            config_plan.save()
+            config_plan.validated_save()
             _features = ", ".join([str(feat) for feat in features])
             self.log_success(obj=config_plan, message=f"Config plan created for `{device}` with feature `{_features}`.")
 

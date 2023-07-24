@@ -818,56 +818,17 @@ class ConfigPlanUIViewSet(NautobotUIViewSet):
     bulk_update_form_class = forms.ConfigPlanBulkEditForm
     filterset_class = filters.ConfigPlanFilterSet
     filterset_form_class = forms.ConfigPlanFilterForm
-    form_class = forms.ConfigPlanUpdateForm
+    form_class = forms.ConfigPlanForm
     queryset = models.ConfigPlan.objects.all()
     serializer_class = serializers.ConfigPlanSerializer
     table_class = tables.ConfigPlanTable
     lookup_field = "pk"
     action_buttons = ("add",)
 
-    def create(self, request, *args, **kwargs):
-        """Create method."""
-        template = "nautobot_golden_config/configplan_generate.html"
-        context = {
-            "type_choices": ConfigPlanTypeChoice.CHOICES,
-            "plan_type": request.GET.get("plan_type"),
-            "return_url": self.get_return_url(request),
-        }
-        form_class = self.get_form_class()
-        if context["plan_type"]:
-            if context["plan_type"] in ["intended", "missing", "remediation"]:
-                form_class = forms.ConfigPlanCreateFeatureForm
-            elif context["plan_type"] in ["manual"]:
-                form_class = forms.ConfigPlanCreateCommandsForm
-            else:
-                form_class = forms.ConfigPlanCreateForm
-
-        context["form"] = form_class
-
-        if request.method == "GET":
-            return render(request, template, context)
-
-        context["form"] = form_class(data=request.POST)
-        if not context["form"].is_valid():
-            return render(request, template, context)
-
-        job_data = {
-            "plan_type": context["plan_type"],
-        }
-        for field in request.POST:
-            if field in ["commands", "change_control_id"]:
-                job_data[field] = request.POST.get(field)
-            else:
-                job_data[field] = request.POST.getlist(field)
-
-        result = JobResult.enqueue_job(
-            func=run_job,
-            name=GenerateConfigPlans.class_path,
-            obj_type=get_job_content_type(),
-            user=request.user,
-            data=job_data,
-            request=copy_safe_request(request),
-            commit=True,
-        )
-
-        return redirect(result.get_absolute_url())
+    def get_form_class(self, **kwargs):
+        """
+        Helper function to get form_class for different views.
+        """
+        if self.action == "update":
+            return forms.ConfigPlanUpdateForm
+        return super().get_form_class(**kwargs)

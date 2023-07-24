@@ -4,7 +4,7 @@ import django_filters
 from django.db.models import Q
 from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Platform, Rack, RackGroup, Region, Site
 from nautobot.extras.filters import CustomFieldModelFilterSetMixin, StatusFilter
-from nautobot.extras.models import Status
+from nautobot.extras.models import JobResult, Status
 from nautobot.tenancy.models import Tenant, TenantGroup
 from nautobot.utilities.filters import BaseFilterSet, NameSlugSearchFilterSet, TreeNodeMultipleChoiceFilter, TagFilter
 from nautobot_golden_config import models
@@ -350,6 +350,10 @@ class ConfigPlanFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
         queryset=models.ComplianceFeature.objects.all(),
         to_field_name="name",
         label="Feature Name",
+    )
+    job_result_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=JobResult.objects.all(),
+        label="JobResult ID",
     )
     change_control_id = django_filters.CharFilter(
         field_name="change_control_id",

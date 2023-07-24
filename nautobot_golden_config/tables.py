@@ -496,8 +496,8 @@ class ConfigPlanTable(StatusTableMixin, BaseTable):
 
     pk = ToggleColumn()
     device = LinkColumn("plugins:nautobot_golden_config:configplan", args=[A("pk")])
-    feature = LinkColumn(
-        "plugins:nautobot_golden_config:compliancefeature", args=[A("feature__pk")], text=lambda record: record.feature
+    job_result = TemplateColumn(
+        template_code="""<a href="{% url 'extras:jobresult' pk=record.job_result.pk  %}" <i class="mdi mdi-clipboard-text-play-outline"></i></a> """
     )
     config_set = TemplateColumn(template_code=CONFIG_SET_BUTTON, verbose_name="Config Set", orderable=False)
     tags = TagColumn(url_name="plugins:nautobot_golden_config:configplan_list")
@@ -513,6 +513,8 @@ class ConfigPlanTable(StatusTableMixin, BaseTable):
             "plan_type",
             "feature",
             "change_control_id",
+            "change_control_url",
+            "job_result",
             "config_set",
             "status",
             "tags",
@@ -524,6 +526,8 @@ class ConfigPlanTable(StatusTableMixin, BaseTable):
             "plan_type",
             "feature",
             "change_control_id",
+            "change_control_url",
+            "job_result",
             "config_set",
             "status",
         )

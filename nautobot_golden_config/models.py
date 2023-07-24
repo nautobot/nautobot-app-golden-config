@@ -862,19 +862,26 @@ class RemediationSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
 class ConfigPlan(PrimaryModel):  # pylint: disable=too-many-ancestors
     """ConfigPlan for Golden Configuration Plan Model definition."""
 
-    plan_type = models.CharField(max_length=20, choices=ConfigPlanTypeChoice)
+    plan_type = models.CharField(max_length=20, choices=ConfigPlanTypeChoice, verbose_name="Plan Type")
     device = models.ForeignKey(
         to="dcim.Device",
         on_delete=models.CASCADE,
         related_name="config_plan",
     )
     config_set = models.TextField(help_text="Configuration set to be applied to device.")
-    feature = models.ForeignKey(
-        to="ComplianceFeature",
-        on_delete=models.CASCADE,
+    feature = models.ManyToManyField(
+        to=ComplianceFeature,
         related_name="config_plan",
         null=True,
         blank=True,
+    )
+    job_result = models.ForeignKey(
+        to="extras.JobResult",
+        on_delete=models.CASCADE,
+        related_name="config_plan",
+        null=False,
+        blank=False,
+        verbose_name="Job Result",
     )
     change_control_id = models.CharField(
         max_length=50,
@@ -883,12 +890,13 @@ class ConfigPlan(PrimaryModel):  # pylint: disable=too-many-ancestors
         verbose_name="Change Control ID",
         help_text="Change Control ID for this configuration plan.",
     )
+    change_control_url = models.URLField(blank=True, verbose_name="Change Control URL")
     status = StatusField(blank=True, null=True, on_delete=models.PROTECT)
 
     class Meta:
         """Meta information for ConfigPlan model."""
 
-        ordering = ("device",)
+        ordering = ("-created", "device")
 
     def __str__(self):
         """Return a simple string if model is called."""

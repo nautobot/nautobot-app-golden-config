@@ -36,10 +36,12 @@ class GoldenConfig(PluginConfig):
         "per_feature_width": 13,
         "per_feature_height": 4,
         "get_custom_compliance": None,
+        "enable_config_context_sync": False,
     }
 
     def ready(self):
         """Register custom signals."""
+        import nautobot_golden_config.jobs  # pylint: disable=unused-import, import-outside-toplevel
         from nautobot_golden_config.models import ConfigCompliance  # pylint: disable=import-outside-toplevel
 
         from .signals import config_compliance_platform_cleanup  # pylint: disable=import-outside-toplevel

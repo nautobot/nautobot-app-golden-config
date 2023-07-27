@@ -3,7 +3,6 @@
 from rest_framework import serializers
 
 from nautobot.apps.api import WritableNestedSerializer
-from nautobot.core.api import SerializedPKRelatedField
 from nautobot.extras.api.fields import StatusSerializerField
 from nautobot.extras.api.serializers import TaggedObjectSerializer
 from nautobot.extras.api.nested_serializers import NestedDynamicGroupSerializer

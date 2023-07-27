@@ -33,9 +33,16 @@ def graph_ql_query(request, device, query):
     if result.invalid:
         LOGGER.warning("GraphQL - query executed unsuccessfully")
         return (400, result.to_dict())
-    data = result.data
+    result_data = result.data
+    data = result_data.get("device", {})
+    data['external_data'] = {}
+    for key in result_data.keys():
+       if key != 'device':
+          data['external_data'][key] = result_data.get(key,{})
 
-    data = data.get("device", {})
+    
+
+
 
     if PLUGIN_CFG.get("sot_agg_transposer"):
         LOGGER.debug("GraphQL - tansform data with function: `%s`", str(PLUGIN_CFG.get("sot_agg_transposer")))

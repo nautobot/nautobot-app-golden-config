@@ -175,7 +175,7 @@ class ConfigPlanSerializer(NautobotModelSerializer, TaggedObjectSerializer, Stat
     """Serializer for ConfigPlan object."""
 
     url = serializers.HyperlinkedIdentityField(view_name="plugins-api:nautobot_golden_config-api:configplan-detail")
-    device = SerializedPKRelatedField(queryset=Device.objects.all(), serializer=NestedDeviceSerializer, required=False)
+    device = NestedDeviceSerializer(required=False)
     status = StatusSerializerField(required=False, queryset=Status.objects.all())
 
     class Meta:

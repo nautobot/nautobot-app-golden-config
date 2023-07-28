@@ -13,13 +13,13 @@
     </button>
     <ul class="dropdown-menu">
         {% if compliance %}
-            <li><a href="{% url 'extras:job' class_path='plugins/nautobot_golden_config.jobs/ComplianceJob' %}">Compliance</a></li>
+            <li><a href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.ComplianceJob' %}">Compliance</a></li>
         {% endif %}
         {% if intended %}
-            <li><a href="{% url 'extras:job' class_path='plugins/nautobot_golden_config.jobs/IntendedJob' %}">Intended</a></li>
+            <li><a href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.IntendedJob' %}">Intended</a></li>
         {% endif %}
         {% if backup %}
-            <li><a href="{% url 'extras:job' class_path='plugins/nautobot_golden_config.jobs/BackupJob' %}">Backup</a></li>
+            <li><a href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.BackupJob' %}">Backup</a></li>
         {% endif %}
     </ul>
 </div>

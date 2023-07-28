@@ -33,13 +33,13 @@ packages = [
 "Bug Tracker" = "https://github.com/nautobot/nautobot-plugin-golden-config/issues"
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.12"
+python = "^3.8,<3.12"
 deepdiff = ">=5.5.0,!=6.0,!=6.1,<7"
 django-pivot = "^1.8.1"
 matplotlib = "^3.3.2"
-nautobot = "^1.6.1"
-nautobot-plugin-nornir = ">=1.0.0"
-nautobot-capacity-metrics = "2.0.0"
+nautobot = ">=2.0.0-rc.2"  # TODO: Point to 2.x version
+nautobot-plugin-nornir = { git = "https://github.com/nautobot/nautobot-plugin-nornir.git", branch = "lvrfrc87" }  # TODO: Point to 2.x version
+toml = "^0.10.2"
 
 [tool.poetry.group.dev.dependencies]
 bandit = "*"
@@ -64,6 +64,7 @@ mkdocs-version-annotations = "1.0.0"
 # Automatic documentation from sources, for MkDocs
 mkdocstrings = "0.22.0"
 mkdocstrings-python = "1.5.2"
+pylint-nautobot = "^0.1.0"
 
 [tool.black]
 line-length = 120
@@ -90,7 +91,7 @@ exclude = '''
 
 [tool.pylint.master]
 # Include the pylint_django plugin to avoid spurious warnings about Django patterns
-load-plugins="pylint_django"
+load-plugins="pylint_django,pylint_nautobot"
 ignore=["jinja_filters.py", ".venv"]
 
 [tool.pylint.basic]
@@ -134,3 +135,6 @@ testpaths = [
     "tests"
 ]
 addopts = "-vv --doctest-modules"
+
+[tool.pylint-nautobot]
+supported_nautobot_versions = ["2"]

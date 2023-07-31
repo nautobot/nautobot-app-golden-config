@@ -6,7 +6,7 @@ from django.db.models import Q
 from jinja2 import exceptions as jinja_errors
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.dcim.models import Device
-from nautobot.utilities.utils import render_jinja2
+from nautobot.core.utils.data import render_jinja2
 from nornir_nautobot.exceptions import NornirNautobotException
 
 from nautobot_golden_config import models

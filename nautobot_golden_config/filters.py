@@ -2,11 +2,11 @@
 
 import django_filters
 from django.db.models import Q
-from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Platform, Rack, RackGroup, Region, Site
+from nautobot.dcim.models import Device, DeviceType, Manufacturer, Platform, Rack, RackGroup, Location
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.extras.filters import StatusFilter
 from nautobot.extras.filters import NautobotFilterSet
-from nautobot.extras.models import Status
+from nautobot.extras.models import Status, Role
 from nautobot.tenancy.models import Tenant, TenantGroup
 from nautobot.utilities.filters import TreeNodeMultipleChoiceFilter
 from nautobot.utilities.filters import MultiValueDateTimeFilter
@@ -81,24 +81,24 @@ class GoldenConfigFilterSet(NautobotFilterSet):
         label="Tenant (slug)",
     )
     region_id = TreeNodeMultipleChoiceFilter(
-        queryset=Region.objects.all(),
-        field_name="device__site__region",
+        queryset=Location.objects.all(),  # TODO: How does change to Location model affect this?
+        field_name="device__site__region=",  # TODO: How does change to Location model affect this?
         label="Region (ID)",
     )
     region = TreeNodeMultipleChoiceFilter(
-        queryset=Region.objects.all(),
-        field_name="device__site__region",
+        queryset=Location.objects.all(),  # TODO: How does change to Location model affect this?
+        field_name="device__site__region",  # TODO: How does change to Location model affect this?
         to_field_name="slug",
         label="Region (slug)",
     )
     site_id = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__site",
-        queryset=Site.objects.all(),
+        field_name="device__site",  # TODO: How does change to Location model affect this?
+        queryset=Location.objects.all(),  # TODO: How does change to Location model affect this?
         label="Site (ID)",
     )
     site = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__site__slug",
-        queryset=Site.objects.all(),
+        field_name="device__site__slug",  # TODO: How does change to Location model affect this?
+        queryset=Location.objects.all(),  # TODO: How does change to Location model affect this?
         to_field_name="slug",
         label="Site name (slug)",
     )
@@ -125,12 +125,12 @@ class GoldenConfigFilterSet(NautobotFilterSet):
     )
     role_id = django_filters.ModelMultipleChoiceFilter(
         field_name="device__device_role_id",
-        queryset=DeviceRole.objects.all(),
+        queryset=Role.objects.all(),  # TODO: How does change to Role model affect this?
         label="Role (ID)",
     )
     role = django_filters.ModelMultipleChoiceFilter(
         field_name="device__device_role__slug",
-        queryset=DeviceRole.objects.all(),
+        queryset=Role.objects.all(),  # TODO: How does change to Role model affect this?
         to_field_name="slug",
         label="Role (slug)",
     )

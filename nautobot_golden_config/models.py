@@ -13,7 +13,7 @@ from django.utils.text import slugify
 from nautobot.core.models.generics import PrimaryModel
 from nautobot.extras.models import DynamicGroup, ObjectChange
 from nautobot.extras.utils import extras_features
-from nautobot.utilities.utils import serialize_object, serialize_object_v2
+from nautobot.core.models.utils import serialize_object, serialize_object_v2
 from netutils.config.compliance import feature_compliance
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG

@@ -12,7 +12,7 @@
     </button>
     <ul class="dropdown-menu">
         {% if compliance %}
-            <li><a href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.ComplianceJob' %}">Compliance</a></li>
+            <li><a href="{% url 'extras:job' class_path='nautobot_golden_config.jobs.ComplianceJob' %}">Compliance</a></li>
         {% endif %}
     </ul>
 </div>

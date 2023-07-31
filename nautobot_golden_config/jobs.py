@@ -3,11 +3,12 @@
 
 from datetime import datetime
 
-from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Platform, Rack, RackGroup, Region, Site
+from nautobot.dcim.models import Device, DeviceType, Manufacturer, Platform, Rack, RackGroup, Location
 from nautobot.extras.datasources.git import ensure_git_repository
 from nautobot.extras.jobs import BooleanVar, Job, MultiObjectVar, ObjectVar
-from nautobot.extras.models import DynamicGroup, GitRepository, Status, Tag
+from nautobot.extras.models import DynamicGroup, GitRepository, Status, Tag, Role
 from nautobot.tenancy.models import Tenant, TenantGroup
+
 from nautobot_golden_config.nornir_plays.config_backup import config_backup
 from nautobot_golden_config.nornir_plays.config_compliance import config_compliance
 from nautobot_golden_config.nornir_plays.config_intended import config_intended
@@ -57,11 +58,11 @@ class FormEntry:  # pylint disable=too-few-public-method
 
     tenant_group = MultiObjectVar(model=TenantGroup, required=False)
     tenant = MultiObjectVar(model=Tenant, required=False)
-    region = MultiObjectVar(model=Region, required=False)
-    site = MultiObjectVar(model=Site, required=False)
+    region = MultiObjectVar(model=Location, required=False)  # TODO: How does change to Location model affect this?
+    site = MultiObjectVar(model=Location, required=False)  # TODO: How does change to Location model affect this?
     rack_group = MultiObjectVar(model=RackGroup, required=False)
     rack = MultiObjectVar(model=Rack, required=False)
-    role = MultiObjectVar(model=DeviceRole, required=False)
+    role = MultiObjectVar(model=Role, required=False)  # TODO: How does change to Role model affect this?
     manufacturer = MultiObjectVar(model=Manufacturer, required=False)
     platform = MultiObjectVar(model=Platform, required=False)
     device_type = MultiObjectVar(model=DeviceType, required=False, display_field="display_name")

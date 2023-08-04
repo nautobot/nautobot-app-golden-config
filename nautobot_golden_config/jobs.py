@@ -4,7 +4,11 @@
 from datetime import datetime
 
 from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Platform, Rack, RackGroup, Region, Site
-from nautobot.extras.datasources.git import ensure_git_repository
+from nautobot.extras.datasources.git import (
+    ensure_git_repository,
+    refresh_git_config_contexts,
+    refresh_git_config_context_schemas,
+)
 from nautobot.extras.jobs import BooleanVar, Job, MultiObjectVar, ObjectVar
 from nautobot.extras.models import DynamicGroup, GitRepository, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
@@ -46,10 +50,17 @@ def get_refreshed_repos(job_obj, repo_type, data=None):
 
 def update_config_context_repos(job_obj):
     """Simple helper method to update all configured Config Context git repositories."""
-    repos = GitRepository.objects.filter(provided_contents__icontains="extras.configcontext")
-    for repo in repos:
+    config_context_repos = GitRepository.objects.filter(provided_contents__icontains="extras.configcontext")
+    for repo in config_context_repos:
         job_obj.log_debug(f"Pulling config context repo {repo.name}.")
         ensure_git_repository(repository_record=repo, job_result=job_obj.job_result)
+        refresh_git_config_contexts(repository_record=repo, job_result=job_obj.job_result)
+    schema_repos = GitRepository.objects.filter(provided_contents__icontains="extras.configcontextschema")
+    for repo in schema_repos:
+        # to ensure we aren't syncing the git repo multiple times unnecessarily, check if it's already in previous group
+        if repo not in config_context_repos:
+            ensure_git_repository(repository_record=repo, job_result=job_obj.job_result)
+        refresh_git_config_context_schemas(repository_record=repo, job_result=job_obj.job_result)
 
 
 def commit_check(method):

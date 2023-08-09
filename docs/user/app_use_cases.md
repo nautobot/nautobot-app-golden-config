@@ -52,9 +52,9 @@ To update existing settings click on one of the `Settings` name.
 |Setting|Explanation|
 |:--|:--|
 |Backup Repositories |The Git Repository where your backup configurations will be found. |
-|Backup Path|A Jinja template which defines the path and name of backup files within the backup repository. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.site.slug}}/{{obj.name}}.cfg`|
+|Backup Path|A Jinja template which defines the path and name of backup files within the backup repository. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.location.name}}/{{obj.name}}.cfg`|
 |Intended Repositories |The Git Repository where your intended configuration state files will be found. |
-|Intended Path|A Jinja template which defines the path and name of intended configuration state files within the intended state repository. e.g. `{{obj.site.slug}}/{{obj.name}}.intended_cfg`|
+|Intended Path|A Jinja template which defines the path and name of intended configuration state files within the intended state repository. e.g. `{{obj.location.name}}/{{obj.name}}.intended_cfg`|
 |Jinja Repository |The Git Repository where your jinja templates will be found. |
 |Jinja Path|A Jinja template which defines the path (within the repository) and name of the Jinja template file. e.g. `{{obj.platform.slug}}/{{obj.device_role.slug}}/main.j2`|
 |Dynamic Group|The scope of devices on which Golden Config's jobs can operate. |
@@ -165,9 +165,9 @@ above), which will allow the user to limit the scope of the request.
 
 The plugin makes use of template content `right_page` in order to use display in-line the status of that device in the traditional Nautobot view. From here you can click the link to see the detail compliance view.
 
-### Site Template Content
+### Location Template Content
 
-The plugin makes use of template content `right_page` in order to use display in-line the status of that entire site in the traditional Nautobot view.
+The plugin makes use of template content `right_page` in order to use display in-line the status of that entire location in the traditional Nautobot view. This sums the total for all locations for parent locations.
 
 ### API
 

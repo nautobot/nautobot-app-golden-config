@@ -56,7 +56,7 @@ Notice that the `get_secret` filters take arguments. In the example, the `Secret
 
 #### Render Secrets Example
 
-This shows how Render the Secrets feature for a `Device`, for the default `Secrets Group` FK, and for custom relationships, in the example, at `Site` level.
+This shows how Render the Secrets feature for a `Device`, for the default `Secrets Group` FK, and for custom relationships, in the example, at `Location` level.
 
 ##### GraphQL query
 
@@ -66,9 +66,9 @@ query ($device_id: ID!) {
     secrets_group {
       slug
     }
-    site {
-      rel_my_secret_relationship_for_site {
-        slug
+    location {
+      rel_my_secret_relationship_for_location {
+        name
       }
     }
   }
@@ -83,10 +83,10 @@ Using the default `secrets_group` FK in `Device`:
 {% raw %}{{ secrets_group["slug"] | get_secret_by_secret_group_slug("password") | default('no password') }}{% endraw %}
 ```
 
-Using the custom relationship at the `Site` level:
+Using the custom relationship at the `Location` level:
 
 ```jinja2
-{% raw %}{{ site["rel_my_secret_relationship_for_site"][0]["slug"] | get_secret_by_secret_group_slug("password") | default('no password') }}{% endraw %}
+{% raw %}{{ location["rel_my_secret_relationship_for_location"][0]["slug"] | get_secret_by_secret_group_slug("password") | default('no password') }}{% endraw %}
 ```
 
 This will end up rendering the secret, of type "password", for the corresponding `SecretGroup`.

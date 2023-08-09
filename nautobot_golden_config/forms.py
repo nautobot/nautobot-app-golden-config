@@ -2,6 +2,7 @@
 # pylint: disable=too-many-ancestors
 
 from django import forms
+from django.contrib.contenttypes.models import ContentType
 
 import nautobot.extras.forms as extras_forms
 import nautobot.core.forms as core_forms
@@ -18,14 +19,15 @@ from nautobot_golden_config import models
 class ConfigComplianceFilterForm(NautobotFilterForm):
     """Filter Form for ConfigCompliance instances."""
 
+    _device_ct = ContentType.objects.get_for_model(Device)
+
     model = models.ConfigCompliance
     # Set field order to be explicit
     field_order = [
         "q",
         "tenant_group",
         "tenant",
-        "region",  # TODO: Handle change to Location model and removal of slug
-        "site",  # TODO: Handle change to Location model and removal of slug
+        "location",
         "rack_group_id",
         "rack_id",
         "role",
@@ -47,14 +49,11 @@ class ConfigComplianceFilterForm(NautobotFilterForm):
         null_option="None",
         query_params={"group": "$tenant_group"},
     )
-    region = core_forms.DynamicModelMultipleChoiceField(
-        queryset=Location.objects.all(), to_field_name="slug", required=False  # TODO: Handle change to Location model and removal of slug
-    )
-    site = core_forms.DynamicModelMultipleChoiceField(
-        queryset=Location.objects.all(), to_field_name="slug", required=False, query_params={"region": "$region"}  # TODO: Handle change to Location model and removal of slug
+    location = core_forms.DynamicModelMultipleChoiceField(
+        queryset=Location.objects.filter(location_type__content_types=_device_ct), to_field_name="", required=False,
     )
     rack_group_id = core_forms.DynamicModelMultipleChoiceField(
-        queryset=RackGroup.objects.all(), required=False, label="Rack group", query_params={"site": "$site"}  # TODO: Handle change to Location model
+        queryset=RackGroup.objects.all(), required=False, label="Rack group", query_params={"location": "$location"}  # TODO: Verify change to location works
     )
     rack_id = core_forms.DynamicModelMultipleChoiceField(
         queryset=Rack.objects.all(),
@@ -62,7 +61,7 @@ class ConfigComplianceFilterForm(NautobotFilterForm):
         label="Rack",
         null_option="None",
         query_params={
-            "site": "$site",  # TODO: Handle change to Location model and removal of slug
+            "location": "$location",  # TODO: Verify change to location works
             "group_id": "$rack_group_id",
         },
     )

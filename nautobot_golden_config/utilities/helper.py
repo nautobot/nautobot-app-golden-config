@@ -15,8 +15,7 @@ FIELDS_PK = {
     "platform",
     "tenant_group",
     "tenant",
-    "region",
-    "site",
+    "location",
     "role",
     "rack",
     "rack_group",
@@ -24,7 +23,7 @@ FIELDS_PK = {
     "device_type",
 }
 
-FIELDS_SLUG = {"tag", "status"}
+FIELDS_SLUG = {"tag", "status"}  # TODO: Change slug where appropriate
 
 
 def get_job_filter(data=None):

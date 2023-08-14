@@ -59,7 +59,7 @@ def _get_cli_compliance(obj):
         "name": obj.rule,
     }
     feature.update({"section": obj.rule.match_config.splitlines()})
-    value = feature_compliance(feature, obj.actual, obj.intended, get_platform(obj.device.platform.slug))
+    value = feature_compliance(feature, obj.actual, obj.intended, get_platform(obj.device.platform.id))
     compliance = value["compliant"]
     if compliance:
         compliance_int = 1
@@ -177,7 +177,8 @@ class ComplianceFeature(PrimaryModel):  # pylint: disable=too-many-ancestors
         """Return a sane string representation of the instance."""
         return self.slug
 
-    def get_absolute_url(self):
+    # TODO: Fix pylint arguments-differ for 2.x migration
+    def get_absolute_url(self):  # pylint: disable=arguments-differ
         """Absolute url for the ComplianceFeature instance."""
         return reverse("plugins:nautobot_golden_config:compliancefeature", args=[self.pk])
 
@@ -242,7 +243,7 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
     def to_csv(self):
         """Indicates model fields to return as csv."""
         return (
-            self.platform.slug,
+            self.platform.name,  # TODO: verify that changing slug -> name works (write a test case)
             self.feature.name,
             self.description,
             self.config_ordered,
@@ -264,7 +265,8 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
         """Return a sane string representation of the instance."""
         return f"{self.platform} - {self.feature.name}"
 
-    def get_absolute_url(self):
+    # TODO: Fix pylint arguments-differ for 2.x migration
+    def get_absolute_url(self):  # pylint: disable=arguments-differ
         """Absolute url for the ComplianceRule instance."""
         return reverse("plugins:nautobot_golden_config:compliancerule", args=[self.pk])
 
@@ -299,7 +301,8 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
 
     csv_headers = ["Device Name", "Feature", "Compliance"]
 
-    def get_absolute_url(self):
+    # TODO: Fix pylint arguments-differ for 2.x migration
+    def get_absolute_url(self):  # pylint: disable=arguments-differ
         """Return absolute URL for instance."""
         return reverse("plugins:nautobot_golden_config:configcompliance", args=[self.pk])
 
@@ -456,7 +459,7 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         null=False,
         blank=True,
         verbose_name="Backup Path in Jinja Template Form",
-        help_text="The Jinja path representation of where the backup file will be found. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.site.slug}}/{{obj.name}}.cfg`",
+        help_text="The Jinja path representation of where the backup file will be found. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.location.name}}/{{obj.name}}.cfg`",
     )
     intended_repository = models.ForeignKey(
         to="extras.GitRepository",
@@ -471,7 +474,7 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         null=False,
         blank=True,
         verbose_name="Intended Path in Jinja Template Form",
-        help_text="The Jinja path representation of where the generated file will be places. e.g. `{{obj.site.slug}}/{{obj.name}}.cfg`",
+        help_text="The Jinja path representation of where the generated file will be places. e.g. `{{obj.location.name}}/{{obj.name}}.cfg`",
     )
     jinja_repository = models.ForeignKey(
         to="extras.GitRepository",
@@ -522,10 +525,6 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
             self.weight,
             self.description,
         )
-
-    def get_absolute_url(self):
-        """Return absolute URL for instance."""
-        return reverse("plugins:nautobot_golden_config:goldenconfigsetting", args=[self.pk])
 
     def __str__(self):
         """Return a simple string if model is called."""
@@ -628,7 +627,11 @@ class ConfigRemove(PrimaryModel):  # pylint: disable=too-many-ancestors
 
     def to_csv(self):
         """Indicates model fields to return as csv."""
-        return (self.name, self.platform.slug, self.regex)
+        return (
+            self.name,
+            self.platform.name,
+            self.regex,
+        )  # TODO: verify that changing platform.slug -> name works (write a test case)
 
     class Meta:
         """Meta information for ConfigRemove model."""
@@ -639,10 +642,6 @@ class ConfigRemove(PrimaryModel):  # pylint: disable=too-many-ancestors
     def __str__(self):
         """Return a simple string if model is called."""
         return self.name
-
-    def get_absolute_url(self):
-        """Return absolute URL for instance."""
-        return reverse("plugins:nautobot_golden_config:configremove", args=[self.pk])
 
 
 @extras_features(
@@ -685,7 +684,13 @@ class ConfigReplace(PrimaryModel):  # pylint: disable=too-many-ancestors
 
     def to_csv(self):
         """Indicates model fields to return as csv."""
-        return (self.name, self.platform.slug, self.description, self.regex, self.replace)
+        return (
+            self.name,
+            self.platform.name,
+            self.description,
+            self.regex,
+            self.replace,
+        )  # TODO: verify that changing platform.slug -> name works (write a test case)
 
     class Meta:
         """Meta information for ConfigReplace model."""
@@ -693,7 +698,8 @@ class ConfigReplace(PrimaryModel):  # pylint: disable=too-many-ancestors
         ordering = ("platform", "name")
         unique_together = ("name", "platform")
 
-    def get_absolute_url(self):
+    # TODO: Fix pylint arguments-differ for 2.x migration
+    def get_absolute_url(self):  # pylint: disable=arguments-differ
         """Return absolute URL for instance."""
         return reverse("plugins:nautobot_golden_config:configreplace", args=[self.pk])
 

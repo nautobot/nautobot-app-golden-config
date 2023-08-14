@@ -2,7 +2,6 @@
 # pylint: disable=too-many-ancestors
 
 from django import forms
-from django.contrib.contenttypes.models import ContentType
 
 import nautobot.extras.forms as extras_forms
 import nautobot.core.forms as core_forms
@@ -18,8 +17,6 @@ from nautobot_golden_config import models
 
 class ConfigComplianceFilterForm(NautobotFilterForm):
     """Filter Form for ConfigCompliance instances."""
-
-    _device_ct = ContentType.objects.get_for_model(Device)
 
     model = models.ConfigCompliance
     # Set field order to be explicit
@@ -50,10 +47,17 @@ class ConfigComplianceFilterForm(NautobotFilterForm):
         query_params={"group": "$tenant_group"},
     )
     location = core_forms.DynamicModelMultipleChoiceField(
-        queryset=Location.objects.filter(location_type__content_types=_device_ct), to_field_name="", required=False,
+        # Not limiting to query_params={"content_type": "dcim.device" to allow parent locations to be included
+        # i.e. include all sites in a Region, even though Region can't be assigned to a Device
+        queryset=Location.objects.all(),
+        to_field_name="pk",
+        required=False,
     )
     rack_group_id = core_forms.DynamicModelMultipleChoiceField(
-        queryset=RackGroup.objects.all(), required=False, label="Rack group", query_params={"location": "$location"}  # TODO: Verify change to location works
+        queryset=RackGroup.objects.all(),
+        required=False,
+        label="Rack group",
+        query_params={"location": "$location"},
     )
     rack_id = core_forms.DynamicModelMultipleChoiceField(
         queryset=Rack.objects.all(),
@@ -61,12 +65,14 @@ class ConfigComplianceFilterForm(NautobotFilterForm):
         label="Rack",
         null_option="None",
         query_params={
-            "location": "$location",  # TODO: Verify change to location works
+            "location": "$location",
             "group_id": "$rack_group_id",
         },
     )
     role = core_forms.DynamicModelMultipleChoiceField(
-        queryset=Role.objects.all(), to_field_name="slug", required=False  # TODO: Fix slug field, Test with change to Role model
+        queryset=Role.objects.all(),
+        to_field_name="slug",
+        required=False,  # TODO: Fix slug field, Test with change to Role model
     )
     manufacturer = core_forms.DynamicModelMultipleChoiceField(
         queryset=Manufacturer.objects.all(), to_field_name="slug", required=False, label="Manufacturer"

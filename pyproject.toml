@@ -34,6 +34,8 @@ django-pivot = "^1.8.1"
 matplotlib = "^3.3.2"
 nautobot = "^1.5.14"
 nautobot-plugin-nornir = ">=1.0.0"
+# Already a dependecy of nautobot-plugin-nornir, but adding the required minimum version needed
+nornir-nautobot = "^2.6.0"
 hier-config = "^2.2.2"
 nautobot-capacity-metrics = "2.0.0"
 

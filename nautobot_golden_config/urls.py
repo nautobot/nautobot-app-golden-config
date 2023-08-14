@@ -43,4 +43,5 @@ urlpatterns = [
         views.ComplianceDeviceFilteredReport.as_view(),
         name="configcompliance_filter_report",
     ),
+    path("config-plan/bulk_deploy/", views.ConfigPlanBulkDeploy.as_view(), name="configplan_bulk_deploy"),
 ] + router.urls

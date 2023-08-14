@@ -5,7 +5,16 @@ from datetime import datetime
 
 from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Platform, Rack, RackGroup, Region, Site
 from nautobot.extras.datasources.git import ensure_git_repository
-from nautobot.extras.jobs import BooleanVar, Job, MultiObjectVar, ObjectVar, ChoiceVar, StringVar, TextVar
+from nautobot.extras.jobs import (
+    BooleanVar,
+    Job,
+    MultiObjectVar,
+    ObjectVar,
+    ChoiceVar,
+    StringVar,
+    TextVar,
+    JobButtonReceiver,
+)
 from nautobot.extras.models import DynamicGroup, GitRepository, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
 from nornir_nautobot.exceptions import NornirNautobotException
@@ -14,6 +23,7 @@ from nautobot_golden_config.models import ComplianceFeature, ConfigPlan
 from nautobot_golden_config.nornir_plays.config_backup import config_backup
 from nautobot_golden_config.nornir_plays.config_compliance import config_compliance
 from nautobot_golden_config.nornir_plays.config_intended import config_intended
+from nautobot_golden_config.nornir_plays.config_deployment import config_deployment
 from nautobot_golden_config.utilities.constant import (
     ENABLE_BACKUP,
     ENABLE_COMPLIANCE,
@@ -412,6 +422,43 @@ class GenerateConfigPlans(Job, FormEntry):
             return
 
 
+class DeployConfigPlans(Job):
+    """Job to deploy config plans."""
+
+    config_plan = MultiObjectVar(model=ConfigPlan, required=True)
+    debug = BooleanVar(description="Enable for more verbose debug logging")
+
+    class Meta:
+        """Meta object boilerplate for config plan deployment."""
+
+        name = "Deploy Config Plans"
+        description = "Deploy config plans to devices."
+
+    def run(self, data, commit):
+        """Run config plan deployment process."""
+        self.log_debug("Starting config plan deployment job.")
+        config_deployment(self, data, commit)
+        if commit:
+            config_plan_qs = data["config_plan"]
+            config_plan_qs.delete()
+
+
+class DeployConfigPlanJobButtonReceiver(JobButtonReceiver):
+    """Job button to deploy a config plan."""
+
+    class Meta:
+        """Meta object boilerplate for config plan deployment job button."""
+
+        name = "Deploy Config Plan (Job Button Receiver)"
+
+    def receive_job_button(self, obj):
+        """Run config plan deployment process."""
+        self.log_debug("Starting config plan deployment job.")
+        data = {"debug": False, "config_plan": ConfigPlan.objects.filter(id=obj.id)}
+        config_deployment(self, data, commit=True)
+        obj.delete()
+
+
 # Conditionally allow jobs based on whether or not turned on.
 jobs = []
 if ENABLE_BACKUP:
@@ -420,4 +467,12 @@ if ENABLE_INTENDED:
     jobs.append(IntendedJob)
 if ENABLE_COMPLIANCE:
     jobs.append(ComplianceJob)
-jobs.extend([AllGoldenConfig, AllDevicesGoldenConfig, GenerateConfigPlans])
+jobs.extend(
+    [
+        AllGoldenConfig,
+        AllDevicesGoldenConfig,
+        GenerateConfigPlans,
+        DeployConfigPlans,
+        DeployConfigPlanJobButtonReceiver,
+    ]
+)

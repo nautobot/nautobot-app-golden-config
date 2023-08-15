@@ -80,7 +80,7 @@ jobs:
       fail-fast: true
       matrix:
         python-version: ["3.8"]
-        nautobot-version: ["1.5.13"]
+        nautobot-version: ["1.5.14"]
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_PYTHON_VER: "${{ matrix.python-version }}"
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_NAUTOBOT_VER: "${{ matrix.nautobot-version }}"

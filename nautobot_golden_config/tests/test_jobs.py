@@ -16,9 +16,7 @@ class JobHelperTests(TransactionTestCase):
 
     @patch("nautobot.extras.models.GitRepository.objects.filter")
     @patch("nautobot_golden_config.jobs.ensure_git_repository")
-    def test_update_config_context_repos_success(
-        self, mock_ensure_git_repo, mock_filter
-    ):  # pylint: disable=no-self-use
+    def test_update_config_context_repos_success(self, mock_ensure_git_repo, mock_filter):
         mock_job_obj = MagicMock()
         mock_job_obj.job_result = MagicMock()
         mock_job_obj.log_debug = MagicMock()

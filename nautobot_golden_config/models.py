@@ -16,23 +16,11 @@ from nautobot.extras.models import DynamicGroup, ObjectChange
 from nautobot.extras.models.statuses import StatusField
 from nautobot.extras.utils import extras_features
 from nautobot.utilities.utils import serialize_object, serialize_object_v2
+from netutils.lib_mapper import HIERCONFIG_LIB_MAPPER_REVERSE  # pylint: disable=C0412:
 from netutils.config.compliance import feature_compliance
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
 from nautobot_golden_config.utilities.utils import get_platform
-
-# temporal implementation until MAPPERS operational in netutils, and netutils > 1.4.0
-try:
-    from netutils.lib_mapper import HIERCONFIG_LIB_MAPPER_REVERSE  # pylint: disable=C0412:
-except ImportError:
-    HIERCONFIG_LIB_MAPPER_REVERSE = {  # pylint: disable=C0412:
-        "cisco_ios": "ios",
-        "cisco_xe": "iosxe",
-        "cisco_xr": "iosxr",
-        "cisco_nxos": "nxos",
-        "arista_eos": "eos",
-        "ruckus_fastiron": "fastiron",
-    }
 
 LOGGER = logging.getLogger(__name__)
 GRAPHQL_STR_START = "query ($device_id: ID!)"

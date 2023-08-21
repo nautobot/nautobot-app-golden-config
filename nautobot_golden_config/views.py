@@ -15,6 +15,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, ExpressionWrapper, F, FloatField, Max, ProtectedError, Q
 from django.forms import ModelMultipleChoiceField, MultipleHiddenInput
 from django.shortcuts import redirect, render
+from django.views.generic import View
 from django_pivot.pivot import pivot
 from nautobot.core.views import generic
 from nautobot.core.views.viewsets import NautobotUIViewSet
@@ -27,12 +28,12 @@ from nautobot.extras.utils import get_job_content_type
 from nautobot.utilities.error_handlers import handle_protectederror
 from nautobot.utilities.forms import ConfirmationForm
 from nautobot.utilities.utils import csv_format, copy_safe_request
-from nautobot.utilities.views import ContentTypePermissionRequiredMixin
+from nautobot.utilities.views import ContentTypePermissionRequiredMixin, ObjectPermissionRequiredMixin
 
 from nautobot_golden_config import filters, forms, models, tables
 from nautobot_golden_config.api import serializers
 from nautobot_golden_config.choices import ConfigPlanTypeChoice
-from nautobot_golden_config.jobs import GenerateConfigPlans
+from nautobot_golden_config.jobs import GenerateConfigPlans, DeployConfigPlans
 from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_COMPLIANCE, PLUGIN_CFG
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import get_device_to_settings_map
@@ -868,6 +869,37 @@ class ConfigPlanUIViewSet(NautobotUIViewSet):
             data=job_data,
             request=copy_safe_request(request),
             commit=True,
+        )
+
+        return redirect(result.get_absolute_url())
+
+
+class ConfigPlanBulkDeploy(ObjectPermissionRequiredMixin, View):
+    """View to run the Config Plan Deploy Job."""
+
+    queryset = models.ConfigPlan.objects.all()
+
+    def get_required_permission(self):
+        """Permissions required for the view."""
+        return "extras.run_job"
+
+    def post(self, request):
+        """Enqueue the job and redirect to the job results page."""
+        config_plan_pks = request.POST.getlist("pk")
+        if not config_plan_pks:
+            messages.warning(request, "No Config Plans selected for deployment.")
+            return redirect("plugins:nautobot_golden_config:configplan_list")
+
+        job_data = {"config_plan": config_plan_pks}
+
+        result = JobResult.enqueue_job(
+            func=run_job,
+            name=DeployConfigPlans.class_path,
+            obj_type=get_job_content_type(),
+            user=request.user,
+            data=job_data,
+            request=copy_safe_request(request),
+            commit=request.POST.get("commit", False),
         )
 
         return redirect(result.get_absolute_url())

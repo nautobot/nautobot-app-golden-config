@@ -23,5 +23,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(convert_custom_compliance_rules),
+        migrations.RunPython(code=convert_custom_compliance_rules, reverse_code=migrations.RunPython.noop),
     ]

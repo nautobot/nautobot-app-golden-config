@@ -5,28 +5,28 @@ from datetime import datetime
 
 from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Platform, Rack, RackGroup, Region, Site
 from nautobot.extras.datasources.git import ensure_git_repository
-from nautobot.extras.jobs import BooleanVar, Job, MultiObjectVar, ObjectVar, ChoiceVar, StringVar, TextVar
+from nautobot.extras.jobs import BooleanVar, ChoiceVar, Job, MultiObjectVar, ObjectVar, StringVar, TextVar
 from nautobot.extras.models import DynamicGroup, GitRepository, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
-from nornir_nautobot.exceptions import NornirNautobotException
 from nautobot_golden_config.choices import ConfigPlanTypeChoice
 from nautobot_golden_config.models import ComplianceFeature, ConfigPlan
 from nautobot_golden_config.nornir_plays.config_backup import config_backup
 from nautobot_golden_config.nornir_plays.config_compliance import config_compliance
 from nautobot_golden_config.nornir_plays.config_intended import config_intended
-from nautobot_golden_config.utilities.constant import (
-    ENABLE_BACKUP,
-    ENABLE_COMPLIANCE,
-    ENABLE_INTENDED,
-    ENABLE_CONFIG_CONTEXT_SYNC,
-)
 from nautobot_golden_config.utilities.config_plan import (
     config_plan_default_status,
     generate_config_set_from_compliance_feature,
     generate_config_set_from_manual,
 )
+from nautobot_golden_config.utilities.constant import (
+    ENABLE_BACKUP,
+    ENABLE_COMPLIANCE,
+    ENABLE_CONFIG_CONTEXT_SYNC,
+    ENABLE_INTENDED,
+)
 from nautobot_golden_config.utilities.git import GitRepo
 from nautobot_golden_config.utilities.helper import get_job_filter
+from nornir_nautobot.exceptions import NornirNautobotException
 
 name = "Golden Configuration"  # pylint: disable=invalid-name
 
@@ -342,7 +342,7 @@ class GenerateConfigPlans(Job, FormEntry):
         self._plan_type = data["plan_type"]
         self._feature = data.get("feature", [])
         self._change_control_id = data.get("change_control_id", "")
-        self._change_control_url = data.get("change_control_url")
+        self._change_control_url = data.get("change_control_url", "")
         self._commands = data.get("commands", "")
         if self._plan_type in ["intended", "missing", "remediation"]:
             if not self._feature:

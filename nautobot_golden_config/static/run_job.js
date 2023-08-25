@@ -70,6 +70,7 @@ function startJob(jobClass, data, redirectUrlTemplate) {
  * @returns {void}
  */
 function pollJobStatus(jobId) {
+  const jr_options = ["running", "pending"];
   $.ajax({
     url: jobId,
     type: "GET",
@@ -84,7 +85,7 @@ function pollJobStatus(jobId) {
         $('#errorDetails').show();
         $('#errorDetails').addClass("alert alert-danger text-center");
         $('#errorDetails').append("Job Started but failed during the Job run. This job may have partially completed. See Job Results for more details on the errors.");
-      } else if (data.status.value === "running") {
+      } else if (data.status.value in jr_options) {
         // Job is still processing, continue polling
         setTimeout(function() {
           pollJobStatus(jobId);

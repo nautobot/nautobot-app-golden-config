@@ -32,6 +32,24 @@ def post_migrate_create_statuses(sender, apps=global_apps, **kwargs):  # pylint:
         status.content_types.add(ContentType.objects.get_for_model(models.ConfigPlan))
 
 
+def post_migrate_create_job_button(sender, apps=global_apps, **kwargs):  # pylint: disable=unused-argument
+    """Callback function for post_migrate() -- create JobButton records."""
+    JobButton = apps.get_model("extras", "JobButton")  # pylint: disable=invalid-name
+    Job = apps.get_model("extras", "Job")  # pylint: disable=invalid-name
+    ContentType = apps.get_model("contenttypes", "ContentType")  # pylint: disable=invalid-name
+    configplan_type = ContentType.objects.get_for_model(models.ConfigPlan)
+    job_button_config = {
+        "name": "Deploy Config Plan",
+        "job": Job.objects.get(job_class_name="DeployConfigPlanJobButtonReceiver"),
+        "defaults": {
+            "text": "Deploy",
+            "button_class": "primary",
+        },
+    }
+    jobbutton, _ = JobButton.objects.get_or_create(**job_button_config)
+    jobbutton.content_types.set([configplan_type])
+
+
 @receiver(post_save, sender=models.ConfigCompliance)
 def config_compliance_platform_cleanup(sender, instance, **kwargs):  # pylint: disable=unused-argument
     """Signal helper to delete any orphaned ConfigCompliance objects. Caused by device platform changes."""

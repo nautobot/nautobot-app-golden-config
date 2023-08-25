@@ -168,7 +168,7 @@ def _get_hierconfig_remediation(obj):
         host = HierConfigHost(**hc_kwargs)
 
     except Exception as err:  # pylint: disable=broad-except:
-        raise Exception(
+        raise Exception(  # pylint: disable=broad-exception-raised
             f"Cannot instantiate HierConfig on {obj.device.name}, check Device, Platform and Hier Options."
         ) from err
 
@@ -620,7 +620,7 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
             self.description,
         )
 
-    def get_absolute_url(self):  # pylint: disable=no-self-use
+    def get_absolute_url(self):
         """Return absolute URL for instance."""
         return reverse("plugins:nautobot_golden_config:goldenconfigsetting", args=[self.pk])
 
@@ -737,7 +737,7 @@ class ConfigRemove(PrimaryModel):  # pylint: disable=too-many-ancestors
         """Return a simple string if model is called."""
         return self.name
 
-    def get_absolute_url(self):  # pylint: disable=no-self-use
+    def get_absolute_url(self):
         """Return absolute URL for instance."""
         return reverse("plugins:nautobot_golden_config:configremove", args=[self.pk])
 

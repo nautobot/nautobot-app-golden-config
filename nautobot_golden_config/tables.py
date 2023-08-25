@@ -298,7 +298,7 @@ class GoldenConfigTable(BaseTable):
         template_code=ALL_ACTIONS, verbose_name="Actions", extra_context=CONFIG_FEATURES, orderable=False
     )
 
-    def _render_last_success_date(self, record, column, value):  # pylint: disable=no-self-use
+    def _render_last_success_date(self, record, column, value):
         """Abstract method to get last success per row record."""
         last_success_date = getattr(record, f"{value}_last_success_date", None)
         last_attempt_date = getattr(record, f"{value}_last_attempt_date", None)
@@ -314,15 +314,15 @@ class GoldenConfigTable(BaseTable):
         column.attrs = {"td": {"style": "color:red"}}
         return last_success_date
 
-    def render_backup_last_success_date(self, record, column):  # pylint: disable=no-self-use
+    def render_backup_last_success_date(self, record, column):
         """Pull back backup last success per row record."""
         return self._render_last_success_date(record, column, "backup")
 
-    def render_intended_last_success_date(self, record, column):  # pylint: disable=no-self-use
+    def render_intended_last_success_date(self, record, column):
         """Pull back intended last success per row record."""
         return self._render_last_success_date(record, column, "intended")
 
-    def render_compliance_last_success_date(self, record, column):  # pylint: disable=no-self-use
+    def render_compliance_last_success_date(self, record, column):
         """Pull back compliance last success per row record."""
         return self._render_last_success_date(record, column, "compliance")
 
@@ -441,21 +441,21 @@ class GoldenConfigSettingTable(BaseTable):
         empty_values=(),
     )
 
-    def _render_capability(self, record, column, record_attribute):  # pylint: disable=unused-argument, no-self-use
+    def _render_capability(self, record, column, record_attribute):  # pylint: disable=unused-argument
         if getattr(record, record_attribute, None):  # pylint: disable=no-else-return
             return "✔"
 
         return "✘"
 
-    def render_backup_repository(self, record, column):  # pylint: disable=no-self-use
+    def render_backup_repository(self, record, column):
         """Render backup repository YES/NO value."""
         return self._render_capability(record=record, column=column, record_attribute="backup_repository")
 
-    def render_intended_repository(self, record, column):  # pylint: disable=no-self-use
+    def render_intended_repository(self, record, column):
         """Render intended repository YES/NO value."""
         return self._render_capability(record=record, column=column, record_attribute="intended_repository")
 
-    def render_jinja_repository(self, record, column):  # pylint: disable=no-self-use
+    def render_jinja_repository(self, record, column):
         """Render jinja repository YES/NO value."""
         return self._render_capability(record=record, column=column, record_attribute="jinja_repository")
 

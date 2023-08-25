@@ -3,7 +3,6 @@
 from rest_framework import serializers
 
 from nautobot.apps.api import WritableNestedSerializer
-from nautobot.core.api import SerializedPKRelatedField
 from nautobot.extras.api.fields import StatusSerializerField
 from nautobot.extras.api.serializers import TaggedObjectSerializer
 from nautobot.extras.api.nested_serializers import NestedDynamicGroupSerializer
@@ -175,7 +174,7 @@ class ConfigPlanSerializer(NautobotModelSerializer, TaggedObjectSerializer, Stat
     """Serializer for ConfigPlan object."""
 
     url = serializers.HyperlinkedIdentityField(view_name="plugins-api:nautobot_golden_config-api:configplan-detail")
-    device = SerializedPKRelatedField(queryset=Device.objects.all(), serializer=NestedDeviceSerializer, required=False)
+    device = NestedDeviceSerializer(required=False)
     status = StatusSerializerField(required=False, queryset=Status.objects.all())
 
     class Meta:

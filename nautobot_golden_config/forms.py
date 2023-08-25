@@ -1,30 +1,29 @@
 """Forms for Device Configuration Backup."""
 # pylint: disable=too-many-ancestors
 
-from django import forms
 import json
 
 import nautobot.extras.forms as extras_forms
 import nautobot.utilities.forms as utilities_forms
+from django import forms
 from nautobot.dcim.models import (
     Device,
-    Platform,
-    Region,
-    Site,
     DeviceRole,
     DeviceType,
+    Location,
     Manufacturer,
+    Platform,
     Rack,
     RackGroup,
-    Location,
+    Region,
+    Site,
 )
+from nautobot.extras.forms import NautobotBulkEditForm, NautobotFilterForm, NautobotModelForm
 from nautobot.extras.models import DynamicGroup, GitRepository, JobResult, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
-from nautobot.utilities.forms import SlugField, BootstrapMixin, DatePicker, add_blank_choice, TagFilterField
-from nautobot.extras.forms import NautobotFilterForm, NautobotBulkEditForm, NautobotModelForm
-
+from nautobot.utilities.forms import add_blank_choice, DatePicker, SlugField, TagFilterField
 from nautobot_golden_config import models
-from nautobot_golden_config.choices import ConfigPlanTypeChoice, ComplianceRuleConfigTypeChoice
+from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice
 
 # ConfigCompliance
 

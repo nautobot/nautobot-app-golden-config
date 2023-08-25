@@ -31,8 +31,7 @@ from nautobot.utilities.utils import copy_safe_request, csv_format
 from nautobot.utilities.views import ContentTypePermissionRequiredMixin, ObjectPermissionRequiredMixin
 from nautobot_golden_config import filters, forms, models, tables
 from nautobot_golden_config.api import serializers
-from nautobot_golden_config.choices import ConfigPlanTypeChoice
-from nautobot_golden_config.jobs import DeployConfigPlans, GenerateConfigPlans
+from nautobot_golden_config.jobs import DeployConfigPlans
 from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
 from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_COMPLIANCE, PLUGIN_CFG
 from nautobot_golden_config.utilities.graphql import graph_ql_query
@@ -829,53 +828,6 @@ class ConfigPlanUIViewSet(NautobotUIViewSet):
         if self.action == "update":
             return forms.ConfigPlanUpdateForm
         return super().get_form_class(**kwargs)
-
-    def create(self, request, *args, **kwargs):
-        """Create method."""
-        template = "nautobot_golden_config/configplan_generate.html"
-        context = {
-            "type_choices": ConfigPlanTypeChoice.CHOICES,
-            "plan_type": request.GET.get("plan_type"),
-            "return_url": self.get_return_url(request),
-        }
-        form_class = self.get_form_class()
-        if context["plan_type"]:
-            if context["plan_type"] in ["intended", "missing", "remediation"]:
-                form_class = forms.ConfigPlanCreateFeatureForm
-            elif context["plan_type"] in ["manual"]:
-                form_class = forms.ConfigPlanCreateCommandsForm
-            else:
-                form_class = forms.ConfigPlanCreateForm
-
-        context["form"] = form_class
-
-        if request.method == "GET":
-            return render(request, template, context)
-
-        context["form"] = form_class(data=request.POST)
-        if not context["form"].is_valid():
-            return render(request, template, context)
-
-        job_data = {
-            "plan_type": context["plan_type"],
-        }
-        for field in request.POST:
-            if field in ["commands", "change_control_id"]:
-                job_data[field] = request.POST.get(field)
-            else:
-                job_data[field] = request.POST.getlist(field)
-
-        result = JobResult.enqueue_job(
-            func=run_job,
-            name=GenerateConfigPlans.class_path,
-            obj_type=get_job_content_type(),
-            user=request.user,
-            data=job_data,
-            request=copy_safe_request(request),
-            commit=True,
-        )
-
-        return redirect(result.get_absolute_url())
 
 
 class ConfigPlanBulkDeploy(ObjectPermissionRequiredMixin, View):

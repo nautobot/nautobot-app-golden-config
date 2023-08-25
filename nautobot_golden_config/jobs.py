@@ -7,22 +7,24 @@ from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, P
 from nautobot.extras.datasources.git import ensure_git_repository
 from nautobot.extras.jobs import (
     BooleanVar,
+    ChoiceVar,
     Job,
+    JobButtonReceiver,
     MultiObjectVar,
     ObjectVar,
-    ChoiceVar,
     StringVar,
     TextVar,
-    JobButtonReceiver,
 )
 from nautobot.extras.models import DynamicGroup, GitRepository, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
+from nornir_nautobot.exceptions import NornirNautobotException
+
 from nautobot_golden_config.choices import ConfigPlanTypeChoice
 from nautobot_golden_config.models import ComplianceFeature, ConfigPlan
 from nautobot_golden_config.nornir_plays.config_backup import config_backup
 from nautobot_golden_config.nornir_plays.config_compliance import config_compliance
-from nautobot_golden_config.nornir_plays.config_intended import config_intended
 from nautobot_golden_config.nornir_plays.config_deployment import config_deployment
+from nautobot_golden_config.nornir_plays.config_intended import config_intended
 from nautobot_golden_config.utilities.config_plan import (
     config_plan_default_status,
     generate_config_set_from_compliance_feature,
@@ -36,7 +38,6 @@ from nautobot_golden_config.utilities.constant import (
 )
 from nautobot_golden_config.utilities.git import GitRepo
 from nautobot_golden_config.utilities.helper import get_job_filter
-from nornir_nautobot.exceptions import NornirNautobotException
 
 name = "Golden Configuration"  # pylint: disable=invalid-name
 

@@ -27,18 +27,16 @@ from nautobot.extras.models import JobResult
 from nautobot.extras.utils import get_job_content_type
 from nautobot.utilities.error_handlers import handle_protectederror
 from nautobot.utilities.forms import ConfirmationForm
-from nautobot.utilities.utils import csv_format, copy_safe_request
+from nautobot.utilities.utils import copy_safe_request, csv_format
 from nautobot.utilities.views import ContentTypePermissionRequiredMixin, ObjectPermissionRequiredMixin
-
 from nautobot_golden_config import filters, forms, models, tables
 from nautobot_golden_config.api import serializers
 from nautobot_golden_config.choices import ConfigPlanTypeChoice
-from nautobot_golden_config.jobs import GenerateConfigPlans, DeployConfigPlans
+from nautobot_golden_config.jobs import DeployConfigPlans, GenerateConfigPlans
+from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
 from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_COMPLIANCE, PLUGIN_CFG
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import get_device_to_settings_map
-from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -826,11 +824,8 @@ class ConfigPlanUIViewSet(NautobotUIViewSet):
     lookup_field = "pk"
     action_buttons = ("add",)
 
-
     def get_form_class(self, **kwargs):
-        """
-        Helper function to get form_class for different views.
-        """
+        """Helper function to get form_class for different views."""
         if self.action == "update":
             return forms.ConfigPlanUpdateForm
         return super().get_form_class(**kwargs)
@@ -912,4 +907,3 @@ class ConfigPlanBulkDeploy(ObjectPermissionRequiredMixin, View):
         )
 
         return redirect(result.get_absolute_url())
-

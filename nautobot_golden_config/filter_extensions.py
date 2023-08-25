@@ -1,10 +1,10 @@
 """Custom filter to extend base API for filterform use case."""
 import django_filters
-
 from nautobot.apps.filters import FilterExtension
 
 
 def config_plan_null_search(queryset, name, value):
+    """Query to ensure config plans are not empty."""
     return queryset.filter(config_plan__isnull=False).distinct()
 
 

@@ -106,7 +106,7 @@ Each command can be executed with `invoke <command>`. All commands support the a
 
 #### Local Development Environment
 
-```
+```shell
   build            Build all docker images.
   debug            Start Nautobot and its dependencies in debug mode.
   destroy          Destroy all containers and volumes.
@@ -117,7 +117,7 @@ Each command can be executed with `invoke <command>`. All commands support the a
 
 #### Utility
 
-```
+```shell
   cli              Launch a bash shell inside the running Nautobot container.
   create-user      Create a new user in django (default: admin), will prompt for password.
   makemigrations   Run Make Migration in Django.
@@ -126,7 +126,7 @@ Each command can be executed with `invoke <command>`. All commands support the a
 
 #### Testing
 
-```
+```shell
   bandit           Run bandit to validate basic static code security analysis.
   black            Run black to check that Python files adhere to its style standards.
   flake8           Run flake8 to check that Python files adhere to its style standards.
@@ -155,7 +155,7 @@ Poetry is used in lieu of the "virtualenv" commands and is leveraged in both env
 The `pyproject.toml` file outlines all of the relevant dependencies for the project:
 
 - `tool.poetry.dependencies` - the main list of dependencies.
-- `tool.poetry.dev-dependencies` - development dependencies, to facilitate linting, testing, and documentation building.
+- `tool.poetry.group.dev.dependencies` - development dependencies, to facilitate linting, testing, and documentation building.
 
 The `poetry shell` command is used to create and enable a virtual environment managed by Poetry, so all commands ran going forward are executed within the virtual environment. This is similar to running the `source venv/bin/activate` command with virtualenvs. To install project dependencies in the virtual environment, you should run `poetry install` - this will install **both** project and development dependencies.
 

@@ -7,33 +7,34 @@ from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, P
 from nautobot.extras.datasources.git import ensure_git_repository
 from nautobot.extras.jobs import (
     BooleanVar,
+    ChoiceVar,
     Job,
+    JobButtonReceiver,
     MultiObjectVar,
     ObjectVar,
-    ChoiceVar,
     StringVar,
     TextVar,
-    JobButtonReceiver,
 )
 from nautobot.extras.models import DynamicGroup, GitRepository, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
 from nornir_nautobot.exceptions import NornirNautobotException
+
 from nautobot_golden_config.choices import ConfigPlanTypeChoice
 from nautobot_golden_config.models import ComplianceFeature, ConfigPlan
 from nautobot_golden_config.nornir_plays.config_backup import config_backup
 from nautobot_golden_config.nornir_plays.config_compliance import config_compliance
-from nautobot_golden_config.nornir_plays.config_intended import config_intended
 from nautobot_golden_config.nornir_plays.config_deployment import config_deployment
-from nautobot_golden_config.utilities.constant import (
-    ENABLE_BACKUP,
-    ENABLE_COMPLIANCE,
-    ENABLE_INTENDED,
-    ENABLE_CONFIG_CONTEXT_SYNC,
-)
+from nautobot_golden_config.nornir_plays.config_intended import config_intended
 from nautobot_golden_config.utilities.config_plan import (
     config_plan_default_status,
     generate_config_set_from_compliance_feature,
     generate_config_set_from_manual,
+)
+from nautobot_golden_config.utilities.constant import (
+    ENABLE_BACKUP,
+    ENABLE_COMPLIANCE,
+    ENABLE_CONFIG_CONTEXT_SYNC,
+    ENABLE_INTENDED,
 )
 from nautobot_golden_config.utilities.git import GitRepo
 from nautobot_golden_config.utilities.helper import get_job_filter
@@ -326,6 +327,7 @@ class GenerateConfigPlans(Job, FormEntry):
     plan_type = ChoiceVar(choices=ConfigPlanTypeChoice.CHOICES)
     feature = MultiObjectVar(model=ComplianceFeature, required=False)
     change_control_id = StringVar(required=False)
+    change_control_url = StringVar(required=False)
     commands = TextVar(required=False)
 
     class Meta:
@@ -342,6 +344,7 @@ class GenerateConfigPlans(Job, FormEntry):
         self._plan_type = None
         self._feature = None
         self._change_control_id = None
+        self._change_control_url = None
         self._commands = None
         self._device_qs = Device.objects.none()
         self._status = config_plan_default_status()
@@ -350,6 +353,7 @@ class GenerateConfigPlans(Job, FormEntry):
         self._plan_type = data["plan_type"]
         self._feature = data.get("feature", [])
         self._change_control_id = data.get("change_control_id", "")
+        self._change_control_url = data.get("change_control_url", "")
         self._commands = data.get("commands", "")
         if self._plan_type in ["intended", "missing", "remediation"]:
             if not self._feature:
@@ -362,21 +366,33 @@ class GenerateConfigPlans(Job, FormEntry):
 
     def _generate_config_plan_from_feature(self):
         """Generate config plans from features."""
-        for feature in self._feature:
-            for device in self._device_qs:
+        for device in self._device_qs:
+            config_sets = []
+            features = []
+            for feature in self._feature:
                 config_set = generate_config_set_from_compliance_feature(device, self._plan_type, feature)
                 if not config_set:
-                    self.log_debug(f"Device {device} does not have {self._plan_type} config for {feature}.")
                     continue
-                config_plan = ConfigPlan.objects.create(
-                    device=device,
-                    plan_type=self._plan_type,
-                    feature=feature,
-                    config_set=config_set,
-                    change_control_id=self._change_control_id,
-                    status=self._status,
-                )
-                self.log_success(obj=config_plan, message=f"Config plan created for {device} with feature {feature}.")
+                config_sets.append(config_set)
+                features.append(feature)
+
+            if not config_sets:
+                _features = ", ".join([str(feat) for feat in self._feature])
+                self.log_debug(f"Device `{device}` does not have `{self._plan_type}` configs for `{_features}`.")
+                continue
+            config_plan = ConfigPlan.objects.create(
+                device=device,
+                plan_type=self._plan_type,
+                config_set="\n".join(config_sets),
+                change_control_id=self._change_control_id,
+                change_control_url=self._change_control_url,
+                status=self._status,
+                job_result=self.job_result,
+            )
+            config_plan.feature.set(features)
+            config_plan.validated_save()
+            _features = ", ".join([str(feat) for feat in features])
+            self.log_success(obj=config_plan, message=f"Config plan created for `{device}` with feature `{_features}`.")
 
     def _generate_config_plan_from_manual(self):
         """Generate config plans from manual."""
@@ -394,7 +410,9 @@ class GenerateConfigPlans(Job, FormEntry):
                 plan_type=self._plan_type,
                 config_set=config_set,
                 change_control_id=self._change_control_id,
+                change_control_url=self._change_control_url,
                 status=self._status,
+                job_result=self.job_result,
             )
             self.log_success(obj=config_plan, message=f"Config plan created for {device} with manual commands.")
 

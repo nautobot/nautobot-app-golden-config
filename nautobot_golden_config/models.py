@@ -4,26 +4,33 @@ import json
 import logging
 
 from deepdiff import DeepDiff
-from hier_config import Host as HierConfigHost
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.shortcuts import reverse
 from django.utils.module_loading import import_string
 from django.utils.text import slugify
+from hier_config import Host as HierConfigHost
 from nautobot.core.models.generics import PrimaryModel
 from nautobot.extras.models import DynamicGroup, ObjectChange
 from nautobot.extras.models.statuses import StatusField
 from nautobot.extras.utils import extras_features
 from nautobot.utilities.utils import serialize_object, serialize_object_v2
 from netutils.config.compliance import feature_compliance
-from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
+
+from nautobot_golden_config.choices import (
+    ComplianceRuleConfigTypeChoice,
+    ConfigPlanTypeChoice,
+    RemediationTypeChoice,
+)
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
 from nautobot_golden_config.utilities.utils import get_platform
 
 # temporal implementation until MAPPERS operational in netutils, and netutils > 1.4.0
 try:
-    from netutils.lib_mapper import HIERCONFIG_LIB_MAPPER_REVERSE  # pylint: disable=C0412:
+    from netutils.lib_mapper import (
+        HIERCONFIG_LIB_MAPPER_REVERSE,  # pylint: disable=C0412:
+    )
 except ImportError:
     HIERCONFIG_LIB_MAPPER_REVERSE = {  # pylint: disable=C0412:
         "cisco_ios": "ios",
@@ -862,19 +869,25 @@ class RemediationSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
 class ConfigPlan(PrimaryModel):  # pylint: disable=too-many-ancestors
     """ConfigPlan for Golden Configuration Plan Model definition."""
 
-    plan_type = models.CharField(max_length=20, choices=ConfigPlanTypeChoice)
+    plan_type = models.CharField(max_length=20, choices=ConfigPlanTypeChoice, verbose_name="Plan Type")
     device = models.ForeignKey(
         to="dcim.Device",
         on_delete=models.CASCADE,
         related_name="config_plan",
     )
     config_set = models.TextField(help_text="Configuration set to be applied to device.")
-    feature = models.ForeignKey(
-        to="ComplianceFeature",
+    feature = models.ManyToManyField(
+        to=ComplianceFeature,
+        related_name="config_plan",
+        blank=True,
+    )
+    job_result = models.ForeignKey(
+        to="extras.JobResult",
         on_delete=models.CASCADE,
         related_name="config_plan",
-        null=True,
-        blank=True,
+        null=False,
+        blank=False,
+        verbose_name="Job Result",
     )
     change_control_id = models.CharField(
         max_length=50,
@@ -883,12 +896,13 @@ class ConfigPlan(PrimaryModel):  # pylint: disable=too-many-ancestors
         verbose_name="Change Control ID",
         help_text="Change Control ID for this configuration plan.",
     )
+    change_control_url = models.URLField(blank=True, verbose_name="Change Control URL")
     status = StatusField(blank=True, null=True, on_delete=models.PROTECT)
 
     class Meta:
         """Meta information for ConfigPlan model."""
 
-        ordering = ("device",)
+        ordering = ("-created", "device")
 
     def __str__(self):
         """Return a simple string if model is called."""

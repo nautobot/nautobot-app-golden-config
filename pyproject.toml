@@ -35,6 +35,9 @@ matplotlib = "^3.3.2"
 nautobot = "^1.5.14"
 nautobot-plugin-nornir = ">=1.0.0"
 netutils = "^1.5.0"
+
+# Already a dependecy of nautobot-plugin-nornir, but adding the required minimum version needed
+nornir-nautobot = "^2.6.0"
 hier-config = "^2.2.2"
 nautobot-capacity-metrics = "2.0.0"
 
@@ -101,7 +104,6 @@ no-docstring-rgx="^(_|test_|Meta$)"
 # Pylint and Black disagree about how to format multi-line arrays; Black wins.
 disable = """,
     line-too-long,
-    bad-continuation,
     too-few-public-methods,
     duplicate-code,
     """

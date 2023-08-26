@@ -4,7 +4,7 @@ import django_filters
 from django.db.models import Q
 from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Platform, Rack, RackGroup, Region, Site
 from nautobot.extras.filters import CustomFieldModelFilterSetMixin, StatusFilter
-from nautobot.extras.models import Status
+from nautobot.extras.models import JobResult, Status
 from nautobot.tenancy.models import Tenant, TenantGroup
 from nautobot.utilities.filters import BaseFilterSet, NameSlugSearchFilterSet, TreeNodeMultipleChoiceFilter, TagFilter
 from nautobot_golden_config import models
@@ -162,7 +162,7 @@ class GoldenConfigFilterSet(CustomFieldModelFilterSetMixin):
         label="Device Name",
     )
 
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument,no-self-use
+    def search(self, queryset, name, value):  # pylint: disable=unused-argument
         """Perform the filtered search."""
         if not value.strip():
             return queryset
@@ -196,7 +196,7 @@ class ComplianceFeatureFilterSet(CustomFieldModelFilterSetMixin):
         label="Search",
     )
 
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument,no-self-use
+    def search(self, queryset, name, value):  # pylint: disable=unused-argument
         """Perform the filtered search."""
         if not value.strip():
             return queryset
@@ -218,7 +218,7 @@ class ComplianceRuleFilterSet(GenericPlatformFilterSet):
         label="Search",
     )
 
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument,no-self-use
+    def search(self, queryset, name, value):  # pylint: disable=unused-argument
         """Perform the filtered search."""
         if not value.strip():
             return queryset
@@ -240,7 +240,7 @@ class ConfigRemoveFilterSet(GenericPlatformFilterSet):
         label="Search",
     )
 
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument,no-self-use
+    def search(self, queryset, name, value):  # pylint: disable=unused-argument
         """Perform the filtered search."""
         if not value.strip():
             return queryset
@@ -262,7 +262,7 @@ class ConfigReplaceFilterSet(GenericPlatformFilterSet):
         label="Search",
     )
 
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument,no-self-use
+    def search(self, queryset, name, value):  # pylint: disable=unused-argument
         """Perform the filtered search."""
         if not value.strip():
             return queryset
@@ -310,7 +310,7 @@ class RemediationSettingFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
         label="Remediation Type",
     )
 
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument,no-self-use
+    def search(self, queryset, name, value):  # pylint: disable=unused-argument
         """Perform the filtered search."""
         if not value.strip():
             return queryset
@@ -351,6 +351,10 @@ class ConfigPlanFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
         to_field_name="name",
         label="Feature Name",
     )
+    job_result_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=JobResult.objects.filter(config_plan__isnull=False).distinct(),
+        label="JobResult ID",
+    )
     change_control_id = django_filters.CharFilter(
         field_name="change_control_id",
         lookup_expr="exact",
@@ -367,7 +371,7 @@ class ConfigPlanFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
     )
     tag = TagFilter()
 
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument,no-self-use
+    def search(self, queryset, name, value):  # pylint: disable=unused-argument
         """Perform the filtered search."""
         if not value.strip():
             return queryset

@@ -49,9 +49,13 @@ class GoldenConfig(PluginConfig):
         from .signals import (
             config_compliance_platform_cleanup,
             post_migrate_create_statuses,
+            post_migrate_create_job_button,
+            post_migrate_default_enabled_configplan_jobs,
         )
 
         nautobot_database_ready.connect(post_migrate_create_statuses, sender=self)
+        nautobot_database_ready.connect(post_migrate_create_job_button, sender=self)
+        nautobot_database_ready.connect(post_migrate_default_enabled_configplan_jobs, sender=self)
 
         super().ready()
         post_migrate.connect(config_compliance_platform_cleanup, sender=ConfigCompliance)

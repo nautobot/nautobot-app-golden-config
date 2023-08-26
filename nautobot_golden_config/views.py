@@ -15,6 +15,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, ExpressionWrapper, F, FloatField, Max, ProtectedError, Q
 from django.forms import ModelMultipleChoiceField, MultipleHiddenInput
 from django.shortcuts import redirect, render
+from django.views.generic import View
 from django_pivot.pivot import pivot
 from nautobot.core.views import generic
 from nautobot.core.views.viewsets import NautobotUIViewSet
@@ -26,18 +27,15 @@ from nautobot.extras.models import JobResult
 from nautobot.extras.utils import get_job_content_type
 from nautobot.utilities.error_handlers import handle_protectederror
 from nautobot.utilities.forms import ConfirmationForm
-from nautobot.utilities.utils import csv_format, copy_safe_request
-from nautobot.utilities.views import ContentTypePermissionRequiredMixin
-
+from nautobot.utilities.utils import copy_safe_request, csv_format
+from nautobot.utilities.views import ContentTypePermissionRequiredMixin, ObjectPermissionRequiredMixin
 from nautobot_golden_config import filters, forms, models, tables
 from nautobot_golden_config.api import serializers
-from nautobot_golden_config.choices import ConfigPlanTypeChoice
-from nautobot_golden_config.jobs import GenerateConfigPlans
+from nautobot_golden_config.jobs import DeployConfigPlans
+from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
 from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_COMPLIANCE, PLUGIN_CFG
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import get_device_to_settings_map
-from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -818,56 +816,46 @@ class ConfigPlanUIViewSet(NautobotUIViewSet):
     bulk_update_form_class = forms.ConfigPlanBulkEditForm
     filterset_class = filters.ConfigPlanFilterSet
     filterset_form_class = forms.ConfigPlanFilterForm
-    form_class = forms.ConfigPlanUpdateForm
+    form_class = forms.ConfigPlanForm
     queryset = models.ConfigPlan.objects.all()
     serializer_class = serializers.ConfigPlanSerializer
     table_class = tables.ConfigPlanTable
     lookup_field = "pk"
     action_buttons = ("add",)
 
-    def create(self, request, *args, **kwargs):
-        """Create method."""
-        template = "nautobot_golden_config/configplan_generate.html"
-        context = {
-            "type_choices": ConfigPlanTypeChoice.CHOICES,
-            "plan_type": request.GET.get("plan_type"),
-            "return_url": self.get_return_url(request),
-        }
-        form_class = self.get_form_class()
-        if context["plan_type"]:
-            if context["plan_type"] in ["intended", "missing", "remediation"]:
-                form_class = forms.ConfigPlanCreateFeatureForm
-            elif context["plan_type"] in ["manual"]:
-                form_class = forms.ConfigPlanCreateCommandsForm
-            else:
-                form_class = forms.ConfigPlanCreateForm
+    def get_form_class(self, **kwargs):
+        """Helper function to get form_class for different views."""
+        if self.action == "update":
+            return forms.ConfigPlanUpdateForm
+        return super().get_form_class(**kwargs)
 
-        context["form"] = form_class
 
-        if request.method == "GET":
-            return render(request, template, context)
+class ConfigPlanBulkDeploy(ObjectPermissionRequiredMixin, View):
+    """View to run the Config Plan Deploy Job."""
 
-        context["form"] = form_class(data=request.POST)
-        if not context["form"].is_valid():
-            return render(request, template, context)
+    queryset = models.ConfigPlan.objects.all()
 
-        job_data = {
-            "plan_type": context["plan_type"],
-        }
-        for field in request.POST:
-            if field in ["commands", "change_control_id"]:
-                job_data[field] = request.POST.get(field)
-            else:
-                job_data[field] = request.POST.getlist(field)
+    def get_required_permission(self):
+        """Permissions required for the view."""
+        return "extras.run_job"
+
+    def post(self, request):
+        """Enqueue the job and redirect to the job results page."""
+        config_plan_pks = request.POST.getlist("pk")
+        if not config_plan_pks:
+            messages.warning(request, "No Config Plans selected for deployment.")
+            return redirect("plugins:nautobot_golden_config:configplan_list")
+
+        job_data = {"config_plan": config_plan_pks}
 
         result = JobResult.enqueue_job(
             func=run_job,
-            name=GenerateConfigPlans.class_path,
+            name=DeployConfigPlans.class_path,
             obj_type=get_job_content_type(),
             user=request.user,
             data=job_data,
             request=copy_safe_request(request),
-            commit=True,
+            commit=request.POST.get("commit", False),
         )
 
         return redirect(result.get_absolute_url())

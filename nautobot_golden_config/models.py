@@ -879,7 +879,6 @@ class ConfigPlan(PrimaryModel):  # pylint: disable=too-many-ancestors
     feature = models.ManyToManyField(
         to=ComplianceFeature,
         related_name="config_plan",
-        # null=True,
         blank=True,
     )
     job_result = models.ForeignKey(

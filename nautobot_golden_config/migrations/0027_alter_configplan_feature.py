@@ -4,15 +4,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('nautobot_golden_config', '0026_configplan'),
+        ("nautobot_golden_config", "0026_configplan"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='configplan',
-            name='feature',
-            field=models.ManyToManyField(blank=True, related_name='config_plan', to='nautobot_golden_config.ComplianceFeature'),
+            model_name="configplan",
+            name="feature",
+            field=models.ManyToManyField(
+                blank=True, related_name="config_plan", to="nautobot_golden_config.ComplianceFeature"
+            ),
         ),
     ]

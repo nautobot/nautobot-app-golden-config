@@ -4,26 +4,33 @@ import json
 import logging
 
 from deepdiff import DeepDiff
-from hier_config import Host as HierConfigHost
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.shortcuts import reverse
 from django.utils.module_loading import import_string
 from django.utils.text import slugify
+from hier_config import Host as HierConfigHost
 from nautobot.core.models.generics import PrimaryModel
 from nautobot.extras.models import DynamicGroup, ObjectChange
 from nautobot.extras.models.statuses import StatusField
 from nautobot.extras.utils import extras_features
 from nautobot.utilities.utils import serialize_object, serialize_object_v2
 from netutils.config.compliance import feature_compliance
-from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
+
+from nautobot_golden_config.choices import (
+    ComplianceRuleConfigTypeChoice,
+    ConfigPlanTypeChoice,
+    RemediationTypeChoice,
+)
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
 from nautobot_golden_config.utilities.utils import get_platform
 
 # temporal implementation until MAPPERS operational in netutils, and netutils > 1.4.0
 try:
-    from netutils.lib_mapper import HIERCONFIG_LIB_MAPPER_REVERSE  # pylint: disable=C0412:
+    from netutils.lib_mapper import (
+        HIERCONFIG_LIB_MAPPER_REVERSE,  # pylint: disable=C0412:
+    )
 except ImportError:
     HIERCONFIG_LIB_MAPPER_REVERSE = {  # pylint: disable=C0412:
         "cisco_ios": "ios",
@@ -872,7 +879,7 @@ class ConfigPlan(PrimaryModel):  # pylint: disable=too-many-ancestors
     feature = models.ManyToManyField(
         to=ComplianceFeature,
         related_name="config_plan",
-        null=True,
+        # null=True,
         blank=True,
     )
     job_result = models.ForeignKey(

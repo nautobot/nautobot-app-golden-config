@@ -127,7 +127,7 @@ def render_jinja_template(obj, logger, template):
             "Jinja encountered an unexpected TemplateError; check the template for correctness\n"
             f"Template:\n{template}"
         )
-        logger.log_failure(error_msg)
+        logger.log_failure(obj, error_msg)
         raise NornirNautobotException from error
 
 

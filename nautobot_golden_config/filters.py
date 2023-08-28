@@ -162,7 +162,7 @@ class GoldenConfigFilterSet(CustomFieldModelFilterSetMixin):
         label="Device Name",
     )
 
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument,no-self-use
+    def search(self, queryset, name, value):  # pylint: disable=unused-argument
         """Perform the filtered search."""
         if not value.strip():
             return queryset
@@ -196,7 +196,7 @@ class ComplianceFeatureFilterSet(CustomFieldModelFilterSetMixin):
         label="Search",
     )
 
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument,no-self-use
+    def search(self, queryset, name, value):  # pylint: disable=unused-argument
         """Perform the filtered search."""
         if not value.strip():
             return queryset
@@ -218,7 +218,7 @@ class ComplianceRuleFilterSet(GenericPlatformFilterSet):
         label="Search",
     )
 
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument,no-self-use
+    def search(self, queryset, name, value):  # pylint: disable=unused-argument
         """Perform the filtered search."""
         if not value.strip():
             return queryset
@@ -240,7 +240,7 @@ class ConfigRemoveFilterSet(GenericPlatformFilterSet):
         label="Search",
     )
 
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument,no-self-use
+    def search(self, queryset, name, value):  # pylint: disable=unused-argument
         """Perform the filtered search."""
         if not value.strip():
             return queryset
@@ -262,7 +262,7 @@ class ConfigReplaceFilterSet(GenericPlatformFilterSet):
         label="Search",
     )
 
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument,no-self-use
+    def search(self, queryset, name, value):  # pylint: disable=unused-argument
         """Perform the filtered search."""
         if not value.strip():
             return queryset

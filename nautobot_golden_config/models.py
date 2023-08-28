@@ -523,7 +523,7 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
             self.description,
         )
 
-    def get_absolute_url(self):  # pylint: disable=no-self-use
+    def get_absolute_url(self):
         """Return absolute URL for instance."""
         return reverse("plugins:nautobot_golden_config:goldenconfigsetting", args=[self.pk])
 
@@ -640,7 +640,7 @@ class ConfigRemove(PrimaryModel):  # pylint: disable=too-many-ancestors
         """Return a simple string if model is called."""
         return self.name
 
-    def get_absolute_url(self):  # pylint: disable=no-self-use
+    def get_absolute_url(self):
         """Return absolute URL for instance."""
         return reverse("plugins:nautobot_golden_config:configremove", args=[self.pk])
 

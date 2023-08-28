@@ -7,8 +7,6 @@ from nautobot.utilities.testing import TestCase
 from nautobot.dcim.models import Device
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 
-# pylint: disable=no-self-use
-
 
 class GraphQLTest(TestCase):
     """Test for the GraphQL Queries."""

@@ -1,6 +1,6 @@
 """Tasks for use with Invoke.
 
-(c) 2020-2021 Network To Code
+(c) 2020-2023 Network To Code
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -40,9 +40,9 @@ namespace = Collection("nautobot_golden_config")
 namespace.configure(
     {
         "nautobot_golden_config": {
-            "nautobot_ver": "1.5.13",
+            "nautobot_ver": "1.6.1",
             "project_name": "nautobot_golden_config",
-            "python_ver": "3.8",
+            "python_ver": "3.11",
             "local": False,
             "compose_dir": os.path.join(os.path.dirname(__file__), "development"),
             "compose_files": [

@@ -85,7 +85,7 @@ function pollJobStatus(jobId) {
         $('#errorDetails').show();
         $('#errorDetails').addClass("alert alert-danger text-center");
         $('#errorDetails').append("Job Started but failed during the Job run. This job may have partially completed. See Job Results for more details on the errors.");
-      } else if (data.status.value in jr_options) {
+      } else if (jr_options.includes(data.status.value)) {
         // Job is still processing, continue polling
         setTimeout(function() {
           pollJobStatus(jobId);

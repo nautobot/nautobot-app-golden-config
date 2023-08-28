@@ -40,10 +40,8 @@ function startJob(jobClass, data, redirectUrlTemplate) {
               $('#redirectLink').html(finalUrl).show();
             }
         },
-        complete: function() {
-            $("#loaderImg").hide();
-        },
         error: function(e) {
+            $("#loaderImg").hide();
             console.log("There was an error with your request...");
             console.log("error: " + JSON.stringify(e));
             $('#jobStatus').html("failed").show();
@@ -82,6 +80,7 @@ function pollJobStatus(jobId) {
     success: function(data) {
       $('#jobStatus').html(data.status.value).show();
       if (["errored", "failed"].includes(data.status.value)) {
+        $("#loaderImg").hide();
         $('#errorDetails').show();
         $('#errorDetails').addClass("alert alert-danger text-center");
         $('#errorDetails').html("Job Started but failed during the Job run. This job may have partially completed. See Job Results for more details on the errors.");
@@ -90,9 +89,13 @@ function pollJobStatus(jobId) {
         setTimeout(function() {
           pollJobStatus(jobId);
         }, 1000); // Poll every 1 seconds
-      } 
+      } else if (data.status.value == "completed") {
+        $("#loaderImg").hide();
+        $('#errorDetails').hide();
+      }
     },
     error: function(e) {
+      $("#loaderImg").hide();
       console.log("There was an error with your request...");
       console.log("error: " + JSON.stringify(e));
       $('#errorDetails').show();

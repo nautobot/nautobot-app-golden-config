@@ -10,7 +10,6 @@
  */
 function startJob(jobClass, data, redirectUrlTemplate) {
     var jobApi = `/api/extras/jobs/${jobClass}/run/`;
-    var jobResultUrl = "/extras/job-results/";
 
     $.ajax({
         type: 'POST',
@@ -23,31 +22,30 @@ function startJob(jobClass, data, redirectUrlTemplate) {
         },
         beforeSend: function() {
             // Normalize to base as much as you can.
-            $('#jobStatus').html("pending").show();
+            $('#jobStatus').html("Pending").show();
             $('#loaderImg').show();
             $('#jobResults').hide();
             $('#redirectLink').hide();
-            $('#errorDetails').removeClass("alert alert-danger text-center").hide();
+            $('#detailMessages').hide();
           },
         success: function(jobData) {
-            $('#jobStatus').html("started").show();
-            var jobUrlIcon = iconLink(jobResultUrl + jobData.result.id, "mdi-link-box-variant-outline", "Job Details");
-            $('#jobResults').html(jobUrlIcon).show();
+            $('#jobStatus').html("Started").show();
+            var jobResultUrl = "/extras/job-results/" + jobData.result.id + "/";
+            $('#jobResults').html(iconLink(jobResultUrl, "mdi-open-in-new", "Job Details")).show();
             pollJobStatus(jobData.result.url);
             if (typeof redirectUrlTemplate !== "undefined") {
               var redirectUrl = _renderTemplate(redirectUrlTemplate, jobData);
-              var finalUrl = iconLink(redirectUrl, "mdi-link-box-variant-outline", "Info");
-              $('#redirectLink').html(finalUrl).show();
+              $('#redirectLink').html(iconLink(redirectUrl, "mdi-open-in-new", "Info"));
             }
         },
         error: function(e) {
             $("#loaderImg").hide();
             console.log("There was an error with your request...");
             console.log("error: " + JSON.stringify(e));
-            $('#jobStatus').html("failed").show();
-            $('#errorDetails').show();
-            $('#errorDetails').addClass("alert alert-danger text-center");
-            $('#errorDetails').html("<b>Error: </b>" + e.responseText);
+            $('#jobStatus').html("Failed").show();
+            $('#detailMessages').show();
+            $('#detailMessages').attr('class', 'alert alert-danger text-center');
+            $('#detailMessages').html("<b>Error: </b>" + e.responseText);
         }
     });
 }
@@ -77,12 +75,12 @@ function pollJobStatus(jobId) {
       'X-CSRFToken': nautobot_csrf_token
     },
     success: function(data) {
-      $('#jobStatus').html(data.status.value).show();
+      $('#jobStatus').html(data.status.value.charAt(0).toUpperCase() + data.status.value.slice(1)).show();
       if (["errored", "failed"].includes(data.status.value)) {
         $("#loaderImg").hide();
-        $('#errorDetails').show();
-        $('#errorDetails').addClass("alert alert-danger text-center");
-        $('#errorDetails').html("Job Started but failed during the Job run. This job may have partially completed. See Job Results for more details on the errors.");
+        $('#detailMessages').show();
+        $('#detailMessages').attr('class', 'alert alert-warning text-center');
+        $('#detailMessages').html("Job started but failed during the Job run. This job may have partially completed. See Job Results for more details on the errors.");
       } else if (["running", "pending"].includes(data.status.value)) {
         // Job is still processing, continue polling
         setTimeout(function() {
@@ -90,16 +88,32 @@ function pollJobStatus(jobId) {
         }, 1000); // Poll every 1 seconds
       } else if (data.status.value == "completed") {
         $("#loaderImg").hide();
-        $('#errorDetails').hide();
+        $('#detailMessages').show();
+        configPlanCount(data.id)
+          .then(function(planCount) {
+            $('#redirectLink').show();
+            $('#detailMessages').attr('class', 'alert alert-success text-center');
+            $('#detailMessages').html(
+              "Job Completed Successfully."+
+              "<br>Number of Config Plans generated: " + planCount
+            )
+          })
+          .catch(function(error) {
+            $('#detailMessages').attr('class', 'alert alert-warning text-center');
+            $('#detailMessages').html(
+              "Job completed successfully, but no Config Plans were generated."+
+              "<br>If this is unexpected, please validate your input parameters."
+            )
+          });
       }
     },
     error: function(e) {
       $("#loaderImg").hide();
       console.log("There was an error with your request...");
       console.log("error: " + JSON.stringify(e));
-      $('#errorDetails').show();
-      $('#errorDetails').addClass("alert alert-danger text-center");
-      $('#errorDetails').html("<b>Error: </b>" + e.responseText);
+      $('#detailMessages').show();
+      $('#detailMessages').attr('class', 'alert alert-danger text-center');
+      $('#detailMessages').html("<b>Error: </b>" + e.responseText);
   }
   });
 }
@@ -140,7 +154,7 @@ function formDataToDictionary(formData, listKeys) {
  */
 function iconLink(url, icon, title) {
 
-  const linkUrl = `<a href="${url}">` + 
+  const linkUrl = `<a href="${url}" target="_blank">` + 
   `  <span class="text-primary">` +
   `    <i class="mdi ${icon}" title="${title}"></i>` +
   `  </span>` +
@@ -174,4 +188,26 @@ function _renderTemplate(templateString, data) {
   });
 
   return renderedString;
+}
+
+
+function configPlanCount(jobResultId) {
+  return new Promise(function(resolve, reject) {
+    var configPlanApi = `/api/plugins/golden-config/config-plan/?job_result_id=${jobResultId}`;
+    $.ajax({
+      url: configPlanApi,
+      type: "GET",
+      dataType: "json",
+      headers: {
+        'X-CSRFToken': nautobot_csrf_token
+      },
+      success: function(data) {
+        var count = data.count;
+        resolve(count);
+      },
+      error: function(e) {
+        resolve(e);
+      }
+    });
+  });
 }

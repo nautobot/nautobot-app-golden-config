@@ -49,7 +49,7 @@ function startJob(jobClass, data, redirectUrlTemplate) {
             $('#jobStatus').html("failed").show();
             $('#errorDetails').show();
             $('#errorDetails').addClass("alert alert-danger text-center");
-            $('#errorDetails').append("<b>Error: </b>" + e.responseText);
+            $('#errorDetails').html("<b>Error: </b>" + e.responseText);
         }
     });
 }
@@ -84,7 +84,7 @@ function pollJobStatus(jobId) {
       if (["errored", "failed"].includes(data.status.value)) {
         $('#errorDetails').show();
         $('#errorDetails').addClass("alert alert-danger text-center");
-        $('#errorDetails').append("Job Started but failed during the Job run. This job may have partially completed. See Job Results for more details on the errors.");
+        $('#errorDetails').html("Job Started but failed during the Job run. This job may have partially completed. See Job Results for more details on the errors.");
       } else if (jr_options.includes(data.status.value)) {
         // Job is still processing, continue polling
         setTimeout(function() {
@@ -97,7 +97,7 @@ function pollJobStatus(jobId) {
       console.log("error: " + JSON.stringify(e));
       $('#errorDetails').show();
       $('#errorDetails').addClass("alert alert-danger text-center");
-      $('#errorDetails').append("<b>Error: </b>" + e.responseText);
+      $('#errorDetails').html("<b>Error: </b>" + e.responseText);
   }
   });
 }

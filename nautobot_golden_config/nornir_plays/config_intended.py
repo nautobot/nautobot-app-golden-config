@@ -49,7 +49,7 @@ jinja_env = SandboxedEnvironment(
     trim_blocks=OPTION_TRIM_BLOCKS,
     lstrip_blocks=OPTION_LSTRIP_BLOCKS,
 )
-# Retrieve filters from the Djanog jinja template engine
+# Retrieve filters from the Django jinja template engine
 jinja_env.filters = engines["jinja"].env.filters
 
 

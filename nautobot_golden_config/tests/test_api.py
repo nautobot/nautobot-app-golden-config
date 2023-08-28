@@ -19,6 +19,7 @@ from .conftest import (
     create_git_repos,
     create_saved_queries,
     create_device_data,
+    create_job_result,
 )
 
 
@@ -332,7 +333,7 @@ class RemediationSettingTest(APIViewTestCases.APIViewTestCase):
         """Skipping test due to POST method not allowed."""
 
 
-# pylint: disable=too-many-ancestors
+# pylint: disable=too-many-ancestors,too-many-locals
 class ConfigPlanTest(APIViewTestCases.APIViewTestCase):
     """Test API for ConfigPlan."""
 
@@ -352,28 +353,38 @@ class ConfigPlanTest(APIViewTestCases.APIViewTestCase):
         rule2 = create_feature_rule_json(device2, feature="Test Feature 2")
         rule3 = create_feature_rule_json(device3, feature="Test Feature 3")
 
+        job_result1 = create_job_result()
+        job_result2 = create_job_result()
+        job_result3 = create_job_result()
+
         features = [rule1.feature, rule2.feature, rule3.feature]
         plan_types = ["intended", "missing", "remediation"]
+        job_result_ids = [job_result1.id, job_result2.id, job_result3.id]
         not_approved_status = Status.objects.get(slug="not-approved")
         approved_status = Status.objects.get(slug="approved")
 
         for cont in range(1, 4):
-            ConfigPlan.objects.create(
+            plan = ConfigPlan.objects.create(
                 device=Device.objects.get(name=f"Device {cont}"),
                 plan_type=plan_types[cont - 1],
-                feature=features[cont - 1],
                 config_set=f"Test Config Set {cont}",
                 change_control_id=f"Test Change Control ID {cont}",
+                change_control_url=f"https://{cont}.example.com/",
                 status=not_approved_status,
+                job_result_id=job_result_ids[cont - 1],
             )
+            plan.feature.add(features[cont - 1])
+            plan.validated_save()
 
         cls.update_data = {
             "change_control_id": "Test Change Control ID 4",
+            "change_control_url": "https://4.example.com/",
             "status": approved_status.slug,
         }
 
         cls.bulk_update_data = {
             "change_control_id": "Test Change Control ID 5",
+            "change_control_url": "https://5.example.com/",
             "status": approved_status.slug,
         }
 

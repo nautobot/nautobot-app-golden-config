@@ -3,7 +3,6 @@ from django.apps import apps as global_apps
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from nautobot.dcim.models import Platform
-from nautobot.extras.models import Job
 from nautobot_golden_config import models
 
 
@@ -49,13 +48,6 @@ def post_migrate_create_job_button(sender, apps=global_apps, **kwargs):  # pylin
     }
     jobbutton, _ = JobButton.objects.get_or_create(**job_button_config)
     jobbutton.content_types.set([configplan_type])
-
-
-def post_migrate_default_enabled_configplan_jobs(sender, apps=global_apps, **kwargs):  # pylint: disable=unused-argument
-    """Signal to enable ConfigPlan job be default."""
-    cp_job = Job.objects.get(name="Generate Config Plans")
-    cp_job.enabled = True
-    cp_job.save()
 
 
 @receiver(post_save, sender=models.ConfigCompliance)

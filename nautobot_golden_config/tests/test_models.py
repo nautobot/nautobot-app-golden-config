@@ -17,7 +17,13 @@ from nautobot_golden_config.models import (
 )
 from nautobot_golden_config.tests.conftest import create_git_repos
 
-from .conftest import create_config_compliance, create_device, create_feature_rule_json, create_saved_queries
+from .conftest import (
+    create_config_compliance,
+    create_device,
+    create_feature_rule_json,
+    create_saved_queries,
+    create_job_result,
+)
 
 
 class ConfigComplianceModelTestCase(TestCase):
@@ -295,19 +301,45 @@ class ConfigPlanModelTestCase(TestCase):
         self.rule = create_feature_rule_json(self.device)
         self.feature = self.rule.feature
         self.status = Status.objects.get(slug="not-approved")
+        self.job_result = create_job_result()
 
     def test_create_config_plan_intended(self):
         """Test Create Object."""
         config_plan = ConfigPlan.objects.create(
             device=self.device,
             plan_type="intended",
-            feature=self.feature,
             config_set="test intended config",
             change_control_id="1234",
+            change_control_url="https://1234.example.com/",
             status=self.status,
+            job_result_id=self.job_result.id,
         )
+        config_plan.feature.add(self.feature)
+        config_plan.validated_save()
         self.assertEqual(config_plan.device, self.device)
-        self.assertEqual(config_plan.feature, self.feature)
+        self.assertEqual(config_plan.feature.first(), self.feature)
+        self.assertEqual(config_plan.config_set, "test intended config")
+        self.assertEqual(config_plan.change_control_id, "1234")
+        self.assertEqual(config_plan.status, self.status)
+        self.assertEqual(config_plan.plan_type, "intended")
+
+    def test_create_config_plan_intended_multiple_features(self):
+        """Test Create Object."""
+        rule2 = create_feature_rule_json(self.device, feature="feature2")
+        config_plan = ConfigPlan.objects.create(
+            device=self.device,
+            plan_type="intended",
+            config_set="test intended config",
+            change_control_id="1234",
+            change_control_url="https://1234.example.com/",
+            status=self.status,
+            job_result_id=self.job_result.id,
+        )
+        config_plan.feature.set([self.feature, rule2.feature])
+        config_plan.validated_save()
+        self.assertEqual(config_plan.device, self.device)
+        self.assertIn(self.feature.id, config_plan.feature.all().values_list("id", flat=True))
+        self.assertIn(rule2.feature.id, config_plan.feature.all().values_list("id", flat=True))
         self.assertEqual(config_plan.config_set, "test intended config")
         self.assertEqual(config_plan.change_control_id, "1234")
         self.assertEqual(config_plan.status, self.status)
@@ -318,13 +350,16 @@ class ConfigPlanModelTestCase(TestCase):
         config_plan = ConfigPlan.objects.create(
             device=self.device,
             plan_type="missing",
-            feature=self.feature,
             config_set="test missing config",
             change_control_id="2345",
+            change_control_url="https://2345.example.com/",
             status=self.status,
+            job_result_id=self.job_result.id,
         )
+        config_plan.feature.add(self.feature)
+        config_plan.validated_save()
         self.assertEqual(config_plan.device, self.device)
-        self.assertEqual(config_plan.feature, self.feature)
+        self.assertEqual(config_plan.feature.first(), self.feature)
         self.assertEqual(config_plan.config_set, "test missing config")
         self.assertEqual(config_plan.change_control_id, "2345")
         self.assertEqual(config_plan.status, self.status)
@@ -335,13 +370,16 @@ class ConfigPlanModelTestCase(TestCase):
         config_plan = ConfigPlan.objects.create(
             device=self.device,
             plan_type="remediation",
-            feature=self.feature,
             config_set="test remediation config",
             change_control_id="3456",
+            change_control_url="https://3456.example.com/",
             status=self.status,
+            job_result_id=self.job_result.id,
         )
+        config_plan.feature.add(self.feature)
+        config_plan.validated_save()
         self.assertEqual(config_plan.device, self.device)
-        self.assertEqual(config_plan.feature, self.feature)
+        self.assertEqual(config_plan.feature.first(), self.feature)
         self.assertEqual(config_plan.config_set, "test remediation config")
         self.assertEqual(config_plan.change_control_id, "3456")
         self.assertEqual(config_plan.status, self.status)
@@ -353,6 +391,7 @@ class ConfigPlanModelTestCase(TestCase):
             device=self.device,
             plan_type="manual",
             config_set="test manual config",
+            job_result_id=self.job_result.id,
         )
         self.assertEqual(config_plan.device, self.device)
         self.assertEqual(config_plan.config_set, "test manual config")

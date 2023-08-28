@@ -20,8 +20,18 @@
                 <td>{{ object.plan_type | title }}</td>
             </tr>
             <tr>
-                <td>Feature</td>
-                <td>{% if object.feature %}<a href="{{ object.feature.get_absolute_url }}">{{ object.feature }}</a>{% else %}{{ None | placeholder }}{% endif %}</td>
+                <td>Features</td>
+                <td>
+                    {% if object.feature.exists %}
+                        <ul>
+                            {% for feature in object.feature.all %}
+                                <li><a href="{{ feature.get_absolute_url }}">{{ feature }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        {{ None | placeholder }}
+                    {% endif %}
+                </td>
             </tr>
             <tr>
                 <td>Change Control ID</td>
@@ -32,7 +42,7 @@
                 <td><a href="{{ object.change_control_url }}">{{ object.change_control_url|placeholder }}</a></td>
             </tr>
             <tr>
-                <td>Job Results</td>
+                <td>Job Result</td>
                 <td><a href="{{ object.job_result.get_absolute_url }}">{{ object.job_result|placeholder }}</a></td>
             </tr>
             <tr>

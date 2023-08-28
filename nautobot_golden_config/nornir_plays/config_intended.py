@@ -36,13 +36,8 @@ InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 LOGGER = logging.getLogger(__name__)
 
 # Use a custom Jinja2 environment instead of Django's to avoid HTML escaping
-# Trim_blocks option defaulted to True to match nornir's default environment
-OPTION_LSTRIP_BLOCKS = False
-OPTION_TRIM_BLOCKS = True
-if PLUGIN_CFG.get("jinja_env_trim_blocks"):
-    OPTION_TRIM_BLOCKS = PLUGIN_CFG.get("jinja_env_trim_blocks")
-if PLUGIN_CFG.get("jinja_env_lstrip_blocks"):
-    OPTION_LSTRIP_BLOCKS = PLUGIN_CFG.get("jinja_env_lstrip_blocks")
+OPTION_TRIM_BLOCKS = PLUGIN_CFG["jinja_env_trim_blocks"]
+OPTION_LSTRIP_BLOCKS = PLUGIN_CFG["jinja_env_lstrip_blocks"]
 
 jinja_env = SandboxedEnvironment(
     undefined=StrictUndefined,

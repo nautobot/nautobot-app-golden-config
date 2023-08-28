@@ -8,9 +8,6 @@ The current sources of these plans (i.e. plan types) are as follows:
 - The **Missing** configuration of a specific Compliance Feature
 - The **Remediation** configuration of a specific Compliance Feature (*)
 - A **Manual** set of configuration commands
-- A **Full** copy of the entire intended configuration (*)
-
-`(*) These features are not yet fully implemented`
 
 !!! note
     The Intended, Missing and Remediation configuration come from the [Configuration Compliance](./app_feature_compliance.md#compliance-details-view) object that is created when you run the [Perform Configuration Compliance Job](./app_feature_compliance.md#starting-a-compliance-job).

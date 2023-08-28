@@ -516,7 +516,6 @@ class ConfigPlanForm(NautobotModelForm):
                     {"name": "missing", "show": ["id_feature"], "hide": ["id_commands"]},
                     {"name": "intended", "show": ["id_feature"], "hide": ["id_commands"]},
                     {"name": "remediation", "show": ["id_feature"], "hide": ["id_commands"]},
-                    {"name": "full", "show": [], "hide": ["id_commands", "id_feature"]},
                     {"name": "", "show": [], "hide": ["id_commands", "id_feature"]},
                 ],
             }

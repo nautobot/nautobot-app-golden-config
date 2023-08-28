@@ -432,9 +432,6 @@ class GenerateConfigPlans(Job, FormEntry):
         elif self._plan_type in ["manual"]:
             self.log_debug("Starting config plan generation for manual commands.")
             self._generate_config_plan_from_manual()
-        elif self._plan_type in ["full"]:
-            self.log_failure("Full config plan generation is not yet supported.")
-            return
         else:
             self.log_failure(f"Unknown config plan type {self._plan_type}.")
             return

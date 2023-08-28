@@ -342,7 +342,9 @@ class ConfigPlanFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
         label="Device Name",
     )
     feature_id = django_filters.ModelMultipleChoiceFilter(
+        field_name="feature__id",
         queryset=models.ComplianceFeature.objects.all(),
+        to_field_name="id",
         label="Feature ID",
     )
     feature = django_filters.ModelMultipleChoiceFilter(

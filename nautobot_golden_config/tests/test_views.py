@@ -17,7 +17,7 @@ from nautobot.extras.models import Relationship, RelationshipAssociation, Status
 from nautobot.utilities.testing import ViewTestCases
 from nautobot_golden_config import views, models
 
-from .conftest import create_feature_rule_json, create_device_data
+from .conftest import create_feature_rule_json, create_device_data, create_job_result
 
 
 User = get_user_model()
@@ -322,37 +322,51 @@ class ConfigPlanTestCase(
         rule2 = create_feature_rule_json(device2, feature="Test Feature 2")
         rule3 = create_feature_rule_json(device3, feature="Test Feature 3")
 
+        job_result1 = create_job_result()
+        job_result2 = create_job_result()
+        job_result3 = create_job_result()
+
         not_approved_status = Status.objects.get(slug="not-approved")
         approved_status = Status.objects.get(slug="approved")
 
-        models.ConfigPlan.objects.create(
+        plan1 = models.ConfigPlan.objects.create(
             device=device1,
             plan_type="intended",
-            feature=rule1.feature,
             config_set="Test Config Set 1",
             change_control_id="Test Change Control ID 1",
+            change_control_url="https://1.example.com/",
             status=not_approved_status,
+            job_result_id=job_result1.id,
         )
-        models.ConfigPlan.objects.create(
+        plan1.feature.add(rule1.feature)
+        plan1.validated_save()
+        plan2 = models.ConfigPlan.objects.create(
             device=device2,
             plan_type="missing",
-            feature=rule2.feature,
             config_set="Test Config Set 2",
             change_control_id="Test Change Control ID 2",
+            change_control_url="https://2.example.com/",
             status=not_approved_status,
+            job_result_id=job_result2.id,
         )
-        models.ConfigPlan.objects.create(
+        plan2.feature.add(rule2.feature)
+        plan2.validated_save()
+        plan3 = models.ConfigPlan.objects.create(
             device=device3,
             plan_type="remediation",
-            feature=rule3.feature,
             config_set="Test Config Set 3",
             change_control_id="Test Change Control ID 3",
+            change_control_url="https://3.example.com/",
             status=not_approved_status,
+            job_result_id=job_result3.id,
         )
+        plan3.feature.add(rule3.feature)
+        plan3.validated_save()
 
         # Used for EditObjectViewTestCase
         cls.form_data = {
             "change_control_id": "Test Change Control ID 4",
+            "change_control_url": "https://4.example.com/",
             "status": approved_status.pk,
         }
 

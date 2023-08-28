@@ -10,7 +10,6 @@ from nautobot.dcim.models import (
     Device,
     DeviceRole,
     DeviceType,
-    Location,
     Manufacturer,
     Platform,
     Rack,
@@ -488,7 +487,8 @@ class ConfigPlanForm(NautobotModelForm):
 
     tenant_group = utilities_forms.DynamicModelMultipleChoiceField(queryset=TenantGroup.objects.all(), required=False)
     tenant = utilities_forms.DynamicModelMultipleChoiceField(queryset=Tenant.objects.all(), required=False)
-    location = utilities_forms.DynamicModelMultipleChoiceField(queryset=Location.objects.all(), required=False)
+    # Requires https://github.com/nautobot/nautobot-plugin-golden-config/issues/430
+    # location = utilities_forms.DynamicModelMultipleChoiceField(queryset=Location.objects.all(), required=False)
     region = utilities_forms.DynamicModelMultipleChoiceField(queryset=Region.objects.all(), required=False)
     site = utilities_forms.DynamicModelMultipleChoiceField(queryset=Site.objects.all(), required=False)
     rack_group = utilities_forms.DynamicModelMultipleChoiceField(queryset=RackGroup.objects.all(), required=False)
@@ -533,7 +533,7 @@ class ConfigPlanForm(NautobotModelForm):
             "feature",
             "commands",
             "tenant",
-            "location",
+            # "location", Requires https://github.com/nautobot/nautobot-plugin-golden-config/issues/430
             "region",
             "site",
             "rack_group",

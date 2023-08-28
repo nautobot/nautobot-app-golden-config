@@ -297,7 +297,7 @@ class GoldenConfigListViewTestCase(TestCase):
         self.assertEqual(device_names_in_export, device_names_in_site_1)
 
 
-# pylint: disable=too-many-ancestors
+# pylint: disable=too-many-ancestors,too-many-locals
 class ConfigPlanTestCase(
     ViewTestCases.GetObjectViewTestCase,
     ViewTestCases.GetObjectChangelogViewTestCase,
@@ -321,6 +321,7 @@ class ConfigPlanTestCase(
         rule1 = create_feature_rule_json(device1, feature="Test Feature 1")
         rule2 = create_feature_rule_json(device2, feature="Test Feature 2")
         rule3 = create_feature_rule_json(device3, feature="Test Feature 3")
+        rule4 = create_feature_rule_json(device3, feature="Test Feature 4")
 
         job_result1 = create_job_result()
         job_result2 = create_job_result()
@@ -360,7 +361,7 @@ class ConfigPlanTestCase(
             status=not_approved_status,
             job_result_id=job_result3.id,
         )
-        plan3.feature.add(rule3.feature)
+        plan3.feature.set([rule3.feature, rule4.feature])
         plan3.validated_save()
 
         # Used for EditObjectViewTestCase

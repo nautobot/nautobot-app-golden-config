@@ -320,6 +320,8 @@ class ConfigPlanFilterTestCase(FilterTestCases.FilterTestCase):
         self.feature1 = self.rule1.feature
         self.rule2 = create_feature_rule_cli(self.device2, feature="Feature 2")
         self.feature2 = self.rule2.feature
+        self.rule3 = create_feature_rule_cli(self.device1, feature="Feature 3")
+        self.feature3 = self.rule3.feature
         self.status1 = Status.objects.get(name="Not Approved")
         self.status2 = Status.objects.get(name="Approved")
         self.tag1, _ = Tag.objects.get_or_create(name="Tag 1")
@@ -360,7 +362,7 @@ class ConfigPlanFilterTestCase(FilterTestCases.FilterTestCase):
             job_result_id=self.job_result2.id,
         )
         self.config_plan3.tags.add(self.tag2)
-        self.config_plan3.feature.add(self.feature1)
+        self.config_plan3.feature.set([self.feature1, self.feature3])
         self.config_plan3.validated_save()
         self.config_plan4 = models.ConfigPlan.objects.create(
             device=self.device2,

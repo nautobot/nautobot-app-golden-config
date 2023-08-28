@@ -323,6 +323,28 @@ class ConfigPlanModelTestCase(TestCase):
         self.assertEqual(config_plan.status, self.status)
         self.assertEqual(config_plan.plan_type, "intended")
 
+    def test_create_config_plan_intended_multiple_features(self):
+        """Test Create Object."""
+        rule2 = create_feature_rule_json(self.device, feature="feature2")
+        config_plan = ConfigPlan.objects.create(
+            device=self.device,
+            plan_type="intended",
+            config_set="test intended config",
+            change_control_id="1234",
+            change_control_url="https://1234.example.com/",
+            status=self.status,
+            job_result_id=self.job_result.id,
+        )
+        config_plan.feature.set([self.feature, rule2.feature])
+        config_plan.validated_save()
+        self.assertEqual(config_plan.device, self.device)
+        self.assertIn(self.feature.id, config_plan.feature.all().values_list("id", flat=True))
+        self.assertIn(rule2.feature.id, config_plan.feature.all().values_list("id", flat=True))
+        self.assertEqual(config_plan.config_set, "test intended config")
+        self.assertEqual(config_plan.change_control_id, "1234")
+        self.assertEqual(config_plan.status, self.status)
+        self.assertEqual(config_plan.plan_type, "intended")
+
     def test_create_config_plan_missing(self):
         """Test Create Object."""
         config_plan = ConfigPlan.objects.create(

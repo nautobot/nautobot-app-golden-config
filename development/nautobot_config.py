@@ -3,6 +3,8 @@
 import os
 import sys
 
+from django.utils.module_loading import import_string
+
 from nautobot.core.settings import *  # noqa: F403
 from nautobot.core.settings_funcs import is_truthy, parse_redis_connection
 
@@ -174,8 +176,11 @@ PLUGINS_CONFIG = {
         "enable_postprocessing": is_truthy(os.environ.get("ENABLE_POSTPROCESSING", True)),
         "postprocessing_callables": os.environ.get("POSTPROCESSING_CALLABLES", []),
         "postprocessing_subscribed": os.environ.get("POSTPROCESSING_SUBSCRIBED", []),
-        "jinja_env_trim_blocks": is_truthy(os.getenv("NAUTOBOT_JINJA_ENV_TRIM_BLOCKS", True)),
-        "jinja_env_lstrip_blocks": is_truthy(os.getenv("NAUTOBOT_JINJA_ENV_LSTRIP_BLOCKS", False)),
+        "jinja_env": {
+            "undefined": import_string("jinja2.StrictUndefined"),
+            "jinja_env_trim_blocks": is_truthy(os.getenv("NAUTOBOT_JINJA_ENV_TRIM_BLOCKS", True)),
+            "jinja_env_lstrip_blocks": is_truthy(os.getenv("NAUTOBOT_JINJA_ENV_LSTRIP_BLOCKS", False)),
+        },
         # The platform_slug_map maps an arbitrary platform slug to its corresponding parser.
         # Use this if the platform slug names in your Nautobot instance don't correspond exactly
         # to the Nornir driver names ("arista_eos", "cisco_ios", etc.).

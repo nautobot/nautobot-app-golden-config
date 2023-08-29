@@ -103,11 +103,20 @@ The plugin behavior can be controlled with the following list of settings.
 | per_feature_bar_width     | 0.15                          | 0.15    | The width of the table bar within the overview report                                                                                                                      |
 | per_feature_width         | 13                            | 13      | The width in inches that the overview table can be.                                                                                                                        |
 | per_feature_height        | 4                             | 4       | The height in inches that the overview table can be.                                                                                                                       |
-| jinja_env_trim_blocks     | True                          | True    | A boolean to represent whether the jinja2 option for "trim_blocks" should be enabled for intended config rendering                                                         |
-| jinja_env_lstrip_blocks   | True                          | False   | A boolean to represent whether the jinja2 option for "lstrip_blocks" should be enabled for intended config rendering                                                       |
+| jinja_env | {"jinja_env_lstrip_blocks": False} | See Note Below | A dictionary of Jinja2 Environment options compatible with Jinja2.SandboxEnvironment() |
 
 !!! note
     Over time the compliance report will become more dynamic, but for now allow users to configure the `per_*` configs in a way that fits best for them.
 
 !!! note
     Review [`nautobot_plugin_nornir`](https://docs.nautobot.com/projects/plugin-nornir/en/latest/user/app_feature_dispatcher/) for Nornir and dispatcher configuration options.
+
+!!! note
+    Defaults for Jinja2 environment settings (`jinja_env`) are as follows:
+    ```python
+    jinja_env = {
+        "undefined": import_string("jinja2.StrictUndefined"),
+        "jinja_env_trim_blocks": True,
+        "jinja_env_lstrip_blocks": False,
+    }
+    ```

@@ -8,6 +8,7 @@ except ImportError:
 
 __version__ = metadata.version(__name__)
 
+from jinja2 import StrictUndefined
 from django.db.models.signals import post_migrate
 from nautobot.extras.plugins import PluginConfig
 
@@ -36,8 +37,11 @@ class GoldenConfig(PluginConfig):
         "per_feature_width": 13,
         "per_feature_height": 4,
         "get_custom_compliance": None,
-        "jinja_env_trim_blocks": True,
-        "jinja_env_lstrip_blocks": False,
+        "jinja_env": {
+            "undefined": StrictUndefined,
+            "jinja_env_trim_blocks": True,
+            "jinja_env_lstrip_blocks": False,
+        },
     }
 
     def ready(self):

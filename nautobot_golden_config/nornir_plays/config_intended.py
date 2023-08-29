@@ -9,7 +9,6 @@ from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir.core.task import Result, Task
 
 from django.template import engines
-from jinja2 import StrictUndefined
 from jinja2.sandbox import SandboxedEnvironment
 
 from nornir_nautobot.exceptions import NornirNautobotException
@@ -36,14 +35,9 @@ InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 LOGGER = logging.getLogger(__name__)
 
 # Use a custom Jinja2 environment instead of Django's to avoid HTML escaping
-OPTION_TRIM_BLOCKS = PLUGIN_CFG["jinja_env_trim_blocks"]
-OPTION_LSTRIP_BLOCKS = PLUGIN_CFG["jinja_env_lstrip_blocks"]
+JINJA_ENV = PLUGIN_CFG["jinja_env"]
+jinja_env = SandboxedEnvironment(**JINJA_ENV)
 
-jinja_env = SandboxedEnvironment(
-    undefined=StrictUndefined,
-    trim_blocks=OPTION_TRIM_BLOCKS,
-    lstrip_blocks=OPTION_LSTRIP_BLOCKS,
-)
 # Retrieve filters from the Django jinja template engine
 jinja_env.filters = engines["jinja"].env.filters
 

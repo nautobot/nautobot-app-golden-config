@@ -59,8 +59,11 @@ PLUGINS_CONFIG = {
         "postprocessing_callables": [],
         "postprocessing_subscribed": [],
         "platform_slug_map": None,
-        "jinja_env_trim_blocks": True,
-        "jinja_env_lstrip_blocks": False,
+        "jinja_env": {
+            "undefined": StrictUndefined,  # jinja2.StrictUndefined
+            "jinja_env_trim_blocks": True,
+            "jinja_env_lstrip_blocks": False,
+        },
         # "get_custom_compliance": "my.custom_compliance.func"
     },
 }

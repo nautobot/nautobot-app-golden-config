@@ -5,7 +5,7 @@ from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, P
 from nautobot.extras.datasources.registry import get_datasource_contents
 from nautobot.extras.models import GitRepository, GraphQLQuery, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
-from nautobot_golden_config.choices import ComplianceRuleTypeChoice
+from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
 from nautobot_golden_config.models import ComplianceFeature, ComplianceRule, ConfigCompliance
 
 
@@ -177,7 +177,7 @@ def create_feature_rule_json(device, feature="foo", rule="json"):
     rule = ComplianceRule(
         feature=feature_obj,
         platform=device.platform,
-        config_type=ComplianceRuleTypeChoice.TYPE_JSON,
+        config_type=ComplianceRuleConfigTypeChoice.TYPE_JSON,
         config_ordered=False,
     )
     rule.save()

@@ -18,8 +18,6 @@ from nautobot_golden_config.utilities.helper import (
     render_jinja_template,
 )
 
-# pylint: disable=no-self-use
-
 
 class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
     """Test Helper Functions."""

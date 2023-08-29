@@ -1,5 +1,7 @@
 """Helper functions."""
 # pylint: disable=raise-missing-from
+import json
+
 from django.db.models import Q
 from jinja2 import exceptions as jinja_errors
 from nautobot.dcim.filters import DeviceFilterSet
@@ -141,3 +143,11 @@ def get_device_to_settings_map(queryset):
         if dynamic_group.exists():
             device_to_settings_map[device.id] = dynamic_group.first().golden_config_setting
     return device_to_settings_map
+
+
+def get_json_config(config):
+    """Helper to JSON load config files."""
+    try:
+        return json.loads(config)
+    except json.decoder.JSONDecodeError:
+        return None

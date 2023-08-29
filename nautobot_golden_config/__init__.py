@@ -36,8 +36,8 @@ class GoldenConfig(PluginConfig):
         "get_custom_compliance": None,
         "jinja_env": {
             "undefined": StrictUndefined,
-            "jinja_env_trim_blocks": True,
-            "jinja_env_lstrip_blocks": False,
+            "trim_blocks": True,
+            "lstrip_blocks": False,
         },
     }
 

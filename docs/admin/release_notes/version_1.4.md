@@ -2,6 +2,23 @@
 
 - Change min version of Nautobot from 1.4.0 to 1.5.3 which is required for the use of NautobotUIViewset, Notes mixins etc.
 
+## v1.4.2 - 2023-08
+
+### Changed
+
+- [519](https://github.com/nautobot/nautobot-plugin-golden-config/pull/519) - docs-only: large fixes and template troubleshooting section.
+
+### Fixed
+
+- [492](https://github.com/nautobot/nautobot-plugin-golden-config/pull/492) - Fix count of in scope devices on settings detail view.
+- [498](https://github.com/nautobot/nautobot-plugin-golden-config/pull/498) - Fix deepdiff dependency.
+- [501](https://github.com/nautobot/nautobot-plugin-golden-config/pull/501) - Update docs for adding CustomField data with datasources.
+- [503](https://github.com/nautobot/nautobot-plugin-golden-config/pull/503) - Switch from deprecated FilterSet to new FilterSetMixin.
+- [504](https://github.com/nautobot/nautobot-plugin-golden-config/pull/504) - Fix extend queryfilter to export.
+- [511](https://github.com/nautobot/nautobot-plugin-golden-config/pull/511) - Fix `log_failure` function missing argument.
+- [523](https://github.com/nautobot/nautobot-plugin-golden-config/pull/523) - Fix docs site by pinning dev dependencies.
+- [530](https://github.com/nautobot/nautobot-plugin-golden-config/pull/530) - Fix, removing ConfigCompliance model import from 0005 migration.
+
 ## v1.4.1 - 2023-05
 
 ### Fixed

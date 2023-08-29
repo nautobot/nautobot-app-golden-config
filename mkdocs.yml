@@ -5,7 +5,7 @@ site_dir: "golden-config/static/golden-config/docs"
 site_name: "Golden Configuration Documentation"
 site_url: "https://docs.nautobot.com/projects/golden-config/en/latest/"
 repo_url: "https://github.com/nautobot/nautobot-plugin-golden-config"
-copyright: "Copyright &copy; 2022 The Authors"
+copyright: "Copyright &copy; 2023 The Authors"
 theme:
   name: "material"
   navigation_depth: 4
@@ -14,6 +14,7 @@ theme:
     - "django"
     - "yaml"
   features:
+    - "content.code.copy"
     - "navigation.tracking"
     - "navigation.tabs"
     - "navigation.tabs.sticky"
@@ -118,6 +119,7 @@ nav:
       - Compatibility Matrix: "admin/compatibility_matrix.md"
       - Release Notes:
           - "admin/release_notes/index.md"
+          - v1.5: "admin/release_notes/version_1.5.md"
           - v1.4: "admin/release_notes/version_1.4.md"
           - v1.3: "admin/release_notes/version_1.3.md"
           - v1.2: "admin/release_notes/version_1.2.md"

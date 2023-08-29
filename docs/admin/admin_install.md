@@ -114,10 +114,10 @@ The plugin behavior can be controlled with the following list of settings.
 !!! note
     Defaults for Jinja2 environment settings (`jinja_env`) are as follows:
 
-```python
-    jinja_env = {
-        "undefined": import_string("jinja2.StrictUndefined"),
-        "jinja_env_trim_blocks": True,
-        "jinja_env_lstrip_blocks": False,
-    }
-```
+    ```python
+        jinja_env = {
+            "undefined": import_string("jinja2.StrictUndefined"),
+            "jinja_env_trim_blocks": True,
+            "jinja_env_lstrip_blocks": False,
+        }
+    ```

@@ -5,6 +5,7 @@ from importlib import metadata
 
 __version__ = metadata.version(__name__)
 
+from jinja2 import StrictUndefined
 from django.db.models.signals import post_migrate
 from nautobot.extras.plugins import PluginConfig
 
@@ -33,6 +34,11 @@ class GoldenConfig(PluginConfig):
         "per_feature_width": 13,
         "per_feature_height": 4,
         "get_custom_compliance": None,
+        "jinja_env": {
+            "undefined": StrictUndefined,
+            "trim_blocks": True,
+            "lstrip_blocks": False,
+        },
     }
 
     def ready(self):

@@ -3,6 +3,7 @@
 - Add ability to update JSON based compliance via a job and have git integrations.
 - Made custom compliance a boolean to support both JSON or CLI custom compliance types.
 - Add metrics for Golden Config plugin.
+- Add jinja settings support.
 - Supports Nautobot >=1.6.1,<2.0.0.
 
 ## v1.5.0 - 2023-08
@@ -12,6 +13,7 @@
 - [455](https://github.com/nautobot/nautobot-plugin-golden-config/pull/455) - Add metrics for Golden Config plugin.
 - [485](https://github.com/nautobot/nautobot-plugin-golden-config/pull/485) - Custom compliance for CLI and JSON rules.
 - [487](https://github.com/nautobot/nautobot-plugin-golden-config/pull/487) - Implement native JSON support.
+- [527](https://github.com/nautobot/nautobot-plugin-golden-config/pull/527) - Add the ability to update Jinja environment setting from nautobot_config.
 
 ### Changed
 

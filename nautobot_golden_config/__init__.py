@@ -1,10 +1,7 @@
 """Plugin declaration for nautobot_golden_config."""
 # Metadata is inherited from Nautobot. If not including Nautobot in the environment, this should be added
-try:
-    from importlib import metadata
-except ImportError:
-    # Python version < 3.8
-    import importlib_metadata as metadata
+from importlib import metadata
+
 
 __version__ = metadata.version(__name__)
 
@@ -23,7 +20,7 @@ class GoldenConfig(PluginConfig):
     author_email = "opensource@networktocode.com"
     description = "Nautobot Apps that embraces NetDevOps and automates configuration backups, performs configuration compliance, and generates intended configurations. Includes native Git integration and gives users the flexibility to mix and match the supported features."
     base_url = "golden-config"
-    min_version = "1.5.14"
+    min_version = "1.6.1"
     max_version = "1.99"
     default_settings = {
         "enable_backup": True,
@@ -37,12 +34,10 @@ class GoldenConfig(PluginConfig):
         "per_feature_width": 13,
         "per_feature_height": 4,
         "get_custom_compliance": None,
-        "enable_config_context_sync": False,
     }
 
     def ready(self):
         """Register custom signals."""
-        import nautobot_golden_config.jobs  # pylint: disable=unused-import, import-outside-toplevel
         from nautobot_golden_config.models import ConfigCompliance  # pylint: disable=import-outside-toplevel
 
         # pylint: disable=import-outside-toplevel

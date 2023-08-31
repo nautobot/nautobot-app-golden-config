@@ -136,10 +136,14 @@ ERROR: 1
 
 If you receive this error, the issue is the secret key has been changed, and **does not** have anything to do with the Golden Config plugin. You can either delete the entries from your data source and the reference to those in the Golden Config settings or revert the secret key back so it matches the original deployment. Any issues opened will be closed and this faq referred to. If you still need help, feel free to join the Slack community.
 
-_I got a `preemptively failed` error, but I know my system is setup correctly?_
+## _I got a `preemptively failed` error, but I know my system is setup correctly?_
 
 These errors have been accurate so far, that is not to say that there is no way they could be a bug, but most commonly they have worked as expected thus far. Common issues include.
 
 * Incorrectly configured Secrets
 * Filtering to nothing when presumption is the filter works a certain way
 * Referencing an OS that is not recognized
+
+## _Why is the `_isnull` on DateTime filters considered experimental?_
+
+There are various ways we can create a programmatic interface, which may change the behavior or name, for now it should be considered experimental as we may update this strategy.

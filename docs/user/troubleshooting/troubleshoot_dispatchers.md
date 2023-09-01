@@ -28,7 +28,7 @@ Some steps to consider to troubleshooting this:
 
     As an example if you wanted to use NAPALMs Palo Alto plugin you'd need that library installed in the environment.
 
-    ```
+    ```shell
     pip install napalm-panos
     ```
 

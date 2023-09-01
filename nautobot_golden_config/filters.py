@@ -3,30 +3,56 @@
 import django_filters
 from django.db.models import Q
 from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Platform, Rack, RackGroup, Region, Site
-from nautobot.extras.filters import CustomFieldModelFilterSetMixin, StatusFilter
+from nautobot.dcim.filters import DeviceFilterSet
+from nautobot.extras.filters import StatusFilter
+from nautobot.extras.filters import NautobotFilterSet
 from nautobot.extras.models import Status
 from nautobot.tenancy.models import Tenant, TenantGroup
-from nautobot.utilities.filters import BaseFilterSet, NameSlugSearchFilterSet, TreeNodeMultipleChoiceFilter
+from nautobot.utilities.filters import TreeNodeMultipleChoiceFilter
+from nautobot.utilities.filters import MultiValueDateTimeFilter
+
 from nautobot_golden_config import models
 
 
-class GenericPlatformFilterSet(CustomFieldModelFilterSetMixin):
-    """Generic method to reuse common FilterSet."""
+class GoldenConfigDeviceFilterSet(DeviceFilterSet):  # pylint: disable=too-many-ancestors
+    """Filter capabilities that extend the standard DeviceFilterSet."""
 
-    platform_id = django_filters.ModelMultipleChoiceFilter(
-        queryset=Platform.objects.all(),
-        label="Platform (ID)",
-    )
-    platform = django_filters.ModelMultipleChoiceFilter(
-        field_name="platform__slug",
-        queryset=Platform.objects.all(),
-        to_field_name="slug",
-        label="Platform (slug)",
-    )
+    @staticmethod
+    def _get_filter_lookup_dict(existing_filter):
+        """Extend method to account for isnull on datetime types."""
+        # Choose the lookup expression map based on the filter type
+        lookup_map = DeviceFilterSet._get_filter_lookup_dict(existing_filter)
+        if isinstance(existing_filter, MultiValueDateTimeFilter):
+            lookup_map.update({"isnull": "isnull"})
+        return lookup_map
+
+    class Meta(DeviceFilterSet.Meta):
+        """Update the Meta class, but only for fields."""
+
+        fields = DeviceFilterSet.Meta.fields + [
+            "goldenconfig__backup_config",
+            "goldenconfig__backup_last_attempt_date",
+            "goldenconfig__backup_last_success_date",
+            "goldenconfig__intended_config",
+            "goldenconfig__intended_last_attempt_date",
+            "goldenconfig__intended_last_success_date",
+            "goldenconfig__compliance_config",
+            "goldenconfig__compliance_last_attempt_date",
+            "goldenconfig__compliance_last_success_date",
+        ]
 
 
-class GoldenConfigFilterSet(CustomFieldModelFilterSetMixin):
+class GoldenConfigFilterSet(NautobotFilterSet):
     """Filter capabilities for GoldenConfig instances."""
+
+    @staticmethod
+    def _get_filter_lookup_dict(existing_filter):
+        """Extend method to account for isnull on datetime types."""
+        # Choose the lookup expression map based on the filter type
+        lookup_map = NautobotFilterSet._get_filter_lookup_dict(existing_filter)
+        if isinstance(existing_filter, MultiValueDateTimeFilter):
+            lookup_map.update({"isnull": "isnull"})
+        return lookup_map
 
     q = django_filters.CharFilter(
         method="search",
@@ -162,7 +188,7 @@ class GoldenConfigFilterSet(CustomFieldModelFilterSetMixin):
         label="Device Name",
     )
 
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument,no-self-use
+    def search(self, queryset, name, value):  # pylint: disable=unused-argument
         """Perform the filtered search."""
         if not value.strip():
             return queryset
@@ -175,28 +201,51 @@ class GoldenConfigFilterSet(CustomFieldModelFilterSetMixin):
 
         model = models.GoldenConfig
         distinct = True
-        fields = ["id"]
+        fields = [
+            "id",
+            "backup_config",
+            "backup_last_attempt_date",
+            "backup_last_success_date",
+            "intended_config",
+            "intended_last_attempt_date",
+            "intended_last_success_date",
+            "compliance_config",
+            "compliance_last_attempt_date",
+            "compliance_last_success_date",
+        ]
 
 
-class ConfigComplianceFilterSet(GoldenConfigFilterSet):
+class ConfigComplianceFilterSet(GoldenConfigFilterSet):  # pylint: disable=too-many-ancestors
     """Filter capabilities for ConfigCompliance instances."""
+
+    feature_id = django_filters.ModelMultipleChoiceFilter(
+        field_name="rule__feature",
+        queryset=models.ComplianceFeature.objects.all(),
+        label="ComplianceFeature (ID)",
+    )
+    feature = django_filters.ModelMultipleChoiceFilter(
+        field_name="rule__feature__slug",
+        queryset=models.ComplianceFeature.objects.all(),
+        to_field_name="slug",
+        label="ComplianceFeature (slug)",
+    )
 
     class Meta:
         """Meta class attributes for ConfigComplianceFilter."""
 
         model = models.ConfigCompliance
-        fields = ["id"]
+        fields = ["id", "compliance", "actual", "intended", "missing", "extra", "ordered", "compliance_int", "rule"]
 
 
-class ComplianceFeatureFilterSet(CustomFieldModelFilterSetMixin):
-    """Inherits Base Class CustomFieldModelFilterSetMixin."""
+class ComplianceFeatureFilterSet(NautobotFilterSet):
+    """Inherits Base Class NautobotFilterSet."""
 
     q = django_filters.CharFilter(
         method="search",
         label="Search",
     )
 
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument,no-self-use
+    def search(self, queryset, name, value):  # pylint: disable=unused-argument
         """Perform the filtered search."""
         if not value.strip():
             return queryset
@@ -207,18 +256,28 @@ class ComplianceFeatureFilterSet(CustomFieldModelFilterSetMixin):
         """Boilerplate filter Meta data for compliance feature."""
 
         model = models.ComplianceFeature
-        fields = ["id", "name", "slug"]
+        fields = ["id", "name", "slug", "description"]
 
 
-class ComplianceRuleFilterSet(GenericPlatformFilterSet):
-    """Inherits Base Class CustomFieldModelFilterSetMixin."""
+class ComplianceRuleFilterSet(NautobotFilterSet):
+    """Inherits Base Class NautobotFilterSet."""
 
     q = django_filters.CharFilter(
         method="search",
         label="Search",
     )
+    platform_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=Platform.objects.all(),
+        label="Platform (ID)",
+    )
+    platform = django_filters.ModelMultipleChoiceFilter(
+        field_name="platform__slug",
+        queryset=Platform.objects.all(),
+        to_field_name="slug",
+        label="Platform (slug)",
+    )
 
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument,no-self-use
+    def search(self, queryset, name, value):  # pylint: disable=unused-argument
         """Perform the filtered search."""
         if not value.strip():
             return queryset
@@ -232,15 +291,25 @@ class ComplianceRuleFilterSet(GenericPlatformFilterSet):
         fields = ["feature", "id"]
 
 
-class ConfigRemoveFilterSet(GenericPlatformFilterSet):
-    """Inherits Base Class CustomFieldModelFilterSetMixin."""
+class ConfigRemoveFilterSet(NautobotFilterSet):
+    """Inherits Base Class NautobotFilterSet."""
 
     q = django_filters.CharFilter(
         method="search",
         label="Search",
     )
+    platform_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=Platform.objects.all(),
+        label="Platform (ID)",
+    )
+    platform = django_filters.ModelMultipleChoiceFilter(
+        field_name="platform__slug",
+        queryset=Platform.objects.all(),
+        to_field_name="slug",
+        label="Platform (slug)",
+    )
 
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument,no-self-use
+    def search(self, queryset, name, value):  # pylint: disable=unused-argument
         """Perform the filtered search."""
         if not value.strip():
             return queryset
@@ -254,15 +323,25 @@ class ConfigRemoveFilterSet(GenericPlatformFilterSet):
         fields = ["id", "name"]
 
 
-class ConfigReplaceFilterSet(GenericPlatformFilterSet):
-    """Inherits Base Class CustomFieldModelFilterSetMixin."""
+class ConfigReplaceFilterSet(NautobotFilterSet):
+    """Inherits Base Class NautobotFilterSet."""
 
     q = django_filters.CharFilter(
         method="search",
         label="Search",
     )
+    platform_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=Platform.objects.all(),
+        label="Platform (ID)",
+    )
+    platform = django_filters.ModelMultipleChoiceFilter(
+        field_name="platform__slug",
+        queryset=Platform.objects.all(),
+        to_field_name="slug",
+        label="Platform (slug)",
+    )
 
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument,no-self-use
+    def search(self, queryset, name, value):  # pylint: disable=unused-argument
         """Perform the filtered search."""
         if not value.strip():
             return queryset
@@ -276,8 +355,8 @@ class ConfigReplaceFilterSet(GenericPlatformFilterSet):
         fields = ["id", "name"]
 
 
-class GoldenConfigSettingFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
-    """Inherits Base Class BaseFilterSet."""
+class GoldenConfigSettingFilterSet(NautobotFilterSet):
+    """Inherits Base Class NautobotFilterSet."""
 
     class Meta:
         """Boilerplate filter Meta data for Config Remove."""

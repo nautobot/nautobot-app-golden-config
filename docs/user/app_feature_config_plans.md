@@ -5,8 +5,8 @@ The natural progression for the Golden Config application is providing the abili
 The current sources of these plans (i.e. plan types) are as follows:
 
 - The **Intended** configuration of a specific Compliance Feature
-- The **Missing** configuration of a specific Compliance Feature
-- The **Remediation** configuration of a specific Compliance Feature (*)
+- The **Missing** configuration(s) of Compliance Feature(s)
+- The **Remediation** configuration(s) of Compliance Feature(s) (*)
 - A **Manual** set of configuration commands
 
 !!! note
@@ -24,6 +24,7 @@ You can view a plan by navigating to **Golden Config -> Config Plans** and choos
 - **Config Set**: The set of commands to be deployed.
 - **Feature** (If Applicable): The Compliance Feature the config set was generated from.
 - **Change Control ID** (Optional): A text field that be used for grouping and filtering plans.
+- **Change Control URL** (Optional): A URL field that can be used to link to an external system tracking change controls.
 - **Status**: The status of the plan.
 
 ![Config Plan View](../images/config_plan-view.png)
@@ -46,13 +47,14 @@ Once you have selected the appropriate options, you can click the **Generate** b
 
 ### Generating Config Plans via API
 
-The HTTP POST method is not currently enabled for the Config Plan serializer to create plans directly via API. Instead you may run the **GenerateConfigPlans** Job directly via the `plugins/nautobot_golden_config.jobs/GenerateConfigPlans` API endpoint.
+The HTTP(S) POST method is not currently enabled for the Config Plan serializer to create plans directly via API. Instead you may run the **GenerateConfigPlans** Job directly via the `plugins/nautobot_golden_config.jobs/GenerateConfigPlans` API endpoint.
 
 ## Editing a Config Plan
 
 After a Config Plan is generated you have the ability to edit (or bulk edit) the following fields:
 
 - Change Control ID
+- Change Control URL
 - Status
 - Notes
 - Tags

@@ -126,7 +126,7 @@ Compliance requires Backups and Intended Configurations in order to be executed.
 
 Golden Config properties include: Compliance Features, Compliance Rules, Config Removals, and Config Replacements. They can be created via the UI, API, or alternatively you can load these properties from a Git repository, defined in YAML files following the this directory structure (you can skip any of them if not apply):
 
-```
+```shell
 ├── golden_config
 │   ├── compliance_features
 │   ├── compliance_rules
@@ -136,7 +136,7 @@ Golden Config properties include: Compliance Features, Compliance Rules, Config 
 
 The files within these folders can follow any naming pattern or nested folder structure, all of them will be recursively taken into account. So it's up to you to decide how to you prefer to organize these files (within the previously stated directory structure):
 
-```
+```shell
 ├── golden_config
 │   ├── compliance_features
 │   │   └── all.yml

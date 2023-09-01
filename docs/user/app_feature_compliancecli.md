@@ -1,7 +1,7 @@
 # Configuration Compliance
 
 !!! note
-    This document provides instructions based on `CLI` based compliance.  The other options are `JSON` [structured data compliance](./app_feature_compliancejson.md) and [custom compliance](./app_feature_compliancecustom.md).
+    This document provides instructions for `CLI` configuration type based compliance.  The other option is `JSON` based [structured data compliance](./app_feature_compliancejson.md).
 
 ## Configuration Compliance Parsing Engine
 
@@ -14,13 +14,16 @@ configuration. The compliance engine has several features to better build work t
 3. The ability to dynamically understand parent/child relationships within the configurations.
 
 In regards to `1`, consider the following example of how to obtain service configurations:
+
 ```
 service
 no service
 ```
+
 Specific configurations that start with either of these commands can be grouped together.
 
 In regards to `2`, consider the configurations of SNMP on a nexus switch.
+
 ```
 snmp-server community secure group network-admin
 snmp-server community networktocode group network-operator
@@ -34,14 +37,17 @@ snmp-server community secure group network-admin
 ```
 
 In regards to `3`, consider the following example of BGP configuration.
+
 ```
 router bgp
 prefix-list
 ```
+
 All configurations that are a parent and child relationships would be considered within the parsing engine. Additionally, if one configuration line was
 wrong, only that line and the parents would be shown, not all lines or only the missing configuration without context of the parents, e.g. Given:
 
 Actual
+
 ```
 router bgp 65250
   router-id 10.0.10.5
@@ -54,6 +60,7 @@ router bgp 65250
 ```
 
 Intended
+
 ```
 router bgp 65250
   router-id 10.0.10.6
@@ -64,6 +71,7 @@ router bgp 65250
     remote-as 65250
     address-family ipv4 unicast
 ```
+
 Would result in the identifying the missing configurations as:
 
 ```

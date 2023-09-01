@@ -2,7 +2,7 @@
 
 Automated network configuration remediation is a systematic approach that leverages technology and processes to address and rectify configuration issues in network devices. 
 It involves the use of the Golden Configuration plugin to understand the current configuration state, compare it against the intended configuration state, and automatically generate remediation data.
-Automated network configuration remediation improves efficiency by eliminating manual efforts and reducing the risk of human errors. It enables rapid response to security vulnerabilities, minimizes downtime, and enhances compliance with regulatory and industry standards
+Automated network configuration remediation improves efficiency by eliminating manual efforts and reducing the risk of human errors. It enables rapid response to security vulnerabilities, minimizes downtime, and enhances compliance with regulatory and industry standards.
 
 
 The current sources of data to generate remediating configuration are as follows:
@@ -40,8 +40,8 @@ Hier Config is a python library that is able to take a running configuration of 
 - Arista EOS
 - Ruckus FastIron
 
-However, any Network Operating System (NOS) that utilizes a CLI syntax that is structured in a similar fashion to IOS should work mostly out of the box.
-Default Hier options can be used or customized on a per platform basis, as shown below:
+However, any Network Operating System (NOS) that utilizes a CLI syntax that is structured in a similar fashion to Cisco IOS should work mostly out of the box.
+Default Hier config options can be used or customized on a per platform basis, as shown below:
 
 ![Hier Options Customization](../images/remediation_hier_edit_options.png)
 
@@ -51,7 +51,7 @@ https://netdevops.io/hier_config/advanced-topics/
 ### Custom Config Remediation Type
 
 When a Network Operating System delivers configuration data in a format that is not CLI/Hierarchical, we can still perform remediation by using the Custom Remediation options. Custom Remediation is defined within a Python function that takes as input a Configuration Compliance object and returns a Remediation Field.
-Custom remediation performs a call to the remediation function every time a Compliance Job runs. Custom Remediation allows the user to control the configuration comparison process (between intended and actual configuration) and use additional Nautobot or external data to produce the remediation plan. Custom remediation functions need to be defined in the nautobot_config.py file, as show below:
+Custom remediation performs a call to the remediation function every time a Compliance Job runs. Custom Remediation allows the user to control the configuration comparison process (between intended and actual configuration) and use additional Nautobot or external data to produce the remediation plan. Custom remediation functions need to be defined in PLUGIN_CONFIG for `nautobot_plugin_golden_config` the nautobot_config.py file, as show below:
 
 ![Custom Remediation Function Setup](../images/remediation_custom_function_setup.png)
 

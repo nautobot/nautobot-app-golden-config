@@ -4,7 +4,7 @@ The natural progression for the Golden Config application is providing the abili
 
 The current sources of these plans (i.e. plan types) are as follows:
 
-- The **Intended** configuration of a specific Compliance Feature
+- The **Intended** configuration(s) of Compliance Feature(s)
 - The **Missing** configuration(s) of Compliance Feature(s)
 - The **Remediation** configuration(s) of Compliance Feature(s) (*)
 - A **Manual** set of configuration commands

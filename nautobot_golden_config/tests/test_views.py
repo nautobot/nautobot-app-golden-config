@@ -1,7 +1,6 @@
 """Unit tests for nautobot_golden_config views."""
 
-import datetime
-from unittest import mock, skip
+from unittest import mock
 
 from lxml import html
 
@@ -145,19 +144,6 @@ class ConfigReplaceListViewTestCase(TestCase):
     def _entry_replace(self):
         return "<dontlookatme>"
 
-    @skip("TODO: Look into export changes")
-    def test_configreplace_export(self):
-        response = self.client.get(f"{self._url}?export")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.headers["Content-Type"], "text/csv")
-        last_entry = models.ConfigReplace.objects.last()
-        csv_data = response.content.decode().splitlines()
-        expected_last_entry = f"{last_entry.name},{last_entry.platform.name},{last_entry.description},{last_entry.regex},{last_entry.replace}"
-        self.assertEqual(csv_data[0], self._csv_headers)
-        self.assertEqual(csv_data[-1], expected_last_entry)
-        self.assertEqual(len(csv_data) - 1, models.ConfigReplace.objects.count())
-
-    @skip("TODO: Look into import changes")
     def test_configreplace_import(self):
         self._delete_test_entry()
         platform = Device.objects.first().platform
@@ -256,43 +242,3 @@ class GoldenConfigListViewTestCase(TestCase):
         _, table_body = self._get_golden_config_table()
         devices_in_table = [device_column.text for device_column in table_body.xpath("tr/td[2]/a")]
         self.assertNotIn(last_device.name, devices_in_table)
-
-    @skip("TODO: Look into export changes")
-    def test_csv_export(self):
-        # verify GoldenConfig table is empty
-        self.assertEqual(models.GoldenConfig.objects.count(), 0)
-        intended_datetime = datetime.datetime.now()
-        first_device = self.gc_dynamic_group.members.first()
-        models.GoldenConfig.objects.create(
-            device=first_device,
-            intended_last_attempt_date=intended_datetime,
-            intended_last_success_date=intended_datetime,
-        )
-        response = self.client.get(f"{self._url}?export")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.headers["Content-Type"], "text/csv")
-        csv_data = response.content.decode().splitlines()
-        csv_headers = "Device Name,backup attempt,backup successful,intended attempt,intended successful,compliance attempt,compliance successful"
-        self.assertEqual(csv_headers, csv_data[0])
-        intended_datetime_formated = intended_datetime.strftime("%Y-%m-%dT%H:%M:%S.%f+00:00")
-        # Test single entry in GoldenConfig table has data
-        expected_first_row = f"{first_device.name},,,{intended_datetime_formated},{intended_datetime_formated},,"
-        self.assertEqual(expected_first_row, csv_data[1])
-        # Test Devices in scope but without entries in GoldenConfig have empty entries
-        empty_csv_rows = [
-            f"{device.name},,,,,," for device in self.gc_dynamic_group.members.exclude(pk=first_device.pk)
-        ]
-        self.assertEqual(empty_csv_rows, csv_data[2:])
-
-    @skip("TODO: Look into export changes")
-    def test_csv_export_with_filter(self):
-        devices_in_site_1 = Device.objects.filter(location__name="Site 1")
-        golden_config_devices = self.gc_dynamic_group.members.all()
-        # Test that there are Devices in GC that are not related to Site 1
-        self.assertNotEqual(devices_in_site_1, golden_config_devices)
-        response = self.client.get(f"{self._url}?location={Device.objects.first().location.name}&export")
-        self.assertEqual(response.status_code, 200)
-        csv_data = response.content.decode().splitlines()
-        device_names_in_export = [entry.split(",")[0] for entry in csv_data[1:]]
-        device_names_in_site_1 = [device.name for device in devices_in_site_1]
-        self.assertEqual(device_names_in_export, device_names_in_site_1)

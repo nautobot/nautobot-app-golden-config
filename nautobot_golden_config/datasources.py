@@ -15,7 +15,7 @@ def refresh_git_jinja(repository_record, job_result, delete=False):  # pylint: d
     """Callback for gitrepository updates on Jinja Template repo."""
     job_result.log(
         "Successfully Pulled git repo",
-        level_choice=LogLevelChoices.LOG_SUCCESS,
+        level_choice=LogLevelChoices.LOG_DEBUG,
     )
 
 
@@ -23,7 +23,7 @@ def refresh_git_intended(repository_record, job_result, delete=False):  # pylint
     """Callback for gitrepository updates on Intended Config repo."""
     job_result.log(
         "Successfully Pulled git repo",
-        level_choice=LogLevelChoices.LOG_SUCCESS,
+        level_choice=LogLevelChoices.LOG_DEBUG,
     )
 
 
@@ -31,7 +31,7 @@ def refresh_git_backup(repository_record, job_result, delete=False):  # pylint: 
     """Callback for gitrepository updates on Git Backup repo."""
     job_result.log(
         "Successfully Pulled git repo",
-        level_choice=LogLevelChoices.LOG_SUCCESS,
+        level_choice=LogLevelChoices.LOG_DEBUG,
     )
 
 
@@ -96,7 +96,7 @@ def refresh_git_gc_properties(repository_record, job_result, delete=False):  # p
 
     job_result.log(
         "Successfully Completed sync of Golden Config properties",
-        level_choice=LogLevelChoices.LOG_SUCCESS,
+        level_choice=LogLevelChoices.LOG_DEBUG,
     )
 
 
@@ -186,7 +186,7 @@ def update_git_gc_properties(golden_config_path, job_result, gc_config_item):  #
 
                 job_result.log(
                     log_message,
-                    level_choice=LogLevelChoices.LOG_SUCCESS,
+                    level_choice=LogLevelChoices.LOG_DEBUG,
                 )
 
         except MissingReference:

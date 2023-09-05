@@ -5,7 +5,7 @@ from django.utils.html import format_html
 from django_tables2 import Column, LinkColumn, TemplateColumn
 from django_tables2.utils import A
 
-from nautobot.utilities.tables import (
+from nautobot.core.tables import (
     BaseTable,
     ToggleColumn,
 )
@@ -76,7 +76,7 @@ ALL_ACTIONS = """
     {% if record.config_type == 'json' %}
         <i class="mdi mdi-circle-small"></i>
     {% else %}
-        <a href="{% url 'extras:job' class_path='plugins/nautobot_golden_config.jobs/AllGoldenConfig' %}?device={{ record.pk }}"
+        <a href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.AllGoldenConfig' %}?device={{ record.pk }}"
             <span class="text-primary">
                 <i class="mdi mdi-play-circle" title="Execute All Golden Config Jobs"></i>
             </span>

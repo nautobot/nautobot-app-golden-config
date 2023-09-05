@@ -40,9 +40,9 @@ namespace = Collection("nautobot_golden_config")
 namespace.configure(
     {
         "nautobot_golden_config": {
-            "nautobot_ver": "1.6.1",
+            "nautobot_ver": "2.0.0-rc.2",
             "project_name": "nautobot_golden_config",
-            "python_ver": "3.11",
+            "python_ver": "3.10",
             "local": False,
             "compose_dir": os.path.join(os.path.dirname(__file__), "development"),
             "compose_files": [

@@ -3,11 +3,12 @@
 
 from datetime import datetime
 
-from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Platform, Rack, RackGroup, Region, Site
+from nautobot.dcim.models import Device, DeviceType, Manufacturer, Platform, Rack, RackGroup, Location
 from nautobot.extras.datasources.git import ensure_git_repository
 from nautobot.extras.jobs import BooleanVar, Job, MultiObjectVar, ObjectVar
-from nautobot.extras.models import DynamicGroup, GitRepository, Status, Tag
+from nautobot.extras.models import DynamicGroup, GitRepository, Status, Tag, Role
 from nautobot.tenancy.models import Tenant, TenantGroup
+
 from nautobot_golden_config.nornir_plays.config_backup import config_backup
 from nautobot_golden_config.nornir_plays.config_compliance import config_compliance
 from nautobot_golden_config.nornir_plays.config_intended import config_intended
@@ -52,16 +53,18 @@ def commit_check(method):
     return inner
 
 
+# TODO: Does changing region/site to location affect nornir jobs?
+
+
 class FormEntry:  # pylint disable=too-few-public-method
     """Class definition to use as Mixin for form definitions."""
 
     tenant_group = MultiObjectVar(model=TenantGroup, required=False)
     tenant = MultiObjectVar(model=Tenant, required=False)
-    region = MultiObjectVar(model=Region, required=False)
-    site = MultiObjectVar(model=Site, required=False)
+    location = MultiObjectVar(model=Location, required=False)
     rack_group = MultiObjectVar(model=RackGroup, required=False)
     rack = MultiObjectVar(model=Rack, required=False)
-    role = MultiObjectVar(model=DeviceRole, required=False)
+    role = MultiObjectVar(model=Role, required=False)  # TODO: How does change to Role model affect this?
     manufacturer = MultiObjectVar(model=Manufacturer, required=False)
     platform = MultiObjectVar(model=Platform, required=False)
     device_type = MultiObjectVar(model=DeviceType, required=False, display_field="display_name")
@@ -80,10 +83,11 @@ class FormEntry:  # pylint disable=too-few-public-method
 class ComplianceJob(Job, FormEntry):
     """Job to to run the compliance engine."""
 
+    # TODO: Remove these as they are already defined via inheritence
+
     tenant_group = FormEntry.tenant_group
     tenant = FormEntry.tenant
-    region = FormEntry.region
-    site = FormEntry.site
+    location = FormEntry.location
     rack_group = FormEntry.rack_group
     rack = FormEntry.rack
     role = FormEntry.role
@@ -102,17 +106,22 @@ class ComplianceJob(Job, FormEntry):
         description = "Run configuration compliance on your network infrastructure."
 
     @commit_check
-    def run(self, data, commit):  # pylint: disable=too-many-branches
+    # TODO: Fix pylint arguments-differ during Job 2.x migration
+    def run(self, data, commit):  # pylint: disable=too-many-branches,arguments-differ
         """Run config compliance report script."""
         # pylint: disable=unused-argument
-        self.log_debug("Starting compliance job.")
+        # TODO: Fix pylint no-member during Job 2.x migration
+        self.log_debug("Starting compliance job.")  # pylint: disable=no-member
 
-        self.log_debug("Refreshing intended configuration git repository.")
+        # TODO: Fix pylint no-member during Job 2.x migration
+        self.log_debug("Refreshing intended configuration git repository.")  # pylint: disable=no-member
         get_refreshed_repos(job_obj=self, repo_type="intended_repository", data=data)
-        self.log_debug("Refreshing backup configuration git repository.")
+        # TODO: Fix pylint no-member during Job 2.x migration
+        self.log_debug("Refreshing backup configuration git repository.")  # pylint: disable=no-member
         get_refreshed_repos(job_obj=self, repo_type="backup_repository", data=data)
 
-        self.log_debug("Starting config compliance nornir play.")
+        # TODO: Fix pylint no-member during Job 2.x migration
+        self.log_debug("Starting config compliance nornir play.")  # pylint: disable=no-member
         config_compliance(self, data)
 
 
@@ -121,8 +130,7 @@ class IntendedJob(Job, FormEntry):
 
     tenant_group = FormEntry.tenant_group
     tenant = FormEntry.tenant
-    region = FormEntry.region
-    site = FormEntry.site
+    location = FormEntry.location
     rack_group = FormEntry.rack_group
     rack = FormEntry.rack
     role = FormEntry.role
@@ -141,25 +149,33 @@ class IntendedJob(Job, FormEntry):
         description = "Generate the configuration for your intended state."
 
     @commit_check
-    def run(self, data, commit):
+    # TODO: Fix pylint arguments-differ,unused-argument during Job 2.x migration
+    def run(self, data, commit):  # pylint: disable=arguments-differ,unused-argument
         """Run config generation script."""
-        self.log_debug("Starting intended job.")
+        # TODO: Fix pylint no-member during Job 2.x migration
+        self.log_debug("Starting intended job.")  # pylint: disable=no-member
 
         now = datetime.now()
 
-        self.log_debug("Pull Jinja template repos.")
+        # TODO: Fix pylint no-member during Job 2.x migration
+        self.log_debug("Pull Jinja template repos.")  # pylint: disable=no-member
         get_refreshed_repos(job_obj=self, repo_type="jinja_repository", data=data)
 
-        self.log_debug("Pull Intended config repos.")
+        # TODO: Fix pylint no-member during Job 2.x migration
+        self.log_debug("Pull Intended config repos.")  # pylint: disable=no-member
         # Instantiate a GitRepo object for each GitRepository in GoldenConfigSettings.
         intended_repos = get_refreshed_repos(job_obj=self, repo_type="intended_repository", data=data)
 
-        self.log_debug("Building device settings mapping and running intended config nornir play.")
+        # TODO: Fix pylint no-member during Job 2.x migration
+        self.log_debug(  # pylint: disable=no-member
+            "Building device settings mapping and running intended config nornir play."
+        )
         config_intended(self, data)
 
         # Commit / Push each repo after job is completed.
         for intended_repo in intended_repos:
-            self.log_debug(f"Push new intended configs to repo {intended_repo.url}.")
+            # TODO: Fix pylint no-member during Job 2.x migration
+            self.log_debug(f"Push new intended configs to repo {intended_repo.url}.")  # pylint: disable=no-member
             intended_repo.commit_with_added(f"INTENDED CONFIG CREATION JOB - {now}")
             intended_repo.push()
 
@@ -169,8 +185,7 @@ class BackupJob(Job, FormEntry):
 
     tenant_group = FormEntry.tenant_group
     tenant = FormEntry.tenant
-    region = FormEntry.region
-    site = FormEntry.site
+    location = FormEntry.location
     rack_group = FormEntry.rack_group
     rack = FormEntry.rack
     role = FormEntry.role
@@ -189,23 +204,29 @@ class BackupJob(Job, FormEntry):
         description = "Backup the configurations of your network devices."
 
     @commit_check
-    def run(self, data, commit):
+    # TODO: Fix pylint arguments-differ,unused-argument during Job 2.x migration
+    def run(self, data, commit):  # pylint: disable=arguments-differ,unused-argument
         """Run config backup process."""
-        self.log_debug("Starting backup job.")
+        # TODO: Fix pylint no-member during Job 2.x migration
+        self.log_debug("Starting backup job.")  # pylint: disable=no-member
         now = datetime.now()
-        self.log_debug("Pull Backup config repo.")
+        # TODO: Fix pylint no-member during Job 2.x migration
+        self.log_debug("Pull Backup config repo.")  # pylint: disable=no-member
 
         # Instantiate a GitRepo object for each GitRepository in GoldenConfigSettings.
         backup_repos = get_refreshed_repos(job_obj=self, repo_type="backup_repository", data=data)
 
-        self.log_debug(f"Starting backup jobs to the following repos: {backup_repos}")
+        # TODO: Fix pylint no-member during Job 2.x migration
+        self.log_debug(f"Starting backup jobs to the following repos: {backup_repos}")  # pylint: disable=no-member
 
-        self.log_debug("Starting config backup nornir play.")
+        # TODO: Fix pylint no-member during Job 2.x migration
+        self.log_debug("Starting config backup nornir play.")  # pylint: disable=no-member
         config_backup(self, data)
 
         # Commit / Push each repo after job is completed.
         for backup_repo in backup_repos:
-            self.log_debug(f"Pushing Backup config repo {backup_repo.url}.")
+            # TODO: Fix pylint no-member during Job 2.x migration
+            self.log_debug(f"Pushing Backup config repo {backup_repo.url}.")  # pylint: disable=no-member
             backup_repo.commit_with_added(f"BACKUP JOB {now}")
             backup_repo.push()
 
@@ -223,7 +244,8 @@ class AllGoldenConfig(Job):
         description = "Process to run all Golden Configuration jobs configured."
 
     @commit_check
-    def run(self, data, commit):
+    # TODO: Fix pylint arguments-differ,unused-argument during Job 2.x migration
+    def run(self, data, commit):  # pylint: disable=arguments-differ,unused-argument
         """Run all jobs."""
         if ENABLE_INTENDED:
             IntendedJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
@@ -238,8 +260,7 @@ class AllDevicesGoldenConfig(Job):
 
     tenant_group = FormEntry.tenant_group
     tenant = FormEntry.tenant
-    region = FormEntry.region
-    site = FormEntry.site
+    location = FormEntry.location
     rack_group = FormEntry.rack_group
     rack = FormEntry.rack
     role = FormEntry.role
@@ -258,7 +279,8 @@ class AllDevicesGoldenConfig(Job):
         description = "Process to run all Golden Configuration jobs configured against multiple devices."
 
     @commit_check
-    def run(self, data, commit):
+    # TODO: Fix pylint arguments-differ,unused-argument during Job 2.x migration
+    def run(self, data, commit):  # pylint: disable=arguments-differ,unused-argument
         """Run all jobs."""
         if ENABLE_INTENDED:
             IntendedJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args

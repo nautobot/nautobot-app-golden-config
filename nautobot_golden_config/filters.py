@@ -2,18 +2,19 @@
 
 import django_filters
 from django.db.models import Q
-from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Platform, Rack, RackGroup, Region, Site
+
+from nautobot.core.filters import MultiValueDateTimeFilter, TreeNodeMultipleChoiceFilter
+from nautobot.dcim.models import Device, DeviceType, Manufacturer, Platform, Rack, RackGroup, Location
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.extras.filters import StatusFilter
 from nautobot.extras.filters import NautobotFilterSet
-from nautobot.extras.models import Status
+from nautobot.extras.models import Status, Role
 from nautobot.tenancy.models import Tenant, TenantGroup
-from nautobot.utilities.filters import TreeNodeMultipleChoiceFilter
-from nautobot.utilities.filters import MultiValueDateTimeFilter
 
 from nautobot_golden_config import models
 
 
+# TODO: DeviceFilterSet has bugs in regards to Location in 2.0.0-rc.2
 class GoldenConfigDeviceFilterSet(DeviceFilterSet):  # pylint: disable=too-many-ancestors
     """Filter capabilities that extend the standard DeviceFilterSet."""
 
@@ -80,27 +81,13 @@ class GoldenConfigFilterSet(NautobotFilterSet):
         to_field_name="slug",
         label="Tenant (slug)",
     )
-    region_id = TreeNodeMultipleChoiceFilter(
-        queryset=Region.objects.all(),
-        field_name="device__site__region",
-        label="Region (ID)",
-    )
-    region = TreeNodeMultipleChoiceFilter(
-        queryset=Region.objects.all(),
-        field_name="device__site__region",
-        to_field_name="slug",
-        label="Region (slug)",
-    )
-    site_id = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__site",
-        queryset=Site.objects.all(),
-        label="Site (ID)",
-    )
-    site = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__site__slug",
-        queryset=Site.objects.all(),
-        to_field_name="slug",
-        label="Site name (slug)",
+    location = TreeNodeMultipleChoiceFilter(
+        # Not limiting to content_type=dcim.device to allow parent locations to be included
+        # i.e. include all sites in a Region, even though Region can't be assigned to a Device
+        queryset=Location.objects.all(),
+        field_name="device__location__id",
+        to_field_name="pk",
+        label="Location (ID)",
     )
     rack_group_id = TreeNodeMultipleChoiceFilter(
         queryset=RackGroup.objects.all(),
@@ -125,12 +112,12 @@ class GoldenConfigFilterSet(NautobotFilterSet):
     )
     role_id = django_filters.ModelMultipleChoiceFilter(
         field_name="device__device_role_id",
-        queryset=DeviceRole.objects.all(),
+        queryset=Role.objects.all(),  # TODO: How does change to Role model affect this?
         label="Role (ID)",
     )
     role = django_filters.ModelMultipleChoiceFilter(
         field_name="device__device_role__slug",
-        queryset=DeviceRole.objects.all(),
+        queryset=Role.objects.all(),  # TODO: How does change to Role model affect this?
         to_field_name="slug",
         label="Role (slug)",
     )

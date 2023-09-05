@@ -20,10 +20,9 @@ from nautobot.core.views import generic
 from nautobot.core.views.viewsets import NautobotUIViewSet
 from nautobot.dcim.forms import DeviceFilterForm
 from nautobot.dcim.models import Device
-from nautobot.utilities.error_handlers import handle_protectederror
-from nautobot.utilities.forms import ConfirmationForm
-from nautobot.utilities.utils import csv_format
-from nautobot.utilities.views import ContentTypePermissionRequiredMixin
+from nautobot.core.forms import ConfirmationForm
+from nautobot.core.views.utils import csv_format, handle_protectederror
+from nautobot.core.views.mixins import ContentTypePermissionRequiredMixin
 
 from nautobot_golden_config import filters, forms, models, tables
 from nautobot_golden_config.api import serializers

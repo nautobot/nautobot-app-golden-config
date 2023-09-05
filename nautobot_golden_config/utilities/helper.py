@@ -6,7 +6,7 @@ from django.db.models import Q
 from jinja2 import exceptions as jinja_errors
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.dcim.models import Device
-from nautobot.utilities.utils import render_jinja2
+from nautobot.core.utils.data import render_jinja2
 from nornir_nautobot.exceptions import NornirNautobotException
 
 from nautobot_golden_config import models
@@ -15,8 +15,7 @@ FIELDS_PK = {
     "platform",
     "tenant_group",
     "tenant",
-    "region",
-    "site",
+    "location",
     "role",
     "rack",
     "rack_group",
@@ -24,7 +23,7 @@ FIELDS_PK = {
     "device_type",
 }
 
-FIELDS_SLUG = {"tag", "status"}
+FIELDS_SLUG = {"tag", "status"}  # TODO: Change slug where appropriate
 
 
 def get_job_filter(data=None):

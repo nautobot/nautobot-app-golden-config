@@ -2,8 +2,7 @@
 # pylint: disable=too-many-ancestors
 from rest_framework import serializers
 
-from nautobot.extras.api.serializers import TaggedObjectSerializer
-from nautobot.extras.api.nested_serializers import NestedDynamicGroupSerializer
+from nautobot.extras.api.mixins import TaggedModelSerializerMixin
 from nautobot.dcim.api.serializers import DeviceSerializer
 from nautobot.dcim.models import Device
 from nautobot.extras.api.serializers import NautobotModelSerializer
@@ -19,7 +18,7 @@ class GraphQLSerializer(serializers.Serializer):  # pylint: disable=abstract-met
     data = serializers.JSONField()
 
 
-class ComplianceFeatureSerializer(NautobotModelSerializer, TaggedObjectSerializer):
+class ComplianceFeatureSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
     """Serializer for ComplianceFeature object."""
 
     url = serializers.HyperlinkedIdentityField(
@@ -33,7 +32,7 @@ class ComplianceFeatureSerializer(NautobotModelSerializer, TaggedObjectSerialize
         fields = "__all__"
 
 
-class ComplianceRuleSerializer(NautobotModelSerializer, TaggedObjectSerializer):
+class ComplianceRuleSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
     """Serializer for ComplianceRule object."""
 
     url = serializers.HyperlinkedIdentityField(view_name="plugins-api:nautobot_golden_config-api:compliancerule-detail")
@@ -45,7 +44,7 @@ class ComplianceRuleSerializer(NautobotModelSerializer, TaggedObjectSerializer):
         fields = "__all__"
 
 
-class ConfigComplianceSerializer(NautobotModelSerializer, TaggedObjectSerializer):
+class ConfigComplianceSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
     """Serializer for ConfigCompliance object."""
 
     class Meta:
@@ -55,7 +54,7 @@ class ConfigComplianceSerializer(NautobotModelSerializer, TaggedObjectSerializer
         fields = "__all__"
 
 
-class GoldenConfigSerializer(NautobotModelSerializer, TaggedObjectSerializer):
+class GoldenConfigSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
     """Serializer for GoldenConfig object."""
 
     url = serializers.HyperlinkedIdentityField(view_name="plugins-api:nautobot_golden_config-api:goldenconfig-detail")
@@ -67,14 +66,15 @@ class GoldenConfigSerializer(NautobotModelSerializer, TaggedObjectSerializer):
         fields = "__all__"
 
 
-class GoldenConfigSettingSerializer(NautobotModelSerializer, TaggedObjectSerializer):
+class GoldenConfigSettingSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
     """Serializer for GoldenConfigSetting object."""
 
     url = serializers.HyperlinkedIdentityField(
         view_name="plugins-api:nautobot_golden_config-api:goldenconfigsetting-detail"
     )
     scope = serializers.JSONField(required=False)
-    dynamic_group = NestedDynamicGroupSerializer(required=False)
+    # TODO: What is correct for this with the removal of nested serializers?
+    # dynamic_group = NestedDynamicGroupSerializer(required=False)
 
     class Meta:
         """Set Meta Data for GoldenConfigSetting, will serialize all fields."""
@@ -108,7 +108,7 @@ class GoldenConfigSettingSerializer(NautobotModelSerializer, TaggedObjectSeriali
         return setting
 
 
-class ConfigRemoveSerializer(NautobotModelSerializer, TaggedObjectSerializer):
+class ConfigRemoveSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
     """Serializer for ConfigRemove object."""
 
     url = serializers.HyperlinkedIdentityField(view_name="plugins-api:nautobot_golden_config-api:configremove-detail")
@@ -120,7 +120,7 @@ class ConfigRemoveSerializer(NautobotModelSerializer, TaggedObjectSerializer):
         fields = "__all__"
 
 
-class ConfigReplaceSerializer(NautobotModelSerializer, TaggedObjectSerializer):
+class ConfigReplaceSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
     """Serializer for ConfigReplace object."""
 
     url = serializers.HyperlinkedIdentityField(view_name="plugins-api:nautobot_golden_config-api:configreplace-detail")
@@ -140,7 +140,9 @@ class ConfigToPushSerializer(DeviceSerializer):
     class Meta(DeviceSerializer):
         """Extend the Device serializer with the configuration after postprocessing."""
 
-        fields = DeviceSerializer.Meta.fields + ["config"]
+        # TODO: Fix fields to work with Device moving to a string "__all__"
+        # fields = DeviceSerializer.Meta.fields + ["config"]
+        fields = "__all__"
         model = Device
 
     def get_config(self, obj):

@@ -323,14 +323,6 @@ class RemediationSettingTest(APIViewTestCases.APIViewTestCase):
     def test_list_objects_brief(self):
         """Skipping test due to brief_fields not implemented."""
 
-    def test_create_object(self):
-        """Skipping test due to POST method not allowed."""
-
-    def test_create_object_without_permission(self):
-        """Skipping test due to POST method not allowed."""
-
-    def test_bulk_create_objects(self):
-        """Skipping test due to POST method not allowed."""
 
 
 # pylint: disable=too-many-ancestors,too-many-locals

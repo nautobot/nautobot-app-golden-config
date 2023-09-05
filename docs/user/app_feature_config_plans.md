@@ -22,9 +22,10 @@ You can view a plan by navigating to **Golden Config -> Config Plans** and choos
 - **Date Created**: The date the plan was generated.
 - **Plan Type**: The type of plan used to generate it.
 - **Config Set**: The set of commands to be deployed.
-- **Feature** (If Applicable): The Compliance Feature the config set was generated from.
+- **Features** (If Applicable): The Compliance Feature(s) the config set was generated from.
 - **Change Control ID** (Optional): A text field that be used for grouping and filtering plans.
 - **Change Control URL** (Optional): A URL field that can be used to link to an external system tracking change controls.
+- **Job Result**: The Job that generated the plan(s).
 - **Status**: The status of the plan.
 
 ![Config Plan View](../images/config_plan-view.png)
@@ -33,9 +34,9 @@ You can view a plan by navigating to **Golden Config -> Config Plans** and choos
 
 In order to generate a plan, navigate to **Golden Config -> Config Plans** and hit the **Add** button. After choosing the type of plan you want to generate, you can then filter the list of devices you want to generate a Config Plan for by selecting either the list of devices themselves or a by choosing one or more related items such as Location or Status. If you select a plan type that is derived from a Configuration Compliance object, you will have the ability to only generate plans for one or more features, but selecting no features will generate plans for all applicable features.
 
-In addition, you have the ability to specify a Change Control ID that can be associated with all of the plans that will be generated. This can come in handy when it comes to filtering the list of plans to ultimately deploy.
+In addition, you have the ability to specify a Change Control ID & URL that can be associated with all of the plans that will be generated. This can come in handy when it comes to filtering the list of plans to ultimately deploy.
 
-Once you have selected the appropriate options, you can click the **Generate** button which will start a Job to generate the plans. You will automatically be forwarded to the Job Result output page so you can monitor the progress.
+Once you have selected the appropriate options, you can click the **Generate** button which will start a Job to generate the plans.
 
 ### Screenshots
 

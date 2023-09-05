@@ -16,6 +16,8 @@ from django.db.models import Count, ExpressionWrapper, F, FloatField, Max, Prote
 from django.forms import ModelMultipleChoiceField, MultipleHiddenInput
 from django.shortcuts import redirect, render
 from django.views.generic import View
+from django.urls import reverse
+from django.utils.html import format_html
 from django_pivot.pivot import pivot
 from nautobot.core.views import generic
 from nautobot.core.views.viewsets import NautobotUIViewSet
@@ -23,7 +25,7 @@ from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.dcim.forms import DeviceFilterForm
 from nautobot.dcim.models import Device
 from nautobot.extras.jobs import run_job
-from nautobot.extras.models import JobResult
+from nautobot.extras.models import Job, JobResult
 from nautobot.extras.utils import get_job_content_type
 from nautobot.utilities.error_handlers import handle_protectederror
 from nautobot.utilities.forms import ConfirmationForm
@@ -828,6 +830,19 @@ class ConfigPlanUIViewSet(NautobotUIViewSet):
         if self.action == "update":
             return forms.ConfigPlanUpdateForm
         return super().get_form_class(**kwargs)
+
+    def create(self, request, *args, **kwargs):
+        """Helper function to warn if the Job is not enabled to run."""
+        job = Job.objects.get(name="Generate Config Plans")
+        if not job.enabled:
+            messages.warning(
+                request,
+                format_html(
+                    "The Job to generate Config Plans is not yet enabled. "
+                    f"<a href='{reverse('extras:job_edit', kwargs={'slug': job.slug})}'>Click here to edit the Job</a>."
+                ),
+            )
+        return super().create(request, *args, **kwargs)
 
 
 class ConfigPlanBulkDeploy(ObjectPermissionRequiredMixin, View):

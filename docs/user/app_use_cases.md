@@ -76,9 +76,6 @@ Within the Detail view of a Golden Config Setting the section to denote the scop
 
 ![Dynamic Group](../images/setting-dynamic-group.png)
 
-!!! note
-    The Golden Config Setting API endpoint still supports the `scope` attribute as a setter for a Dynamic Group, but this is a deprecated feature and all are encouraged to use the `dynamic_group` attribute. The attributes `dynamic_group` & `scope` **CANNOT** be used in same PUT/PATCH/POST payload. The use of `scope` will create or update the assigned Dynamic Group if used.
-
 The below configurations of scope can either be removed or specified for pre 1.2 only, the same logic applies in 1.2 and onwards but via DynamicGroups.
 
 Filtering to specific platforms, based on their slug.

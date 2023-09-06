@@ -41,7 +41,7 @@ def get_rules():
     # TODO: Review if creating a proper serializer is the way to go.
     rules = defaultdict(list)
     for compliance_rule in ComplianceRule.objects.all():
-        platform = str(compliance_rule.platform.slug)
+        platform = str(compliance_rule.platform.network_driver)
         rules[platform].append(
             {
                 "ordered": compliance_rule.config_ordered,
@@ -73,16 +73,16 @@ def get_config_element(rule, config, obj, logger):
             config_element = config_json
 
     elif rule["obj"].config_type == ComplianceRuleConfigTypeChoice.TYPE_CLI:
-        if get_platform(obj.platform.slug) not in parser_map.keys():
+        if get_platform(obj.platform.network_driver) not in parser_map.keys():
             logger.log_failure(
                 obj,
-                f"There is currently no CLI-config parser support for platform slug `{get_platform(obj.platform.slug)}`, preemptively failed.",
+                f"There is currently no CLI-config parser support for platform network_driver `{get_platform(obj.platform.network_driver)}`, preemptively failed.",
             )
             raise NornirNautobotException(
-                f"There is currently no CLI-config parser support for platform slug `{get_platform(obj.platform.slug)}`, preemptively failed."
+                f"There is currently no CLI-config parser support for platform network_driver `{get_platform(obj.platform.network_driver)}`, preemptively failed."
             )
 
-        config_element = section_config(rule, config, get_platform(obj.platform.slug))
+        config_element = section_config(rule, config, get_platform(obj.platform.network_driver))
 
     else:
         logger.log_failure(obj, f"There rule type ({rule['obj'].config_type}) is not recognized.")
@@ -142,19 +142,20 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
         logger.log_failure(obj, f"Unable to locate backup file for device at {backup_file}, preemptively failed.")
         raise NornirNautobotException(f"Unable to locate backup file for device at {backup_file}, preemptively failed.")
 
-    platform = obj.platform.slug
+    platform = obj.platform.network_driver
     if not rules.get(platform):
         logger.log_failure(
-            obj, f"There is no defined `Configuration Rule` for platform slug `{platform}`, preemptively failed."
+            obj,
+            f"There is no defined `Configuration Rule` for platform network_driver `{platform}`, preemptively failed.",
         )
         raise NornirNautobotException(
-            f"There is no defined `Configuration Rule` for platform slug `{platform}`, preemptively failed."
+            f"There is no defined `Configuration Rule` for platform network_driver `{platform}`, preemptively failed."
         )
 
     backup_cfg = _open_file_config(backup_file)
     intended_cfg = _open_file_config(intended_file)
 
-    for rule in rules[obj.platform.slug]:
+    for rule in rules[obj.platform.network_driver]:
         _actual = get_config_element(rule, backup_cfg, obj, logger)
         _intended = get_config_element(rule, intended_cfg, obj, logger)
 

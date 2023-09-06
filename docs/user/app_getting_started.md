@@ -75,7 +75,7 @@ Follow the steps below to get up and running for the intended configuration elem
     3. Fill out the Intended Repository. (The dropdown will show the repository that was just created.)
     4. Fill out Intended Path Template. Typically `{{obj.location.name}}/{{obj.name}}.cfg`, see [Setting Details](./app_feature_backup.md#application-settings)
     5. Fill out Jinja Repository. (The dropdown will show the repository that was just created.)
-    6. Fill out Jinja Path Template.  Typically `{{obj.platform.slug}}.j2`.
+    6. Fill out Jinja Path Template.  Typically `{{obj.platform.network_driver}}.j2`.
 
 5. Determine what data(variables) the Jinja2 templates need from Nautobot.
 

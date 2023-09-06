@@ -76,8 +76,8 @@ def run_backup(  # pylint: disable=too-many-arguments
         obj=obj,
         logger=logger,
         backup_file=backup_file,
-        remove_lines=remove_regex_dict.get(obj.platform.slug, []),
-        substitute_lines=replace_regex_dict.get(obj.platform.slug, []),
+        remove_lines=remove_regex_dict.get(obj.platform.netwokr_driver, []),
+        substitute_lines=replace_regex_dict.get(obj.platform.netwokr_driver, []),
         default_drivers_mapping=get_dispatcher(),
     )[1].result["config"]
 
@@ -102,19 +102,19 @@ def config_backup(job_result, data):
     for settings in set(device_to_settings_map.values()):
         verify_settings(logger, settings, ["backup_path_template"])
 
-    # Build a dictionary, with keys of platform.slug, and the regex line in it for the netutils func.
+    # Build a dictionary, with keys of platform.network_driver, and the regex line in it for the netutils func.
     remove_regex_dict = {}
     for regex in ConfigRemove.objects.all():
-        if not remove_regex_dict.get(regex.platform.slug):
-            remove_regex_dict[regex.platform.slug] = []
-        remove_regex_dict[regex.platform.slug].append({"regex": regex.regex})
+        if not remove_regex_dict.get(regex.platform.network_driver):
+            remove_regex_dict[regex.platform.network_driver] = []
+        remove_regex_dict[regex.platform.network_driver].append({"regex": regex.regex})
 
-    # Build a dictionary, with keys of platform.slug, and the regex and replace keys for the netutils func.
+    # Build a dictionary, with keys of platform.network_driver, and the regex and replace keys for the netutils func.
     replace_regex_dict = {}
     for regex in ConfigReplace.objects.all():
-        if not replace_regex_dict.get(regex.platform.slug):
-            replace_regex_dict[regex.platform.slug] = []
-        replace_regex_dict[regex.platform.slug].append({"replace": regex.replace, "regex": regex.regex})
+        if not replace_regex_dict.get(regex.platform.network_driver):
+            replace_regex_dict[regex.platform.network_driver] = []
+        replace_regex_dict[regex.platform.network_driver].append({"replace": regex.replace, "regex": regex.regex})
     try:
         with InitNornir(
             runner=NORNIR_SETTINGS.get("runner"),

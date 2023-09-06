@@ -214,7 +214,7 @@ class ConfigRemoveModelTestCase(TestCase):
 
     def setUp(self):
         """Setup Object."""
-        self.platform = Platform.objects.create(name="cisco_ios")
+        self.platform = Platform.objects.create(name="Cisco IOS", network_driver="cisco_ios")
         self.line_removal = ConfigRemove.objects.create(
             name="foo", platform=self.platform, description="foo bar", regex="^Back.*"
         )
@@ -245,7 +245,7 @@ class ConfigReplaceModelTestCase(TestCase):
 
     def setUp(self):
         """Setup Object."""
-        self.platform = Platform.objects.create(name="cisco_ios")
+        self.platform = Platform.objects.create(name="Cisco IOS", network_driver="cisco_ios")
         self.line_replace = ConfigReplace.objects.create(
             name="foo",
             platform=self.platform,

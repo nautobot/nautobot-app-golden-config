@@ -817,6 +817,11 @@ class RemediationSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         "remediation_type",
     ]
 
+    class Meta:
+        """Meta information for RemediationSettings model."""
+
+        ordering = ("platform", "remediation_type")
+
     def to_csv(self):
         """Indicates model fields to return as csv."""
         return (

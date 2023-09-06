@@ -424,7 +424,9 @@ class RemediationSettingFilterForm(NautobotFilterForm):
 
     model = models.RemediationSetting
     q = forms.CharField(required=False, label="Search")
-    platform = utilities_forms.DynamicModelMultipleChoiceField(queryset=Platform.objects.all(), required=False, display_field="name", to_field_name="name")
+    platform = utilities_forms.DynamicModelMultipleChoiceField(
+        queryset=Platform.objects.all(), required=False, display_field="name", to_field_name="name"
+    )
     remediation_type = forms.ChoiceField(
         choices=add_blank_choice(RemediationTypeChoice), required=False, label="Remediation Type"
     )

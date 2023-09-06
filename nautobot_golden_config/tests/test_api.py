@@ -1,27 +1,25 @@
 """Unit tests for nautobot_golden_config."""
 from copy import deepcopy
+
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
-
 from django.urls import reverse
-from rest_framework import status
-
 from nautobot.dcim.models import Device, Platform
+from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status
 from nautobot.utilities.testing import APITestCase, APIViewTestCases
-from nautobot.extras.models import GitRepository, GraphQLQuery, DynamicGroup, Status
+from rest_framework import status
 from nautobot_golden_config.choices import RemediationTypeChoice
 from nautobot_golden_config.models import ConfigPlan, GoldenConfigSetting, RemediationSetting
 
 from .conftest import (
-    create_device,
-    create_feature_rule_json,
     create_config_compliance,
-    create_git_repos,
-    create_saved_queries,
+    create_device,
     create_device_data,
+    create_feature_rule_json,
+    create_git_repos,
     create_job_result,
+    create_saved_queries,
 )
-
 
 User = get_user_model()
 
@@ -312,6 +310,22 @@ class RemediationSettingTest(APIViewTestCases.APIViewTestCase):
             remediation_type=type_custom,
         )
 
+        platforms = (
+            Platform.objects.create(name="Platform 4", slug="platform-4"),
+            Platform.objects.create(name="Platform 5", slug="platform-5"),
+            Platform.objects.create(name="Platform 6", slug="platform-6"),
+        )
+
+        cls.create_data = [
+            {"platform": platforms[0].pk, "remediation_type": type_cli},
+            {
+                "platform": platforms[1].pk,
+                "remediation_type": type_cli,
+                "remediation_options": {"some_option": "some_value"},
+            },
+            {"platform": platforms[2].pk, "remediation_type": type_custom},
+        ]
+
         cls.update_data = {
             "remediation_type": type_custom,
         }
@@ -322,7 +336,6 @@ class RemediationSettingTest(APIViewTestCases.APIViewTestCase):
 
     def test_list_objects_brief(self):
         """Skipping test due to brief_fields not implemented."""
-
 
 
 # pylint: disable=too-many-ancestors,too-many-locals

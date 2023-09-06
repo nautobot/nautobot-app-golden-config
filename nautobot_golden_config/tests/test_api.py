@@ -223,3 +223,64 @@ class GoldenConfigSettingsAPITest(APITestCase):  # pylint: disable=too-many-ance
         # Put back a general GoldenConfigSetting object.
         global_settings = GoldenConfigSetting.objects.create(dynamic_group=self.dynamic_group)
         global_settings.save()
+
+
+# pylint: disable=too-many-ancestors
+
+
+class GoldenConfigSerializerCSVTest(APITestCase):
+    """Test CSV Export returns 200/OK."""
+
+    url = reverse("plugins-api:nautobot_golden_config-api:goldenconfig-list")
+
+    def setUp(self):
+        super().setUp()
+        self._add_permissions()
+
+    def _add_permissions(self):
+        model = self.url.split("/")[-2]
+        permission_name = model.replace("-", "")
+        self.add_permissions(f"nautobot_golden_config.view_{permission_name}")
+
+    def test_csv_export(self):
+        response = self.client.get(f"{self.url}?format=csv", **self.header)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+class GoldenConfigSettingSerializerCSVTest(GoldenConfigSerializerCSVTest):
+    """Test CSV Export returns 200/OK."""
+
+    url = reverse("plugins-api:nautobot_golden_config-api:goldenconfigsetting-list")
+
+    def _add_permissions(self):
+        self.add_permissions("nautobot_golden_config.view_goldenconfigsetting")
+
+
+class ComplianceFeatureSerializerCSVTest(GoldenConfigSerializerCSVTest):
+    """Test CSV Export returns 200/OK."""
+
+    url = reverse("plugins-api:nautobot_golden_config-api:compliancefeature-list")
+
+
+class ComplianceRuleCSVTest(GoldenConfigSerializerCSVTest):
+    """Test CSV Export returns 200/OK."""
+
+    url = reverse("plugins-api:nautobot_golden_config-api:compliancerule-list")
+
+
+class ConfigComplianceCSVTest(GoldenConfigSerializerCSVTest):
+    """Test CSV Export returns 200/OK."""
+
+    url = reverse("plugins-api:nautobot_golden_config-api:configcompliance-list")
+
+
+class ConfigRemoveCSVTest(GoldenConfigSerializerCSVTest):
+    """Test CSV Export returns 200/OK."""
+
+    url = reverse("plugins-api:nautobot_golden_config-api:configremove-list")
+
+
+class ConfigReplaceCSVTest(GoldenConfigSerializerCSVTest):
+    """Test CSV Export returns 200/OK."""
+
+    url = reverse("plugins-api:nautobot_golden_config-api:configreplace-list")

@@ -3,7 +3,6 @@
 
 from django import forms
 
-import nautobot.extras.forms as extras_forms
 import nautobot.core.forms as core_forms
 from nautobot.dcim.models import Device, Platform, Location, DeviceType, Manufacturer, Rack, RackGroup
 from nautobot.extras.forms import NautobotFilterForm, NautobotBulkEditForm, NautobotModelForm
@@ -176,16 +175,6 @@ class ComplianceRuleBulkEditForm(NautobotBulkEditForm):
         nullable_fields = []
 
 
-class ComplianceRuleCSVForm(extras_forms.CustomFieldModelCSVForm):
-    """CSV Form for ComplianceRule instances."""
-
-    class Meta:
-        """Boilerplate form Meta data for ComplianceRule."""
-
-        model = models.ComplianceRule
-        fields = models.ComplianceRule.csv_headers
-
-
 # ComplianceFeature
 
 
@@ -220,16 +209,6 @@ class ComplianceFeatureBulkEditForm(NautobotBulkEditForm):
         """Boilerplate form Meta data for ComplianceFeature."""
 
         nullable_fields = []
-
-
-class ComplianceFeatureCSVForm(extras_forms.CustomFieldModelCSVForm):
-    """CSV Form for ComplianceFeature instances."""
-
-    class Meta:
-        """Boilerplate form Meta data for ComplianceFeature."""
-
-        model = models.ComplianceFeature
-        fields = models.ComplianceFeature.csv_headers
 
 
 # ConfigRemove
@@ -275,16 +254,6 @@ class ConfigRemoveBulkEditForm(NautobotBulkEditForm):
         nullable_fields = []
 
 
-class ConfigRemoveCSVForm(extras_forms.CustomFieldModelCSVForm):
-    """CSV Form for ConfigRemove instances."""
-
-    class Meta:
-        """Boilerplate form Meta data for ConfigRemove."""
-
-        model = models.ConfigRemove
-        fields = models.ConfigRemove.csv_headers
-
-
 # ConfigReplace
 
 
@@ -317,16 +286,6 @@ class ConfigReplaceFilterForm(NautobotFilterForm):
     name = core_forms.DynamicModelChoiceField(
         queryset=models.ConfigReplace.objects.all(), to_field_name="name", required=False
     )
-
-
-class ConfigReplaceCSVForm(extras_forms.CustomFieldModelCSVForm):
-    """CSV Form for ConfigReplace instances."""
-
-    class Meta:
-        """Boilerplate form Meta data for ConfigReplace."""
-
-        model = models.ConfigReplace
-        fields = models.ConfigReplace.csv_headers
 
 
 class ConfigReplaceBulkEditForm(NautobotBulkEditForm):
@@ -391,16 +350,6 @@ class GoldenConfigSettingFilterForm(NautobotFilterForm):
         queryset=GitRepository.objects.filter(provided_contents__contains="nautobot_golden_config.jinjatemplate"),
         required=False,
     )
-
-
-class GoldenConfigSettingCSVForm(extras_forms.CustomFieldModelCSVForm):
-    """CSV Form for GoldenConfigSetting instances."""
-
-    class Meta:
-        """Boilerplate form Meta data for GoldenConfigSetting."""
-
-        model = models.GoldenConfigSetting
-        fields = models.GoldenConfigSetting.csv_headers
 
 
 class GoldenConfigSettingBulkEditForm(NautobotBulkEditForm):

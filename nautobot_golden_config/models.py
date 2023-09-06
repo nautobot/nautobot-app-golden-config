@@ -160,12 +160,6 @@ class ComplianceFeature(PrimaryModel):  # pylint: disable=too-many-ancestors
     slug = models.SlugField(max_length=100, unique=True)
     description = models.CharField(max_length=200, blank=True)
 
-    csv_headers = ["name", "slug", "description"]
-
-    def to_csv(self):
-        """Indicates model fields to return as csv."""
-        return (self.name, self.slug, self.description)
-
     class Meta:
         """Meta information for ComplianceFeature model."""
 
@@ -223,32 +217,9 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
         choices=ComplianceRuleConfigTypeChoice,
         help_text="Whether the configuration is in CLI or JSON/structured format.",
     )
-
     custom_compliance = models.BooleanField(
         default=False, help_text="Whether this Compliance Rule is proceeded as custom."
     )
-
-    csv_headers = [
-        "platform",
-        "feature",
-        "description",
-        "config_ordered",
-        "match_config",
-        "config_type",
-        "custom_compliance",
-    ]
-
-    def to_csv(self):
-        """Indicates model fields to return as csv."""
-        return (
-            self.platform.name,  # TODO: verify that changing slug -> name works (write a test case)
-            self.feature.name,
-            self.description,
-            self.config_ordered,
-            self.match_config,
-            self.config_type,
-            self.custom_compliance,
-        )
 
     class Meta:
         """Meta information for ComplianceRule model."""
@@ -297,16 +268,10 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
     # Used for django-pivot, both compliance and compliance_int should be set.
     compliance_int = models.IntegerField(null=True, blank=True)
 
-    csv_headers = ["Device Name", "Feature", "Compliance"]
-
     # TODO: Fix pylint arguments-differ for 2.x migration
     def get_absolute_url(self):  # pylint: disable=arguments-differ
         """Return absolute URL for instance."""
         return reverse("plugins:nautobot_golden_config:configcompliance", args=[self.pk])
-
-    def to_csv(self):
-        """Indicates model fields to return as csv."""
-        return (self.device.name, self.rule.feature.name, self.compliance)
 
     def to_objectchange(
         self, action, *, related_object=None, object_data_extra=None, object_data_exclude=None
@@ -383,28 +348,6 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
     compliance_config = models.TextField(blank=True, help_text="Full config diff for device.")
     compliance_last_attempt_date = models.DateTimeField(null=True)
     compliance_last_success_date = models.DateTimeField(null=True)
-
-    csv_headers = [
-        "Device Name",
-        "backup attempt",
-        "backup successful",
-        "intended attempt",
-        "intended successful",
-        "compliance attempt",
-        "compliance successful",
-    ]
-
-    def to_csv(self):
-        """Indicates model fields to return as csv."""
-        return (
-            self.device,
-            self.backup_last_attempt_date,
-            self.backup_last_success_date,
-            self.intended_last_attempt_date,
-            self.intended_last_success_date,
-            self.compliance_last_attempt_date,
-            self.compliance_last_success_date,
-        )
 
     def to_objectchange(
         self, action, *, related_object=None, object_data_extra=None, object_data_exclude=None
@@ -508,22 +451,6 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         related_name="golden_config_setting",
     )
 
-    csv_headers = [
-        "name",
-        "slug",
-        "weight",
-        "description",
-    ]
-
-    def to_csv(self):
-        """Indicates model fields to return as csv."""
-        return (
-            self.name,
-            self.slug,
-            self.weight,
-            self.description,
-        )
-
     def __str__(self):
         """Return a simple string if model is called."""
         return f"Golden Config Setting - {self.name}"
@@ -595,15 +522,6 @@ class ConfigRemove(PrimaryModel):  # pylint: disable=too-many-ancestors
     )
 
     clone_fields = ["platform", "description", "regex"]
-    csv_headers = ["name", "platform", "description", "regex"]
-
-    def to_csv(self):
-        """Indicates model fields to return as csv."""
-        return (
-            self.name,
-            self.platform.name,
-            self.regex,
-        )  # TODO: verify that changing platform.slug -> name works (write a test case)
 
     class Meta:
         """Meta information for ConfigRemove model."""
@@ -652,17 +570,6 @@ class ConfigReplace(PrimaryModel):  # pylint: disable=too-many-ancestors
     )
 
     clone_fields = ["platform", "description", "regex", "replace"]
-    csv_headers = ["name", "platform", "description", "regex", "replace"]
-
-    def to_csv(self):
-        """Indicates model fields to return as csv."""
-        return (
-            self.name,
-            self.platform.name,
-            self.description,
-            self.regex,
-            self.replace,
-        )  # TODO: verify that changing platform.slug -> name works (write a test case)
 
     class Meta:
         """Meta information for ConfigReplace model."""

@@ -117,7 +117,7 @@ class ConfigToPushViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
 
 
 class RemediationSettingViewSet(NautobotModelViewSet):  # pylint:disable=too-many-ancestors
-    """API viewset for interacting with ConfigRemove objects."""
+    """API viewset for interacting with RemediationSetting objects."""
 
     queryset = models.RemediationSetting.objects.all()
     serializer_class = serializers.RemediationSettingSerializer

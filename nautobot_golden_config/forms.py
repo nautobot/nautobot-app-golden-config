@@ -406,10 +406,10 @@ class GoldenConfigSettingBulkEditForm(NautobotBulkEditForm):
 
 # Remediation Setting
 class RemediationSettingForm(NautobotModelForm):
-    """Filter Form for Line Removal instances."""
+    """Filter Form for Remediation Settings instances."""
 
     class Meta:
-        """Boilerplate form Meta data for removal feature."""
+        """Boilerplate form Meta data for Remediation Settings."""
 
         model = models.RemediationSetting
         fields = (
@@ -424,9 +424,9 @@ class RemediationSettingFilterForm(NautobotFilterForm):
 
     model = models.RemediationSetting
     q = forms.CharField(required=False, label="Search")
-    platform = utilities_forms.DynamicModelMultipleChoiceField(queryset=Platform.objects.all(), required=False)
+    platform = utilities_forms.DynamicModelMultipleChoiceField(queryset=Platform.objects.all(), required=False, display_field="name", to_field_name="name")
     remediation_type = forms.ChoiceField(
-        choices=add_blank_choice(RemediationTypeChoice), required=True, label="Remediation Type"
+        choices=add_blank_choice(RemediationTypeChoice), required=False, label="Remediation Type"
     )
 
 

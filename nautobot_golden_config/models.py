@@ -11,7 +11,7 @@ from django.shortcuts import reverse
 from django.utils.module_loading import import_string
 from django.utils.text import slugify
 from hier_config import Host as HierConfigHost
-from nautobot.core.models.generics import OrganizationalModel, PrimaryModel
+from nautobot.core.models.generics import PrimaryModel
 from nautobot.extras.models import DynamicGroup, ObjectChange
 from nautobot.extras.models.statuses import StatusField
 from nautobot.extras.utils import extras_features
@@ -786,7 +786,7 @@ class ConfigReplace(PrimaryModel):  # pylint: disable=too-many-ancestors
 @extras_features(
     "graphql",
 )
-class RemediationSetting(OrganizationalModel):  # pylint: disable=too-many-ancestors
+class RemediationSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     """RemediationSetting details."""
 
     # Remediation points to the platform

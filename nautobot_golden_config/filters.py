@@ -299,8 +299,12 @@ class RemediationSettingFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
         to_field_name="name",
         label="Platform Name",
     )
+    platform_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=Platform.objects.all(),
+        label="Platform ID",
+    )
     remediation_type = django_filters.ModelMultipleChoiceFilter(
-        field_name="remediationsetting__remediation_type",
+        field_name="remediation_type",
         queryset=models.RemediationSetting.objects.all(),
         to_field_name="remediation_type",
         label="Remediation Type",
@@ -310,7 +314,7 @@ class RemediationSettingFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
         """Perform the filtered search."""
         if not value.strip():
             return queryset
-        qs_filter = Q(platform__icontains=value)
+        qs_filter = Q(platform__name__icontains=value) | Q(remediation_type__icontains=value)
         return queryset.filter(qs_filter)
 
     class Meta:

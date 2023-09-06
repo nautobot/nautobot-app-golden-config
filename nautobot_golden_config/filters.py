@@ -2,9 +2,9 @@
 
 import django_filters
 from django.db.models import Q
-from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Platform, Rack, RackGroup, Region, Site
 from nautobot.dcim.filters import DeviceFilterSet
-from nautobot.extras.filters import CustomFieldModelFilterSetMixin, NautobotFilterSet, StatusFilter
+from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Platform, Rack, RackGroup, Region, Site
+from nautobot.extras.filters import NautobotFilterSet, StatusFilter
 from nautobot.extras.models import JobResult, Status
 from nautobot.tenancy.models import Tenant, TenantGroup
 from nautobot.utilities.filters import (

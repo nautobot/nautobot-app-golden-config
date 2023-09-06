@@ -826,7 +826,7 @@ class RemediationSetting(OrganizationalModel):  # pylint: disable=too-many-ances
 
     def __str__(self):
         """Return a sane string representation of the instance."""
-        return f"{self.platform.slug}"
+        return str(self.platform.slug)
 
     def get_absolute_url(self):
         """Absolute url for the RemediationRule instance."""

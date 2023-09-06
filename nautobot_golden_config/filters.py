@@ -6,7 +6,7 @@ from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, P
 from nautobot.extras.filters import CustomFieldModelFilterSetMixin, StatusFilter
 from nautobot.extras.models import JobResult, Status
 from nautobot.tenancy.models import Tenant, TenantGroup
-from nautobot.utilities.filters import BaseFilterSet, NameSlugSearchFilterSet, TreeNodeMultipleChoiceFilter, TagFilter
+from nautobot.utilities.filters import BaseFilterSet, NameSlugSearchFilterSet, TagFilter, TreeNodeMultipleChoiceFilter
 from nautobot_golden_config import models
 
 
@@ -292,10 +292,6 @@ class RemediationSettingFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
     q = django_filters.CharFilter(
         method="search",
         label="Search",
-    )
-    remediationsetting_id = django_filters.ModelMultipleChoiceFilter(
-        queryset=models.RemediationSetting.objects.all(),
-        label="RemediationSetting ID",
     )
     platform = django_filters.ModelMultipleChoiceFilter(
         field_name="platform__name",

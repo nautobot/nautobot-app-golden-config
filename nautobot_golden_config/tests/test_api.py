@@ -1,27 +1,25 @@
 """Unit tests for nautobot_golden_config."""
 from copy import deepcopy
+
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
-
 from django.urls import reverse
 from rest_framework import status
-
 from nautobot.dcim.models import Device, Platform
+from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status
 from nautobot.utilities.testing import APITestCase, APIViewTestCases
-from nautobot.extras.models import GitRepository, GraphQLQuery, DynamicGroup, Status
 from nautobot_golden_config.choices import RemediationTypeChoice
 from nautobot_golden_config.models import ConfigPlan, GoldenConfigSetting, RemediationSetting
 
 from .conftest import (
-    create_device,
-    create_feature_rule_json,
     create_config_compliance,
-    create_git_repos,
-    create_saved_queries,
+    create_device,
     create_device_data,
+    create_feature_rule_json,
+    create_git_repos,
     create_job_result,
+    create_saved_queries,
 )
-
 
 User = get_user_model()
 
@@ -282,7 +280,7 @@ class GoldenConfigSettingsAPITest(APITestCase):  # pylint: disable=too-many-ance
 
 
 # pylint: disable=too-many-ancestors
-class RemediationSettingTest(APIViewTestCases.APIViewTestCase):
+class RemediationSettingTest(APITestCase):
     """Test API for Remediation Settings."""
 
     model = RemediationSetting
@@ -319,10 +317,6 @@ class RemediationSettingTest(APIViewTestCases.APIViewTestCase):
         cls.bulk_update_data = {
             "remediation_type": type_cli,
         }
-
-    def test_list_objects_brief(self):
-        """Skipping test due to brief_fields not implemented."""
-
 
 
 # pylint: disable=too-many-ancestors,too-many-locals

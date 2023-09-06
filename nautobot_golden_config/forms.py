@@ -6,23 +6,13 @@ import json
 import nautobot.extras.forms as extras_forms
 import nautobot.utilities.forms as utilities_forms
 from django import forms
-from nautobot.dcim.models import (
-    Device,
-    DeviceRole,
-    DeviceType,
-    Manufacturer,
-    Platform,
-    Rack,
-    RackGroup,
-    Region,
-    Site,
-)
+from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Platform, Rack, RackGroup, Region, Site
 from nautobot.extras.forms import NautobotBulkEditForm, NautobotFilterForm, NautobotModelForm
 from nautobot.extras.models import DynamicGroup, GitRepository, JobResult, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
 from nautobot.utilities.forms import add_blank_choice, DatePicker, SlugField, TagFilterField
 from nautobot_golden_config import models
-from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice
+from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
 
 # ConfigCompliance
 
@@ -430,9 +420,14 @@ class RemediationSettingForm(NautobotModelForm):
 
 
 class RemediationSettingFilterForm(NautobotFilterForm):
-    """Filter Form for Line Replacement."""
+    """Filter Form for Remediation Settings."""
 
     model = models.RemediationSetting
+    q = forms.CharField(required=False, label="Search")
+    platform = utilities_forms.DynamicModelMultipleChoiceField(queryset=Platform.objects.all(), required=False)
+    remediation_type = forms.ChoiceField(
+        choices=add_blank_choice(RemediationTypeChoice), required=True, label="Remediation Type"
+    )
 
 
 class RemediationSettingCSVForm(extras_forms.CustomFieldModelCSVForm):
@@ -451,6 +446,7 @@ class RemediationSettingBulkEditForm(NautobotBulkEditForm):
     pk = forms.ModelMultipleChoiceField(
         queryset=models.RemediationSetting.objects.all(), widget=forms.MultipleHiddenInput
     )
+    remediation_type = forms.ChoiceField(choices=RemediationTypeChoice, label="Remediation Type")
 
     class Meta:
         """Boilerplate form Meta data for RemediationSetting."""

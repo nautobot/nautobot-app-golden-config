@@ -11,21 +11,16 @@ from django.shortcuts import reverse
 from django.utils.module_loading import import_string
 from django.utils.text import slugify
 from hier_config import Host as HierConfigHost
-from nautobot.core.models.generics import PrimaryModel
+from nautobot.core.models.generics import OrganizationalModel, PrimaryModel
 from nautobot.extras.models import DynamicGroup, ObjectChange
 from nautobot.extras.models.statuses import StatusField
 from nautobot.extras.utils import extras_features
 from nautobot.utilities.utils import serialize_object, serialize_object_v2
 from netutils.config.compliance import feature_compliance
 from netutils.lib_mapper import HIERCONFIG_LIB_MAPPER_REVERSE
-from nautobot_golden_config.choices import (
-    ComplianceRuleConfigTypeChoice,
-    ConfigPlanTypeChoice,
-    RemediationTypeChoice,
-)
+from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
 from nautobot_golden_config.utilities.utils import get_platform
-
 
 LOGGER = logging.getLogger(__name__)
 GRAPHQL_STR_START = "query ($device_id: ID!)"
@@ -298,11 +293,7 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
     @property
     def remediation_setting(self):
         """Returns remediation settings for a particular platform."""
-        try:
-            remediation_setting = RemediationSetting.objects.get(platform=self.platform)
-        except RemediationSetting.DoesNotExist as err:
-            raise ValidationError(f"Platform {self.platform.slug} has no Remediation Settings defined.") from err
-        return remediation_setting
+        return RemediationSetting.objects.filter(platform=self.platform).first()
 
     def to_csv(self):
         """Indicates model fields to return as csv."""
@@ -428,10 +419,10 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
             self.remediation = None
             return
 
-        if not FUNC_MAPPER.get(self.rule.remediation_setting.remediation_type):
-            raise ValidationError(
-                f"Remediation {self.rule.remediation_setting.remediation_type} has no associated function set."
-            )
+        if not self.rule.remediation_setting:
+            self.remediation = None
+            return
+
         remediation_config = FUNC_MAPPER[self.rule.remediation_setting.remediation_type](obj=self)
         self.remediation = remediation_config
 
@@ -795,7 +786,7 @@ class ConfigReplace(PrimaryModel):  # pylint: disable=too-many-ancestors
 @extras_features(
     "graphql",
 )
-class RemediationSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
+class RemediationSetting(OrganizationalModel):  # pylint: disable=too-many-ancestors
     """RemediationSetting details."""
 
     # Remediation points to the platform
@@ -835,7 +826,7 @@ class RemediationSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
 
     def __str__(self):
         """Return a sane string representation of the instance."""
-        return self.platform.slug
+        return f"{self.platform.slug}"
 
     def get_absolute_url(self):
         """Absolute url for the RemediationRule instance."""

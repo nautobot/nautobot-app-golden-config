@@ -45,7 +45,7 @@ class ConfigComplianceModelTestCase(TestCase):
 
     def test_id(self):
         """Test filtering by ID (primary key)."""
-        params = {"id": self.queryset.values_list("pk", flat=True)[0]}
+        params = {"id": str(self.queryset.values_list("pk", flat=True)[0])}
         self.assertEqual(self.filterset(params, self.queryset).qs.count(), 1)
 
     def test_full(self):
@@ -186,7 +186,7 @@ class ConfigRemoveModelTestCase(TestCase):
 
     def test_id(self):
         """Test filtering by ID (primary key)."""
-        params = {"id": self.queryset.values_list("pk", flat=True)[0]}
+        params = {"id": str(self.queryset.values_list("pk", flat=True)[0])}
         self.assertEqual(self.filterset(params, self.queryset).qs.count(), 1)
 
     def test_full(self):
@@ -289,7 +289,7 @@ class ComplianceFeatureModelTestCase(TestCase):
 
     def test_id(self):
         """Test filtering by ID (primary key)."""
-        params = {"id": self.queryset.values_list("pk", flat=True)[0]}
+        params = {"id": str(self.queryset.values_list("pk", flat=True)[0])}
         self.assertEqual(self.filterset(params, self.queryset).qs.count(), 1)
 
     def test_name(self):

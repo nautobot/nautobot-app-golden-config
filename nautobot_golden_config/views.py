@@ -21,7 +21,6 @@ from django.utils.html import format_html
 from django_pivot.pivot import pivot
 from nautobot.core.views import generic
 from nautobot.core.views.viewsets import NautobotUIViewSet
-from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.dcim.forms import DeviceFilterForm
 from nautobot.dcim.models import Device
 from nautobot.extras.jobs import run_job
@@ -53,7 +52,7 @@ class GoldenConfigListView(generic.ObjectListView):
     """View for displaying the configuration management status for backup, intended, diff, and SoT Agg."""
 
     table = tables.GoldenConfigTable
-    filterset = DeviceFilterSet
+    filterset = filters.GoldenConfigDeviceFilterSet
     filterset_form = DeviceFilterForm
     queryset = Device.objects.all()
     template_name = "nautobot_golden_config/goldenconfig_list.html"
@@ -115,7 +114,7 @@ class GoldenConfigBulkDeleteView(generic.BulkDeleteView):
 
     queryset = Device.objects.all()
     table = tables.GoldenConfigTable
-    filterset = DeviceFilterSet
+    filterset = filters.GoldenConfigDeviceFilterSet
 
     def post(self, request, **kwargs):
         """Delete instances based on post request data."""

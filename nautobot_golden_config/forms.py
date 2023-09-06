@@ -406,7 +406,7 @@ class GoldenConfigSettingBulkEditForm(NautobotBulkEditForm):
 
 # Remediation Setting
 class RemediationSettingForm(NautobotModelForm):
-    """Filter Form for Remediation Settings instances."""
+    """Create/Update Form for Remediation Settings instances."""
 
     class Meta:
         """Boilerplate form Meta data for Remediation Settings."""

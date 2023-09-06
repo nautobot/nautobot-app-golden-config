@@ -75,12 +75,19 @@ def create_device_data():  # pylint: disable=too-many-locals
         Location.objects.create(
             name="Site 3", location_type=lt_site, parent=regions[2], status=device_status_map["Active"]
         ),
+        Location.objects.create(
+            name="Site 1", location_type=lt_site, parent=regions[2], status=device_status_map["Active"]
+        ),
     )
 
+    rack_group_parent = RackGroup.objects.create(name="Rack Group Parent", location=sites[0])
+
     rack_groups = (
-        RackGroup.objects.create(name="Rack Group 1", location=sites[0]),
+        RackGroup.objects.create(name="Rack Group 1", location=sites[0], parent=rack_group_parent),
         RackGroup.objects.create(name="Rack Group 2", location=sites[1]),
         RackGroup.objects.create(name="Rack Group 3", location=sites[2]),
+        RackGroup.objects.create(name="Rack Group 4", location=sites[0], parent=rack_group_parent),
+        RackGroup.objects.create(name="Rack Group 1", location=sites[3]),
     )
 
     racks = (
@@ -93,12 +100,20 @@ def create_device_data():  # pylint: disable=too-many-locals
         Rack.objects.create(
             name="Rack 3", location=sites[2], rack_group=rack_groups[2], status=device_status_map["Active"]
         ),
+        Rack.objects.create(
+            name="Rack 4", location=sites[0], rack_group=rack_groups[3], status=device_status_map["Active"]
+        ),
+        Rack.objects.create(
+            name="Rack 5", location=sites[3], rack_group=rack_groups[4], status=device_status_map["Active"]
+        ),
     )
 
+    tenant_group_parent = TenantGroup.objects.create(name="Tenant group parent")
+
     tenant_groups = (
-        TenantGroup.objects.create(name="Tenant group 1"),
+        TenantGroup.objects.create(name="Tenant group 1", parent=tenant_group_parent),
         TenantGroup.objects.create(name="Tenant group 2"),
-        TenantGroup.objects.create(name="Tenant group 3"),
+        TenantGroup.objects.create(name="Tenant group 3", parent=tenant_group_parent),
     )
 
     tenants = (
@@ -145,6 +160,26 @@ def create_device_data():  # pylint: disable=too-many-locals
         tenant=tenants[0],
         location=sites[0],
         rack=racks[0],
+        status=device_status_map["Active"],
+    )
+    Device.objects.create(
+        name="Device 5",
+        device_type=device_types[0],
+        role=device_roles[0],
+        platform=platforms[0],
+        tenant=tenants[0],
+        location=sites[3],
+        rack=racks[4],
+        status=device_status_map["Active"],
+    )
+    Device.objects.create(
+        name="Device 6",
+        device_type=device_types[0],
+        role=device_roles[0],
+        platform=platforms[0],
+        tenant=tenants[0],
+        location=sites[0],
+        rack=racks[3],
         status=device_status_map["Active"],
     )
 
@@ -197,7 +232,7 @@ def create_orphan_device(name="orphan"):
     return device
 
 
-def create_feature_rule_json(device, feature="foo", rule="json"):
+def create_feature_rule_json(device, feature="foo"):
     """Creates a Feature/Rule Mapping and Returns the rule."""
     feature_obj, _ = ComplianceFeature.objects.get_or_create(slug=feature, name=feature)
     rule = ComplianceRule(

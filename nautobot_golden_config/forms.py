@@ -24,8 +24,10 @@ class ConfigComplianceFilterForm(NautobotFilterForm):
         "q",
         "tenant_group",
         "tenant",
+        "location_id",
         "location",
         "rack_group_id",
+        "rack_group",
         "rack_id",
         "role",
         "manufacturer",
@@ -36,27 +38,46 @@ class ConfigComplianceFilterForm(NautobotFilterForm):
     ]
 
     q = forms.CharField(required=False, label="Search")
+    tenant_group_id = core_forms.DynamicModelMultipleChoiceField(
+        queryset=TenantGroup.objects.all(), to_field_name="id", required=False, label="Tenant group ID"
+    )
     tenant_group = core_forms.DynamicModelMultipleChoiceField(
-        queryset=TenantGroup.objects.all(), to_field_name="slug", required=False, null_option="None"
+        queryset=TenantGroup.objects.all(),
+        to_field_name="name",
+        required=False,
+        label="Tenant group name",
+        null_option="None",
     )
     tenant = core_forms.DynamicModelMultipleChoiceField(
         queryset=Tenant.objects.all(),
-        to_field_name="slug",
+        to_field_name="name",
         required=False,
         null_option="None",
         query_params={"group": "$tenant_group"},
     )
-    location = core_forms.DynamicModelMultipleChoiceField(
+    location_id = core_forms.DynamicModelMultipleChoiceField(
         # Not limiting to query_params={"content_type": "dcim.device" to allow parent locations to be included
         # i.e. include all sites in a Region, even though Region can't be assigned to a Device
         queryset=Location.objects.all(),
-        to_field_name="pk",
+        to_field_name="id",
         required=False,
+        label="Location ID",
+    )
+    location = core_forms.DynamicModelMultipleChoiceField(
+        queryset=Location.objects.all(), to_field_name="name", required=False, label="Location name"
     )
     rack_group_id = core_forms.DynamicModelMultipleChoiceField(
         queryset=RackGroup.objects.all(),
+        to_field_name="id",
         required=False,
-        label="Rack group",
+        label="Rack group ID",
+        query_params={"location": "$location"},
+    )
+    rack_group = core_forms.DynamicModelMultipleChoiceField(
+        queryset=RackGroup.objects.all(),
+        to_field_name="name",
+        required=False,
+        label="Rack group name",
         query_params={"location": "$location"},
     )
     rack_id = core_forms.DynamicModelMultipleChoiceField(
@@ -71,11 +92,11 @@ class ConfigComplianceFilterForm(NautobotFilterForm):
     )
     role = core_forms.DynamicModelMultipleChoiceField(
         queryset=Role.objects.all(),
-        to_field_name="slug",
-        required=False,  # TODO: Fix slug field, Test with change to Role model
+        to_field_name="name",
+        required=False,  # TODO: Test with change to Role model
     )
     manufacturer = core_forms.DynamicModelMultipleChoiceField(
-        queryset=Manufacturer.objects.all(), to_field_name="slug", required=False, label="Manufacturer"
+        queryset=Manufacturer.objects.all(), to_field_name="name", required=False, label="Manufacturer"
     )
     device_type_id = core_forms.DynamicModelMultipleChoiceField(
         queryset=DeviceType.objects.all(),
@@ -86,7 +107,7 @@ class ConfigComplianceFilterForm(NautobotFilterForm):
     )
 
     platform = core_forms.DynamicModelMultipleChoiceField(
-        queryset=Platform.objects.all(), to_field_name="slug", required=False, null_option="None"
+        queryset=Platform.objects.all(), to_field_name="name", required=False, null_option="None"
     )
     device_id = core_forms.DynamicModelMultipleChoiceField(
         queryset=Device.objects.all(), required=False, null_option="None", label="Device"
@@ -101,7 +122,7 @@ class ConfigComplianceFilterForm(NautobotFilterForm):
             query_params={"content_types": Device._meta.label_lower},
             display_field="label",
             label="Device Status",
-            to_field_name="slug",
+            to_field_name="name",
         )
         self.order_fields(self.field_order)  # Reorder fields again
 
@@ -236,7 +257,7 @@ class ConfigRemoveFilterForm(NautobotFilterForm):
 
     model = models.ConfigRemove
     platform = core_forms.DynamicModelMultipleChoiceField(
-        queryset=Platform.objects.all(), to_field_name="slug", required=False, null_option="None"
+        queryset=Platform.objects.all(), to_field_name="name", required=False, null_option="None"
     )
     name = core_forms.DynamicModelChoiceField(
         queryset=models.ConfigRemove.objects.all(), to_field_name="name", required=False

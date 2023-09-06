@@ -72,7 +72,6 @@ class GoldenConfigSettingSerializer(NautobotModelSerializer, TaggedModelSerializ
     url = serializers.HyperlinkedIdentityField(
         view_name="plugins-api:nautobot_golden_config-api:goldenconfigsetting-detail"
     )
-    scope = serializers.JSONField(required=False)
     # TODO: What is correct for this with the removal of nested serializers?
     # dynamic_group = NestedDynamicGroupSerializer(required=False)
 
@@ -81,31 +80,6 @@ class GoldenConfigSettingSerializer(NautobotModelSerializer, TaggedModelSerializ
 
         model = models.GoldenConfigSetting
         fields = "__all__"
-
-    def validate(self, data):
-        """Validate scope & dynamic_group are not both submitted."""
-        if data.get("scope") and data.get("dynamic_group"):
-            raise serializers.ValidationError(
-                "Payload can only contain `scope` or `dynamic_group`, but both were provided."
-            )
-        return data
-
-    def create(self, validated_data):
-        """Overload to handle ability to post scope instead of dynamic_group."""
-        if not validated_data.get("scope"):
-            return models.GoldenConfigSetting.objects.create(**validated_data)
-
-        # The scope setter is not called on use of Model.objects.create method.
-        # The model must first be created in memory without the scope, then
-        # assign the scope which will call the scope setter. Finally .save()
-        # and return.
-        scope = validated_data.pop("scope")
-        setting = models.GoldenConfigSetting(**validated_data)
-        setting.scope = scope
-
-        # Using .save() over .validated_save() as validation is done prior to .create() being called
-        setting.save()
-        return setting
 
 
 class ConfigRemoveSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):

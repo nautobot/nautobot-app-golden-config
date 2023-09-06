@@ -1,6 +1,5 @@
 """Unit tests for nautobot_golden_config."""
 from copy import deepcopy
-import unittest
 
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
@@ -157,7 +156,6 @@ class GoldenConfigSettingsAPITest(APITestCase):  # pylint: disable=too-many-ance
             response.data["jinja_path_template"], "templates/{{obj.platform.name}}/{{obj.platform.name}}_main.j2"
         )
         self.assertFalse(response.data["backup_test_connectivity"])
-        self.assertEqual(response.data["scope"], {"has_primary_ip": "True"})
         self.assertEqual(response.data["sot_agg_query"]["id"], GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1").id)
         self.assertEqual(
             response.data["jinja_repository"]["id"], GitRepository.objects.get(name="test-jinja-repo-1").id
@@ -200,7 +198,6 @@ class GoldenConfigSettingsAPITest(APITestCase):  # pylint: disable=too-many-ance
             response.data["jinja_path_template"], "templates/{{obj.platform.name}}/{{obj.platform.name}}_main.j2"
         )
         self.assertFalse(response.data["backup_test_connectivity"])
-        self.assertEqual(response.data["scope"], {"has_primary_ip": "True"})
         self.assertEqual(response.data["sot_agg_query"]["id"], GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1").id)
         self.assertEqual(
             response.data["jinja_repository"]["id"], GitRepository.objects.get(name="test-jinja-repo-1").id
@@ -211,66 +208,6 @@ class GoldenConfigSettingsAPITest(APITestCase):  # pylint: disable=too-many-ance
         self.assertEqual(
             response.data["intended_repository"]["id"], GitRepository.objects.get(name="test-intended-repo-1").id
         )
-        # Clean up
-        GoldenConfigSetting.objects.all().delete()
-        self.assertEqual(GoldenConfigSetting.objects.all().count(), 0)
-
-    def test_scope_and_dynamic_group_create(self):
-        """Attempts to create object with both scope & dynamic group set."""
-        new_data = deepcopy(self.data)
-        new_data["scope"] = {"has_primary_ip": "True"}
-        response = self.client.post(
-            self.base_view,
-            data=new_data,
-            format="json",
-            **self.header,
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(
-            response.json(),
-            {"non_field_errors": ["Payload can only contain `scope` or `dynamic_group`, but both were provided."]},
-        )
-
-    @unittest.skip("TODO: Fix serializer for removal of nested serializers")
-    def test_scope_create(self):
-        """Attempts to create object with only scope."""
-        new_data = deepcopy(self.data)
-        new_data["scope"] = {"has_primary_ip": "True"}
-        new_data.pop("dynamic_group")
-        response = self.client.post(
-            self.base_view,
-            data=new_data,
-            format="json",
-            **self.header,
-        )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.json()["dynamic_group"]["name"], f"GoldenConfigSetting {new_data['name']} scope")
-        # Clean up
-        GoldenConfigSetting.objects.all().delete()
-        self.assertEqual(GoldenConfigSetting.objects.all().count(), 0)
-
-    def test_golden_config_settings_update_scope(self):
-        """Verify a PATCH to the valid settings object, with just scope."""
-        response_post = self.client.post(
-            self.base_view,
-            data=self.data,
-            format="json",
-            **self.header,
-        )
-        response = self.client.patch(
-            f"{self.base_view}{response_post.data['id']}/",
-            data={"scope": {"has_primary_ip": "False"}},
-            format="json",
-            **self.header,
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.json()["scope"], {"has_primary_ip": "False"})
-        dg_response = self.client.get(
-            response.json()["dynamic_group"]["url"],
-            format="json",
-            **self.header,
-        )
-        self.assertEqual(dg_response.json()["filter"], {"has_primary_ip": "False"})
         # Clean up
         GoldenConfigSetting.objects.all().delete()
         self.assertEqual(GoldenConfigSetting.objects.all().count(), 0)

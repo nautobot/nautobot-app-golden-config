@@ -12,6 +12,8 @@ router.register("compliance-rule", views.ComplianceRuleUIViewSet)
 router.register("golden-config-setting", views.GoldenConfigSettingUIViewSet)
 router.register("config-remove", views.ConfigRemoveUIViewSet)
 router.register("config-replace", views.ConfigReplaceUIViewSet)
+router.register("remediation-setting", views.RemediationSettingUIViewSet)
+router.register("config-plan", views.ConfigPlanUIViewSet)
 
 
 urlpatterns = [
@@ -41,4 +43,5 @@ urlpatterns = [
         views.ComplianceDeviceFilteredReport.as_view(),
         name="configcompliance_filter_report",
     ),
+    path("config-plan/bulk_deploy/", views.ConfigPlanBulkDeploy.as_view(), name="configplan_bulk_deploy"),
 ] + router.urls

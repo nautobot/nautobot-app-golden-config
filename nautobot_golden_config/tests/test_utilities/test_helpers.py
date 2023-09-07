@@ -200,7 +200,6 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         result = get_job_filter()
         self.assertEqual(result.count(), 2)
 
-    @unittest.skip("TODO: Fix get_job_filter using slugs")
     def test_get_job_filter_site_success(self):
         """Verify we get a single device returned when providing specific site."""
         result = get_job_filter(data={"location": Location.objects.filter(name="Site 4")})
@@ -216,13 +215,13 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         result = get_job_filter(data={"device": Device.objects.filter(name="test_device")})
         self.assertEqual(result.count(), 1)
 
-    @unittest.skip("TODO: Fix get_job_filter using slugs")
+    @unittest.skip("TODO: Fix tag to tags change")
     def test_get_job_filter_tag_success(self):
         """Verify we get a single device returned when providing tag filter that matches on device."""
         result = get_job_filter(data={"tag": Tag.objects.filter(name="Orphaned")})
         self.assertEqual(result.count(), 1)
 
-    @unittest.skip("TODO: Fix get_job_filter using slugs")
+    @unittest.skip("TODO: Fix tag to tags change")
     def test_get_job_filter_tag_success_and_logic(self):
         """Verify we get a single device returned when providing multiple tag filter that matches on device."""
         device = Device.objects.get(name="orphan_device")
@@ -238,13 +237,11 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         self.assertEqual(device_2.tags.count(), 1)
         self.assertEqual(result.count(), 1)
 
-    @unittest.skip("TODO: Fix get_job_filter using slugs")
     def test_get_job_filter_status_success(self):
         """Verify we get a single device returned when providing status filter that matches on device."""
         result = get_job_filter(data={"status": Status.objects.filter(name="Offline")})
         self.assertEqual(result.count(), 1)
 
-    @unittest.skip("TODO: Fix get_job_filter using slugs")
     def test_get_job_filter_multiple_status_success(self):
         """Verify we get a0 devices returned matching multiple status'."""
         result = get_job_filter(data={"status": Status.objects.filter(name__in=["Offline", "Failed"])})
@@ -268,13 +265,12 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
             "The base queryset didn't find any devices. Please check the Golden Config Setting scope.",
         )
 
-    @unittest.skip("TODO: Fix get_job_filter using slugs")
     def test_get_job_filter_filtered_devices_raise(self):
         """Verify we get raise for having providing site that doesn't have any devices in scope."""
         location_type = LocationType.objects.create(name="New Location Type Site")
         Location.objects.create(name="New Site", status=Status.objects.get(name="Active"), location_type=location_type)
         with self.assertRaises(NornirNautobotException) as failure:
-            get_job_filter(data={"site": Location.objects.filter(name="New Site")})
+            get_job_filter(data={"location": Location.objects.filter(name="New Site")})
         self.assertEqual(
             failure.exception.args[0],
             "The provided job parameters didn't match any devices detected by the Golden Config scope. Please check the scope defined within Golden Config Settings or select the correct job parameters to correctly match devices.",

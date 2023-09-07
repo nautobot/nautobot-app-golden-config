@@ -92,17 +92,16 @@ query ($device_id: ID!) {
     }
     tags {
       name
-      slug
     }
-    device_role {
+    role {
       name
     }
     platform {
       name
-      network_driver
       manufacturer {
         name
       }
+      network_driver
       napalm_driver
     }
     location {

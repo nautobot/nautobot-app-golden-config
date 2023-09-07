@@ -153,7 +153,7 @@ The files within these folders can follow any naming pattern or nested folder st
 │   │   └── juniper_junos.yml
 ```
 
-The `YAML` files will contain all the attributes necessary to identify an object (for instance, a `ComplianceRule` is identified by the `feature_slug` and the `platform_slug` together) and the other attributes (the ones that are not used to identify the object). For example:
+The `YAML` files will contain all the attributes necessary to identify an object (for instance, a `ComplianceRule` is identified by the `feature_slug` and the `platform_name` together) and the other attributes (the ones that are not used to identify the object). For example:
 
 `compliance_features` example:
 
@@ -169,7 +169,7 @@ The `YAML` files will contain all the attributes necessary to identify an object
 ```yaml
 ---
 - feature_slug: "aaa"
-  platform_slug: "cisco_ios"
+  platform_name: "Cisco IOS"
   config_ordered: true
   match_config: |
     aaa
@@ -184,7 +184,7 @@ The `YAML` files will contain all the attributes necessary to identify an object
 
 ```yaml
 ---
-- platform_slug: "cisco_ios"
+- platform_name: "Cisco IOS"
   name: "Build config"
   regex: '^Building\s+configuration.*\n'
 ```
@@ -194,7 +194,7 @@ The `YAML` files will contain all the attributes necessary to identify an object
 ```yaml
 ---
 - name: "username"
-  platform_slug: "cisco_ios"
+  platform_name: "Cisco IOS"
   description: "username"
   regex: '(username\s+\S+\spassword\s+5\s+)\S+(\s+role\s+\S+)'
   replace: '\1<redacted_config>\2'
@@ -213,7 +213,7 @@ CustomField data can be added using the `_custom_field_data` attribute, that tak
 ```
 
 !!! note
-    For Foreign Key references to `ComplianceFeature` and `Platform` we use the keywords `feature_slug` and `platform_slug` respectively.
+    For Foreign Key references to `ComplianceFeature` and `Platform` we use the keywords `feature_slug` and `platform_name` respectively.
 
 1. Add the Git repository that will be used to sync Git properties.
 

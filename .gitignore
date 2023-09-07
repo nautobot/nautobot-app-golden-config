@@ -5,6 +5,7 @@ creds.env
 nautobot_golden_config/transposer.py
 docker-compose.override.yml
 packages/
+invoke.yml
 
 # Ansible Retry Files
 *.retry

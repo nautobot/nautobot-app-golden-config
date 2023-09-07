@@ -15,23 +15,28 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, ExpressionWrapper, F, FloatField, Max, ProtectedError, Q
 from django.forms import ModelMultipleChoiceField, MultipleHiddenInput
 from django.shortcuts import redirect, render
+from django.views.generic import View
+from django.urls import reverse
+from django.utils.html import format_html
 from django_pivot.pivot import pivot
 from nautobot.core.views import generic
 from nautobot.core.views.viewsets import NautobotUIViewSet
 from nautobot.dcim.forms import DeviceFilterForm
 from nautobot.dcim.models import Device
+from nautobot.extras.jobs import run_job
+from nautobot.extras.models import Job, JobResult
+from nautobot.extras.utils import get_job_content_type
 from nautobot.utilities.error_handlers import handle_protectederror
 from nautobot.utilities.forms import ConfirmationForm
-from nautobot.utilities.utils import csv_format
-from nautobot.utilities.views import ContentTypePermissionRequiredMixin
-
+from nautobot.utilities.utils import copy_safe_request, csv_format
+from nautobot.utilities.views import ContentTypePermissionRequiredMixin, ObjectPermissionRequiredMixin
 from nautobot_golden_config import filters, forms, models, tables
 from nautobot_golden_config.api import serializers
+from nautobot_golden_config.jobs import DeployConfigPlans
+from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
 from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_COMPLIANCE, PLUGIN_CFG
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import get_device_to_settings_map
-from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -790,3 +795,81 @@ class ConfigReplaceUIViewSet(NautobotUIViewSet):
     serializer_class = serializers.ConfigReplaceSerializer
     table_class = tables.ConfigReplaceTable
     lookup_field = "pk"
+
+
+class RemediationSettingUIViewSet(NautobotUIViewSet):
+    """Views for the RemediationSetting model."""
+
+    bulk_create_form_class = forms.RemediationSettingCSVForm
+    bulk_update_form_class = forms.RemediationSettingBulkEditForm
+    filterset_class = filters.RemediationSettingFilterSet
+    filterset_form_class = forms.RemediationSettingFilterForm
+    form_class = forms.RemediationSettingForm
+    queryset = models.RemediationSetting.objects.all()
+    serializer_class = serializers.RemediationSettingSerializer
+    table_class = tables.RemediationSettingTable
+    lookup_field = "pk"
+
+
+class ConfigPlanUIViewSet(NautobotUIViewSet):
+    """Views for the ConfigPlan model."""
+
+    bulk_update_form_class = forms.ConfigPlanBulkEditForm
+    filterset_class = filters.ConfigPlanFilterSet
+    filterset_form_class = forms.ConfigPlanFilterForm
+    form_class = forms.ConfigPlanForm
+    queryset = models.ConfigPlan.objects.all()
+    serializer_class = serializers.ConfigPlanSerializer
+    table_class = tables.ConfigPlanTable
+    lookup_field = "pk"
+    action_buttons = ("add",)
+
+    def get_form_class(self, **kwargs):
+        """Helper function to get form_class for different views."""
+        if self.action == "update":
+            return forms.ConfigPlanUpdateForm
+        return super().get_form_class(**kwargs)
+
+    def create(self, request, *args, **kwargs):
+        """Helper function to warn if the Job is not enabled to run."""
+        job = Job.objects.get(name="Generate Config Plans")
+        if not job.enabled:
+            messages.warning(
+                request,
+                format_html(
+                    "The Job to generate Config Plans is not yet enabled. "
+                    f"<a href='{reverse('extras:job_edit', kwargs={'slug': job.slug})}'>Click here to edit the Job</a>."
+                ),
+            )
+        return super().create(request, *args, **kwargs)
+
+
+class ConfigPlanBulkDeploy(ObjectPermissionRequiredMixin, View):
+    """View to run the Config Plan Deploy Job."""
+
+    queryset = models.ConfigPlan.objects.all()
+
+    def get_required_permission(self):
+        """Permissions required for the view."""
+        return "extras.run_job"
+
+    def post(self, request):
+        """Enqueue the job and redirect to the job results page."""
+        config_plan_pks = request.POST.getlist("pk")
+        if not config_plan_pks:
+            messages.warning(request, "No Config Plans selected for deployment.")
+            return redirect("plugins:nautobot_golden_config:configplan_list")
+
+        job_data = {"config_plan": config_plan_pks}
+
+        result = JobResult.enqueue_job(
+            func=run_job,
+            name=DeployConfigPlans.class_path,
+            obj_type=get_job_content_type(),
+            user=request.user,
+            data=job_data,
+            request=copy_safe_request(request),
+            commit=request.POST.get("commit", False),
+        )
+
+        return redirect(result.get_absolute_url())

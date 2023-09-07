@@ -6,7 +6,6 @@ import logging
 from deepdiff import DeepDiff
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.shortcuts import reverse
 from django.utils.module_loading import import_string
 from nautobot.core.models.generics import PrimaryModel
 from nautobot.extras.models import ObjectChange
@@ -169,11 +168,6 @@ class ComplianceFeature(PrimaryModel):  # pylint: disable=too-many-ancestors
         """Return a sane string representation of the instance."""
         return self.slug
 
-    # TODO: Fix pylint arguments-differ for 2.x migration
-    def get_absolute_url(self):  # pylint: disable=arguments-differ
-        """Absolute url for the ComplianceFeature instance."""
-        return reverse("plugins:nautobot_golden_config:compliancefeature", args=[self.pk])
-
 
 @extras_features(
     "custom_fields",
@@ -234,11 +228,6 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
         """Return a sane string representation of the instance."""
         return f"{self.platform} - {self.feature.name}"
 
-    # TODO: Fix pylint arguments-differ for 2.x migration
-    def get_absolute_url(self):  # pylint: disable=arguments-differ
-        """Absolute url for the ComplianceRule instance."""
-        return reverse("plugins:nautobot_golden_config:compliancerule", args=[self.pk])
-
     def clean(self):
         """Verify that if cli, then match_config is set."""
         if self.config_type == ComplianceRuleConfigTypeChoice.TYPE_CLI and not self.match_config:
@@ -267,11 +256,6 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
     ordered = models.BooleanField(default=True)
     # Used for django-pivot, both compliance and compliance_int should be set.
     compliance_int = models.IntegerField(null=True, blank=True)
-
-    # TODO: Fix pylint arguments-differ for 2.x migration
-    def get_absolute_url(self):  # pylint: disable=arguments-differ
-        """Return absolute URL for instance."""
-        return reverse("plugins:nautobot_golden_config:configcompliance", args=[self.pk])
 
     def to_objectchange(
         self, action, *, related_object=None, object_data_extra=None, object_data_exclude=None
@@ -576,11 +560,6 @@ class ConfigReplace(PrimaryModel):  # pylint: disable=too-many-ancestors
 
         ordering = ("platform", "name")
         unique_together = ("name", "platform")
-
-    # TODO: Fix pylint arguments-differ for 2.x migration
-    def get_absolute_url(self):  # pylint: disable=arguments-differ
-        """Return absolute URL for instance."""
-        return reverse("plugins:nautobot_golden_config:configreplace", args=[self.pk])
 
     def __str__(self):
         """Return a simple string if model is called."""

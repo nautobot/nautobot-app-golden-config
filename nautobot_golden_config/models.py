@@ -57,7 +57,7 @@ def _get_cli_compliance(obj):
         "name": obj.rule,
     }
     feature.update({"section": obj.rule.match_config.splitlines()})
-    value = feature_compliance(feature, obj.actual, obj.intended, get_platform(obj.device.platform.id))
+    value = feature_compliance(feature, obj.actual, obj.intended, get_platform(obj.device.platform.network_driver))
     compliance = value["compliant"]
     if compliance:
         compliance_int = 1
@@ -430,7 +430,7 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         null=False,
         blank=True,
         verbose_name="Template Path in Jinja Template Form",
-        help_text="The Jinja path representation of where the Jinja template can be found. e.g. `{{obj.platform.slug}}.j2`",
+        help_text="The Jinja path representation of where the Jinja template can be found. e.g. `{{obj.platform.network_driver}}.j2`",
     )
     backup_test_connectivity = models.BooleanField(
         null=False,

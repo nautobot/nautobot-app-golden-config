@@ -23,11 +23,11 @@ FIELDS_PK = {
     "device_type",
 }
 
-FIELDS_SLUG = {"tag", "status"}  # TODO: Change slug where appropriate
+FIELDS_NAME = {"tag", "status"}  # TODO: Change tag to tags
 
 
 def get_job_filter(data=None):
-    """Helper function to return a the filterable list of OS's based on platform.slug and a specific custom value."""
+    """Helper function to return a the filterable list of OS's based on platform.name and a specific custom value."""
     if not data:
         data = {}
     query = {}
@@ -35,12 +35,12 @@ def get_job_filter(data=None):
     # Translate instances from FIELDS set to list of primary keys
     for field in FIELDS_PK:
         if data.get(field):
-            query[f"{field}_id"] = data[field].values_list("pk", flat=True)
+            query[field] = data[field].values_list("pk", flat=True)
 
-    # Translate instances from FIELDS set to list of slugs
-    for field in FIELDS_SLUG:
+    # Translate instances from FIELDS set to list of names
+    for field in FIELDS_NAME:
         if data.get(field):
-            query[f"{field}"] = data[field].values_list("slug", flat=True)
+            query[field] = data[field].values_list("name", flat=True)
 
     # Handle case where object is from single device run all.
     if data.get("device") and isinstance(data["device"], Device):

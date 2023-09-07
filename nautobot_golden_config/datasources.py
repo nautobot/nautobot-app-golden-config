@@ -70,7 +70,7 @@ def refresh_git_gc_properties(repository_record, job_result, delete=False):  # p
             "class": ComplianceRule,
             "id_keys": (
                 ("feature", "feature_slug"),
-                ("platform", "platform_slug"),
+                ("platform", "platform_name"),
             ),
         },
         {
@@ -78,7 +78,7 @@ def refresh_git_gc_properties(repository_record, job_result, delete=False):  # p
             "class": ConfigRemove,
             "id_keys": (
                 ("name", "name"),
-                ("platform", "platform_slug"),
+                ("platform", "platform_name"),
             ),
         },
         {
@@ -86,7 +86,7 @@ def refresh_git_gc_properties(repository_record, job_result, delete=False):  # p
             "class": ConfigReplace,
             "id_keys": (
                 ("name", "name"),
-                ("platform", "platform_slug"),
+                ("platform", "platform_name"),
             ),
         },
     )
@@ -102,8 +102,8 @@ def refresh_git_gc_properties(repository_record, job_result, delete=False):  # p
 
 def get_id_kwargs(gc_config_item_dict, id_keys, job_result):
     """Method to get the proper id kwargs and remove them from gc_config_item_dict."""
-    # fk_slug_class_mapping contains a mapping of the FK attributes to the related model
-    fk_slug_class_mapping = {"feature": ComplianceFeature, "platform": Platform}
+    # fk_class_mapping contains a mapping of the FK attributes to the related model
+    fk_class_mapping = {"feature": ComplianceFeature, "platform": Platform}
 
     id_kwargs = {}
     for id_key in id_keys:
@@ -111,12 +111,12 @@ def get_id_kwargs(gc_config_item_dict, id_keys, job_result):
         yaml_attr_name = id_key[1]
 
         # If the attribute is actually a FK reference, we need to resolve the related object
-        if actual_attr_name in fk_slug_class_mapping:
+        if actual_attr_name in fk_class_mapping:
+            _, field_name = yaml_attr_name.split("_")
+            kwargs = {field_name: gc_config_item_dict[yaml_attr_name]}
             try:
-                id_kwargs[actual_attr_name] = fk_slug_class_mapping[actual_attr_name].objects.get(
-                    slug=gc_config_item_dict[yaml_attr_name]
-                )
-            except fk_slug_class_mapping[actual_attr_name].DoesNotExist:
+                id_kwargs[actual_attr_name] = fk_class_mapping[actual_attr_name].objects.get(**kwargs)
+            except fk_class_mapping[actual_attr_name].DoesNotExist:
                 job_result.log(
                     (
                         f"Reference to {yaml_attr_name}: {gc_config_item_dict[yaml_attr_name]}",
@@ -124,7 +124,7 @@ def get_id_kwargs(gc_config_item_dict, id_keys, job_result):
                     ),
                     level_choice=LogLevelChoices.LOG_WARNING,
                 )
-                raise MissingReference from fk_slug_class_mapping[actual_attr_name].DoesNotExist
+                raise MissingReference from fk_class_mapping[actual_attr_name].DoesNotExist
         else:
             id_kwargs[actual_attr_name] = gc_config_item_dict[yaml_attr_name]
 

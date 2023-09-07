@@ -181,11 +181,11 @@ PLUGINS_CONFIG = {
             "trim_blocks": is_truthy(os.getenv("NAUTOBOT_JINJA_ENV_TRIM_BLOCKS", True)),
             "lstrip_blocks": is_truthy(os.getenv("NAUTOBOT_JINJA_ENV_LSTRIP_BLOCKS", False)),
         },
-        # The platform_slug_map maps an arbitrary platform slug to its corresponding parser.
-        # Use this if the platform slug names in your Nautobot instance don't correspond exactly
+        # The platform_network_driver_map maps an arbitrary platform network_driver to its corresponding parser.
+        # Use this if the platform network_driver names in your Nautobot instance don't correspond exactly
         # to the Nornir driver names ("arista_eos", "cisco_ios", etc.).
-        # Each key should == the slug of the Nautobot platform object.
-        # "platform_slug_map": {
+        # Each key should == the network_driver of the Nautobot platform object.
+        # "platform_network_driver_map": {
         #     "eos": "arista_eos",
         #     "ios": "cisco_ios",
         #     "iosxe": "cisco_ios",

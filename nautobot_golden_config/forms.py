@@ -156,7 +156,7 @@ class ComplianceRuleFilterForm(NautobotFilterForm):
 
     q = forms.CharField(required=False, label="Search")
     platform = core_forms.DynamicModelMultipleChoiceField(
-        queryset=Platform.objects.all(), to_field_name="slug", required=False, null_option="None"
+        queryset=Platform.objects.all(), to_field_name="name", required=False, null_option="None"
     )
 
     feature = core_forms.DynamicModelMultipleChoiceField(
@@ -281,7 +281,7 @@ class ConfigReplaceFilterForm(NautobotFilterForm):
     model = models.ConfigReplace
 
     platform = core_forms.DynamicModelMultipleChoiceField(
-        queryset=Platform.objects.all(), to_field_name="slug", required=False, null_option="None"
+        queryset=Platform.objects.all(), to_field_name="name", required=False, null_option="None"
     )
     name = core_forms.DynamicModelChoiceField(
         queryset=models.ConfigReplace.objects.all(), to_field_name="name", required=False

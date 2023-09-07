@@ -28,9 +28,9 @@ operator to point to a function within the python path by a string. The function
 ```python
 def transposer(data):
     """Some."""
-    if data["platform"]["slug"] == "cisco_ios":
+    if data["platform"]["network_driver"] == "cisco_ios":
         data["platform"].update({"support-number": "1-800-ciscohelp"})
-    if data["platform"]["slug"] == "arista_eos":
+    if data["platform"]["network_driver"] == "arista_eos":
         data["platform"].update({"support-number": "1-800-aristahelp"})
     return data
 ```
@@ -92,17 +92,16 @@ query ($device_id: ID!) {
     }
     tags {
       name
-      slug
     }
-    device_role {
+    role {
       name
     }
     platform {
       name
-      slug
       manufacturer {
         name
       }
+      network_driver
       napalm_driver
     }
     location {

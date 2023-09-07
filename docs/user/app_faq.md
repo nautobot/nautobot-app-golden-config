@@ -40,7 +40,7 @@ Understanding that there will never be consensus on what should go into a featur
 
 ## _What are the supported platforms for Compliance jobs? How do I configure a device with a specific OS?_
 
-The current supported platform and the associated *default* platform slug names are the following for:
+The current supported platform and the associated *default* platform network_driver names are the following for:
 
 * arista_eos
 * aruba_aoscx
@@ -60,12 +60,12 @@ The current supported platform and the associated *default* platform slug names 
 * nokia_sros
 * paloalto_panos
 
-The expected "network_os" parameter must be as defined by netutils and golden config uses the platform slug to map from the device to the appropriate "network_os" that netutils expects. However, there an ability to map the actual platform slug for compliance and parsing tasks via the plugin settings in your "nautobot_config.py", and documented on the primary Readme.
+The expected "network_os" parameter must be as defined by netutils and golden config uses the platform network_driver to map from the device to the appropriate "network_os" that netutils expects. However, there an ability to map the actual platform network_driver for compliance and parsing tasks via the plugin settings in your "nautobot_config.py", and documented in [App Configuration](../admin/admin_install.md#app-configuration).
 
-To provide a concrete example of this, note the following example that demonstrates how you can transpose any platform slug name to the expected one, as well as map multiple keys to a single netutils expected key. The `platform_slug_map` is only used for configuration compliance job. The json key is the Nautobot platform slug, and the json value is the "network_os" parameter defined in `netutils.config.compliance.parser_map`.
+To provide a concrete example of this, note the following example that demonstrates how you can transpose any platform network_driver name to the expected one, as well as map multiple keys to a single netutils expected key. The `platform_network_driver_map` is only used for configuration compliance job. The json key is the Nautobot platform network_driver, and the json value is the "network_os" parameter defined in `netutils.config.compliance.parser_map`.
 ```json
 {
-    "platform_slug_map":  {
+    "platform_network_driver_map":  {
         "cisco_aireos": "cisco_wlc",
         "ios": "cisco_ios",
         "iosxe": "cisco_ios"
@@ -75,7 +75,7 @@ To provide a concrete example of this, note the following example that demonstra
 
 ## _What are the supported platforms for Backup and Intended Configuration jobs? How do I configure a device with a specific OS?_
 
-The current supported platform and the associated *default* platform slug names are the following for:
+The current supported platform and the associated *default* platform network_driver names are the following for:
 
 * arista_eos
 * cisco_asa

@@ -21,8 +21,9 @@ services:
         condition: "service_started"
       db:
         condition: "service_healthy"
-    <<: *nautobot-build
-    <<: *nautobot-base
+    <<:
+      - *nautobot-build
+      - *nautobot-base
   worker:
     entrypoint:
       - "sh"

@@ -1,12 +1,19 @@
 """Params for testing."""
+from datetime import datetime
+import uuid
+from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.utils.text import slugify
 from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Platform, Rack, RackGroup, Region, Site
 from nautobot.extras.datasources.registry import get_datasource_contents
-from nautobot.extras.models import GitRepository, GraphQLQuery, Status, Tag
+from nautobot.extras.models import GitRepository, GraphQLQuery, Status, Tag, JobResult
 from nautobot.tenancy.models import Tenant, TenantGroup
+import pytz
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
 from nautobot_golden_config.models import ComplianceFeature, ComplianceRule, ConfigCompliance
+
+
+User = get_user_model()
 
 
 def create_device_data():
@@ -171,13 +178,54 @@ def create_orphan_device(name="orphan"):
     return device
 
 
-def create_feature_rule_json(device, feature="foo", rule="json"):
+def create_feature_rule_json(device, feature="foo1", rule="json"):
     """Creates a Feature/Rule Mapping and Returns the rule."""
     feature_obj, _ = ComplianceFeature.objects.get_or_create(slug=feature, name=feature)
     rule = ComplianceRule(
         feature=feature_obj,
         platform=device.platform,
         config_type=ComplianceRuleConfigTypeChoice.TYPE_JSON,
+        config_ordered=False,
+    )
+    rule.save()
+    return rule
+
+
+def create_feature_rule_json_with_remediation(device, feature="foo2", rule="json"):
+    """Creates a Feature/Rule Mapping with remediation enabled and Returns the rule."""
+    feature_obj, _ = ComplianceFeature.objects.get_or_create(slug=feature, name=feature)
+    rule = ComplianceRule(
+        feature=feature_obj,
+        platform=device.platform,
+        config_type=ComplianceRuleConfigTypeChoice.TYPE_JSON,
+        config_ordered=False,
+        config_remediation=True,
+    )
+    rule.save()
+    return rule
+
+
+def create_feature_rule_cli_with_remediation(device, feature="foo3", rule="cli"):
+    """Creates a Feature/Rule Mapping with remediation enabled and Returns the rule."""
+    feature_obj, _ = ComplianceFeature.objects.get_or_create(slug=feature, name=feature)
+    rule = ComplianceRule(
+        feature=feature_obj,
+        platform=device.platform,
+        config_type=ComplianceRuleConfigTypeChoice.TYPE_CLI,
+        config_ordered=False,
+        config_remediation=True,
+    )
+    rule.save()
+    return rule
+
+
+def create_feature_rule_cli(device, feature="foo_cli"):
+    """Creates a Feature/Rule Mapping and Returns the rule."""
+    feature_obj, _ = ComplianceFeature.objects.get_or_create(slug=feature, name=feature)
+    rule, _ = ComplianceRule.objects.get_or_create(
+        feature=feature_obj,
+        platform=device.platform,
+        config_type=ComplianceRuleConfigTypeChoice.TYPE_CLI,
         config_ordered=False,
     )
     rule.save()
@@ -403,3 +451,19 @@ def create_saved_queries() -> None:
         query=query,
     )
     saved_query_5.save()
+
+
+def create_job_result() -> None:
+    """Create a JobResult and return the object."""
+    obj_type = ContentType.objects.get(app_label="extras", model="job")
+    user, _ = User.objects.get_or_create(username="testuser")
+    result = JobResult.objects.create(
+        name="Test-Job-Result",
+        obj_type=obj_type,
+        user=user,
+        job_id=uuid.uuid4(),
+    )
+    result.status = "completed"
+    result.completed = datetime.now(pytz.UTC)
+    result.validated_save()
+    return result

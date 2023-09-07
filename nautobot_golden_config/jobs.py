@@ -5,6 +5,7 @@
 
 from datetime import datetime
 
+from nautobot.core.celery import register_jobs
 from nautobot.dcim.models import Device, DeviceType, Manufacturer, Platform, Rack, RackGroup, Location
 from nautobot.extras.datasources.git import ensure_git_repository
 from nautobot.extras.jobs import (
@@ -58,7 +59,7 @@ def get_refreshed_repos(job_obj, repo_type, data=None):
     repositories = []
     for repository_record in repository_records:
         repo = GitRepository.objects.get(id=repository_record)
-        ensure_git_repository(repo, job_obj.job_result)
+        ensure_git_repository(repo, job_obj.logger)
         git_repo = GitRepo(repo)
         repositories.append(git_repo)
 
@@ -95,27 +96,13 @@ class FormEntry:  # pylint disable=too-few-public-method
 class ComplianceJob(Job, FormEntry):
     """Job to to run the compliance engine."""
 
-    tenant_group = FormEntry.tenant_group
-    tenant = FormEntry.tenant
-    location = FormEntry.location
-    rack_group = FormEntry.rack_group
-    rack = FormEntry.rack
-    role = FormEntry.role
-    manufacturer = FormEntry.manufacturer
-    platform = FormEntry.platform
-    device_type = FormEntry.device_type
-    device = FormEntry.device
-    tag = FormEntry.tag
-    status = FormEntry.status
-    debug = FormEntry.debug
-
     class Meta:
         """Meta object boilerplate for compliance."""
 
         name = "Perform Configuration Compliance"
         description = "Run configuration compliance on your network infrastructure."
 
-    def run(self, **data):  # pylint: disable=too-many-branches
+    def run(self, **data):  # pylint: disable=arguments-differ
         """Run config compliance report script."""
         # pylint: disable=unused-argument
         self.logger.debug("Starting compliance job.")
@@ -132,27 +119,13 @@ class ComplianceJob(Job, FormEntry):
 class IntendedJob(Job, FormEntry):
     """Job to to run generation of intended configurations."""
 
-    tenant_group = FormEntry.tenant_group
-    tenant = FormEntry.tenant
-    location = FormEntry.location
-    rack_group = FormEntry.rack_group
-    rack = FormEntry.rack
-    role = FormEntry.role
-    manufacturer = FormEntry.manufacturer
-    platform = FormEntry.platform
-    device_type = FormEntry.device_type
-    device = FormEntry.device
-    tag = FormEntry.tag
-    status = FormEntry.status
-    debug = FormEntry.debug
-
     class Meta:
         """Meta object boilerplate for intended."""
 
         name = "Generate Intended Configurations"
         description = "Generate the configuration for your intended state."
 
-    def run(self, **data):
+    def run(self, **data):  # pylint: disable=arguments-differ
         """Run config generation script."""
         self.logger.debug("Starting intended job.")
 
@@ -178,27 +151,13 @@ class IntendedJob(Job, FormEntry):
 class BackupJob(Job, FormEntry):
     """Job to to run the backup job."""
 
-    tenant_group = FormEntry.tenant_group
-    tenant = FormEntry.tenant
-    location = FormEntry.location
-    rack_group = FormEntry.rack_group
-    rack = FormEntry.rack
-    role = FormEntry.role
-    manufacturer = FormEntry.manufacturer
-    platform = FormEntry.platform
-    device_type = FormEntry.device_type
-    device = FormEntry.device
-    tag = FormEntry.tag
-    status = FormEntry.status
-    debug = FormEntry.debug
-
     class Meta:
         """Meta object boilerplate for backup configurations."""
 
         name = "Backup Configurations"
         description = "Backup the configurations of your network devices."
 
-    def run(self, **data):
+    def run(self, **data):  # pylint: disable=arguments-differ
         """Run config backup process."""
         self.logger.debug("Starting backup job.")
         now = datetime.now()
@@ -231,7 +190,7 @@ class AllGoldenConfig(Job):
         name = "Execute All Golden Configuration Jobs - Single Device"
         description = "Process to run all Golden Configuration jobs configured."
 
-    def run(self, **data):
+    def run(self, **data):  # pylint: disable=arguments-differ
         """Run all jobs."""
         if ENABLE_INTENDED:
             IntendedJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
@@ -244,27 +203,13 @@ class AllGoldenConfig(Job):
 class AllDevicesGoldenConfig(Job):
     """Job to to run all three jobs against multiple devices."""
 
-    tenant_group = FormEntry.tenant_group
-    tenant = FormEntry.tenant
-    location = FormEntry.location
-    rack_group = FormEntry.rack_group
-    rack = FormEntry.rack
-    role = FormEntry.role
-    manufacturer = FormEntry.manufacturer
-    platform = FormEntry.platform
-    device_type = FormEntry.device_type
-    device = FormEntry.device
-    tag = FormEntry.tag
-    status = FormEntry.status
-    debug = FormEntry.debug
-
     class Meta:
         """Meta object boilerplate for all jobs to run against multiple devices."""
 
         name = "Execute All Golden Configuration Jobs - Multiple Device"
         description = "Process to run all Golden Configuration jobs configured against multiple devices."
 
-    def run(self, **data):
+    def run(self, **data):  # pylint: disable=arguments-differ
         """Run all jobs."""
         if ENABLE_INTENDED:
             IntendedJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
@@ -446,17 +391,13 @@ class DeployConfigPlanJobButtonReceiver(JobButtonReceiver):
 # Conditionally allow jobs based on whether or not turned on.
 jobs = []
 if ENABLE_BACKUP:
-    jobs.append(BackupJob)
+    register_jobs(BackupJob)
 if ENABLE_INTENDED:
-    jobs.append(IntendedJob)
+    register_jobs(IntendedJob)
 if ENABLE_COMPLIANCE:
-    jobs.append(ComplianceJob)
-jobs.extend(
-    [
-        AllGoldenConfig,
-        AllDevicesGoldenConfig,
-        GenerateConfigPlans,
-        DeployConfigPlans,
-        DeployConfigPlanJobButtonReceiver,
-    ]
-)
+    register_jobs(ComplianceJob)
+register_jobs(GenerateConfigPlans)
+register_jobs(DeployConfigPlans)
+register_jobs(DeployConfigPlanJobButtonReceiver)
+register_jobs(AllGoldenConfig)
+register_jobs(AllDevicesGoldenConfig)

@@ -176,11 +176,12 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     return Result(host=task.host)
 
 
-def config_compliance(job_result, data):
+def config_compliance(job_class_instance, data):
     """Nornir play to generate configurations."""
     now = datetime.now()
     rules = get_rules()
-    logger = NornirLogger(__name__, job_result, data.get("debug"))
+    # TODO: nornir-nautobot needs to fix log_* methods for Nautobot Job classes in 2.x
+    logger = NornirLogger(__name__, job_class_instance, data.get("debug"))
 
     qs = get_job_filter(data)
     logger.log_debug("Compiling device data for compliance job.")

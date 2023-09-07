@@ -9,4 +9,6 @@
 
 ### Added
 
-- [573](https://github.com/nautobot/nautobot-plugin-golden-config/pull/573) - Add ConfigPlan and Remediation features.
+- [573](https://github.com/nautobot/nautobot-plugin-golden-config/pull/573) - Added the ability to generate remediation configurations and store in ConfigRemediation model
+- [573](https://github.com/nautobot/nautobot-plugin-golden-config/pull/573) - Added the ability to generate configurations that you plan to deploy from a variety of methods, such as Remediation, intended, manual, etc. via the ConfigPlan model.
+- [573](https://github.com/nautobot/nautobot-plugin-golden-config/pull/573) - Added the ability to Deploy configurations from the ConfigPlan configurations to your network devices.

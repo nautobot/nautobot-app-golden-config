@@ -1,6 +1,5 @@
 """Unit tests for nautobot_golden_config utilities helpers."""
 
-import unittest
 from unittest.mock import MagicMock, patch
 
 from django.contrib.contenttypes.models import ContentType
@@ -215,13 +214,11 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         result = get_job_filter(data={"device": Device.objects.filter(name="test_device")})
         self.assertEqual(result.count(), 1)
 
-    @unittest.skip("TODO: Fix tag to tags change")
     def test_get_job_filter_tag_success(self):
         """Verify we get a single device returned when providing tag filter that matches on device."""
-        result = get_job_filter(data={"tag": Tag.objects.filter(name="Orphaned")})
+        result = get_job_filter(data={"tags": Tag.objects.filter(name="Orphaned")})
         self.assertEqual(result.count(), 1)
 
-    @unittest.skip("TODO: Fix tag to tags change")
     def test_get_job_filter_tag_success_and_logic(self):
         """Verify we get a single device returned when providing multiple tag filter that matches on device."""
         device = Device.objects.get(name="orphan_device")
@@ -232,7 +229,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         device.tags.add(tag)
         device_2.tags.add(tag)
         # Default tag logic is an `AND` not and `OR`.
-        result = get_job_filter(data={"tag": Tag.objects.filter(name__in=["second-tag", "Orphaned"])})
+        result = get_job_filter(data={"tags": Tag.objects.filter(name__in=["second-tag", "Orphaned"])})
         self.assertEqual(device.tags.count(), 2)
         self.assertEqual(device_2.tags.count(), 1)
         self.assertEqual(result.count(), 1)

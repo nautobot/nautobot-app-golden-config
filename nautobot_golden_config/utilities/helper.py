@@ -23,7 +23,7 @@ FIELDS_PK = {
     "device_type",
 }
 
-FIELDS_NAME = {"tag", "status"}  # TODO: Change tag to tags
+FIELDS_NAME = {"tags", "status"}  # TODO: Change tag to tags
 
 
 def get_job_filter(data=None):

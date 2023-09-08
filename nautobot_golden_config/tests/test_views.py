@@ -1,19 +1,23 @@
 """Unit tests for nautobot_golden_config views."""
 
-from unittest import mock
+from unittest import mock, skipIf
+import datetime
+from packaging import version
 
 from lxml import html
 
+from django.conf import settings
 from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 
 from nautobot.dcim.models import Device
-from nautobot.extras.models import Relationship, RelationshipAssociation
+from nautobot.extras.models import Relationship, RelationshipAssociation, Status
+from nautobot.utilities.testing import ViewTestCases
 from nautobot_golden_config import views, models
 
-from .conftest import create_feature_rule_json, create_device_data
+from .conftest import create_feature_rule_json, create_device_data, create_job_result
 
 
 User = get_user_model()
@@ -242,3 +246,121 @@ class GoldenConfigListViewTestCase(TestCase):
         _, table_body = self._get_golden_config_table()
         devices_in_table = [device_column.text for device_column in table_body.xpath("tr/td[2]/a")]
         self.assertNotIn(last_device.name, devices_in_table)
+
+    def test_csv_export(self):
+        # verify GoldenConfig table is empty
+        self.assertEqual(models.GoldenConfig.objects.count(), 0)
+        intended_datetime = datetime.datetime.now()
+        first_device = self.gc_dynamic_group.members.first()
+        models.GoldenConfig.objects.create(
+            device=first_device,
+            intended_last_attempt_date=intended_datetime,
+            intended_last_success_date=intended_datetime,
+        )
+        response = self.client.get(f"{self._url}?export")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["Content-Type"], "text/csv")
+        csv_data = response.content.decode().splitlines()
+        csv_headers = "Device Name,backup attempt,backup successful,intended attempt,intended successful,compliance attempt,compliance successful"
+        self.assertEqual(csv_headers, csv_data[0])
+        intended_datetime_formated = intended_datetime.strftime("%Y-%m-%dT%H:%M:%S.%f+00:00")
+        # Test single entry in GoldenConfig table has data
+        expected_first_row = f"{first_device.name},,,{intended_datetime_formated},{intended_datetime_formated},,"
+        self.assertEqual(expected_first_row, csv_data[1])
+        # Test Devices in scope but without entries in GoldenConfig have empty entries
+        empty_csv_rows = [
+            f"{device.name},,,,,," for device in self.gc_dynamic_group.members.exclude(pk=first_device.pk)
+        ]
+        self.assertEqual(empty_csv_rows, csv_data[2:])
+
+    def test_csv_export_with_filter(self):
+        devices_in_site_1 = Device.objects.filter(site__name="Site 1")
+        golden_config_devices = self.gc_dynamic_group.members.all()
+        # Test that there are Devices in GC that are not related to Site 1
+        self.assertNotEqual(devices_in_site_1, golden_config_devices)
+        response = self.client.get(f"{self._url}?site={Device.objects.first().site.slug}&export")
+        self.assertEqual(response.status_code, 200)
+        csv_data = response.content.decode().splitlines()
+        device_names_in_export = [entry.split(",")[0] for entry in csv_data[1:]]
+        device_names_in_site_1 = [device.name for device in devices_in_site_1]
+        self.assertEqual(device_names_in_export, device_names_in_site_1)
+
+
+# pylint: disable=too-many-ancestors,too-many-locals
+class ConfigPlanTestCase(
+    ViewTestCases.GetObjectViewTestCase,
+    ViewTestCases.GetObjectChangelogViewTestCase,
+    ViewTestCases.ListObjectsViewTestCase,
+    # Disabling Create tests because ConfigPlans are created via Job
+    # ViewTestCases.CreateObjectViewTestCase,
+    ViewTestCases.DeleteObjectViewTestCase,
+    ViewTestCases.EditObjectViewTestCase,
+):
+    """Test ConfigPlan views."""
+
+    model = models.ConfigPlan
+
+    @classmethod
+    def setUpTestData(cls):
+        create_device_data()
+        device1 = Device.objects.get(name="Device 1")
+        device2 = Device.objects.get(name="Device 2")
+        device3 = Device.objects.get(name="Device 3")
+
+        rule1 = create_feature_rule_json(device1, feature="Test Feature 1")
+        rule2 = create_feature_rule_json(device2, feature="Test Feature 2")
+        rule3 = create_feature_rule_json(device3, feature="Test Feature 3")
+        rule4 = create_feature_rule_json(device3, feature="Test Feature 4")
+
+        job_result1 = create_job_result()
+        job_result2 = create_job_result()
+        job_result3 = create_job_result()
+
+        not_approved_status = Status.objects.get(slug="not-approved")
+        approved_status = Status.objects.get(slug="approved")
+
+        plan1 = models.ConfigPlan.objects.create(
+            device=device1,
+            plan_type="intended",
+            config_set="Test Config Set 1",
+            change_control_id="Test Change Control ID 1",
+            change_control_url="https://1.example.com/",
+            status=not_approved_status,
+            job_result_id=job_result1.id,
+        )
+        plan1.feature.add(rule1.feature)
+        plan1.validated_save()
+        plan2 = models.ConfigPlan.objects.create(
+            device=device2,
+            plan_type="missing",
+            config_set="Test Config Set 2",
+            change_control_id="Test Change Control ID 2",
+            change_control_url="https://2.example.com/",
+            status=not_approved_status,
+            job_result_id=job_result2.id,
+        )
+        plan2.feature.add(rule2.feature)
+        plan2.validated_save()
+        plan3 = models.ConfigPlan.objects.create(
+            device=device3,
+            plan_type="remediation",
+            config_set="Test Config Set 3",
+            change_control_id="Test Change Control ID 3",
+            change_control_url="https://3.example.com/",
+            status=not_approved_status,
+            job_result_id=job_result3.id,
+        )
+        plan3.feature.set([rule3.feature, rule4.feature])
+        plan3.validated_save()
+
+        # Used for EditObjectViewTestCase
+        cls.form_data = {
+            "change_control_id": "Test Change Control ID 4",
+            "change_control_url": "https://4.example.com/",
+            "status": approved_status.pk,
+        }
+
+    @skipIf(version.parse(settings.VERSION) <= version.parse("1.5.5"), "Bug in 1.5.4 and below")
+    def test_list_objects_with_permission(self):
+        """Overriding test for versions < 1.5.5."""
+        super().test_list_objects_with_permission()

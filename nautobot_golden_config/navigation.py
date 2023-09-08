@@ -3,37 +3,36 @@
 from nautobot.core.apps import NavMenuGroup, NavMenuItem, NavMenuTab
 from nautobot_golden_config.utilities.constant import ENABLE_COMPLIANCE, ENABLE_BACKUP
 
-items = [
+items_operate = [
     NavMenuItem(
         link="plugins:nautobot_golden_config:goldenconfig_list",
-        name="Home",
+        name="Config Overview",
         permissions=["nautobot_golden_config.view_goldenconfig"],
     )
 ]
 
+items_setup = []
+
 if ENABLE_COMPLIANCE:
-    items.append(
+    items_operate.append(
         NavMenuItem(
             link="plugins:nautobot_golden_config:configcompliance_list",
-            name="Configuration Compliance",
+            name="Config Compliance",
             permissions=["nautobot_golden_config.view_configcompliance"],
         )
     )
-    items.append(
-        NavMenuItem(
-            link="plugins:nautobot_golden_config:configcompliance_report",
-            name="Compliance Report",
-            permissions=["nautobot_golden_config.view_configcompliance"],
-        )
-    )
-    items.append(
+
+if ENABLE_COMPLIANCE:
+    items_setup.append(
         NavMenuItem(
             link="plugins:nautobot_golden_config:compliancerule_list",
             name="Compliance Rules",
             permissions=["nautobot_golden_config.view_compliancerule"],
         )
     )
-    items.append(
+
+if ENABLE_COMPLIANCE:
+    items_setup.append(
         NavMenuItem(
             link="plugins:nautobot_golden_config:compliancefeature_list",
             name="Compliance Features",
@@ -41,15 +40,44 @@ if ENABLE_COMPLIANCE:
         )
     )
 
+
+if ENABLE_COMPLIANCE:
+    items_operate.append(
+        NavMenuItem(
+            link="plugins:nautobot_golden_config:configcompliance_report",
+            name="Compliance Report",
+            permissions=["nautobot_golden_config.view_configcompliance"],
+        )
+    )
+
+items_operate.append(
+    NavMenuItem(
+        link="plugins:nautobot_golden_config:configplan_list",
+        name="Config Plans",
+        permissions=["nautobot_golden_config.view_configplan"],
+        buttons=(
+            NavMenuButton(
+                link="plugins:nautobot_golden_config:configplan_add",
+                title="Generate Config Plan",
+                icon_class="mdi mdi-plus-thick",
+                button_class=ButtonColorChoices.GREEN,
+                permissions=["nautobot_golden_config.add_configplan"],
+            ),
+        ),
+    )
+)
+
 if ENABLE_BACKUP:
-    items.append(
+    items_setup.append(
         NavMenuItem(
             link="plugins:nautobot_golden_config:configremove_list",
             name="Config Removals",
             permissions=["nautobot_golden_config.view_configremove"],
         )
     )
-    items.append(
+
+if ENABLE_BACKUP:
+    items_setup.append(
         NavMenuItem(
             link="plugins:nautobot_golden_config:configreplace_list",
             name="Config Replacements",
@@ -58,10 +86,28 @@ if ENABLE_BACKUP:
     )
 
 
-items.append(
+if ENABLE_COMPLIANCE:
+    items_setup.append(
+        NavMenuItem(
+            link="plugins:nautobot_golden_config:remediationsetting_list",
+            name="Remediation Settings",
+            permissions=["nautobot_golden_config.view_remediationsetting"],
+            buttons=(
+                NavMenuButton(
+                    link="plugins:nautobot_golden_config:remediationsetting_add",
+                    title="Remediation Settings",
+                    icon_class="mdi mdi-plus-thick",
+                    button_class=ButtonColorChoices.GREEN,
+                    permissions=["nautobot_golden_config.add_remediationsetting"],
+                ),
+            ),
+        )
+    )
+
+items_setup.append(
     NavMenuItem(
         link="plugins:nautobot_golden_config:goldenconfigsetting_list",
-        name="Settings",
+        name="Golden Config Settings",
         permissions=["nautobot_golden_config.view_goldenconfigsetting"],
     ),
 )
@@ -71,6 +117,9 @@ menu_items = (
     NavMenuTab(
         name="Golden Config",
         weight=1000,
-        groups=(NavMenuGroup(name="Golden Config", weight=100, items=tuple(items)),),
+        groups=(
+            NavMenuGroup(name="Manage", weight=100, items=tuple(items_operate)),
+            (NavMenuGroup(name="Setup", weight=100, items=tuple(items_setup))),
+        ),
     ),
 )

@@ -4,9 +4,11 @@ from unittest import skip
 from django.test import TestCase
 
 from nautobot.dcim.models import Device, Platform
+from nautobot.extras.models import Status, Tag
+from nautobot.utilities.testing import FilterTestCases
 from nautobot_golden_config import filters, models
 
-from .conftest import create_feature_rule_json, create_device_data
+from .conftest import create_feature_rule_json, create_device_data, create_feature_rule_cli, create_job_result
 
 
 class ConfigComplianceModelTestCase(TestCase):  # pylint: disable=too-many-public-methods
@@ -381,3 +383,173 @@ class ComplianceFeatureModelTestCase(TestCase):
         """Test filtering by Q search value."""
         params = {"q": self.obj1.name[-1:]}
         self.assertEqual(self.filterset(params, self.queryset).qs.count(), 1)
+
+
+# pylint: disable=too-many-ancestors
+# pylint: disable=too-many-instance-attributes
+class ConfigPlanFilterTestCase(FilterTestCases.FilterTestCase):
+    """Test filtering operations for ConfigPlan Model."""
+
+    queryset = models.ConfigPlan.objects.all()
+    filterset = filters.ConfigPlanFilterSet
+
+    def setUp(self):
+        """Setup Object."""
+        create_device_data()
+        self.device1 = Device.objects.get(name="Device 1")
+        self.device2 = Device.objects.get(name="Device 2")
+        self.rule1 = create_feature_rule_cli(self.device1, feature="Feature 1")
+        self.feature1 = self.rule1.feature
+        self.rule2 = create_feature_rule_cli(self.device2, feature="Feature 2")
+        self.feature2 = self.rule2.feature
+        self.rule3 = create_feature_rule_cli(self.device1, feature="Feature 3")
+        self.feature3 = self.rule3.feature
+        self.status1 = Status.objects.get(name="Not Approved")
+        self.status2 = Status.objects.get(name="Approved")
+        self.tag1, _ = Tag.objects.get_or_create(name="Tag 1")
+        self.tag2, _ = Tag.objects.get_or_create(name="Tag 2")
+        self.job_result1 = create_job_result()
+        self.job_result2 = create_job_result()
+        self.config_plan1 = models.ConfigPlan.objects.create(
+            device=self.device1,
+            plan_type="intended",
+            created="2020-01-01",
+            config_set="intended test",
+            change_control_id="12345",
+            status=self.status2,
+            job_result_id=self.job_result1.id,
+        )
+        self.config_plan1.tags.add(self.tag1)
+        self.config_plan1.feature.add(self.feature1)
+        self.config_plan1.validated_save()
+        self.config_plan2 = models.ConfigPlan.objects.create(
+            device=self.device1,
+            plan_type="missing",
+            created="2020-01-02",
+            config_set="missing test",
+            change_control_id="23456",
+            status=self.status1,
+            job_result_id=self.job_result1.id,
+        )
+        self.config_plan2.tags.add(self.tag2)
+        self.config_plan2.feature.add(self.feature2)
+        self.config_plan2.validated_save()
+        self.config_plan3 = models.ConfigPlan.objects.create(
+            device=self.device2,
+            plan_type="remediation",
+            created="2020-01-03",
+            config_set="remediation test",
+            change_control_id="34567",
+            status=self.status2,
+            job_result_id=self.job_result2.id,
+        )
+        self.config_plan3.tags.add(self.tag2)
+        self.config_plan3.feature.set([self.feature1, self.feature3])
+        self.config_plan3.validated_save()
+        self.config_plan4 = models.ConfigPlan.objects.create(
+            device=self.device2,
+            plan_type="manual",
+            created="2020-01-04",
+            config_set="manual test",
+            change_control_id="45678",
+            status=self.status1,
+            job_result_id=self.job_result1.id,
+        )
+        self.config_plan4.tags.add(self.tag1)
+        self.config_plan4.validated_save()
+
+    def test_full(self):
+        """Test without filtering to ensure all have been added."""
+        self.assertEqual(self.queryset.count(), 4)
+
+    def test_search_device_name(self):
+        """Test filtering by Q search value."""
+        params = {"q": "Device 1"}
+        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 2)
+
+    def test_search_change_control_id(self):
+        """Test filtering by Q search value."""
+        params = {"q": "345"}
+        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 3)
+
+    def test_filter_device_id(self):
+        """Test filtering by Device ID."""
+        params = {"device_id": [self.device1.pk]}
+        filterset = self.filterset(params, self.queryset)
+        self.assertEqual(filterset.qs.count(), 2)
+        self.assertQuerysetEqualAndNotEmpty(filterset.qs, self.queryset.filter(device=self.device1).distinct())
+
+    def test_filter_device(self):
+        """Test filtering by Device."""
+        params = {"device": [self.device1.name]}
+        filterset = self.filterset(params, self.queryset)
+        self.assertEqual(filterset.qs.count(), 2)
+        self.assertQuerysetEqualAndNotEmpty(
+            filterset.qs, self.queryset.filter(device__name=self.device1.name).distinct()
+        )
+
+    def test_filter_feature_id(self):
+        """Test filtering by Feature ID."""
+        params = {"feature_id": [self.feature1.pk]}
+        filterset = self.filterset(params, self.queryset)
+        self.assertEqual(filterset.qs.count(), 2)
+        self.assertQuerysetEqualAndNotEmpty(filterset.qs, self.queryset.filter(feature=self.feature1).distinct())
+
+    def test_filter_feature(self):
+        """Test filtering by Feature."""
+        params = {"feature": [self.feature1.name]}
+        filterset = self.filterset(params, self.queryset)
+        self.assertEqual(filterset.qs.count(), 2)
+        self.assertQuerysetEqualAndNotEmpty(
+            filterset.qs, self.queryset.filter(feature__name=self.feature1.name).distinct()
+        )
+
+    def test_filter_change_control_id(self):
+        """Test filtering by Change Control ID."""
+        params = {"change_control_id": self.config_plan1.change_control_id}
+        filterset = self.filterset(params, self.queryset)
+        self.assertEqual(filterset.qs.count(), 1)
+        self.assertQuerysetEqualAndNotEmpty(
+            filterset.qs, self.queryset.filter(change_control_id=self.config_plan1.change_control_id).distinct()
+        )
+
+    def test_filter_status_id(self):
+        """Test filtering by Status ID."""
+        params = {"status_id": [self.status1.pk]}
+        filterset = self.filterset(params, self.queryset)
+        self.assertEqual(filterset.qs.count(), 2)
+        self.assertQuerysetEqualAndNotEmpty(filterset.qs, self.queryset.filter(status=self.status1).distinct())
+
+    def test_filter_status(self):
+        """Test filtering by Status."""
+        params = {"status": [self.status1.name]}
+        filterset = self.filterset(params, self.queryset)
+        self.assertEqual(filterset.qs.count(), 2)
+        self.assertQuerysetEqualAndNotEmpty(
+            filterset.qs, self.queryset.filter(status__name=self.status1.name).distinct()
+        )
+
+    def test_filter_plan_type(self):
+        """Test filtering by Plan Type."""
+        params = {"plan_type": self.config_plan1.plan_type}
+        filterset = self.filterset(params, self.queryset)
+        self.assertEqual(filterset.qs.count(), 1)
+        self.assertQuerysetEqualAndNotEmpty(
+            filterset.qs, self.queryset.filter(plan_type=self.config_plan1.plan_type).distinct()
+        )
+
+    def test_filter_tag(self):
+        """Test filtering by Tag."""
+        params = {"tag": [self.tag1.slug]}
+        filterset = self.filterset(params, self.queryset)
+        self.assertEqual(filterset.qs.count(), 2)
+        self.assertQuerysetEqualAndNotEmpty(filterset.qs, self.queryset.filter(tags__name=self.tag1.name).distinct())
+
+    def test_job_result_id(self):
+        """Test filtering by Job Result ID."""
+        params = {"job_result_id": [self.job_result1.pk]}
+        filterset = self.filterset(params, self.queryset)
+        self.assertEqual(filterset.qs.count(), 3)
+        self.assertQuerysetEqualAndNotEmpty(
+            filterset.qs, self.queryset.filter(job_result_id=self.job_result1.id).distinct()
+        )

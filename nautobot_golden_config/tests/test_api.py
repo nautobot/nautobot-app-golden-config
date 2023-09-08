@@ -4,20 +4,25 @@ from copy import deepcopy
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
+from nautobot.dcim.models import Device, Platform
+from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status
+from nautobot.utilities.testing import APITestCase, APIViewTestCases
 from rest_framework import status
 
 from nautobot.core.testing import APITestCase
 from nautobot.extras.models import GitRepository, GraphQLQuery, DynamicGroup
-from nautobot_golden_config.models import GoldenConfigSetting
+from nautobot_golden_config.choices import RemediationTypeChoice
+from nautobot_golden_config.models import ConfigPlan, GoldenConfigSetting, RemediationSetting
 
 from .conftest import (
-    create_device,
-    create_feature_rule_json,
     create_config_compliance,
+    create_device,
+    create_device_data,
+    create_feature_rule_json,
     create_git_repos,
+    create_job_result,
     create_saved_queries,
 )
-
 
 User = get_user_model()
 
@@ -227,7 +232,6 @@ class GoldenConfigSettingsAPITest(APITestCase):  # pylint: disable=too-many-ance
 
 # pylint: disable=too-many-ancestors
 
-
 class GoldenConfigSerializerCSVTest(APITestCase):
     """Test CSV Export returns 200/OK."""
 
@@ -284,3 +288,126 @@ class ConfigReplaceCSVTest(GoldenConfigSerializerCSVTest):
     """Test CSV Export returns 200/OK."""
 
     url = reverse("plugins-api:nautobot_golden_config-api:configreplace-list")
+
+    
+class RemediationSettingTest(APIViewTestCases.APIViewTestCase):
+    """Test API for Remediation Settings."""
+
+    model = RemediationSetting
+    choices_fields = ["remediation_type"]
+
+    @classmethod
+    def setUpTestData(cls):
+        create_device_data()
+        platform1 = Platform.objects.get(name="Platform 1")
+        platform2 = Platform.objects.get(name="Platform 2")
+        platform3 = Platform.objects.get(name="Platform 3")
+        type_cli = RemediationTypeChoice.TYPE_HIERCONFIG
+        type_custom = RemediationTypeChoice.TYPE_CUSTOM
+
+        # RemediationSetting type Hier with default values.
+        RemediationSetting.objects.create(
+            platform=platform1,
+            remediation_type=type_cli,
+        )
+        # RemediationSetting type Hier with custom options.
+        RemediationSetting.objects.create(
+            platform=platform2, remediation_type=type_cli, remediation_options={"some_option": "some_value"}
+        )
+        # RemediationSetting type Custom with custom options.
+        RemediationSetting.objects.create(
+            platform=platform3,
+            remediation_type=type_custom,
+        )
+
+        platforms = (
+            Platform.objects.create(name="Platform 4", slug="platform-4"),
+            Platform.objects.create(name="Platform 5", slug="platform-5"),
+            Platform.objects.create(name="Platform 6", slug="platform-6"),
+        )
+
+        cls.create_data = [
+            {"platform": platforms[0].pk, "remediation_type": type_cli},
+            {
+                "platform": platforms[1].pk,
+                "remediation_type": type_cli,
+                "remediation_options": {"some_option": "some_value"},
+            },
+            {"platform": platforms[2].pk, "remediation_type": type_custom},
+        ]
+
+        cls.update_data = {
+            "remediation_type": type_custom,
+        }
+
+        cls.bulk_update_data = {
+            "remediation_type": type_cli,
+        }
+
+    def test_list_objects_brief(self):
+        """Skipping test due to brief_fields not implemented."""
+
+
+# pylint: disable=too-many-ancestors,too-many-locals
+class ConfigPlanTest(APIViewTestCases.APIViewTestCase):
+    """Test API for ConfigPlan."""
+
+    model = ConfigPlan
+    brief_fields = ["device", "display", "id", "plan_type", "url"]
+    # The Status serializer field requires slug, but the model field returns the UUID.
+    validation_excluded_fields = ["status"]
+
+    @classmethod
+    def setUpTestData(cls):
+        create_device_data()
+        device1 = Device.objects.get(name="Device 1")
+        device2 = Device.objects.get(name="Device 2")
+        device3 = Device.objects.get(name="Device 3")
+
+        rule1 = create_feature_rule_json(device1, feature="Test Feature 1")
+        rule2 = create_feature_rule_json(device2, feature="Test Feature 2")
+        rule3 = create_feature_rule_json(device3, feature="Test Feature 3")
+
+        job_result1 = create_job_result()
+        job_result2 = create_job_result()
+        job_result3 = create_job_result()
+
+        features = [rule1.feature, rule2.feature, rule3.feature]
+        plan_types = ["intended", "missing", "remediation"]
+        job_result_ids = [job_result1.id, job_result2.id, job_result3.id]
+        not_approved_status = Status.objects.get(slug="not-approved")
+        approved_status = Status.objects.get(slug="approved")
+
+        for cont in range(1, 4):
+            plan = ConfigPlan.objects.create(
+                device=Device.objects.get(name=f"Device {cont}"),
+                plan_type=plan_types[cont - 1],
+                config_set=f"Test Config Set {cont}",
+                change_control_id=f"Test Change Control ID {cont}",
+                change_control_url=f"https://{cont}.example.com/",
+                status=not_approved_status,
+                job_result_id=job_result_ids[cont - 1],
+            )
+            plan.feature.add(features[cont - 1])
+            plan.validated_save()
+
+        cls.update_data = {
+            "change_control_id": "Test Change Control ID 4",
+            "change_control_url": "https://4.example.com/",
+            "status": approved_status.slug,
+        }
+
+        cls.bulk_update_data = {
+            "change_control_id": "Test Change Control ID 5",
+            "change_control_url": "https://5.example.com/",
+            "status": approved_status.slug,
+        }
+
+    def test_create_object(self):
+        """Skipping test due to POST method not allowed."""
+
+    def test_create_object_without_permission(self):
+        """Skipping test due to POST method not allowed."""
+
+    def test_bulk_create_objects(self):
+        """Skipping test due to POST method not allowed."""

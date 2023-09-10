@@ -1,14 +1,18 @@
 """Nornir job for deploying configurations."""
 from datetime import datetime
-from nautobot.dcim.models import Device
-from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
-from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
-from nautobot_plugin_nornir.utils import get_dispatcher
+
 from nornir import InitNornir
 from nornir.core.task import Result, Task
 from nornir.core.plugins.inventory import InventoryPluginRegister
+
+from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
 from nornir_nautobot.utils.logger import NornirLogger
+
+from nautobot.dcim.models import Device
+
+from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
+from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 
@@ -21,20 +25,20 @@ def run_deployment(task: Task, logger: NornirLogger, commit: bool, config_plan_q
     plans_to_deploy = config_plan_qs.filter(device=obj)
     consolidated_config_set = "\n".join(plans_to_deploy.values_list("config_set", flat=True))
     logger.log_debug(f"Consolidated config set: {consolidated_config_set}")
-    # TODO: We should add post-processing rendering here
+    # TODO: Future: We should add post-processing rendering here
     # after https://github.com/nautobot/nautobot-plugin-golden-config/issues/443
 
     if commit:
         result = task.run(
             task=dispatcher,
-            name="DEPLOY CONFIG TO DEVICE",
             method="merge_config",
             obj=obj,
             logger=logger,
+            custom_dispatcher={},
+            name="DEPLOY CONFIG TO DEVICE",
             config=consolidated_config_set,
-            default_drivers_mapping=get_dispatcher(),
         )[1].result["result"]
-        logger.log_success(obj=obj, message="Successfully deployed configuration to device.")
+        logger.log_info(obj=obj, message="Successfully deployed configuration to device.")
     else:
         result = None
         logger.log_info(obj=obj, message="Commit not enabled. Configuration not deployed to device.")
@@ -50,11 +54,10 @@ def config_deployment(job_result, data, commit):
 
     config_plan_qs = data["config_plan"]
     if config_plan_qs.filter(status__slug="not-approved").exists():
-        logger.log_failure(
-            obj=None,
-            message="Cannot deploy configuration(s). One or more config plans are not approved.",
-        )
-        raise ValueError("Cannot deploy configuration(s). One or more config plans are not approved.")
+        error_msg = "E3010: Cannot deploy configuration(s). One or more config plans are not approved."
+        logger.log_error(error_msg)
+        raise NornirNautobotException(error_msg)
+
     device_qs = Device.objects.filter(config_plan__in=config_plan_qs).distinct()
 
     try:
@@ -81,7 +84,8 @@ def config_deployment(job_result, data, commit):
                 config_plan_qs=config_plan_qs,
             )
     except Exception as err:
-        logger.log_failure(obj=None, message=f"Failed to initialize Nornir: {err}")
-        raise
+        error_msg = f"E3011: {err}"
+        logger.log_error(error_msg)
+        raise NornirNautobotException(error_msg)
 
     logger.log_debug("Completed configuration deployment.")

@@ -12,6 +12,13 @@ services:
     volumes:
       - "./nautobot_config.py:/opt/nautobot/nautobot_config.py"
       - "../:/source"
+      # Helper method to mount on top of the python implementations, assuming you are using py3.11 and
+      # have all of your projects in the same directory. Uncomment out as required.
+      # - "../../netutils/netutils:/opt/nautobot/lib/python3.11/site-packages/netutils"
+      # - "../../nornir-nautobot/nornir_nautobot:/opt/nautobot/lib/python3.11/site-packages/nornir_nautobot"
+      # - "../../nautobot-plugin-nornir/nautobot_plugin_nornir:/opt/nautobot/lib/python3.11/site-packages/nautobot_plugin_nornir"
+      # - "../../nautobot/nautobot:/opt/nautobot/lib/python3.11/site-packages/nautobot"
+
   docs:
     entrypoint: "mkdocs serve -v -a 0.0.0.0:8080"
     ports:
@@ -26,6 +33,12 @@ services:
     volumes:
       - "./nautobot_config.py:/opt/nautobot/nautobot_config.py"
       - "../:/source"
+      # Helper method to mount on top of the python implementations, assuming you are using py3.11 and
+      # have all of your projects in the same directory. Uncomment out as required.
+      # - "../../netutils/netutils:/opt/nautobot/lib/python3.11/site-packages/netutils"
+      # - "../../nornir-nautobot/nornir_nautobot:/opt/nautobot/lib/python3.11/site-packages/nornir_nautobot"
+      # - "../../nautobot-plugin-nornir/nautobot_plugin_nornir:/opt/nautobot/lib/python3.11/site-packages/nautobot_plugin_nornir"
+      # - "../../nautobot/nautobot:/opt/nautobot/lib/python3.11/site-packages/nautobot"
 # To expose postgres or redis to the host uncomment the following
 # postgres:
 #   ports:

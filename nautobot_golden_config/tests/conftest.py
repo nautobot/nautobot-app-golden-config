@@ -15,7 +15,8 @@ from nautobot_golden_config.models import ComplianceFeature, ComplianceRule, Con
 
 User = get_user_model()
 
-def create_device_data():
+
+def create_device_data():  # pylint: disable=too-many-locals
     """Creates a Device and associated data."""
     ct_device = ContentType.objects.get_for_model(Device)
 

@@ -2,16 +2,10 @@
 # pylint: disable=too-many-ancestors
 from rest_framework import serializers
 
-from nautobot.apps.api import WritableNestedSerializer
-from nautobot.extras.api.fields import StatusSerializerField
-from nautobot.extras.api.serializers import TaggedObjectSerializer
-from nautobot.extras.api.nested_serializers import NestedDynamicGroupSerializer
 from nautobot.extras.api.mixins import TaggedModelSerializerMixin
-from nautobot.extras.models import Status
-from nautobot.dcim.api.nested_serializers import NestedDeviceSerializer
 from nautobot.dcim.api.serializers import DeviceSerializer
 from nautobot.dcim.models import Device
-from nautobot.extras.api.serializers import NautobotModelSerializer, StatusModelSerializerMixin
+from nautobot.core.api.serializers import NautobotModelSerializer
 
 
 from nautobot_golden_config import models
@@ -78,7 +72,7 @@ class GoldenConfigSettingSerializer(NautobotModelSerializer, TaggedModelSerializ
     url = serializers.HyperlinkedIdentityField(
         view_name="plugins-api:nautobot_golden_config-api:goldenconfigsetting-detail"
     )
-    # TODO: What is correct for this with the removal of nested serializers?
+    # TODO: 2.0: What is correct for this with the removal of nested serializers?
     # dynamic_group = NestedDynamicGroupSerializer(required=False)
 
     class Meta:
@@ -120,7 +114,7 @@ class ConfigToPushSerializer(DeviceSerializer):
     class Meta(DeviceSerializer):
         """Extend the Device serializer with the configuration after postprocessing."""
 
-        # TODO: Fix fields to work with Device moving to a string "__all__"
+        # TODO: 2.0: Fix fields to work with Device moving to a string "__all__"
         # fields = DeviceSerializer.Meta.fields + ["config"]
         fields = "__all__"
         model = Device
@@ -133,7 +127,7 @@ class ConfigToPushSerializer(DeviceSerializer):
         return get_config_postprocessing(config_details, request)
 
 
-class RemediationSettingSerializer(NautobotModelSerializer, TaggedObjectSerializer):
+class RemediationSettingSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
     """Serializer for RemediationSetting object."""
 
     url = serializers.HyperlinkedIdentityField(
@@ -148,12 +142,10 @@ class RemediationSettingSerializer(NautobotModelSerializer, TaggedObjectSerializ
         fields = "__all__"
 
 
-class ConfigPlanSerializer(NautobotModelSerializer, TaggedObjectSerializer, StatusModelSerializerMixin):
+class ConfigPlanSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
     """Serializer for ConfigPlan object."""
 
     url = serializers.HyperlinkedIdentityField(view_name="plugins-api:nautobot_golden_config-api:configplan-detail")
-    device = NestedDeviceSerializer(required=False)
-    status = StatusSerializerField(required=False, queryset=Status.objects.all())
 
     class Meta:
         """Set Meta Data for ConfigPlan, will serialize all fields."""
@@ -161,15 +153,3 @@ class ConfigPlanSerializer(NautobotModelSerializer, TaggedObjectSerializer, Stat
         model = models.ConfigPlan
         fields = "__all__"
         read_only_fields = ["device", "plan_type", "feature", "config_set"]
-
-
-class NestedConfigPlanSerializer(WritableNestedSerializer):
-    """Nested serializer for ConfigPlan object."""
-
-    url = serializers.HyperlinkedIdentityField(view_name="plugins-api:nautobot_golden_config-api:configplan-detail")
-
-    class Meta:
-        """Set Meta Data for ConfigPlan, will serialize brief fields."""
-
-        model = models.ConfigPlan
-        fields = ["id", "url", "device", "plan_type"]

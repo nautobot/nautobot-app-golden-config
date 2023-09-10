@@ -25,18 +25,15 @@ from nautobot.dcim.forms import DeviceFilterForm
 from nautobot.dcim.models import Device
 from nautobot.core.forms import ConfirmationForm
 from nautobot.core.views.utils import handle_protectederror
-from nautobot.core.views.mixins import ContentTypePermissionRequiredMixin
+from nautobot.core.views.mixins import ContentTypePermissionRequiredMixin, ObjectPermissionRequiredMixin
 
-from nautobot.extras.jobs import run_job
+
 from nautobot.extras.models import Job, JobResult
-from nautobot.extras.utils import get_job_content_type
-from nautobot.utilities.error_handlers import handle_protectederror
-from nautobot.utilities.forms import ConfirmationForm
-from nautobot.utilities.utils import copy_safe_request, csv_format
-from nautobot.utilities.views import ContentTypePermissionRequiredMixin, ObjectPermissionRequiredMixin
+
+# from nautobot.extras.utils import get_job_content_type
+# from nautobot.utilities.utils import copy_safe_request, csv_format
 from nautobot_golden_config import filters, forms, models, tables
 from nautobot_golden_config.api import serializers
-from nautobot_golden_config.jobs import DeployConfigPlans
 from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
 from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_COMPLIANCE, PLUGIN_CFG
 from nautobot_golden_config.utilities.graphql import graph_ql_query
@@ -144,7 +141,7 @@ class GoldenConfigBulkDeleteView(generic.BulkDeleteView):
                     "return_url": self.get_return_url(request),
                 }
             )
-        # Levarge a custom table just for deleting
+        # Leverage a custom table just for deleting
         table = tables.DeleteGoldenConfigTable(models.GoldenConfig.objects.filter(pk__in=obj_to_del), orderable=False)
         if not table.rows:
             messages.warning(
@@ -723,7 +720,7 @@ class ConfigReplaceUIViewSet(NautobotUIViewSet):
 class RemediationSettingUIViewSet(NautobotUIViewSet):
     """Views for the RemediationSetting model."""
 
-    bulk_create_form_class = forms.RemediationSettingCSVForm
+    # bulk_create_form_class = forms.RemediationSettingCSVForm
     bulk_update_form_class = forms.RemediationSettingBulkEditForm
     filterset_class = filters.RemediationSettingFilterSet
     filterset_form_class = forms.RemediationSettingFilterForm
@@ -784,15 +781,23 @@ class ConfigPlanBulkDeploy(ObjectPermissionRequiredMixin, View):
             return redirect("plugins:nautobot_golden_config:configplan_list")
 
         job_data = {"config_plan": config_plan_pks}
+        job = Job.objects.get(name="Generate Config Plans")
 
-        result = JobResult.enqueue_job(
-            func=run_job,
-            name=DeployConfigPlans.class_path,
-            obj_type=get_job_content_type(),
-            user=request.user,
+        # result = JobResult.enqueue_job(
+        #     func=run_job,
+        #     name=DeployConfigPlans.class_path,
+        #     obj_type=get_job_content_type(),
+        #     user=request.user,
+        #     data=job_data,
+        #     request=copy_safe_request(request),
+        #     commit=request.POST.get("commit", False),
+        # )
+        job_result = JobResult.enqueue_job(
+            job,
+            request.user,
+            # task_queue=task_queue,
             data=job_data,
-            request=copy_safe_request(request),
-            commit=request.POST.get("commit", False),
+            **job.job_class.serialize_data(request),
         )
 
-        return redirect(result.get_absolute_url())
+        return redirect(job_result.get_absolute_url())

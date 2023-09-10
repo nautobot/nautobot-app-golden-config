@@ -3,24 +3,17 @@
 import django_filters
 from django.db.models import Q
 
-from nautobot.core.filters import (
-    BaseFilterSet,
-    MultiValueDateTimeFilter,
-    NameSlugSearchFilterSet,
-    TagFilter,
-    TreeNodeMultipleChoiceFilter,
-)
+from nautobot.core.filters import BaseFilterSet, MultiValueDateTimeFilter, TagFilter, TreeNodeMultipleChoiceFilter
 from nautobot.dcim.models import Device, DeviceType, Manufacturer, Platform, Rack, RackGroup, Location
 from nautobot.dcim.filters import DeviceFilterSet
-from nautobot.extras.filters import NaturalKeyOrPKMultipleChoiceFilter, StatusFilter
-from nautobot.extras.filters import NautobotFilterSet
-from nautobot.extras.models import Status, Role
+from nautobot.extras.filters import NaturalKeyOrPKMultipleChoiceFilter, NautobotFilterSet, StatusFilter
+from nautobot.extras.models import JobResult, Role, Status
 from nautobot.tenancy.models import Tenant, TenantGroup
 
 from nautobot_golden_config import models
 
 
-# TODO: DeviceFilterSet has bugs in regards to Location in 2.0.0-rc.2
+# TODO: 2.0: DeviceFilterSet has bugs in regards to Location in 2.0.0-rc.2
 class GoldenConfigDeviceFilterSet(DeviceFilterSet):  # pylint: disable=too-many-ancestors
     """Filter capabilities that extend the standard DeviceFilterSet."""
 
@@ -119,7 +112,7 @@ class GoldenConfigFilterSet(NautobotFilterSet):
     )
     role = NaturalKeyOrPKMultipleChoiceFilter(
         field_name="device__role",
-        queryset=Role.objects.all(),  # TODO: How does change to Role model affect this?
+        queryset=Role.objects.all(),  # TODO: 2.0: How does change to Role model affect this?
         to_field_name="name",
         label="Role (name or ID)",
     )
@@ -318,7 +311,7 @@ class GoldenConfigSettingFilterSet(NautobotFilterSet):
         fields = ["id", "name", "slug", "weight", "backup_repository", "intended_repository", "jinja_repository"]
 
 
-class RemediationSettingFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
+class RemediationSettingFilterSet(BaseFilterSet):
     """Inherits Base Class CustomFieldModelFilterSet."""
 
     q = django_filters.CharFilter(
@@ -356,7 +349,7 @@ class RemediationSettingFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
         fields = ["id", "platform", "remediation_type"]
 
 
-class ConfigPlanFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
+class ConfigPlanFilterSet(BaseFilterSet):
     """Inherits Base Class BaseFilterSet."""
 
     q = django_filters.CharFilter(

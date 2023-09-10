@@ -152,7 +152,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         with self.assertRaises(NornirNautobotException):
             with self.assertRaises(jinja_errors.UndefinedError):
                 render_jinja_template(mock_device, mock_nornir_logger, "{{ obj.fake }}")
-        mock_nornir_logger.log_failure.assert_called_once()
+        mock_nornir_logger.log_error.assert_called_once()
 
     @patch("nornir_nautobot.utils.logger.NornirLogger")
     @patch("nautobot.dcim.models.Device")
@@ -161,7 +161,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         with self.assertRaises(NornirNautobotException):
             with self.assertRaises(jinja_errors.TemplateSyntaxError):
                 render_jinja_template(mock_device, mock_nornir_logger, "{{ obj.fake }")
-        mock_nornir_logger.log_failure.assert_called_once()
+        mock_nornir_logger.log_error.assert_called_once()
 
     @patch("nornir_nautobot.utils.logger.NornirLogger")
     @patch("nautobot.dcim.models.Device")
@@ -172,7 +172,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
             with self.assertRaises(jinja_errors.TemplateError):
                 template_mock.side_effect = jinja_errors.TemplateRuntimeError
                 render_jinja_template(mock_device, mock_nornir_logger, "template")
-        mock_nornir_logger.log_failure.assert_called_once()
+        mock_nornir_logger.log_error.assert_called_once()
 
     def test_get_backup_repository_dir_success(self):
         """Verify that we successfully look up the path from a provided repo object."""

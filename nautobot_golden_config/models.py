@@ -7,14 +7,11 @@ from deepdiff import DeepDiff
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.module_loading import import_string
-from django.utils.text import slugify
 
 from hier_config import Host as HierConfigHost
 
 from nautobot.core.models.generics import PrimaryModel
 from nautobot.extras.models import ObjectChange
-from nautobot.extras.models import DynamicGroup, ObjectChange
-from nautobot.extras.models.statuses import StatusField
 from nautobot.extras.utils import extras_features
 from nautobot.core.models.utils import serialize_object, serialize_object_v2
 from netutils.config.compliance import feature_compliance
@@ -225,36 +222,30 @@ class ComplianceFeature(PrimaryModel):  # pylint: disable=too-many-ancestors
 class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
     """ComplianceRule details."""
 
-    feature = models.ForeignKey(to="ComplianceFeature", on_delete=models.CASCADE, blank=False, related_name="feature")
+    feature = models.ForeignKey(to="ComplianceFeature", on_delete=models.CASCADE, related_name="feature")
 
     platform = models.ForeignKey(
         to="dcim.Platform",
         on_delete=models.CASCADE,
         related_name="compliance_rules",
-        null=False,
-        blank=False,
     )
     description = models.CharField(
         max_length=200,
         blank=True,
     )
     config_ordered = models.BooleanField(
-        null=False,
-        blank=False,
         verbose_name="Configured Ordered",
         help_text="Whether or not the configuration order matters, such as in ACLs.",
+        default=False,
     )
 
     config_remediation = models.BooleanField(
         default=False,
-        null=False,
-        blank=False,
         verbose_name="Config Remediation",
         help_text="Whether or not the config remediation is executed for this compliance rule.",
     )
 
     match_config = models.TextField(
-        null=True,
         blank=True,
         verbose_name="Config to Match",
         help_text="The config to match that is matched based on the parent most configuration. E.g.: For CLI `router bgp` or `ntp`. For JSON this is a top level key name.",
@@ -305,18 +296,18 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
 class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
     """Configuration compliance details."""
 
-    device = models.ForeignKey(to="dcim.Device", on_delete=models.CASCADE, help_text="The device", blank=False)
-    rule = models.ForeignKey(to="ComplianceRule", on_delete=models.CASCADE, blank=False, related_name="rule")
-    compliance = models.BooleanField(null=True, blank=True)
+    device = models.ForeignKey(to="dcim.Device", on_delete=models.CASCADE, help_text="The device")
+    rule = models.ForeignKey(to="ComplianceRule", on_delete=models.CASCADE, related_name="rule")
+    compliance = models.BooleanField(blank=True)
     actual = models.JSONField(blank=True, help_text="Actual Configuration for feature")
     intended = models.JSONField(blank=True, help_text="Intended Configuration for feature")
     # these three are config snippets exposed for the ConfigDeployment.
-    remediation = models.JSONField(blank=True, null=True, help_text="Remediation Configuration for the device")
+    remediation = models.JSONField(blank=True, help_text="Remediation Configuration for the device")
     missing = models.JSONField(blank=True, help_text="Configuration that should be on the device.")
     extra = models.JSONField(blank=True, help_text="Configuration that should not be on the device.")
-    ordered = models.BooleanField(default=True)
+    ordered = models.BooleanField(default=False)
     # Used for django-pivot, both compliance and compliance_int should be set.
-    compliance_int = models.IntegerField(null=True, blank=True)
+    compliance_int = models.IntegerField(blank=True)
 
     def to_objectchange(
         self, action, *, related_object=None, object_data_extra=None, object_data_exclude=None
@@ -382,6 +373,7 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
         """The actual configuration compliance happens here, but the details for actual compliance job would be found in FUNC_MAPPER."""
         self.compliance_on_save()
         self.remediation_on_save()
+        self.full_clean()
 
         super().save(*args, **kwargs)
 
@@ -405,16 +397,16 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
         blank=False,
     )
     backup_config = models.TextField(blank=True, help_text="Full backup config for device.")
-    backup_last_attempt_date = models.DateTimeField(null=True)
-    backup_last_success_date = models.DateTimeField(null=True)
+    backup_last_attempt_date = models.DateTimeField(null=True, blank=True)
+    backup_last_success_date = models.DateTimeField(null=True, blank=True)
 
     intended_config = models.TextField(blank=True, help_text="Intended config for the device.")
-    intended_last_attempt_date = models.DateTimeField(null=True)
-    intended_last_success_date = models.DateTimeField(null=True)
+    intended_last_attempt_date = models.DateTimeField(null=True, blank=True)
+    intended_last_success_date = models.DateTimeField(null=True, blank=True)
 
     compliance_config = models.TextField(blank=True, help_text="Full config diff for device.")
-    compliance_last_attempt_date = models.DateTimeField(null=True)
-    compliance_last_success_date = models.DateTimeField(null=True)
+    compliance_last_attempt_date = models.DateTimeField(null=True, blank=True)
+    compliance_last_success_date = models.DateTimeField(null=True, blank=True)
 
     def to_objectchange(
         self, action, *, related_object=None, object_data_extra=None, object_data_exclude=None
@@ -447,16 +439,16 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
 class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     """GoldenConfigSetting Model definition. This provides global configs instead of via configs.py."""
 
-    name = models.CharField(max_length=100, unique=True, blank=False)
-    slug = models.SlugField(max_length=100, unique=True, blank=False)
-    weight = models.PositiveSmallIntegerField(default=1000, blank=False)
+    name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=100, unique=True)
+    weight = models.PositiveSmallIntegerField(default=1000)
     description = models.CharField(
         max_length=200,
         blank=True,
     )
     backup_repository = models.ForeignKey(
         to="extras.GitRepository",
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name="backup_repository",
@@ -464,14 +456,13 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     )
     backup_path_template = models.CharField(
         max_length=255,
-        null=False,
         blank=True,
         verbose_name="Backup Path in Jinja Template Form",
         help_text="The Jinja path representation of where the backup file will be found. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.location.name}}/{{obj.name}}.cfg`",
     )
     intended_repository = models.ForeignKey(
         to="extras.GitRepository",
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name="intended_repository",
@@ -479,14 +470,13 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     )
     intended_path_template = models.CharField(
         max_length=255,
-        null=False,
         blank=True,
         verbose_name="Intended Path in Jinja Template Form",
         help_text="The Jinja path representation of where the generated file will be places. e.g. `{{obj.location.name}}/{{obj.name}}.cfg`",
     )
     jinja_repository = models.ForeignKey(
         to="extras.GitRepository",
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name="jinja_template",
@@ -494,13 +484,11 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     )
     jinja_path_template = models.CharField(
         max_length=255,
-        null=False,
         blank=True,
         verbose_name="Template Path in Jinja Template Form",
         help_text="The Jinja path representation of where the Jinja template can be found. e.g. `{{obj.platform.network_driver}}.j2`",
     )
     backup_test_connectivity = models.BooleanField(
-        null=False,
         default=True,
         verbose_name="Backup Test",
         help_text="Whether or not to pretest the connectivity of the device by verifying there is a resolvable IP that can connect to port 22.",
@@ -570,13 +558,11 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
 class ConfigRemove(PrimaryModel):  # pylint: disable=too-many-ancestors
     """ConfigRemove for Regex Line Removals from Backup Configuration Model definition."""
 
-    name = models.CharField(max_length=255, null=False, blank=False)
+    name = models.CharField(max_length=255)
     platform = models.ForeignKey(
         to="dcim.Platform",
         on_delete=models.CASCADE,
         related_name="backup_line_remove",
-        null=False,
-        blank=False,
     )
     description = models.CharField(
         max_length=200,
@@ -613,13 +599,11 @@ class ConfigRemove(PrimaryModel):  # pylint: disable=too-many-ancestors
 class ConfigReplace(PrimaryModel):  # pylint: disable=too-many-ancestors
     """ConfigReplace for Regex Line Replacements from Backup Configuration Model definition."""
 
-    name = models.CharField(max_length=255, null=False, blank=False)
+    name = models.CharField(max_length=255)
     platform = models.ForeignKey(
         to="dcim.Platform",
         on_delete=models.CASCADE,
         related_name="backup_line_replace",
-        null=False,
-        blank=False,
     )
     description = models.CharField(
         max_length=200,
@@ -660,8 +644,6 @@ class RemediationSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         to="dcim.Platform",
         on_delete=models.CASCADE,
         related_name="remediation_settings",
-        null=False,
-        blank=False,
     )
 
     remediation_type = models.CharField(
@@ -697,11 +679,7 @@ class RemediationSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
 
     def __str__(self):
         """Return a sane string representation of the instance."""
-        return str(self.platform.slug)
-
-    def get_absolute_url(self):
-        """Absolute url for the RemediationRule instance."""
-        return reverse("plugins:nautobot_golden_config:remediationsetting", args=[self.pk])
+        return str(self.platform.name)
 
 
 @extras_features(
@@ -733,19 +711,15 @@ class ConfigPlan(PrimaryModel):  # pylint: disable=too-many-ancestors
         to="extras.JobResult",
         on_delete=models.CASCADE,
         related_name="config_plan",
-        null=False,
-        blank=False,
         verbose_name="Job Result",
     )
     change_control_id = models.CharField(
         max_length=50,
         blank=True,
-        null=True,
         verbose_name="Change Control ID",
         help_text="Change Control ID for this configuration plan.",
     )
     change_control_url = models.URLField(blank=True, verbose_name="Change Control URL")
-    status = StatusField(blank=True, null=True, on_delete=models.PROTECT)
 
     class Meta:
         """Meta information for ConfigPlan model."""
@@ -755,7 +729,3 @@ class ConfigPlan(PrimaryModel):  # pylint: disable=too-many-ancestors
     def __str__(self):
         """Return a simple string if model is called."""
         return f"{self.device.name}-{self.plan_type}-{self.created}"
-
-    def get_absolute_url(self):
-        """Return absolute URL for instance."""
-        return reverse("plugins:nautobot_golden_config:configplan", args=[self.pk])

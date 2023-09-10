@@ -5,7 +5,7 @@ from django.test import TestCase
 
 from nautobot.dcim.models import Device, Platform
 from nautobot.extras.models import Status, Tag
-from nautobot.utilities.testing import FilterTestCases
+from nautobot.core.testing import FilterTestCases
 from nautobot_golden_config import filters, models
 
 from .conftest import create_feature_rule_json, create_device_data, create_feature_rule_cli, create_job_result

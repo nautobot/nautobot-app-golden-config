@@ -23,7 +23,7 @@ FIELDS_PK = {
     "device_type",
 }
 
-FIELDS_NAME = {"tags", "status"}  # TODO: Change tag to tags
+FIELDS_NAME = {"tags", "status"}  # TODO: 2.0: Change tag to tags
 
 
 def get_job_filter(data=None):
@@ -87,8 +87,9 @@ def verify_settings(logger, global_settings, attrs):
     """Helper function to verify required attributes are set before a Nornir play start."""
     for item in attrs:
         if not getattr(global_settings, item):
-            logger.log_failure(None, f"Missing the required global setting: `{item}`.")
-            raise NornirNautobotException()
+            error_msg = f"Missing the required global setting: `{item}`."
+            logger.log_error(error_msg)
+            raise NornirNautobotException(error_msg)
 
 
 def render_jinja_template(obj, logger, template):
@@ -111,25 +112,29 @@ def render_jinja_template(obj, logger, template):
     except jinja_errors.UndefinedError as error:
         error_msg = (
             "Jinja encountered and UndefinedError`, check the template for missing variable definitions.\n"
-            f"Template:\n{template}"
+            f"Template:\n{template}\n"
+            f"Original Error: {error}"
         )
-        logger.log_failure(obj, error_msg)
-        raise NornirNautobotException from error
+        logger.log_error(error_msg, extra={"object": obj})
+        raise NornirNautobotException(error_msg)
+
     except jinja_errors.TemplateSyntaxError as error:  # Also catches subclass of TemplateAssertionError
         error_msg = (
             f"Jinja encountered a SyntaxError at line number {error.lineno},"
-            f"check the template for invalid Jinja syntax.\nTemplate:\n{template}"
+            f"check the template for invalid Jinja syntax.\nTemplate:\n{template}\n"
+            f"Original Error: {error}"
         )
-        logger.log_failure(obj, error_msg)
-        raise NornirNautobotException from error
+        logger.log_error(error_msg, extra={"object": obj})
+        raise NornirNautobotException(error_msg)
     # Intentionally not catching TemplateNotFound errors since template is passes as a string and not a filename
     except jinja_errors.TemplateError as error:  # Catches all remaining Jinja errors
         error_msg = (
             "Jinja encountered an unexpected TemplateError; check the template for correctness\n"
-            f"Template:\n{template}"
+            f"Template:\n{template}\n"
+            f"Original Error: {error}"
         )
-        logger.log_failure(obj, error_msg)
-        raise NornirNautobotException from error
+        logger.log_error(error_msg, extra={"object": obj})
+        raise NornirNautobotException(error_msg)
 
 
 def get_device_to_settings_map(queryset):

@@ -17,7 +17,6 @@ from nornir_nautobot.utils.logger import NornirLogger
 
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
-from nautobot_plugin_nornir.utils import get_dispatcher
 
 from nautobot_golden_config.utilities.constant import PLUGIN_CFG
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
@@ -75,10 +74,10 @@ def run_template(  # pylint: disable=too-many-arguments
     jinja_template = render_jinja_template(obj, logger, settings.jinja_path_template)
     status, device_data = graph_ql_query(nautobot_job.request, obj, settings.sot_agg_query.query)
     if status != 200:
-        logger.log_failure(obj, f"The GraphQL query return a status of {str(status)} with error of {str(device_data)}")
-        raise NornirNautobotException(
-            f"The GraphQL query return a status of {str(status)} with error of {str(device_data)}"
-        )
+        error_msg = f"E3012: The GraphQL query return a status of {str(status)} with error of {str(device_data)}"
+        logger.log_error(error_msg, extra={"object": obj})
+        raise NornirNautobotException(error_msg)
+
     task.host.data.update(device_data)
 
     generated_config = task.run(
@@ -90,7 +89,7 @@ def run_template(  # pylint: disable=too-many-arguments
         jinja_template=jinja_template,
         jinja_root_path=settings.jinja_repository.filesystem_path,
         output_file_location=output_file_location,
-        default_drivers_mapping=get_dispatcher(),
+        custom_dispatcher={},
         jinja_filters=jinja_env.filters,
         jinja_env=jinja_env,
     )[1].result["config"]
@@ -98,7 +97,7 @@ def run_template(  # pylint: disable=too-many-arguments
     intended_obj.intended_config = generated_config
     intended_obj.save()
 
-    logger.log_success(obj, "Successfully generated the intended configuration.")
+    logger.log_info(obj, "Successfully generated the intended configuration.")
 
     return Result(host=task.host, result=generated_config)
 
@@ -151,5 +150,6 @@ def config_intended(nautobot_job, data):
             )
 
     except Exception as err:
-        logger.log_failure(None, err)
-        raise
+        error_msg = f"E3013: {err}"
+        logger.log_error(error_msg)
+        raise NornirNautobotException(error_msg)

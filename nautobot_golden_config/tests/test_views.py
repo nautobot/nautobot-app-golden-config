@@ -14,7 +14,8 @@ from django.contrib.contenttypes.models import ContentType
 
 from nautobot.dcim.models import Device
 from nautobot.extras.models import Relationship, RelationshipAssociation, Status
-from nautobot.utilities.testing import ViewTestCases
+from nautobot.core.testing import ViewTestCases
+
 from nautobot_golden_config import views, models
 
 from .conftest import create_feature_rule_json, create_device_data, create_job_result

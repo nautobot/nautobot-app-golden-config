@@ -7,12 +7,12 @@ from nornir import InitNornir
 from nornir.core.task import Result, Task
 from nornir.core.plugins.inventory import InventoryPluginRegister
 
+from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
 from nornir_nautobot.utils.logger import NornirLogger
 
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
-from nautobot_plugin_nornir.utils import get_dispatcher
 
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.utilities.helper import (
@@ -63,29 +63,31 @@ def run_backup(  # pylint: disable=too-many-arguments
     if settings.backup_test_connectivity is not False:
         task.run(
             task=dispatcher,
-            name="TEST CONNECTIVITY",
             method="check_connectivity",
-            obj=obj,
             logger=logger,
-            default_drivers_mapping=get_dispatcher(),
+            obj=obj,
+            framework="napalm",
+            custom_dispatcher={},
+            name="TEST CONNECTIVITY",
         )
     running_config = task.run(
         task=dispatcher,
-        name="SAVE BACKUP CONFIGURATION TO FILE",
         method="get_config",
         obj=obj,
         logger=logger,
+        framework="napalm",
+        custom_dispatcher={},
+        name="SAVE BACKUP CONFIGURATION TO FILE",
         backup_file=backup_file,
-        remove_lines=remove_regex_dict.get(obj.platform.netwokr_driver, []),
-        substitute_lines=replace_regex_dict.get(obj.platform.netwokr_driver, []),
-        default_drivers_mapping=get_dispatcher(),
+        remove_lines=remove_regex_dict.get(obj.platform.network_driver, []),
+        substitute_lines=replace_regex_dict.get(obj.platform.network_driver, []),
     )[1].result["config"]
 
     backup_obj.backup_last_success_date = task.host.defaults.data["now"]
     backup_obj.backup_config = running_config
     backup_obj.save()
 
-    logger.log_success(obj, "Successfully extracted running configuration from device.")
+    logger.log_info(obj, "Successfully extracted running configuration from device.")
 
     return Result(host=task.host, result=running_config)
 
@@ -143,7 +145,8 @@ def config_backup(job_result, data):
             logger.log_debug("Completed configuration from devices.")
 
     except Exception as err:
-        logger.log_failure(None, err)
-        raise
+        error_msg = f"E3001: {err}"
+        logger.log_error(error_msg)
+        raise NornirNautobotException(error_msg)
 
     logger.log_debug("Completed configuration backup job for devices.")

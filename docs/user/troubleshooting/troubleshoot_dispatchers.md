@@ -14,6 +14,8 @@ This occurs when a Golden Config job is executed with a Nautobot `platform`, and
 
 How is the dispatcher loaded?
 
+TODO: 2.0: Change to custom_dispatcher
+
 1. Job initializes Nornir and the method is called with `get_dispatcher()` function from Nautobot-Plugin-Nornir.
 2. Nornir initialization looks in the DEFAULT_DISPATCHER map for the platform network_driver from [nornir-nautobot](https://github.com/nautobot/nornir-nautobot/blob/64baa8a24d21d9ec14c32be569e2b51cd0bd1cd1/nornir_nautobot/plugins/tasks/dispatcher/__init__.py#L12) mapping.
 3. Merge this mapping with anything directly configured in Golden Config [dispatcher mapping]().

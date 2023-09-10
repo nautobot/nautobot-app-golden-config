@@ -6,11 +6,10 @@ from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from nautobot.dcim.models import Device, Platform
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status
-from nautobot.utilities.testing import APITestCase, APIViewTestCases
+from nautobot.core.testing import APITestCase, APIViewTestCases
 from rest_framework import status
 
-from nautobot.core.testing import APITestCase
-from nautobot.extras.models import GitRepository, GraphQLQuery, DynamicGroup
+# from nautobot.extras.models import GitRepository, GraphQLQuery, DynamicGroup
 from nautobot_golden_config.choices import RemediationTypeChoice
 from nautobot_golden_config.models import ConfigPlan, GoldenConfigSetting, RemediationSetting
 
@@ -232,6 +231,7 @@ class GoldenConfigSettingsAPITest(APITestCase):  # pylint: disable=too-many-ance
 
 # pylint: disable=too-many-ancestors
 
+
 class GoldenConfigSerializerCSVTest(APITestCase):
     """Test CSV Export returns 200/OK."""
 
@@ -289,7 +289,7 @@ class ConfigReplaceCSVTest(GoldenConfigSerializerCSVTest):
 
     url = reverse("plugins-api:nautobot_golden_config-api:configreplace-list")
 
-    
+
 class RemediationSettingTest(APIViewTestCases.APIViewTestCase):
     """Test API for Remediation Settings."""
 

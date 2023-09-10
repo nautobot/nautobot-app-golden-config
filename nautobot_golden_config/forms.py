@@ -462,7 +462,7 @@ class RemediationSettingBulkEditForm(NautobotBulkEditForm):
 class ConfigPlanForm(NautobotModelForm):
     """Form for ConfigPlan instances."""
 
-    plan_type = forms.ChoiceField(choices=add_blank_choice(ConfigPlanTypeChoice), required=True, label="Plan Type")
+    plan_type = forms.ChoiceField(choices=add_blank_choice(ConfigPlanTypeChoice), label="Plan Type")
     change_control_id = forms.CharField(required=False, label="Change Control ID")
     change_control_url = forms.URLField(required=False, label="Change Control URL")
 
@@ -480,27 +480,26 @@ class ConfigPlanForm(NautobotModelForm):
             "You can also reference the device object with <code>obj</code>.<br>"
             "For example: <code>hostname {{ obj.name }}</code> or <code>ip address {{ obj.primary_ip4.host }}</code>"
         ),
-        required=True,
     )
 
-    tenant_group = utilities_forms.DynamicModelMultipleChoiceField(queryset=TenantGroup.objects.all(), required=False)
-    tenant = utilities_forms.DynamicModelMultipleChoiceField(queryset=Tenant.objects.all(), required=False)
+    tenant_group = utilities_forms.DynamicModelMultipleChoiceField(queryset=TenantGroup.objects.all())
+    tenant = utilities_forms.DynamicModelMultipleChoiceField(queryset=Tenant.objects.all())
     # Requires https://github.com/nautobot/nautobot-plugin-golden-config/issues/430
-    # location = utilities_forms.DynamicModelMultipleChoiceField(queryset=Location.objects.all(), required=False)
-    region = utilities_forms.DynamicModelMultipleChoiceField(queryset=Region.objects.all(), required=False)
-    site = utilities_forms.DynamicModelMultipleChoiceField(queryset=Site.objects.all(), required=False)
-    rack_group = utilities_forms.DynamicModelMultipleChoiceField(queryset=RackGroup.objects.all(), required=False)
-    rack = utilities_forms.DynamicModelMultipleChoiceField(queryset=Rack.objects.all(), required=False)
-    role = utilities_forms.DynamicModelMultipleChoiceField(queryset=DeviceRole.objects.all(), required=False)
-    manufacturer = utilities_forms.DynamicModelMultipleChoiceField(queryset=Manufacturer.objects.all(), required=False)
-    platform = utilities_forms.DynamicModelMultipleChoiceField(queryset=Platform.objects.all(), required=False)
-    device_type = utilities_forms.DynamicModelMultipleChoiceField(queryset=DeviceType.objects.all(), required=False)
-    device = utilities_forms.DynamicModelMultipleChoiceField(queryset=Device.objects.all(), required=False)
+    # location = utilities_forms.DynamicModelMultipleChoiceField(queryset=Location.objects.all())
+    region = utilities_forms.DynamicModelMultipleChoiceField(queryset=Region.objects.all())
+    site = utilities_forms.DynamicModelMultipleChoiceField(queryset=Site.objects.all())
+    rack_group = utilities_forms.DynamicModelMultipleChoiceField(queryset=RackGroup.objects.all())
+    rack = utilities_forms.DynamicModelMultipleChoiceField(queryset=Rack.objects.all())
+    role = utilities_forms.DynamicModelMultipleChoiceField(queryset=DeviceRole.objects.all())
+    manufacturer = utilities_forms.DynamicModelMultipleChoiceField(queryset=Manufacturer.objects.all())
+    platform = utilities_forms.DynamicModelMultipleChoiceField(queryset=Platform.objects.all())
+    device_type = utilities_forms.DynamicModelMultipleChoiceField(queryset=DeviceType.objects.all())
+    device = utilities_forms.DynamicModelMultipleChoiceField(queryset=Device.objects.all())
     tag = utilities_forms.DynamicModelMultipleChoiceField(
-        queryset=Tag.objects.all(), query_params={"content_types": "dcim.device"}, required=False
+        queryset=Tag.objects.all(), query_params={"content_types": "dcim.device"}
     )
     status = utilities_forms.DynamicModelMultipleChoiceField(
-        queryset=Status.objects.all(), query_params={"content_types": "dcim.device"}, required=False
+        queryset=Status.objects.all(), query_params={"content_types": "dcim.device"}
     )
 
     def __init__(self, *args, **kwargs):
@@ -549,15 +548,14 @@ class ConfigPlanForm(NautobotModelForm):
 class ConfigPlanUpdateForm(NautobotModelForm):
     """Form for ConfigPlan instances."""
 
-    change_control_id = forms.CharField(required=False, label="Change Control ID")
-    change_control_url = forms.URLField(required=False, label="Change Control URL")
+    change_control_id = forms.CharField(label="Change Control ID")
+    change_control_url = forms.URLField(label="Change Control URL")
     status = utilities_forms.DynamicModelChoiceField(
         queryset=Status.objects.all(),
         query_params={"content_types": models.ConfigPlan._meta.label_lower},
-        required=False,
     )
     tag = utilities_forms.DynamicModelMultipleChoiceField(
-        queryset=Tag.objects.all(), query_params={"content_types": "dcim.device"}, required=False
+        queryset=Tag.objects.all(), query_params={"content_types": "dcim.device"}
     )
 
     class Meta:

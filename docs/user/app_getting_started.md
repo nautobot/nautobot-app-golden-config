@@ -4,6 +4,8 @@
 - [Backup Configuration](#backup-configuration)
 - [Intended Configuration](#intended-configuration)
 - [Compliance](#compliance)
+- [Config Plans](#config-plans)
+- [Config Deploy](#config-deploy)
 - [Load Properties from Git](#load-properties-from-git)
 
 # Backup Configuration
@@ -121,6 +123,14 @@ Compliance requires Backups and Intended Configurations in order to be executed.
     4. Run the Job.
 
 > For in-depth details see [Navigating Compliance](./app_feature_compliance.md)
+
+# Config Plans
+
+Coming soon
+
+# Config Deploy
+
+Coming soon
 
 # Load Properties from Git
 

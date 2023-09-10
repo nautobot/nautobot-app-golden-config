@@ -256,8 +256,6 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
 
     config_remediation = models.BooleanField(
         default=False,
-        null=False,
-        blank=False,
         verbose_name="Config Remediation",
         help_text="Whether or not the config remediation is executed for this compliance rule.",
     )
@@ -794,8 +792,6 @@ class RemediationSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         to="dcim.Platform",
         on_delete=models.CASCADE,
         related_name="remediation_settings",
-        null=False,
-        blank=False,
     )
 
     remediation_type = models.CharField(
@@ -867,14 +863,11 @@ class ConfigPlan(PrimaryModel):  # pylint: disable=too-many-ancestors
         to="extras.JobResult",
         on_delete=models.CASCADE,
         related_name="config_plan",
-        null=False,
-        blank=False,
         verbose_name="Job Result",
     )
     change_control_id = models.CharField(
         max_length=50,
         blank=True,
-        null=True,
         verbose_name="Change Control ID",
         help_text="Change Control ID for this configuration plan.",
     )

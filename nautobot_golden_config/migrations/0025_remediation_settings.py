@@ -55,6 +55,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 "abstract": False,
+                "ordering": ("platform", "remediation_type"),
             },
             bases=(
                 models.Model,

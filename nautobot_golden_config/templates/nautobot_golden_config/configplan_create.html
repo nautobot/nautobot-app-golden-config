@@ -63,7 +63,7 @@ function formatJobData(data) {
   var form_data = formDataToDictionary(data, arrayFields);
   delete form_data.csrfmiddlewaretoken;
   delete form_data.q;
-  return form_data;
+  return {"data": form_data};
 }
 var jobClass = "plugins/nautobot_golden_config.jobs/GenerateConfigPlans"
 var redirectUrlTemplate = "/plugins/golden-config/config-plan/?job_result_id={jobData.result.id}"

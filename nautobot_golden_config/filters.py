@@ -7,13 +7,8 @@ from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, P
 from nautobot.extras.filters import NautobotFilterSet, StatusFilter
 from nautobot.extras.models import JobResult, Status
 from nautobot.tenancy.models import Tenant, TenantGroup
-from nautobot.utilities.filters import (
-    BaseFilterSet,
-    MultiValueDateTimeFilter,
-    NameSlugSearchFilterSet,
-    TagFilter,
-    TreeNodeMultipleChoiceFilter,
-)
+from nautobot.utilities.filters import MultiValueDateTimeFilter, TagFilter, TreeNodeMultipleChoiceFilter
+
 from nautobot_golden_config import models
 
 
@@ -368,7 +363,7 @@ class GoldenConfigSettingFilterSet(NautobotFilterSet):
         fields = ["id", "name", "slug", "weight", "backup_repository", "intended_repository", "jinja_repository"]
 
 
-class RemediationSettingFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
+class RemediationSettingFilterSet(NautobotFilterSet):
     """Inherits Base Class CustomFieldModelFilterSet."""
 
     q = django_filters.CharFilter(
@@ -403,10 +398,10 @@ class RemediationSettingFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
         """Boilerplate filter Meta data for Remediation Setting."""
 
         model = models.RemediationSetting
-        fields = ["id", "platform", "remediation_type"]
+        fields = ["id"]
 
 
-class ConfigPlanFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
+class ConfigPlanFilterSet(NautobotFilterSet):
     """Inherits Base Class BaseFilterSet."""
 
     q = django_filters.CharFilter(
@@ -466,4 +461,4 @@ class ConfigPlanFilterSet(BaseFilterSet, NameSlugSearchFilterSet):
         """Boilerplate filter Meta data for Config Plan."""
 
         model = models.ConfigPlan
-        fields = ["id", "device", "created", "plan_type", "feature", "change_control_id", "status"]
+        fields = ["id", "created", "plan_type", "change_control_id"]

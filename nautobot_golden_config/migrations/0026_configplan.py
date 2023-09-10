@@ -34,7 +34,7 @@ class Migration(migrations.Migration):
                 ),
                 ("plan_type", models.CharField(max_length=20)),
                 ("config_set", models.TextField()),
-                ("change_control_id", models.CharField(blank=True, max_length=50, null=True)),
+                ("change_control_id", models.CharField(blank=True, max_length=50)),
                 ("change_control_url", models.URLField(blank=True)),
                 (
                     "device",

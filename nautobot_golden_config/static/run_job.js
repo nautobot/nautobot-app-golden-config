@@ -15,7 +15,7 @@ function startJob(jobClass, data, redirectUrlTemplate) {
         type: 'POST',
         url: jobApi,
         contentType: "application/json",
-        data: JSON.stringify({"data": data}),
+        data: JSON.stringify(data),
         dataType: 'json',
         headers: {
             'X-CSRFToken': nautobot_csrf_token

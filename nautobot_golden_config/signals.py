@@ -1,10 +1,8 @@
 """Signal helpers."""
 from django.apps import apps as global_apps
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from nautobot.dcim.models import Platform
-from nautobot_golden_config import models
+
 from nautobot.utilities.choices import ColorChoices
+from nautobot_golden_config import models
 
 
 def post_migrate_create_statuses(sender, apps=global_apps, **kwargs):  # pylint: disable=unused-argument
@@ -29,11 +27,27 @@ def post_migrate_create_statuses(sender, apps=global_apps, **kwargs):  # pylint:
             },
         },
         {
+            "name": "In Progress",
+            "slug": "in-progress",
+            "defaults": {
+                "description": "Config deployment has started and not completed or failed",
+                "color": ColorChoices.COLOR_GREY,
+            },
+        },
+        {
             "name": "Completed",
             "slug": "completed",
             "defaults": {
-                "description": "Config plan has been completed",
-                "color": ColorChoices.COLOR_BLUE,
+                "description": "Config deploy has been successfully completed",
+                "color": ColorChoices.COLOR_DARK_GREY,
+            },
+        },
+        {
+            "name": "Failed",
+            "slug": "failed",
+            "defaults": {
+                "description": "Config deploy has failed",
+                "color": ColorChoices.COLOR_DARK_RED,
             },
         },
     ]:
@@ -57,13 +71,3 @@ def post_migrate_create_job_button(sender, apps=global_apps, **kwargs):  # pylin
     }
     jobbutton, _ = JobButton.objects.get_or_create(**job_button_config)
     jobbutton.content_types.set([configplan_type])
-
-
-# @receiver(post_save, sender=models.ConfigCompliance)
-# def config_compliance_platform_cleanup(sender, instance, **kwargs):  # pylint: disable=unused-argument
-#     """Signal helper to delete any orphaned ConfigCompliance objects. Caused by device platform changes."""
-#     cc_wrong_platform = models.ConfigCompliance.objects.filter(device=instance.device).filter(
-#         rule__platform__in=Platform.objects.exclude(slug=instance.device.platform.slug)
-#     )
-#     if cc_wrong_platform.count() > 0:
-#         cc_wrong_platform.delete()

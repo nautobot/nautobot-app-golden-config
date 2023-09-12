@@ -367,9 +367,6 @@ class DeployConfigPlans(Job):
         """Run config plan deployment process."""
         self.log_debug("Starting config plan deployment job.")
         config_deployment(self, data, commit)
-        if commit and not self.failed:
-            config_plan_qs = data["config_plan"]
-            config_plan_qs.update(status=Status.objects.get(slug="completed"))
 
 
 class DeployConfigPlanJobButtonReceiver(JobButtonReceiver):
@@ -386,8 +383,6 @@ class DeployConfigPlanJobButtonReceiver(JobButtonReceiver):
         self.log_debug("Starting config plan deployment job.")
         data = {"debug": False, "config_plan": ConfigPlan.objects.filter(id=obj.id)}
         config_deployment(self, data, commit=True)
-        if not self.failed:
-            obj.update(status=Status.objects.get(slug="completed"))
 
 
 # Conditionally allow jobs based on whether or not turned on.

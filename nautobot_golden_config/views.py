@@ -913,6 +913,7 @@ class ConfigPlanUIViewSet(NautobotUIViewSet):
     filterset_class = filters.ConfigPlanFilterSet
     filterset_form_class = forms.ConfigPlanFilterForm
     form_class = forms.ConfigPlanForm
+    # queryset = models.ConfigPlan.objects.filter(status__slug__n="completed")
     queryset = models.ConfigPlan.objects.all()
     serializer_class = serializers.ConfigPlanSerializer
     table_class = tables.ConfigPlanTable

@@ -278,7 +278,7 @@ class ConfigRemoveCSVForm(extras_forms.CustomFieldModelCSVForm):
 class ConfigReplaceForm(NautobotModelForm):
     """Filter Form for Line Removal instances."""
 
-    platform = utilities_forms.DynamicModelChoiceField(queryset=Platform.objects.all(), required=False)
+    platform = utilities_forms.DynamicModelChoiceField(queryset=Platform.objects.all())
 
     class Meta:
         """Boilerplate form Meta data for removal feature."""

@@ -157,15 +157,26 @@ def get_json_config(config):
         return None
 
 
-def add_message(job, request, feature_enabled):
+def list_to_string(items):
+    """Helper function to set the proper list of items sentence."""
+    if len(items) == 1:
+        return items[0]
+    elif len(items) == 2:
+        return " and ".join(items)
+    else:
+        return ", ".join(items[:-1]) + " and " + items[-1]
+
+
+def add_message(inbound):
     """Helper function to abstract the adding a message that the job is not enabled."""
-    if not isinstance(feature_enabled, list):
-        feature_enabled = [feature_enabled]
-    if not job.enabled and any(feature_enabled):
-        messages.warning(
-            request,
-            format_html(
-                f'The Job "{job.name}" is not yet enabled. '
-                f"<a href='{reverse('extras:job_edit', kwargs={'slug': job.slug})}'>Click here to edit the Job</a>."
-            ),
-        )
+    multiple_messages = []
+    for item in inbound:
+        job, request, feature_enabled = item
+        if not isinstance(feature_enabled, list):
+            feature_enabled = [feature_enabled]
+        if not job.enabled and any(feature_enabled):
+            multiple_messages.append(
+                f"<a href='{reverse('extras:job_edit', kwargs={'slug': job.slug})}'>{job.name}</a>"
+            )
+    if multiple_messages:
+        messages.warning(request, format_html(f"The Job(s) {list_to_string(multiple_messages)} are not yet enabled."))

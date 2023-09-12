@@ -782,7 +782,13 @@ class ConfigReplace(PrimaryModel):  # pylint: disable=too-many-ancestors
 
 
 @extras_features(
+    "custom_fields",
+    "custom_links",
+    "custom_validators",
+    "export_templates",
     "graphql",
+    "relationships",
+    "webhooks",
 )
 class RemediationSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     """RemediationSetting details."""

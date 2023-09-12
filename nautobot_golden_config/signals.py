@@ -4,6 +4,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from nautobot.dcim.models import Platform
 from nautobot_golden_config import models
+from nautobot.utilities.choices import ColorChoices
 
 
 def post_migrate_create_statuses(sender, apps=global_apps, **kwargs):  # pylint: disable=unused-argument
@@ -16,7 +17,7 @@ def post_migrate_create_statuses(sender, apps=global_apps, **kwargs):  # pylint:
             "slug": "approved",
             "defaults": {
                 "description": "Config plan is approved",
-                "color": "4caf50",  # Green
+                "color": ColorChoices.COLOR_GREEN,
             },
         },
         {
@@ -24,7 +25,15 @@ def post_migrate_create_statuses(sender, apps=global_apps, **kwargs):  # pylint:
             "slug": "not-approved",
             "defaults": {
                 "description": "Config plan is not approved",
-                "color": "f44336",  # Red
+                "color": ColorChoices.COLOR_RED,
+            },
+        },
+        {
+            "name": "Completed",
+            "slug": "completed",
+            "defaults": {
+                "description": "Config plan is not approved",
+                "color": ColorChoices.COLOR_BLUE,
             },
         },
     ]:
@@ -50,11 +59,11 @@ def post_migrate_create_job_button(sender, apps=global_apps, **kwargs):  # pylin
     jobbutton.content_types.set([configplan_type])
 
 
-@receiver(post_save, sender=models.ConfigCompliance)
-def config_compliance_platform_cleanup(sender, instance, **kwargs):  # pylint: disable=unused-argument
-    """Signal helper to delete any orphaned ConfigCompliance objects. Caused by device platform changes."""
-    cc_wrong_platform = models.ConfigCompliance.objects.filter(device=instance.device).filter(
-        rule__platform__in=Platform.objects.exclude(slug=instance.device.platform.slug)
-    )
-    if cc_wrong_platform.count() > 0:
-        cc_wrong_platform.delete()
+# @receiver(post_save, sender=models.ConfigCompliance)
+# def config_compliance_platform_cleanup(sender, instance, **kwargs):  # pylint: disable=unused-argument
+#     """Signal helper to delete any orphaned ConfigCompliance objects. Caused by device platform changes."""
+#     cc_wrong_platform = models.ConfigCompliance.objects.filter(device=instance.device).filter(
+#         rule__platform__in=Platform.objects.exclude(slug=instance.device.platform.slug)
+#     )
+#     if cc_wrong_platform.count() > 0:
+#         cc_wrong_platform.delete()

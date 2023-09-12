@@ -4,20 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('nautobot_golden_config', '0026_configplan'),
+        ("nautobot_golden_config", "0026_configplan"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='remediationsetting',
-            options={'ordering': ('platform', 'remediation_type')},
+            name="remediationsetting",
+            options={"ordering": ("platform", "remediation_type")},
         ),
         migrations.AlterField(
-            model_name='configplan',
-            name='change_control_id',
-            field=models.CharField(blank=True, default='', max_length=50),
+            model_name="configplan",
+            name="change_control_id",
+            field=models.CharField(blank=True, default="", max_length=50),
             preserve_default=False,
         ),
     ]

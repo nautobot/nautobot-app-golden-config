@@ -38,7 +38,7 @@ from nautobot_golden_config.utilities.helper import get_device_to_settings_map, 
 
 LOGGER = logging.getLogger(__name__)
 
-GREEN = "#D5E8D4"
+GREEN = "#D5E8D4"  # TODO: 2.0: change all to ColorChoices.COLOR_GREEN
 RED = "#F8CECC"
 
 #

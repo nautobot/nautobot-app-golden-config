@@ -472,10 +472,10 @@ class ConfigPlanForm(NautobotModelForm):
     device_type = utilities_forms.DynamicModelMultipleChoiceField(queryset=DeviceType.objects.all(), required=False)
     device = utilities_forms.DynamicModelMultipleChoiceField(queryset=Device.objects.all(), required=False)
     tag = utilities_forms.DynamicModelMultipleChoiceField(
-        queryset=Tag.objects.all(), required=False, query_params={"content_types": "dcim.device"}
+        queryset=Tag.objects.all(), query_params={"content_types": "dcim.device"}, required=False
     )
     status = utilities_forms.DynamicModelMultipleChoiceField(
-        queryset=Status.objects.all(), required=False, query_params={"content_types": "dcim.device"}
+        queryset=Status.objects.all(), query_params={"content_types": "dcim.device"}, required=False
     )
 
     def __init__(self, *args, **kwargs):
@@ -511,7 +511,7 @@ class ConfigPlanUpdateForm(NautobotModelForm):
         query_params={"content_types": models.ConfigPlan._meta.label_lower},
     )
     tag = utilities_forms.DynamicModelMultipleChoiceField(
-        queryset=Tag.objects.all(), query_params={"content_types": "dcim.device"}
+        queryset=Tag.objects.all(), query_params={"content_types": "dcim.device"}, required=False
     )
 
     class Meta:

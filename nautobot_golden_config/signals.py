@@ -32,7 +32,7 @@ def post_migrate_create_statuses(sender, apps=global_apps, **kwargs):  # pylint:
             "name": "Completed",
             "slug": "completed",
             "defaults": {
-                "description": "Config plan is not approved",
+                "description": "Config plan has been completed",
                 "color": ColorChoices.COLOR_BLUE,
             },
         },

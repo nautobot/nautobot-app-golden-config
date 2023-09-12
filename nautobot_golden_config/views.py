@@ -694,7 +694,7 @@ class ConfigComplianceOverview(generic.ObjectListView):
         """Extra content method on."""
         # add global aggregations to extra context.
         job = Job.objects.get(module_name="nautobot_golden_config.jobs", job_class_name="ComplianceJob")
-        add_message([[[job, self.request, constant.ENABLE_COMPLIANCE]]])
+        add_message([[job, self.request, constant.ENABLE_COMPLIANCE]])
         return self.extra_content
 
     def queryset_to_csv(self):

@@ -1,0 +1,134 @@
+[tool.poetry]
+name = "nautobot-golden-config"
+version = "1.0.0"
+description = "A plugin for configuration on nautobot"
+authors = ["Network to Code, LLC <opensource@networktocode.com>"]
+license = "Apache-2.0"
+readme = "README.md"
+homepage = "https://github.com/nautobot/nautobot-plugin-golden-config"
+repository = "https://github.com/nautobot/nautobot-plugin-golden-config"
+keywords = ["nautobot", "nautobot-plugin"]
+classifiers = [
+    "Intended Audience :: Developers",
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+include = [
+    "LICENSE",
+    "README.md",
+]
+packages = [
+    { include = "nautobot_golden_config" },
+]
+
+[tool.poetry.dependencies]
+python = ">=3.8,<3.12"
+# Used for local development
+nautobot = { version = "^1.4.0", optional = true }
+
+[tool.poetry.group.dev.dependencies]
+bandit = "*"
+black = "*"
+coverage = "*"
+django-debug-toolbar = "*"
+flake8 = "*"
+invoke = "*"
+ipython = "*"
+pydocstyle = "*"
+pylint = "*"
+pylint-django = "*"
+pylint-nautobot = "*"
+pytest = "*"
+python-dotenv = "^1.0.0"
+yamllint = "*"
+toml = "*"
+Markdown = "*"
+# Rendering docs to HTML
+mkdocs = "1.5.2"
+# Material for MkDocs theme
+mkdocs-material = "9.1.15"
+# Render custom markdown for version added/changed/remove notes
+mkdocs-version-annotations = "1.0.0"
+# Automatic documentation from sources, for MkDocs
+mkdocstrings = "0.22.0"
+mkdocstrings-python = "1.5.2"
+
+[tool.poetry.extras]
+nautobot = ["nautobot"]
+
+[tool.black]
+line-length = 120
+target-version = ['py38', 'py39', 'py310', 'py311']
+include = '\.pyi?$'
+exclude = '''
+(
+  /(
+      \.eggs         # exclude a few common directories in the
+    | \.git          # root of the project
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+  )/
+  | settings.py     # This is where you define files that should not be stylized by black
+                     # the root of the project
+)
+'''
+
+[tool.pylint.master]
+# Include the pylint_django plugin to avoid spurious warnings about Django patterns
+load-plugins="pylint_django, pylint_nautobot"
+ignore=".venv"
+
+[tool.pylint.basic]
+# No docstrings required for private methods (Pylint default), or for test_ functions, or for inner Meta classes.
+no-docstring-rgx="^(_|test_|Meta$)"
+
+[tool.pylint.messages_control]
+# Line length is enforced by Black, so pylint doesn't need to check it.
+# Pylint and Black disagree about how to format multi-line arrays; Black wins.
+disable = """,
+    line-too-long
+    """
+
+[tool.pylint.miscellaneous]
+# Don't flag TODO as a failure, let us commit with things that still need to be done in the code
+notes = """,
+    FIXME,
+    XXX,
+    """
+
+[tool.pylint-nautobot]
+supported_nautobot_versions = [
+    "1.4.0"
+]
+
+[tool.pydocstyle]
+convention = "google"
+inherit = false
+match = "(?!__init__).*\\.py"
+match-dir = "(?!tests|migrations|development)[^\\.].*"
+# D212 is enabled by default in google convention, and complains if we have a docstring like:
+# """
+# My docstring is on the line after the opening quotes instead of on the same line as them.
+# """
+# We've discussed and concluded that we consider this to be a valid style choice.
+add_ignore = "D212"
+
+[build-system]
+requires = ["poetry_core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+testpaths = [
+    "tests"
+]
+addopts = "-vv --doctest-modules"

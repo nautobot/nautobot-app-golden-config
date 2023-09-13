@@ -1,0 +1,43 @@
+# We can't remove volumes in a compose override, for the test configuration using the final containers
+# we don't want the volumes so this is the default override file to add the volumes in the dev case
+# any override will need to include these volumes to use them.
+# see:  https://github.com/docker/compose/issues/3729
+---
+version: "3.8"
+services:
+  nautobot:
+    command: "nautobot-server runserver 0.0.0.0:8080"
+    ports:
+      - "8080:8080"
+    volumes:
+      - "./nautobot_config.py:/opt/nautobot/nautobot_config.py"
+      - "../:/source"
+    healthcheck:
+      test: ["CMD", "true"]  # Due to layering, disable: true won't work. Instead, change the test
+  docs:
+    entrypoint: "mkdocs serve -v -a 0.0.0.0:8080"
+    ports:
+      - "8001:8080"
+    volumes:
+      - "../:/source"
+    image: "nautobot-golden-config/nautobot:${NAUTOBOT_VER}-py${PYTHON_VER}"
+    healthcheck:
+      disable: true
+    tty: true
+  worker:
+    entrypoint:
+      - "sh"
+      - "-c"  # this is to evaluate the $NAUTOBOT_LOG_LEVEL from the env
+      - "watchmedo auto-restart --directory './' --pattern '*.py' --recursive -- nautobot-server celery worker -l $$NAUTOBOT_LOG_LEVEL --events"  ## $$ because of docker-compose
+    volumes:
+      - "./nautobot_config.py:/opt/nautobot/nautobot_config.py"
+      - "../:/source"
+    healthcheck:
+      test: ["CMD", "true"]  # Due to layering, disable: true won't work. Instead, change the test
+# To expose postgres or redis to the host uncomment the following
+# postgres:
+#   ports:
+#     - "5432:5432"
+# redis:
+#   ports:
+#     - "6379:6379"

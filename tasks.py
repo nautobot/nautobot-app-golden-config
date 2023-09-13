@@ -45,9 +45,9 @@ namespace = Collection("nautobot_golden_config")
 namespace.configure(
     {
         "nautobot_golden_config": {
-            "nautobot_ver": "latest",
+            "nautobot_ver": "2.0.0-rc.2",
             "project_name": "nautobot-golden-config",
-            "python_ver": "3.8",
+            "python_ver": "3.11",
             "local": False,
             "compose_dir": os.path.join(os.path.dirname(__file__), "development"),
             "compose_files": [
@@ -604,7 +604,7 @@ def bandit(context):
 
 @task
 def yamllint(context):
-    """Run yamllint to validate formating adheres to NTC defined YAML standards.
+    """Run yamllint to validate formatting adheres to NTC defined YAML standards.
 
     Args:
         context (obj): Used to run specific commands

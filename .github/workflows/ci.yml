@@ -13,7 +13,9 @@ on: # yamllint disable-line rule:truthy rule:comments
   pull_request: ~
 
 env:
-  PLUGIN_NAME: "nautobot-plugin-golden-config"
+  # TODO Fix to be repository name
+  # PLUGIN_NAME: "nautobot-plugin-golden-config"
+  PLUGIN_NAME: "nautobot-golden-config"
 
 jobs:
   black:
@@ -82,8 +84,8 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        python-version: ["3.8"]
-        nautobot-version: ["1.4.0"]
+        python-version: ["3.11"]
+        nautobot-version: ["2.0.0-rc.2"]
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_PYTHON_VER: "${{ matrix.python-version }}"
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_NAUTOBOT_VER: "${{ matrix.nautobot-version }}"
@@ -121,17 +123,20 @@ jobs:
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11"]
         db-backend: ["postgresql"]
-        nautobot-version: ["stable"]
+        nautobot-version: ["2.0.0-rc.2"]  # ["latest"]
+        # The include is a method to limit the amount of jobs ran. This essentially
+        # means that in addition to standard postgres and stable, also the lowest
+        # supported version and with mysql
         include:
           - python-version: "3.11"
             db-backend: "postgresql"
-            nautobot-version: "1.4.0"
-          - python-version: "3.8"
-            db-backend: "mysql"
-            nautobot-version: "1.4.0"
+            nautobot-version: "2.0.0-rc.2"
           - python-version: "3.11"
             db-backend: "mysql"
-            nautobot-version: "stable"
+            nautobot-version: "2.0.0-rc.2"
+          - python-version: "3.8"
+            db-backend: "mysql"
+            nautobot-version: "latest"
     runs-on: "ubuntu-20.04"
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_PYTHON_VER: "${{ matrix.python-version }}"
@@ -189,7 +194,7 @@ jobs:
       - name: "Upload binaries to release"
         uses: "svenstaro/upload-release-action@v2"
         with:
-          repo_token: "${{ secrets.NTC_GITHUB_TOKEN }}"  # use GH_NAUTOBOT_BOT_TOKEN for Nautobot Org repos.
+          repo_token: "${{ secrets.GH_NAUTOBOT_BOT_TOKEN }}"
           file: "dist/*"
           tag: "${{ github.ref }}"
           overwrite: true

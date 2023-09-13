@@ -2,6 +2,7 @@
 import os
 import sys
 
+from django.utils.module_loading import import_string
 from nautobot.core.settings import *  # noqa: F403  # pylint: disable=wildcard-import,unused-wildcard-import
 from nautobot.core.settings_funcs import is_truthy, parse_redis_connection
 
@@ -128,14 +129,80 @@ if not _TESTING:
 # Apps
 #
 
-# Enable installed Apps. Add the name of each App to the list.
-PLUGINS = ["nautobot_golden_config"]
+# Enable installed plugins. Add the name of each plugin to the list.
+PLUGINS = ["nautobot_plugin_nornir", "nautobot_golden_config"]
 
-# Apps configuration settings. These settings are used by various Apps that the user may have installed.
-# Each key in the dictionary is the name of an installed App and its value is a dictionary of settings.
-# PLUGINS_CONFIG = {
-#     'nautobot_golden_config': {
-#         'foo': 'bar',
-#         'buzz': 'bazz'
-#     }
-# }
+# Plugins configuration settings. These settings are used by various plugins that the user may have installed.
+# Each key in the dictionary is the name of an installed plugin and its value is a dictionary of settings.
+PLUGINS_CONFIG = {
+    "nautobot_plugin_nornir": {
+        "nornir_settings": {
+            "credentials": "nautobot_plugin_nornir.plugins.credentials.env_vars.CredentialsEnvVars",
+            "runner": {
+                "plugin": "threaded",
+                "options": {
+                    "num_workers": 20,
+                },
+            },
+        },
+        # dispatcher_mapping may be necessary if you get an error `Cannot import "<foo>". Is the library installed?`
+        # when you run a backup job, and <foo> is the name of the platform applied to the device.
+        # to the Nornir driver names ("arista_eos", "cisco_ios", etc.).
+        # "dispatcher_mapping": {
+        #     "eos": "nornir_nautobot.plugins.tasks.dispatcher.arista_eos.NautobotNornirDriver",
+        #     "arbitrary_platform_name": "nornir_nautobot.plugins.tasks.dispatcher.arista_eos.NautobotNornirDriver",
+        #     "ios": "nornir_nautobot.plugins.tasks.dispatcher.cisco_ios.NautobotNornirDriver",
+        #     "iosxe": "nornir_nautobot.plugins.tasks.dispatcher.cisco_ios.NautobotNornirDriver",
+        #     "junos": "nornir_nautobot.plugins.tasks.dispatcher.juniper_junos.NautobotNornirDriver",
+        #     "nxos": "nornir_nautobot.plugins.tasks.dispatcher.cisco_nxos.NautobotNornirDriver",
+        # },
+    },
+    "nautobot_golden_config": {
+        "per_feature_bar_width": float(os.environ.get("PER_FEATURE_BAR_WIDTH", 0.15)),
+        "per_feature_width": int(os.environ.get("PER_FEATURE_WIDTH", 13)),
+        "per_feature_height": int(os.environ.get("PER_FEATURE_HEIGHT", 4)),
+        "enable_backup": is_truthy(os.environ.get("ENABLE_BACKUP", True)),
+        "enable_compliance": is_truthy(os.environ.get("ENABLE_COMPLIANCE", True)),
+        "enable_intended": is_truthy(os.environ.get("ENABLE_INTENDED", True)),
+        "enable_sotagg": is_truthy(os.environ.get("ENABLE_SOTAGG", True)),
+        "sot_agg_transposer": os.environ.get("SOT_AGG_TRANSPOSER"),
+        "enable_postprocessing": is_truthy(os.environ.get("ENABLE_POSTPROCESSING", True)),
+        "postprocessing_callables": os.environ.get("POSTPROCESSING_CALLABLES", []),
+        "postprocessing_subscribed": os.environ.get("POSTPROCESSING_SUBSCRIBED", []),
+        "jinja_env": {
+            "undefined": import_string("jinja2.StrictUndefined"),
+            "trim_blocks": is_truthy(os.getenv("NAUTOBOT_JINJA_ENV_TRIM_BLOCKS", True)),
+            "lstrip_blocks": is_truthy(os.getenv("NAUTOBOT_JINJA_ENV_LSTRIP_BLOCKS", False)),
+        },
+        # The platform_network_driver_map maps an arbitrary platform network_driver to its corresponding parser.
+        # Use this if the platform network_driver names in your Nautobot instance don't correspond exactly
+        # to the Nornir driver names ("arista_eos", "cisco_ios", etc.).
+        # Each key should == the network_driver of the Nautobot platform object.
+        # "platform_network_driver_map": {
+        #     "eos": "arista_eos",
+        #     "ios": "cisco_ios",
+        #     "iosxe": "cisco_ios",
+        #     "junos": "juniper_junos",
+        #     "nxos": "cisco_nxos",
+        # },
+        # "get_custom_compliance": "my.custom_compliance.func",
+    },
+}
+
+# TODO:Verify this is still needed
+# Modify django_jinja Environment for test cases
+django_jinja_config = None
+for template in TEMPLATES:
+    if template["BACKEND"].startswith("django_jinja"):
+        django_jinja_config = template
+
+if django_jinja_config is not None:
+    jinja_options = django_jinja_config.get("OPTIONS")
+    if not jinja_options:
+        jinja_options = {}
+        django_jinja_config["OPTIONS"] = jinja_options
+    # Default behavior ignores UndefinedErrors
+    jinja_options["undefined"] = "jinja2.StrictUndefined"
+
+# Import filter function to have it register filter with django_jinja
+from nautobot_golden_config.tests import jinja_filters  # noqa: E402

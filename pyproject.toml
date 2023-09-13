@@ -1,12 +1,13 @@
 [tool.poetry]
 name = "nautobot-golden-config"
-version = "1.0.0"
+version = "1.5.0"
 description = "A plugin for configuration on nautobot"
 authors = ["Network to Code, LLC <opensource@networktocode.com>"]
 license = "Apache-2.0"
 readme = "README.md"
-homepage = "https://github.com/nautobot/nautobot-plugin-golden-config"
+homepage = "https://docs.nautobot.com/projects/golden-config/en/latest/"
 repository = "https://github.com/nautobot/nautobot-plugin-golden-config"
+documentation = "https://docs.nautobot.com/projects/golden-config/en/latest/"
 keywords = ["nautobot", "nautobot-plugin"]
 classifiers = [
     "Intended Audience :: Developers",
@@ -25,10 +26,23 @@ packages = [
     { include = "nautobot_golden_config" },
 ]
 
+[tool.poetry.urls]
+"Changelog" = "https://docs.nautobot.com/projects/golden-config/en/latest/admin/release_notes/"
+"Bug Tracker" = "https://github.com/nautobot/nautobot-plugin-golden-config/issues"
+
 [tool.poetry.dependencies]
 python = ">=3.8,<3.12"
-# Used for local development
-nautobot = { version = "^1.4.0", optional = true }
+deepdiff = ">=5.5.0,!=6.0,!=6.1,<7"
+django-pivot = "^1.8.1"
+matplotlib = "^3.3.2"
+nautobot = ">=2.0.0-rc.2"  # TODO: 2.0: Point to 2.x version
+nautobot-plugin-nornir = { git = "https://github.com/nautobot/nautobot-plugin-nornir.git", branch = "next-2.0" }  # TODO: 2.0: Point to 2.x version
+nornir-nautobot = { git = "https://github.com/nautobot/nornir-nautobot.git", branch = "next-2.0" }  # TODO: 2.0: Point to 2.x version
+
+toml = "^0.10.2"
+netutils = "^1.5.0"
+hier-config = "^2.2.2"
+# nautobot-capacity-metrics = "2.0.0" TODO: 2.0: Turn on
 
 [tool.poetry.group.dev.dependencies]
 bandit = "*"
@@ -41,8 +55,7 @@ ipython = "*"
 pydocstyle = "*"
 pylint = "*"
 pylint-django = "*"
-pylint-nautobot = "*"
-pytest = "*"
+pylint-nautobot = { git = "https://github.com/nautobot/pylint-nautobot.git", branch = "develop" }  # TODO: 2.0: Point to pypi
 python-dotenv = "^1.0.0"
 yamllint = "*"
 toml = "*"
@@ -50,15 +63,12 @@ Markdown = "*"
 # Rendering docs to HTML
 mkdocs = "1.5.2"
 # Material for MkDocs theme
-mkdocs-material = "9.1.15"
+mkdocs-material = "9.2.4"
 # Render custom markdown for version added/changed/remove notes
 mkdocs-version-annotations = "1.0.0"
 # Automatic documentation from sources, for MkDocs
 mkdocstrings = "0.22.0"
 mkdocstrings-python = "1.5.2"
-
-[tool.poetry.extras]
-nautobot = ["nautobot"]
 
 [tool.black]
 line-length = 120
@@ -86,7 +96,10 @@ exclude = '''
 [tool.pylint.master]
 # Include the pylint_django plugin to avoid spurious warnings about Django patterns
 load-plugins="pylint_django, pylint_nautobot"
-ignore=".venv"
+ignore = [
+  "jinja_filters.py",
+  ".venv",
+]
 
 [tool.pylint.basic]
 # No docstrings required for private methods (Pylint default), or for test_ functions, or for inner Meta classes.
@@ -96,7 +109,9 @@ no-docstring-rgx="^(_|test_|Meta$)"
 # Line length is enforced by Black, so pylint doesn't need to check it.
 # Pylint and Black disagree about how to format multi-line arrays; Black wins.
 disable = """,
-    line-too-long
+    line-too-long,
+    too-few-public-methods,
+    duplicate-code,
     """
 
 [tool.pylint.miscellaneous]
@@ -105,11 +120,6 @@ notes = """,
     FIXME,
     XXX,
     """
-
-[tool.pylint-nautobot]
-supported_nautobot_versions = [
-    "1.4.0"
-]
 
 [tool.pydocstyle]
 convention = "google"
@@ -121,7 +131,8 @@ match-dir = "(?!tests|migrations|development)[^\\.].*"
 # My docstring is on the line after the opening quotes instead of on the same line as them.
 # """
 # We've discussed and concluded that we consider this to be a valid style choice.
-add_ignore = "D212"
+# TODO D417 is not in the template, verify this
+add_ignore = "D212,D417"
 
 [build-system]
 requires = ["poetry_core>=1.0.0"]
@@ -132,3 +143,6 @@ testpaths = [
     "tests"
 ]
 addopts = "-vv --doctest-modules"
+
+[tool.pylint-nautobot]
+supported_nautobot_versions = ["2"]

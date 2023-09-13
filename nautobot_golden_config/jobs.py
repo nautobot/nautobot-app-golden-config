@@ -439,7 +439,7 @@ class DeployConfigPlanJobButtonReceiver(JobButtonReceiver):
         """Run config plan deployment process."""
         self.logger.debug("Starting config plan deployment job.")
         data = {"debug": False, "config_plan": ConfigPlan.objects.filter(id=obj.id)}
-        config_deployment(self, **data=True)
+        config_deployment(self, data, commit=True)
 
 
 # Conditionally allow jobs based on whether or not turned on.

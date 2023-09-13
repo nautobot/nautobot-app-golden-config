@@ -913,12 +913,18 @@ class ConfigPlanUIViewSet(NautobotUIViewSet):
     filterset_class = filters.ConfigPlanFilterSet
     filterset_form_class = forms.ConfigPlanFilterForm
     form_class = forms.ConfigPlanForm
-    # queryset = models.ConfigPlan.objects.filter(status__slug__n="completed")
     queryset = models.ConfigPlan.objects.all()
     serializer_class = serializers.ConfigPlanSerializer
     table_class = tables.ConfigPlanTable
     lookup_field = "pk"
     action_buttons = ("add",)
+
+    def alter_queryset(self, request):
+        """Build actual runtime queryset as the build time queryset provides no information."""
+        if "Completed" in request.query_params.get("status", []):
+            return models.ConfigPlan.objects.all()
+
+        return models.ConfigPlan.objects.exclude(status__name="Completed")
 
     def get_form_class(self, **kwargs):
         """Helper function to get form_class for different views."""

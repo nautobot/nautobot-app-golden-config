@@ -59,7 +59,7 @@ def run_deployment(task: Task, logger: NornirLogger, commit: bool, config_plan_q
     else:
         task_result = None
         logger.log_info(obj=obj, message="Commit not enabled. Configuration not deployed to device.")
-    
+
     return Result(host=task.host, result=task_result)
 
 

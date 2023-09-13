@@ -524,6 +524,8 @@ class ConfigPlanUpdateForm(NautobotModelForm):
         fields = (
             "change_control_id",
             "change_control_url",
+            "status",
+            "tag",
         )
 
 

@@ -75,6 +75,7 @@ def post_migrate_create_job_button(sender, apps=global_apps, **kwargs):  # pylin
     jobbutton, _ = JobButton.objects.get_or_create(**job_button_config)
     jobbutton.content_types.set([configplan_type])
 
+
 @receiver(post_save, sender=models.ConfigCompliance)
 def config_compliance_platform_cleanup(sender, instance, **kwargs):  # pylint: disable=unused-argument
     """Signal helper to delete any orphaned ConfigCompliance objects. Caused by device platform changes."""

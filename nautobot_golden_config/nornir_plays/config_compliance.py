@@ -143,7 +143,8 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     platform = obj.platform.network_driver
     if not rules.get(platform):
         error_msg = (
-            f"E3007: There is no defined `Configuration Rule` for platform network_driver `{platform}`, preemptively failed."
+            f"E3007: There is no defined `Configuration Rule` for platform network_driver `{platform}`, "
+            "preemptively failed."
         )
         logger.log_error(error_msg, extra={"object": obj})
         raise NornirNautobotException(error_msg)

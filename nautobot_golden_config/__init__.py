@@ -8,10 +8,10 @@ __version__ = metadata.version(__name__)
 from jinja2 import StrictUndefined
 from django.db.models.signals import post_migrate
 from nautobot.core.signals import nautobot_database_ready
-from nautobot.extras.plugins import PluginConfig
+from nautobot.extras.plugins import NautobotAppConfig
 
 
-class GoldenConfig(PluginConfig):
+class GoldenConfig(NautobotAppConfig):
     """Plugin configuration for the nautobot_golden_config plugin."""
 
     name = "nautobot_golden_config"

@@ -1,13 +1,25 @@
 """Nautobot development configuration file."""
-# pylint: disable=invalid-envvar-default
 import os
 import sys
 
 from django.utils.module_loading import import_string
-
-from nautobot.core.settings import *  # noqa: F403
+from nautobot.core.settings import *  # noqa: F403  # pylint: disable=wildcard-import,unused-wildcard-import
 from nautobot.core.settings_funcs import is_truthy, parse_redis_connection
 
+#
+# Debug
+#
+
+DEBUG = is_truthy(os.getenv("NAUTOBOT_DEBUG", False))
+_TESTING = len(sys.argv) > 1 and sys.argv[1] == "test"
+
+if DEBUG and not _TESTING:
+    DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda _request: True}
+
+    if "debug_toolbar" not in INSTALLED_APPS:  # noqa: F405
+        INSTALLED_APPS.append("debug_toolbar")  # noqa: F405
+    if "debug_toolbar.middleware.DebugToolbarMiddleware" not in MIDDLEWARE:  # noqa: F405
+        MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")  # noqa: F405
 
 #
 # Misc. settings
@@ -16,6 +28,9 @@ from nautobot.core.settings_funcs import is_truthy, parse_redis_connection
 ALLOWED_HOSTS = os.getenv("NAUTOBOT_ALLOWED_HOSTS", "").split(" ")
 SECRET_KEY = os.getenv("NAUTOBOT_SECRET_KEY", "")
 
+#
+# Database
+#
 
 nautobot_db_engine = os.getenv("NAUTOBOT_DB_ENGINE", "django.db.backends.postgresql")
 default_db_settings = {
@@ -45,18 +60,28 @@ if DATABASES["default"]["ENGINE"] == "django.db.backends.mysql":
     DATABASES["default"]["OPTIONS"] = {"charset": "utf8mb4"}
 
 #
-# Debug
+# Redis
 #
 
-DEBUG = True
+# The django-redis cache is used to establish concurrent locks using Redis.
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": parse_redis_connection(redis_database=0),
+        "TIMEOUT": 300,
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
+    }
+}
 
-# Django Debug Toolbar
-DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda _request: DEBUG and not TESTING}
+# Redis Cacheops
+CACHEOPS_REDIS = parse_redis_connection(redis_database=1)
 
-if DEBUG and "debug_toolbar" not in INSTALLED_APPS:  # noqa: F405
-    INSTALLED_APPS.append("debug_toolbar")  # noqa: F405
-if DEBUG and "debug_toolbar.middleware.DebugToolbarMiddleware" not in MIDDLEWARE:  # noqa: F405
-    MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")  # noqa: F405
+#
+# Celery settings are not defined here because they can be overloaded with
+# environment variables. By default they use `CACHES["default"]["LOCATION"]`.
+#
 
 #
 # Logging
@@ -64,10 +89,8 @@ if DEBUG and "debug_toolbar.middleware.DebugToolbarMiddleware" not in MIDDLEWARE
 
 LOG_LEVEL = "DEBUG" if DEBUG else "INFO"
 
-TESTING = len(sys.argv) > 1 and sys.argv[1] == "test"
-
 # Verbose logging during normal development operation, but quiet logging during unit test execution
-if not TESTING:
+if not _TESTING:
     LOGGING = {
         "version": 1,
         "disable_existing_loggers": False,
@@ -101,40 +124,10 @@ if not TESTING:
             },
         },
     }
-else:
-    LOGGING = {}
 
 #
-# Redis
+# Apps
 #
-
-# The django-redis cache is used to establish concurrent locks using Redis. The
-# django-rq settings will use the same instance/database by default.
-#
-# This "default" server is now used by RQ_QUEUES.
-# >> See: nautobot.core.settings.RQ_QUEUES
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": parse_redis_connection(redis_database=0),
-        "TIMEOUT": 300,
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        },
-    }
-}
-
-# RQ_QUEUES is not set here because it just uses the default that gets imported
-# up top via `from nautobot.core.settings import *`.
-
-# Redis Cacheops
-CACHEOPS_REDIS = parse_redis_connection(redis_database=1)
-
-#
-# Celery settings are not defined here because they can be overloaded with
-# environment variables. By default they use `CACHES["default"]["LOCATION"]`.
-#
-
 
 # Enable installed plugins. Add the name of each plugin to the list.
 PLUGINS = ["nautobot_plugin_nornir", "nautobot_golden_config"]
@@ -196,6 +189,7 @@ PLUGINS_CONFIG = {
     },
 }
 
+# TODO:Verify this is still needed
 # Modify django_jinja Environment for test cases
 django_jinja_config = None
 for template in TEMPLATES:

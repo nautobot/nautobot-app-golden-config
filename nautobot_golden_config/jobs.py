@@ -1,5 +1,7 @@
 """Jobs to run backups, intended config, and compliance."""
 # pylint: disable=too-many-function-args,logging-fstring-interpolation
+# TODO: Remove the following ignore, added to be able to pass pylint in CI.
+# pylint: disable=arguments-differ
 
 from datetime import datetime
 
@@ -163,9 +165,7 @@ class IntendedJob(Job, FormEntry):
         # Instantiate a GitRepo object for each GitRepository in GoldenConfigSettings.
         intended_repos = get_refreshed_repos(job_obj=self, repo_type="intended_repository", data=data)
 
-        self.logger.debug(
-            "Building device settings mapping and running intended config nornir play."
-        )
+        self.logger.debug("Building device settings mapping and running intended config nornir play.")
         config_intended(self, data)
 
         # Commit / Push each repo after job is completed.
@@ -396,7 +396,7 @@ class GenerateConfigPlans(Job, FormEntry):
         except NornirNautobotException as error:
             error_msg = str(error)
             self.logger.error(error_msg)
-            raise NornirNautobotException(error_msg)
+            raise NornirNautobotException(error_msg) from error
         if self._plan_type in ["intended", "missing", "remediation"]:
             self.logger.debug("Starting config plan generation for compliance features.")
             self._generate_config_plan_from_feature()
@@ -439,7 +439,8 @@ class DeployConfigPlanJobButtonReceiver(JobButtonReceiver):
         """Run config plan deployment process."""
         self.logger.debug("Starting config plan deployment job.")
         data = {"debug": False, "config_plan": ConfigPlan.objects.filter(id=obj.id)}
-        config_deployment(self, **data=True)
+        # pylint: disable-next=unexpected-keyword-arg
+        config_deployment(self, **data)
 
 
 # Conditionally allow jobs based on whether or not turned on.

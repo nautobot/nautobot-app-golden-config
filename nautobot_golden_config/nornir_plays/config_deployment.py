@@ -46,19 +46,21 @@ def run_deployment(task: Task, logger: NornirLogger, commit: bool, config_plan_q
                 plans_to_deploy.update(status=Status.objects.get(slug="failed"))
                 logger.log_failure(obj=obj, message="Failed deployment to the device.")
             elif not task_changed and not task_failed:
-                plans_to_deploy.update(status=Status.objects.get(slug="Completed"))
-                logger.log_failure(obj=obj, message="Nothing was deployment to the device.")
+                plans_to_deploy.update(status=Status.objects.get(slug="completed"))
+                logger.log_success(obj=obj, message="Nothing was deployed to the device.")
             else:
                 if not task_failed:
                     logger.log_success(obj=obj, message="Successfully deployed configuration to device.")
                     plans_to_deploy.update(status=Status.objects.get(slug="completed"))
-            return Result(host=task.host, result=task_result)
         except NornirSubTaskError:
+            task_result = None
             plans_to_deploy.update(status=Status.objects.get(slug="failed"))
             logger.log_failure(obj=obj, message="Failed deployment to the device.")
     else:
-        result = None
+        task_result = None
         logger.log_info(obj=obj, message="Commit not enabled. Configuration not deployed to device.")
+    
+    return Result(host=task.host, result=task_result)
 
 
 def config_deployment(job_result, data, commit):

@@ -439,8 +439,8 @@ class DeployConfigPlanJobButtonReceiver(JobButtonReceiver):
         """Run config plan deployment process."""
         self.logger.debug("Starting config plan deployment job.")
         data = {"debug": False, "config_plan": ConfigPlan.objects.filter(id=obj.id)}
-        # pylint: disable-next=no-value-for-parameter
-        config_deployment(self, data)
+        # pylint: disable-next=unexpected-keyword-arg
+        config_deployment(self, **data)
 
 
 # Conditionally allow jobs based on whether or not turned on.

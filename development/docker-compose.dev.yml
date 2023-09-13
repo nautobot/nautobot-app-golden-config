@@ -12,6 +12,8 @@ services:
     volumes:
       - "./nautobot_config.py:/opt/nautobot/nautobot_config.py"
       - "../:/source"
+    healthcheck:
+      test: ["CMD", "true"]  # Due to layering, disable: true won't work. Instead, change the test
   docs:
     entrypoint: "mkdocs serve -v -a 0.0.0.0:8080"
     ports:
@@ -23,9 +25,15 @@ services:
       disable: true
     tty: true
   worker:
+    entrypoint:
+      - "sh"
+      - "-c"  # this is to evaluate the $NAUTOBOT_LOG_LEVEL from the env
+      - "watchmedo auto-restart --directory './' --pattern '*.py' --recursive -- nautobot-server celery worker -l $$NAUTOBOT_LOG_LEVEL --events"  ## $$ because of docker-compose
     volumes:
       - "./nautobot_config.py:/opt/nautobot/nautobot_config.py"
       - "../:/source"
+    healthcheck:
+      test: ["CMD", "true"]  # Due to layering, disable: true won't work. Instead, change the test
 # To expose postgres or redis to the host uncomment the following
 # postgres:
 #   ports:

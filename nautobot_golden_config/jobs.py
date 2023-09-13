@@ -163,9 +163,7 @@ class IntendedJob(Job, FormEntry):
         # Instantiate a GitRepo object for each GitRepository in GoldenConfigSettings.
         intended_repos = get_refreshed_repos(job_obj=self, repo_type="intended_repository", data=data)
 
-        self.logger.debug(
-            "Building device settings mapping and running intended config nornir play."
-        )
+        self.logger.debug("Building device settings mapping and running intended config nornir play.")
         config_intended(self, data)
 
         # Commit / Push each repo after job is completed.

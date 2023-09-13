@@ -1,64 +1,48 @@
 # v1.0 Release Notes
 
-- Added support for Jinja2Filters to be be used in configuration generation
-- Added support for multiple repos
-- Add Git datasource to load GC properties
-- Added support for nautobot secrets group on git repos
-- Changed the release policy
-- Updated navigation to a dedicated top level menu
+!!! warning "Developer Note - Remove Me!"
+    Guiding Principles:
 
-## v1.0.3 - 2022-06
+    - Changelogs are for humans, not machines.
+    - There should be an entry for every single version.
+    - The same types of changes should be grouped.
+    - Versions and sections should be linkable.
+    - The latest version comes first.
+    - The release date of each version is displayed.
+    - Mention whether you follow Semantic Versioning.
 
-### Fixed
+    Types of changes:
 
-- [#257](https://github.com/nautobot/nautobot-plugin-golden-config/issues/257) Resolved template_content displaying SoT AGG link on Device detail page if Device not in scope of GoldenConfigSetting
-    - Change to pull version from package instead of static variable
+    - `Added` for new features.
+    - `Changed` for changes in existing functionality.
+    - `Deprecated` for soon-to-be removed features.
+    - `Removed` for now removed features.
+    - `Fixed` for any bug fixes.
+    - `Security` in case of vulnerabilities.
 
-## v1.0.2 - 2022-05
 
-### Fixed
+This document describes all new features and changes in the release `1.0`. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-- [#246](https://github.com/nautobot/nautobot-plugin-golden-config/issues/246) Dependabot update to Docker redis-7.x
-- [#233](https://github.com/nautobot/nautobot-plugin-golden-config/issues/233) Dependabot update to paramiko-2.10.1
-- [#251](https://github.com/nautobot/nautobot-plugin-golden-config/issues/251) Add description to CSV config replace export
+## Release Overview
 
-## v1.0.1 - 2022-05
+- Major features or milestones
+- Achieved in this `x.y` release
+- Changes to compatibility with Nautobot and/or other plugins, libraries etc.
 
-### Fixed
-
-- [#238](https://github.com/nautobot/nautobot-plugin-golden-config/issues/238) Fixed repo/docs/homepage links for PyPI
-- [#243](https://github.com/nautobot/nautobot-plugin-golden-config/issues/243) Removing unneed javascript source as it is part of [#243](https://github.com/nautobot/nautobot-plugin-golden-config/pull/243)
-
-## v1.0.0 - 2022-04
+## [v1.0.1] - 2021-09-08
 
 ### Added
 
-- [#180](https://github.com/nautobot/nautobot-plugin-golden-config/issues/180) Added Renovate for proactive package management
-- [#158](https://github.com/nautobot/nautobot-plugin-golden-config/issues/158) Allow for Jinja2 Filters to be used by GoldenConfig templates
-- [#167](https://github.com/nautobot/nautobot-plugin-golden-config/issues/167) Added support for multiple repos
-- [#205](https://github.com/nautobot/nautobot-plugin-golden-config/issues/205) Added support for multiple repos via multiple golden config settings
-- [#206](https://github.com/nautobot/nautobot-plugin-golden-config/issues/206) Add Git datasource to load GC properties
-- [#218](https://github.com/nautobot/nautobot-plugin-golden-config/issues/218) Added ability to storre SoTAgg field leveraging Nautobot saved GraphQl query
-- [#225](https://github.com/nautobot/nautobot-plugin-golden-config/issues/225) Added support for nautobot secrets group on git repos
-- [#234](https://github.com/nautobot/nautobot-plugin-golden-config/issues/234) Minor update to FAQ
-
 ### Changed
-
-- [#171](https://github.com/nautobot/nautobot-plugin-golden-config/issues/171) Changed the release policy
-- [#158](https://github.com/nautobot/nautobot-plugin-golden-config/issues/158) Changed variable job_result to nautobot_job
-- [#186](https://github.com/nautobot/nautobot-plugin-golden-config/issues/186) Update mariadb Docker tag to v10.7
-- [#187](https://github.com/nautobot/nautobot-plugin-golden-config/issues/187) Update postgres Docker tag to v14
-- [#188](https://github.com/nautobot/nautobot-plugin-golden-config/issues/188) Update Markdown dependency
-- [#190](https://github.com/nautobot/nautobot-plugin-golden-config/issues/190) Update to Nautobot 1.2.0
-- [#190](https://github.com/nautobot/nautobot-plugin-golden-config/issues/190) Remove Nautobot 1.0 specific code
-- [#211](https://github.com/nautobot/nautobot-plugin-golden-config/issues/211) Update dependency mariadb to v10.8
-- [#229](https://github.com/nautobot/nautobot-plugin-golden-config/issues/229) Updated navigation to a dedicated top level menu
 
 ### Fixed
 
-- [#176](https://github.com/nautobot/nautobot-plugin-golden-config/issues/176) Fixed Pylint issue
-- [#182](https://github.com/nautobot/nautobot-plugin-golden-config/issues/182) Add reference to Nornir plugin for installation
-- [#183](https://github.com/nautobot/nautobot-plugin-golden-config/issues/183) Fixed documentation for sot_agg_transposer default
-- [#184](https://github.com/nautobot/nautobot-plugin-golden-config/issues/184) Fix markdown links in quick-start
-- [#194](https://github.com/nautobot/nautobot-plugin-golden-config/issues/194) Detailed Error Handling in get_job_filter helper
-- [#229](https://github.com/nautobot/nautobot-plugin-golden-config/issues/229) Fixed [#165](https://github.com/nautobot/nautobot-plugin-golden-config/pull/165), Configuration Compliance List View "Device" filter doesn't work
+- [#123](https://github.com/nautobot/nautobot-plugin-golden-config/issues/123) Fixed Tag filtering not working in job launch form
+
+## [v1.0.0] - 2021-08-03
+
+### Added
+
+### Changed
+
+### Fixed

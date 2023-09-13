@@ -1,6 +1,6 @@
 """Tasks for use with Invoke.
 
-(c) 2020-2023 Network To Code
+Copyright (c) 2023, Network to Code, LLC
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -12,11 +12,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import os
 from distutils.util import strtobool
+from invoke import Collection, task as invoke_task
+import os
 
-from invoke import Collection
-from invoke import task as invoke_task
+from dotenv import load_dotenv
+
+
+def _load_dotenv():
+    load_dotenv("./development/development.env")
+    load_dotenv("./development/creds.env")
 
 
 def is_truthy(arg):
@@ -40,9 +45,9 @@ namespace = Collection("nautobot_golden_config")
 namespace.configure(
     {
         "nautobot_golden_config": {
-            "nautobot_ver": "2.0.0-rc.2",
-            "project_name": "nautobot_golden_config",
-            "python_ver": "3.11",
+            "nautobot_ver": "latest",
+            "project_name": "nautobot-golden-config",
+            "python_ver": "3.8",
             "local": False,
             "compose_dir": os.path.join(os.path.dirname(__file__), "development"),
             "compose_files": [
@@ -77,22 +82,23 @@ def task(function=None, *args, **kwargs):
 
 
 def docker_compose(context, command, **kwargs):
-    """Helper function for running a specific docker-compose command with all appropriate parameters and environment.
+    """Helper function for running a specific docker compose command with all appropriate parameters and environment.
 
     Args:
         context (obj): Used to run specific commands
-        command (str): Command string to append to the "docker-compose ..." command, such as "build", "up", etc.
+        command (str): Command string to append to the "docker compose ..." command, such as "build", "up", etc.
         **kwargs: Passed through to the context.run() call.
     """
     build_env = {
-        # Note: 'docker-compose logs' will stop following after 60 seconds by default,
+        # Note: 'docker compose logs' will stop following after 60 seconds by default,
         # so we are overriding that by setting this environment variable.
         "COMPOSE_HTTP_TIMEOUT": context.nautobot_golden_config.compose_http_timeout,
         "NAUTOBOT_VER": context.nautobot_golden_config.nautobot_ver,
         "PYTHON_VER": context.nautobot_golden_config.python_ver,
+        **kwargs.pop("env", {}),
     }
     compose_command_tokens = [
-        "docker-compose",
+        "docker compose",
         f"--project-name {context.nautobot_golden_config.project_name}",
         f'--project-directory "{context.nautobot_golden_config.compose_dir}"',
     ]
@@ -108,7 +114,7 @@ def docker_compose(context, command, **kwargs):
     if service is not None:
         compose_command_tokens.append(service)
 
-    print(f'Running docker-compose command "{command}"')
+    print(f'Running docker compose command "{command}"')
     compose_command = " ".join(compose_command_tokens)
 
     return context.run(compose_command, env=build_env, **kwargs)
@@ -125,9 +131,11 @@ def run_command(context, command, **kwargs):
         if "nautobot" in results.stdout:
             compose_command = f"exec nautobot {command}"
         else:
-            compose_command = f"run --entrypoint '{command}' nautobot"
+            compose_command = f"run --rm --entrypoint '{command}' nautobot"
 
-        docker_compose(context, compose_command, pty=True)
+        pty = kwargs.pop("pty", True)
+
+        docker_compose(context, compose_command, pty=pty, **kwargs)
 
 
 # ------------------------------------------------------------------------------
@@ -159,42 +167,66 @@ def generate_packages(context):
     run_command(context, command)
 
 
+@task
+def lock(context):
+    """Generate poetry.lock inside the Nautobot container."""
+    run_command(context, "poetry lock --no-update")
+
+
 # ------------------------------------------------------------------------------
 # START / STOP / DEBUG
 # ------------------------------------------------------------------------------
-@task
-def debug(context):
-    """Start Nautobot and its dependencies in debug mode."""
-    print("Starting Nautobot in debug mode...")
-    docker_compose(context, "up")
+@task(help={"service": "If specified, only affect this service."})
+def debug(context, service=""):
+    """Start specified or all services and its dependencies in debug mode."""
+    print(f"Starting {service} in debug mode...")
+    docker_compose(context, "up", service=service)
 
 
 @task(help={"service": "If specified, only affect this service."})
-def start(context, service=None):
-    """Start Nautobot and its dependencies in detached mode."""
+def start(context, service=""):
+    """Start specified or all services and its dependencies in detached mode."""
     print("Starting Nautobot in detached mode...")
     docker_compose(context, "up --detach", service=service)
 
 
-@task
-def restart(context):
-    """Gracefully restart all containers."""
+@task(help={"service": "If specified, only affect this service."})
+def restart(context, service=""):
+    """Gracefully restart specified or all services."""
     print("Restarting Nautobot...")
-    docker_compose(context, "restart")
+    docker_compose(context, "restart", service=service)
 
 
-@task
-def stop(context):
-    """Stop Nautobot and its dependencies."""
+@task(help={"service": "If specified, only affect this service."})
+def stop(context, service=""):
+    """Stop specified or all services, if service is not specified, remove all containers."""
     print("Stopping Nautobot...")
-    docker_compose(context, "down")
+    docker_compose(context, "stop" if service else "down --remove-orphans", service=service)
 
 
 @task
 def destroy(context):
     """Destroy all containers and volumes."""
     print("Destroying Nautobot...")
-    docker_compose(context, "down --volumes")
+    docker_compose(context, "down --remove-orphans --volumes")
+
+
+@task
+def export(context):
+    """Export docker compose configuration to `compose.yaml` file.
+
+    Useful to:
+
+    - Debug docker compose configuration.
+    - Allow using `docker compose` command directly without invoke.
+    """
+    docker_compose(context, "convert > compose.yaml")
+
+
+@task(name="ps", help={"all": "Show all, including stopped containers"})
+def ps_task(context, all=False):
+    """List containers."""
+    docker_compose(context, f"ps {'--all' if all else ''}")
 
 
 @task
@@ -207,13 +239,13 @@ def vscode(context):
 
 @task(
     help={
-        "service": "Docker-compose service name to view (default: nautobot)",
-        "follow": "Follow logs",
-        "tail": "Tail N number of lines or 'all'",
+        "service": "If specified, only display logs for this service (default: all)",
+        "follow": "Flag to follow logs (default: False)",
+        "tail": "Tail N number of lines (default: all)",
     }
 )
-def logs(context, service="nautobot", follow=False, tail=None):
-    """View the logs of a docker-compose service."""
+def logs(context, service="", follow=False, tail=0):
+    """View the logs of a docker compose service."""
     command = "logs "
 
     if follow:
@@ -221,18 +253,21 @@ def logs(context, service="nautobot", follow=False, tail=None):
     if tail:
         command += f"--tail={tail} "
 
-    command += service
-    docker_compose(context, command)
+    docker_compose(context, command, service=service)
 
 
 # ------------------------------------------------------------------------------
 # ACTIONS
 # ------------------------------------------------------------------------------
-@task
-def nbshell(context):
+@task(help={"file": "Python file to execute"})
+def nbshell(context, file=""):
     """Launch an interactive nbshell session."""
-    command = "nautobot-server nbshell"
-    run_command(context, command)
+    command = [
+        "nautobot-server",
+        "nbshell",
+        f"< '{file}'" if file else "",
+    ]
+    run_command(context, " ".join(command), pty=not bool(file))
 
 
 @task
@@ -244,7 +279,7 @@ def shell_plus(context):
 
 @task
 def cli(context):
-    """Launch a bash shell inside the running Nautobot container."""
+    """Launch a bash shell inside the Nautobot container."""
     run_command(context, "bash")
 
 
@@ -302,6 +337,181 @@ def post_upgrade(context):
     run_command(context, command)
 
 
+@task(
+    help={
+        "service": "Docker compose service name to run command in (default: nautobot).",
+        "command": "Command to run (default: bash).",
+        "file": "File to run command with (default: empty)",
+    },
+)
+def exec(context, service="nautobot", command="bash", file=""):
+    """Launch a command inside the running container (defaults to bash shell inside nautobot container)."""
+    command = [
+        "exec",
+        "--",
+        service,
+        command,
+        f"< '{file}'" if file else "",
+    ]
+    docker_compose(context, " ".join(command), pty=not bool(file))
+
+
+@task(
+    help={
+        "query": "SQL command to execute and quit (default: empty)",
+        "input": "SQL file to execute and quit (default: empty)",
+        "output": "Ouput file, overwrite if exists (default: empty)",
+    }
+)
+def dbshell(context, query="", input="", output=""):
+    """Start database CLI inside the running `db` container.
+
+    Doesn't use `nautobot-server dbshell`, using started `db` service container only.
+    """
+    if input and query:
+        raise ValueError("Cannot specify both, `input` and `query` arguments")
+    if output and not (input or query):
+        raise ValueError("`output` argument requires `input` or `query` argument")
+
+    _load_dotenv()
+
+    service = "db"
+    env_vars = {}
+    command = ["exec"]
+
+    if "docker-compose.mysql.yml" in context.nautobot_golden_config.compose_files:
+        env_vars["MYSQL_PWD"] = os.getenv("MYSQL_PASSWORD")
+        command += [
+            "--env=MYSQL_PWD",
+            "--",
+            service,
+            "mysql",
+            f"--user='{os.getenv('MYSQL_USER')}'",
+            f"--database='{os.getenv('MYSQL_DATABASE')}'",
+        ]
+        if query:
+            command += [f"--execute='{query}'"]
+    elif "docker-compose.postgres.yml" in context.nautobot_golden_config.compose_files:
+        command += [
+            "--",
+            service,
+            "psql",
+            f"--username='{os.getenv('POSTGRES_USER')}'",
+            f"--dbname='{os.getenv('POSTGRES_DB')}'",
+        ]
+        if query:
+            command += [f"--command='{query}'"]
+    else:
+        raise ValueError("Unsupported database backend.")
+
+    if input:
+        command += [f"< '{input}'"]
+    if output:
+        command += [f"> '{output}'"]
+
+    docker_compose(context, " ".join(command), env=env_vars, pty=not (input or output or query))
+
+
+@task(
+    help={
+        "input": "SQL dump file to replace the existing database with. This can be generated using `invoke backup-db` (default: `dump.sql`).",
+    }
+)
+def import_db(context, input="dump.sql"):
+    """Stop Nautobot containers and replace the current database with the dump into the running `db` container."""
+    docker_compose(context, "stop -- nautobot worker")
+
+    _load_dotenv()
+
+    service = "db"
+    env_vars = {}
+    command = ["exec"]
+
+    if "docker-compose.mysql.yml" in context.nautobot_golden_config.compose_files:
+        env_vars["MYSQL_PWD"] = os.getenv("MYSQL_PASSWORD")
+        command += [
+            "--env=MYSQL_PWD",
+            "--",
+            service,
+            "mysql",
+            f"--user='{os.getenv('MYSQL_USER')}'",
+            f"--database='{os.getenv('MYSQL_DATABASE')}'",
+        ]
+    elif "docker-compose.postgres.yml" in context.nautobot_golden_config.compose_files:
+        command += [
+            "--",
+            service,
+            "psql",
+            f"--username='{os.getenv('POSTGRES_USER')}'",
+            "postgres",
+        ]
+    else:
+        raise ValueError("Unsupported database backend.")
+
+    command += [f"< '{input}'"]
+
+    docker_compose(context, " ".join(command), env=env_vars, pty=False)
+
+    print("Database import complete, you can start Nautobot now: `invoke start`")
+
+
+@task(
+    help={
+        "output": "Ouput file, overwrite if exists (default: `dump.sql`)",
+        "readable": "Flag to dump database data in more readable format (default: `True`)",
+    }
+)
+def backup_db(context, output="dump.sql", readable=True):
+    """Dump database into `output` file from running `db` container."""
+    _load_dotenv()
+
+    service = "db"
+    env_vars = {}
+    command = ["exec"]
+
+    if "docker-compose.mysql.yml" in context.nautobot_golden_config.compose_files:
+        env_vars["MYSQL_PWD"] = os.getenv("MYSQL_ROOT_PASSWORD")
+        command += [
+            "--env=MYSQL_PWD",
+            "--",
+            service,
+            "mysqldump",
+            "--user=root",
+            "--add-drop-database",
+            "--skip-extended-insert" if readable else "",
+            "--databases",
+            os.getenv("MYSQL_DATABASE", ""),
+        ]
+    elif "docker-compose.postgres.yml" in context.nautobot_golden_config.compose_files:
+        command += [
+            "--",
+            service,
+            "pg_dump",
+            "--clean",
+            "--create",
+            "--if-exists",
+            f"--username='{os.getenv('POSTGRES_USER')}'",
+            f"--dbname='{os.getenv('POSTGRES_DB')}'",
+        ]
+
+        if readable:
+            command += ["--inserts"]
+    else:
+        raise ValueError("Unsupported database backend.")
+
+    if output:
+        command += [f"> '{output}'"]
+
+    docker_compose(context, " ".join(command), env=env_vars, pty=False)
+
+    print(50 * "=")
+    print("The database backup has been successfully completed and saved to the file:")
+    print(output)
+    print("If you want to import this database backup, please execute the following command:")
+    print(f"invoke import-db --input '{output}'")
+    print(50 * "=")
+
+
 # ------------------------------------------------------------------------------
 # DOCS
 # ------------------------------------------------------------------------------
@@ -315,6 +525,25 @@ def docs(context):
         run_command(context, command)
     else:
         start(context, service="docs")
+
+
+@task
+def build_and_check_docs(context):
+    """Build documentation to be available within Nautobot."""
+    command = "mkdocs build --no-directory-urls --strict"
+    run_command(context, command)
+
+
+@task(name="help")
+def help_task(context):
+    """Print the help of available tasks."""
+    import tasks  # pylint: disable=all
+
+    root = Collection.from_module(tasks)
+    for task_name in sorted(root.task_names):
+        print(50 * "-")
+        print(f"invoke {task_name} --help")
+        context.run(f"invoke {task_name} --help")
 
 
 # ------------------------------------------------------------------------------
@@ -375,7 +604,7 @@ def bandit(context):
 
 @task
 def yamllint(context):
-    """Run yamllint to validate formatting adheres to NTC defined YAML standards.
+    """Run yamllint to validate formating adheres to NTC defined YAML standards.
 
     Args:
         context (obj): Used to run specific commands
@@ -387,7 +616,7 @@ def yamllint(context):
 @task
 def check_migrations(context):
     """Check for missing migrations."""
-    command = "nautobot-server --config=nautobot/core/tests/nautobot_config.py makemigrations --dry-run --check"
+    command = "nautobot-server makemigrations --dry-run --check"
 
     run_command(context, command)
 
@@ -398,9 +627,19 @@ def check_migrations(context):
         "label": "specify a directory or module to test instead of running all Nautobot tests",
         "failfast": "fail as soon as a single test fails don't run the entire test suite",
         "buffer": "Discard output from passing tests",
+        "pattern": "Run specific test methods, classes, or modules instead of all tests",
+        "verbose": "Enable verbose test output.",
     }
 )
-def unittest(context, keepdb=False, label="nautobot_golden_config", failfast=False, buffer=True):
+def unittest(
+    context,
+    keepdb=False,
+    label="nautobot_golden_config",
+    failfast=False,
+    buffer=True,
+    pattern="",
+    verbose=False,
+):
     """Run Nautobot unit tests."""
     command = f"coverage run --module nautobot.core.cli test {label}"
 
@@ -410,6 +649,11 @@ def unittest(context, keepdb=False, label="nautobot_golden_config", failfast=Fal
         command += " --failfast"
     if buffer:
         command += " --buffer"
+    if pattern:
+        command += f" -k='{pattern}'"
+    if verbose:
+        command += " --verbosity 2"
+
     run_command(context, command)
 
 
@@ -423,10 +667,12 @@ def unittest_coverage(context):
 
 @task(
     help={
-        "failfast": "fail as soon as a single test fails don't run the entire test suite",
+        "failfast": "fail as soon as a single test fails don't run the entire test suite. (default: False)",
+        "keepdb": "Save and re-use test database between test runs for faster re-testing. (default: False)",
+        "lint-only": "Only run linters; unit tests will be excluded. (default: False)",
     }
 )
-def tests(context, failfast=False):
+def tests(context, failfast=False, keepdb=False, lint_only=False):
     """Run all tests for this plugin."""
     # If we are not running locally, start the docker containers so we don't have to for each test
     if not is_truthy(context.nautobot_golden_config.local):
@@ -445,7 +691,10 @@ def tests(context, failfast=False):
     yamllint(context)
     print("Running pylint...")
     pylint(context)
-    print("Running unit tests...")
-    unittest(context, failfast=failfast)
+    print("Running mkdocs...")
+    build_and_check_docs(context)
+    if not lint_only:
+        print("Running unit tests...")
+        unittest(context, failfast=failfast, keepdb=keepdb)
     print("All tests have passed!")
     unittest_coverage(context)

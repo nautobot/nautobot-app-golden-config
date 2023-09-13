@@ -1,0 +1,33 @@
+{
+    "cookiecutter": {
+        "codeowner_github_usernames": "@itdependsnetworks @jeffkala @nkallergis",
+        "full_name": "Network to Code, LLC",
+        "email": "opensource@networktocode.com",
+        "github_org": "nautobot",
+        "plugin_name": "nautobot_golden_config",
+        "verbose_name": "Golden Config",
+        "plugin_slug": "nautobot-golden-config",
+        "project_slug": "nautobot-plugin-golden-config",
+        "repo_url": "https://github.com/nautobot/nautobot-plugin-golden-config",
+        "base_url": "golden-config",
+        "min_nautobot_version": "1.4.0",
+        "max_nautobot_version": "1.9999",
+        "nautobot_version": "latest",
+        "camel_name": "NautobotGoldenConfig",
+        "project_short_description": "A plugin for configuration on nautobot",
+        "version": "1.0.0",
+        "model_class_name": "None",
+        "open_source_license": "Apache-2.0",
+        "docs_base_url": "https://docs.nautobot.com",
+        "docs_app_url": "https://docs.nautobot.com/projects/golden-config/en/latest",
+        "_drift_manager": {
+            "template": "https://github.com/nautobot/cookiecutter-nautobot-app.git",
+            "template_dir": "nautobot-app",
+            "template_ref": "develop",
+            "cookie_dir": "",
+            "branch_prefix": "drift-manager",
+            "pull_request_strategy": "create",
+            "post_actions": []
+        }
+    }
+}

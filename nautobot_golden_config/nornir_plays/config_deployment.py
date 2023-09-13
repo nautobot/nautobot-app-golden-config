@@ -1,13 +1,14 @@
 """Nornir job for deploying configurations."""
 from datetime import datetime
+
 from nautobot.dcim.models import Device
 from nautobot.extras.models import Status
-from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
+from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from nautobot_plugin_nornir.utils import get_dispatcher
 from nornir import InitNornir
-from nornir.core.task import Result, Task
 from nornir.core.plugins.inventory import InventoryPluginRegister
+from nornir.core.task import Result, Task
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
 from nornir_nautobot.utils.logger import NornirLogger
 
@@ -26,7 +27,7 @@ def run_deployment(task: Task, logger: NornirLogger, commit: bool, config_plan_q
     # after https://github.com/nautobot/nautobot-plugin-golden-config/issues/443
 
     if commit:
-        obj.update(status=Status.objects.get(slug="in-progress"))
+        plans_to_deploy.update(status=Status.objects.get(slug="in-progress"))
         result = task.run(
             task=dispatcher,
             name="DEPLOY CONFIG TO DEVICE",
@@ -36,12 +37,16 @@ def run_deployment(task: Task, logger: NornirLogger, commit: bool, config_plan_q
             config=consolidated_config_set,
             default_drivers_mapping=get_dispatcher(),
         )[1].result["result"]
-        if not result.failed:
-            logger.log_success(obj=obj, message="Successfully deployed configuration to device.")
-            obj.update(status=Status.objects.get(slug="completed"))
+        if not result:
+            plans_to_deploy.update(status=Status.objects.get(slug="failed"))
+            logger.log_failure(obj=obj, message="No Nornir Result was Returned.")
         else:
-            obj.update(status=Status.objects.get(slug="failed"))
-            logger.log_failure(obj=obj, message="Failed deployment to the device.")
+            if not result.failed:
+                logger.log_success(obj=obj, message="Successfully deployed configuration to device.")
+                plans_to_deploy.update(status=Status.objects.get(slug="completed"))
+            else:
+                plans_to_deploy.update(status=Status.objects.get(slug="failed"))
+                logger.log_failure(obj=obj, message="Failed deployment to the device.")
     else:
         result = None
         logger.log_info(obj=obj, message="Commit not enabled. Configuration not deployed to device.")

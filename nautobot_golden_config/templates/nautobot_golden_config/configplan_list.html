@@ -5,15 +5,16 @@
 
 <!-- Deploy Button -->
 {% if perms.extras.run_job %}
-{% include "nautobot_golden_config/job_result_modal.html" %}
+{% include "nautobot_golden_config/job_result_modal.html" with modal_title="Deploy Config Plans" %}
 <button id="startJob" type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modalPopup">
-   <span class="mdi mdi-upload-multiple" aria-hidden="true"></span> Deploy Selected
+  <span class="mdi mdi-upload-multiple" aria-hidden="true"></span> Deploy Selected
 </button>
 {% endif %}
 
 {% endblock %}
 
 {% block javascript %}
+{{ block.super }}
 <script src="{% static 'toggle_fields.js' %}"></script>
 <script src="{% static 'run_job.js' %}"></script>
 <script>

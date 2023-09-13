@@ -11,6 +11,7 @@ from nautobot.extras.forms import NautobotBulkEditForm, NautobotFilterForm, Naut
 from nautobot.extras.models import DynamicGroup, GitRepository, JobResult, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
 from nautobot.utilities.forms import add_blank_choice, DatePicker, SlugField, TagFilterField
+
 from nautobot_golden_config import models
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
 
@@ -513,7 +514,7 @@ class ConfigPlanUpdateForm(NautobotModelForm):
         queryset=Status.objects.all(),
         query_params={"content_types": models.ConfigPlan._meta.label_lower},
     )
-    tag = utilities_forms.DynamicModelMultipleChoiceField(
+    tags = utilities_forms.DynamicModelMultipleChoiceField(
         queryset=Tag.objects.all(), query_params={"content_types": "dcim.device"}, required=False
     )
 
@@ -525,7 +526,7 @@ class ConfigPlanUpdateForm(NautobotModelForm):
             "change_control_id",
             "change_control_url",
             "status",
-            "tag",
+            "tags",
         )
 
 

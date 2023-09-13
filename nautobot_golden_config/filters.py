@@ -461,4 +461,4 @@ class ConfigPlanFilterSet(NautobotFilterSet):
         """Boilerplate filter Meta data for Config Plan."""
 
         model = models.ConfigPlan
-        fields = ["id", "created", "plan_type", "change_control_id"]
+        fields = ["id", "created", "change_control_id"]

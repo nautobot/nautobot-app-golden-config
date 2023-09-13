@@ -124,6 +124,7 @@ class ComplianceRuleForm(NautobotModelForm):
             "match_config",
             "custom_compliance",
             "config_remediation",
+            "tags",
         )
 
 
@@ -183,7 +184,7 @@ class ComplianceFeatureForm(NautobotModelForm):
         """Boilerplate form Meta data for compliance feature."""
 
         model = models.ComplianceFeature
-        fields = ("name", "slug", "description")
+        fields = ("name", "slug", "description", "tags")
 
 
 class ComplianceFeatureFilterForm(NautobotFilterForm):
@@ -235,6 +236,7 @@ class ConfigRemoveForm(NautobotModelForm):
             "name",
             "description",
             "regex",
+            "tags",
         )
 
 
@@ -290,6 +292,7 @@ class ConfigReplaceForm(NautobotModelForm):
             "description",
             "regex",
             "replace",
+            "tags",
         )
 
 

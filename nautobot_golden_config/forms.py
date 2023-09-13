@@ -342,6 +342,7 @@ class GoldenConfigSettingForm(NautobotModelForm):
 
         model = models.GoldenConfigSetting
         fields = "__all__"
+        exclude = ["_custom_field_data"]  # pylint: disable=modelform-uses-exclude
 
 
 class GoldenConfigSettingFilterForm(NautobotFilterForm):
@@ -398,6 +399,7 @@ class RemediationSettingForm(NautobotModelForm):
 
         model = models.RemediationSetting
         fields = "__all__"
+        exclude = ["_custom_field_data"]  # pylint: disable=modelform-uses-exclude
 
 
 class RemediationSettingFilterForm(NautobotFilterForm):
@@ -502,6 +504,7 @@ class ConfigPlanForm(NautobotModelForm):
 
         model = models.ConfigPlan
         fields = "__all__"
+        exclude = ["_custom_field_data"]  # pylint: disable=modelform-uses-exclude
 
 
 class ConfigPlanUpdateForm(NautobotModelForm):
@@ -520,9 +523,9 @@ class ConfigPlanUpdateForm(NautobotModelForm):
 
         model = models.ConfigPlan
         fields = (
-            "status",
             "change_control_id",
             "change_control_url",
+            "status",
             "tags",
         )
 

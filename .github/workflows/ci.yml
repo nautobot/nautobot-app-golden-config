@@ -13,9 +13,7 @@ on: # yamllint disable-line rule:truthy rule:comments
   pull_request: ~
 
 env:
-  # TODO Fix to be repository name
-  # PLUGIN_NAME: "nautobot-plugin-golden-config"
-  PLUGIN_NAME: "nautobot-golden-config"
+  PLUGIN_NAME: "nautobot-plugin-golden-config"
 
 jobs:
   black:

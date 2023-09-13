@@ -1,5 +1,7 @@
 """Jobs to run backups, intended config, and compliance."""
 # pylint: disable=too-many-function-args,logging-fstring-interpolation
+# TODO: Remove the following ignore, added to be able to pass pylint in CI.
+# pylint: disable=arguments-differ
 
 from datetime import datetime
 
@@ -394,7 +396,7 @@ class GenerateConfigPlans(Job, FormEntry):
         except NornirNautobotException as error:
             error_msg = str(error)
             self.logger.error(error_msg)
-            raise NornirNautobotException(error_msg)
+            raise NornirNautobotException(error_msg) from error
         if self._plan_type in ["intended", "missing", "remediation"]:
             self.logger.debug("Starting config plan generation for compliance features.")
             self._generate_config_plan_from_feature()

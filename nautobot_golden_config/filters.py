@@ -380,12 +380,6 @@ class RemediationSettingFilterSet(NautobotFilterSet):
         queryset=Platform.objects.all(),
         label="Platform ID",
     )
-    remediation_type = django_filters.ModelMultipleChoiceFilter(
-        field_name="remediation_type",
-        queryset=models.RemediationSetting.objects.all(),
-        to_field_name="remediation_type",
-        label="Remediation Type",
-    )
 
     def search(self, queryset, name, value):  # pylint: disable=unused-argument
         """Perform the filtered search."""
@@ -398,7 +392,7 @@ class RemediationSettingFilterSet(NautobotFilterSet):
         """Boilerplate filter Meta data for Remediation Setting."""
 
         model = models.RemediationSetting
-        fields = ["id"]
+        fields = ["id", "remediation_type"]
 
 
 class ConfigPlanFilterSet(NautobotFilterSet):
@@ -461,4 +455,4 @@ class ConfigPlanFilterSet(NautobotFilterSet):
         """Boilerplate filter Meta data for Config Plan."""
 
         model = models.ConfigPlan
-        fields = ["id", "created", "change_control_id"]
+        fields = ["id", "created", "change_control_id", "plan_type"]

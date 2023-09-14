@@ -1,5 +1,7 @@
 # Using the App
 
+This document describes common use-cases and scenarios for this App.
+
 ## General Usage
 
 ### Home
@@ -177,7 +179,7 @@ garbage collection and it is up to the operator to remove such data.
 The version of OS's supported is documented in the [FAQ](./app_faq.md) and is controlled the platform network_driver. The platform network_driver must be exactly as expected or leverage
 a configuration option--which is described the the FAQ--for the plugin to work.
 
-### Use-cases and common workflows
+## Use-cases and common workflows
 
 This plugin enable four (4) key use cases.
 

@@ -1,11 +1,11 @@
 ---
 dev_addr: "127.0.0.1:8001"
-edit_uri: "edit/main/docs"
+edit_uri: "edit/main/nautobot-plugin-golden-config/docs"
 site_dir: "golden-config/static/golden-config/docs"
-site_name: "Golden Configuration Documentation"
+site_name: "Nautobot Golden Configuration Documentation"
 site_url: "https://docs.nautobot.com/projects/golden-config/en/latest/"
 repo_url: "https://github.com/nautobot/nautobot-plugin-golden-config"
-copyright: "Copyright &copy; 2023 The Authors"
+copyright: "Copyright &copy; The Authors"
 theme:
   name: "material"
   navigation_depth: 4
@@ -14,14 +14,17 @@ theme:
     - "django"
     - "yaml"
   features:
+    - "content.action.edit"
+    - "content.action.view"
     - "content.code.copy"
-    - "navigation.tracking"
+    - "navigation.footer"
+    - "navigation.indexes"
     - "navigation.tabs"
     - "navigation.tabs.sticky"
-    - "search.suggest"
+    - "navigation.tracking"
     - "search.highlight"
     - "search.share"
-    - "navigation.indexes"
+    - "search.suggest"
   favicon: "assets/favicon.ico"
   logo: "assets/nautobot_logo.svg"
   palette:
@@ -79,8 +82,10 @@ markdown_extensions:
   - "pymdownx.inlinehilite"
   - "pymdownx.snippets"
   - "pymdownx.superfences"
+  - "footnotes"
 plugins:
   - "search"
+  - "mkdocs-version-annotations"
   - "mkdocstrings":
       default_handler: "python"
       handlers:

@@ -1,11 +1,11 @@
 # App Overview
 
-The golden configuration plugin is a Nautobot plugin that aims to solve common configuration management challenges.
+This document provides an overview of the App including critical information and import considerations when applying it to your Nautobot environment.
 
 !!! note
     Throughout this documentation, the terms "app" and "plugin" will be used interchangeably.
 
-## Description/Overview
+## Description
 
 When engineers are starting their network automation journey, everybody asks where and how they should start. Their immediate thought is coming up with methods of automating changes within their environments. However, doing so can be scary for those who are risk averse about automation making changes. The question then comes about how automation can be used to help solve some of the big problems facing network teams today. One of those problems that we’ve repeatedly heard from our customers and fellow network engineers is around configuration drift. This issue typically occurs for multiple reasons:
 

@@ -1702,7 +1702,7 @@ nornir = ">=3,<4"
 
 [[package]]
 name = "nornir-nautobot"
-version = "2.6.0"
+version = "2.6.1"
 description = "Nornir Nautobot"
 category = "main"
 optional = false
@@ -2721,7 +2721,7 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<3.12"
-content-hash = "091e6364b1ed492aed6a56f2aeb29b6221583d17e8f7a67e4bc10c05c3984ca3"
+content-hash = "e33d2998dfbae8691313263d6e1e8f75023f2b9529291c3dc09783ba9814c8e3"
 
 [metadata.files]
 amqp = [
@@ -3779,8 +3779,8 @@ nornir-napalm = [
     {file = "nornir_napalm-0.4.0.tar.gz", hash = "sha256:84e0711ccbdf24bdb228042ab530bf688d6b2b8f12c65fa3cb73499c6974a9de"},
 ]
 nornir-nautobot = [
-    {file = "nornir_nautobot-2.6.0-py3-none-any.whl", hash = "sha256:7a325488775e56fefcb925d21134be7f6f177c5088cd16ec400f0789f723ccbf"},
-    {file = "nornir_nautobot-2.6.0.tar.gz", hash = "sha256:dbe7bc9d941b8337d3048e2cbfb5e2a9bea2774f38e5a50f2a3a04cda2213767"},
+    {file = "nornir_nautobot-2.6.1-py3-none-any.whl", hash = "sha256:ba3227e55f0d5efb107e9bb491a27f36729bae7404eafee1b1b8e102f8313657"},
+    {file = "nornir_nautobot-2.6.1.tar.gz", hash = "sha256:792c0cd5f12455f437736c2a13e10c8fbe9e4540817873ef310f849f6ecff73a"},
 ]
 nornir-netmiko = [
     {file = "nornir_netmiko-1.0.0-py3-none-any.whl", hash = "sha256:5ffcbecae3d2c374e0cbee8e3cf2ed5937e3effee73ad3c5195d6b3572dc7a56"},

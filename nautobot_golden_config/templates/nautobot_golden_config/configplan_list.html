@@ -23,7 +23,7 @@ var nautobot_csrf_token = "{{ csrf_token }}";
 document.addEventListener("DOMContentLoaded", function() {
     var startJobButton = document.getElementById("startJob");
     startJobButton.addEventListener("click", function(event) {
-        var userConfirmed = confirm("Warning!! This will deploy configurations to the devices you have selected, are you sure you want to deploy???");
+        var userConfirmed = confirm("Warning! This will deploy configurations to the devices you have selected, are you sure you want to deploy?");
         if (!userConfirmed) {
             // If user clicked "Cancel", stop the modal from showing
             event.preventDefault();

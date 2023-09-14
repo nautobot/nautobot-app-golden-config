@@ -74,7 +74,7 @@ function isValidURL(url) {
 
 function openModalAndStartJob() {
   var changeControlUrl = changeControlUrlInput.value;
-  if (!isValidURL(changeControlUrl)) {
+  if (changeControlUrl && !isValidURL(changeControlUrl)) {
     alert("Please enter a valid URL for Change Control URL.");
   } else {
     // If validation passes, trigger the modal to open

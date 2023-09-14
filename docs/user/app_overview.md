@@ -36,3 +36,14 @@ Utilizing these components, you can define the Golden Configuration standard for
 
 - Ken Celenza (@itdependsnetworks)
 - Jeff Kala (@jeffkala)
+
+## Nautobot Features Used
+
+!!! warning "Developer Note - Remove Me!"
+    What is shown today in the Installed Plugins page in Nautobot. What parts of Nautobot does it interact with, what does it add etc. ?
+
+### Extras
+
+!!! warning "Developer Note - Remove Me!"
+    Custom Fields - things like which CFs are created by this app?
+    Jobs - are jobs, if so, which ones, installed by this app?

@@ -4,10 +4,8 @@ import os
 import sys
 
 from django.utils.module_loading import import_string
-
 from nautobot.core.settings import *  # noqa: F403
 from nautobot.core.settings_funcs import is_truthy, parse_redis_connection
-
 
 #
 # Misc. settings
@@ -200,7 +198,7 @@ PLUGINS_CONFIG = {
 
 # Modify django_jinja Environment for test cases
 django_jinja_config = None
-for template in TEMPLATES:
+for template in TEMPLATES:  # noqa: F405
     if template["BACKEND"].startswith("django_jinja"):
         django_jinja_config = template
 
@@ -213,4 +211,4 @@ if django_jinja_config is not None:
     jinja_options["undefined"] = "jinja2.StrictUndefined"
 
 # Import filter function to have it register filter with django_jinja
-from nautobot_golden_config.tests import jinja_filters  # noqa: E402
+from nautobot_golden_config.tests import jinja_filters  # noqa: E402, F401

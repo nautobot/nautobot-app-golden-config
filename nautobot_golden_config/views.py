@@ -28,13 +28,14 @@ from nautobot.utilities.error_handlers import handle_protectederror
 from nautobot.utilities.forms import ConfirmationForm
 from nautobot.utilities.utils import copy_safe_request, csv_format
 from nautobot.utilities.views import ContentTypePermissionRequiredMixin, ObjectPermissionRequiredMixin
+
 from nautobot_golden_config import filters, forms, models, tables
 from nautobot_golden_config.api import serializers
 from nautobot_golden_config.jobs import DeployConfigPlans
-from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
 from nautobot_golden_config.utilities import constant
+from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
 from nautobot_golden_config.utilities.graphql import graph_ql_query
-from nautobot_golden_config.utilities.helper import get_device_to_settings_map, add_message
+from nautobot_golden_config.utilities.helper import add_message, get_device_to_settings_map
 
 LOGGER = logging.getLogger(__name__)
 
@@ -497,7 +498,7 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
                     + "\n"
                     + output[first_occurence:second_occurence]
                     + "@@"
-                    + output[second_occurence + 2 :]
+                    + output[second_occurence + 2 :]  # noqa: E203
                 )
 
         template_name = "nautobot_golden_config/configcompliance_details.html"

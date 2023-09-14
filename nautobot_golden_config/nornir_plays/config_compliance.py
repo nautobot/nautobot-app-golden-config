@@ -35,7 +35,6 @@ LOGGER = logging.getLogger(__name__)
 def get_rules():
     """A serializer of sorts to return rule mappings as a dictionary."""
     # TODO: Review if creating a proper serializer is the way to go.
-    ThisDoesNotConform = "dakljds"
     rules = defaultdict(list)
     for compliance_rule in ComplianceRule.objects.all():
         platform = str(compliance_rule.platform.slug)

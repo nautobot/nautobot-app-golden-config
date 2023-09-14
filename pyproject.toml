@@ -95,7 +95,8 @@ exclude = '''
 [tool.pylint.master]
 # Include the pylint_django plugin to avoid spurious warnings about Django patterns
 load-plugins="pylint_django"
-ignore=["jinja_filters.py", ".venv"]
+ignore-patterns=["jinja_filters.py", ".venv"]
+ignore-paths = '^.*/migrations/.*$'
 
 [tool.pylint.basic]
 # No docstrings required for private methods (Pylint default), or for test_ functions, or for inner Meta classes.

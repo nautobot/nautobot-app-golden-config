@@ -25,12 +25,12 @@ from nautobot_golden_config.nornir_plays.config_backup import config_backup
 from nautobot_golden_config.nornir_plays.config_compliance import config_compliance
 from nautobot_golden_config.nornir_plays.config_deployment import config_deployment
 from nautobot_golden_config.nornir_plays.config_intended import config_intended
+from nautobot_golden_config.utilities import constant
 from nautobot_golden_config.utilities.config_plan import (
     config_plan_default_status,
     generate_config_set_from_compliance_feature,
     generate_config_set_from_manual,
 )
-from nautobot_golden_config.utilities import constant
 from nautobot_golden_config.utilities.git import GitRepo
 from nautobot_golden_config.utilities.helper import get_job_filter
 

@@ -126,11 +126,50 @@ Compliance requires Backups and Intended Configurations in order to be executed.
 
 # Config Plans
 
-Coming soon
+Follow the steps below to get up and running for the configuration plans element of the plugin.
+
+1. Enable the feature in the `PLUGIN_SETTINGS`. The configuration should have `"enable_plan": True` set in the `PLUGINS_CONFIG` dictionary for `nautobot_golden_config`.
+2. Follow the steps in [Compliance](#compliance).
+    - Compliance is necessary if ConfigPlans will be generated utilizing any of the attributes provided by a Compliance object.
+    - This step may be skipped if only `manual` ConfigPlans are going to be generated.
+3. Create a ConfigPlan
+
+    1. Navigate to `Golden Config -> Config Plans`
+    2. Click on `ADD` button.
+    3. Fill out the plan details and plan filters.
+        - The options dynamically change in the form based on the `plan type` selected.
+        - If the `plan type` is Intended, Remediation, Missing.
+            - Select the Compliance Features to use to generate the plan.  If none are selected all features will be in scope.
+        - If the `plan type` is Manual.
+            - Create a manual plan to accomplish the goal. Note: Access to `obj` is available to dynamically populate fields via Jinja2 syntax.
+    4. Click `Generate`
+
+> For in-depth details see [Navigating Config Plans](./app_feature_config_plans.md)
 
 # Config Deploy
 
-Coming soon
+Follow the steps below to get up and running for the configuration deployment element of the plugin.
+
+1. Enable the feature in the `PLUGIN_SETTINGS`. The configuration should have `"enable_deploy": True` set in the `PLUGINS_CONFIG` dictionary for `nautobot_golden_config`.
+2. Follow the steps in [Config Plans](#config-plans).
+3. Navigate to the specific ConfigPlan to deploy, or multi-select them from the ConfigPlan list view.
+    - If deploying from a specific ConfigPlan object. Click `Deploy` button and accept the warnings.
+    - If deploying from the ConfigPlan list view. Click `Deploy Selected` button and accept the warnings.
+4. Interpret the results from the popup modal and navigate to the job result as needed for more details.
+
+> Config Deployments utilize the dispatchers from nornir-nautobot just like the other functionality of Golden Config. See [Troubleshooting Dispatchers](./troubleshooting/troubleshoot_dispatchers.md) for more details.
+
+# Config Remediation
+
+Follow the steps below to get up and running for the configuration remediation element of the plugin.
+
+1. Navigate to `Golden Config -> Compliance Rules`.
+2. Select the rules in which you'd like to enable remediation on.
+3. Edit the `Compliance Rule` and turn on the `Remediation` toggle button.
+4. Run the `Compliance` job again which will generate the initial remediation plan for the feature.
+5. Navigate to `Golden Config -> Config Compliance`, select the device and notice a remediation section is not present for the compliance details for the feature.
+
+> For in-depth details see [Navigating Config Plans](./app_feature_remediation.md)
 
 # Load Properties from Git
 

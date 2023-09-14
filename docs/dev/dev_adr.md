@@ -146,9 +146,14 @@ This has a computational impact when updating a Device object's platform. This i
 
 ### Configuration Deployment and Remediation
 
-Configuration remediation and deployments of any of the attributes based on the configuration compliance object are calculated based on the last run of the `ConfigCompliance` job. After a configuration deployment to fix any of these attributes (remediation, extras, missing) a new `ConfigCompliance` job must be run before all the compliance results will be updated.
+Configuration remediation and deployments of any of the attributes based on the configuration compliance object are calculated based on the last run of the `ConfigCompliance` job. After a configuration deployment to fix any of these attributes (remediation, intended, missing) a new `ConfigCompliance` job must be run before all the compliance results will be updated.
 
 
 ### Manual ConfigPlans
 
 When generating a manual `ConfigPlan` the Jinja2 template render has access to Django ORM methods like `.all()`, this also means that methods like `.delete()` can be called, the `render_template` functionality used by Golden Config inherits a Jinja2 Sandbox exception that will block unsafe calls. Golden Config will simply re-raise the exception `jinja2.exceptions.SecurityError: > is not safely callable`.
+
+
+### Hidden Jobs and JobButtons
+
+The configuration deployment and plans features of Golden Config come packaged with Jobs and JobButtons to execute the functionality. In order to to provide a repeatable and consistent behavior these Jobs and JobButtons are designed to only be executed via specialized views. They're not intended to be executed manually from the Jobs/JobButtons menus.

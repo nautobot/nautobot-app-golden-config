@@ -7,6 +7,7 @@ from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from nautobot_plugin_nornir.utils import get_dispatcher
 from nornir import InitNornir
+from nornir.core.exceptions import NornirSubTaskError
 from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir.core.task import Result, Task
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
@@ -28,30 +29,37 @@ def run_deployment(task: Task, logger: NornirLogger, commit: bool, config_plan_q
 
     if commit:
         plans_to_deploy.update(status=Status.objects.get(slug="in-progress"))
-        result = task.run(
-            task=dispatcher,
-            name="DEPLOY CONFIG TO DEVICE",
-            method="merge_config",
-            obj=obj,
-            logger=logger,
-            config=consolidated_config_set,
-            default_drivers_mapping=get_dispatcher(),
-        )[1].result["result"]
-        if not result:
-            plans_to_deploy.update(status=Status.objects.get(slug="failed"))
-            logger.log_failure(obj=obj, message="No Nornir Result was Returned.")
-        else:
-            if not result.failed:
-                logger.log_success(obj=obj, message="Successfully deployed configuration to device.")
-                plans_to_deploy.update(status=Status.objects.get(slug="completed"))
-            else:
+        try:
+            result = task.run(
+                task=dispatcher,
+                name="DEPLOY CONFIG TO DEVICE",
+                method="merge_config",
+                obj=obj,
+                logger=logger,
+                config=consolidated_config_set,
+                default_drivers_mapping=get_dispatcher(),
+            )[1]
+            task_changed, task_result, task_failed = result.changed, result.result, result.failed
+            if task_changed and task_failed:
+                # means config_revert happened in `napalm_configure`
                 plans_to_deploy.update(status=Status.objects.get(slug="failed"))
                 logger.log_failure(obj=obj, message="Failed deployment to the device.")
+            elif not task_changed and not task_failed:
+                plans_to_deploy.update(status=Status.objects.get(slug="completed"))
+                logger.log_success(obj=obj, message="Nothing was deployed to the device.")
+            else:
+                if not task_failed:
+                    logger.log_success(obj=obj, message="Successfully deployed configuration to device.")
+                    plans_to_deploy.update(status=Status.objects.get(slug="completed"))
+        except NornirSubTaskError:
+            task_result = None
+            plans_to_deploy.update(status=Status.objects.get(slug="failed"))
+            logger.log_failure(obj=obj, message="Failed deployment to the device.")
     else:
-        result = None
+        task_result = None
         logger.log_info(obj=obj, message="Commit not enabled. Configuration not deployed to device.")
 
-    return Result(host=task.host, result=result)
+    return Result(host=task.host, result=task_result)
 
 
 def config_deployment(job_result, data, commit):

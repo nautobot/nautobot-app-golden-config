@@ -411,7 +411,7 @@ class RemediationSettingFilterForm(NautobotFilterForm):
         queryset=Platform.objects.all(), required=False, display_field="name", to_field_name="name"
     )
     remediation_type = forms.ChoiceField(
-        choices=add_blank_choice(RemediationTypeChoice), required=False, label="Remediation Type"
+        choices=add_blank_choice(RemediationTypeChoice), required=False, widget=forms.Select(), label="Remediation Type"
     )
 
 

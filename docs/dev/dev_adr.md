@@ -143,3 +143,17 @@ This function performs an additional permission validation, to check if the requ
 Over time device(s) platform may change; whether this is a device refresh or full replacement. A Django `post_save` signal is used on the `ConfigCompliance` model and provides a reliable and efficient way to manage configuration compliance objects. This signal deletes any `ConfigCompliance` objects that don't match the current platform. This decision was made to avoid compliance reporting inconsistencies that can arise when outdated or irrelevant objects remain in the database which were generated with the previous platform.
 
 This has a computational impact when updating a Device object's platform. This is similar to the computational impact of an SQL `cascade` option on a delete. This is largely unavoidable and should be limited in impact, such that it will only be the removal of the number of `ConfigCompliance` objects, which is no bigger than the number of  `Config Features`, which is generally intended to be a small amount.
+
+### Configuration Deployment and Remediation
+
+Configuration remediation and deployments of any of the attributes based on the configuration compliance object are calculated based on the last run of the `ConfigCompliance` job. After a configuration deployment to fix any of these attributes (remediation, intended, missing) a new `ConfigCompliance` job must be run before all the compliance results will be updated.
+
+
+### Manual ConfigPlans
+
+When generating a manual `ConfigPlan` the Jinja2 template render has access to Django ORM methods like `.all()`, this also means that methods like `.delete()` can be called, the `render_template` functionality used by Golden Config inherits a Jinja2 Sandbox exception that will block unsafe calls. Golden Config will simply re-raise the exception `jinja2.exceptions.SecurityError: > is not safely callable`.
+
+
+### Hidden Jobs and JobButtons
+
+The configuration deployment and plans features of Golden Config come packaged with Jobs and JobButtons to execute the functionality. In order to to provide a repeatable and consistent behavior these Jobs and JobButtons are designed to only be executed via specialized views. They're not intended to be executed manually from the Jobs/JobButtons menus.

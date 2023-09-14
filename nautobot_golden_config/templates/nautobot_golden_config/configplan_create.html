@@ -72,6 +72,29 @@ function isValidURL(url) {
   return urlPattern.test(url);
 }
 
+function configPlanCount(jobResultId) {
+  return new Promise(function(resolve, reject) {
+    var configPlanApi = `/api/plugins/golden-config/config-plan/?job_result_id=${jobResultId}`;
+    $.ajax({
+      url: configPlanApi,
+      type: "GET",
+      dataType: "json",
+      headers: {
+        'X-CSRFToken': nautobot_csrf_token
+      },
+      success: function(data) {
+        var count = data.count;
+        resolve("Job Completed Successfully."+
+        "<br>Number of Config Plans generated: " + count);
+      },
+      error: function(e) {
+        resolve("Job completed successfully, but no Config Plans were generated."+
+        "<br>If this is unexpected, please validate your input parameters.");
+      }
+    });
+  });
+}
+
 function openModalAndStartJob() {
   var changeControlUrl = changeControlUrlInput.value;
   if (changeControlUrl && !isValidURL(changeControlUrl)) {
@@ -80,7 +103,7 @@ function openModalAndStartJob() {
     // If validation passes, trigger the modal to open
     $('#modalPopup').modal('show');
     // Start the job
-    startJob(jobClass, formatJobData($("form").serializeArray()), redirectUrlTemplate);
+    startJob(jobClass, formatJobData($("form").serializeArray()), redirectUrlTemplate, configPlanCount);
   }
 }
 

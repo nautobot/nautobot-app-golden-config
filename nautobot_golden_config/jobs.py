@@ -300,7 +300,7 @@ class GenerateConfigPlans(Job, FormEntry):
                 change_control_id=self._change_control_id,
                 change_control_url=self._change_control_url,
                 status=self._status,
-                job_result=self.job_result,
+                plan_result=self.job_result,
             )
             config_plan.feature.set(features)
             config_plan.validated_save()
@@ -325,7 +325,7 @@ class GenerateConfigPlans(Job, FormEntry):
                 change_control_id=self._change_control_id,
                 change_control_url=self._change_control_url,
                 status=self._status,
-                job_result=self.job_result,
+                plan_result=self.job_result,
             )
             self.log_success(obj=config_plan, message=f"Config plan created for {device} with manual commands.")
 

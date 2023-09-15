@@ -8,6 +8,7 @@ from nautobot.dcim.models import Device, Platform
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status
 from nautobot.utilities.testing import APITestCase, APIViewTestCases
 from rest_framework import status
+
 from nautobot_golden_config.choices import RemediationTypeChoice
 from nautobot_golden_config.models import ConfigPlan, GoldenConfigSetting, RemediationSetting
 
@@ -376,7 +377,7 @@ class ConfigPlanTest(APIViewTestCases.APIViewTestCase):
                 change_control_id=f"Test Change Control ID {cont}",
                 change_control_url=f"https://{cont}.example.com/",
                 status=not_approved_status,
-                job_result_id=job_result_ids[cont - 1],
+                plan_result_id=job_result_ids[cont - 1],
             )
             plan.feature.add(features[cont - 1])
             plan.validated_save()

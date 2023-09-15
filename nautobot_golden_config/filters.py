@@ -398,6 +398,17 @@ class RemediationSettingFilterSet(NautobotFilterSet):
 class ConfigPlanFilterSet(NautobotFilterSet):
     """Inherits Base Class BaseFilterSet."""
 
+    # @staticmethod
+    # def _get_filter_lookup_dict(existing_filter):
+    #     """Extend method to account for isnull on datetime types."""
+    #     # Choose the lookup expression map based on the filter type
+
+    #     lookup_map = NautobotFilterSet._get_filter_lookup_dict(existing_filter)
+    #     if existing_filter == lookup_map["config_plan"]
+    #     if isinstance(existing_filter, MultiValueDateTimeFilter):
+    #         lookup_map.update({"isnull": "isnull"})
+    #     return lookup_map
+
     q = django_filters.CharFilter(
         method="search",
         label="Search",
@@ -424,9 +435,13 @@ class ConfigPlanFilterSet(NautobotFilterSet):
         to_field_name="name",
         label="Feature Name",
     )
-    job_result_id = django_filters.ModelMultipleChoiceFilter(
+    plan_result_id = django_filters.ModelMultipleChoiceFilter(
         queryset=JobResult.objects.filter(config_plan__isnull=False).distinct(),
-        label="JobResult ID",
+        label="Plan JobResult ID",
+    )
+    deploy_result_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=JobResult.objects.filter(config_plan__isnull=False).distinct(),
+        label="Deploy JobResult ID",
     )
     change_control_id = django_filters.CharFilter(
         field_name="change_control_id",

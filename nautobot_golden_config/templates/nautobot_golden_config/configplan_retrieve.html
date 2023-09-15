@@ -51,8 +51,17 @@
                 <td><a href="{{ object.change_control_url }}">{{ object.change_control_url|placeholder }}</a></td>
             </tr>
             <tr>
-                <td>Job Result</td>
-                <td><a href="{{ object.job_result.get_absolute_url }}">{{ object.job_result.status|placeholder }}</a></td>
+                <td>Plan Result</td>
+                <td><a href="{{ object.plan_result.get_absolute_url }}">{{ object.plan_result.status|title }}</a></td>
+            </tr>
+            <tr>
+                <td>Deploy Result</td>
+                {% if object.deploy_result %}
+                <td><a href="{{ object.deploy_result.get_absolute_url }}">{{ object.deploy_result.status|title }}</a>
+                {% else %}
+                <td>{{ object.deploy_result|placeholder }}</td>
+                {% endif %}
+                </td>
             </tr>
             <tr>
                 <td>Status</td>

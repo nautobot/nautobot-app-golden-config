@@ -18,10 +18,11 @@ from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 
 
-def run_deployment(task: Task, logger: NornirLogger, commit: bool, config_plan_qs) -> Result:
+def run_deployment(task: Task, logger: NornirLogger, commit: bool, config_plan_qs, deploy_job_result) -> Result:
     """Deploy configurations to device."""
     obj = task.host.data["obj"]
     plans_to_deploy = config_plan_qs.filter(device=obj)
+    plans_to_deploy.update(deploy_result=deploy_job_result.job_result)
     consolidated_config_set = "\n".join(plans_to_deploy.values_list("config_set", flat=True))
     logger.log_debug(f"Consolidated config set: {consolidated_config_set}")
     # TODO: We should add post-processing rendering here
@@ -67,7 +68,8 @@ def config_deployment(job_result, data, commit):
     now = datetime.now()
     logger = NornirLogger(__name__, job_result, data.get("debug"))
     logger.log_debug("Starting config deployment")
-
+    logger.log_debug(f"{dir(job_result)}")
+    logger.log_debug(f"{type(job_result)}")
     config_plan_qs = data["config_plan"]
     if config_plan_qs.filter(status__slug="not-approved").exists():
         logger.log_failure(
@@ -99,6 +101,7 @@ def config_deployment(job_result, data, commit):
                 logger=logger,
                 commit=commit,
                 config_plan_qs=config_plan_qs,
+                deploy_job_result=job_result,
             )
     except Exception as err:
         logger.log_failure(obj=None, message=f"Failed to initialize Nornir: {err}")

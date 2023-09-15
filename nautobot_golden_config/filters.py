@@ -424,9 +424,13 @@ class ConfigPlanFilterSet(NautobotFilterSet):
         to_field_name="name",
         label="Feature Name",
     )
-    job_result_id = django_filters.ModelMultipleChoiceFilter(
+    plan_result_id = django_filters.ModelMultipleChoiceFilter(
         queryset=JobResult.objects.filter(config_plan__isnull=False).distinct(),
-        label="JobResult ID",
+        label="Plan JobResult ID",
+    )
+    deploy_result_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=JobResult.objects.filter(config_plan__isnull=False).distinct(),
+        label="Deploy JobResult ID",
     )
     change_control_id = django_filters.CharFilter(
         field_name="change_control_id",

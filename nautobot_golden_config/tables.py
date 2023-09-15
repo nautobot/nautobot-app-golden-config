@@ -4,21 +4,11 @@ import copy
 from django.utils.html import format_html
 from django_tables2 import Column, LinkColumn, TemplateColumn
 from django_tables2.utils import A
-
 from nautobot.extras.tables import StatusTableMixin
-from nautobot.utilities.tables import (
-    BaseTable,
-    ToggleColumn,
-    TagColumn,
-)
-from nautobot_golden_config import models
-from nautobot_golden_config.utilities.constant import (
-    ENABLE_BACKUP,
-    ENABLE_COMPLIANCE,
-    ENABLE_INTENDED,
-    CONFIG_FEATURES,
-)
+from nautobot.utilities.tables import BaseTable, TagColumn, ToggleColumn
 
+from nautobot_golden_config import models
+from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
 
 ALL_ACTIONS = """
 {% if backup == True %}
@@ -496,8 +486,17 @@ class ConfigPlanTable(StatusTableMixin, BaseTable):
 
     pk = ToggleColumn()
     device = LinkColumn("plugins:nautobot_golden_config:configplan", args=[A("pk")])
-    job_result = TemplateColumn(
-        template_code="""<a href="{% url 'extras:jobresult' pk=record.job_result.pk  %}" <i class="mdi mdi-clipboard-text-play-outline"></i></a> """
+    plan_result = TemplateColumn(
+        template_code="""<a href="{% url 'extras:jobresult' pk=record.plan_result.pk  %}" <i class="mdi mdi-clipboard-text-play-outline"></i></a> """
+    )
+    deploy_result = TemplateColumn(
+        template_code="""
+        {% if record.deploy_result %}
+            <a href="{% url 'extras:jobresult' pk=record.deploy_result.pk  %}" <i class="mdi mdi-clipboard-text-play-outline"></i></a>
+        {% else %}
+            &mdash;
+        {% endif %}
+        """
     )
     config_set = TemplateColumn(template_code=CONFIG_SET_BUTTON, verbose_name="Config Set", orderable=False)
     tags = TagColumn(url_name="plugins:nautobot_golden_config:configplan_list")
@@ -514,7 +513,8 @@ class ConfigPlanTable(StatusTableMixin, BaseTable):
             "feature",
             "change_control_id",
             "change_control_url",
-            "job_result",
+            "plan_result",
+            "deploy_result",
             "config_set",
             "status",
             "tags",
@@ -527,7 +527,8 @@ class ConfigPlanTable(StatusTableMixin, BaseTable):
             "feature",
             "change_control_id",
             "change_control_url",
-            "job_result",
+            "plan_result",
+            "deploy_result",
             "config_set",
             "status",
         )

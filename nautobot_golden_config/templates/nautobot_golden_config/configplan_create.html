@@ -74,7 +74,7 @@ function isValidURL(url) {
 
 function configPlanCount(jobResultId) {
   return new Promise(function(resolve, reject) {
-    var configPlanApi = `/api/plugins/golden-config/config-plan/?job_result_id=${jobResultId}`;
+    var configPlanApi = `/api/plugins/golden-config/config-plan/?plan_result_id=${jobResultId}`;
     $.ajax({
       url: configPlanApi,
       type: "GET",
@@ -108,7 +108,7 @@ function openModalAndStartJob() {
 }
 
 var jobClass = "plugins/nautobot_golden_config.jobs/GenerateConfigPlans";
-var redirectUrlTemplate = "/plugins/golden-config/config-plan/?job_result_id={jobData.result.id}";
+var redirectUrlTemplate = "/plugins/golden-config/config-plan/?play_result_id={jobData.result.id}";
 var changeControlUrlInput = document.getElementById("id_change_control_url");
 var startJobButton = document.getElementById("startJob");
 var form = document.querySelector("form");

@@ -70,11 +70,13 @@ def config_deployment(job_result, data, commit):
 
     config_plan_qs = data["config_plan"]
     if config_plan_qs.filter(status__slug="not-approved").exists():
-        logger.log_failure(
-            obj=None,
-            message="Cannot deploy configuration(s). One or more config plans are not approved.",
-        )
-        raise ValueError("Cannot deploy configuration(s). One or more config plans are not approved.")
+        message = "Cannot deploy configuration(s). One or more config plans are not approved."
+        logger.log_failure(obj=None, message=message)
+        raise ValueError(message)
+    if config_plan_qs.filter(status__slug="completed").exists():
+        message = "Cannot deploy configuration(s). One or more config plans are already completed."
+        logger.log_failure(obj=None, message=message)
+        raise ValueError(message)
     device_qs = Device.objects.filter(config_plan__in=config_plan_qs).distinct()
 
     try:

@@ -4,6 +4,7 @@
 - [Backup Configuration](#backup-configuration)
 - [Intended Configuration](#intended-configuration)
 - [Compliance](#compliance)
+- [Config Remediation](#config-remediation)
 - [Config Plans](#config-plans)
 - [Config Deploy](#config-deploy)
 - [Load Properties from Git](#load-properties-from-git)
@@ -124,6 +125,18 @@ Compliance requires Backups and Intended Configurations in order to be executed.
 
 > For in-depth details see [Navigating Compliance](./app_feature_compliance.md)
 
+# Config Remediation
+
+Follow the steps below to get up and running for the configuration remediation element of the plugin.
+
+1. Navigate to `Golden Config -> Compliance Rules`.
+2. Select the rules in which you'd like to enable remediation on.
+3. Edit the `Compliance Rule` and turn on the `Remediation` toggle button.
+4. Run the `Compliance` job again which will generate the initial remediation plan for the feature.
+5. Navigate to `Golden Config -> Config Compliance`, select the device and notice a remediation section is not present for the compliance details for the feature.
+
+> For in-depth details see [Navigating Config Plans](./app_feature_remediation.md)
+
 # Config Plans
 
 Follow the steps below to get up and running for the configuration plans element of the plugin.
@@ -158,18 +171,6 @@ Follow the steps below to get up and running for the configuration deployment el
 4. Interpret the results from the popup modal and navigate to the job result as needed for more details.
 
 > Config Deployments utilize the dispatchers from nornir-nautobot just like the other functionality of Golden Config. See [Troubleshooting Dispatchers](./troubleshooting/troubleshoot_dispatchers.md) for more details.
-
-# Config Remediation
-
-Follow the steps below to get up and running for the configuration remediation element of the plugin.
-
-1. Navigate to `Golden Config -> Compliance Rules`.
-2. Select the rules in which you'd like to enable remediation on.
-3. Edit the `Compliance Rule` and turn on the `Remediation` toggle button.
-4. Run the `Compliance` job again which will generate the initial remediation plan for the feature.
-5. Navigate to `Golden Config -> Config Compliance`, select the device and notice a remediation section is not present for the compliance details for the feature.
-
-> For in-depth details see [Navigating Config Plans](./app_feature_remediation.md)
 
 # Load Properties from Git
 

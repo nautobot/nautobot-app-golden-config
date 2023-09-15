@@ -4,19 +4,11 @@ import copy
 from django.utils.html import format_html
 from django_tables2 import Column, LinkColumn, TemplateColumn
 from django_tables2.utils import A
+from nautobot.extras.tables import StatusTableMixin
+from nautobot.utilities.tables import BaseTable, TagColumn, ToggleColumn
 
-from nautobot.utilities.tables import (
-    BaseTable,
-    ToggleColumn,
-)
 from nautobot_golden_config import models
-from nautobot_golden_config.utilities.constant import (
-    ENABLE_BACKUP,
-    ENABLE_COMPLIANCE,
-    ENABLE_INTENDED,
-    CONFIG_FEATURES,
-)
-
+from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
 
 ALL_ACTIONS = """
 {% if backup == True %}
@@ -84,6 +76,38 @@ ALL_ACTIONS = """
     {% endif %}
 {% endif %}
 """
+
+CONFIG_SET_BUTTON = """
+<a href="#" class="openBtn" data-toggle="modal" data-target="#codeModal-{{ record.pk }}">
+    <i class="mdi mdi-file-document-outline"></i>
+</a>
+
+<div class="modal" id="codeModal-{{ record.pk }}">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <!-- Modal Header -->
+            <div class="modal-header">
+                <h3 class="modal-title">Config Set - {{ record.device }}</h3>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+
+            <!-- Modal body -->
+            <div class="modal-body">
+                <span id="config_set_{{ record.pk }}"><pre>{{ record.config_set }}</pre></span>
+                <span class="config_hover_button">
+                    <button type="button" class="btn btn-inline btn-default hover_copy_button" data-clipboard-action='copy' data-clipboard-target="#config_set_{{ record.pk }}">
+                        <span class="mdi mdi-content-copy"></span>
+                    </button>
+                </span>
+            </div>
+
+            <!-- Modal footer -->
+            <div class="modal-footer">
+                <button id="close" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>"""
 
 MATCH_CONFIG = """{{ record.match_config|linebreaksbr }}"""
 
@@ -339,6 +363,7 @@ class ComplianceRuleTable(BaseTable):
             "match_config",
             "config_type",
             "custom_compliance",
+            "config_remediation",
         )
         default_columns = (
             "pk",
@@ -349,6 +374,7 @@ class ComplianceRuleTable(BaseTable):
             "match_config",
             "config_type",
             "custom_compliance",
+            "config_remediation",
         )
 
 
@@ -435,4 +461,74 @@ class GoldenConfigSettingTable(BaseTable):
             "backup_repository",
             "intended_repository",
             "jinja_repository",
+        )
+
+
+class RemediationSettingTable(BaseTable):
+    """Table to display RemediationSetting Rules."""
+
+    pk = ToggleColumn()
+    platform = LinkColumn("plugins:nautobot_golden_config:remediationsetting", args=[A("pk")])
+
+    class Meta(BaseTable.Meta):
+        """Table to display RemediationSetting Meta Data."""
+
+        model = models.RemediationSetting
+        fields = ("pk", "platform", "remediation_type")
+        default_columns = ("pk", "platform", "remediation_type")
+
+
+# ConfigPlan
+
+
+class ConfigPlanTable(StatusTableMixin, BaseTable):
+    """Table to display Config Plans."""
+
+    pk = ToggleColumn()
+    device = LinkColumn("plugins:nautobot_golden_config:configplan", args=[A("pk")])
+    plan_result = TemplateColumn(
+        template_code="""<a href="{% url 'extras:jobresult' pk=record.plan_result.pk  %}" <i class="mdi mdi-clipboard-text-play-outline"></i></a> """
+    )
+    deploy_result = TemplateColumn(
+        template_code="""
+        {% if record.deploy_result %}
+            <a href="{% url 'extras:jobresult' pk=record.deploy_result.pk  %}" <i class="mdi mdi-clipboard-text-play-outline"></i></a>
+        {% else %}
+            &mdash;
+        {% endif %}
+        """
+    )
+    config_set = TemplateColumn(template_code=CONFIG_SET_BUTTON, verbose_name="Config Set", orderable=False)
+    tags = TagColumn(url_name="plugins:nautobot_golden_config:configplan_list")
+
+    class Meta(BaseTable.Meta):
+        """Table to display Config Plans Meta Data."""
+
+        model = models.ConfigPlan
+        fields = (
+            "pk",
+            "device",
+            "created",
+            "plan_type",
+            "feature",
+            "change_control_id",
+            "change_control_url",
+            "plan_result",
+            "deploy_result",
+            "config_set",
+            "status",
+            "tags",
+        )
+        default_columns = (
+            "pk",
+            "device",
+            "created",
+            "plan_type",
+            "feature",
+            "change_control_id",
+            "change_control_url",
+            "plan_result",
+            "deploy_result",
+            "config_set",
+            "status",
         )

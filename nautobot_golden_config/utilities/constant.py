@@ -7,6 +7,8 @@ ENABLE_INTENDED = PLUGIN_CFG["enable_intended"]
 ENABLE_COMPLIANCE = PLUGIN_CFG["enable_compliance"]
 ENABLE_BACKUP = PLUGIN_CFG["enable_backup"]
 ENABLE_SOTAGG = PLUGIN_CFG["enable_sotagg"]
+ENABLE_PLAN = PLUGIN_CFG["enable_plan"]
+ENABLE_DEPLOY = PLUGIN_CFG["enable_deploy"]
 ENABLE_POSTPROCESSING = PLUGIN_CFG["enable_postprocessing"]
 
 CONFIG_FEATURES = {

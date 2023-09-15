@@ -1,0 +1,42 @@
+{% load static %}
+<div class="modal" id="modalPopup">
+  <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+          <!-- Modal Header -->
+          <div class="modal-header">
+              <h3 class="modal-title">{{ modal_title }}</h3>
+          </div>
+
+          <!-- Modal body -->
+          <div class="modal-body">
+            <table class="table table-hover panel-body attr-table">
+                <tr>
+                  <td>Job Status: </td>
+                  <td><div id="jobStatus" style="display:none;"></div></td>
+                </tr>
+                <tr>
+                  <td>Plan Results: </td>
+                  <td><div id="jobResults" style="display:none;"></div></td>
+                </tr>
+                <tr>
+                  <td>Redirect Link: </td>
+                  <td><div id="redirectLink" style="display:none;"></div></td>
+                </tr>
+                <tr>
+                  <td>Details: </td>
+                  <td><div id="detailMessages" style="display:none;"></div></td>
+                </tr>
+                <tr>
+                  <td span="2"><img id="loaderImg" style="display:none;" src="{% static 'img/ajax-loader.gif' %}" alt=""/></td>
+                </tr>
+              <div id="jobInfo" style="display:none;"></div><br>
+            </table>
+          </div>
+
+          <!-- Modal footer -->
+          <div class="modal-footer">
+              <button id="close" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          </div>
+      </div>
+  </div>
+</div>

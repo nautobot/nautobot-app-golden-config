@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nautobot-golden-config"
-version = "1.5.0"
+version = "1.6.0"
 description = "A plugin for configuration on nautobot"
 authors = ["Network to Code, LLC", "<opensource@networktocode.com>"]
 
@@ -38,7 +38,11 @@ deepdiff = ">=5.5.0,!=6.0,!=6.1,<7"
 django-pivot = "^1.8.1"
 matplotlib = "^3.3.2"
 nautobot = "^1.6.1"
-nautobot-plugin-nornir = ">=1.0.0"
+nautobot-plugin-nornir = ">=1.0.1"
+netutils = "^1.5.0"
+# Already a dependecy of nautobot-plugin-nornir, but adding the required minimum version needed
+nornir-nautobot = "^2.6.1"
+hier-config = "^2.2.2"
 nautobot-capacity-metrics = "2.0.0"
 
 [tool.poetry.group.dev.dependencies]
@@ -91,7 +95,8 @@ exclude = '''
 [tool.pylint.master]
 # Include the pylint_django plugin to avoid spurious warnings about Django patterns
 load-plugins="pylint_django"
-ignore=["jinja_filters.py", ".venv"]
+ignore-patterns=["jinja_filters.py", ".venv"]
+ignore-paths = '^.*/migrations/.*$'
 
 [tool.pylint.basic]
 # No docstrings required for private methods (Pylint default), or for test_ functions, or for inner Meta classes.

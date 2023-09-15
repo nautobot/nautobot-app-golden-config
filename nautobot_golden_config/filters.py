@@ -2,14 +2,12 @@
 
 import django_filters
 from django.db.models import Q
-from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Platform, Rack, RackGroup, Region, Site
 from nautobot.dcim.filters import DeviceFilterSet
-from nautobot.extras.filters import StatusFilter
-from nautobot.extras.filters import NautobotFilterSet
-from nautobot.extras.models import Status
+from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Platform, Rack, RackGroup, Region, Site
+from nautobot.extras.filters import NautobotFilterSet, StatusFilter
+from nautobot.extras.models import JobResult, Status
 from nautobot.tenancy.models import Tenant, TenantGroup
-from nautobot.utilities.filters import TreeNodeMultipleChoiceFilter
-from nautobot.utilities.filters import MultiValueDateTimeFilter
+from nautobot.utilities.filters import MultiValueDateTimeFilter, TagFilter, TreeNodeMultipleChoiceFilter
 
 from nautobot_golden_config import models
 
@@ -363,3 +361,102 @@ class GoldenConfigSettingFilterSet(NautobotFilterSet):
 
         model = models.GoldenConfigSetting
         fields = ["id", "name", "slug", "weight", "backup_repository", "intended_repository", "jinja_repository"]
+
+
+class RemediationSettingFilterSet(NautobotFilterSet):
+    """Inherits Base Class CustomFieldModelFilterSet."""
+
+    q = django_filters.CharFilter(
+        method="search",
+        label="Search",
+    )
+    platform = django_filters.ModelMultipleChoiceFilter(
+        field_name="platform__name",
+        queryset=Platform.objects.all(),
+        to_field_name="name",
+        label="Platform Name",
+    )
+    platform_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=Platform.objects.all(),
+        label="Platform ID",
+    )
+
+    def search(self, queryset, name, value):  # pylint: disable=unused-argument
+        """Perform the filtered search."""
+        if not value.strip():
+            return queryset
+        qs_filter = Q(platform__name__icontains=value) | Q(remediation_type__icontains=value)
+        return queryset.filter(qs_filter)
+
+    class Meta:
+        """Boilerplate filter Meta data for Remediation Setting."""
+
+        model = models.RemediationSetting
+        fields = ["id", "remediation_type"]
+
+
+class ConfigPlanFilterSet(NautobotFilterSet):
+    """Inherits Base Class BaseFilterSet."""
+
+    q = django_filters.CharFilter(
+        method="search",
+        label="Search",
+    )
+    device_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=Device.objects.all(),
+        label="Device ID",
+    )
+    device = django_filters.ModelMultipleChoiceFilter(
+        field_name="device__name",
+        queryset=Device.objects.all(),
+        to_field_name="name",
+        label="Device Name",
+    )
+    feature_id = django_filters.ModelMultipleChoiceFilter(
+        field_name="feature__id",
+        queryset=models.ComplianceFeature.objects.all(),
+        to_field_name="id",
+        label="Feature ID",
+    )
+    feature = django_filters.ModelMultipleChoiceFilter(
+        field_name="feature__name",
+        queryset=models.ComplianceFeature.objects.all(),
+        to_field_name="name",
+        label="Feature Name",
+    )
+    plan_result_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=JobResult.objects.filter(config_plan__isnull=False).distinct(),
+        label="Plan JobResult ID",
+    )
+    deploy_result_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=JobResult.objects.filter(config_plan__isnull=False).distinct(),
+        label="Deploy JobResult ID",
+    )
+    change_control_id = django_filters.CharFilter(
+        field_name="change_control_id",
+        lookup_expr="exact",
+    )
+    status_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=Status.objects.all(),
+        label="Status ID",
+    )
+    status = django_filters.ModelMultipleChoiceFilter(
+        field_name="status__name",
+        queryset=Status.objects.all(),
+        to_field_name="name",
+        label="Status",
+    )
+    tag = TagFilter()
+
+    def search(self, queryset, name, value):  # pylint: disable=unused-argument
+        """Perform the filtered search."""
+        if not value.strip():
+            return queryset
+        qs_filter = Q(device__name__icontains=value) | Q(change_control_id__icontains=value)
+        return queryset.filter(qs_filter)
+
+    class Meta:
+        """Boilerplate filter Meta data for Config Plan."""
+
+        model = models.ConfigPlan
+        fields = ["id", "created", "change_control_id", "plan_type"]

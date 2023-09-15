@@ -14,7 +14,9 @@ router.register("golden-config", views.GoldenConfigViewSet)
 router.register("golden-config-settings", views.GoldenConfigSettingViewSet)
 router.register("config-remove", views.ConfigRemoveViewSet)
 router.register("config-replace", views.ConfigReplaceViewSet)
+router.register("remediation-setting", views.RemediationSettingViewSet)
 router.register("config-postprocessing", views.ConfigToPushViewSet)
+router.register("config-plan", views.ConfigPlanViewSet)
 urlpatterns = router.urls
 urlpatterns.append(
     path(

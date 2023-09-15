@@ -1,21 +1,22 @@
 """Unit tests for nautobot_golden_config views."""
 
 import datetime
-from unittest import mock
+from unittest import mock, skipIf
 
-from lxml import html
-
-from django.test import TestCase
-from django.urls import reverse
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
-
+from django.test import TestCase
+from django.urls import reverse
+from lxml import html
 from nautobot.dcim.models import Device
-from nautobot.extras.models import Relationship, RelationshipAssociation
-from nautobot_golden_config import views, models
+from nautobot.extras.models import Relationship, RelationshipAssociation, Status
+from nautobot.utilities.testing import ViewTestCases
+from packaging import version
 
-from .conftest import create_feature_rule_json, create_device_data
+from nautobot_golden_config import models, views
 
+from .conftest import create_device_data, create_feature_rule_json, create_job_result
 
 User = get_user_model()
 
@@ -292,3 +293,83 @@ class GoldenConfigListViewTestCase(TestCase):
         device_names_in_export = [entry.split(",")[0] for entry in csv_data[1:]]
         device_names_in_site_1 = [device.name for device in devices_in_site_1]
         self.assertEqual(device_names_in_export, device_names_in_site_1)
+
+
+# pylint: disable=too-many-ancestors,too-many-locals
+class ConfigPlanTestCase(
+    ViewTestCases.GetObjectViewTestCase,
+    ViewTestCases.GetObjectChangelogViewTestCase,
+    ViewTestCases.ListObjectsViewTestCase,
+    # Disabling Create tests because ConfigPlans are created via Job
+    # ViewTestCases.CreateObjectViewTestCase,
+    ViewTestCases.DeleteObjectViewTestCase,
+    ViewTestCases.EditObjectViewTestCase,
+):
+    """Test ConfigPlan views."""
+
+    model = models.ConfigPlan
+
+    @classmethod
+    def setUpTestData(cls):
+        create_device_data()
+        device1 = Device.objects.get(name="Device 1")
+        device2 = Device.objects.get(name="Device 2")
+        device3 = Device.objects.get(name="Device 3")
+
+        rule1 = create_feature_rule_json(device1, feature="Test Feature 1")
+        rule2 = create_feature_rule_json(device2, feature="Test Feature 2")
+        rule3 = create_feature_rule_json(device3, feature="Test Feature 3")
+        rule4 = create_feature_rule_json(device3, feature="Test Feature 4")
+
+        job_result1 = create_job_result()
+        job_result2 = create_job_result()
+        job_result3 = create_job_result()
+
+        not_approved_status = Status.objects.get(slug="not-approved")
+        approved_status = Status.objects.get(slug="approved")
+
+        plan1 = models.ConfigPlan.objects.create(
+            device=device1,
+            plan_type="intended",
+            config_set="Test Config Set 1",
+            change_control_id="Test Change Control ID 1",
+            change_control_url="https://1.example.com/",
+            status=not_approved_status,
+            plan_result_id=job_result1.id,
+        )
+        plan1.feature.add(rule1.feature)
+        plan1.validated_save()
+        plan2 = models.ConfigPlan.objects.create(
+            device=device2,
+            plan_type="missing",
+            config_set="Test Config Set 2",
+            change_control_id="Test Change Control ID 2",
+            change_control_url="https://2.example.com/",
+            status=not_approved_status,
+            plan_result_id=job_result2.id,
+        )
+        plan2.feature.add(rule2.feature)
+        plan2.validated_save()
+        plan3 = models.ConfigPlan.objects.create(
+            device=device3,
+            plan_type="remediation",
+            config_set="Test Config Set 3",
+            change_control_id="Test Change Control ID 3",
+            change_control_url="https://3.example.com/",
+            status=not_approved_status,
+            plan_result_id=job_result3.id,
+        )
+        plan3.feature.set([rule3.feature, rule4.feature])
+        plan3.validated_save()
+
+        # Used for EditObjectViewTestCase
+        cls.form_data = {
+            "change_control_id": "Test Change Control ID 4",
+            "change_control_url": "https://4.example.com/",
+            "status": approved_status.pk,
+        }
+
+    @skipIf(version.parse(settings.VERSION) <= version.parse("1.5.5"), "Bug in 1.5.4 and below")
+    def test_list_objects_with_permission(self):
+        """Overriding test for versions < 1.5.5."""
+        super().test_list_objects_with_permission()

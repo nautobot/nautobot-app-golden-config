@@ -5,13 +5,32 @@ from datetime import datetime
 
 from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Platform, Rack, RackGroup, Region, Site
 from nautobot.extras.datasources.git import ensure_git_repository
-from nautobot.extras.jobs import BooleanVar, Job, MultiObjectVar, ObjectVar
+from nautobot.extras.jobs import (
+    BooleanVar,
+    ChoiceVar,
+    Job,
+    JobButtonReceiver,
+    MultiObjectVar,
+    ObjectVar,
+    StringVar,
+    TextVar,
+)
 from nautobot.extras.models import DynamicGroup, GitRepository, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
+from nornir_nautobot.exceptions import NornirNautobotException
+
+from nautobot_golden_config.choices import ConfigPlanTypeChoice
+from nautobot_golden_config.models import ComplianceFeature, ConfigPlan
 from nautobot_golden_config.nornir_plays.config_backup import config_backup
 from nautobot_golden_config.nornir_plays.config_compliance import config_compliance
+from nautobot_golden_config.nornir_plays.config_deployment import config_deployment
 from nautobot_golden_config.nornir_plays.config_intended import config_intended
-from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
+from nautobot_golden_config.utilities import constant
+from nautobot_golden_config.utilities.config_plan import (
+    config_plan_default_status,
+    generate_config_set_from_compliance_feature,
+    generate_config_set_from_manual,
+)
 from nautobot_golden_config.utilities.git import GitRepo
 from nautobot_golden_config.utilities.helper import get_job_filter
 
@@ -80,26 +99,12 @@ class FormEntry:  # pylint disable=too-few-public-method
 class ComplianceJob(Job, FormEntry):
     """Job to to run the compliance engine."""
 
-    tenant_group = FormEntry.tenant_group
-    tenant = FormEntry.tenant
-    region = FormEntry.region
-    site = FormEntry.site
-    rack_group = FormEntry.rack_group
-    rack = FormEntry.rack
-    role = FormEntry.role
-    manufacturer = FormEntry.manufacturer
-    platform = FormEntry.platform
-    device_type = FormEntry.device_type
-    device = FormEntry.device
-    tag = FormEntry.tag
-    status = FormEntry.status
-    debug = FormEntry.debug
-
     class Meta:
         """Meta object boilerplate for compliance."""
 
         name = "Perform Configuration Compliance"
         description = "Run configuration compliance on your network infrastructure."
+        has_sensitive_variables = False
 
     @commit_check
     def run(self, data, commit):  # pylint: disable=too-many-branches
@@ -119,26 +124,12 @@ class ComplianceJob(Job, FormEntry):
 class IntendedJob(Job, FormEntry):
     """Job to to run generation of intended configurations."""
 
-    tenant_group = FormEntry.tenant_group
-    tenant = FormEntry.tenant
-    region = FormEntry.region
-    site = FormEntry.site
-    rack_group = FormEntry.rack_group
-    rack = FormEntry.rack
-    role = FormEntry.role
-    manufacturer = FormEntry.manufacturer
-    platform = FormEntry.platform
-    device_type = FormEntry.device_type
-    device = FormEntry.device
-    tag = FormEntry.tag
-    status = FormEntry.status
-    debug = FormEntry.debug
-
     class Meta:
         """Meta object boilerplate for intended."""
 
         name = "Generate Intended Configurations"
         description = "Generate the configuration for your intended state."
+        has_sensitive_variables = False
 
     @commit_check
     def run(self, data, commit):
@@ -167,26 +158,12 @@ class IntendedJob(Job, FormEntry):
 class BackupJob(Job, FormEntry):
     """Job to to run the backup job."""
 
-    tenant_group = FormEntry.tenant_group
-    tenant = FormEntry.tenant
-    region = FormEntry.region
-    site = FormEntry.site
-    rack_group = FormEntry.rack_group
-    rack = FormEntry.rack
-    role = FormEntry.role
-    manufacturer = FormEntry.manufacturer
-    platform = FormEntry.platform
-    device_type = FormEntry.device_type
-    device = FormEntry.device
-    tag = FormEntry.tag
-    status = FormEntry.status
-    debug = FormEntry.debug
-
     class Meta:
         """Meta object boilerplate for backup configurations."""
 
         name = "Backup Configurations"
         description = "Backup the configurations of your network devices."
+        has_sensitive_variables = False
 
     @commit_check
     def run(self, data, commit):
@@ -221,59 +198,209 @@ class AllGoldenConfig(Job):
 
         name = "Execute All Golden Configuration Jobs - Single Device"
         description = "Process to run all Golden Configuration jobs configured."
+        has_sensitive_variables = False
 
     @commit_check
     def run(self, data, commit):
         """Run all jobs."""
-        if ENABLE_INTENDED:
+        if constant.ENABLE_INTENDED:
             IntendedJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
-        if ENABLE_BACKUP:
+        if constant.ENABLE_BACKUP:
             BackupJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
-        if ENABLE_COMPLIANCE:
+        if constant.ENABLE_COMPLIANCE:
             ComplianceJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
 
 
 class AllDevicesGoldenConfig(Job):
     """Job to to run all three jobs against multiple devices."""
 
-    tenant_group = FormEntry.tenant_group
-    tenant = FormEntry.tenant
-    region = FormEntry.region
-    site = FormEntry.site
-    rack_group = FormEntry.rack_group
-    rack = FormEntry.rack
-    role = FormEntry.role
-    manufacturer = FormEntry.manufacturer
-    platform = FormEntry.platform
-    device_type = FormEntry.device_type
-    device = FormEntry.device
-    tag = FormEntry.tag
-    status = FormEntry.status
-    debug = FormEntry.debug
-
     class Meta:
         """Meta object boilerplate for all jobs to run against multiple devices."""
 
         name = "Execute All Golden Configuration Jobs - Multiple Device"
         description = "Process to run all Golden Configuration jobs configured against multiple devices."
+        has_sensitive_variables = False
 
     @commit_check
     def run(self, data, commit):
         """Run all jobs."""
-        if ENABLE_INTENDED:
+        if constant.ENABLE_INTENDED:
             IntendedJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
-        if ENABLE_BACKUP:
+        if constant.ENABLE_BACKUP:
             BackupJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
-        if ENABLE_COMPLIANCE:
+        if constant.ENABLE_COMPLIANCE:
             ComplianceJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
+
+
+class GenerateConfigPlans(Job, FormEntry):
+    """Job to generate config plans."""
+
+    # Config Plan generation fields
+    plan_type = ChoiceVar(choices=ConfigPlanTypeChoice.CHOICES)
+    feature = MultiObjectVar(model=ComplianceFeature, required=False)
+    change_control_id = StringVar(required=False)
+    change_control_url = StringVar(required=False)
+    commands = TextVar(required=False)
+
+    class Meta:
+        """Meta object boilerplate for config plan generation."""
+
+        name = "Generate Config Plans"
+        description = "Generate config plans for devices."
+        has_sensitive_variables = False
+        # Defaulting to hidden as this should be primarily called by the View
+        hidden = True
+
+    def __init__(self, *args, **kwargs):
+        """Initialize the job."""
+        super().__init__(*args, **kwargs)
+        self._plan_type = None
+        self._feature = None
+        self._change_control_id = None
+        self._change_control_url = None
+        self._commands = None
+        self._device_qs = Device.objects.none()
+        self._status = config_plan_default_status()
+
+    def _validate_inputs(self, data):
+        self._plan_type = data["plan_type"]
+        self._feature = data.get("feature", [])
+        self._change_control_id = data.get("change_control_id", "")
+        self._change_control_url = data.get("change_control_url", "")
+        self._commands = data.get("commands", "")
+        if self._plan_type in ["intended", "missing", "remediation"]:
+            if not self._feature:
+                self._feature = ComplianceFeature.objects.all()
+        if self._plan_type in ["manual"]:
+            if not self._commands:
+                self.log_failure("No commands entered for config plan generation.")
+                return False
+        return True
+
+    def _generate_config_plan_from_feature(self):
+        """Generate config plans from features."""
+        for device in self._device_qs:
+            config_sets = []
+            features = []
+            for feature in self._feature:
+                config_set = generate_config_set_from_compliance_feature(device, self._plan_type, feature)
+                if not config_set:
+                    continue
+                config_sets.append(config_set)
+                features.append(feature)
+
+            if not config_sets:
+                _features = ", ".join([str(feat) for feat in self._feature])
+                self.log_debug(f"Device `{device}` does not have `{self._plan_type}` configs for `{_features}`.")
+                continue
+            config_plan = ConfigPlan.objects.create(
+                device=device,
+                plan_type=self._plan_type,
+                config_set="\n".join(config_sets),
+                change_control_id=self._change_control_id,
+                change_control_url=self._change_control_url,
+                status=self._status,
+                plan_result=self.job_result,
+            )
+            config_plan.feature.set(features)
+            config_plan.validated_save()
+            _features = ", ".join([str(feat) for feat in features])
+            self.log_success(obj=config_plan, message=f"Config plan created for `{device}` with feature `{_features}`.")
+
+    def _generate_config_plan_from_manual(self):
+        """Generate config plans from manual."""
+        default_context = {
+            "request": self.request,
+            "user": self.request.user,
+        }
+        for device in self._device_qs:
+            config_set = generate_config_set_from_manual(device, self._commands, context=default_context)
+            if not config_set:
+                self.log_debug(f"Device {self.device} did not return a rendered config set from the provided commands.")
+                continue
+            config_plan = ConfigPlan.objects.create(
+                device=device,
+                plan_type=self._plan_type,
+                config_set=config_set,
+                change_control_id=self._change_control_id,
+                change_control_url=self._change_control_url,
+                status=self._status,
+                plan_result=self.job_result,
+            )
+            self.log_success(obj=config_plan, message=f"Config plan created for {device} with manual commands.")
+
+    def run(self, data, commit):
+        """Run config plan generation process."""
+        self.log_debug("Starting config plan generation job.")
+        if not self._validate_inputs(data):
+            return
+        try:
+            self._device_qs = get_job_filter(data)
+        except NornirNautobotException as exc:
+            self.log_failure(str(exc))
+            return
+        if self._plan_type in ["intended", "missing", "remediation"]:
+            self.log_debug("Starting config plan generation for compliance features.")
+            self._generate_config_plan_from_feature()
+        elif self._plan_type in ["manual"]:
+            self.log_debug("Starting config plan generation for manual commands.")
+            self._generate_config_plan_from_manual()
+        else:
+            self.log_failure(f"Unknown config plan type {self._plan_type}.")
+            return
+
+
+class DeployConfigPlans(Job):
+    """Job to deploy config plans."""
+
+    config_plan = MultiObjectVar(model=ConfigPlan, required=True)
+    debug = BooleanVar(description="Enable for more verbose debug logging")
+
+    class Meta:
+        """Meta object boilerplate for config plan deployment."""
+
+        name = "Deploy Config Plans"
+        description = "Deploy config plans to devices."
+        has_sensitive_variables = False
+
+    def run(self, data, commit):
+        """Run config plan deployment process."""
+        self.log_debug("Starting config plan deployment job.")
+        config_deployment(self, data, commit)
+
+
+class DeployConfigPlanJobButtonReceiver(JobButtonReceiver):
+    """Job button to deploy a config plan."""
+
+    class Meta:
+        """Meta object boilerplate for config plan deployment job button."""
+
+        name = "Deploy Config Plan (Job Button Receiver)"
+        has_sensitive_variables = False
+
+    def receive_job_button(self, obj):
+        """Run config plan deployment process."""
+        self.log_debug("Starting config plan deployment job.")
+        data = {"debug": False, "config_plan": ConfigPlan.objects.filter(id=obj.id)}
+        config_deployment(self, data, commit=True)
 
 
 # Conditionally allow jobs based on whether or not turned on.
 jobs = []
-if ENABLE_BACKUP:
+if constant.ENABLE_BACKUP:
     jobs.append(BackupJob)
-if ENABLE_INTENDED:
+if constant.ENABLE_INTENDED:
     jobs.append(IntendedJob)
-if ENABLE_COMPLIANCE:
+if constant.ENABLE_COMPLIANCE:
     jobs.append(ComplianceJob)
-jobs.extend([AllGoldenConfig, AllDevicesGoldenConfig])
+if constant.ENABLE_PLAN:
+    jobs.append(GenerateConfigPlans)
+if constant.ENABLE_DEPLOY:
+    jobs.append(DeployConfigPlans)
+    jobs.append(DeployConfigPlanJobButtonReceiver)
+jobs.extend(
+    [
+        AllGoldenConfig,
+        AllDevicesGoldenConfig,
+    ]
+)

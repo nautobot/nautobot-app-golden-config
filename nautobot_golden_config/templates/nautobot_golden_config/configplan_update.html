@@ -1,0 +1,17 @@
+{% extends 'generic/object_create.html' %}
+{% load form_helpers %}
+{% load helpers %}
+{% load static %}
+
+{% block form %}
+  <div class="panel panel-default">
+  <div class="panel-heading"><strong>Plan Details</strong></div>
+  <div class="panel-body">
+    {% render_field form.change_control_id %}
+    {% render_field form.change_control_url %}
+    {% render_field form.status %}
+    {% render_field form.tags %}
+  </div>
+</div>
+
+{% endblock %}

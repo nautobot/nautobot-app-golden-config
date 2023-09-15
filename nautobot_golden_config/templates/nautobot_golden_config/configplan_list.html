@@ -1,0 +1,57 @@
+{% extends 'generic/object_list.html' %}
+{% load static %}
+
+
+{% block buttons %}
+<a href="{% url 'plugins:nautobot_golden_config:configplan_list' %}?status=Approved&status=Failed&status=In%20Progress&status=Not%20Approved" class="btn btn-primary" id="completed-button">
+  <span class="mdi mdi-link" aria-hidden="true"></span> Unfinished Plans
+</a>
+{% endblock %}
+
+{% block bulk_buttons %}
+
+<!-- Deploy Button -->
+{% if perms.extras.run_job %}
+{% include "nautobot_golden_config/job_result_modal.html" with modal_title="Deploy Config Plans" %}
+<button id="startJob" type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modalPopup">
+  <span class="mdi mdi-upload-multiple" aria-hidden="true"></span> Deploy Selected
+</button>
+{% endif %}
+
+{% endblock %}
+
+{% block javascript %}
+{{ block.super }}
+<script src="{% static 'toggle_fields.js' %}"></script>
+<script src="{% static 'run_job.js' %}"></script>
+<script>
+var nautobot_csrf_token = "{{ csrf_token }}";
+
+document.addEventListener("DOMContentLoaded", function() {
+    var startJobButton = document.getElementById("startJob");
+    startJobButton.addEventListener("click", function(event) {
+        var userConfirmed = confirm("Warning! This will deploy configurations to the devices you have selected, are you sure you want to deploy?");
+        if (!userConfirmed) {
+            // If user clicked "Cancel", stop the modal from showing
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    });
+});
+
+function formatJobData(data) {
+  var arrayFields = ["pk"]
+  var form_data = formDataToDictionary(data, arrayFields);
+  return {
+    "commit": true,
+    "data": {
+        "config_plan": form_data.pk,
+        "debug": false
+    },
+  };
+}
+var jobClass = "plugins/nautobot_golden_config.jobs/DeployConfigPlans"
+document.getElementById("startJob").onclick = function() {startJob(jobClass, formatJobData($("form").serializeArray()))};
+
+</script>
+{% endblock javascript %}

@@ -68,8 +68,6 @@ def config_deployment(job_result, data, commit):
     now = datetime.now()
     logger = NornirLogger(__name__, job_result, data.get("debug"))
     logger.log_debug("Starting config deployment")
-    logger.log_debug(f"{dir(job_result)}")
-    logger.log_debug(f"{type(job_result)}")
     config_plan_qs = data["config_plan"]
     if config_plan_qs.filter(status__slug="not-approved").exists():
         logger.log_failure(

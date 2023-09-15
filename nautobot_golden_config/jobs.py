@@ -243,7 +243,14 @@ class GenerateConfigPlans(Job, FormEntry):
         self._change_control_url = None
         self._commands = None
         self._device_qs = Device.objects.none()
-        self._status = config_plan_default_status()
+        self._plan_status = None
+
+    @property
+    def plan_status(self):
+        """The default status for ConfigPlan."""
+        if self._plan_status is None:
+            self._plan_status = config_plan_default_status()
+        return self._plan_status
 
     def _validate_inputs(self, data):
         self._plan_type = data["plan_type"]
@@ -282,7 +289,7 @@ class GenerateConfigPlans(Job, FormEntry):
                 config_set="\n".join(config_sets),
                 change_control_id=self._change_control_id,
                 change_control_url=self._change_control_url,
-                status=self._status,
+                status=self.plan_status,
                 plan_result=self.job_result,
             )
             config_plan.feature.set(features)
@@ -309,7 +316,7 @@ class GenerateConfigPlans(Job, FormEntry):
                 config_set=config_set,
                 change_control_id=self._change_control_id,
                 change_control_url=self._change_control_url,
-                status=self._status,
+                status=self.plan_status,
                 plan_result=self.job_result,
             )
             self.logger.info(f"Config plan created for {device} with manual commands.", extra={"object": config_plan})

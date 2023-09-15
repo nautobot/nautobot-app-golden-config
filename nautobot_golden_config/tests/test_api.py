@@ -354,9 +354,7 @@ class ConfigPlanTest(APIViewTestCases.APIViewTestCase):
 
     model = ConfigPlan
     brief_fields = ["device", "display", "id", "plan_type", "url"]
-    # The Status serializer field requires slug, but the model field returns the UUID.
     choices_fields = ["plan_type"]
-    validation_excluded_fields = ["status"]
 
     @classmethod
     def setUpTestData(cls):

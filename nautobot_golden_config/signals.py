@@ -55,13 +55,18 @@ def post_migrate_create_statuses(sender, apps=global_apps, **kwargs):  # pylint:
 
 def post_migrate_create_job_button(sender, apps=global_apps, **kwargs):  # pylint: disable=unused-argument
     """Callback function for post_migrate() -- create JobButton records."""
-    JobButton = apps.get_model("extras", "JobButton")  # pylint: disable=invalid-name
     Job = apps.get_model("extras", "Job")  # pylint: disable=invalid-name
+    try:
+        deploy_job_button = Job.objects.get(job_class_name="DeployConfigPlanJobButtonReceiver")
+    except Job.DoesNotExist:
+        return
+
+    JobButton = apps.get_model("extras", "JobButton")  # pylint: disable=invalid-name
     ContentType = apps.get_model("contenttypes", "ContentType")  # pylint: disable=invalid-name
     configplan_type = ContentType.objects.get_for_model(models.ConfigPlan)
     job_button_config = {
         "name": "Deploy Config Plan",
-        "job": Job.objects.get(job_class_name="DeployConfigPlanJobButtonReceiver"),
+        "job": deploy_job_button,
         "defaults": {
             "text": "Deploy",
             "button_class": "primary",

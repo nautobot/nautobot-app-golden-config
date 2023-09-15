@@ -138,7 +138,7 @@ def _verify_get_custom_compliance_data(compliance_details):
 
 def _get_hierconfig_remediation(obj):
     """Returns the remediating config."""
-    hierconfig_os = HIERCONFIG_LIB_MAPPER_REVERSE.get(obj.device.platform.slug)
+    hierconfig_os = HIERCONFIG_LIB_MAPPER_REVERSE.get(get_platform(obj.device.platform.slug))
     if not hierconfig_os:
         raise ValidationError(f"platform {obj.device.platform.slug} is not supported by hierconfig.")
 

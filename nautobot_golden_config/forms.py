@@ -554,17 +554,17 @@ class ConfigPlanFilterForm(NautobotFilterForm):
     change_control_id = forms.CharField(required=False, label="Change Control ID")
     plan_result_id = utilities_forms.DynamicModelMultipleChoiceField(
         queryset=JobResult.objects.all(),
-        query_params={"nautobot_golden_config_config_plan_null": True},
+        query_params={"name": "plugins/nautobot_golden_config.jobs/GenerateConfigPlans"},
         label="Plan Result",
         required=False,
-        display_field="id",
+        display_field="created",
     )
     deploy_result_id = utilities_forms.DynamicModelMultipleChoiceField(
         queryset=JobResult.objects.all(),
-        query_params={"nautobot_golden_config_config_plan_null": True},
+        query_params={"name": "plugins/nautobot_golden_config.jobs/DeployConfigPlans"},
         label="Deploy Result",
         required=False,
-        display_field="id",
+        display_field="created",
     )
     status = utilities_forms.DynamicModelMultipleChoiceField(
         required=False,

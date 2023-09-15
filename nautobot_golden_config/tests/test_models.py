@@ -6,6 +6,7 @@ from django.db.utils import IntegrityError
 from django.test import TestCase
 from nautobot.dcim.models import Platform
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status
+
 from nautobot_golden_config.choices import RemediationTypeChoice
 from nautobot_golden_config.models import (
     ConfigCompliance,
@@ -21,8 +22,8 @@ from .conftest import (
     create_config_compliance,
     create_device,
     create_feature_rule_json,
-    create_saved_queries,
     create_job_result,
+    create_saved_queries,
 )
 
 
@@ -312,7 +313,7 @@ class ConfigPlanModelTestCase(TestCase):
             change_control_id="1234",
             change_control_url="https://1234.example.com/",
             status=self.status,
-            job_result_id=self.job_result.id,
+            plan_result_id=self.job_result.id,
         )
         config_plan.feature.add(self.feature)
         config_plan.validated_save()
@@ -333,7 +334,7 @@ class ConfigPlanModelTestCase(TestCase):
             change_control_id="1234",
             change_control_url="https://1234.example.com/",
             status=self.status,
-            job_result_id=self.job_result.id,
+            plan_result_id=self.job_result.id,
         )
         config_plan.feature.set([self.feature, rule2.feature])
         config_plan.validated_save()
@@ -354,7 +355,7 @@ class ConfigPlanModelTestCase(TestCase):
             change_control_id="2345",
             change_control_url="https://2345.example.com/",
             status=self.status,
-            job_result_id=self.job_result.id,
+            plan_result_id=self.job_result.id,
         )
         config_plan.feature.add(self.feature)
         config_plan.validated_save()
@@ -374,7 +375,7 @@ class ConfigPlanModelTestCase(TestCase):
             change_control_id="3456",
             change_control_url="https://3456.example.com/",
             status=self.status,
-            job_result_id=self.job_result.id,
+            plan_result_id=self.job_result.id,
         )
         config_plan.feature.add(self.feature)
         config_plan.validated_save()
@@ -391,7 +392,7 @@ class ConfigPlanModelTestCase(TestCase):
             device=self.device,
             plan_type="manual",
             config_set="test manual config",
-            job_result_id=self.job_result.id,
+            plan_result_id=self.job_result.id,
         )
         self.assertEqual(config_plan.device, self.device)
         self.assertEqual(config_plan.config_set, "test manual config")

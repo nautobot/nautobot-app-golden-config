@@ -4,13 +4,12 @@ import time
 import uuid
 
 from django.contrib.contenttypes.models import ContentType
-from django.utils import timezone
 from django.test.client import RequestFactory
-
-from nautobot.extras.choices import JobResultStatusChoices
-from nautobot.extras.models import JobResult
-from nautobot.extras.jobs import run_job
+from django.utils import timezone
 from nautobot.dcim.models import Device
+from nautobot.extras.choices import JobResultStatusChoices
+from nautobot.extras.jobs import run_job
+from nautobot.extras.models import JobResult
 from nautobot.users.models import User
 
 

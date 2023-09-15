@@ -29,6 +29,8 @@ class GoldenConfig(PluginConfig):
         "enable_intended": True,
         "enable_sotagg": True,
         "enable_postprocessing": False,
+        "enable_plan": True,
+        "enable_deploy": True,
         "postprocessing_callables": [],
         "postprocessing_subscribed": [],
         "per_feature_bar_width": 0.3,

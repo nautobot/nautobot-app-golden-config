@@ -18,6 +18,7 @@ from nautobot.extras.utils import extras_features
 from nautobot.utilities.utils import serialize_object, serialize_object_v2
 from netutils.config.compliance import feature_compliance
 from netutils.lib_mapper import HIERCONFIG_LIB_MAPPER_REVERSE
+
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
 from nautobot_golden_config.utilities.utils import get_platform
@@ -256,8 +257,6 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
 
     config_remediation = models.BooleanField(
         default=False,
-        null=False,
-        blank=False,
         verbose_name="Config Remediation",
         help_text="Whether or not the config remediation is executed for this compliance rule.",
     )
@@ -784,7 +783,13 @@ class ConfigReplace(PrimaryModel):  # pylint: disable=too-many-ancestors
 
 
 @extras_features(
+    "custom_fields",
+    "custom_links",
+    "custom_validators",
+    "export_templates",
     "graphql",
+    "relationships",
+    "webhooks",
 )
 class RemediationSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     """RemediationSetting details."""
@@ -794,8 +799,6 @@ class RemediationSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         to="dcim.Platform",
         on_delete=models.CASCADE,
         related_name="remediation_settings",
-        null=False,
-        blank=False,
     )
 
     remediation_type = models.CharField(
@@ -863,18 +866,23 @@ class ConfigPlan(PrimaryModel):  # pylint: disable=too-many-ancestors
         related_name="config_plan",
         blank=True,
     )
-    job_result = models.ForeignKey(
+    plan_result = models.ForeignKey(
         to="extras.JobResult",
         on_delete=models.CASCADE,
         related_name="config_plan",
-        null=False,
-        blank=False,
-        verbose_name="Job Result",
+        verbose_name="Plan Result",
+    )
+    deploy_result = models.ForeignKey(
+        to="extras.JobResult",
+        on_delete=models.PROTECT,
+        related_name="config_plan_deploy_result",
+        verbose_name="Deploy Result",
+        blank=True,
+        null=True,
     )
     change_control_id = models.CharField(
         max_length=50,
         blank=True,
-        null=True,
         verbose_name="Change Control ID",
         help_text="Change Control ID for this configuration plan.",
     )

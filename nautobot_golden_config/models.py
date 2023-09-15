@@ -17,7 +17,7 @@ from nautobot.extras.models.statuses import StatusField
 from nautobot.extras.utils import extras_features
 from nautobot.utilities.utils import serialize_object, serialize_object_v2
 from netutils.config.compliance import feature_compliance
-from netutils.lib_mapper import HIERCONFIG_LIB_MAPPER, HIERCONFIG_LIB_MAPPER_REVERSE
+from netutils.lib_mapper import HIERCONFIG_LIB_MAPPER_REVERSE
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
 from nautobot_golden_config.utilities.utils import get_platform
@@ -138,9 +138,7 @@ def _verify_get_custom_compliance_data(compliance_details):
 
 def _get_hierconfig_remediation(obj):
     """Returns the remediating config."""
-    hierconfig_os = HIERCONFIG_LIB_MAPPER_REVERSE.get(obj.device.platform.slug) or HIERCONFIG_LIB_MAPPER.get(
-        obj.device.platform.slug
-    )
+    hierconfig_os = HIERCONFIG_LIB_MAPPER_REVERSE.get(get_platform(obj.device.platform.slug))
     if not hierconfig_os:
         raise ValidationError(f"platform {obj.device.platform.slug} is not supported by hierconfig.")
 

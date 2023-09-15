@@ -9,6 +9,13 @@
 
 ### Added
 
-- [573](https://github.com/nautobot/nautobot-plugin-golden-config/pull/573) - Added the ability to generate remediation configurations and store in ConfigRemediation model
-- [573](https://github.com/nautobot/nautobot-plugin-golden-config/pull/573) - Added the ability to generate configurations that you plan to deploy from a variety of methods, such as Remediation, intended, manual, etc. via the ConfigPlan model.
-- [573](https://github.com/nautobot/nautobot-plugin-golden-config/pull/573) - Added the ability to Deploy configurations from the ConfigPlan configurations to your network devices.
+- [#573](https://github.com/nautobot/nautobot-plugin-golden-config/pull/573) - Added the ability to generate remediation configurations and store in ConfigRemediation model
+- [#573](https://github.com/nautobot/nautobot-plugin-golden-config/pull/573) - Added the ability to generate configurations that you plan to deploy from a variety of methods, such as Remediation, intended, manual, etc. via the ConfigPlan model.
+- [#573](https://github.com/nautobot/nautobot-plugin-golden-config/pull/573) - Added the ability to Deploy configurations from the ConfigPlan configurations to your network devices.
+
+### Fixed
+
+- [#585](https://github.com/nautobot/nautobot-plugin-golden-config/pull/585) - Remove Jquery dependency from Google APIs, inherit from Nautobot core instead.
+- [#577](https://github.com/nautobot/nautobot-plugin-golden-config/pull/577) - Fixed various forms fields and filters fields.
+- [#577](https://github.com/nautobot/nautobot-plugin-golden-config/pull/577) - Updated default has_sensitive_data boolean to False.
+- [#577](https://github.com/nautobot/nautobot-plugin-golden-config/pull/577) - Added warning message on views when required jobs are not enabled.

@@ -874,7 +874,7 @@ class ConfigPlan(PrimaryModel):  # pylint: disable=too-many-ancestors
     )
     deploy_result = models.ForeignKey(
         to="extras.JobResult",
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="config_plan_deploy_result",
         verbose_name="Deploy Result",
         blank=True,

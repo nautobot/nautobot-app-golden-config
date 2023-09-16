@@ -13,7 +13,8 @@ from nautobot.tenancy.models import Tenant, TenantGroup
 from nautobot_golden_config import models
 
 
-# TODO: 2.0: DeviceFilterSet has bugs in regards to Location in 2.0.0-rc.2
+# TODO: 2.0: DeviceFilterSet has bugs in regards to Location in 2.0.0-rc.2 Review #2875 and #4207, make determination after.
+# Short term fix should be only use the UUID, not the natural or uuid
 class GoldenConfigDeviceFilterSet(DeviceFilterSet):  # pylint: disable=too-many-ancestors
     """Filter capabilities that extend the standard DeviceFilterSet."""
 
@@ -112,7 +113,7 @@ class GoldenConfigFilterSet(NautobotFilterSet):
     )
     role = NaturalKeyOrPKMultipleChoiceFilter(
         field_name="device__role",
-        queryset=Role.objects.all(),  # TODO: 2.0: How does change to Role model affect this?
+        queryset=Role.objects.all(),  # TODO: 2.0: How does change to Role model affect this?: queryset=Role.objects.filter(content_type__model='device')
         to_field_name="name",
         label="Role (name or ID)",
     )

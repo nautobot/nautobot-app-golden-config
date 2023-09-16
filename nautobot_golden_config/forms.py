@@ -97,7 +97,8 @@ class ConfigComplianceFilterForm(NautobotFilterForm):
     role = core_forms.DynamicModelMultipleChoiceField(
         queryset=Role.objects.all(),
         to_field_name="name",
-        required=False,  # TODO: 2.0: Test with change to Role model
+        required=False,  # TODO: 2.0: Test with change to Role model, add query_params 
+        query_params={"content_types": "dcim.device"},
     )
     manufacturer = core_forms.DynamicModelMultipleChoiceField(
         queryset=Manufacturer.objects.all(), to_field_name="name", required=False, label="Manufacturer"

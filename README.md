@@ -17,7 +17,7 @@ The Golden Config plugin is a Nautobot plugin that provides a NetDevOps approach
 
 ### Key Use Cases
 
-This plugin enable five (5) key use cases.
+This plugin enable six (6) key use cases.
 
 1. **Configuration Backups** - Is a Nornir process to connect to devices, optionally parse out lines/secrets, backup the configuration, and save to a Git repository.
 2. **Intended Configuration** - Is a Nornir process to generate configuration based on a Git repo of Jinja files to combine with a GraphQL generated data and a Git repo to store the intended configuration.

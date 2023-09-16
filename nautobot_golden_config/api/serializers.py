@@ -69,7 +69,7 @@ class GoldenConfigSerializer(NautobotModelSerializer, TaggedModelSerializerMixin
 class GoldenConfigSettingSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
     """Serializer for GoldenConfigSetting object."""
 
-    url = serializers.HyperlinkedIdentityField( # TODO: 2.0: Should be able to remove all of these
+    url = serializers.HyperlinkedIdentityField(  # TODO: 2.0: Should be able to remove all of these
         view_name="plugins-api:nautobot_golden_config-api:goldenconfigsetting-detail"
     )
     # TODO: 2.0: What is correct for this with the removal of nested serializers?. Should just work with __all__

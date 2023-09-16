@@ -16,12 +16,12 @@ from distutils.util import strtobool
 from invoke import Collection, task as invoke_task
 import os
 
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
 
-def _load_dotenv():
-    load_dotenv("./development/development.env")
-    load_dotenv("./development/creds.env")
+# def _load_dotenv():
+#     load_dotenv("./development/development.env")
+#     load_dotenv("./development/creds.env")
 
 
 def is_truthy(arg):
@@ -373,7 +373,7 @@ def dbshell(context, query="", input="", output=""):
     if output and not (input or query):
         raise ValueError("`output` argument requires `input` or `query` argument")
 
-    _load_dotenv()
+    # _load_dotenv()
 
     service = "db"
     env_vars = {}
@@ -421,7 +421,7 @@ def import_db(context, input="dump.sql"):
     """Stop Nautobot containers and replace the current database with the dump into the running `db` container."""
     docker_compose(context, "stop -- nautobot worker")
 
-    _load_dotenv()
+    # _load_dotenv()
 
     service = "db"
     env_vars = {}
@@ -463,7 +463,7 @@ def import_db(context, input="dump.sql"):
 )
 def backup_db(context, output="dump.sql", readable=True):
     """Dump database into `output` file from running `db` container."""
-    _load_dotenv()
+    # _load_dotenv()
 
     service = "db"
     env_vars = {}

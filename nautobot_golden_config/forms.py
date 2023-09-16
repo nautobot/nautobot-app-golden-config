@@ -5,13 +5,14 @@ import json
 
 from django import forms
 
+import nautobot.apps.forms as apps_forms
 import nautobot.core.forms as core_forms
 from nautobot.dcim.models import Device, Platform, Location, DeviceType, Manufacturer, Rack, RackGroup
 from nautobot.extras.forms import NautobotFilterForm, NautobotBulkEditForm, NautobotModelForm
 from nautobot.extras.models import DynamicGroup, GitRepository, JobResult, Role, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
 
-# import nautobot.utilities.forms as core_forms
+# import nautobot.utilities.forms as apps_forms
 
 
 from nautobot_golden_config import models
@@ -43,24 +44,24 @@ class ConfigComplianceFilterForm(NautobotFilterForm):
     ]
 
     q = forms.CharField(required=False, label="Search")
-    tenant_group_id = core_forms.DynamicModelMultipleChoiceField(
+    tenant_group_id = apps_forms.DynamicModelMultipleChoiceField(
         queryset=TenantGroup.objects.all(), to_field_name="id", required=False, label="Tenant group ID"
     )
-    tenant_group = core_forms.DynamicModelMultipleChoiceField(
+    tenant_group = apps_forms.DynamicModelMultipleChoiceField(
         queryset=TenantGroup.objects.all(),
         to_field_name="name",
         required=False,
         label="Tenant group name",
         null_option="None",
     )
-    tenant = core_forms.DynamicModelMultipleChoiceField(
+    tenant = apps_forms.DynamicModelMultipleChoiceField(
         queryset=Tenant.objects.all(),
         to_field_name="name",
         required=False,
         null_option="None",
         query_params={"group": "$tenant_group"},
     )
-    location_id = core_forms.DynamicModelMultipleChoiceField(
+    location_id = apps_forms.DynamicModelMultipleChoiceField(
         # Not limiting to query_params={"content_type": "dcim.device" to allow parent locations to be included
         # i.e. include all sites in a Region, even though Region can't be assigned to a Device
         queryset=Location.objects.all(),
@@ -68,24 +69,24 @@ class ConfigComplianceFilterForm(NautobotFilterForm):
         required=False,
         label="Location ID",
     )
-    location = core_forms.DynamicModelMultipleChoiceField(
+    location = apps_forms.DynamicModelMultipleChoiceField(
         queryset=Location.objects.all(), to_field_name="name", required=False, label="Location name"
     )
-    rack_group_id = core_forms.DynamicModelMultipleChoiceField(
+    rack_group_id = apps_forms.DynamicModelMultipleChoiceField(
         queryset=RackGroup.objects.all(),
         to_field_name="id",
         required=False,
         label="Rack group ID",
         query_params={"location": "$location"},
     )
-    rack_group = core_forms.DynamicModelMultipleChoiceField(
+    rack_group = apps_forms.DynamicModelMultipleChoiceField(
         queryset=RackGroup.objects.all(),
         to_field_name="name",
         required=False,
         label="Rack group name",
         query_params={"location": "$location"},
     )
-    rack_id = core_forms.DynamicModelMultipleChoiceField(
+    rack_id = apps_forms.DynamicModelMultipleChoiceField(
         queryset=Rack.objects.all(),
         required=False,
         label="Rack",
@@ -95,16 +96,16 @@ class ConfigComplianceFilterForm(NautobotFilterForm):
             "group_id": "$rack_group_id",
         },
     )
-    role = core_forms.DynamicModelMultipleChoiceField(
+    role = apps_forms.DynamicModelMultipleChoiceField(
         queryset=Role.objects.all(),
         to_field_name="name",
-        required=False,  # TODO: 2.0: Test with change to Role model, add query_params 
+        required=False,  # TODO: 2.0: Test with change to Role model, add query_params
         query_params={"content_types": "dcim.device"},
     )
-    manufacturer = core_forms.DynamicModelMultipleChoiceField(
+    manufacturer = apps_forms.DynamicModelMultipleChoiceField(
         queryset=Manufacturer.objects.all(), to_field_name="name", required=False, label="Manufacturer"
     )
-    device_type_id = core_forms.DynamicModelMultipleChoiceField(
+    device_type_id = apps_forms.DynamicModelMultipleChoiceField(
         queryset=DeviceType.objects.all(),
         required=False,
         label="Model",
@@ -112,17 +113,17 @@ class ConfigComplianceFilterForm(NautobotFilterForm):
         query_params={"manufacturer": "$manufacturer"},
     )
 
-    platform = core_forms.DynamicModelMultipleChoiceField(
+    platform = apps_forms.DynamicModelMultipleChoiceField(
         queryset=Platform.objects.all(), to_field_name="name", required=False, null_option="None"
     )
-    device_id = core_forms.DynamicModelMultipleChoiceField(
+    device_id = apps_forms.DynamicModelMultipleChoiceField(
         queryset=Device.objects.all(), required=False, null_option="None", label="Device"
     )
 
     def __init__(self, *args, **kwargs):
         """Required for status to work."""
         super().__init__(*args, **kwargs)
-        self.fields["device_status"] = core_forms.DynamicModelMultipleChoiceField(
+        self.fields["device_status"] = apps_forms.DynamicModelMultipleChoiceField(
             required=False,
             queryset=Status.objects.all(),
             query_params={"content_types": Device._meta.label_lower},
@@ -139,7 +140,7 @@ class ConfigComplianceFilterForm(NautobotFilterForm):
 class ComplianceRuleForm(NautobotModelForm):
     """Filter Form for ComplianceRule instances."""
 
-    platform = core_forms.DynamicModelChoiceField(queryset=Platform.objects.all())
+    platform = apps_forms.DynamicModelChoiceField(queryset=Platform.objects.all())
 
     class Meta:
         """Boilerplate form Meta data for compliance rule."""
@@ -164,11 +165,11 @@ class ComplianceRuleFilterForm(NautobotFilterForm):
     model = models.ComplianceRule
 
     q = forms.CharField(required=False, label="Search")
-    platform = core_forms.DynamicModelMultipleChoiceField(
+    platform = apps_forms.DynamicModelMultipleChoiceField(
         queryset=Platform.objects.all(), to_field_name="name", required=False, null_option="None"
     )
 
-    feature = core_forms.DynamicModelMultipleChoiceField(
+    feature = apps_forms.DynamicModelMultipleChoiceField(
         queryset=models.ComplianceFeature.objects.all(), required=False
     )
 
@@ -180,7 +181,7 @@ class ComplianceRuleBulkEditForm(NautobotBulkEditForm):
     description = forms.CharField(max_length=200, required=False)
     config_type = forms.ChoiceField(
         required=False,
-        choices=core_forms.add_blank_choice(ComplianceRuleConfigTypeChoice),
+        choices=apps_forms.add_blank_choice(ComplianceRuleConfigTypeChoice),
     )
     config_ordered = forms.NullBooleanField(required=False, widget=core_forms.BulkEditNullBooleanSelect())
     custom_compliance = forms.NullBooleanField(required=False, widget=core_forms.BulkEditNullBooleanSelect())
@@ -198,7 +199,7 @@ class ComplianceRuleBulkEditForm(NautobotBulkEditForm):
 class ComplianceFeatureForm(NautobotModelForm):
     """Filter Form for ComplianceFeature instances."""
 
-    slug = core_forms.fields.SlugField()  # TODO: 2.1: Change from slugs once django-pivot is figured out
+    slug = core_forms.SlugField()  # TODO: 2.1: Change from slugs once django-pivot is figured out
 
     class Meta:
         """Boilerplate form Meta data for compliance feature."""
@@ -212,7 +213,7 @@ class ComplianceFeatureFilterForm(NautobotFilterForm):
 
     model = models.ComplianceFeature
     q = forms.CharField(required=False, label="Search")
-    name = core_forms.DynamicModelChoiceField(queryset=models.ComplianceFeature.objects.all(), required=False)
+    name = apps_forms.DynamicModelChoiceField(queryset=models.ComplianceFeature.objects.all(), required=False)
 
 
 class ComplianceFeatureBulkEditForm(NautobotBulkEditForm):
@@ -235,7 +236,7 @@ class ComplianceFeatureBulkEditForm(NautobotBulkEditForm):
 class ConfigRemoveForm(NautobotModelForm):
     """Filter Form for Line Removal instances."""
 
-    platform = core_forms.DynamicModelChoiceField(queryset=Platform.objects.all())
+    platform = apps_forms.DynamicModelChoiceField(queryset=Platform.objects.all())
 
     class Meta:
         """Boilerplate form Meta data for removal feature."""
@@ -254,10 +255,10 @@ class ConfigRemoveFilterForm(NautobotFilterForm):
     """Filter Form for Line Removal."""
 
     model = models.ConfigRemove
-    platform = core_forms.DynamicModelMultipleChoiceField(
+    platform = apps_forms.DynamicModelMultipleChoiceField(
         queryset=Platform.objects.all(), to_field_name="name", required=False, null_option="None"
     )
-    name = core_forms.DynamicModelChoiceField(
+    name = apps_forms.DynamicModelChoiceField(
         queryset=models.ConfigRemove.objects.all(), to_field_name="name", required=False
     )
 
@@ -280,7 +281,7 @@ class ConfigRemoveBulkEditForm(NautobotBulkEditForm):
 class ConfigReplaceForm(NautobotModelForm):
     """Filter Form for Line Removal instances."""
 
-    platform = core_forms.DynamicModelChoiceField(queryset=Platform.objects.all())
+    platform = apps_forms.DynamicModelChoiceField(queryset=Platform.objects.all())
 
     class Meta:
         """Boilerplate form Meta data for removal feature."""
@@ -301,10 +302,10 @@ class ConfigReplaceFilterForm(NautobotFilterForm):
 
     model = models.ConfigReplace
 
-    platform = core_forms.DynamicModelMultipleChoiceField(
+    platform = apps_forms.DynamicModelMultipleChoiceField(
         queryset=Platform.objects.all(), to_field_name="name", required=False, null_option="None"
     )
-    name = core_forms.DynamicModelChoiceField(
+    name = apps_forms.DynamicModelChoiceField(
         queryset=models.ConfigReplace.objects.all(), to_field_name="name", required=False
     )
 
@@ -327,7 +328,7 @@ class ConfigReplaceBulkEditForm(NautobotBulkEditForm):
 class GoldenConfigSettingForm(NautobotModelForm):
     """Filter Form for GoldenConfigSettingForm instances."""
 
-    dynamic_group = utilities_forms.DynamicModelChoiceField(queryset=DynamicGroup.objects.all(), required=False)
+    dynamic_group = apps_forms.DynamicModelChoiceField(queryset=DynamicGroup.objects.all(), required=False)
 
     class Meta:
         """Filter Form Meta Data for GoldenConfigSettingForm instances."""
@@ -389,11 +390,14 @@ class RemediationSettingFilterForm(NautobotFilterForm):
 
     model = models.RemediationSetting
     q = forms.CharField(required=False, label="Search")
-    platform = core_forms.DynamicModelMultipleChoiceField(
+    platform = apps_forms.DynamicModelMultipleChoiceField(
         queryset=Platform.objects.all(), required=False, display_field="name", to_field_name="name"
     )
     remediation_type = forms.ChoiceField(
-        choices=add_blank_choice(RemediationTypeChoice), required=False, widget=forms.Select(), label="Remediation Type"
+        choices=apps_forms.add_blank_choice(RemediationTypeChoice),
+        required=False,
+        widget=forms.Select(),
+        label="Remediation Type",
     )
 
 
@@ -417,7 +421,7 @@ class RemediationSettingBulkEditForm(NautobotBulkEditForm):
 class ConfigPlanForm(NautobotModelForm):
     """Form for ConfigPlan instances."""
 
-    feature = core_forms.DynamicModelMultipleChoiceField(
+    feature = apps_forms.DynamicModelMultipleChoiceField(
         queryset=models.ComplianceFeature.objects.all(),
         display_field="name",
         help_text="Note: Selecting no features will generate plans for all applicable features.",
@@ -432,23 +436,23 @@ class ConfigPlanForm(NautobotModelForm):
         ),
     )
 
-    tenant_group = core_forms.DynamicModelMultipleChoiceField(queryset=TenantGroup.objects.all())
-    tenant = core_forms.DynamicModelMultipleChoiceField(queryset=Tenant.objects.all())
+    tenant_group = apps_forms.DynamicModelMultipleChoiceField(queryset=TenantGroup.objects.all())
+    tenant = apps_forms.DynamicModelMultipleChoiceField(queryset=Tenant.objects.all())
     # Requires https://github.com/nautobot/nautobot-plugin-golden-config/issues/430
-    location = core_forms.DynamicModelMultipleChoiceField(queryset=Location.objects.all())
-    # region = core_forms.DynamicModelMultipleChoiceField(queryset=Region.objects.all())
-    # site = core_forms.DynamicModelMultipleChoiceField(queryset=Site.objects.all())
-    rack_group = core_forms.DynamicModelMultipleChoiceField(queryset=RackGroup.objects.all())
-    rack = core_forms.DynamicModelMultipleChoiceField(queryset=Rack.objects.all())
-    role = core_forms.DynamicModelMultipleChoiceField(queryset=Role.objects.all())
-    manufacturer = core_forms.DynamicModelMultipleChoiceField(queryset=Manufacturer.objects.all())
-    platform = core_forms.DynamicModelMultipleChoiceField(queryset=Platform.objects.all())
-    device_type = core_forms.DynamicModelMultipleChoiceField(queryset=DeviceType.objects.all())
-    device = core_forms.DynamicModelMultipleChoiceField(queryset=Device.objects.all())
-    tag = core_forms.DynamicModelMultipleChoiceField(
+    location = apps_forms.DynamicModelMultipleChoiceField(queryset=Location.objects.all())
+    # region = apps_forms.DynamicModelMultipleChoiceField(queryset=Region.objects.all())
+    # site = apps_forms.DynamicModelMultipleChoiceField(queryset=Site.objects.all())
+    rack_group = apps_forms.DynamicModelMultipleChoiceField(queryset=RackGroup.objects.all())
+    rack = apps_forms.DynamicModelMultipleChoiceField(queryset=Rack.objects.all())
+    role = apps_forms.DynamicModelMultipleChoiceField(queryset=Role.objects.all())
+    manufacturer = apps_forms.DynamicModelMultipleChoiceField(queryset=Manufacturer.objects.all())
+    platform = apps_forms.DynamicModelMultipleChoiceField(queryset=Platform.objects.all())
+    device_type = apps_forms.DynamicModelMultipleChoiceField(queryset=DeviceType.objects.all())
+    device = apps_forms.DynamicModelMultipleChoiceField(queryset=Device.objects.all())
+    tag = apps_forms.DynamicModelMultipleChoiceField(
         queryset=Tag.objects.all(), query_params={"content_types": "dcim.device"}
     )
-    status = core_forms.DynamicModelMultipleChoiceField(
+    status = apps_forms.DynamicModelMultipleChoiceField(
         queryset=Status.objects.all(), query_params={"content_types": "dcim.device"}
     )
 
@@ -481,11 +485,11 @@ class ConfigPlanForm(NautobotModelForm):
 class ConfigPlanUpdateForm(NautobotModelForm):
     """Form for ConfigPlan instances."""
 
-    status = utilities_forms.DynamicModelChoiceField(
+    status = apps_forms.DynamicModelChoiceField(
         queryset=Status.objects.all(),
         query_params={"content_types": models.ConfigPlan._meta.label_lower},
     )
-    tags = utilities_forms.DynamicModelMultipleChoiceField(
+    tags = apps_forms.DynamicModelMultipleChoiceField(
         queryset=Tag.objects.all(), query_params={"content_types": "dcim.device"}, required=False
     )
 
@@ -507,18 +511,18 @@ class ConfigPlanFilterForm(NautobotFilterForm):
     model = models.ConfigPlan
 
     q = forms.CharField(required=False, label="Search")
-    device_id = core_forms.DynamicModelMultipleChoiceField(
+    device_id = apps_forms.DynamicModelMultipleChoiceField(
         queryset=Device.objects.all(), required=False, null_option="None", label="Device"
     )
-    created__lte = forms.DateTimeField(label="Created Before", required=False, widget=core_forms.DatePicker())
-    created__gte = forms.DateTimeField(label="Created After", required=False, widget=core_forms.DatePicker())
+    created__lte = forms.DateTimeField(label="Created Before", required=False, widget=apps_forms.DatePicker())
+    created__gte = forms.DateTimeField(label="Created After", required=False, widget=apps_forms.DatePicker())
     plan_type = forms.ChoiceField(
-        choices=core_forms.add_blank_choice(ConfigPlanTypeChoice),
+        choices=apps_forms.add_blank_choice(ConfigPlanTypeChoice),
         required=False,
         widget=forms.Select(),
         label="Plan Type",
     )
-    feature = core_forms.DynamicModelMultipleChoiceField(
+    feature = apps_forms.DynamicModelMultipleChoiceField(
         queryset=models.ComplianceFeature.objects.all(),
         required=False,
         null_option="None",
@@ -526,21 +530,21 @@ class ConfigPlanFilterForm(NautobotFilterForm):
         to_field_name="name",
     )
     change_control_id = forms.CharField(required=False, label="Change Control ID")
-    plan_result_id = utilities_forms.DynamicModelMultipleChoiceField(
+    plan_result_id = apps_forms.DynamicModelMultipleChoiceField(
         queryset=JobResult.objects.all(),
         query_params={"name": "plugins/nautobot_golden_config.jobs/GenerateConfigPlans"},
         label="Plan Result",
         required=False,
         display_field="created",
     )
-    deploy_result_id = utilities_forms.DynamicModelMultipleChoiceField(
+    deploy_result_id = apps_forms.DynamicModelMultipleChoiceField(
         queryset=JobResult.objects.all(),
         query_params={"name": "plugins/nautobot_golden_config.jobs/DeployConfigPlans"},
         label="Deploy Result",
         required=False,
         display_field="created",
     )
-    status = core_forms.DynamicModelMultipleChoiceField(
+    status = apps_forms.DynamicModelMultipleChoiceField(
         required=False,
         queryset=Status.objects.all(),
         query_params={"content_types": models.ConfigPlan._meta.label_lower},
@@ -548,14 +552,14 @@ class ConfigPlanFilterForm(NautobotFilterForm):
         label="Status",
         to_field_name="name",
     )
-    tag = core_forms.TagFilterField(model)
+    tag = apps_forms.TagFilterField(model)
 
 
 class ConfigPlanBulkEditForm(NautobotBulkEditForm):
     """BulkEdit form for ConfigPlan instances."""
 
     pk = forms.ModelMultipleChoiceField(queryset=models.ConfigPlan.objects.all(), widget=forms.MultipleHiddenInput)
-    status = core_forms.DynamicModelChoiceField(
+    status = apps_forms.DynamicModelChoiceField(
         queryset=Status.objects.all(),
         query_params={"content_types": models.ConfigPlan._meta.label_lower},
         required=False,

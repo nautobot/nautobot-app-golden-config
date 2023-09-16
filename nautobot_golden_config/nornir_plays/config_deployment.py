@@ -5,7 +5,7 @@ from nautobot.dcim.models import Device
 from nautobot.extras.models import Status
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
-from nautobot_plugin_nornir.utils import get_dispatcher
+# from nautobot_plugin_nornir.utils import get_dispatcher # custom_dispatcher # TODO: 2.0
 from nornir import InitNornir
 from nornir.core.exceptions import NornirSubTaskError
 from nornir.core.plugins.inventory import InventoryPluginRegister

@@ -373,11 +373,11 @@ class DeployConfigPlanJobButtonReceiver(JobButtonReceiver):
 
 
 # Conditionally allow jobs based on whether or not turned on.
-if ENABLE_BACKUP:
+if constant.ENABLE_BACKUP:
     register_jobs(BackupJob)
-if ENABLE_INTENDED:
+if constant.ENABLE_INTENDED:
     register_jobs(IntendedJob)
-if ENABLE_COMPLIANCE:
+if constant.ENABLE_COMPLIANCE:
     register_jobs(ComplianceJob)
 register_jobs(GenerateConfigPlans)
 register_jobs(DeployConfigPlans)

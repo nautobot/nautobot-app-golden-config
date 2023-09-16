@@ -73,6 +73,7 @@ RUN pip install -c constraints.txt -e .
 # Install any dev dependencies frozen from Poetry
 # Can be improved in Poetry 1.2 which allows `poetry install --only dev`
 RUN pip install -c constraints.txt -r poetry_freeze_dev.txt
+RUN pip install nautobot==2.0.0rc3
 
 COPY development/nautobot_config.py ${NAUTOBOT_ROOT}/nautobot_config.py
 # !!! USE CAUTION WHEN MODIFYING LINES ABOVE

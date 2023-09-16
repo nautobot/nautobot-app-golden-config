@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nautobot-golden-config"
-version = "1.6.0"
+version = "2.0.0-rc1"
 description = "A plugin for configuration on nautobot"
 authors = ["Network to Code, LLC <opensource@networktocode.com>"]
 license = "Apache-2.0"
@@ -95,7 +95,7 @@ exclude = '''
 
 [tool.pylint.master]
 # Include the pylint_django plugin to avoid spurious warnings about Django patterns
-load-plugins="pylint_django"
+load-plugins="pylint_django, pylint_nautobot"
 ignore-patterns=["jinja_filters.py", ".venv"]
 ignore-paths = '^.*/migrations/.*$'
 

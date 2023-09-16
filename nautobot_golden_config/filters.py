@@ -3,7 +3,7 @@
 import django_filters
 from django.db.models import Q
 
-from nautobot.core.filters import BaseFilterSet, MultiValueDateTimeFilter, TagFilter, TreeNodeMultipleChoiceFilter
+from nautobot.core.filters import MultiValueDateTimeFilter, TagFilter, TreeNodeMultipleChoiceFilter
 from nautobot.dcim.models import Device, DeviceType, Manufacturer, Platform, Rack, RackGroup, Location
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.extras.filters import NaturalKeyOrPKMultipleChoiceFilter, NautobotFilterSet, StatusFilter
@@ -345,7 +345,7 @@ class RemediationSettingFilterSet(NautobotFilterSet):
 
 
 class ConfigPlanFilterSet(NautobotFilterSet):
-    """Inherits Base Class BaseFilterSet."""
+    """Inherits Base Class NautobotFilterSet."""
 
     q = django_filters.CharFilter(
         method="search",

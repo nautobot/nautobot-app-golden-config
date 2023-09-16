@@ -11,12 +11,10 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
 from django.urls import reverse
-from lxml import html
+
 from nautobot.dcim.models import Device
 from nautobot.extras.models import Relationship, RelationshipAssociation, Status
 from nautobot.core.testing import ViewTestCases
-
-from packaging import version
 
 from nautobot_golden_config import models, views
 

@@ -2,7 +2,7 @@
 
 from nautobot.apps.ui import NavMenuAddButton, NavMenuGroup, NavMenuItem, NavMenuTab
 
-from nautobot_golden_config.utilities.constant import ENABLE_COMPLIANCE, ENABLE_BACKUP
+from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_PLAN
 
 items_operate = [
     NavMenuItem(
@@ -116,7 +116,6 @@ if ENABLE_COMPLIANCE:
             name="Remediation Settings",
             permissions=["nautobot_golden_config.view_remediationsetting"],
             buttons=(
-                NavMenuAddButton(
                 NavMenuAddButton(
                     link="plugins:nautobot_golden_config:remediationsetting_add",
                     permissions=["nautobot_golden_config.add_remediationsetting"],

@@ -4,175 +4,235 @@ import uuid
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.utils.text import slugify
-from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Platform, Rack, RackGroup, Region, Site
+
+from nautobot.dcim.models import Device, DeviceType, Location, LocationType, Manufacturer, Platform, Rack, RackGroup
 from nautobot.extras.datasources.registry import get_datasource_contents
-from nautobot.extras.models import GitRepository, GraphQLQuery, Status, Tag, JobResult
+from nautobot.extras.models import GitRepository, GraphQLQuery, JobResult, Role, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
 import pytz
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
 from nautobot_golden_config.models import ComplianceFeature, ComplianceRule, ConfigCompliance
 
-
 User = get_user_model()
 
 
-def create_device_data():
+def create_device_data():  # pylint: disable=too-many-locals
     """Creates a Device and associated data."""
+    ct_device = ContentType.objects.get_for_model(Device)
+
     manufacturers = (
-        Manufacturer.objects.create(name="Manufacturer 1", slug="manufacturer-1"),
-        Manufacturer.objects.create(name="Manufacturer 2", slug="manufacturer-2"),
-        Manufacturer.objects.create(name="Manufacturer 3", slug="manufacturer-3"),
+        Manufacturer.objects.create(name="Manufacturer 1"),
+        Manufacturer.objects.create(name="Manufacturer 2"),
+        Manufacturer.objects.create(name="Manufacturer 3"),
     )
 
     device_types = (
         DeviceType.objects.create(
             manufacturer=manufacturers[0],
             model="Model 1",
-            slug="model-1",
             is_full_depth=True,
         ),
         DeviceType.objects.create(
             manufacturer=manufacturers[1],
             model="Model 2",
-            slug="model-2",
             is_full_depth=True,
         ),
         DeviceType.objects.create(
             manufacturer=manufacturers[2],
             model="Model 3",
-            slug="model-3",
             is_full_depth=False,
         ),
     )
 
-    device_roles = (
-        DeviceRole.objects.create(name="Device Role 1", slug="device-role-1"),
-        DeviceRole.objects.create(name="Device Role 2", slug="device-role-2"),
-        DeviceRole.objects.create(name="Device Role 3", slug="device-role-3"),
-    )
+    role1 = Role.objects.create(name="Device Role 1")
+    role1.content_types.set([ct_device])
+    role2 = Role.objects.create(name="Device Role 2")
+    role2.content_types.set([ct_device])
+    role3 = Role.objects.create(name="Device Role 3")
+    role3.content_types.set([ct_device])
+    device_roles = (role1, role2, role3)
 
     device_statuses = Status.objects.get_for_model(Device)
-    device_status_map = {ds.slug: ds for ds in device_statuses.all()}
+    device_status_map = {ds.name: ds for ds in device_statuses.all()}
 
     platforms = (
-        Platform.objects.create(name="Platform 1", slug="platform-1"),
-        Platform.objects.create(name="Platform 2", slug="platform-2"),
-        Platform.objects.create(name="Platform 3", slug="platform-3"),
+        Platform.objects.create(name="Platform 1"),
+        Platform.objects.create(name="Platform 2"),
+        Platform.objects.create(name="Platform 3"),
     )
 
+    lt_region = LocationType.objects.create(name="Region")
+    lt_site = LocationType.objects.create(name="Site", parent=lt_region)
+    lt_site.content_types.set([ct_device])
+
     regions = (
-        Region.objects.create(name="Region 1", slug="region-1"),
-        Region.objects.create(name="Region 2", slug="region-2"),
-        Region.objects.create(name="Region 3", slug="region-3"),
+        Location.objects.create(name="Region 1", location_type=lt_region, status=device_status_map["Active"]),
+        Location.objects.create(name="Region 2", location_type=lt_region, status=device_status_map["Active"]),
+        Location.objects.create(name="Region 3", location_type=lt_region, status=device_status_map["Active"]),
     )
 
     sites = (
-        Site.objects.create(name="Site 1", slug="site-1", region=regions[0]),
-        Site.objects.create(name="Site 2", slug="site-2", region=regions[1]),
-        Site.objects.create(name="Site 3", slug="site-3", region=regions[2]),
+        Location.objects.create(
+            name="Site 1", location_type=lt_site, parent=regions[0], status=device_status_map["Active"]
+        ),
+        Location.objects.create(
+            name="Site 2", location_type=lt_site, parent=regions[1], status=device_status_map["Active"]
+        ),
+        Location.objects.create(
+            name="Site 3", location_type=lt_site, parent=regions[2], status=device_status_map["Active"]
+        ),
+        Location.objects.create(
+            name="Site 1", location_type=lt_site, parent=regions[2], status=device_status_map["Active"]
+        ),
     )
 
+    rack_group_parent = RackGroup.objects.create(name="Rack Group Parent", location=sites[0])
+
     rack_groups = (
-        RackGroup.objects.create(name="Rack Group 1", slug="rack-group-1", site=sites[0]),
-        RackGroup.objects.create(name="Rack Group 2", slug="rack-group-2", site=sites[1]),
-        RackGroup.objects.create(name="Rack Group 3", slug="rack-group-3", site=sites[2]),
+        RackGroup.objects.create(name="Rack Group 1", location=sites[0], parent=rack_group_parent),
+        RackGroup.objects.create(name="Rack Group 2", location=sites[1]),
+        RackGroup.objects.create(name="Rack Group 3", location=sites[2]),
+        RackGroup.objects.create(name="Rack Group 4", location=sites[0], parent=rack_group_parent),
+        RackGroup.objects.create(name="Rack Group 1", location=sites[3]),
     )
 
     racks = (
-        Rack.objects.create(name="Rack 1", site=sites[0], group=rack_groups[0]),
-        Rack.objects.create(name="Rack 2", site=sites[1], group=rack_groups[1]),
-        Rack.objects.create(name="Rack 3", site=sites[2], group=rack_groups[2]),
+        Rack.objects.create(
+            name="Rack 1", location=sites[0], rack_group=rack_groups[0], status=device_status_map["Active"]
+        ),
+        Rack.objects.create(
+            name="Rack 2", location=sites[1], rack_group=rack_groups[1], status=device_status_map["Active"]
+        ),
+        Rack.objects.create(
+            name="Rack 3", location=sites[2], rack_group=rack_groups[2], status=device_status_map["Active"]
+        ),
+        Rack.objects.create(
+            name="Rack 4", location=sites[0], rack_group=rack_groups[3], status=device_status_map["Active"]
+        ),
+        Rack.objects.create(
+            name="Rack 5", location=sites[3], rack_group=rack_groups[4], status=device_status_map["Active"]
+        ),
     )
 
+    tenant_group_parent = TenantGroup.objects.create(name="Tenant group parent")
+
     tenant_groups = (
-        TenantGroup.objects.create(name="Tenant group 1", slug="tenant-group-1"),
-        TenantGroup.objects.create(name="Tenant group 2", slug="tenant-group-2"),
-        TenantGroup.objects.create(name="Tenant group 3", slug="tenant-group-3"),
+        TenantGroup.objects.create(name="Tenant group 1", parent=tenant_group_parent),
+        TenantGroup.objects.create(name="Tenant group 2"),
+        TenantGroup.objects.create(name="Tenant group 3", parent=tenant_group_parent),
     )
 
     tenants = (
-        Tenant.objects.create(name="Tenant 1", slug="tenant-1", group=tenant_groups[0]),
-        Tenant.objects.create(name="Tenant 2", slug="tenant-2", group=tenant_groups[1]),
-        Tenant.objects.create(name="Tenant 3", slug="tenant-3", group=tenant_groups[2]),
+        Tenant.objects.create(name="Tenant 1", tenant_group=tenant_groups[0]),
+        Tenant.objects.create(name="Tenant 2", tenant_group=tenant_groups[1]),
+        Tenant.objects.create(name="Tenant 3", tenant_group=tenant_groups[2]),
     )
 
     Device.objects.create(
         name="Device 1",
         device_type=device_types[0],
-        device_role=device_roles[0],
+        role=device_roles[0],
         platform=platforms[0],
         tenant=tenants[0],
-        site=sites[0],
+        location=sites[0],
         rack=racks[0],
-        status=device_status_map["active"],
+        status=device_status_map["Active"],
     )
     Device.objects.create(
         name="Device 2",
         device_type=device_types[1],
-        device_role=device_roles[1],
+        role=device_roles[1],
         platform=platforms[1],
         tenant=tenants[1],
-        site=sites[1],
+        location=sites[1],
         rack=racks[1],
-        status=device_status_map["staged"],
+        status=device_status_map["Staged"],
     )
     Device.objects.create(
         name="Device 3",
         device_type=device_types[2],
-        device_role=device_roles[2],
+        role=device_roles[2],
         platform=platforms[2],
         tenant=tenants[2],
-        site=sites[2],
+        location=sites[2],
         rack=racks[2],
-        status=device_status_map["failed"],
+        status=device_status_map["Failed"],
     )
     Device.objects.create(
         name="Device 4",
         device_type=device_types[0],
-        device_role=device_roles[0],
+        role=device_roles[0],
         platform=platforms[0],
         tenant=tenants[0],
-        site=sites[0],
+        location=sites[0],
         rack=racks[0],
-        status=device_status_map["active"],
+        status=device_status_map["Active"],
+    )
+    Device.objects.create(
+        name="Device 5",
+        device_type=device_types[0],
+        role=device_roles[0],
+        platform=platforms[0],
+        tenant=tenants[0],
+        location=sites[3],
+        rack=racks[4],
+        status=device_status_map["Active"],
+    )
+    Device.objects.create(
+        name="Device 6",
+        device_type=device_types[0],
+        role=device_roles[0],
+        platform=platforms[0],
+        tenant=tenants[0],
+        location=sites[0],
+        rack=racks[3],
+        status=device_status_map["Active"],
     )
 
 
 def create_device(name="foobaz"):
     """Creates a Device to be used with tests."""
-    parent_region, _ = Region.objects.get_or_create(name="Parent Region 1", slug="parent_region-1")
-    child_region, _ = Region.objects.get_or_create(name="Child Region 1", slug="child_region-1", parent=parent_region)
-    site, _ = Site.objects.get_or_create(name="Site 1", slug="site-1", region=child_region)
-    manufacturer, _ = Manufacturer.objects.get_or_create(name="Manufacturer 1", slug="manufacturer-1")
-    device_role, _ = DeviceRole.objects.get_or_create(name="Role 1", slug="role-1")
-    device_type, _ = DeviceType.objects.get_or_create(
-        manufacturer=manufacturer, model="Device Type 1", slug="device-type-1"
-    )
-    platform, _ = Platform.objects.get_or_create(manufacturer=manufacturer, name="Platform 1", slug="platform-1")
+    ct_device = ContentType.objects.get_for_model(Device)
     status, _ = Status.objects.get_or_create(name="Failed")
+    lt_region, _ = LocationType.objects.get_or_create(name="Region", nestable=True)
+    lt_site, _ = LocationType.objects.get_or_create(name="Site", parent=lt_region)
+    lt_site.content_types.set([ct_device])
+    parent_region, _ = Location.objects.get_or_create(name="Parent Region 1", location_type=lt_region, status=status)
+    child_region, _ = Location.objects.get_or_create(
+        name="Child Region 1", parent=parent_region, location_type=lt_region, status=status
+    )
+    site, _ = Location.objects.get_or_create(name="Site 1", parent=child_region, location_type=lt_site, status=status)
+    manufacturer, _ = Manufacturer.objects.get_or_create(name="Manufacturer")
+    device_role, _ = Role.objects.get_or_create(name="Role 1")
+    device_role.content_types.set([ct_device])
+    device_type, _ = DeviceType.objects.get_or_create(manufacturer=manufacturer, model="Device Type 1")
+    platform, _ = Platform.objects.get_or_create(manufacturer=manufacturer, name="Platform 1")
     device = Device.objects.create(
-        name=name, platform=platform, site=site, device_role=device_role, device_type=device_type, status=status
+        name=name, platform=platform, location=site, role=device_role, device_type=device_type, status=status
     )
     return device
 
 
 def create_orphan_device(name="orphan"):
     """Creates a Device to be used with tests."""
-    parent_region, _ = Region.objects.get_or_create(name="Parent Region 4", slug="parent_region-4")
-    child_region, _ = Region.objects.get_or_create(name="Child Region 4", slug="child_region-4", parent=parent_region)
-    site, _ = Site.objects.get_or_create(name="Site 4", slug="site-4", region=child_region)
-    manufacturer, _ = Manufacturer.objects.get_or_create(name="Manufacturer 4", slug="manufacturer-4")
-    device_role, _ = DeviceRole.objects.get_or_create(name="Role 4", slug="role-4")
-    device_type, _ = DeviceType.objects.get_or_create(
-        manufacturer=manufacturer, model="Device Type 4", slug="device-type-4"
-    )
-    platform, _ = Platform.objects.get_or_create(manufacturer=manufacturer, name="Platform 4", slug="platform-4")
-    content_type = ContentType.objects.get(app_label="dcim", model="device")
-    tag, _ = Tag.objects.get_or_create(name="Orphaned", slug="orphaned")
-    tag.content_types.add(content_type)
+    ct_device = ContentType.objects.get_for_model(Device)
     status, _ = Status.objects.get_or_create(name="Offline")
+    lt_region, _ = LocationType.objects.get_or_create(name="Region", nestable=True)
+    lt_site, _ = LocationType.objects.get_or_create(name="Site", parent=lt_region)
+    lt_site.content_types.set([ct_device])
+    parent_region, _ = Location.objects.get_or_create(name="Parent Region 4", location_type=lt_region, status=status)
+    child_region, _ = Location.objects.get_or_create(
+        name="Child Region 4", parent=parent_region, location_type=lt_region, status=status
+    )
+    site, _ = Location.objects.get_or_create(name="Site 4", parent=child_region, location_type=lt_site, status=status)
+    manufacturer, _ = Manufacturer.objects.get_or_create(name="Manufacturer 4")
+    device_role, _ = Role.objects.get_or_create(name="Role 4")
+    device_type, _ = DeviceType.objects.get_or_create(manufacturer=manufacturer, model="Device Type 4")
+    platform, _ = Platform.objects.get_or_create(manufacturer=manufacturer, name="Platform 4")
+    tag, _ = Tag.objects.get_or_create(name="Orphaned")
+    tag.content_types.add(ct_device)
     device = Device.objects.create(
-        name=name, platform=platform, site=site, device_role=device_role, device_type=device_type, status=status
+        name=name, platform=platform, location=site, role=device_role, device_type=device_type, status=status
     )
     device.tags.add(tag)
     return device
@@ -259,14 +319,13 @@ def create_git_repos() -> None:
         slug=slugify(name),
         remote_url=f"http://www.remote-repo.com/{name}.git",
         branch="main",
-        username="CoolDeveloper_1",
         provided_contents=[
             entry.content_identifier
             for entry in get_datasource_contents("extras.gitrepository")
             if entry.content_identifier == provides
         ],
     )
-    git_repo_1.save(trigger_resync=False)
+    git_repo_1.save()
 
     name = "test-backup-repo-2"
     provides = "nautobot_golden_config.backupconfigs"
@@ -275,14 +334,13 @@ def create_git_repos() -> None:
         slug=slugify(name),
         remote_url=f"http://www.remote-repo.com/{name}.git",
         branch="main",
-        username="CoolDeveloper_1",
         provided_contents=[
             entry.content_identifier
             for entry in get_datasource_contents("extras.gitrepository")
             if entry.content_identifier == provides
         ],
     )
-    git_repo_2.save(trigger_resync=False)
+    git_repo_2.save()
 
     name = "test-intended-repo-1"
     provides = "nautobot_golden_config.intendedconfigs"
@@ -291,14 +349,13 @@ def create_git_repos() -> None:
         slug=slugify(name),
         remote_url=f"http://www.remote-repo.com/{name}.git",
         branch="main",
-        username="CoolDeveloper_1",
         provided_contents=[
             entry.content_identifier
             for entry in get_datasource_contents("extras.gitrepository")
             if entry.content_identifier == provides
         ],
     )
-    git_repo_3.save(trigger_resync=False)
+    git_repo_3.save()
 
     name = "test-intended-repo-2"
     provides = "nautobot_golden_config.intendedconfigs"
@@ -307,14 +364,13 @@ def create_git_repos() -> None:
         slug=slugify(name),
         remote_url=f"http://www.remote-repo.com/{name}.git",
         branch="main",
-        username="CoolDeveloper_1",
         provided_contents=[
             entry.content_identifier
             for entry in get_datasource_contents("extras.gitrepository")
             if entry.content_identifier == provides
         ],
     )
-    git_repo_4.save(trigger_resync=False)
+    git_repo_4.save()
 
     name = "test-jinja-repo-1"
     provides = "nautobot_golden_config.jinjatemplate"
@@ -323,14 +379,13 @@ def create_git_repos() -> None:
         slug=slugify(name),
         remote_url=f"http://www.remote-repo.com/{name}.git",
         branch="main",
-        username="CoolDeveloper_1",
         provided_contents=[
             entry.content_identifier
             for entry in get_datasource_contents("extras.gitrepository")
             if entry.content_identifier == provides
         ],
     )
-    git_repo_5.save(trigger_resync=False)
+    git_repo_5.save()
 
 
 def create_helper_repo(name="foobaz", provides=None):
@@ -343,14 +398,13 @@ def create_helper_repo(name="foobaz", provides=None):
         slug=slugify(name),
         remote_url=f"http://www.remote-repo.com/{name}.git",
         branch="main",
-        username="CoolDeveloper_1",
         provided_contents=[
             entry.content_identifier
             for entry in get_datasource_contents("extras.gitrepository")
             if entry.content_identifier == content_provides
         ],
     )
-    git_repo.save(trigger_resync=False)
+    git_repo.save()
 
 
 def create_saved_queries() -> None:
@@ -371,7 +425,6 @@ def create_saved_queries() -> None:
             """
     saved_query_1 = GraphQLQuery(
         name=name,
-        slug=slugify(name),
         variables=variables,
         query=query,
     )
@@ -382,7 +435,7 @@ def create_saved_queries() -> None:
                   device(id: $device_id) {
                     config_context
                     name
-                    site {
+                    location {
                       name
                     }
                   }
@@ -390,7 +443,6 @@ def create_saved_queries() -> None:
             """
     saved_query_2 = GraphQLQuery(
         name=name,
-        slug=slugify(name),
         variables=variables,
         query=query,
     )
@@ -400,7 +452,6 @@ def create_saved_queries() -> None:
     query = '{devices(name:"ams-edge-01"){id}}'
     saved_query_3 = GraphQLQuery(
         name=name,
-        slug=slugify(name),
         query=query,
     )
     saved_query_3.save()
@@ -423,7 +474,6 @@ def create_saved_queries() -> None:
     """
     saved_query_4 = GraphQLQuery(
         name=name,
-        slug=slugify(name),
         query=query,
     )
     saved_query_4.save()
@@ -447,7 +497,6 @@ def create_saved_queries() -> None:
     """
     saved_query_5 = GraphQLQuery(
         name=name,
-        slug=slugify(name),
         query=query,
     )
     saved_query_5.save()

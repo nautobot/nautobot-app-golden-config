@@ -20,6 +20,7 @@ services:
     image: "mysql:8"
     command:
       - "--default-authentication-plugin=mysql_native_password"
+      - "--max_connections=1000"
     env_file:
       - "development.env"
       - "creds.env"
@@ -27,7 +28,12 @@ services:
     volumes:
       - "mysql_data:/var/lib/mysql"
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test:
+        - "CMD"
+        - "mysqladmin"
+        - "ping"
+        - "-h"
+        - "localhost"
       timeout: "20s"
       retries: 10
 volumes:

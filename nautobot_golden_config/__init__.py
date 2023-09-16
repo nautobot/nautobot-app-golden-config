@@ -8,10 +8,10 @@ __version__ = metadata.version(__name__)
 from jinja2 import StrictUndefined
 from django.db.models.signals import post_migrate
 from nautobot.core.signals import nautobot_database_ready
-from nautobot.extras.plugins import PluginConfig
+from nautobot.extras.plugins import NautobotAppConfig
 
 
-class GoldenConfig(PluginConfig):
+class GoldenConfig(NautobotAppConfig):
     """Plugin configuration for the nautobot_golden_config plugin."""
 
     name = "nautobot_golden_config"
@@ -21,8 +21,6 @@ class GoldenConfig(PluginConfig):
     author_email = "opensource@networktocode.com"
     description = "Nautobot Apps that embraces NetDevOps and automates configuration backups, performs configuration compliance, generates intended configurations, and has config remediation and deployment features. Includes native Git integration and gives users the flexibility to mix and match the supported features."
     base_url = "golden-config"
-    min_version = "1.6.1"
-    max_version = "1.99"
     default_settings = {
         "enable_backup": True,
         "enable_compliance": True,

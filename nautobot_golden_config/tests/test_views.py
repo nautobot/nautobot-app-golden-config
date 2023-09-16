@@ -1,7 +1,10 @@
 """Unit tests for nautobot_golden_config views."""
 
-import datetime
 from unittest import mock, skipIf
+import datetime
+from packaging import version
+
+from lxml import html
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -11,7 +14,8 @@ from django.urls import reverse
 from lxml import html
 from nautobot.dcim.models import Device
 from nautobot.extras.models import Relationship, RelationshipAssociation, Status
-from nautobot.utilities.testing import ViewTestCases
+from nautobot.core.testing import ViewTestCases
+
 from packaging import version
 
 from nautobot_golden_config import models, views
@@ -146,17 +150,6 @@ class ConfigReplaceListViewTestCase(TestCase):
     def _entry_replace(self):
         return "<dontlookatme>"
 
-    def test_configreplace_export(self):
-        response = self.client.get(f"{self._url}?export")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.headers["Content-Type"], "text/csv")
-        last_entry = models.ConfigReplace.objects.last()
-        csv_data = response.content.decode().splitlines()
-        expected_last_entry = f"{last_entry.name},{last_entry.platform.slug},{last_entry.description},{last_entry.regex},{last_entry.replace}"
-        self.assertEqual(csv_data[0], self._csv_headers)
-        self.assertEqual(csv_data[-1], expected_last_entry)
-        self.assertEqual(len(csv_data) - 1, models.ConfigReplace.objects.count())
-
     def test_configreplace_import(self):
         self._delete_test_entry()
         platform = Device.objects.first().platform
@@ -220,7 +213,7 @@ class GoldenConfigListViewTestCase(TestCase):
         platform_content_type = ContentType.objects.get(app_label="dcim", model="platform")
         device = Device.objects.first()
         relationship = Relationship.objects.create(
-            name="test platform to dev",
+            label="test platform to dev",
             type="one-to-many",
             source_type_id=platform_content_type.id,
             destination_type_id=device_content_type.id,

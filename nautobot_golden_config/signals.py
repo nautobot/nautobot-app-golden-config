@@ -80,7 +80,7 @@ def post_migrate_create_job_button(sender, apps=global_apps, **kwargs):  # pylin
 def config_compliance_platform_cleanup(sender, instance, **kwargs):  # pylint: disable=unused-argument
     """Signal helper to delete any orphaned ConfigCompliance objects. Caused by device platform changes."""
     cc_wrong_platform = models.ConfigCompliance.objects.filter(device=instance.device).filter(
-        rule__platform__in=Platform.objects.exclude(slug=instance.device.platform.slug)
+        rule__platform__in=Platform.objects.exclude(id=instance.device.platform.id)
     )
     if cc_wrong_platform.count() > 0:
         cc_wrong_platform.delete()

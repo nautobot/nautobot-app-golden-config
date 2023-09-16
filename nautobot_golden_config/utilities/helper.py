@@ -10,7 +10,7 @@ from django.urls import reverse
 from jinja2 import exceptions as jinja_errors
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.dcim.models import Device
-from nautobot.utilities.utils import render_jinja2
+from nautobot.core.utils.data import render_jinja2
 from nornir_nautobot.exceptions import NornirNautobotException
 
 from nautobot_golden_config import models
@@ -19,8 +19,7 @@ FIELDS_PK = {
     "platform",
     "tenant_group",
     "tenant",
-    "region",
-    "site",
+    "location",
     "role",
     "rack",
     "rack_group",
@@ -28,11 +27,11 @@ FIELDS_PK = {
     "device_type",
 }
 
-FIELDS_SLUG = {"tag", "status"}
+FIELDS_NAME = {"tags", "status"}  # TODO: 2.0: Change tag to tags, this should be good now, verify
 
 
 def get_job_filter(data=None):
-    """Helper function to return a the filterable list of OS's based on platform.slug and a specific custom value."""
+    """Helper function to return a the filterable list of OS's based on platform.name and a specific custom value."""
     if not data:
         data = {}
     query = {}
@@ -40,12 +39,12 @@ def get_job_filter(data=None):
     # Translate instances from FIELDS set to list of primary keys
     for field in FIELDS_PK:
         if data.get(field):
-            query[f"{field}_id"] = data[field].values_list("pk", flat=True)
+            query[field] = data[field].values_list("pk", flat=True)
 
-    # Translate instances from FIELDS set to list of slugs
-    for field in FIELDS_SLUG:
+    # Translate instances from FIELDS set to list of names
+    for field in FIELDS_NAME:
         if data.get(field):
-            query[f"{field}"] = data[field].values_list("slug", flat=True)
+            query[field] = data[field].values_list("name", flat=True)
 
     # Handle case where object is from single device run all.
     if data.get("device") and isinstance(data["device"], Device):
@@ -92,8 +91,9 @@ def verify_settings(logger, global_settings, attrs):
     """Helper function to verify required attributes are set before a Nornir play start."""
     for item in attrs:
         if not getattr(global_settings, item):
-            logger.log_failure(None, f"Missing the required global setting: `{item}`.")
-            raise NornirNautobotException()
+            error_msg = f"Missing the required global setting: `{item}`."
+            logger.log_error(error_msg)
+            raise NornirNautobotException(error_msg)
 
 
 def render_jinja_template(obj, logger, template):
@@ -116,25 +116,29 @@ def render_jinja_template(obj, logger, template):
     except jinja_errors.UndefinedError as error:
         error_msg = (
             "Jinja encountered and UndefinedError`, check the template for missing variable definitions.\n"
-            f"Template:\n{template}"
+            f"Template:\n{template}\n"
+            f"Original Error: {error}"
         )
-        logger.log_failure(obj, error_msg)
-        raise NornirNautobotException from error
+        logger.log_error(error_msg, extra={"object": obj})
+        raise NornirNautobotException(error_msg)
+
     except jinja_errors.TemplateSyntaxError as error:  # Also catches subclass of TemplateAssertionError
         error_msg = (
             f"Jinja encountered a SyntaxError at line number {error.lineno},"
-            f"check the template for invalid Jinja syntax.\nTemplate:\n{template}"
+            f"check the template for invalid Jinja syntax.\nTemplate:\n{template}\n"
+            f"Original Error: {error}"
         )
-        logger.log_failure(obj, error_msg)
-        raise NornirNautobotException from error
+        logger.log_error(error_msg, extra={"object": obj})
+        raise NornirNautobotException(error_msg)
     # Intentionally not catching TemplateNotFound errors since template is passes as a string and not a filename
     except jinja_errors.TemplateError as error:  # Catches all remaining Jinja errors
         error_msg = (
             "Jinja encountered an unexpected TemplateError; check the template for correctness\n"
-            f"Template:\n{template}"
+            f"Template:\n{template}\n"
+            f"Original Error: {error}"
         )
-        logger.log_failure(obj, error_msg)
-        raise NornirNautobotException from error
+        logger.log_error(error_msg, extra={"object": obj})
+        raise NornirNautobotException(error_msg)
 
 
 def get_device_to_settings_map(queryset):

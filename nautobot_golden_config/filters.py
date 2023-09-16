@@ -2,16 +2,19 @@
 
 import django_filters
 from django.db.models import Q
+
+from nautobot.core.filters import BaseFilterSet, MultiValueDateTimeFilter, TagFilter, TreeNodeMultipleChoiceFilter
+from nautobot.dcim.models import Device, DeviceType, Manufacturer, Platform, Rack, RackGroup, Location
 from nautobot.dcim.filters import DeviceFilterSet
-from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Platform, Rack, RackGroup, Region, Site
-from nautobot.extras.filters import NautobotFilterSet, StatusFilter
-from nautobot.extras.models import JobResult, Status
+from nautobot.extras.filters import NaturalKeyOrPKMultipleChoiceFilter, NautobotFilterSet, StatusFilter
+from nautobot.extras.models import JobResult, Role, Status
 from nautobot.tenancy.models import Tenant, TenantGroup
-from nautobot.utilities.filters import MultiValueDateTimeFilter, TagFilter, TreeNodeMultipleChoiceFilter
 
 from nautobot_golden_config import models
 
 
+# TODO: 2.0: DeviceFilterSet has bugs in regards to Location in 2.0.0-rc.2 Review #2875 and #4207, make determination after.
+# Short term fix should be only use the UUID, not the natural or uuid
 class GoldenConfigDeviceFilterSet(DeviceFilterSet):  # pylint: disable=too-many-ancestors
     """Filter capabilities that extend the standard DeviceFilterSet."""
 
@@ -58,132 +61,90 @@ class GoldenConfigFilterSet(NautobotFilterSet):
     )
     tenant_group_id = TreeNodeMultipleChoiceFilter(
         queryset=TenantGroup.objects.all(),
-        field_name="device__tenant__group",
+        field_name="device__tenant__tenant_group",
+        to_field_name="id",
         label="Tenant Group (ID)",
     )
     tenant_group = TreeNodeMultipleChoiceFilter(
         queryset=TenantGroup.objects.all(),
-        field_name="device__tenant__group",
-        to_field_name="slug",
-        label="Tenant Group (slug)",
+        field_name="device__tenant__tenant_group",
+        to_field_name="name",
+        label="Tenant Group (name)",
     )
-    tenant_id = django_filters.ModelMultipleChoiceFilter(
+    tenant = NaturalKeyOrPKMultipleChoiceFilter(
         queryset=Tenant.objects.all(),
-        field_name="device__tenant_id",
-        label="Tenant (ID)",
+        field_name="device__tenant",
+        to_field_name="name",
+        label="Tenant (name or ID)",
     )
-    tenant = django_filters.ModelMultipleChoiceFilter(
-        queryset=Tenant.objects.all(),
-        field_name="device__tenant__slug",
-        to_field_name="slug",
-        label="Tenant (slug)",
+    location_id = TreeNodeMultipleChoiceFilter(
+        # Not limiting to content_type=dcim.device to allow parent locations to be included
+        # i.e. include all Sites in a Region, even though Region can't be assigned to a Device
+        queryset=Location.objects.all(),
+        field_name="device__location",
+        to_field_name="id",
+        label="Location (ID)",
     )
-    region_id = TreeNodeMultipleChoiceFilter(
-        queryset=Region.objects.all(),
-        field_name="device__site__region",
-        label="Region (ID)",
-    )
-    region = TreeNodeMultipleChoiceFilter(
-        queryset=Region.objects.all(),
-        field_name="device__site__region",
-        to_field_name="slug",
-        label="Region (slug)",
-    )
-    site_id = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__site",
-        queryset=Site.objects.all(),
-        label="Site (ID)",
-    )
-    site = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__site__slug",
-        queryset=Site.objects.all(),
-        to_field_name="slug",
-        label="Site name (slug)",
+    location = TreeNodeMultipleChoiceFilter(
+        # Not limiting to content_type=dcim.device to allow parent locations to be included
+        # i.e. include all sites in a Region, even though Region can't be assigned to a Device
+        queryset=Location.objects.all(),
+        field_name="device__location",
+        to_field_name="name",
+        label="Location (ID)",
     )
     rack_group_id = TreeNodeMultipleChoiceFilter(
         queryset=RackGroup.objects.all(),
-        field_name="device__rack__group",
+        field_name="device__rack__rack_group",
+        to_field_name="id",
         label="Rack group (ID)",
     )
     rack_group = TreeNodeMultipleChoiceFilter(
-        field_name="device__rack__group",
         queryset=RackGroup.objects.all(),
-        label="Rack group (slug)",
+        field_name="device__rack__rack_group",
+        to_field_name="name",
+        label="Rack group (name)",
     )
-    rack_id = django_filters.ModelMultipleChoiceFilter(
+    rack = NaturalKeyOrPKMultipleChoiceFilter(
         field_name="device__rack",
         queryset=Rack.objects.all(),
-        label="Rack (ID)",
-    )
-    rack = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__rack__name",
-        queryset=Rack.objects.all(),
         to_field_name="name",
-        label="Rack (name)",
+        label="Rack (name or ID)",
     )
-    role_id = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__device_role_id",
-        queryset=DeviceRole.objects.all(),
-        label="Role (ID)",
+    role = NaturalKeyOrPKMultipleChoiceFilter(
+        field_name="device__role",
+        queryset=Role.objects.all(),  # TODO: 2.0: How does change to Role model affect this?: queryset=Role.objects.filter(content_type__model='device')
+        to_field_name="name",
+        label="Role (name or ID)",
     )
-    role = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__device_role__slug",
-        queryset=DeviceRole.objects.all(),
-        to_field_name="slug",
-        label="Role (slug)",
-    )
-    manufacturer_id = django_filters.ModelMultipleChoiceFilter(
+    manufacturer = NaturalKeyOrPKMultipleChoiceFilter(
         field_name="device__device_type__manufacturer",
         queryset=Manufacturer.objects.all(),
-        label="Manufacturer (ID)",
+        to_field_name="name",
+        label="Manufacturer (name or ID)",
     )
-    manufacturer = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__device_type__manufacturer__slug",
-        queryset=Manufacturer.objects.all(),
-        to_field_name="slug",
-        label="Manufacturer (slug)",
-    )
-    platform_id = django_filters.ModelMultipleChoiceFilter(
+    platform = NaturalKeyOrPKMultipleChoiceFilter(
         field_name="device__platform",
         queryset=Platform.objects.all(),
-        label="Platform (ID)",
-    )
-    platform = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__platform__slug",
-        queryset=Platform.objects.all(),
-        to_field_name="slug",
-        label="Platform (slug)",
-    )
-    device_status_id = StatusFilter(
-        field_name="device__status_id",
-        queryset=Status.objects.all(),
-        label="Device Status",
+        to_field_name="name",
+        label="Platform (name or ID)",
     )
     device_status = StatusFilter(
         field_name="device__status",
         queryset=Status.objects.all(),
         label="Device Status",
     )
-    device_type_id = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__device_type_id",
+    device_type = NaturalKeyOrPKMultipleChoiceFilter(
+        field_name="device__device_type",
         queryset=DeviceType.objects.all(),
-        label="Device type (ID)",
+        to_field_name="model",
+        label="DeviceType (model or ID)",
     )
-    device_type = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__device_type__slug",
-        queryset=DeviceType.objects.all(),
-        to_field_name="slug",
-        label="DeviceType (slug)",
-    )
-    device_id = django_filters.ModelMultipleChoiceFilter(
-        queryset=Device.objects.all(),
-        label="Device ID",
-    )
-    device = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__name",
+    device = NaturalKeyOrPKMultipleChoiceFilter(
+        field_name="device",
         queryset=Device.objects.all(),
         to_field_name="name",
-        label="Device Name",
+        label="Device (name or ID)",
     )
 
     def search(self, queryset, name, value):  # pylint: disable=unused-argument
@@ -264,15 +225,11 @@ class ComplianceRuleFilterSet(NautobotFilterSet):
         method="search",
         label="Search",
     )
-    platform_id = django_filters.ModelMultipleChoiceFilter(
+    platform = NaturalKeyOrPKMultipleChoiceFilter(
+        field_name="platform",
         queryset=Platform.objects.all(),
-        label="Platform (ID)",
-    )
-    platform = django_filters.ModelMultipleChoiceFilter(
-        field_name="platform__slug",
-        queryset=Platform.objects.all(),
-        to_field_name="slug",
-        label="Platform (slug)",
+        to_field_name="name",
+        label="Platform (name or ID)",
     )
 
     def search(self, queryset, name, value):  # pylint: disable=unused-argument
@@ -296,15 +253,11 @@ class ConfigRemoveFilterSet(NautobotFilterSet):
         method="search",
         label="Search",
     )
-    platform_id = django_filters.ModelMultipleChoiceFilter(
+    platform = NaturalKeyOrPKMultipleChoiceFilter(
+        field_name="platform",
         queryset=Platform.objects.all(),
-        label="Platform (ID)",
-    )
-    platform = django_filters.ModelMultipleChoiceFilter(
-        field_name="platform__slug",
-        queryset=Platform.objects.all(),
-        to_field_name="slug",
-        label="Platform (slug)",
+        to_field_name="name",
+        label="Platform (name or ID)",
     )
 
     def search(self, queryset, name, value):  # pylint: disable=unused-argument
@@ -328,15 +281,11 @@ class ConfigReplaceFilterSet(NautobotFilterSet):
         method="search",
         label="Search",
     )
-    platform_id = django_filters.ModelMultipleChoiceFilter(
+    platform = NaturalKeyOrPKMultipleChoiceFilter(
+        field_name="platform",
         queryset=Platform.objects.all(),
-        label="Platform (ID)",
-    )
-    platform = django_filters.ModelMultipleChoiceFilter(
-        field_name="platform__slug",
-        queryset=Platform.objects.all(),
-        to_field_name="slug",
-        label="Platform (slug)",
+        to_field_name="name",
+        label="Platform (name or ID)",
     )
 
     def search(self, queryset, name, value):  # pylint: disable=unused-argument

@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
 from jinja2 import exceptions as jinja_errors
-from nautobot.dcim.models import Device, Platform, Site
+from nautobot.dcim.models import Device, Platform, Location, LocationType
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status, Tag
 from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.utils.logger import NornirLogger
@@ -45,20 +45,17 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         self.content_type = ContentType.objects.get(app_label="dcim", model="device")
 
         dynamic_group1 = DynamicGroup.objects.create(
-            name="test1 site site-4",
-            slug="test1-site-site-4",
+            name="test1 location site-4",
             content_type=self.content_type,
-            filter={"site": ["site-4"]},
+            filter={"location": ["Site 4"]},
         )
         dynamic_group2 = DynamicGroup.objects.create(
-            name="test2 site site-4",
-            slug="test2-site-site-4",
+            name="test2 location site-4",
             content_type=self.content_type,
-            filter={"site": ["site-4"]},
+            filter={"location": ["Site 4"]},
         )
         dynamic_group3 = DynamicGroup.objects.create(
-            name="test3 site site-4",
-            slug="test3-site-site-4",
+            name="test3 location site-all",
             content_type=self.content_type,
             filter={},
         )
@@ -155,7 +152,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         with self.assertRaises(NornirNautobotException):
             with self.assertRaises(jinja_errors.UndefinedError):
                 render_jinja_template(mock_device, mock_nornir_logger, "{{ obj.fake }}")
-        mock_nornir_logger.log_failure.assert_called_once()
+        mock_nornir_logger.log_error.assert_called_once()
 
     @patch("nornir_nautobot.utils.logger.NornirLogger")
     @patch("nautobot.dcim.models.Device")
@@ -164,7 +161,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         with self.assertRaises(NornirNautobotException):
             with self.assertRaises(jinja_errors.TemplateSyntaxError):
                 render_jinja_template(mock_device, mock_nornir_logger, "{{ obj.fake }")
-        mock_nornir_logger.log_failure.assert_called_once()
+        mock_nornir_logger.log_error.assert_called_once()
 
     @patch("nornir_nautobot.utils.logger.NornirLogger")
     @patch("nautobot.dcim.models.Device")
@@ -175,7 +172,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
             with self.assertRaises(jinja_errors.TemplateError):
                 template_mock.side_effect = jinja_errors.TemplateRuntimeError
                 render_jinja_template(mock_device, mock_nornir_logger, "template")
-        mock_nornir_logger.log_failure.assert_called_once()
+        mock_nornir_logger.log_error.assert_called_once()
 
     def test_get_backup_repository_dir_success(self):
         """Verify that we successfully look up the path from a provided repo object."""
@@ -204,7 +201,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
 
     def test_get_job_filter_site_success(self):
         """Verify we get a single device returned when providing specific site."""
-        result = get_job_filter(data={"site": Site.objects.filter(slug="site-4")})
+        result = get_job_filter(data={"location": Location.objects.filter(name="Site 4")})
         self.assertEqual(result.count(), 1)
 
     def test_get_job_filter_device_object_success(self):
@@ -219,7 +216,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
 
     def test_get_job_filter_tag_success(self):
         """Verify we get a single device returned when providing tag filter that matches on device."""
-        result = get_job_filter(data={"tag": Tag.objects.filter(name="Orphaned")})
+        result = get_job_filter(data={"tags": Tag.objects.filter(name="Orphaned")})
         self.assertEqual(result.count(), 1)
 
     def test_get_job_filter_tag_success_and_logic(self):
@@ -227,12 +224,12 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         device = Device.objects.get(name="orphan_device")
         device_2 = Device.objects.get(name="test_device")
         content_type = ContentType.objects.get(app_label="dcim", model="device")
-        tag, _ = Tag.objects.get_or_create(name="second-tag", slug="second-tag")
+        tag, _ = Tag.objects.get_or_create(name="second-tag")
         tag.content_types.add(content_type)
         device.tags.add(tag)
         device_2.tags.add(tag)
         # Default tag logic is an `AND` not and `OR`.
-        result = get_job_filter(data={"tag": Tag.objects.filter(name__in=["second-tag", "Orphaned"])})
+        result = get_job_filter(data={"tags": Tag.objects.filter(name__in=["second-tag", "Orphaned"])})
         self.assertEqual(device.tags.count(), 2)
         self.assertEqual(device_2.tags.count(), 1)
         self.assertEqual(result.count(), 1)
@@ -249,11 +246,10 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
 
     def test_get_job_filter_base_queryset_raise(self):
         """Verify we get raise for having a base_qs with no objects due to bad Golden Config Setting scope."""
-        Platform.objects.create(name="Placeholder Platform", slug="placeholder-platform")
+        Platform.objects.create(name="Placeholder Platform")
         for golden_settings in GoldenConfigSetting.objects.all():
             dynamic_group = DynamicGroup.objects.create(
                 name=f"{golden_settings.name} group",
-                slug=f"{golden_settings.slug}-group",
                 content_type=self.content_type,
                 filter={"platform": ["placeholder-platform"]},
             )
@@ -268,9 +264,10 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
 
     def test_get_job_filter_filtered_devices_raise(self):
         """Verify we get raise for having providing site that doesn't have any devices in scope."""
-        Site.objects.create(name="New Site", slug="new-site", status=Status.objects.get(slug="active"))
+        location_type = LocationType.objects.create(name="New Location Type Site")
+        Location.objects.create(name="New Site", status=Status.objects.get(name="Active"), location_type=location_type)
         with self.assertRaises(NornirNautobotException) as failure:
-            get_job_filter(data={"site": Site.objects.filter(name="New Site")})
+            get_job_filter(data={"location": Location.objects.filter(name="New Site")})
         self.assertEqual(
             failure.exception.args[0],
             "The provided job parameters didn't match any devices detected by the Golden Config scope. Please check the scope defined within Golden Config Settings or select the correct job parameters to correctly match devices.",
@@ -280,7 +277,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         """Verify we get raise for not having a platform set on a device."""
         device = Device.objects.get(name="test_device")
         device.platform = None
-        device.status = Status.objects.get(slug="active")
+        device.status = Status.objects.get(name="Active")
         device.validated_save()
         with self.assertRaises(NornirNautobotException) as failure:
             get_job_filter()

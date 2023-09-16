@@ -5,8 +5,15 @@ about: Report a reproducible bug in the current release of nautobot-golden-confi
 
 ### Environment
 * Python version:  <!-- Example: 3.7.7 -->
-* Nautobot version:  <!-- Example: 1.0.1 -->
+* Nautobot version:  <!-- Example: 1.4.0 -->
 * nautobot-golden-config version:  <!-- Example: 1.0.0 -->
+
+<!-- What did you expect to happen? -->
+### Expected Behavior
+
+
+<!-- What happened instead? -->
+### Observed Behavior
 
 <!--
     Describe in detail the exact steps that someone else can take to reproduce
@@ -16,10 +23,3 @@ about: Report a reproducible bug in the current release of nautobot-golden-confi
 1.
 2.
 3.
-
-<!-- What did you expect to happen? -->
-### Expected Behavior
-
-
-<!-- What happened instead? -->
-### Observed Behavior

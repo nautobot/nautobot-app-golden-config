@@ -32,4 +32,5 @@ class ProcessGoldenConfig(BaseLoggingProcessor):
                     for level_2_result in level_1_result.exception.result:
                         if isinstance(level_2_result.exception, NornirNautobotException):
                             return
-            self.logger.log_failure(task.host.data["obj"], f"{task.name} failed: {result.exception}")
+            self.logger.log_error(f"{task.name} failed: {result.exception}", extra={"object": task.host.data["obj"]})
+            # TODO 2.0: update the state????

@@ -16,7 +16,7 @@ The query starts with exactly `query ($device_id: ID!)`. This is to help fail fa
 !!! note
     The above validation will not happen if the query in the Saved Query object is modified after it's been assigned to the Settings object. That is, validation of the SoTAgg field only happens when the Settings object is created or updated.
 
-Note that the GraphQL query returned is modified to remove the root key of `device`, so instead of all data being within device, such as `{"device": {"site": {"slug": "jcy"}}}`, it is simply `{"site": {"slug": "jcy"}}` as an example.
+Note that the GraphQL query returned is modified to remove the root key of `device`, so instead of all data being within device, such as `{"device": {"location": {"name": "Jersey City"}}}`, it is simply `{"location": {"name": "Jersey City"}}` as an example.
 
 It is helpful to make adjustments to the query, and then view the data from the Plugin's home page and clicking on a given device's `code-json` icon.
 
@@ -28,9 +28,9 @@ operator to point to a function within the python path by a string. The function
 ```python
 def transposer(data):
     """Some."""
-    if data["platform"]["slug"] == "cisco_ios":
+    if data["platform"]["network_driver"] == "cisco_ios":
         data["platform"].update({"support-number": "1-800-ciscohelp"})
-    if data["platform"]["slug"] == "arista_eos":
+    if data["platform"]["network_driver"] == "arista_eos":
         data["platform"].update({"support-number": "1-800-aristahelp"})
     return data
 ```
@@ -92,29 +92,22 @@ query ($device_id: ID!) {
     }
     tags {
       name
-      slug
     }
-    device_role {
+    role {
       name
     }
     platform {
       name
-      slug
       manufacturer {
         name
       }
+      network_driver
       napalm_driver
     }
-    site {
+    location {
       name
-      slug
-      vlans {
-        id
+      parent {
         name
-        vid
-      }
-      vlan_groups {
-        id
       }
     }
     interfaces {
@@ -149,12 +142,6 @@ query ($device_id: ID!) {
           name
         }
         color
-      }
-      tagged_vlans {
-        site {
-          name
-        }
-        id
       }
       tags {
         id

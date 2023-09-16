@@ -10,8 +10,15 @@ from nornir import InitNornir
 from nornir.core.exceptions import NornirSubTaskError
 from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir.core.task import Result, Task
+
+from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
 from nornir_nautobot.utils.logger import NornirLogger
+
+from nautobot.dcim.models import Device
+
+from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
+from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 
@@ -25,7 +32,7 @@ def run_deployment(task: Task, logger: NornirLogger, commit: bool, config_plan_q
     plans_to_deploy.update(deploy_result=deploy_job_result.job_result)
     consolidated_config_set = "\n".join(plans_to_deploy.values_list("config_set", flat=True))
     logger.log_debug(f"Consolidated config set: {consolidated_config_set}")
-    # TODO: We should add post-processing rendering here
+    # TODO: Future: We should add post-processing rendering here
     # after https://github.com/nautobot/nautobot-plugin-golden-config/issues/443
 
     if commit:
@@ -104,7 +111,8 @@ def config_deployment(job_result, data, commit):
                 deploy_job_result=job_result,
             )
     except Exception as err:
-        logger.log_failure(obj=None, message=f"Failed to initialize Nornir: {err}")
-        raise
+        error_msg = f"E3011: {err}"
+        logger.log_error(error_msg)
+        raise NornirNautobotException(error_msg)
 
     logger.log_debug("Completed configuration deployment.")

@@ -29,9 +29,9 @@ class GoldenConfigSettingFormTest(TestCase):
                     "weight": 1000,
                     "description": "Test description.",
                     "backup_repository": GitRepository.objects.get(name="test-backup-repo-1"),
-                    "backup_path_template": "{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg",
+                    "backup_path_template": "{{ obj.location.name }}/{{obj.name}}.cfg",
                     "intended_repository": GitRepository.objects.get(name="test-intended-repo-1"),
-                    "intended_path_template": "{{ obj.site.slug }}/{{ obj.name }}.cfg",
+                    "intended_path_template": "{{ obj.location.name }}/{{ obj.name }}.cfg",
                     "backup_test_connectivity": True,
                     "dynamic_group": DynamicGroup.objects.first()
                 }
@@ -49,9 +49,9 @@ class GoldenConfigSettingFormTest(TestCase):
                     "weight": 1000,
                     "description": "Test description.",
                     "backup_repository": GitRepository.objects.get(name="test-backup-repo-1"),
-                    "backup_path_template": "{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg",
+                    "backup_path_template": "{{ obj.location.name }}/{{obj.name}}.cfg",
                     "intended_repository": GitRepository.objects.get(name="test-intended-repo-1"),
-                    "intended_path_template": "{{ obj.site.slug }}/{{ obj.name }}.cfg",
+                    "intended_path_template": "{{ obj.location.name }}/{{ obj.name }}.cfg",
                     "backup_test_connectivity": True,
                     "dynamic_group": DynamicGroup.objects.first()
                 }

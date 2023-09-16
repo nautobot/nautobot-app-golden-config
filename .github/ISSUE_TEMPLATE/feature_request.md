@@ -1,11 +1,11 @@
 ---
 name: ✨ Feature Request
 about: Propose a new feature or enhancement
+
 ---
 
 ### Environment
-* Python version:  <!-- Example: 3.7.7 -->
-* Nautobot version:  <!-- Example: 1.0.1 -->
+* Nautobot version:  <!-- Example: 1.4.0 -->
 * nautobot-golden-config version:  <!-- Example: 1.0.0 -->
 
 <!--

@@ -54,8 +54,10 @@ PLUGINS_CONFIG = {
         "enable_compliance": True,
         "enable_intended": True,
         "enable_sotagg": True,
-        "sot_agg_transposer": None,
+        "enable_plan": True,
+        "enable_deploy": True,
         "enable_postprocessing": False,
+        "sot_agg_transposer": None,
         "postprocessing_callables": [],
         "postprocessing_subscribed": [],
         "platform_network_driver_map": None,
@@ -90,23 +92,25 @@ sudo systemctl restart nautobot nautobot-worker nautobot-scheduler
 The plugin behavior can be controlled with the following list of settings.
 
 !!! note
-    The `enable_backup`, `enable_compliance`, `enable_intended`, `enable_sotagg` and `enable_postprocessing` will toggle inclusion of the entire component.
+    The `enable_backup`, `enable_compliance`, `enable_intended`, `enable_sotagg`, `enable_plan`, `enable_deploy`, and `enable_postprocessing` will toggle inclusion of the entire component.
 
-| Key                                 | Example                       | Default        | Description                                                                                                                                                                |
-| ----------------------------------- | ----------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| enable_backup                       | True                          | True           | A boolean to represent whether or not to run backup configurations within the plugin.                                                                                      |
-| enable_compliance                   | True                          | True           | A boolean to represent whether or not to run the compliance process within the plugin.                                                                                     |
-| enable_intended                     | True                          | True           | A boolean to represent whether or not to generate intended configurations within the plugin.                                                                               |
-| enable_sotagg                       | True                          | True           | A boolean to represent whether or not to provide a GraphQL query per device to allow the intended configuration to provide data variables to the plugin.                   |
-| enable_postprocessing               | True                          | False          | A boolean to represent whether or not to generate intended configurations to push, with extra processing such as secrets rendering.                                        |
-| postprocessing_callables            | ['mypackage.myfunction']      | []             | A list of function paths, in dotted format, that are appended to the available methods for post-processing the intended configuration, for instance, the `render_secrets`. |
-| postprocessing_subscribed           | ['mypackage.myfunction']      | []             | A list of function paths, that should exist as postprocessing_callables, that defines the order of application of during the post-processing process.                      |
-| platform_network_driver_map         | {"cisco_wlc": "cisco_aireos"} | None           | A dictionary in which the key is the platform slug and the value is what netutils uses in any "network_os" parameter within `netutils.config.compliance.parser_map`.       |
-| sot_agg_transposer                  | "mypkg.transposer"            | None           | A string representation of a function that can post-process the graphQL data.                                                                                              |
-| per_feature_bar_width               | 0.15                          | 0.15           | The width of the table bar within the overview report                                                                                                                      |
-| per_feature_width                   | 13                            | 13             | The width in inches that the overview table can be.                                                                                                                        |
-| per_feature_height                  | 4                             | 4              | The height in inches that the overview table can be.                                                                                                                       |
-| jinja_env                           | {"lstrip_blocks": False}      | See Note Below | A dictionary of Jinja2 Environment options compatible with Jinja2.SandboxEnvironment()                                                                                     |
+| Key                       | Example                       | Default | Description                                                                                                                                                                |
+| ------------------------- | ----------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| enable_backup             | True                          | True    | A boolean to represent whether or not to run backup configurations within the plugin.                                                                                      |
+| enable_compliance         | True                          | True    | A boolean to represent whether or not to run the compliance process within the plugin.                                                                                     |
+| enable_intended           | True                          | True    | A boolean to represent whether or not to generate intended configurations within the plugin.                                                                               |
+| enable_sotagg             | True                          | True    | A boolean to represent whether or not to provide a GraphQL query per device to allow the intended configuration to provide data variables to the plugin.                   |
+| enable_plan               | True                          | True    | A boolean to represent whether or not to allow the config plan job to run.                                                                                                          |
+| enable_deploy             | True                          | True    | A boolean to represent whether or not to be able to deploy configs to network devices.                                                                             |
+| enable_postprocessing     | True                          | False    | A boolean to represent whether or not to generate intended configurations to push, with extra processing such as secrets rendering.                                       |
+| postprocessing_callables  | ['mypackage.myfunction']      | []      | A list of function paths, in dotted format, that are appended to the available methods for post-processing the intended configuration, for instance, the `render_secrets`. |
+| postprocessing_subscribed | ['mypackage.myfunction']      | []      | A list of function paths, that should exist as postprocessing_callables, that defines the order of application of during the post-processing process.                      |
+| platform_slug_map         | {"cisco_wlc": "cisco_aireos"} | None    | A dictionary in which the key is the platform slug and the value is what netutils uses in any "network_os" parameter within `netutils.config.compliance.parser_map`.       |
+| sot_agg_transposer        | "mypkg.transposer"            | None    | A string representation of a function that can post-process the graphQL data.                                                                                              |
+| per_feature_bar_width     | 0.15                          | 0.15    | The width of the table bar within the overview report                                                                                                                      |
+| per_feature_width         | 13                            | 13      | The width in inches that the overview table can be.                                                                                                                        |
+| per_feature_height        | 4                             | 4       | The height in inches that the overview table can be.                                                                                                                       |
+| jinja_env | {"lstrip_blocks": False} | See Note Below | A dictionary of Jinja2 Environment options compatible with Jinja2.SandboxEnvironment() |
 
 !!! note
     Over time the compliance report will become more dynamic, but for now allow users to configure the `per_*` configs in a way that fits best for them.

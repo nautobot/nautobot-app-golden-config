@@ -7,19 +7,20 @@ from packaging import version
 from lxml import html
 
 from django.conf import settings
-from django.test import TestCase
-from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
-
+from django.test import TestCase
+from django.urls import reverse
+from lxml import html
 from nautobot.dcim.models import Device
 from nautobot.extras.models import Relationship, RelationshipAssociation, Status
 from nautobot.core.testing import ViewTestCases
 
-from nautobot_golden_config import views, models
+from packaging import version
 
-from .conftest import create_feature_rule_json, create_device_data, create_job_result
+from nautobot_golden_config import models, views
 
+from .conftest import create_device_data, create_feature_rule_json, create_job_result
 
 User = get_user_model()
 
@@ -327,7 +328,7 @@ class ConfigPlanTestCase(
             change_control_id="Test Change Control ID 1",
             change_control_url="https://1.example.com/",
             status=not_approved_status,
-            job_result_id=job_result1.id,
+            plan_result_id=job_result1.id,
         )
         plan1.feature.add(rule1.feature)
         plan1.validated_save()
@@ -338,7 +339,7 @@ class ConfigPlanTestCase(
             change_control_id="Test Change Control ID 2",
             change_control_url="https://2.example.com/",
             status=not_approved_status,
-            job_result_id=job_result2.id,
+            plan_result_id=job_result2.id,
         )
         plan2.feature.add(rule2.feature)
         plan2.validated_save()
@@ -349,7 +350,7 @@ class ConfigPlanTestCase(
             change_control_id="Test Change Control ID 3",
             change_control_url="https://3.example.com/",
             status=not_approved_status,
-            job_result_id=job_result3.id,
+            plan_result_id=job_result3.id,
         )
         plan3.feature.set([rule3.feature, rule4.feature])
         plan3.validated_save()

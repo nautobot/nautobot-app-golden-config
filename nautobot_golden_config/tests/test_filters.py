@@ -1,14 +1,14 @@
 """Unit tests for nautobot_golden_config models."""
 
 from unittest import skip
-from django.test import TestCase
 
+from django.test import TestCase
 from nautobot.dcim.models import Device, Platform
 from nautobot.extras.models import Status, Tag
 from nautobot.core.testing import FilterTestCases
 from nautobot_golden_config import filters, models
 
-from .conftest import create_feature_rule_json, create_device_data, create_feature_rule_cli, create_job_result
+from .conftest import create_device_data, create_feature_rule_cli, create_feature_rule_json, create_job_result
 
 
 class ConfigComplianceModelTestCase(TestCase):  # pylint: disable=too-many-public-methods
@@ -417,7 +417,7 @@ class ConfigPlanFilterTestCase(FilterTestCases.FilterTestCase):
             config_set="intended test",
             change_control_id="12345",
             status=self.status2,
-            job_result_id=self.job_result1.id,
+            plan_result_id=self.job_result1.id,
         )
         self.config_plan1.tags.add(self.tag1)
         self.config_plan1.feature.add(self.feature1)
@@ -429,7 +429,7 @@ class ConfigPlanFilterTestCase(FilterTestCases.FilterTestCase):
             config_set="missing test",
             change_control_id="23456",
             status=self.status1,
-            job_result_id=self.job_result1.id,
+            plan_result_id=self.job_result1.id,
         )
         self.config_plan2.tags.add(self.tag2)
         self.config_plan2.feature.add(self.feature2)
@@ -441,7 +441,7 @@ class ConfigPlanFilterTestCase(FilterTestCases.FilterTestCase):
             config_set="remediation test",
             change_control_id="34567",
             status=self.status2,
-            job_result_id=self.job_result2.id,
+            plan_result_id=self.job_result2.id,
         )
         self.config_plan3.tags.add(self.tag2)
         self.config_plan3.feature.set([self.feature1, self.feature3])
@@ -453,7 +453,7 @@ class ConfigPlanFilterTestCase(FilterTestCases.FilterTestCase):
             config_set="manual test",
             change_control_id="45678",
             status=self.status1,
-            job_result_id=self.job_result1.id,
+            plan_result_id=self.job_result1.id,
         )
         self.config_plan4.tags.add(self.tag1)
         self.config_plan4.validated_save()
@@ -547,9 +547,9 @@ class ConfigPlanFilterTestCase(FilterTestCases.FilterTestCase):
 
     def test_job_result_id(self):
         """Test filtering by Job Result ID."""
-        params = {"job_result_id": [self.job_result1.pk]}
+        params = {"plan_result_id": [self.job_result1.pk]}
         filterset = self.filterset(params, self.queryset)
         self.assertEqual(filterset.qs.count(), 3)
         self.assertQuerysetEqualAndNotEmpty(
-            filterset.qs, self.queryset.filter(job_result_id=self.job_result1.id).distinct()
+            filterset.qs, self.queryset.filter(plan_result_id=self.job_result1.id).distinct()
         )

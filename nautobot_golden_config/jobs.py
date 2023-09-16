@@ -29,15 +29,11 @@ from nautobot_golden_config.nornir_plays.config_backup import config_backup
 from nautobot_golden_config.nornir_plays.config_compliance import config_compliance
 from nautobot_golden_config.nornir_plays.config_deployment import config_deployment
 from nautobot_golden_config.nornir_plays.config_intended import config_intended
+from nautobot_golden_config.utilities import constant
 from nautobot_golden_config.utilities.config_plan import (
     config_plan_default_status,
     generate_config_set_from_compliance_feature,
     generate_config_set_from_manual,
-)
-from nautobot_golden_config.utilities.constant import (
-    ENABLE_BACKUP,
-    ENABLE_COMPLIANCE,
-    ENABLE_INTENDED,
 )
 from nautobot_golden_config.utilities.git import GitRepo
 from nautobot_golden_config.utilities.helper import get_job_filter
@@ -101,6 +97,7 @@ class ComplianceJob(Job, FormEntry):
 
         name = "Perform Configuration Compliance"
         description = "Run configuration compliance on your network infrastructure."
+        has_sensitive_variables = False
 
     def run(self, *args, **data):
         """Run config compliance report script."""
@@ -122,6 +119,7 @@ class IntendedJob(Job, FormEntry):
 
         name = "Generate Intended Configurations"
         description = "Generate the configuration for your intended state."
+        has_sensitive_variables = False
 
     def run(self, *args, **data):
         """Run config generation script."""
@@ -152,6 +150,7 @@ class BackupJob(Job, FormEntry):
 
         name = "Backup Configurations"
         description = "Backup the configurations of your network devices."
+        has_sensitive_variables = False
 
     def run(self, *args, **data):
         """Run config backup process."""
@@ -184,15 +183,16 @@ class AllGoldenConfig(Job):
 
         name = "Execute All Golden Configuration Jobs - Single Device"
         description = "Process to run all Golden Configuration jobs configured."
+        has_sensitive_variables = False
 
     def run(self, *args, **data):
         """Run all jobs."""
-        if ENABLE_INTENDED:
-            IntendedJob().run.__func__(self, data, True)
-        if ENABLE_BACKUP:
-            BackupJob().run.__func__(self, data, True)
-        if ENABLE_COMPLIANCE:
-            ComplianceJob().run.__func__(self, data, True)
+        if constant.ENABLE_INTENDED:
+            IntendedJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
+        if constant.ENABLE_BACKUP:
+            BackupJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
+        if constant.ENABLE_COMPLIANCE:
+            ComplianceJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
 
 
 class AllDevicesGoldenConfig(Job):
@@ -203,34 +203,20 @@ class AllDevicesGoldenConfig(Job):
 
         name = "Execute All Golden Configuration Jobs - Multiple Device"
         description = "Process to run all Golden Configuration jobs configured against multiple devices."
+        has_sensitive_variables = False
 
     def run(self, *args, **data):
         """Run all jobs."""
-        if ENABLE_INTENDED:
-            IntendedJob().run.__func__(self, data, True)
-        if ENABLE_BACKUP:
-            BackupJob().run.__func__(self, data, True)
-        if ENABLE_COMPLIANCE:
-            ComplianceJob().run.__func__(self, data, True)
+        if constant.ENABLE_INTENDED:
+            IntendedJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
+        if constant.ENABLE_BACKUP:
+            BackupJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
+        if constant.ENABLE_COMPLIANCE:
+            ComplianceJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
 
 
 class GenerateConfigPlans(Job, FormEntry):
     """Job to generate config plans."""
-
-    # Device QS Filters
-    tenant_group = FormEntry.tenant_group
-    tenant = FormEntry.tenant
-    location = FormEntry.location
-    rack_group = FormEntry.rack_group
-    rack = FormEntry.rack
-    role = FormEntry.role
-    manufacturer = FormEntry.manufacturer
-    platform = FormEntry.platform
-    device_type = FormEntry.device_type
-    device = FormEntry.device
-    tag = FormEntry.tag
-    status = FormEntry.status
-    debug = FormEntry.debug
 
     # Config Plan generation fields
     plan_type = ChoiceVar(choices=ConfigPlanTypeChoice.CHOICES)
@@ -244,6 +230,7 @@ class GenerateConfigPlans(Job, FormEntry):
 
         name = "Generate Config Plans"
         description = "Generate config plans for devices."
+        has_sensitive_variables = False
         # Defaulting to hidden as this should be primarily called by the View
         hidden = True
 
@@ -296,7 +283,7 @@ class GenerateConfigPlans(Job, FormEntry):
                 change_control_id=self._change_control_id,
                 change_control_url=self._change_control_url,
                 status=self._status,
-                job_result=self.job_result,
+                plan_result=self.job_result,
             )
             config_plan.feature.set(features)
             config_plan.validated_save()
@@ -323,7 +310,7 @@ class GenerateConfigPlans(Job, FormEntry):
                 change_control_id=self._change_control_id,
                 change_control_url=self._change_control_url,
                 status=self._status,
-                job_result=self.job_result,
+                plan_result=self.job_result,
             )
             self.logger.info(obj=config_plan, message=f"Config plan created for {device} with manual commands.")
 
@@ -360,6 +347,7 @@ class DeployConfigPlans(Job):
 
         name = "Deploy Config Plans"
         description = "Deploy config plans to devices."
+        has_sensitive_variables = False
 
     def run(self, **data):  # pylint: disable=arguments-differ
         """Run config plan deployment process."""
@@ -374,6 +362,7 @@ class DeployConfigPlanJobButtonReceiver(JobButtonReceiver):
         """Meta object boilerplate for config plan deployment job button."""
 
         name = "Deploy Config Plan (Job Button Receiver)"
+        has_sensitive_variables = False
 
     def receive_job_button(self, obj):
         """Run config plan deployment process."""

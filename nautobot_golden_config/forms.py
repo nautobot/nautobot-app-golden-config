@@ -13,6 +13,7 @@ from nautobot.tenancy.models import Tenant, TenantGroup
 
 # import nautobot.utilities.forms as core_forms
 
+
 from nautobot_golden_config import models
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
 
@@ -153,6 +154,7 @@ class ComplianceRuleForm(NautobotModelForm):
             "match_config",
             "custom_compliance",
             "config_remediation",
+            "tags",
         )
 
 
@@ -202,7 +204,7 @@ class ComplianceFeatureForm(NautobotModelForm):
         """Boilerplate form Meta data for compliance feature."""
 
         model = models.ComplianceFeature
-        fields = ("name", "slug", "description")
+        fields = ("name", "slug", "description", "tags")
 
 
 class ComplianceFeatureFilterForm(NautobotFilterForm):
@@ -244,6 +246,7 @@ class ConfigRemoveForm(NautobotModelForm):
             "name",
             "description",
             "regex",
+            "tags",
         )
 
 
@@ -289,6 +292,7 @@ class ConfigReplaceForm(NautobotModelForm):
             "description",
             "regex",
             "replace",
+            "tags",
         )
 
 
@@ -323,29 +327,14 @@ class ConfigReplaceBulkEditForm(NautobotBulkEditForm):
 class GoldenConfigSettingForm(NautobotModelForm):
     """Filter Form for GoldenConfigSettingForm instances."""
 
-    slug = core_forms.fields.SlugField()  # TODO: 2.1: Remove slugs
-    dynamic_group = core_forms.DynamicModelChoiceField(queryset=DynamicGroup.objects.all())
+    dynamic_group = utilities_forms.DynamicModelChoiceField(queryset=DynamicGroup.objects.all(), required=False)
 
     class Meta:
         """Filter Form Meta Data for GoldenConfigSettingForm instances."""
 
         model = models.GoldenConfigSetting
-        fields = (
-            "name",
-            "slug",
-            "weight",
-            "description",
-            "backup_repository",
-            "backup_path_template",
-            "intended_repository",
-            "intended_path_template",
-            "jinja_repository",
-            "jinja_path_template",
-            "backup_test_connectivity",
-            "dynamic_group",
-            "sot_agg_query",
-            "tags",
-        )
+        fields = "__all__"
+        exclude = ["_custom_field_data"]  # pylint: disable=modelform-uses-exclude
 
 
 class GoldenConfigSettingFilterForm(NautobotFilterForm):
@@ -391,11 +380,8 @@ class RemediationSettingForm(NautobotModelForm):
         """Boilerplate form Meta data for Remediation Settings."""
 
         model = models.RemediationSetting
-        fields = (
-            "platform",
-            "remediation_type",
-            "remediation_options",
-        )
+        fields = "__all__"
+        exclude = ["_custom_field_data"]  # pylint: disable=modelform-uses-exclude
 
 
 class RemediationSettingFilterForm(NautobotFilterForm):
@@ -407,7 +393,7 @@ class RemediationSettingFilterForm(NautobotFilterForm):
         queryset=Platform.objects.all(), required=False, display_field="name", to_field_name="name"
     )
     remediation_type = forms.ChoiceField(
-        choices=core_forms.add_blank_choice(RemediationTypeChoice), required=False, label="Remediation Type"
+        choices=add_blank_choice(RemediationTypeChoice), required=False, widget=forms.Select(), label="Remediation Type"
     )
 
 
@@ -430,12 +416,6 @@ class RemediationSettingBulkEditForm(NautobotBulkEditForm):
 
 class ConfigPlanForm(NautobotModelForm):
     """Form for ConfigPlan instances."""
-
-    plan_type = forms.ChoiceField(
-        choices=core_forms.add_blank_choice(ConfigPlanTypeChoice), required=True, label="Plan Type"
-    )
-    change_control_id = forms.CharField(label="Change Control ID")
-    change_control_url = forms.URLField(label="Change Control URL")
 
     feature = core_forms.DynamicModelMultipleChoiceField(
         queryset=models.ComplianceFeature.objects.all(),
@@ -494,36 +474,19 @@ class ConfigPlanForm(NautobotModelForm):
         """Boilerplate form Meta data for ConfigPlan."""
 
         model = models.ConfigPlan
-        fields = (
-            "plan_type",
-            "change_control_id",
-            "feature",
-            "commands",
-            "tenant",
-            "location",  # Requires https://github.com/nautobot/nautobot-plugin-golden-config/issues/430
-            "rack_group",
-            "rack",
-            "role",
-            "manufacturer",
-            "platform",
-            "device_type",
-            "device",
-            "tag",
-            "status",
-        )
+        fields = "__all__"
+        exclude = ["_custom_field_data"]  # pylint: disable=modelform-uses-exclude
 
 
 class ConfigPlanUpdateForm(NautobotModelForm):
     """Form for ConfigPlan instances."""
 
-    change_control_id = forms.CharField(label="Change Control ID")
-    change_control_url = forms.URLField(label="Change Control URL")
-    status = core_forms.DynamicModelChoiceField(
+    status = utilities_forms.DynamicModelChoiceField(
         queryset=Status.objects.all(),
         query_params={"content_types": models.ConfigPlan._meta.label_lower},
     )
-    tag = core_forms.DynamicModelMultipleChoiceField(
-        queryset=Tag.objects.all(), query_params={"content_types": "dcim.device"}
+    tags = utilities_forms.DynamicModelMultipleChoiceField(
+        queryset=Tag.objects.all(), query_params={"content_types": "dcim.device"}, required=False
     )
 
     class Meta:
@@ -533,8 +496,8 @@ class ConfigPlanUpdateForm(NautobotModelForm):
         fields = (
             "change_control_id",
             "change_control_url",
-            "tag",
             "status",
+            "tags",
         )
 
 
@@ -563,12 +526,19 @@ class ConfigPlanFilterForm(NautobotFilterForm):
         to_field_name="name",
     )
     change_control_id = forms.CharField(required=False, label="Change Control ID")
-    job_result_id = core_forms.DynamicModelMultipleChoiceField(
+    plan_result_id = utilities_forms.DynamicModelMultipleChoiceField(
         queryset=JobResult.objects.all(),
-        query_params={"nautobot_golden_config_config_plan_null": True},
-        label="Job Result",
+        query_params={"name": "plugins/nautobot_golden_config.jobs/GenerateConfigPlans"},
+        label="Plan Result",
         required=False,
-        display_field="id",
+        display_field="created",
+    )
+    deploy_result_id = utilities_forms.DynamicModelMultipleChoiceField(
+        queryset=JobResult.objects.all(),
+        query_params={"name": "plugins/nautobot_golden_config.jobs/DeployConfigPlans"},
+        label="Deploy Result",
+        required=False,
+        display_field="created",
     )
     status = core_forms.DynamicModelMultipleChoiceField(
         required=False,

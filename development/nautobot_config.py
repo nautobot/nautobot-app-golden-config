@@ -165,8 +165,10 @@ PLUGINS_CONFIG = {
         "enable_compliance": is_truthy(os.environ.get("ENABLE_COMPLIANCE", True)),
         "enable_intended": is_truthy(os.environ.get("ENABLE_INTENDED", True)),
         "enable_sotagg": is_truthy(os.environ.get("ENABLE_SOTAGG", True)),
-        "sot_agg_transposer": os.environ.get("SOT_AGG_TRANSPOSER"),
         "enable_postprocessing": is_truthy(os.environ.get("ENABLE_POSTPROCESSING", True)),
+        "enable_plan": is_truthy(os.environ.get("ENABLE_PLAN", True)),
+        "enable_deploy": is_truthy(os.environ.get("ENABLE_DEPLOY", True)),
+        "sot_agg_transposer": os.environ.get("SOT_AGG_TRANSPOSER"),
         "postprocessing_callables": os.environ.get("POSTPROCESSING_CALLABLES", []),
         "postprocessing_subscribed": os.environ.get("POSTPROCESSING_SUBSCRIBED", []),
         "jinja_env": {
@@ -192,7 +194,7 @@ PLUGINS_CONFIG = {
 # TODO:Verify this is still needed
 # Modify django_jinja Environment for test cases
 django_jinja_config = None
-for template in TEMPLATES:
+for template in TEMPLATES:  # noqa: F405
     if template["BACKEND"].startswith("django_jinja"):
         django_jinja_config = template
 
@@ -205,4 +207,4 @@ if django_jinja_config is not None:
     jinja_options["undefined"] = "jinja2.StrictUndefined"
 
 # Import filter function to have it register filter with django_jinja
-from nautobot_golden_config.tests import jinja_filters  # noqa: E402
+from nautobot_golden_config.tests import jinja_filters  # noqa: E402, F401

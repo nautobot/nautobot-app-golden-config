@@ -3,6 +3,8 @@ from django.apps import apps as global_apps
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from nautobot.dcim.models import Platform
+
+from nautobot.utilities.choices import ColorChoices
 from nautobot_golden_config import models
 
 
@@ -16,7 +18,7 @@ def post_migrate_create_statuses(sender, apps=global_apps, **kwargs):  # pylint:
             "slug": "approved",
             "defaults": {
                 "description": "Config plan is approved",
-                "color": "4caf50",  # Green
+                "color": ColorChoices.COLOR_GREEN,
             },
         },
         {
@@ -24,7 +26,31 @@ def post_migrate_create_statuses(sender, apps=global_apps, **kwargs):  # pylint:
             "slug": "not-approved",
             "defaults": {
                 "description": "Config plan is not approved",
-                "color": "f44336",  # Red
+                "color": ColorChoices.COLOR_RED,
+            },
+        },
+        {
+            "name": "In Progress",
+            "slug": "in-progress",
+            "defaults": {
+                "description": "Config deployment has started and not completed or failed",
+                "color": ColorChoices.COLOR_GREY,
+            },
+        },
+        {
+            "name": "Completed",
+            "slug": "completed",
+            "defaults": {
+                "description": "Config deploy has been successfully completed",
+                "color": ColorChoices.COLOR_DARK_GREY,
+            },
+        },
+        {
+            "name": "Failed",
+            "slug": "failed",
+            "defaults": {
+                "description": "Config deploy has failed",
+                "color": ColorChoices.COLOR_DARK_RED,
             },
         },
     ]:

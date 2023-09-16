@@ -31,7 +31,7 @@ from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 
 
-@close_threaded_db_connections
+@close_threaded_db_connections  # TODO: Is this still needed?
 def run_backup(  # pylint: disable=too-many-arguments
     task: Task, logger, device_to_settings_map, remove_regex_dict, replace_regex_dict
 ) -> Result:
@@ -92,10 +92,11 @@ def run_backup(  # pylint: disable=too-many-arguments
     return Result(host=task.host, result=running_config)
 
 
-def config_backup(job_result, data):
+def config_backup(job_class_instance, data):
     """Nornir play to backup configurations."""
     now = datetime.now()
-    logger = NornirLogger(__name__, job_result, data.get("debug"))
+    # TODO: nornir-nautobot needs to fix log_* methods for Nautobot Job classes in 2.x
+    logger = NornirLogger(__name__, job_class_instance, data.get("debug"))
 
     qs = get_job_filter(data)
     logger.log_debug("Compiling device data for backup.")

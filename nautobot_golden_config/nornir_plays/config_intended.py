@@ -43,7 +43,7 @@ jinja_env.filters = engines["jinja"].env.filters
 
 @close_threaded_db_connections
 def run_template(  # pylint: disable=too-many-arguments
-    task: Task, logger, device_to_settings_map, nautobot_job
+    task: Task, logger, device_to_settings_map, job_class_instance
 ) -> Result:
     """Render Jinja Template.
 
@@ -53,7 +53,7 @@ def run_template(  # pylint: disable=too-many-arguments
         task (Task): Nornir task individual object
         logger (NornirLogger): Logger to log messages to.
         global_settings (GoldenConfigSetting): The settings for GoldenConfigPlugin.
-        nautobot_job (Result): The the output from the Nautobot Job instance being run.
+        job_class_instance (Result): The the output from the Nautobot Job instance being run.
 
     Returns:
         result (Result): Result from Nornir task
@@ -72,7 +72,7 @@ def run_template(  # pylint: disable=too-many-arguments
     output_file_location = os.path.join(intended_directory, intended_path_template_obj)
 
     jinja_template = render_jinja_template(obj, logger, settings.jinja_path_template)
-    status, device_data = graph_ql_query(nautobot_job.request, obj, settings.sot_agg_query.query)
+    status, device_data = graph_ql_query(job_class_instance.request, obj, settings.sot_agg_query.query)
     if status != 200:
         error_msg = f"E3012: The GraphQL query return a status of {str(status)} with error of {str(device_data)}"
         logger.log_error(error_msg, extra={"object": obj})
@@ -102,19 +102,20 @@ def run_template(  # pylint: disable=too-many-arguments
     return Result(host=task.host, result=generated_config)
 
 
-def config_intended(nautobot_job, data):
+def config_intended(job_class_instance, data):
     """
     Nornir play to generate configurations.
 
     Args:
-        nautobot_job (Result): The Nautobot Job instance being run.
+        job_class_instance (Job): The Nautobot Job instance being run.
         data (dict): Form data from Nautobot Job.
 
     Returns:
         None: Intended configuration files are written to filesystem.
     """
     now = datetime.now()
-    logger = NornirLogger(__name__, nautobot_job, data.get("debug"))
+    # TODO: nornir-nautobot needs to fix log_* methods for Nautobot Job classes in 2.x
+    logger = NornirLogger(__name__, job_class_instance, data.get("debug"))
 
     qs = get_job_filter(data)
     logger.log_debug("Compiling device data for intended configuration.")
@@ -146,7 +147,7 @@ def config_intended(nautobot_job, data):
                 name="RENDER CONFIG",
                 logger=logger,
                 device_to_settings_map=device_to_settings_map,
-                nautobot_job=nautobot_job,
+                job_class_instance=job_class_instance,
             )
 
     except Exception as err:

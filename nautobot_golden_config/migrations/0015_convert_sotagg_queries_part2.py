@@ -1,4 +1,4 @@
-from django.db import migrations, models
+from django.db import migrations
 
 
 def save_existing_sotagg_queries(apps, schema_editor):

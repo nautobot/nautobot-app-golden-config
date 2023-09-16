@@ -1,35 +1,32 @@
 """Nornir job for generating the intended config."""
 # pylint: disable=relative-beyond-top-level
-import os
 import logging
-
+import os
 from datetime import datetime
-from nornir import InitNornir
-from nornir.core.plugins.inventory import InventoryPluginRegister
-from nornir.core.task import Result, Task
 
 from django.template import engines
 from jinja2.sandbox import SandboxedEnvironment
-
+from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
+from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
+from nautobot_plugin_nornir.utils import get_dispatcher
+from nornir import InitNornir
+from nornir.core.plugins.inventory import InventoryPluginRegister
+from nornir.core.task import Result, Task
 from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
 from nornir_nautobot.utils.logger import NornirLogger
 
-from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
-from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
-from nautobot_plugin_nornir.utils import get_dispatcher
-
+from nautobot_golden_config.models import GoldenConfig
+from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.constant import PLUGIN_CFG
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
-from nautobot_golden_config.models import GoldenConfigSetting, GoldenConfig
+from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import (
     get_device_to_settings_map,
     get_job_filter,
-    verify_settings,
     render_jinja_template,
+    verify_settings,
 )
-from nautobot_golden_config.utilities.graphql import graph_ql_query
-from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 LOGGER = logging.getLogger(__name__)

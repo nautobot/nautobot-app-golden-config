@@ -2,7 +2,11 @@
 # pylint: disable=raise-missing-from
 import json
 
+from django.contrib import messages
 from django.db.models import Q
+from django.utils.html import format_html
+from django.urls import reverse
+
 from jinja2 import exceptions as jinja_errors
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.dcim.models import Device
@@ -151,3 +155,27 @@ def get_json_config(config):
         return json.loads(config)
     except json.decoder.JSONDecodeError:
         return None
+
+
+def list_to_string(items):
+    """Helper function to set the proper list of items sentence."""
+    if len(items) == 1:
+        return items[0]
+    if len(items) == 2:
+        return " and ".join(items)
+    return ", ".join(items[:-1]) + " and " + items[-1]
+
+
+def add_message(inbound):
+    """Helper function to abstract the adding a message that the job is not enabled."""
+    multiple_messages = []
+    for item in inbound:
+        job, request, feature_enabled = item
+        if not isinstance(feature_enabled, list):
+            feature_enabled = [feature_enabled]
+        if not job.enabled and any(feature_enabled):
+            multiple_messages.append(
+                f"<a href='{reverse('extras:job_edit', kwargs={'slug': job.slug})}'>{job.name}</a>"
+            )
+    if multiple_messages:
+        messages.warning(request, format_html(f"The Job(s) {list_to_string(multiple_messages)} are not yet enabled."))

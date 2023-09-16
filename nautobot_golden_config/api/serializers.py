@@ -69,10 +69,10 @@ class GoldenConfigSerializer(NautobotModelSerializer, TaggedModelSerializerMixin
 class GoldenConfigSettingSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
     """Serializer for GoldenConfigSetting object."""
 
-    url = serializers.HyperlinkedIdentityField(
+    url = serializers.HyperlinkedIdentityField( # TODO: 2.0: Should be able to remove all of these
         view_name="plugins-api:nautobot_golden_config-api:goldenconfigsetting-detail"
     )
-    # TODO: 2.0: What is correct for this with the removal of nested serializers?
+    # TODO: 2.0: What is correct for this with the removal of nested serializers?. Should just work with __all__
     # dynamic_group = NestedDynamicGroupSerializer(required=False)
 
     class Meta:
@@ -116,6 +116,7 @@ class ConfigToPushSerializer(DeviceSerializer):
 
         # TODO: 2.0: Fix fields to work with Device moving to a string "__all__"
         # fields = DeviceSerializer.Meta.fields + ["config"]
+        # View here: https://github.com/nautobot/nautobot/blob/1d372e4040a0a4d6f95d688843a76b4194283bf1/nautobot/extras/api/mixins.py#L12-L17
         fields = "__all__"
         model = Device
 

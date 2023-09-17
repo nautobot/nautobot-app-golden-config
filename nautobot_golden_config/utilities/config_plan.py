@@ -9,8 +9,7 @@ from nautobot_golden_config.models import ComplianceFeature
 # TODO: Future: Make the default Status configurable
 def config_plan_default_status():
     """Return the default status for config plan."""
-    return Status.objects.filter(content_types__model="configplan").first() # TODO: 2.0
-    # return Status.objects.first()
+    return Status.objects.filter(content_types__model="configplan").first()  # TODO: 2.0
 
 
 def generate_config_set_from_compliance_feature(device: Device, plan_type: str, feature: ComplianceFeature):

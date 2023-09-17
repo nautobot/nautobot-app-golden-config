@@ -8,10 +8,12 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.module_loading import import_string
 
+
 from hier_config import Host as HierConfigHost
 
 from nautobot.core.models.generics import PrimaryModel
 from nautobot.extras.models import ObjectChange
+from nautobot.extras.models.statuses import StatusField
 from nautobot.extras.utils import extras_features
 from nautobot.core.models.utils import serialize_object, serialize_object_v2
 from netutils.config.compliance import feature_compliance
@@ -137,14 +139,14 @@ def _verify_get_custom_compliance_data(compliance_details):
 
 def _get_hierconfig_remediation(obj):
     """Returns the remediating config."""
-    hierconfig_os = HIERCONFIG_LIB_MAPPER_REVERSE.get(get_platform(obj.device.platform.slug))
+    hierconfig_os = HIERCONFIG_LIB_MAPPER_REVERSE.get(get_platform(obj.network_driver))
     if not hierconfig_os:
-        raise ValidationError(f"platform {obj.device.platform.slug} is not supported by hierconfig.")
+        raise ValidationError(f"platform {obj.network_driver} is not supported by hierconfig.")
 
     try:
         remediation_setting_obj = RemediationSetting.objects.get(platform=obj.rule.platform)
     except Exception as err:  # pylint: disable=broad-except:
-        raise ValidationError(f"Platform {obj.device.platform.slug} has no Remediation Settings defined.") from err
+        raise ValidationError(f"Platform {obj.network_driver} has no Remediation Settings defined.") from err
 
     remediation_options = remediation_setting_obj.remediation_options
 
@@ -356,15 +358,15 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
     def remediation_on_save(self):
         """The actual remediation happens here, before saving the object."""
         if self.compliance:
-            self.remediation = None
+            self.remediation = ""
             return
 
         if not self.rule.config_remediation:
-            self.remediation = None
+            self.remediation = ""
             return
 
         if not self.rule.remediation_setting:
-            self.remediation = None
+            self.remediation = ""
             return
 
         remediation_config = FUNC_MAPPER[self.rule.remediation_setting.remediation_type](obj=self)
@@ -686,7 +688,7 @@ class RemediationSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
 
     def __str__(self):
         """Return a sane string representation of the instance."""
-        return str(self.platform.name)
+        return str(self.platform)
 
 
 @extras_features(
@@ -735,11 +737,17 @@ class ConfigPlan(PrimaryModel):  # pylint: disable=too-many-ancestors
         help_text="Change Control ID for this configuration plan.",
     )
     change_control_url = models.URLField(blank=True, verbose_name="Change Control URL")
+    status = StatusField(blank=True, null=True, on_delete=models.PROTECT)
 
     class Meta:
         """Meta information for ConfigPlan model."""
 
         ordering = ("-created", "device")
+        unique_together = (
+            "plan_type",
+            "device",
+            "created",
+        )
 
     def __str__(self):
         """Return a simple string if model is called."""

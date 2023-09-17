@@ -8,6 +8,7 @@ from django.template import engines
 from jinja2.sandbox import SandboxedEnvironment
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
+
 # from nautobot_plugin_nornir.utils import get_dispatcher # custom_dispatcher # TODO: 2.0
 from nornir import InitNornir
 from nornir.core.plugins.inventory import InventoryPluginRegister
@@ -115,6 +116,7 @@ def config_intended(job_class_instance, data):
     # TODO: nornir-nautobot needs to fix log_* methods for Nautobot Job classes in 2.x
     logger = NornirLogger(__name__, job_class_instance, data.get("debug"))
 
+    # TODO: 2.0 try/accept here and re-raise error with proper code and logger message.
     qs = get_job_filter(data)
     logger.log_debug("Compiling device data for intended configuration.")
     device_to_settings_map = get_device_to_settings_map(queryset=qs)

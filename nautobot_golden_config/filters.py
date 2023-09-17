@@ -386,6 +386,7 @@ class ConfigPlanFilterSet(NautobotFilterSet):
         lookup_expr="exact",
     )
     status_id = django_filters.ModelMultipleChoiceFilter(
+        # field_name="status__id",
         queryset=Status.objects.all(),
         label="Status ID",
     )
@@ -395,7 +396,7 @@ class ConfigPlanFilterSet(NautobotFilterSet):
         to_field_name="name",
         label="Status",
     )
-    tag = TagFilter()
+    # tags = TagFilter()
 
     def search(self, queryset, name, value):  # pylint: disable=unused-argument
         """Perform the filtered search."""
@@ -408,4 +409,4 @@ class ConfigPlanFilterSet(NautobotFilterSet):
         """Boilerplate filter Meta data for Config Plan."""
 
         model = models.ConfigPlan
-        fields = ["id", "created", "change_control_id", "plan_type"]
+        fields = ["id", "created", "change_control_id", "plan_type", "tags"]

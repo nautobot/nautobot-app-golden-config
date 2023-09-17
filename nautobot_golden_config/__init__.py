@@ -8,7 +8,7 @@ __version__ = metadata.version(__name__)
 from jinja2 import StrictUndefined
 from django.db.models.signals import post_migrate
 from nautobot.core.signals import nautobot_database_ready
-from nautobot.extras.plugins import NautobotAppConfig
+from nautobot.apps import ConstanceConfigItem, NautobotAppConfig
 
 
 class GoldenConfig(NautobotAppConfig):
@@ -40,6 +40,28 @@ class GoldenConfig(NautobotAppConfig):
             "trim_blocks": True,
             "lstrip_blocks": False,
         },
+    }
+    constance_config = {
+        "DEFAULT_FRAMEWORK": ConstanceConfigItem(
+            default={"all": "napalm"},
+            help_text="The network library you prefer for by default for your dispatcher methods.",
+            field_type="optional_json_field",
+        ),
+        "GET_CONFIG_FRAMEWORK": ConstanceConfigItem(
+            default={"all": "napalm"},
+            help_text="The network library you prefer for making backups.",
+            field_type="optional_json_field",
+        ),
+        "MERGE_CONFIG_FRAMEWORK": ConstanceConfigItem(
+            default={"all": "napalm"},
+            help_text="The network library you prefer for pushing configs via a merge.",
+            field_type="optional_json_field",
+        ),
+        "REPLACE_CONFIG_FRAMEWORK": ConstanceConfigItem(
+            default={"all": "napalm"},
+            help_text="The network library you prefer for pushing configs via a merge.",
+            field_type="optional_json_field",
+        ),
     }
 
     def ready(self):

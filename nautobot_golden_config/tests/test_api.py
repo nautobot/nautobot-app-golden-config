@@ -321,9 +321,9 @@ class RemediationSettingTest(APIViewTestCases.APIViewTestCase):
         )
 
         platforms = (
-            Platform.objects.create(name="Platform 4", slug="platform-4"),
-            Platform.objects.create(name="Platform 5", slug="platform-5"),
-            Platform.objects.create(name="Platform 6", slug="platform-6"),
+            Platform.objects.create(name="Platform 4"),
+            Platform.objects.create(name="Platform 5"),
+            Platform.objects.create(name="Platform 6"),
         )
 
         cls.create_data = [
@@ -355,6 +355,7 @@ class ConfigPlanTest(APIViewTestCases.APIViewTestCase):
     model = ConfigPlan
     brief_fields = ["device", "display", "id", "plan_type", "url"]
     # The Status serializer field requires slug, but the model field returns the UUID.
+    choices_fields = ["plan_type"]
     validation_excluded_fields = ["status"]
 
     @classmethod
@@ -375,8 +376,8 @@ class ConfigPlanTest(APIViewTestCases.APIViewTestCase):
         features = [rule1.feature, rule2.feature, rule3.feature]
         plan_types = ["intended", "missing", "remediation"]
         job_result_ids = [job_result1.id, job_result2.id, job_result3.id]
-        not_approved_status = Status.objects.get(slug="not-approved")
-        approved_status = Status.objects.get(slug="approved")
+        not_approved_status = Status.objects.get(name="Not Approved")
+        approved_status = Status.objects.get(name="Approved")
 
         for cont in range(1, 4):
             plan = ConfigPlan.objects.create(
@@ -394,13 +395,13 @@ class ConfigPlanTest(APIViewTestCases.APIViewTestCase):
         cls.update_data = {
             "change_control_id": "Test Change Control ID 4",
             "change_control_url": "https://4.example.com/",
-            "status": approved_status.slug,
+            "status": approved_status.pk,
         }
 
         cls.bulk_update_data = {
             "change_control_id": "Test Change Control ID 5",
             "change_control_url": "https://5.example.com/",
-            "status": approved_status.slug,
+            "status": approved_status.pk,
         }
 
     def test_create_object(self):
@@ -410,4 +411,7 @@ class ConfigPlanTest(APIViewTestCases.APIViewTestCase):
         """Skipping test due to POST method not allowed."""
 
     def test_bulk_create_objects(self):
+        """Skipping test due to POST method not allowed."""
+
+    def test_recreate_object_csv(self):
         """Skipping test due to POST method not allowed."""

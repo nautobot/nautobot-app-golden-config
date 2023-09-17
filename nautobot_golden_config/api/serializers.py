@@ -21,10 +21,6 @@ class GraphQLSerializer(serializers.Serializer):  # pylint: disable=abstract-met
 class ComplianceFeatureSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
     """Serializer for ComplianceFeature object."""
 
-    url = serializers.HyperlinkedIdentityField(
-        view_name="plugins-api:nautobot_golden_config-api:compliancefeature-detail"
-    )
-
     class Meta:
         """Set Meta Data for ComplianceFeature, will serialize all fields."""
 
@@ -34,8 +30,6 @@ class ComplianceFeatureSerializer(NautobotModelSerializer, TaggedModelSerializer
 
 class ComplianceRuleSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
     """Serializer for ComplianceRule object."""
-
-    url = serializers.HyperlinkedIdentityField(view_name="plugins-api:nautobot_golden_config-api:compliancerule-detail")
 
     class Meta:
         """Set Meta Data for ComplianceRule, will serialize all fields."""
@@ -57,8 +51,6 @@ class ConfigComplianceSerializer(NautobotModelSerializer, TaggedModelSerializerM
 class GoldenConfigSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
     """Serializer for GoldenConfig object."""
 
-    url = serializers.HyperlinkedIdentityField(view_name="plugins-api:nautobot_golden_config-api:goldenconfig-detail")
-
     class Meta:
         """Set Meta Data for GoldenConfig, will serialize all fields."""
 
@@ -69,9 +61,6 @@ class GoldenConfigSerializer(NautobotModelSerializer, TaggedModelSerializerMixin
 class GoldenConfigSettingSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
     """Serializer for GoldenConfigSetting object."""
 
-    url = serializers.HyperlinkedIdentityField(  # TODO: 2.0: Should be able to remove all of these
-        view_name="plugins-api:nautobot_golden_config-api:goldenconfigsetting-detail"
-    )
     # TODO: 2.0: What is correct for this with the removal of nested serializers?. Should just work with __all__
     # dynamic_group = NestedDynamicGroupSerializer(required=False)
 
@@ -85,8 +74,6 @@ class GoldenConfigSettingSerializer(NautobotModelSerializer, TaggedModelSerializ
 class ConfigRemoveSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
     """Serializer for ConfigRemove object."""
 
-    url = serializers.HyperlinkedIdentityField(view_name="plugins-api:nautobot_golden_config-api:configremove-detail")
-
     class Meta:
         """Set Meta Data for ConfigRemove, will serialize all fields."""
 
@@ -96,8 +83,6 @@ class ConfigRemoveSerializer(NautobotModelSerializer, TaggedModelSerializerMixin
 
 class ConfigReplaceSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
     """Serializer for ConfigReplace object."""
-
-    url = serializers.HyperlinkedIdentityField(view_name="plugins-api:nautobot_golden_config-api:configreplace-detail")
 
     class Meta:
         """Set Meta Data for ConfigReplace, will serialize all fields."""
@@ -110,6 +95,13 @@ class ConfigToPushSerializer(DeviceSerializer):
     """Serializer for ConfigToPush view."""
 
     config = serializers.SerializerMethodField()
+
+    # TODO: 2.0 test this
+    def get_field_names(self, declared_fields, info):
+        """Ensure that 'tags' field is always present except on nested serializers."""
+        fields = list(super().get_field_names(declared_fields, info))
+        self.extend_field_names(fields, "config")
+        return fields
 
     class Meta(DeviceSerializer):
         """Extend the Device serializer with the configuration after postprocessing."""
@@ -131,22 +123,16 @@ class ConfigToPushSerializer(DeviceSerializer):
 class RemediationSettingSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
     """Serializer for RemediationSetting object."""
 
-    url = serializers.HyperlinkedIdentityField(
-        view_name="plugins-api:nautobot_golden_config-api:remediationsetting-detail"
-    )
-
     class Meta:
         """Set Meta Data for RemediationSetting, will serialize all fields."""
 
         model = models.RemediationSetting
-        choices_fields = ["remediation_type"]
+        choices_fields = ["remediation_type"]  # TODO: 2.0 I think this was meant to go onto test not Meta
         fields = "__all__"
 
 
 class ConfigPlanSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
     """Serializer for ConfigPlan object."""
-
-    url = serializers.HyperlinkedIdentityField(view_name="plugins-api:nautobot_golden_config-api:configplan-detail")
 
     class Meta:
         """Set Meta Data for ConfigPlan, will serialize all fields."""

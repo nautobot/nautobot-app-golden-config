@@ -1,11 +1,11 @@
 """Params for testing."""
 from datetime import datetime
-import uuid
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.utils.text import slugify
 
 from nautobot.dcim.models import Device, DeviceType, Location, LocationType, Manufacturer, Platform, Rack, RackGroup
+from nautobot.extras.choices import JobResultStatusChoices
 from nautobot.extras.datasources.registry import get_datasource_contents
 from nautobot.extras.models import GitRepository, GraphQLQuery, JobResult, Role, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
@@ -504,15 +504,14 @@ def create_saved_queries() -> None:
 
 def create_job_result() -> None:
     """Create a JobResult and return the object."""
-    obj_type = ContentType.objects.get(app_label="extras", model="job")
     user, _ = User.objects.get_or_create(username="testuser")
     result = JobResult.objects.create(
         name="Test-Job-Result",
-        obj_type=obj_type,
+        task_name="Test-Job-Result-Task-Name",
+        worker="celery",
         user=user,
-        job_id=uuid.uuid4(),
     )
-    result.status = "completed"
+    result.status = JobResultStatusChoices.STATUS_SUCCESS
     result.completed = datetime.now(pytz.UTC)
     result.validated_save()
     return result

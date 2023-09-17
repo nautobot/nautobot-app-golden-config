@@ -462,6 +462,11 @@ class ConfigPlanFilterTestCase(FilterTestCases.FilterTestCase):
         """Test without filtering to ensure all have been added."""
         self.assertEqual(self.queryset.count(), 4)
 
+    def test_tags_filter(self):
+        self.config_plan1.tags.add(self.tag2)
+        self.config_plan1.validated_save()
+        super().test_tags_filter()
+
     def test_search_device_name(self):
         """Test filtering by Q search value."""
         params = {"q": "Device 1"}
@@ -531,7 +536,7 @@ class ConfigPlanFilterTestCase(FilterTestCases.FilterTestCase):
 
     def test_filter_plan_type(self):
         """Test filtering by Plan Type."""
-        params = {"plan_type": self.config_plan1.plan_type}
+        params = {"plan_type": [self.config_plan1.plan_type]}
         filterset = self.filterset(params, self.queryset)
         self.assertEqual(filterset.qs.count(), 1)
         self.assertQuerysetEqualAndNotEmpty(
@@ -540,7 +545,7 @@ class ConfigPlanFilterTestCase(FilterTestCases.FilterTestCase):
 
     def test_filter_tag(self):
         """Test filtering by Tag."""
-        params = {"tag": [self.tag1.slug]}
+        params = {"tags": [self.tag1.name]}
         filterset = self.filterset(params, self.queryset)
         self.assertEqual(filterset.qs.count(), 2)
         self.assertQuerysetEqualAndNotEmpty(filterset.qs, self.queryset.filter(tags__name=self.tag1.name).distinct())

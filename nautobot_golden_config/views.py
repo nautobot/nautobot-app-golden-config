@@ -28,21 +28,21 @@ from nautobot.core.views.mixins import ContentTypePermissionRequiredMixin, Objec
 
 from nautobot.extras.models import Job, JobResult
 
+from nautobot.core.choices import ColorChoices
+
 # from nautobot.extras.utils import get_job_content_type
 # from nautobot.utilities.utils import copy_safe_request, csv_format
 
 from nautobot_golden_config import filters, forms, models, tables
 from nautobot_golden_config.api import serializers
-from nautobot_golden_config.jobs import DeployConfigPlans
-from nautobot_golden_config.utilities import constant
+
+# from nautobot_golden_config.jobs import DeployConfigPlans
+from nautobot_golden_config.utilities import constant, utils
 from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import add_message, get_device_to_settings_map
 
 LOGGER = logging.getLogger(__name__)
-
-GREEN = "#D5E8D4"  # TODO: 2.0: change all to ColorChoices.COLOR_GREEN
-RED = "#F8CECC"
 
 #
 # GoldenConfig
@@ -503,7 +503,7 @@ class ConfigComplianceOverviewOverviewHelper(ContentTypePermissionRequiredMixin,
                 explode=explode,
                 labels=labels,
                 autopct="%1.1f%%",
-                colors=[GREEN, RED],
+                colors=[ColorChoices.COLOR_GREEN, ColorChoices.COLOR_RED],
                 shadow=True,
                 startangle=90,
             )
@@ -536,8 +536,12 @@ class ConfigComplianceOverviewOverviewHelper(ContentTypePermissionRequiredMixin,
         width = per_feature_bar_width  # the width of the bars
 
         fig, axis = plt.subplots(figsize=(per_feature_width, per_feature_height))
-        rects1 = axis.bar(label_locations - width / 2, compliant, width, label="Compliant", color=GREEN)
-        rects2 = axis.bar(label_locations + width / 2, non_compliant, width, label="Non Compliant", color=RED)
+        rects1 = axis.bar(
+            label_locations - width / 2, compliant, width, label="Compliant", color=ColorChoices.COLOR_GREEN
+        )
+        rects2 = axis.bar(
+            label_locations + width / 2, non_compliant, width, label="Non Compliant", color=ColorChoices.COLOR_RED
+        )
 
         # Add some text for labels, title and custom x-axis tick labels, etc.
         axis.set_ylabel("Compliance")
@@ -874,7 +878,15 @@ class ConfigPlanUIViewSet(NautobotUIViewSet):
             ]
         )
         add_message(jobs)
-        return {}
+        # TODO: 2.0 the name in html should be enough, this should not be needed
+        data = {}
+        data["generate_job"] = Job.objects.get(
+            module_name="nautobot_golden_config.jobs", job_class_name="GenerateConfigPlans"
+        )
+        data["deploy_job"] = Job.objects.get(
+            module_name="nautobot_golden_config.jobs", job_class_name="DeployConfigPlans"
+        )
+        return data
 
 
 class ConfigPlanBulkDeploy(ObjectPermissionRequiredMixin, View):
@@ -896,6 +908,7 @@ class ConfigPlanBulkDeploy(ObjectPermissionRequiredMixin, View):
         job_data = {"config_plan": config_plan_pks}
         job = Job.objects.get(name="Generate Config Plans")
 
+        # TODO: 2.0 re-enable
         # result = JobResult.enqueue_job(
         #     func=run_job,
         #     name=DeployConfigPlans.class_path,

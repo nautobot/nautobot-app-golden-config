@@ -59,10 +59,11 @@ clearFields(hideFormData)
 setupFieldListeners(hideFormData)
 
 function formatJobData(data) {
-  var arrayFields = ["feature", "device_type", "tenant_group", "tenant", "region", "site","rack_group","rack","role","manufacturer","platform","device_type","device","tag"]
+  var arrayFields = ["feature", "device_type", "tenant_group", "tenant", "region", "site","rack_group","rack","role","manufacturer","platform","device_type","device","tags"]
   var form_data = formDataToDictionary(data, arrayFields);
   delete form_data.csrfmiddlewaretoken;
   delete form_data.q;
+  console.log(form_data)
   return {"data": form_data};
 }
 
@@ -74,6 +75,7 @@ function isValidURL(url) {
 
 function configPlanCount(jobResultId) {
   return new Promise(function(resolve, reject) {
+    // TODO: 2.0 what if there is no objects created, what should this be? 
     var configPlanApi = `/api/plugins/golden-config/config-plan/?plan_result_id=${jobResultId}`;
     $.ajax({
       url: configPlanApi,
@@ -107,7 +109,8 @@ function openModalAndStartJob() {
   }
 }
 
-var jobClass = "plugins/nautobot_golden_config.jobs/GenerateConfigPlans";
+// TODO: 2.0 this should just use the job name
+var jobClass = "{{ generate_job.pk }}";
 var redirectUrlTemplate = "/plugins/golden-config/config-plan/?plan_result_id={jobData.result.id}";
 var changeControlUrlInput = document.getElementById("id_change_control_url");
 var startJobButton = document.getElementById("startJob");

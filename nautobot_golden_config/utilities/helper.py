@@ -178,8 +178,6 @@ def add_message(inbound):
         if not isinstance(feature_enabled, list):
             feature_enabled = [feature_enabled]
         if not job.enabled and any(feature_enabled):
-            multiple_messages.append(
-                f"<a href='{reverse('extras:job_edit', kwargs={'slug': job.slug})}'>{job.name}</a>"
-            )
+            multiple_messages.append(f"<a href='{reverse('extras:job_edit', kwargs={'pk': job.pk})}'>{job.name}</a>")
     if multiple_messages:
         messages.warning(request, format_html(f"The Job(s) {list_to_string(multiple_messages)} are not yet enabled."))

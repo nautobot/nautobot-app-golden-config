@@ -2,6 +2,7 @@
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.db.models.deletion import ProtectedError
 from django.db.utils import IntegrityError
 from django.test import TestCase
 from nautobot.dcim.models import Platform
@@ -59,7 +60,8 @@ class ConfigComplianceModelTestCase(TestCase):
             missing={},
             extra={},
         )
-        with self.assertRaises(IntegrityError):
+        # TODO: 2.0 This now raises a ValidationError vs an IntegrityError, are we checking the same thing??
+        with self.assertRaises(ValidationError):
             ConfigCompliance.objects.create(
                 device=self.device,
                 rule=self.compliance_rule_json,
@@ -211,11 +213,9 @@ class GoldenConfigSettingGitModelTestCase(TestCase):
 
     def test_removing_git_repos(self):
         """Ensure we can remove the Git Repository objects from GoldenConfigSetting."""
-        GitRepository.objects.all().delete()
-        gc = GoldenConfigSetting.objects.all().first()  # pylint: disable=invalid-name
-        self.assertEqual(gc.intended_repository, None)
-        self.assertEqual(gc.backup_repository, None)
-        self.assertEqual(GoldenConfigSetting.objects.all().count(), 1)
+        # TODO: 2.0 Confirm that this makes sense, should not have been SET_NULL to begin with.
+        with self.assertRaises(ProtectedError):
+            GitRepository.objects.all().delete()
 
     def test_clean_up(self):
         """Delete all objects created of GoldenConfigSetting type."""
@@ -299,7 +299,7 @@ class ConfigPlanModelTestCase(TestCase):
         self.device = create_device()
         self.rule = create_feature_rule_json(self.device)
         self.feature = self.rule.feature
-        self.status = Status.objects.get(slug="not-approved")
+        self.status = Status.objects.get(name="Not Approved")
         self.job_result = create_job_result()
 
     def test_create_config_plan_intended(self):
@@ -402,7 +402,7 @@ class RemediationSettingModelTestCase(TestCase):
 
     def setUp(self):
         """Setup Object."""
-        self.platform = Platform.objects.create(slug="cisco_ios")
+        self.platform = Platform.objects.create(name="Cisco IOS", network_driver="cisco_ios")
         self.remediation_options = {
             "optionA": "someValue",
             "optionB": "someotherValue",

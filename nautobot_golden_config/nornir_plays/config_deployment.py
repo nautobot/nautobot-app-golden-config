@@ -5,6 +5,7 @@ from nautobot.dcim.models import Device
 from nautobot.extras.models import Status
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
+
 # from nautobot_plugin_nornir.utils import get_dispatcher # custom_dispatcher # TODO: 2.0
 from nornir import InitNornir
 from nornir.core.exceptions import NornirSubTaskError
@@ -36,7 +37,7 @@ def run_deployment(task: Task, logger: NornirLogger, commit: bool, config_plan_q
     # after https://github.com/nautobot/nautobot-plugin-golden-config/issues/443
 
     if commit:
-        plans_to_deploy.update(status=Status.objects.get(slug="in-progress"))
+        plans_to_deploy.update(status=Status.objects.get(name="In Progress"))
         try:
             result = task.run(
                 task=dispatcher,
@@ -50,18 +51,18 @@ def run_deployment(task: Task, logger: NornirLogger, commit: bool, config_plan_q
             task_changed, task_result, task_failed = result.changed, result.result, result.failed
             if task_changed and task_failed:
                 # means config_revert happened in `napalm_configure`
-                plans_to_deploy.update(status=Status.objects.get(slug="failed"))
+                plans_to_deploy.update(status=Status.objects.get(name="Failed"))
                 logger.log_failure(obj=obj, message="Failed deployment to the device.")
             elif not task_changed and not task_failed:
-                plans_to_deploy.update(status=Status.objects.get(slug="completed"))
+                plans_to_deploy.update(status=Status.objects.get(name="Completed"))
                 logger.log_success(obj=obj, message="Nothing was deployed to the device.")
             else:
                 if not task_failed:
                     logger.log_success(obj=obj, message="Successfully deployed configuration to device.")
-                    plans_to_deploy.update(status=Status.objects.get(slug="completed"))
+                    plans_to_deploy.update(status=Status.objects.get(name="Completed"))
         except NornirSubTaskError:
             task_result = None
-            plans_to_deploy.update(status=Status.objects.get(slug="failed"))
+            plans_to_deploy.update(status=Status.objects.get(name="Failed"))
             logger.log_failure(obj=obj, message="Failed deployment to the device.")
     else:
         task_result = None
@@ -76,11 +77,11 @@ def config_deployment(job_result, data, commit):
     logger = NornirLogger(__name__, job_result, data.get("debug"))
     logger.log_debug("Starting config deployment")
     config_plan_qs = data["config_plan"]
-    if config_plan_qs.filter(status__slug="not-approved").exists():
+    if config_plan_qs.filter(status__name="Not Approved").exists():
         message = "Cannot deploy configuration(s). One or more config plans are not approved."
         logger.log_failure(obj=None, message=message)
         raise ValueError(message)
-    if config_plan_qs.filter(status__slug="completed").exists():
+    if config_plan_qs.filter(status__name="Completed").exists():
         message = "Cannot deploy configuration(s). One or more config plans are already completed."
         logger.log_failure(obj=None, message=message)
         raise ValueError(message)

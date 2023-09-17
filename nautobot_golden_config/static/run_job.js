@@ -35,9 +35,9 @@ function startJob(jobClass, data, redirectUrlTemplate, callBack) {
         },
       success: function(jobData) {
           $('#jobStatus').html("Started").show();
-          var jobResultUrl = "/extras/job-results/" + jobData.result.id + "/";
+          var jobResultUrl = "/extras/job-results/" + jobData.job_result.id + "/";
           $('#jobResults').html(iconLink(jobResultUrl, "mdi-open-in-new", "Job Details")).show();
-          pollJobStatus(jobData.result.url, callBack);
+          pollJobStatus(jobData.job_result.url, callBack);
           if (typeof redirectUrlTemplate !== "undefined") {
             var redirectUrl = _renderTemplate(redirectUrlTemplate, jobData);
             $('#redirectLink').html(iconLink(redirectUrl, "mdi-open-in-new", "Info"));
@@ -86,14 +86,17 @@ $.ajax({
       $('#detailMessages').show();
       $('#detailMessages').attr('class', 'alert alert-warning text-center');
       $('#detailMessages').html("Job started but failed during the Job run. This job may have partially completed. See Job Results for more details on the errors.");
-    } else if (["running", "pending"].includes(data.status.value)) {
+    } else if (["PENDING", "RECEIVED", "RETRY","STARTED"].includes(data.status.value)) {
       // Job is still processing, continue polling
       setTimeout(function () {
         pollJobStatus(jobId, callBack);
       }, 1000); // Poll every 1 seconds
-    } else if (data.status.value == "completed") {
+      // TODO: 2.0, should we do something else on Failure/revoked?
+    } else if (["FAILURE", "REVOKED", "SUCCESS"].includes(data.status.value)) {
       $("#loaderImg").hide();
       $('#detailMessages').show();
+      console.log(data)
+      console.log(data.id)
       callBack(data.id)
         .then((message) => {
           $('#redirectLink').show();

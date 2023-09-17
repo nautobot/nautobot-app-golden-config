@@ -436,24 +436,22 @@ class ConfigPlanForm(NautobotModelForm):
         ),
     )
 
-    tenant_group = apps_forms.DynamicModelMultipleChoiceField(queryset=TenantGroup.objects.all())
-    tenant = apps_forms.DynamicModelMultipleChoiceField(queryset=Tenant.objects.all())
+    tenant_group = apps_forms.DynamicModelMultipleChoiceField(queryset=TenantGroup.objects.all(), required=False)
+    tenant = apps_forms.DynamicModelMultipleChoiceField(queryset=Tenant.objects.all(), required=False)
     # Requires https://github.com/nautobot/nautobot-plugin-golden-config/issues/430
-    location = apps_forms.DynamicModelMultipleChoiceField(queryset=Location.objects.all())
-    # region = apps_forms.DynamicModelMultipleChoiceField(queryset=Region.objects.all())
-    # site = apps_forms.DynamicModelMultipleChoiceField(queryset=Site.objects.all())
-    rack_group = apps_forms.DynamicModelMultipleChoiceField(queryset=RackGroup.objects.all())
-    rack = apps_forms.DynamicModelMultipleChoiceField(queryset=Rack.objects.all())
-    role = apps_forms.DynamicModelMultipleChoiceField(queryset=Role.objects.all())
-    manufacturer = apps_forms.DynamicModelMultipleChoiceField(queryset=Manufacturer.objects.all())
-    platform = apps_forms.DynamicModelMultipleChoiceField(queryset=Platform.objects.all())
-    device_type = apps_forms.DynamicModelMultipleChoiceField(queryset=DeviceType.objects.all())
-    device = apps_forms.DynamicModelMultipleChoiceField(queryset=Device.objects.all())
+    # location = apps_forms.DynamicModelMultipleChoiceField(queryset=Location.objects.all(), required=False)
+    rack_group = apps_forms.DynamicModelMultipleChoiceField(queryset=RackGroup.objects.all(), required=False)
+    rack = apps_forms.DynamicModelMultipleChoiceField(queryset=Rack.objects.all(), required=False)
+    role = apps_forms.DynamicModelMultipleChoiceField(queryset=Role.objects.all(), required=False)
+    manufacturer = apps_forms.DynamicModelMultipleChoiceField(queryset=Manufacturer.objects.all(), required=False)
+    platform = apps_forms.DynamicModelMultipleChoiceField(queryset=Platform.objects.all(), required=False)
+    device_type = apps_forms.DynamicModelMultipleChoiceField(queryset=DeviceType.objects.all(), required=False)
+    device = apps_forms.DynamicModelMultipleChoiceField(queryset=Device.objects.all(), required=False)
     tag = apps_forms.DynamicModelMultipleChoiceField(
-        queryset=Tag.objects.all(), query_params={"content_types": "dcim.device"}
+        queryset=Tag.objects.all(), query_params={"content_types": "dcim.device"}, required=False
     )
     status = apps_forms.DynamicModelMultipleChoiceField(
-        queryset=Status.objects.all(), query_params={"content_types": "dcim.device"}
+        queryset=Status.objects.all(), query_params={"content_types": "dcim.device"}, required=False
     )
 
     def __init__(self, *args, **kwargs):

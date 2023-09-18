@@ -60,7 +60,6 @@ PLUGINS_CONFIG = {
         "sot_agg_transposer": None,
         "postprocessing_callables": [],
         "postprocessing_subscribed": [],
-        "platform_network_driver_map": None,
         "jinja_env": {
             "undefined": StrictUndefined,  # jinja2.StrictUndefined
             "trim_blocks": True,

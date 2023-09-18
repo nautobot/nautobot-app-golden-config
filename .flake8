@@ -1,12 +1,7 @@
 [flake8]
-ignore =
-  E501,  # Line length is enforced by Black, so flake8 doesn't need to check it
-  W503,  # Black disagrees with this rule, as does PEP 8; Black wins
-  # TODO: Review the following rules, not in the template
-  F811,
-  F401,
-  F405,
-  E203,
+# E501: Line length is enforced by Black, so flake8 doesn't need to check it
+# W503: Black disagrees with this rule, as does PEP 8; Black wins
+ignore = E501, W503
 exclude = 
   migrations,
   __pycache__,

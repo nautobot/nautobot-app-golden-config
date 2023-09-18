@@ -62,6 +62,9 @@ The current supported platform and the associated *default* platform network_dri
 
 The expected "network_os" parameter must be as defined by netutils and golden config uses the platform network_driver to map from the device to the appropriate "network_os" that netutils expects. However, there an ability to map the actual platform network_driver for compliance and parsing tasks via the plugin settings in your "nautobot_config.py", and documented in [App Configuration](../admin/admin_install.md#app-configuration).
 
+
+TODO: 2.0 Change this out to config 
+
 To provide a concrete example of this, note the following example that demonstrates how you can transpose any platform network_driver name to the expected one, as well as map multiple keys to a single netutils expected key. The `platform_network_driver_map` is only used for configuration compliance job. The json key is the Nautobot platform network_driver, and the json value is the "network_os" parameter defined in `netutils.config.compliance.parser_map`.
 ```json
 {

@@ -42,7 +42,7 @@ nornir-nautobot = { git = "https://github.com/nautobot/nornir-nautobot.git", bra
 toml = "^0.10.2"
 netutils = "^1.5.0"
 hier-config = "^2.2.2"
-# nautobot-capacity-metrics = "2.0.0" TODO: 2.0: Turn on
+nautobot-capacity-metrics = "3.0.0-rc.3" # TODO: 2.0: Point to non-RC version
 
 [tool.poetry.group.dev.dependencies]
 bandit = "*"
@@ -55,7 +55,7 @@ ipython = "*"
 pydocstyle = "*"
 pylint = "*"
 pylint-django = "*"
-pylint-nautobot = { git = "https://github.com/nautobot/pylint-nautobot.git", branch = "develop" }  # TODO: 2.0: Point to pypi
+pylint-nautobot = "*"
 python-dotenv = "^1.0.0"
 yamllint = "*"
 toml = "*"

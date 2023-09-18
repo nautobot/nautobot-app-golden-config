@@ -73,7 +73,7 @@ class FormEntry:  # pylint disable=too-few-public-method
     location = MultiObjectVar(model=Location, required=False)
     rack_group = MultiObjectVar(model=RackGroup, required=False)
     rack = MultiObjectVar(model=Rack, required=False)
-    role = MultiObjectVar(model=Role, required=False)  # TODO: 2.0: How does change to Role model affect this?
+    role = MultiObjectVar(model=Role, required=False)
     manufacturer = MultiObjectVar(model=Manufacturer, required=False)
     platform = MultiObjectVar(model=Platform, required=False)
     device_type = MultiObjectVar(model=DeviceType, required=False, display_field="display_name")

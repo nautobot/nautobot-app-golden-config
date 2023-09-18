@@ -99,7 +99,7 @@ class ConfigComplianceFilterForm(NautobotFilterForm):
     role = apps_forms.DynamicModelMultipleChoiceField(
         queryset=Role.objects.all(),
         to_field_name="name",
-        required=False,  # TODO: 2.0: Test with change to Role model, add query_params
+        required=False,
         query_params={"content_types": "dcim.device"},
     )
     manufacturer = apps_forms.DynamicModelMultipleChoiceField(
@@ -439,7 +439,7 @@ class ConfigPlanForm(NautobotModelForm):
     tenant_group = apps_forms.DynamicModelMultipleChoiceField(queryset=TenantGroup.objects.all(), required=False)
     tenant = apps_forms.DynamicModelMultipleChoiceField(queryset=Tenant.objects.all(), required=False)
     # Requires https://github.com/nautobot/nautobot-plugin-golden-config/issues/430
-    # location = apps_forms.DynamicModelMultipleChoiceField(queryset=Location.objects.all(), required=False)
+    location = apps_forms.DynamicModelMultipleChoiceField(queryset=Location.objects.all(), required=False)
     rack_group = apps_forms.DynamicModelMultipleChoiceField(queryset=RackGroup.objects.all(), required=False)
     rack = apps_forms.DynamicModelMultipleChoiceField(queryset=Rack.objects.all(), required=False)
     role = apps_forms.DynamicModelMultipleChoiceField(queryset=Role.objects.all(), required=False)
@@ -447,7 +447,7 @@ class ConfigPlanForm(NautobotModelForm):
     platform = apps_forms.DynamicModelMultipleChoiceField(queryset=Platform.objects.all(), required=False)
     device_type = apps_forms.DynamicModelMultipleChoiceField(queryset=DeviceType.objects.all(), required=False)
     device = apps_forms.DynamicModelMultipleChoiceField(queryset=Device.objects.all(), required=False)
-    tag = apps_forms.DynamicModelMultipleChoiceField(
+    tags = apps_forms.DynamicModelMultipleChoiceField(
         queryset=Tag.objects.all(), query_params={"content_types": "dcim.device"}, required=False
     )
     status = apps_forms.DynamicModelMultipleChoiceField(
@@ -550,7 +550,7 @@ class ConfigPlanFilterForm(NautobotFilterForm):
         label="Status",
         to_field_name="name",
     )
-    tag = apps_forms.TagFilterField(model)
+    tags = apps_forms.TagFilterField(model)
 
 
 class ConfigPlanBulkEditForm(NautobotBulkEditForm):

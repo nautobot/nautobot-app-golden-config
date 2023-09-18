@@ -28,6 +28,7 @@ from nautobot_golden_config.utilities.helper import (
     render_jinja_template,
     verify_settings,
 )
+from nautobot_golden_config.utilities.helper import dispatch_params
 
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 LOGGER = logging.getLogger(__name__)
@@ -82,15 +83,14 @@ def run_template(  # pylint: disable=too-many-arguments
     generated_config = task.run(
         task=dispatcher,
         name="GENERATE CONFIG",
-        method="generate_config",
         obj=obj,
         logger=logger,
         jinja_template=jinja_template,
         jinja_root_path=settings.jinja_repository.filesystem_path,
         output_file_location=output_file_location,
-        custom_dispatcher={},
         jinja_filters=jinja_env.filters,
         jinja_env=jinja_env,
+        **dispatch_params("generate_config", obj.platform.network_driver),
     )[1].result["config"]
     intended_obj.intended_last_success_date = task.host.defaults.data["now"]
     intended_obj.intended_config = generated_config

@@ -206,7 +206,9 @@ def create_device(name="foobaz"):
     device_role, _ = Role.objects.get_or_create(name="Role 1")
     device_role.content_types.set([ct_device])
     device_type, _ = DeviceType.objects.get_or_create(manufacturer=manufacturer, model="Device Type 1")
-    platform, _ = Platform.objects.get_or_create(manufacturer=manufacturer, name="Platform 1")
+    platform, _ = Platform.objects.get_or_create(
+        manufacturer=manufacturer, name="Platform 1", network_driver="cisco_ios"
+    )
     device = Device.objects.create(
         name=name, platform=platform, location=site, role=device_role, device_type=device_type, status=status
     )

@@ -37,7 +37,8 @@ from nautobot_golden_config import filters, forms, models, tables
 from nautobot_golden_config.api import serializers
 
 # from nautobot_golden_config.jobs import DeployConfigPlans
-from nautobot_golden_config.utilities import constant, utils
+# from nautobot_golden_config.utilities import utils
+from nautobot_golden_config.utilities import constant
 from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import add_message, get_device_to_settings_map
@@ -304,50 +305,24 @@ class ConfigComplianceDeleteView(generic.ObjectDeleteView):
 # ConfigCompliance Non-Standards
 
 
-class ConfigComplianceDeviceView(ContentTypePermissionRequiredMixin, generic.View):
+class ConfigComplianceDeviceView(generic.ObjectView):
     """View for individual device detailed information."""
+
+    queryset = Device.objects.all()
+    template_name = ("nautobot_golden_config/compliance_device_report.html",)
 
     def get_required_permission(self):
         """Manually set permission when not tied to a model for device report."""
         return "nautobot_golden_config.view_configcompliance"
 
-    def get(self, request, pk):  # pylint: disable=invalid-name
-        """Read request into a view of a single device."""
-        device = Device.objects.get(pk=pk)
-        compliance_details = models.ConfigCompliance.objects.filter(device=device)
-
-        config_details = {"compliance_details": compliance_details, "device": device}
-
-        return render(
-            request,
-            "nautobot_golden_config/compliance_device_report.html",
-            config_details,
-        )
-
-
-class ComplianceDeviceFilteredReport(ContentTypePermissionRequiredMixin, generic.View):
-    """View for the single device detailed information."""
-
-    def get_required_permission(self):
-        """Manually set permission when not tied to a model for filtered report."""
-        return "nautobot_golden_config.view_configcompliance"
-
-    def get(self, request, pk, compliance):  # pylint: disable=invalid-name
-        """Read request into a view of a single device."""
-        device = Device.objects.get(pk=pk)
-        compliance_details = models.ConfigCompliance.objects.filter(device=device)
-
-        if compliance == "compliant":
+    def get_extra_context(self, request, instance=None):
+        """A ComplianceFeature helper function to warn if the Job is not enabled to run."""
+        compliance_details = models.ConfigCompliance.objects.filter(device=instance)
+        if request.GET.get("compliance") == "compliant":
             compliance_details = compliance_details.filter(compliance=True)
-        else:
+        elif request.GET.get("compliance") == "non-compliant":
             compliance_details = compliance_details.filter(compliance=False)
-
-        config_details = {"compliance_details": compliance_details, "device": device}
-        return render(
-            request,
-            "nautobot_golden_config/compliance_device_report.html",
-            config_details,
-        )
+        return {"compliance_details": compliance_details, "device": instance}
 
 
 class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):

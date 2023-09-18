@@ -26,7 +26,6 @@ from nautobot_golden_config.utilities.helper import (
     render_jinja_template,
     verify_settings,
 )
-from nautobot_golden_config.utilities.utils import get_platform
 
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 LOGGER = logging.getLogger(__name__)
@@ -70,12 +69,12 @@ def get_config_element(rule, config, obj, logger):
             config_element = config_json
 
     elif rule["obj"].config_type == ComplianceRuleConfigTypeChoice.TYPE_CLI:
-        if get_platform(obj.platform.network_driver) not in parser_map.keys():
-            error_msg = f"E3003: There is currently no CLI-config parser support for platform network_driver `{get_platform(obj.platform.network_driver)}`, preemptively failed."
+        if obj.platform.network_driver_mapper["netmiko"] not in parser_map.keys():
+            error_msg = f"E3003: There is currently no CLI-config parser support for platform network_driver `{obj.platform.network_driver}`, preemptively failed."
             logger.log_error(error_msg, extra={"object": obj})
             raise NornirNautobotException(error_msg)
 
-        config_element = section_config(rule, config, get_platform(obj.platform.network_driver))
+        config_element = section_config(rule, config, obj.platform.network_driver_mapper["netmiko"])
 
     else:
         error_msg = f"E3004: There rule type ({rule['obj'].config_type}) is not recognized."

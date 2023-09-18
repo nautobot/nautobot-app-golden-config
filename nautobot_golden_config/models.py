@@ -17,11 +17,9 @@ from nautobot.extras.models.statuses import StatusField
 from nautobot.extras.utils import extras_features
 from nautobot.core.models.utils import serialize_object, serialize_object_v2
 from netutils.config.compliance import feature_compliance
-from netutils.lib_mapper import HIERCONFIG_LIB_MAPPER_REVERSE
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
-from nautobot_golden_config.utilities.utils import get_platform
 
 LOGGER = logging.getLogger(__name__)
 GRAPHQL_STR_START = "query ($device_id: ID!)"
@@ -67,7 +65,9 @@ def _get_cli_compliance(obj):
         "name": obj.rule,
     }
     feature.update({"section": obj.rule.match_config.splitlines()})
-    value = feature_compliance(feature, obj.actual, obj.intended, get_platform(obj.device.platform.network_driver))
+    value = feature_compliance(
+        feature, obj.actual, obj.intended, obj.device.platform.network_driver_mappings.get("netmiko")
+    )
     compliance = value["compliant"]
     if compliance:
         compliance_int = 1
@@ -139,7 +139,7 @@ def _verify_get_custom_compliance_data(compliance_details):
 
 def _get_hierconfig_remediation(obj):
     """Returns the remediating config."""
-    hierconfig_os = HIERCONFIG_LIB_MAPPER_REVERSE.get(get_platform(obj.network_driver))
+    hierconfig_os = obj.network_driver_mappings["hier_config"]  # TODO: 2.0 verify this works
     if not hierconfig_os:
         raise ValidationError(f"platform {obj.network_driver} is not supported by hierconfig.")
 

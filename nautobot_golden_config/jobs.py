@@ -78,7 +78,7 @@ class FormEntry:  # pylint disable=too-few-public-method
     platform = MultiObjectVar(model=Platform, required=False)
     device_type = MultiObjectVar(model=DeviceType, required=False, display_field="display_name")
     device = MultiObjectVar(model=Device, required=False)
-    tag = MultiObjectVar(model=Tag, required=False)
+    tags = MultiObjectVar(model=Tag, required=False, display_field="name")
     status = MultiObjectVar(
         model=Status,
         required=False,
@@ -312,7 +312,7 @@ class GenerateConfigPlans(Job, FormEntry):
                 status=self._status,
                 plan_result=self.job_result,
             )
-            self.logger.info(obj=config_plan, message=f"Config plan created for {device} with manual commands.")
+            self.logger.info(f"Config plan created for {device} with manual commands.", extra={"object": config_plan})
 
     def run(self, **data):
         """Run config plan generation process."""
@@ -332,7 +332,7 @@ class GenerateConfigPlans(Job, FormEntry):
             self._generate_config_plan_from_manual()
         else:
             error_msg = f"Unknown config plan type {self._plan_type}."
-            self.logger.error()
+            self.logger.error(error_msg)
             raise ValueError(error_msg)
 
 

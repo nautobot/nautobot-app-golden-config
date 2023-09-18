@@ -22,9 +22,7 @@
     </span>
     {% render_field form.tenant_group %}
     {% render_field form.tenant %}
-    <!-- {% render_field form.location %} Requires https://github.com/nautobot/nautobot-plugin-golden-config/issues/430 -->
-    {% render_field form.region %}
-    {% render_field form.site %}
+    {% render_field form.location %}
     {% render_field form.rack_group %}
     {% render_field form.rack %}
     {% render_field form.role %}
@@ -32,7 +30,7 @@
     {% render_field form.platform %}
     {% render_field form.device_type %}
     {% render_field form.device %}
-    {% render_field form.tag %}
+    {% render_field form.tags %}
     {% render_field form.status %}
   </div>
 </div>
@@ -59,11 +57,11 @@ clearFields(hideFormData)
 setupFieldListeners(hideFormData)
 
 function formatJobData(data) {
-  var arrayFields = ["feature", "device_type", "tenant_group", "tenant", "region", "site","rack_group","rack","role","manufacturer","platform","device_type","device","tags"]
+  var arrayFields = ["feature", "device_type", "tenant_group", "tenant","location", "rack_group","rack","role","manufacturer","platform","device_type","device","tags"]
   var form_data = formDataToDictionary(data, arrayFields);
   delete form_data.csrfmiddlewaretoken;
   delete form_data.q;
-  console.log(form_data)
+
   return {"data": form_data};
 }
 
@@ -111,7 +109,7 @@ function openModalAndStartJob() {
 
 // TODO: 2.0 this should just use the job name
 var jobClass = "{{ generate_job.pk }}";
-var redirectUrlTemplate = "/plugins/golden-config/config-plan/?plan_result_id={jobData.result.id}";
+var redirectUrlTemplate = "/plugins/golden-config/config-plan/?plan_result_id={jobData.job_result.id}";
 var changeControlUrlInput = document.getElementById("id_change_control_url");
 var startJobButton = document.getElementById("startJob");
 var form = document.querySelector("form");

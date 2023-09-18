@@ -162,7 +162,7 @@ class ConfigComplianceTable(BaseTable):
 
     pk = ToggleColumn(accessor=A("device"))
     device = TemplateColumn(
-        template_code="""<a href="{% url 'plugins:nautobot_golden_config:configcompliance_devicedetail' pk=record.device  %}" <strong>{{ record.device__name }}</strong></a> """
+        template_code="""<a href="{% url 'plugins:nautobot_golden_config:configcompliance_tab' pk=record.device  %}" <strong>{{ record.device__name }}</strong></a> """
     )
 
     def __init__(self, *args, **kwargs):

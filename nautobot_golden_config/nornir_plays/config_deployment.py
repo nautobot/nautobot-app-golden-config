@@ -22,6 +22,7 @@ from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInv
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
+from nautobot_golden_config.utilities.helper import dispatch_params
 
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 
@@ -42,11 +43,10 @@ def run_deployment(task: Task, logger: NornirLogger, commit: bool, config_plan_q
             result = task.run(
                 task=dispatcher,
                 name="DEPLOY CONFIG TO DEVICE",
-                method="merge_config",
                 obj=obj,
                 logger=logger,
                 config=consolidated_config_set,
-                default_drivers_mapping=get_dispatcher(),
+                **dispatch_params("check_connectivity", obj.platform.network_driver),
             )[1]
             task_changed, task_result, task_failed = result.changed, result.result, result.failed
             if task_changed and task_failed:

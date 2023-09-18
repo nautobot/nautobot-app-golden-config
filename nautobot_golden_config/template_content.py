@@ -1,5 +1,7 @@
 """Added content to the device model view for config compliance."""
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, Q
+from django.urls import reverse
 from nautobot.dcim.models import Device
 from nautobot.extras.plugins import PluginTemplateExtension
 from nautobot_golden_config.models import ConfigCompliance, GoldenConfig
@@ -28,6 +30,20 @@ class ConfigComplianceDeviceCheck(PluginTemplateExtension):  # pylint: disable=a
             "nautobot_golden_config/content_template.html",
             extra_context=extra_context,
         )
+
+    def detail_tabs(self):
+        """Add a Configuration Compliance tab to the Device detail view if the Configuration Compliance associated to it."""
+        try:
+            return [
+                {
+                    "title": "Configuration Compliance",
+                    "url": reverse(
+                        "plugins:nautobot_golden_config:configcompliance_tab", kwargs={"pk": self.get_device().pk}
+                    ),
+                }
+            ]
+        except ObjectDoesNotExist:
+            return []
 
 
 class ConfigComplianceLocationCheck(PluginTemplateExtension):  # pylint: disable=abstract-method

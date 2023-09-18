@@ -3,7 +3,7 @@
 import django_filters
 from django.db.models import Q
 
-from nautobot.core.filters import MultiValueDateTimeFilter, TagFilter, TreeNodeMultipleChoiceFilter
+from nautobot.core.filters import MultiValueDateTimeFilter, TreeNodeMultipleChoiceFilter
 from nautobot.dcim.models import Device, DeviceType, Manufacturer, Platform, Rack, RackGroup, Location
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.extras.filters import NaturalKeyOrPKMultipleChoiceFilter, NautobotFilterSet, StatusFilter

@@ -48,17 +48,17 @@ class GoldenConfig(NautobotAppConfig):
             field_type="optional_json_field",
         ),
         "GET_CONFIG_FRAMEWORK": ConstanceConfigItem(
-            default={"all": "napalm"},
+            default={},
             help_text="The network library you prefer for making backups.",
             field_type="optional_json_field",
         ),
         "MERGE_CONFIG_FRAMEWORK": ConstanceConfigItem(
-            default={"all": "napalm"},
+            default={},
             help_text="The network library you prefer for pushing configs via a merge.",
             field_type="optional_json_field",
         ),
         "REPLACE_CONFIG_FRAMEWORK": ConstanceConfigItem(
-            default={"all": "napalm"},
+            default={},
             help_text="The network library you prefer for pushing configs via a merge.",
             field_type="optional_json_field",
         ),

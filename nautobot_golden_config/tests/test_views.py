@@ -1,12 +1,10 @@
 """Unit tests for nautobot_golden_config views."""
 
-from unittest import mock, skip, skipIf
+from unittest import mock, skip
 import datetime
-from packaging import version
 
 from lxml import html
 
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
@@ -361,7 +359,3 @@ class ConfigPlanTestCase(
             "change_control_url": "https://4.example.com/",
             "status": approved_status.pk,
         }
-
-    def test_list_objects_with_permission(self):
-        """Overriding test for versions < 1.5.5."""
-        super().test_list_objects_with_permission()

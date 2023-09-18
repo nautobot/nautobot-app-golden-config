@@ -2,7 +2,7 @@
 <div class="panel panel-default">
   {% if template_type == "device-compliance" %}
   <div class="panel-heading">
-    <a href="{% url 'plugins:nautobot_golden_config:configcompliance_devicedetail' pk=device.pk %}"
+    <a href="{% url 'plugins:nautobot_golden_config:configcompliance_tab' pk=device.pk %}"
       ><strong>Config Compliance Validation</strong></a
     >
   </div>

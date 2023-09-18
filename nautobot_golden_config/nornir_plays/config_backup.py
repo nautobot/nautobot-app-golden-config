@@ -21,6 +21,7 @@ from nautobot_golden_config.utilities.helper import (
     verify_settings,
     render_jinja_template,
 )
+from nautobot_golden_config.utilities.helper import dispatch_params
 from nautobot_golden_config.models import (
     GoldenConfig,
     ConfigRemove,
@@ -63,24 +64,20 @@ def run_backup(  # pylint: disable=too-many-arguments
     if settings.backup_test_connectivity is not False:
         task.run(
             task=dispatcher,
-            method="check_connectivity",
             logger=logger,
             obj=obj,
-            framework="napalm",
-            custom_dispatcher={},
             name="TEST CONNECTIVITY",
+            **dispatch_params("check_connectivity", obj.platform.network_driver),
         )
     running_config = task.run(
         task=dispatcher,
-        method="get_config",
         obj=obj,
         logger=logger,
-        framework="napalm",
-        custom_dispatcher={},
         name="SAVE BACKUP CONFIGURATION TO FILE",
         backup_file=backup_file,
         remove_lines=remove_regex_dict.get(obj.platform.network_driver, []),
         substitute_lines=replace_regex_dict.get(obj.platform.network_driver, []),
+        **dispatch_params("get_config", obj.platform.network_driver),
     )[1].result["config"]
 
     backup_obj.backup_last_success_date = task.host.defaults.data["now"]

@@ -2,6 +2,7 @@
 # pylint: disable=raise-missing-from
 import json
 
+from django.conf import settings
 from django.contrib import messages
 from django.db.models import Q
 from django.utils.html import format_html
@@ -14,6 +15,16 @@ from nautobot.core.utils.data import render_jinja2
 from nornir_nautobot.exceptions import NornirNautobotException
 
 from nautobot_golden_config import models
+from nautobot_golden_config.utilities import utils
+from nautobot_golden_config import config as app_config
+
+
+FRAMEWORK_METHODS = {
+    "default": utils.default_framework,
+    "get_config": utils.get_config_framework,
+    "merge_config": utils.merge_config_framework,
+    "replace_config_framework": utils.replace_config_framework,
+}
 
 FIELDS_PK = {
     "platform",
@@ -181,3 +192,30 @@ def add_message(inbound):
             multiple_messages.append(f"<a href='{reverse('extras:job_edit', kwargs={'pk': job.pk})}'>{job.name}</a>")
     if multiple_messages:
         messages.warning(request, format_html(f"The Job(s) {list_to_string(multiple_messages)} are not yet enabled."))
+
+
+def dispatch_params(method, platform):
+    """Utility method to map user defined platform network_driver to netutils named entity."""
+    custom_dispatcher = settings.PLUGINS_CONFIG[app_config.name].get("custom_dispatcher", {})
+    params = {"method": method}
+
+    # If there is a custom driver we can simply return that
+    if custom_dispatcher.get(platform.network_driver):
+        params["custom_dispatcher"] = custom_dispatcher[platform.network_driver]
+        params["framework"] = ""
+        return params
+    # Otherwise we are checking in order of:
+    #   1. method & driver
+    #   2. method & all
+    #   3. default and driver
+    #   4. default & all
+    if FRAMEWORK_METHODS.get(method) and FRAMEWORK_METHODS[method]().get(platform.network_driver):
+        params["framework"] = FRAMEWORK_METHODS[method]()[platform.network_driver]
+    elif FRAMEWORK_METHODS.get(method) and FRAMEWORK_METHODS[method]()["all"]:
+        params["framework"] = FRAMEWORK_METHODS[method]()["all"]
+    elif utils.default_framework().get(platform.network_driver):
+        params["framework"] = utils.default_framework()[platform.network_driver]
+    elif utils.default_framework().get("all"):
+        params["framework"] = utils.default_framework()["all"]
+    # TODO: 2.0 raise a sane error here
+    return params

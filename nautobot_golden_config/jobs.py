@@ -187,7 +187,7 @@ class BackupJob(Job, FormEntry):
             backup_repo.push()
 
 
-class AllGoldenConfig(Job, FormEntry):
+class AllGoldenConfig(Job):
     """Job to to run all three jobs against a single device."""
 
     device = ObjectVar(model=Device, required=True)

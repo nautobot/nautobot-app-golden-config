@@ -301,6 +301,7 @@ def create_config_compliance(device, compliance_rule=None, actual=None, intended
         rule=compliance_rule,
         actual=actual,
         intended=intended,
+        remediation={"a": "b"},
     )
     return config_compliance
 

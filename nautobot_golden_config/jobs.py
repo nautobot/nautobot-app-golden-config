@@ -4,6 +4,7 @@
 # pylint: disable=arguments-differ
 
 from datetime import datetime
+from django.utils.timezone import make_aware
 
 from nautobot.core.celery import register_jobs
 from nautobot.dcim.models import Device, DeviceType, Manufacturer, Platform, Rack, RackGroup, Location
@@ -57,6 +58,7 @@ def get_refreshed_repos(job_obj, repo_type, data=None):
         repo = GitRepository.objects.get(id=repository_record)
         ensure_git_repository(repo, job_obj.logger)
         git_repo = GitRepo(repo)
+        # TODO: 2.0 add secret check here
         repositories.append(git_repo)
 
     return repositories
@@ -108,7 +110,8 @@ class ComplianceJob(Job, FormEntry):
         get_refreshed_repos(job_obj=self, repo_type="backup_repository", data=data)
 
         self.logger.debug("Starting config compliance nornir play.")
-        config_compliance(self, data)
+        # config_compliance(self.logger, data, self.job_result)
+        config_compliance(self.job_result, self.logger.getEffectiveLevel(), data)
 
 
 class IntendedJob(Job, FormEntry):
@@ -124,7 +127,7 @@ class IntendedJob(Job, FormEntry):
     def run(self, *args, **data):
         """Run config generation script."""
         self.logger.debug("Starting intended job.")
-        now = datetime.now()
+        now = make_aware(datetime.now())
         self.logger.debug("Pull Jinja template repos.")
         get_refreshed_repos(job_obj=self, repo_type="jinja_repository", data=data)
 
@@ -133,7 +136,7 @@ class IntendedJob(Job, FormEntry):
         intended_repos = get_refreshed_repos(job_obj=self, repo_type="intended_repository", data=data)
 
         self.logger.debug("Building device settings mapping and running intended config nornir play.")
-        config_intended(self, data)
+        config_intended(self.job_result, self.logger.getEffectiveLevel(), data, self)
 
         # Commit / Push each repo after job is completed.
         for intended_repo in intended_repos:
@@ -155,7 +158,7 @@ class BackupJob(Job, FormEntry):
     def run(self, *args, **data):
         """Run config backup process."""
         self.logger.debug("Starting backup job.")
-        now = datetime.now()
+        now = make_aware(datetime.now())
         self.logger.debug("Pull Backup config repo.")
 
         # Instantiate a GitRepo object for each GitRepository in GoldenConfigSettings.
@@ -163,7 +166,7 @@ class BackupJob(Job, FormEntry):
 
         self.logger.debug("Starting backup jobs to the following repos: %s", backup_repos)
         self.logger.debug("Starting config backup nornir play.")
-        config_backup(self, data)
+        config_backup(self.job_result, self.logger.getEffectiveLevel(), data)
 
         # Commit / Push each repo after job is completed.
         for backup_repo in backup_repos:
@@ -359,7 +362,7 @@ class DeployConfigPlans(Job):
     def run(self, **data):  # pylint: disable=arguments-differ
         """Run config plan deployment process."""
         self.logger.debug("Starting config plan deployment job.")
-        config_deployment(self, **data)
+        config_deployment(self.job_result, self.logger.getEffectiveLevel(), data)
 
 
 class DeployConfigPlanJobButtonReceiver(JobButtonReceiver):
@@ -375,8 +378,7 @@ class DeployConfigPlanJobButtonReceiver(JobButtonReceiver):
         """Run config plan deployment process."""
         self.logger.debug("Starting config plan deployment job.")
         data = {"debug": False, "config_plan": ConfigPlan.objects.filter(id=obj.id)}
-        # pylint: disable-next=unexpected-keyword-arg
-        config_deployment(self, **data)
+        config_deployment(self.job_result, self.logger.getEffectiveLevel(), data)
 
 
 # Conditionally allow jobs based on whether or not turned on.

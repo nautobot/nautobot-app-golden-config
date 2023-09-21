@@ -7,7 +7,7 @@
 # !!! USE CAUTION WHEN MODIFYING LINES BELOW
 
 # Accepts a desired Nautobot version as build argument, default to 2.0.0
-ARG NAUTOBOT_VER="2.0.0-rc.2"
+ARG NAUTOBOT_VER="2.0.0-rc.3"
 
 # Accepts a desired Python version as build argument, default to 3.11
 ARG PYTHON_VER="3.11"
@@ -73,7 +73,6 @@ RUN pip install -c constraints.txt -e .
 # Install any dev dependencies frozen from Poetry
 # Can be improved in Poetry 1.2 which allows `poetry install --only dev`
 RUN pip install -c constraints.txt -r poetry_freeze_dev.txt
-RUN pip install nautobot==2.0.0rc3
 
 COPY development/nautobot_config.py ${NAUTOBOT_ROOT}/nautobot_config.py
 # !!! USE CAUTION WHEN MODIFYING LINES ABOVE

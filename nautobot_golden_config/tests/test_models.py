@@ -211,8 +211,7 @@ class GoldenConfigSettingGitModelTestCase(TestCase):
         self.assertEqual(self.golden_config.intended_repository, GitRepository.objects.get(name="test-intended-repo-1"))
 
     def test_removing_git_repos(self):
-        """Ensure we can remove the Git Repository objects from GoldenConfigSetting."""
-        # TODO: 2.0 Confirm that this makes sense, should not have been SET_NULL to begin with.
+        """Ensure we cannot remove the Git Repository objects while still attached to GC setting."""
         with self.assertRaises(ProtectedError):
             GitRepository.objects.all().delete()
 

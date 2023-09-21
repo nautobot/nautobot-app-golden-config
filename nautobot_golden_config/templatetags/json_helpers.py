@@ -2,6 +2,7 @@
 import json
 
 from django import template
+from django.utils.text import slugify as _slugify
 from django_jinja import library
 
 register = template.Library()
@@ -14,3 +15,9 @@ def condition_render_json(value):
     if isinstance(value, (dict, list)):
         return json.dumps(value, indent=4, sort_keys=True, ensure_ascii=False)
     return value
+
+# TODO: 2.0 #4477 
+@library.filter()
+def slugify(value):
+    """Use django's slugify, but in jinja."""
+    return _slugify(value)

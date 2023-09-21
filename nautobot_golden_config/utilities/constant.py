@@ -10,6 +10,7 @@ ENABLE_SOTAGG = PLUGIN_CFG["enable_sotagg"]
 ENABLE_PLAN = PLUGIN_CFG["enable_plan"]
 ENABLE_DEPLOY = PLUGIN_CFG["enable_deploy"]
 ENABLE_POSTPROCESSING = PLUGIN_CFG["enable_postprocessing"]
+DEFAULT_DEPLOY_STATUS = PLUGIN_CFG["default_deploy_status"]
 
 CONFIG_FEATURES = {
     "intended": ENABLE_INTENDED,

@@ -778,34 +778,34 @@ dev = ["polib"]
 
 [[package]]
 name = "cryptography"
-version = "41.0.3"
+version = "41.0.4"
 description = "cryptography is a package which provides cryptographic recipes and primitives to Python developers."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "cryptography-41.0.3-cp37-abi3-macosx_10_12_universal2.whl", hash = "sha256:652627a055cb52a84f8c448185922241dd5217443ca194d5739b44612c5e6507"},
-    {file = "cryptography-41.0.3-cp37-abi3-macosx_10_12_x86_64.whl", hash = "sha256:8f09daa483aedea50d249ef98ed500569841d6498aa9c9f4b0531b9964658922"},
-    {file = "cryptography-41.0.3-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:4fd871184321100fb400d759ad0cddddf284c4b696568204d281c902fc7b0d81"},
-    {file = "cryptography-41.0.3-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:84537453d57f55a50a5b6835622ee405816999a7113267739a1b4581f83535bd"},
-    {file = "cryptography-41.0.3-cp37-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:3fb248989b6363906827284cd20cca63bb1a757e0a2864d4c1682a985e3dca47"},
-    {file = "cryptography-41.0.3-cp37-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:42cb413e01a5d36da9929baa9d70ca90d90b969269e5a12d39c1e0d475010116"},
-    {file = "cryptography-41.0.3-cp37-abi3-musllinux_1_1_aarch64.whl", hash = "sha256:aeb57c421b34af8f9fe830e1955bf493a86a7996cc1338fe41b30047d16e962c"},
-    {file = "cryptography-41.0.3-cp37-abi3-musllinux_1_1_x86_64.whl", hash = "sha256:6af1c6387c531cd364b72c28daa29232162010d952ceb7e5ca8e2827526aceae"},
-    {file = "cryptography-41.0.3-cp37-abi3-win32.whl", hash = "sha256:0d09fb5356f975974dbcb595ad2d178305e5050656affb7890a1583f5e02a306"},
-    {file = "cryptography-41.0.3-cp37-abi3-win_amd64.whl", hash = "sha256:a983e441a00a9d57a4d7c91b3116a37ae602907a7618b882c8013b5762e80574"},
-    {file = "cryptography-41.0.3-pp310-pypy310_pp73-macosx_10_12_x86_64.whl", hash = "sha256:5259cb659aa43005eb55a0e4ff2c825ca111a0da1814202c64d28a985d33b087"},
-    {file = "cryptography-41.0.3-pp310-pypy310_pp73-manylinux_2_28_aarch64.whl", hash = "sha256:67e120e9a577c64fe1f611e53b30b3e69744e5910ff3b6e97e935aeb96005858"},
-    {file = "cryptography-41.0.3-pp310-pypy310_pp73-manylinux_2_28_x86_64.whl", hash = "sha256:7efe8041897fe7a50863e51b77789b657a133c75c3b094e51b5e4b5cec7bf906"},
-    {file = "cryptography-41.0.3-pp310-pypy310_pp73-win_amd64.whl", hash = "sha256:ce785cf81a7bdade534297ef9e490ddff800d956625020ab2ec2780a556c313e"},
-    {file = "cryptography-41.0.3-pp38-pypy38_pp73-macosx_10_12_x86_64.whl", hash = "sha256:57a51b89f954f216a81c9d057bf1a24e2f36e764a1ca9a501a6964eb4a6800dd"},
-    {file = "cryptography-41.0.3-pp38-pypy38_pp73-manylinux_2_28_aarch64.whl", hash = "sha256:4c2f0d35703d61002a2bbdcf15548ebb701cfdd83cdc12471d2bae80878a4207"},
-    {file = "cryptography-41.0.3-pp38-pypy38_pp73-manylinux_2_28_x86_64.whl", hash = "sha256:23c2d778cf829f7d0ae180600b17e9fceea3c2ef8b31a99e3c694cbbf3a24b84"},
-    {file = "cryptography-41.0.3-pp38-pypy38_pp73-win_amd64.whl", hash = "sha256:95dd7f261bb76948b52a5330ba5202b91a26fbac13ad0e9fc8a3ac04752058c7"},
-    {file = "cryptography-41.0.3-pp39-pypy39_pp73-macosx_10_12_x86_64.whl", hash = "sha256:41d7aa7cdfded09b3d73a47f429c298e80796c8e825ddfadc84c8a7f12df212d"},
-    {file = "cryptography-41.0.3-pp39-pypy39_pp73-manylinux_2_28_aarch64.whl", hash = "sha256:d0d651aa754ef58d75cec6edfbd21259d93810b73f6ec246436a21b7841908de"},
-    {file = "cryptography-41.0.3-pp39-pypy39_pp73-manylinux_2_28_x86_64.whl", hash = "sha256:ab8de0d091acbf778f74286f4989cf3d1528336af1b59f3e5d2ebca8b5fe49e1"},
-    {file = "cryptography-41.0.3-pp39-pypy39_pp73-win_amd64.whl", hash = "sha256:a74fbcdb2a0d46fe00504f571a2a540532f4c188e6ccf26f1f178480117b33c4"},
-    {file = "cryptography-41.0.3.tar.gz", hash = "sha256:6d192741113ef5e30d89dcb5b956ef4e1578f304708701b8b73d38e3e1461f34"},
+    {file = "cryptography-41.0.4-cp37-abi3-macosx_10_12_universal2.whl", hash = "sha256:80907d3faa55dc5434a16579952ac6da800935cd98d14dbd62f6f042c7f5e839"},
+    {file = "cryptography-41.0.4-cp37-abi3-macosx_10_12_x86_64.whl", hash = "sha256:35c00f637cd0b9d5b6c6bd11b6c3359194a8eba9c46d4e875a3660e3b400005f"},
+    {file = "cryptography-41.0.4-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:cecfefa17042941f94ab54f769c8ce0fe14beff2694e9ac684176a2535bf9714"},
+    {file = "cryptography-41.0.4-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e40211b4923ba5a6dc9769eab704bdb3fbb58d56c5b336d30996c24fcf12aadb"},
+    {file = "cryptography-41.0.4-cp37-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:23a25c09dfd0d9f28da2352503b23e086f8e78096b9fd585d1d14eca01613e13"},
+    {file = "cryptography-41.0.4-cp37-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:2ed09183922d66c4ec5fdaa59b4d14e105c084dd0febd27452de8f6f74704143"},
+    {file = "cryptography-41.0.4-cp37-abi3-musllinux_1_1_aarch64.whl", hash = "sha256:5a0f09cefded00e648a127048119f77bc2b2ec61e736660b5789e638f43cc397"},
+    {file = "cryptography-41.0.4-cp37-abi3-musllinux_1_1_x86_64.whl", hash = "sha256:9eeb77214afae972a00dee47382d2591abe77bdae166bda672fb1e24702a3860"},
+    {file = "cryptography-41.0.4-cp37-abi3-win32.whl", hash = "sha256:3b224890962a2d7b57cf5eeb16ccaafba6083f7b811829f00476309bce2fe0fd"},
+    {file = "cryptography-41.0.4-cp37-abi3-win_amd64.whl", hash = "sha256:c880eba5175f4307129784eca96f4e70b88e57aa3f680aeba3bab0e980b0f37d"},
+    {file = "cryptography-41.0.4-pp310-pypy310_pp73-macosx_10_12_x86_64.whl", hash = "sha256:004b6ccc95943f6a9ad3142cfabcc769d7ee38a3f60fb0dddbfb431f818c3a67"},
+    {file = "cryptography-41.0.4-pp310-pypy310_pp73-manylinux_2_28_aarch64.whl", hash = "sha256:86defa8d248c3fa029da68ce61fe735432b047e32179883bdb1e79ed9bb8195e"},
+    {file = "cryptography-41.0.4-pp310-pypy310_pp73-manylinux_2_28_x86_64.whl", hash = "sha256:37480760ae08065437e6573d14be973112c9e6dcaf5f11d00147ee74f37a3829"},
+    {file = "cryptography-41.0.4-pp310-pypy310_pp73-win_amd64.whl", hash = "sha256:b5f4dfe950ff0479f1f00eda09c18798d4f49b98f4e2006d644b3301682ebdca"},
+    {file = "cryptography-41.0.4-pp38-pypy38_pp73-macosx_10_12_x86_64.whl", hash = "sha256:7e53db173370dea832190870e975a1e09c86a879b613948f09eb49324218c14d"},
+    {file = "cryptography-41.0.4-pp38-pypy38_pp73-manylinux_2_28_aarch64.whl", hash = "sha256:5b72205a360f3b6176485a333256b9bcd48700fc755fef51c8e7e67c4b63e3ac"},
+    {file = "cryptography-41.0.4-pp38-pypy38_pp73-manylinux_2_28_x86_64.whl", hash = "sha256:93530900d14c37a46ce3d6c9e6fd35dbe5f5601bf6b3a5c325c7bffc030344d9"},
+    {file = "cryptography-41.0.4-pp38-pypy38_pp73-win_amd64.whl", hash = "sha256:efc8ad4e6fc4f1752ebfb58aefece8b4e3c4cae940b0994d43649bdfce8d0d4f"},
+    {file = "cryptography-41.0.4-pp39-pypy39_pp73-macosx_10_12_x86_64.whl", hash = "sha256:c3391bd8e6de35f6f1140e50aaeb3e2b3d6a9012536ca23ab0d9c35ec18c8a91"},
+    {file = "cryptography-41.0.4-pp39-pypy39_pp73-manylinux_2_28_aarch64.whl", hash = "sha256:0d9409894f495d465fe6fda92cb70e8323e9648af912d5b9141d616df40a87b8"},
+    {file = "cryptography-41.0.4-pp39-pypy39_pp73-manylinux_2_28_x86_64.whl", hash = "sha256:8ac4f9ead4bbd0bc8ab2d318f97d85147167a488be0e08814a37eb2f439d5cf6"},
+    {file = "cryptography-41.0.4-pp39-pypy39_pp73-win_amd64.whl", hash = "sha256:047c4603aeb4bbd8db2756e38f5b8bd7e94318c047cfe4efeb5d715e08b49311"},
+    {file = "cryptography-41.0.4.tar.gz", hash = "sha256:7febc3094125fc126a7f6fb1f420d0da639f3f32cb15c8ff0dc3997c4549f51a"},
 ]
 
 [package.dependencies]
@@ -2483,13 +2483,13 @@ requests = ">=2.26"
 
 [[package]]
 name = "mkdocs-material-extensions"
-version = "1.1.1"
+version = "1.2"
 description = "Extension pack for Python Markdown and MkDocs Material."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "mkdocs_material_extensions-1.1.1-py3-none-any.whl", hash = "sha256:e41d9f38e4798b6617ad98ca8f7f1157b1e4385ac1459ca1e4ea219b556df945"},
-    {file = "mkdocs_material_extensions-1.1.1.tar.gz", hash = "sha256:9c003da71e2cc2493d910237448c672e00cefc800d3d6ae93d2fc69979e3bd93"},
+    {file = "mkdocs_material_extensions-1.2-py3-none-any.whl", hash = "sha256:c767bd6d6305f6420a50f0b541b0c9966d52068839af97029be14443849fb8a1"},
+    {file = "mkdocs_material_extensions-1.2.tar.gz", hash = "sha256:27e2d1ed2d031426a6e10d5ea06989d67e90bb02acd588bc5673106b5ee5eedf"},
 ]
 
 [[package]]
@@ -2592,53 +2592,51 @@ version = "2.0.0rc3"
 description = "Source of truth and network automation platform."
 optional = false
 python-versions = ">=3.8,<3.12"
-files = [
-    {file = "nautobot-2.0.0rc3-py3-none-any.whl", hash = "sha256:0fd9f843cba7920aa6fdb5533318b621b312d83565e2964592b80ac84c53ce63"},
-    {file = "nautobot-2.0.0rc3.tar.gz", hash = "sha256:9388c55318df0e58418810a56d50c5cdecb78fccb6971ec830e04563e5e3edb5"},
-]
+files = []
+develop = false
 
 [package.dependencies]
-celery = ">=5.3.1,<5.4.0"
-Django = ">=3.2.20,<3.3.0"
-django-ajax-tables = ">=1.1.1,<1.2.0"
-django-celery-beat = ">=2.5.0,<2.6.0"
-django-celery-results = ">=2.4.0,<2.5.0"
-django-constance = {version = ">=2.9.1,<2.10.0", extras = ["database"]}
-django-cors-headers = ">=4.2.0,<4.3.0"
-django-db-file-storage = ">=0.5.5,<0.6.0"
-django-extensions = ">=3.2.3,<3.3.0"
-django-filter = ">=23.1,<23.2"
-django-health-check = ">=3.17.0,<3.18.0"
-django-jinja = ">=2.10.2,<2.11.0"
-django-prometheus = ">=2.3.1,<2.4.0"
-django-redis = ">=5.3.0,<5.4.0"
-django-tables2 = ">=2.6.0,<2.7.0"
-django-taggit = ">=4.0.0,<4.1.0"
-django-timezone-field = ">=5.1,<5.2"
-django-tree-queries = ">=0.15.0,<0.16.0"
-django-webserver = ">=1.2.0,<1.3.0"
-djangorestframework = ">=3.14.0,<3.15.0"
-drf-react-template-framework = ">=0.0.17,<0.0.18"
+celery = "~5.3.1"
+Django = "~3.2.20"
+django-ajax-tables = "~1.1.1"
+django-celery-beat = "~2.5.0"
+django-celery-results = "~2.4.0"
+django-constance = {version = "~2.9.1", extras = ["database"]}
+django-cors-headers = "~4.2.0"
+django-db-file-storage = "~0.5.5"
+django-extensions = "~3.2.3"
+django-filter = "~23.1"
+django-health-check = "~3.17.0"
+django-jinja = "~2.10.2"
+django-prometheus = "~2.3.1"
+django-redis = "~5.3.0"
+django-tables2 = "~2.6.0"
+django-taggit = "~4.0.0"
+django-timezone-field = "~5.1"
+django-tree-queries = "~0.15.0"
+django-webserver = "~1.2.0"
+djangorestframework = "~3.14.0"
+drf-react-template-framework = "^0.0.17"
 drf-spectacular = {version = "0.26.3", extras = ["sidecar"]}
-emoji = ">=2.8.0,<2.9.0"
-GitPython = ">=3.1.36,<3.2.0"
-graphene-django = ">=2.16.0,<2.17.0"
-graphene-django-optimizer = ">=0.8.0,<0.9.0"
-Jinja2 = ">=3.1.2,<3.2.0"
+emoji = "~2.8.0"
+GitPython = "~3.1.36"
+graphene-django = "~2.16.0"
+graphene-django-optimizer = "~0.8.0"
+Jinja2 = "~3.1.2"
 jsonschema = ">=4.7.0,<4.19.0"
-Markdown = ">=3.3.7,<3.4.0"
-MarkupSafe = ">=2.1.3,<2.2.0"
-netaddr = ">=0.8.0,<0.9.0"
-netutils = ">=1.5.0,<2.0.0"
-packaging = ">=23.1,<23.2"
-Pillow = ">=10.0.0,<10.1.0"
-prometheus-client = ">=0.17.1,<0.18.0"
-psycopg2-binary = ">=2.9.6,<2.10.0"
-python-slugify = ">=8.0.1,<8.1.0"
-pyuwsgi = ">=2.0.21,<2.1.0"
-PyYAML = ">=6.0,<6.1"
-social-auth-app-django = ">=5.2.0,<5.3.0"
-svgwrite = ">=1.4.2,<1.5.0"
+Markdown = "~3.3.7"
+MarkupSafe = "~2.1.3"
+netaddr = "~0.8.0"
+netutils = "^1.6.0"
+packaging = "~23.1"
+Pillow = "~10.0.0"
+prometheus-client = "~0.17.1"
+psycopg2-binary = "~2.9.6"
+python-slugify = "~8.0.1"
+pyuwsgi = "~2.0.21"
+PyYAML = "~6.0"
+social-auth-app-django = "~5.2.0"
+svgwrite = "~1.4.2"
 
 [package.extras]
 all = ["django-auth-ldap (>=4.3.0,<4.4.0)", "django-storages (>=1.13.2,<1.14.0)", "mysqlclient (>=2.2.0,<2.3.0)", "napalm (>=4.1.0,<4.2.0)", "social-auth-core[openidconnect,saml] (>=4.4.2,<4.5.0)"]
@@ -2647,6 +2645,12 @@ mysql = ["mysqlclient (>=2.2.0,<2.3.0)"]
 napalm = ["napalm (>=4.1.0,<4.2.0)"]
 remote-storage = ["django-storages (>=1.13.2,<1.14.0)"]
 sso = ["social-auth-core[openidconnect,saml] (>=4.4.2,<4.5.0)"]
+
+[package.source]
+type = "git"
+url = "https://github.com/nautobot/nautobot.git"
+reference = "develop"
+resolved_reference = "c5ed48f81f5428e070489e2972d27e82da407856"
 
 [[package]]
 name = "nautobot-capacity-metrics"
@@ -2677,13 +2681,13 @@ netutils = ">=1.0.0"
 nornir-nautobot = {git = "https://github.com/nautobot/nornir-nautobot.git", branch = "next-2.0"}
 
 [package.extras]
-nautobot = ["nautobot (==2.0.0-rc.2)"]
+nautobot = ["nautobot (==2.0.0-rc.3)"]
 
 [package.source]
 type = "git"
 url = "https://github.com/nautobot/nautobot-plugin-nornir.git"
 reference = "next-2.0"
-resolved_reference = "adea430cc55f004d2f31120ffeab6fbf6a1142eb"
+resolved_reference = "956826df791b654b58e1d19442621ed6ba63eb20"
 
 [[package]]
 name = "ncclient"
@@ -2824,7 +2828,7 @@ mikrotik-driver = ["routeros-api (>=0.17.0,<0.18.0)"]
 type = "git"
 url = "https://github.com/nautobot/nornir-nautobot.git"
 reference = "next-2.0"
-resolved_reference = "df2bfa9bd9967ec4ee384483e223bdb1a2add16a"
+resolved_reference = "cba65462552a125021f9e590153498b2ac518055"
 
 [[package]]
 name = "nornir-netmiko"
@@ -4186,24 +4190,26 @@ testing-integration = ["build[virtualenv] (>=1.0.3)", "filelock (>=3.4.0)", "jar
 
 [[package]]
 name = "setuptools-scm"
-version = "7.1.0"
+version = "8.0.1"
 description = "the blessed package to manage your versions by scm tags"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "setuptools_scm-7.1.0-py3-none-any.whl", hash = "sha256:73988b6d848709e2af142aa48c986ea29592bbcfca5375678064708205253d8e"},
-    {file = "setuptools_scm-7.1.0.tar.gz", hash = "sha256:6c508345a771aad7d56ebff0e70628bf2b0ec7573762be9960214730de278f27"},
+    {file = "setuptools-scm-8.0.1.tar.gz", hash = "sha256:e69bf0b8265fdc8f4e070c98235b1b0816ffa8b7f91153400404bf68496012e3"},
+    {file = "setuptools_scm-8.0.1-py3-none-any.whl", hash = "sha256:c132f5a8dc508c8113f865c709041d1b15f7d500442220174c38397607797a91"},
 ]
 
 [package.dependencies]
-packaging = ">=20.0"
+importlib-metadata = {version = ">=4.6", markers = "python_version < \"3.10\""}
+packaging = ">=20"
 setuptools = "*"
-tomli = {version = ">=1.0.0", markers = "python_version < \"3.11\""}
-typing-extensions = "*"
+tomli = {version = ">=1", markers = "python_version < \"3.11\""}
+typing-extensions = {version = "*", markers = "python_version < \"3.11\""}
 
 [package.extras]
-test = ["pytest (>=6.2)", "virtualenv (>20)"]
-toml = ["setuptools (>=42)"]
+docs = ["entangled-cli[rich]", "mkdocs", "mkdocs-entangled-plugin", "mkdocs-material", "mkdocstrings[python]", "pygments"]
+rich = ["rich"]
+test = ["pytest", "rich", "virtualenv (>20)"]
 
 [[package]]
 name = "singledispatch"
@@ -4758,4 +4764,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<3.12"
-content-hash = "f06888907031f0ffad5ed80cf59fbee40e94be95a52108f5c3ceedd2ad085512"
+content-hash = "03f058d3d996bb40891640c7dde96a4c05b25f5c09ae6cf4bf5dd1ab58b2e9a8"

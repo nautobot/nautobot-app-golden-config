@@ -26,6 +26,10 @@ class GitRepo:  # pylint: disable=too-many-instance-attributes
         self.path = obj.filesystem_path
         self.url = obj.remote_url
         self.secrets_group = obj.secrets_group
+        if not self.secrets_group:
+            error_msg = f"E3014: The Git Repositories `{obj}` [{str(self.url)}] does not have a required token."
+            LOGGER.error(error_msg)
+            raise ValueError(error_msg)
         self.token_user = get_secret_value(secret_type=SecretsGroupSecretTypeChoices.TYPE_USERNAME, git_obj=obj)
         self.token = get_secret_value(secret_type=SecretsGroupSecretTypeChoices.TYPE_TOKEN, git_obj=obj)
 

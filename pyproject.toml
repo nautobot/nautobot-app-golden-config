@@ -35,7 +35,8 @@ python = ">=3.8,<3.12"
 deepdiff = ">=5.5.0,!=6.0,!=6.1,<7"
 django-pivot = "^1.8.1"
 matplotlib = "^3.3.2"
-nautobot = ">=2.0.0-rc.2"  # TODO: 2.0: Point to 2.x version
+# nautobot = ">=2.0.0-rc.3"  # TODO: 2.0: Point to 2.x version
+nautobot = { git = "https://github.com/nautobot/nautobot.git", branch = "develop" }  # TODO: 2.0: Point to 2.x version
 nautobot-plugin-nornir = { git = "https://github.com/nautobot/nautobot-plugin-nornir.git", branch = "next-2.0" }  # TODO: 2.0: Point to 2.x version
 nornir-nautobot = { git = "https://github.com/nautobot/nornir-nautobot.git", branch = "next-2.0" }  # TODO: 2.0: Point to 2.x version
 

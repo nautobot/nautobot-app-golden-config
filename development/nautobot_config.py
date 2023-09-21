@@ -177,6 +177,7 @@ PLUGINS_CONFIG = {
             "lstrip_blocks": is_truthy(os.getenv("NAUTOBOT_JINJA_ENV_LSTRIP_BLOCKS", False)),
         },
         # "get_custom_compliance": "my.custom_compliance.func",
+        # "default_deploy_status": "Not Approved",
     },
 }
 

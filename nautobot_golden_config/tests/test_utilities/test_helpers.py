@@ -1,5 +1,6 @@
 """Unit tests for nautobot_golden_config utilities helpers."""
 
+import logging
 from unittest.mock import MagicMock, patch
 
 from django.contrib.contenttypes.models import ContentType
@@ -8,7 +9,6 @@ from jinja2 import exceptions as jinja_errors
 from nautobot.dcim.models import Device, Platform, Location, LocationType
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status, Tag
 from nornir_nautobot.exceptions import NornirNautobotException
-from nornir_nautobot.utils.logger import NornirLogger
 from nautobot_golden_config.models import GoldenConfigSetting
 from nautobot_golden_config.tests.conftest import create_device, create_helper_repo, create_orphan_device
 from nautobot_golden_config.utilities.helper import (
@@ -112,7 +112,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         create_orphan_device(name="orphan_device")
         self.job_result = MagicMock()
         self.data = MagicMock()
-        self.logger = NornirLogger(__name__, self.job_result, self.data)
+        self.logger = logging.getLogger(__name__)  # TODO: 2.0, this work?
         self.device_to_settings_map = get_device_to_settings_map(queryset=Device.objects.all())
 
     def test_null_to_empty_null(self):
@@ -145,25 +145,25 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         rendered_template = render_jinja_template(mock_device, "logger", "{{ data | return_a }}")
         self.assertEqual(rendered_template, "a")
 
-    @patch("nornir_nautobot.utils.logger.NornirLogger")
+    # @patch("nornir_nautobot.utils.logger.NornirLogger")
     @patch("nautobot.dcim.models.Device", spec=Device)
     def test_render_jinja_template_exceptions_undefined(self, mock_device, mock_nornir_logger):
         """Use fake obj key to cause UndefinedError from Jinja2 Template."""
         with self.assertRaises(NornirNautobotException):
             with self.assertRaises(jinja_errors.UndefinedError):
                 render_jinja_template(mock_device, mock_nornir_logger, "{{ obj.fake }}")
-        mock_nornir_logger.log_error.assert_called_once()
+        mock_nornir_logger.error.assert_called_once()
 
-    @patch("nornir_nautobot.utils.logger.NornirLogger")
+    # @patch("nornir_nautobot.utils.logger.NornirLogger")
     @patch("nautobot.dcim.models.Device")
     def test_render_jinja_template_exceptions_syntaxerror(self, mock_device, mock_nornir_logger):
         """Use invalid templating to cause TemplateSyntaxError from Jinja2 Template."""
         with self.assertRaises(NornirNautobotException):
             with self.assertRaises(jinja_errors.TemplateSyntaxError):
                 render_jinja_template(mock_device, mock_nornir_logger, "{{ obj.fake }")
-        mock_nornir_logger.log_error.assert_called_once()
+        mock_nornir_logger.error.assert_called_once()
 
-    @patch("nornir_nautobot.utils.logger.NornirLogger")
+    # @patch("nornir_nautobot.utils.logger.NornirLogger")
     @patch("nautobot.dcim.models.Device")
     @patch("nautobot_golden_config.utilities.helper.render_jinja2")
     def test_render_jinja_template_exceptions_templateerror(self, template_mock, mock_device, mock_nornir_logger):
@@ -172,7 +172,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
             with self.assertRaises(jinja_errors.TemplateError):
                 template_mock.side_effect = jinja_errors.TemplateRuntimeError
                 render_jinja_template(mock_device, mock_nornir_logger, "template")
-        mock_nornir_logger.log_error.assert_called_once()
+        mock_nornir_logger.error.assert_called_once()
 
     def test_get_backup_repository_dir_success(self):
         """Verify that we successfully look up the path from a provided repo object."""
@@ -257,10 +257,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
             golden_settings.validated_save()
         with self.assertRaises(NornirNautobotException) as failure:
             get_job_filter()
-        self.assertEqual(
-            failure.exception.args[0],
-            "The base queryset didn't find any devices. Please check the Golden Config Setting scope.",
-        )
+        self.assertEqual(failure.exception.args[0][:6], "E3015:")
 
     def test_get_job_filter_filtered_devices_raise(self):
         """Verify we get raise for having providing site that doesn't have any devices in scope."""
@@ -268,10 +265,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         Location.objects.create(name="New Site", status=Status.objects.get(name="Active"), location_type=location_type)
         with self.assertRaises(NornirNautobotException) as failure:
             get_job_filter(data={"location": Location.objects.filter(name="New Site")})
-        self.assertEqual(
-            failure.exception.args[0],
-            "The provided job parameters didn't match any devices detected by the Golden Config scope. Please check the scope defined within Golden Config Settings or select the correct job parameters to correctly match devices.",
-        )
+        self.assertEqual(failure.exception.args[0][:6], "E3016:")
 
     def test_get_job_filter_device_no_platform_raise(self):
         """Verify we get raise for not having a platform set on a device."""
@@ -281,10 +275,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         device.validated_save()
         with self.assertRaises(NornirNautobotException) as failure:
             get_job_filter()
-        self.assertEqual(
-            failure.exception.args[0],
-            "The following device(s) test_device have no platform defined. Platform is required.",
-        )
+        self.assertEqual(failure.exception.args[0][:6], "E3017:")
 
     def test_device_to_settings_map(self):
         """Verify Golden Config Settings are properly mapped to devices."""

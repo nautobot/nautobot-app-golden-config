@@ -15,6 +15,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, ExpressionWrapper, F, FloatField, Max, ProtectedError, Q
 from django.forms import ModelMultipleChoiceField, MultipleHiddenInput
 from django.shortcuts import redirect, render
+from django.utils.timezone import make_aware
 from django.views.generic import View
 from django_pivot.pivot import pivot
 from nautobot.core.views import generic
@@ -322,7 +323,7 @@ class ConfigComplianceDeviceView(generic.ObjectView):
             compliance_details = compliance_details.filter(compliance=True)
         elif request.GET.get("compliance") == "non-compliant":
             compliance_details = compliance_details.filter(compliance=False)
-        return {"compliance_details": compliance_details, "device": instance}
+        return {"compliance_details": compliance_details, "device": instance, "active_tab": request.GET.get("tab")}
 
 
 class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
@@ -387,11 +388,11 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
                 if config_details.backup_last_success_date:
                     backup_date = str(config_details.backup_last_success_date.strftime("%b %d %Y"))
                 else:
-                    backup_date = datetime.now().strftime("%b %d %Y")
+                    backup_date = make_aware(datetime.now()).strftime("%b %d %Y")
                 if config_details.intended_last_success_date:
                     intended_date = str(config_details.intended_last_success_date.strftime("%b %d %Y"))
                 else:
-                    intended_date = datetime.now().strftime("%b %d %Y")
+                    intended_date = make_aware(datetime.now()).strftime("%b %d %Y")
             elif config_type == "json_compliance":
                 # The JSON compliance runs differently then CLI, it grabs all configcompliance objects for
                 # a given device and merges them, sorts them, and diffs them.

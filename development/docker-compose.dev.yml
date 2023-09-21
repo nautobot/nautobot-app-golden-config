@@ -14,10 +14,10 @@ services:
       - "../:/source"
       # Helper method to mount on top of the python implementations, assuming you are using py3.11 and
       # have all of your projects in the same directory. Uncomment out as required.
-      # - "../../netutils/netutils:/opt/nautobot/lib/python3.11/site-packages/netutils"
-      # - "../../nornir-nautobot/nornir_nautobot:/opt/nautobot/lib/python3.11/site-packages/nornir_nautobot"
-      # - "../../nautobot-plugin-nornir/nautobot_plugin_nornir:/opt/nautobot/lib/python3.11/site-packages/nautobot_plugin_nornir"
-      # - "../../nautobot/nautobot:/opt/nautobot/lib/python3.11/site-packages/nautobot"
+      # - "../../netutils/netutils:/usr/local/lib/python3.11/site-packages/netutils"
+      # - "../../nornir-nautobot/nornir_nautobot:/usr/local/lib/python3.11/site-packages/nornir_nautobot"
+      # - "../../nautobot-plugin-nornir/nautobot_plugin_nornir:/usr/local/lib/python3.11/site-packages/nautobot_plugin_nornir"
+      # - "../../nautobot/nautobot:/usr/local/lib/python3.11/site-packages/nautobot"
 
     healthcheck:
       test: ["CMD", "true"]  # Due to layering, disable: true won't work. Instead, change the test
@@ -41,10 +41,10 @@ services:
       - "../:/source"
       # Helper method to mount on top of the python implementations, assuming you are using py3.11 and
       # have all of your projects in the same directory. Uncomment out as required.
-      # - "../../netutils/netutils:/opt/nautobot/lib/python3.11/site-packages/netutils"
-      # - "../../nornir-nautobot/nornir_nautobot:/opt/nautobot/lib/python3.11/site-packages/nornir_nautobot"
-      # - "../../nautobot-plugin-nornir/nautobot_plugin_nornir:/opt/nautobot/lib/python3.11/site-packages/nautobot_plugin_nornir"
-      # - "../../nautobot/nautobot:/opt/nautobot/lib/python3.11/site-packages/nautobot"
+      # - "../../netutils/netutils:/usr/local/lib/python3.11/site-packages/netutils"
+      # - "../../nornir-nautobot/nornir_nautobot:/usr/local/lib/python3.11/site-packages/nornir_nautobot"
+      # - "../../nautobot-plugin-nornir/nautobot_plugin_nornir:/usr/local/lib/python3.11/site-packages/nautobot_plugin_nornir"
+      # - "../../nautobot/nautobot:/usr/local/lib/python3.11/site-packages/nautobot"
     healthcheck:
       test: ["CMD", "true"]  # Due to layering, disable: true won't work. Instead, change the test
 # To expose postgres or redis to the host uncomment the following

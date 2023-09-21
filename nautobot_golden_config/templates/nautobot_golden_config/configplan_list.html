@@ -50,7 +50,7 @@ function formatJobData(data) {
     },
   };
 }
-// TODO: 2.0 this should just use the job name
+// TODO: 2.0 #4476 this should just use the job name
 var jobClass = "{{ deploy_job.pk }}";
 document.getElementById("startJob").onclick = function() {startJob(jobClass, formatJobData($("form").serializeArray()))};
 

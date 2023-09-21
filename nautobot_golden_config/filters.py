@@ -113,7 +113,7 @@ class GoldenConfigFilterSet(NautobotFilterSet):
     )
     role = NaturalKeyOrPKMultipleChoiceFilter(
         field_name="device__role",
-        queryset=Role.objects.all(),  # TODO: 2.0: How does change to Role model affect this?: queryset=Role.objects.filter(content_type__model='device')
+        queryset=Role.objects.filter(content_types__model="device"),
         to_field_name="name",
         label="Role (name or ID)",
     )

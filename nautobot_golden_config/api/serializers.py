@@ -127,7 +127,6 @@ class RemediationSettingSerializer(NautobotModelSerializer, TaggedModelSerialize
         """Set Meta Data for RemediationSetting, will serialize all fields."""
 
         model = models.RemediationSetting
-        choices_fields = ["remediation_type"]  # TODO: 2.0 I think this was meant to go onto test not Meta
         fields = "__all__"
 
 

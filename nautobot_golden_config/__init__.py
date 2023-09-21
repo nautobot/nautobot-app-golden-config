@@ -29,6 +29,7 @@ class GoldenConfig(NautobotAppConfig):
         "enable_postprocessing": False,
         "enable_plan": True,
         "enable_deploy": True,
+        "default_deploy_status": "Not Approved",
         "postprocessing_callables": [],
         "postprocessing_subscribed": [],
         "per_feature_bar_width": 0.3,

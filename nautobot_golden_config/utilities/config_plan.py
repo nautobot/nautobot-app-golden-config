@@ -4,12 +4,12 @@ from nautobot.dcim.models import Device
 from nautobot.extras.models import Status
 
 from nautobot_golden_config.models import ComplianceFeature
+from nautobot_golden_config.utilities.constant import DEFAULT_DEPLOY_STATUS
 
 
-# TODO: Future: Make the default Status configurable
 def config_plan_default_status():
     """Return the default status for config plan."""
-    return Status.objects.get(name="Not Approved")  # TODO: 2.0 verify this makes sense
+    return Status.objects.get(name=DEFAULT_DEPLOY_STATUS)
 
 
 def generate_config_set_from_compliance_feature(device: Device, plan_type: str, feature: ComplianceFeature):

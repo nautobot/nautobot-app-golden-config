@@ -26,6 +26,8 @@ This plugin enable six (6) key use cases.
 5. **Configuration Remediation** - Is a process of generating a partial device configuration that would get a configuration feature into a compliant state. 
 6. **Configuration Deployment** - Is a process to generate a device configuration and push it to the network device. It supports compliance features, remediation engine and manual definitions.
 
+> Notice: **Configuration Postprocessing** - (beta feature) This process renders a valid configuration artifact from an intended configuration, that can be pushed to devices. The current implementation renders this configuration; however, **it doesn't push it** to the target device.
+
 > Notice: The operators of their own Nautobot instance are welcome to use any combination of these features. Though the appearance may seem like they are tightly coupled, this isn't actually the case. For example, one can obtain backup configurations from their current RANCID/Oxidized process and simply provide a Git Repo of the location of the backup configurations, and the compliance process would work the same way. Also, another user may only want to generate configurations, but not want to use other features, which is perfectly fine to do so.
 
 ## Screenshots

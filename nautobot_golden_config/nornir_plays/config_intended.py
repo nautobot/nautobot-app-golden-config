@@ -18,7 +18,7 @@ from nornir_nautobot.utils.logger import NornirLogger
 
 from nautobot_golden_config.models import GoldenConfig
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
-from nautobot_golden_config.utilities.constant import PLUGIN_CFG
+from nautobot_golden_config.utilities.constant import JINJA_ENV
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import (
@@ -32,7 +32,6 @@ InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 LOGGER = logging.getLogger(__name__)
 
 # Use a custom Jinja2 environment instead of Django's to avoid HTML escaping
-JINJA_ENV = PLUGIN_CFG["jinja_env"]
 jinja_env = SandboxedEnvironment(**JINJA_ENV)
 
 # Retrieve filters from the Django jinja template engine

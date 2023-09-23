@@ -328,7 +328,8 @@ class ConfigReplaceBulkEditForm(NautobotBulkEditForm):
 class GoldenConfigSettingForm(NautobotModelForm):
     """Filter Form for GoldenConfigSettingForm instances."""
 
-    dynamic_group = apps_forms.DynamicModelChoiceField(queryset=DynamicGroup.objects.all(), required=False)
+    slug = SlugField()
+    dynamic_group = apps_forms.ModelChoiceField(queryset=DynamicGroup.objects.all(), required=False)
 
     class Meta:
         """Filter Form Meta Data for GoldenConfigSettingForm instances."""

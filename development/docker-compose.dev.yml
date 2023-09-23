@@ -12,6 +12,15 @@ services:
     volumes:
       - "./nautobot_config.py:/opt/nautobot/nautobot_config.py"
       - "../:/source"
+      # Helper method to mount on top of the python implementations, assuming you are using py3.11 and
+      # have all of your projects in the same directory. Uncomment out as required.
+      # - "../../netutils/netutils:/usr/local/lib/python3.11/site-packages/netutils"
+      # - "../../nornir-nautobot/nornir_nautobot:/usr/local/lib/python3.11/site-packages/nornir_nautobot"
+      # - "../../nautobot-plugin-nornir/nautobot_plugin_nornir:/usr/local/lib/python3.11/site-packages/nautobot_plugin_nornir"
+      # - "../../nautobot/nautobot:/usr/local/lib/python3.11/site-packages/nautobot"
+
+    healthcheck:
+      test: ["CMD", "true"]  # Due to layering, disable: true won't work. Instead, change the test
   docs:
     entrypoint: "mkdocs serve -v -a 0.0.0.0:8080"
     ports:
@@ -23,9 +32,21 @@ services:
       disable: true
     tty: true
   worker:
+    entrypoint:
+      - "sh"
+      - "-c"  # this is to evaluate the $NAUTOBOT_LOG_LEVEL from the env
+      - "watchmedo auto-restart --directory './' --pattern '*.py' --recursive -- nautobot-server celery worker -l $$NAUTOBOT_LOG_LEVEL --events"  ## $$ because of docker-compose
     volumes:
       - "./nautobot_config.py:/opt/nautobot/nautobot_config.py"
       - "../:/source"
+      # Helper method to mount on top of the python implementations, assuming you are using py3.11 and
+      # have all of your projects in the same directory. Uncomment out as required.
+      # - "../../netutils/netutils:/usr/local/lib/python3.11/site-packages/netutils"
+      # - "../../nornir-nautobot/nornir_nautobot:/usr/local/lib/python3.11/site-packages/nornir_nautobot"
+      # - "../../nautobot-plugin-nornir/nautobot_plugin_nornir:/usr/local/lib/python3.11/site-packages/nautobot_plugin_nornir"
+      # - "../../nautobot/nautobot:/usr/local/lib/python3.11/site-packages/nautobot"
+    healthcheck:
+      test: ["CMD", "true"]  # Due to layering, disable: true won't work. Instead, change the test
 # To expose postgres or redis to the host uncomment the following
 # postgres:
 #   ports:

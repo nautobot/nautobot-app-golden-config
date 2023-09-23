@@ -7,10 +7,10 @@ __version__ = metadata.version(__name__)
 
 from django.db.models.signals import post_migrate
 from nautobot.core.signals import nautobot_database_ready
-from nautobot.extras.plugins import PluginConfig
+from nautobot.apps import ConstanceConfigItem, NautobotAppConfig
 
 
-class GoldenConfig(PluginConfig):
+class GoldenConfig(NautobotAppConfig):
     """Plugin configuration for the nautobot_golden_config plugin."""
 
     name = "nautobot_golden_config"
@@ -20,8 +20,6 @@ class GoldenConfig(PluginConfig):
     author_email = "opensource@networktocode.com"
     description = "Nautobot Apps that embraces NetDevOps and automates configuration backups, performs configuration compliance, generates intended configurations, and has config remediation and deployment features. Includes native Git integration and gives users the flexibility to mix and match the supported features."
     base_url = "golden-config"
-    min_version = "1.6.1"
-    max_version = "1.99"
     default_settings = {
         "enable_backup": True,
         "enable_compliance": True,
@@ -30,6 +28,7 @@ class GoldenConfig(PluginConfig):
         "enable_postprocessing": False,
         "enable_plan": True,
         "enable_deploy": True,
+        "default_deploy_status": "Not Approved",
         "postprocessing_callables": [],
         "postprocessing_subscribed": [],
         "per_feature_bar_width": 0.3,
@@ -41,6 +40,28 @@ class GoldenConfig(PluginConfig):
             "trim_blocks": True,
             "lstrip_blocks": False,
         },
+    }
+    constance_config = {
+        "DEFAULT_FRAMEWORK": ConstanceConfigItem(
+            default={"all": "napalm"},
+            help_text="The network library you prefer for by default for your dispatcher methods.",
+            field_type="optional_json_field",
+        ),
+        "GET_CONFIG_FRAMEWORK": ConstanceConfigItem(
+            default={},
+            help_text="The network library you prefer for making backups.",
+            field_type="optional_json_field",
+        ),
+        "MERGE_CONFIG_FRAMEWORK": ConstanceConfigItem(
+            default={},
+            help_text="The network library you prefer for pushing configs via a merge.",
+            field_type="optional_json_field",
+        ),
+        "REPLACE_CONFIG_FRAMEWORK": ConstanceConfigItem(
+            default={},
+            help_text="The network library you prefer for pushing configs via a merge.",
+            field_type="optional_json_field",
+        ),
     }
 
     def ready(self):

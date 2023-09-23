@@ -26,7 +26,7 @@ Follow the steps below to get up and running for the configuration backup elemen
     1. Navigate to `Golden Config -> Settings` under the Golden Configuration Section.
     2. Create new or select one of the existing `Settings` objects
     3. Fill out the Backup Repository. (The dropdown will show the repository that was just created.)
-    4. Fill out Backup Path Template. Typically `{{obj.site.slug}}/{{obj.name}}.cfg`, see [Setting Details](./app_use_cases.md#application-settings)
+    4. Fill out Backup Path Template. Typically `{{obj.location.name}}/{{obj.name}}.cfg`, see [Setting Details](./app_use_cases.md#application-settings)
     5. Select whether or not to do a connectivity check per device.
     6. Click Save.
 
@@ -76,9 +76,9 @@ Follow the steps below to get up and running for the intended configuration elem
     1. Navigate to `Golden Config -> Settings` under the Golden Configuration Section.
     2. Create new or select one of the existing `Settings` objects
     3. Fill out the Intended Repository. (The dropdown will show the repository that was just created.)
-    4. Fill out Intended Path Template. Typically `{{obj.site.slug}}/{{obj.name}}.cfg`, see [Setting Details](./app_feature_backup.md#application-settings)
+    4. Fill out Intended Path Template. Typically `{{obj.location.name}}/{{obj.name}}.cfg`, see [Setting Details](./app_feature_backup.md#application-settings)
     5. Fill out Jinja Repository. (The dropdown will show the repository that was just created.)
-    6. Fill out Jinja Path Template.  Typically `{{obj.platform.slug}}.j2`.
+    6. Fill out Jinja Path Template.  Typically `{{obj.platform.network_driver}}.j2`.
 
 5. Determine what data(variables) the Jinja2 templates need from Nautobot.
 
@@ -203,7 +203,7 @@ The files within these folders can follow any naming pattern or nested folder st
 │   │   └── juniper_junos.yml
 ```
 
-The `YAML` files will contain all the attributes necessary to identify an object (for instance, a `ComplianceRule` is identified by the `feature_slug` and the `platform_slug` together) and the other attributes (the ones that are not used to identify the object). For example:
+The `YAML` files will contain all the attributes necessary to identify an object (for instance, a `ComplianceRule` is identified by the `feature_slug` and the `platform_name` together) and the other attributes (the ones that are not used to identify the object). For example:
 
 `compliance_features` example:
 
@@ -219,7 +219,7 @@ The `YAML` files will contain all the attributes necessary to identify an object
 ```yaml
 ---
 - feature_slug: "aaa"
-  platform_slug: "cisco_ios"
+  platform_name: "Cisco IOS"
   config_ordered: true
   match_config: |
     aaa
@@ -234,7 +234,7 @@ The `YAML` files will contain all the attributes necessary to identify an object
 
 ```yaml
 ---
-- platform_slug: "cisco_ios"
+- platform_name: "Cisco IOS"
   name: "Build config"
   regex: '^Building\s+configuration.*\n'
 ```
@@ -244,7 +244,7 @@ The `YAML` files will contain all the attributes necessary to identify an object
 ```yaml
 ---
 - name: "username"
-  platform_slug: "cisco_ios"
+  platform_name: "Cisco IOS"
   description: "username"
   regex: '(username\s+\S+\spassword\s+5\s+)\S+(\s+role\s+\S+)'
   replace: '\1<redacted_config>\2'
@@ -263,7 +263,7 @@ CustomField data can be added using the `_custom_field_data` attribute, that tak
 ```
 
 !!! note
-    For Foreign Key references to `ComplianceFeature` and `Platform` we use the keywords `feature_slug` and `platform_slug` respectively.
+    For Foreign Key references to `ComplianceFeature` and `Platform` we use the keywords `feature_slug` and `platform_name` respectively.
 
 1. Add the Git repository that will be used to sync Git properties.
 

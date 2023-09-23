@@ -5,7 +5,7 @@ from django.utils.html import format_html
 from django_tables2 import Column, LinkColumn, TemplateColumn
 from django_tables2.utils import A
 from nautobot.extras.tables import StatusTableMixin
-from nautobot.utilities.tables import BaseTable, TagColumn, ToggleColumn
+from nautobot.core.tables import BaseTable, TagColumn, ToggleColumn
 
 from nautobot_golden_config import models
 from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
@@ -68,7 +68,7 @@ ALL_ACTIONS = """
     {% if record.config_type == 'json' %}
         <i class="mdi mdi-circle-small"></i>
     {% else %}
-        <a href="{% url 'extras:job' class_path='plugins/nautobot_golden_config.jobs/AllGoldenConfig' %}?device={{ record.pk }}"
+        <a href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.AllGoldenConfig' %}?device={{ record.pk }}"
             <span class="text-primary">
                 <i class="mdi mdi-play-circle" title="Execute All Golden Config Jobs"></i>
             </span>
@@ -162,7 +162,7 @@ class ConfigComplianceTable(BaseTable):
 
     pk = ToggleColumn(accessor=A("device"))
     device = TemplateColumn(
-        template_code="""<a href="{% url 'plugins:nautobot_golden_config:configcompliance_devicedetail' pk=record.device  %}" <strong>{{ record.device__name }}</strong></a> """
+        template_code="""<a href="{% url 'plugins:nautobot_golden_config:configcompliance_tab' pk=record.device  %}" <strong>{{ record.device__name }}</strong></a> """
     )
 
     def __init__(self, *args, **kwargs):

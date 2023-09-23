@@ -44,7 +44,7 @@
     </li>
     {% if perms.extras.view_objectchange %}
     <li role="presentation">
-        <a href="{% url 'plugins:nautobot_golden_config:configcompliance_changelog' pk=object.pk %}">Change Log</a>
+        <a href="{% url 'plugins:nautobot_golden_config:configcompliance' pk=object.pk %}">Change Log</a>
     </li>
     {% endif %}
 </ul>

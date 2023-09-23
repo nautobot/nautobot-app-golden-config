@@ -5,28 +5,33 @@ import os
 from datetime import datetime
 
 from django.template import engines
+from django.utils.timezone import make_aware
+
 from jinja2.sandbox import SandboxedEnvironment
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
-from nautobot_plugin_nornir.utils import get_dispatcher
+
 from nornir import InitNornir
 from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir.core.task import Result, Task
 from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
-from nornir_nautobot.utils.logger import NornirLogger
 
 from nautobot_golden_config.models import GoldenConfig
+
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.constant import JINJA_ENV
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
+
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import (
+    dispatch_params,
     get_device_to_settings_map,
     get_job_filter,
     render_jinja_template,
     verify_settings,
 )
+from nautobot_golden_config.utilities.logger import NornirLogger
 
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 LOGGER = logging.getLogger(__name__)
@@ -40,7 +45,7 @@ jinja_env.filters = engines["jinja"].env.filters
 
 @close_threaded_db_connections
 def run_template(  # pylint: disable=too-many-arguments
-    task: Task, logger, device_to_settings_map, nautobot_job
+    task: Task, logger: NornirLogger, device_to_settings_map, job_class_instance
 ) -> Result:
     """Render Jinja Template.
 
@@ -50,7 +55,7 @@ def run_template(  # pylint: disable=too-many-arguments
         task (Task): Nornir task individual object
         logger (NornirLogger): Logger to log messages to.
         global_settings (GoldenConfigSetting): The settings for GoldenConfigPlugin.
-        nautobot_job (Result): The the output from the Nautobot Job instance being run.
+        job_class_instance (Result): The the output from the Nautobot Job instance being run.
 
     Returns:
         result (Result): Result from Nornir task
@@ -69,52 +74,57 @@ def run_template(  # pylint: disable=too-many-arguments
     output_file_location = os.path.join(intended_directory, intended_path_template_obj)
 
     jinja_template = render_jinja_template(obj, logger, settings.jinja_path_template)
-    status, device_data = graph_ql_query(nautobot_job.request, obj, settings.sot_agg_query.query)
+    status, device_data = graph_ql_query(job_class_instance.request, obj, settings.sot_agg_query.query)
     if status != 200:
-        logger.log_failure(obj, f"The GraphQL query return a status of {str(status)} with error of {str(device_data)}")
-        raise NornirNautobotException(
-            f"The GraphQL query return a status of {str(status)} with error of {str(device_data)}"
-        )
+        error_msg = f"E3012: The GraphQL query return a status of {str(status)} with error of {str(device_data)}"
+        logger.error(error_msg, extra={"object": obj})
+        raise NornirNautobotException(error_msg)
+
     task.host.data.update(device_data)
 
     generated_config = task.run(
         task=dispatcher,
         name="GENERATE CONFIG",
-        method="generate_config",
         obj=obj,
         logger=logger,
         jinja_template=jinja_template,
         jinja_root_path=settings.jinja_repository.filesystem_path,
         output_file_location=output_file_location,
-        default_drivers_mapping=get_dispatcher(),
         jinja_filters=jinja_env.filters,
         jinja_env=jinja_env,
+        **dispatch_params("generate_config", obj.platform.network_driver, logger),
     )[1].result["config"]
     intended_obj.intended_last_success_date = task.host.defaults.data["now"]
     intended_obj.intended_config = generated_config
     intended_obj.save()
 
-    logger.log_success(obj, "Successfully generated the intended configuration.")
+    logger.info(obj, "Successfully generated the intended configuration.")
 
     return Result(host=task.host, result=generated_config)
 
 
-def config_intended(nautobot_job, data):
+def config_intended(job_result, log_level, data, job_class_instance):
     """
     Nornir play to generate configurations.
 
     Args:
-        nautobot_job (Result): The Nautobot Job instance being run.
+        logger (NornirLogger): The Nautobot Job instance being run.
+        job_class_instance (Job): The Nautobot Job instance being run.
         data (dict): Form data from Nautobot Job.
 
     Returns:
         None: Intended configuration files are written to filesystem.
     """
-    now = datetime.now()
-    logger = NornirLogger(__name__, nautobot_job, data.get("debug"))
+    now = make_aware(datetime.now())
+    logger = NornirLogger(job_result, log_level)
 
-    qs = get_job_filter(data)
-    logger.log_debug("Compiling device data for intended configuration.")
+    try:
+        qs = get_job_filter(data)
+    except NornirNautobotException as error_msg:
+        logger.error(error_msg)
+        raise NornirNautobotException(error_msg)
+
+    logger.debug("Compiling device data for intended configuration.")
     device_to_settings_map = get_device_to_settings_map(queryset=qs)
 
     for settings in set(device_to_settings_map.values()):
@@ -136,16 +146,17 @@ def config_intended(nautobot_job, data):
         ) as nornir_obj:
             nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
 
-            logger.log_debug("Run nornir render config tasks.")
+            logger.debug("Run nornir render config tasks.")
             # Run the Nornir Tasks
             nr_with_processors.run(
                 task=run_template,
                 name="RENDER CONFIG",
                 logger=logger,
                 device_to_settings_map=device_to_settings_map,
-                nautobot_job=nautobot_job,
+                job_class_instance=job_class_instance,
             )
 
     except Exception as err:
-        logger.log_failure(None, err)
-        raise
+        error_msg = f"E3013: {err}"
+        logger.error(error_msg)
+        raise NornirNautobotException(error_msg)

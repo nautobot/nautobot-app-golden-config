@@ -1,31 +1,31 @@
-{% extends 'base.html' %}
-{% load buttons %}
+{% extends "dcim/device.html" %}
 {% load helpers %}
 {% load json_helpers %}
 {% load static %}
 
+{% block title %} {{ object }} - Config Compliance {% endblock %}
+
 {% block content %}
 <style>
-    pre {
+    #compliance-content pre {
         font-size: 10px;
         display: inline-block;
     }
-    #content table, th, td {
+    #compliance-content table, th, td {
         border: 1px solid lightgray;
         border-collapse: collapse;
     }
-    #content th, td {
+    #compliance-content th, td {
         min-width: 200px;
         width: 100%;
         padding: 15px;
         height:max-content;
     }
-    span.config_hover_button {
+    #navigation span.config_hover_button {
         vertical-align: center;
         display: none;
     }
-
-    td.config_hover:hover span.config_hover_button {
+    #navigation td.config_hover:hover span.config_hover_button {
         display: inline;
     }
     #navigation table {
@@ -43,11 +43,11 @@
     #navigation tr:first-child {
         border-radius: 0.6em 0 0 0;
     }
-    a, a:hover{
+    #navigation a, #navigation a:hover{
         text-decoration: none;
         color: white;
     }
-    td a {
+    #navigation td a {
         text-align: center;
         display:block;
         width:100%;
@@ -56,13 +56,12 @@
         transform: scale(1.1);
     }
 </style>
-<h1>{% block title %}Configuration Compliance - {{ device.name }}{% endblock %}</h1>
 {% block navigation %}
 <div class="panel panel-default" style="width:100%">
         <div class="panel-heading"><strong>Feature Navigation</strong> 
-            <a href="{% url 'plugins:nautobot_golden_config:configcompliance_filter_report' pk=device.pk compliance='compliant' %}" class="btn btn-success">Compliant</a> 
-            <a href="{% url 'plugins:nautobot_golden_config:configcompliance_filter_report' pk=device.pk compliance='non-compliant' %}" class="btn btn-danger">Non-Compliant</a>
-            <a href="{% url 'plugins:nautobot_golden_config:configcompliance_devicedetail' pk=device.pk %}" class="btn btn-info">Clear</a>  
+            <a href="{% url 'plugins:nautobot_golden_config:configcompliance_tab' pk=device.pk %}?tab={{ active_tab }}&compliance=compliant" class="btn btn-success">Compliant</a>  
+            <a href="{% url 'plugins:nautobot_golden_config:configcompliance_tab' pk=device.pk %}?tab={{ active_tab }}&compliance=non-compliant" class="btn btn-danger">Non-Compliant</a>  
+            <a href="{% url 'plugins:nautobot_golden_config:configcompliance_tab' pk=device.pk %}?tab={{ active_tab }}" class="btn btn-info">Clear</a>  
         </div>
     <div id="navigation">
         <table>
@@ -89,8 +88,8 @@
 {% endblock %}
 {% for item in compliance_details %}
     <div id="{{ item.rule }}" class="panel panel-default" style="width:100%">
-        <div class="panel-heading"><strong>{{ item.rule.feature.name|upper }}</strong></div>
-        <table id="content">
+        <div class="panel-heading"><strong><a href="{% url 'plugins:nautobot_golden_config:configcompliance' pk=item.pk %}">{{ item.rule.feature.name|upper }}</a></strong></div>
+        <table id="compliance-content">
         <tr>
             <td style="width:250px">Status</td>
             {% if item.rule.config_ordered %}
@@ -170,7 +169,7 @@
                 </td>
             </tr>
         {% endif %}
-        {% if item.remediation != None %}
+        {% if item.remediation != "" %}
         <tr>
             <td style="color:red;width:250px">Remediating Configuration</td>
             <td class="config_hover">
@@ -182,23 +181,8 @@
                 </span>
             </td>
         </tr>
-        {% endif %}
+    {% endif %}
     </table>
     </div>
 {% endfor %}
-
-{% endblock %}
-<!-- TODO: This should come from the extends base, need to figure out why still required -->
-{% block javascript %}
-<script>
-    var clipboard = new ClipboardJS('.btn');
-
-    clipboard.on('success', function (e) {
-        console.log(e);
-    });
-
-    clipboard.on('error', function (e) {
-        console.log(e);
-    });
-</script>
 {% endblock %}

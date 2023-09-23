@@ -14,13 +14,6 @@ from nautobot_golden_config.utilities.utils import get_secret_value
 LOGGER = logging.getLogger(__name__)
 
 
-def _get_secrets(git_obj):
-    """Get Secrets Information from Associated Git Secrets Group."""
-    user_token = get_secret_value(secret_type=SecretsGroupSecretTypeChoices.TYPE_USERNAME, git_obj=git_obj)
-    token = get_secret_value(secret_type=SecretsGroupSecretTypeChoices.TYPE_TOKEN, git_obj=git_obj)
-    return (user_token, token)
-
-
 class GitRepo:  # pylint: disable=too-many-instance-attributes
     """Git Repo object to help with git actions."""
 
@@ -33,11 +26,13 @@ class GitRepo:  # pylint: disable=too-many-instance-attributes
         self.path = obj.filesystem_path
         self.url = obj.remote_url
         self.secrets_group = obj.secrets_group
-        if self.secrets_group:
-            self.token_user, self.token = _get_secrets(obj)
-        else:
-            self.token = obj._token
-            self.token_user = obj.username
+        if not self.secrets_group:
+            error_msg = f"E3014: The Git Repositories `{obj}` [{str(self.url)}] does not have a required token."
+            LOGGER.error(error_msg)
+            raise ValueError(error_msg)
+        self.token_user = get_secret_value(secret_type=SecretsGroupSecretTypeChoices.TYPE_USERNAME, git_obj=obj)
+        self.token = get_secret_value(secret_type=SecretsGroupSecretTypeChoices.TYPE_TOKEN, git_obj=obj)
+
         if self.token and self.token not in self.url:
             # Some Git Providers require a user as well as a token.
             if self.token_user:

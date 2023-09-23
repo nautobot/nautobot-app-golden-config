@@ -1,7 +1,7 @@
 """API for Custom Jobs ."""
 
 from django.urls import path
-from nautobot.core.api import OrderedDefaultRouter
+from nautobot.core.api.routers import OrderedDefaultRouter
 
 from nautobot_golden_config.api import views
 

@@ -5,6 +5,7 @@ import logging
 import os
 from collections import defaultdict
 from datetime import datetime
+from django.utils.timezone import make_aware
 
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
@@ -13,9 +14,9 @@ from nornir import InitNornir
 from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir.core.task import Result, Task
 from nornir_nautobot.exceptions import NornirNautobotException
-from nornir_nautobot.utils.logger import NornirLogger
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
+from nautobot_golden_config.utilities.logger import NornirLogger
 from nautobot_golden_config.models import ComplianceRule, ConfigCompliance, GoldenConfig
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
@@ -26,7 +27,6 @@ from nautobot_golden_config.utilities.helper import (
     render_jinja_template,
     verify_settings,
 )
-from nautobot_golden_config.utilities.utils import get_platform
 
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 LOGGER = logging.getLogger(__name__)
@@ -34,10 +34,10 @@ LOGGER = logging.getLogger(__name__)
 
 def get_rules():
     """A serializer of sorts to return rule mappings as a dictionary."""
-    # TODO: Review if creating a proper serializer is the way to go.
+    # TODO: Future: Review if creating a proper serializer is the way to go.
     rules = defaultdict(list)
     for compliance_rule in ComplianceRule.objects.all():
-        platform = str(compliance_rule.platform.slug)
+        platform = str(compliance_rule.platform.network_driver)
         rules[platform].append(
             {
                 "ordered": compliance_rule.config_ordered,
@@ -60,8 +60,9 @@ def get_config_element(rule, config, obj, logger):
         config_json = get_json_config(config)
 
         if not config_json:
-            logger.log_failure(obj, "Unable to interpret configuration as JSON.")
-            raise NornirNautobotException("Unable to interpret configuration as JSON.")
+            error_msg = "E3002: Unable to interpret configuration as JSON."
+            logger.error(error_msg, extra={"object": obj})
+            raise NornirNautobotException(error_msg)
 
         if rule["obj"].match_config:
             config_element = {k: config_json.get(k) for k in rule["obj"].match_config.splitlines() if k in config_json}
@@ -69,20 +70,17 @@ def get_config_element(rule, config, obj, logger):
             config_element = config_json
 
     elif rule["obj"].config_type == ComplianceRuleConfigTypeChoice.TYPE_CLI:
-        if get_platform(obj.platform.slug) not in parser_map.keys():
-            logger.log_failure(
-                obj,
-                f"There is currently no CLI-config parser support for platform slug `{get_platform(obj.platform.slug)}`, preemptively failed.",
-            )
-            raise NornirNautobotException(
-                f"There is currently no CLI-config parser support for platform slug `{get_platform(obj.platform.slug)}`, preemptively failed."
-            )
+        if obj.platform.network_driver_mapper["netmiko"] not in parser_map.keys():
+            error_msg = f"E3003: There is currently no CLI-config parser support for platform network_driver `{obj.platform.network_driver}`, preemptively failed."
+            logger.error(error_msg, extra={"object": obj})
+            raise NornirNautobotException(error_msg)
 
-        config_element = section_config(rule, config, get_platform(obj.platform.slug))
+        config_element = section_config(rule, config, obj.platform.network_driver_mapper["netmiko"])
 
     else:
-        logger.log_failure(obj, f"There rule type ({rule['obj'].config_type}) is not recognized.")
-        raise NornirNautobotException(f"There rule type ({rule['obj'].config_type}) is not recognized.")
+        error_msg = f"E3004: There rule type ({rule['obj'].config_type}) is not recognized."
+        logger.error(error_msg, extra={"object": obj})
+        raise NornirNautobotException(error_msg)
 
     return config_element
 
@@ -99,7 +97,7 @@ def diff_files(backup_file, intended_file):
 @close_threaded_db_connections
 def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     task: Task,
-    logger,
+    logger: logging.Logger,
     device_to_settings_map,
     rules,
 ) -> Result:
@@ -125,32 +123,32 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     intended_file = os.path.join(intended_directory, intended_path_template_obj)
 
     if not os.path.exists(intended_file):
-        logger.log_failure(obj, f"Unable to locate intended file for device at {intended_file}, preemptively failed.")
-        raise NornirNautobotException(
-            f"Unable to locate intended file for device at {intended_file}, preemptively failed."
-        )
+        error_msg = f"E3005: Unable to locate intended file for device at {intended_file}, preemptively failed."
+        logger.error(error_msg, extra={"object": obj})
+        raise NornirNautobotException(error_msg)
 
     backup_directory = settings.backup_repository.filesystem_path
     backup_template = render_jinja_template(obj, logger, settings.backup_path_template)
     backup_file = os.path.join(backup_directory, backup_template)
 
     if not os.path.exists(backup_file):
-        logger.log_failure(obj, f"Unable to locate backup file for device at {backup_file}, preemptively failed.")
-        raise NornirNautobotException(f"Unable to locate backup file for device at {backup_file}, preemptively failed.")
+        error_msg = f"E3006: Unable to locate backup file for device at {backup_file}, preemptively failed."
+        logger.error(error_msg, extra={"object": obj})
+        raise NornirNautobotException(error_msg)
 
-    platform = obj.platform.slug
+    platform = obj.platform.network_driver
     if not rules.get(platform):
-        logger.log_failure(
-            obj, f"There is no defined `Configuration Rule` for platform slug `{platform}`, preemptively failed."
+        error_msg = (
+            f"E3007: There is no defined `Configuration Rule` for platform network_driver `{platform}`, "
+            "preemptively failed."
         )
-        raise NornirNautobotException(
-            f"There is no defined `Configuration Rule` for platform slug `{platform}`, preemptively failed."
-        )
+        logger.error(error_msg, extra={"object": obj})
+        raise NornirNautobotException(error_msg)
 
     backup_cfg = _open_file_config(backup_file)
     intended_cfg = _open_file_config(intended_file)
 
-    for rule in rules[obj.platform.slug]:
+    for rule in rules[obj.platform.network_driver]:
         _actual = get_config_element(rule, backup_cfg, obj, logger)
         _intended = get_config_element(rule, intended_cfg, obj, logger)
 
@@ -169,19 +167,21 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     compliance_obj.compliance_last_success_date = task.host.defaults.data["now"]
     compliance_obj.compliance_config = "\n".join(diff_files(backup_file, intended_file))
     compliance_obj.save()
-    logger.log_success(obj, "Successfully tested compliance job.")
+    logger.info(obj, "Successfully tested compliance job.")
 
     return Result(host=task.host)
 
 
-def config_compliance(job_result, data):
+def config_compliance(job_result, log_level, data):
     """Nornir play to generate configurations."""
-    now = datetime.now()
+    now = make_aware(datetime.now())
+    logger = NornirLogger(job_result, log_level)
+
     rules = get_rules()
-    logger = NornirLogger(__name__, job_result, data.get("debug"))
 
     qs = get_job_filter(data)
-    logger.log_debug("Compiling device data for compliance job.")
+    logger.debug("Compiling device data for compliance job.")
+
     device_to_settings_map = get_device_to_settings_map(queryset=qs)
 
     for settings in set(device_to_settings_map.values()):
@@ -201,9 +201,9 @@ def config_compliance(job_result, data):
                 },
             },
         ) as nornir_obj:
-            nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
+            nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger, job_result)])
 
-            logger.log_debug("Run nornir compliance tasks.")
+            logger.debug("Run nornir compliance tasks.")
             nr_with_processors.run(
                 task=run_compliance,
                 name="RENDER COMPLIANCE TASK GROUP",
@@ -213,7 +213,8 @@ def config_compliance(job_result, data):
             )
 
     except Exception as err:
-        logger.log_failure(None, err)
-        raise
+        error_msg = f"E3009: {err}"
+        logger.error(error_msg)
+        raise NornirNautobotException(error_msg)
 
-    logger.log_debug("Completed compliance job for devices.")
+    logger.debug("Completed compliance job for devices.")

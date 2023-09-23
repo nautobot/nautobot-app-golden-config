@@ -1,5 +1,4 @@
 """Unit tests for nautobot_golden_config datasources."""
-
 from unittest.mock import Mock
 from django.test import TestCase
 
@@ -13,7 +12,7 @@ class GitPropertiesDatasourceTestCase(TestCase):
 
     def setUp(self):
         """Setup Object."""
-        self.platform = Platform.objects.create(slug="example_platform")
+        self.platform = Platform.objects.create(name="example_platform")
         self.compliance_feature = ComplianceFeature.objects.create(slug="example_feature")
         self.job_result = Mock()
 
@@ -53,20 +52,20 @@ class GitPropertiesDatasourceTestCase(TestCase):
 
     def test_get_id_kwargs_4(self):
         """Test simple get_id_kwargs ."""
-        gc_config_item_dict = {"platform_slug": "invalid_platform"}
+        gc_config_item_dict = {"platform_name": "invalid_platform"}
         with self.assertRaises(MissingReference):
             get_id_kwargs(
                 gc_config_item_dict,
-                (("platform", "platform_slug"),),
+                (("platform", "platform_name"),),
                 self.job_result,
             )
 
     def test_get_id_kwargs_5(self):
         """Test simple get_id_kwargs 5."""
-        gc_config_item_dict = {"platform_slug": "example_platform"}
+        gc_config_item_dict = {"platform_name": "example_platform"}
         id_kwargs = get_id_kwargs(
             gc_config_item_dict,
-            (("platform", "platform_slug"),),
+            (("platform", "platform_name"),),
             self.job_result,
         )
         self.assertEqual(id_kwargs, {"platform": self.platform})

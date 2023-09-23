@@ -2,6 +2,7 @@
 # pylint: disable=raise-missing-from
 import json
 
+from django.conf import settings
 from django.contrib import messages
 from django.db.models import Q
 from django.utils.html import format_html
@@ -10,17 +11,26 @@ from django.urls import reverse
 from jinja2 import exceptions as jinja_errors
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.dcim.models import Device
-from nautobot.utilities.utils import render_jinja2
+from nautobot.core.utils.data import render_jinja2
 from nornir_nautobot.exceptions import NornirNautobotException
 
 from nautobot_golden_config import models
+from nautobot_golden_config.utilities import utils
+from nautobot_golden_config import config as app_config
+
+
+FRAMEWORK_METHODS = {
+    "default": utils.default_framework,
+    "get_config": utils.get_config_framework,
+    "merge_config": utils.merge_config_framework,
+    "replace_config_framework": utils.replace_config_framework,
+}
 
 FIELDS_PK = {
     "platform",
     "tenant_group",
     "tenant",
-    "region",
-    "site",
+    "location",
     "role",
     "rack",
     "rack_group",
@@ -28,11 +38,11 @@ FIELDS_PK = {
     "device_type",
 }
 
-FIELDS_SLUG = {"tag", "status"}
+FIELDS_NAME = {"tags", "status"}  # TODO: 2.0: Change tag to tags, this should be good now, verify
 
 
 def get_job_filter(data=None):
-    """Helper function to return a the filterable list of OS's based on platform.slug and a specific custom value."""
+    """Helper function to return a the filterable list of OS's based on platform.name and a specific custom value."""
     if not data:
         data = {}
     query = {}
@@ -40,12 +50,12 @@ def get_job_filter(data=None):
     # Translate instances from FIELDS set to list of primary keys
     for field in FIELDS_PK:
         if data.get(field):
-            query[f"{field}_id"] = data[field].values_list("pk", flat=True)
+            query[field] = data[field].values_list("pk", flat=True)
 
-    # Translate instances from FIELDS set to list of slugs
-    for field in FIELDS_SLUG:
+    # Translate instances from FIELDS set to list of names
+    for field in FIELDS_NAME:
         if data.get(field):
-            query[f"{field}"] = data[field].values_list("slug", flat=True)
+            query[field] = data[field].values_list("name", flat=True)
 
     # Handle case where object is from single device run all.
     if data.get("device") and isinstance(data["device"], Device):
@@ -63,19 +73,19 @@ def get_job_filter(data=None):
 
     if not base_qs.exists():
         raise NornirNautobotException(
-            "The base queryset didn't find any devices. Please check the Golden Config Setting scope."
+            "E3015: The base queryset didn't find any devices. Please check the Golden Config Setting scope."
         )
 
     devices_filtered = DeviceFilterSet(data=query, queryset=base_qs)
 
     if not devices_filtered.qs.exists():
         raise NornirNautobotException(
-            "The provided job parameters didn't match any devices detected by the Golden Config scope. Please check the scope defined within Golden Config Settings or select the correct job parameters to correctly match devices."
+            "E3016: The provided job parameters didn't match any devices detected by the Golden Config scope. Please check the scope defined within Golden Config Settings or select the correct job parameters to correctly match devices."
         )
     devices_no_platform = devices_filtered.qs.filter(platform__isnull=True)
     if devices_no_platform.exists():
         raise NornirNautobotException(
-            f"The following device(s) {', '.join([device.name for device in devices_no_platform])} have no platform defined. Platform is required."
+            f"E3017: The following device(s) {', '.join([device.name for device in devices_no_platform])} have no platform defined. Platform is required."
         )
 
     return devices_filtered.qs
@@ -92,8 +102,9 @@ def verify_settings(logger, global_settings, attrs):
     """Helper function to verify required attributes are set before a Nornir play start."""
     for item in attrs:
         if not getattr(global_settings, item):
-            logger.log_failure(None, f"Missing the required global setting: `{item}`.")
-            raise NornirNautobotException()
+            error_msg = f"E3018: Missing the required global setting: `{item}`."
+            logger.error(error_msg)
+            raise NornirNautobotException(error_msg)
 
 
 def render_jinja_template(obj, logger, template):
@@ -102,7 +113,7 @@ def render_jinja_template(obj, logger, template):
 
     Args:
         obj (Device): The Device object from Nautobot.
-        logger (NornirLogger): Logger to log error messages to.
+        logger (logging.logger): Logger to log error messages to.
         template (str): A Jinja2 template to be rendered.
 
     Returns:
@@ -115,26 +126,30 @@ def render_jinja_template(obj, logger, template):
         return render_jinja2(template_code=template, context={"obj": obj})
     except jinja_errors.UndefinedError as error:
         error_msg = (
-            "Jinja encountered and UndefinedError`, check the template for missing variable definitions.\n"
-            f"Template:\n{template}"
+            "E3019: Jinja encountered and UndefinedError`, check the template for missing variable definitions.\n"
+            f"Template:\n{template}\n"
+            f"Original Error: {error}"
         )
-        logger.log_failure(obj, error_msg)
-        raise NornirNautobotException from error
+        logger.error(error_msg, extra={"object": obj})
+        raise NornirNautobotException(error_msg)
+
     except jinja_errors.TemplateSyntaxError as error:  # Also catches subclass of TemplateAssertionError
         error_msg = (
-            f"Jinja encountered a SyntaxError at line number {error.lineno},"
-            f"check the template for invalid Jinja syntax.\nTemplate:\n{template}"
+            f"E3020: Jinja encountered a SyntaxError at line number {error.lineno},"
+            f"check the template for invalid Jinja syntax.\nTemplate:\n{template}\n"
+            f"Original Error: {error}"
         )
-        logger.log_failure(obj, error_msg)
-        raise NornirNautobotException from error
+        logger.error(error_msg, extra={"object": obj})
+        raise NornirNautobotException(error_msg)
     # Intentionally not catching TemplateNotFound errors since template is passes as a string and not a filename
     except jinja_errors.TemplateError as error:  # Catches all remaining Jinja errors
         error_msg = (
-            "Jinja encountered an unexpected TemplateError; check the template for correctness\n"
-            f"Template:\n{template}"
+            "E3021: Jinja encountered an unexpected TemplateError; check the template for correctness\n"
+            f"Template:\n{template}\n"
+            f"Original Error: {error}"
         )
-        logger.log_failure(obj, error_msg)
-        raise NornirNautobotException from error
+        logger.error(error_msg, extra={"object": obj})
+        raise NornirNautobotException(error_msg)
 
 
 def get_device_to_settings_map(queryset):
@@ -176,8 +191,36 @@ def add_message(inbound):
         if not isinstance(feature_enabled, list):
             feature_enabled = [feature_enabled]
         if not job.enabled and any(feature_enabled):
-            multiple_messages.append(
-                f"<a href='{reverse('extras:job_edit', kwargs={'slug': job.slug})}'>{job.name}</a>"
-            )
+            multiple_messages.append(f"<a href='{reverse('extras:job_edit', kwargs={'pk': job.pk})}'>{job.name}</a>")
     if multiple_messages:
         messages.warning(request, format_html(f"The Job(s) {list_to_string(multiple_messages)} are not yet enabled."))
+
+
+def dispatch_params(method, platform, logger):
+    """Utility method to map user defined platform network_driver to netutils named entity."""
+    custom_dispatcher = settings.PLUGINS_CONFIG[app_config.name].get("custom_dispatcher", {})
+    params = {"method": method}
+
+    # If there is a custom driver we can simply return that
+    if custom_dispatcher.get(platform.network_driver):
+        params["custom_dispatcher"] = custom_dispatcher[platform.network_driver]
+        params["framework"] = ""
+        return params
+    # Otherwise we are checking in order of:
+    #   1. method & driver
+    #   2. method & all
+    #   3. default and driver
+    #   4. default & all
+    if FRAMEWORK_METHODS.get(method) and FRAMEWORK_METHODS[method]().get(platform.network_driver):
+        params["framework"] = FRAMEWORK_METHODS[method]()[platform.network_driver]
+    elif FRAMEWORK_METHODS.get(method) and FRAMEWORK_METHODS[method]()["all"]:
+        params["framework"] = FRAMEWORK_METHODS[method]()["all"]
+    elif utils.default_framework().get(platform.network_driver):
+        params["framework"] = utils.default_framework()[platform.network_driver]
+    elif utils.default_framework().get("all"):
+        params["framework"] = utils.default_framework()["all"]
+    if not params.get("framework"):
+        error_msg = "E3022: Could not find a valid framework (e.g. netmiko) given a method (e.g. merge_config) and a driver (e.g. cisco_ios)."
+        logger.error(error_msg)
+        raise NornirNautobotException(error_msg)
+    return params

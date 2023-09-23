@@ -1,26 +1,30 @@
 """Nornir job for backing up actual config."""
 # pylint: disable=relative-beyond-top-level
 import os
-
+import logging
 from datetime import datetime
+from django.utils.timezone import make_aware
+
 from nornir import InitNornir
 from nornir.core.task import Result, Task
 from nornir.core.plugins.inventory import InventoryPluginRegister
 
+from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
-from nornir_nautobot.utils.logger import NornirLogger
 
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
-from nautobot_plugin_nornir.utils import get_dispatcher
 
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.utilities.helper import (
+    dispatch_params,
     get_device_to_settings_map,
     get_job_filter,
     verify_settings,
     render_jinja_template,
 )
+from nautobot_golden_config.utilities.logger import NornirLogger
+
 from nautobot_golden_config.models import (
     GoldenConfig,
     ConfigRemove,
@@ -31,9 +35,9 @@ from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 
 
-@close_threaded_db_connections
+@close_threaded_db_connections  # TODO: Is this still needed?
 def run_backup(  # pylint: disable=too-many-arguments
-    task: Task, logger, device_to_settings_map, remove_regex_dict, replace_regex_dict
+    task: Task, logger: logging.Logger, device_to_settings_map, remove_regex_dict, replace_regex_dict
 ) -> Result:
     r"""Backup configurations to disk.
 
@@ -63,58 +67,56 @@ def run_backup(  # pylint: disable=too-many-arguments
     if settings.backup_test_connectivity is not False:
         task.run(
             task=dispatcher,
-            name="TEST CONNECTIVITY",
-            method="check_connectivity",
-            obj=obj,
             logger=logger,
-            default_drivers_mapping=get_dispatcher(),
+            obj=obj,
+            name="TEST CONNECTIVITY",
+            **dispatch_params("check_connectivity", obj.platform.network_driver, logger),
         )
     running_config = task.run(
         task=dispatcher,
-        name="SAVE BACKUP CONFIGURATION TO FILE",
-        method="get_config",
         obj=obj,
         logger=logger,
+        name="SAVE BACKUP CONFIGURATION TO FILE",
         backup_file=backup_file,
-        remove_lines=remove_regex_dict.get(obj.platform.slug, []),
-        substitute_lines=replace_regex_dict.get(obj.platform.slug, []),
-        default_drivers_mapping=get_dispatcher(),
+        remove_lines=remove_regex_dict.get(obj.platform.network_driver, []),
+        substitute_lines=replace_regex_dict.get(obj.platform.network_driver, []),
+        **dispatch_params("get_config", obj.platform.network_driver, logger),
     )[1].result["config"]
 
     backup_obj.backup_last_success_date = task.host.defaults.data["now"]
     backup_obj.backup_config = running_config
     backup_obj.save()
 
-    logger.log_success(obj, "Successfully extracted running configuration from device.")
+    logger.info(obj, "Successfully extracted running configuration from device.")
 
     return Result(host=task.host, result=running_config)
 
 
-def config_backup(job_result, data):
+def config_backup(job_result, log_level, data):
     """Nornir play to backup configurations."""
-    now = datetime.now()
-    logger = NornirLogger(__name__, job_result, data.get("debug"))
+    now = make_aware(datetime.now())
+    logger = NornirLogger(job_result, log_level)
 
     qs = get_job_filter(data)
-    logger.log_debug("Compiling device data for backup.")
+    logger.debug("Compiling device data for backup.")
     device_to_settings_map = get_device_to_settings_map(queryset=qs)
 
     for settings in set(device_to_settings_map.values()):
         verify_settings(logger, settings, ["backup_path_template"])
 
-    # Build a dictionary, with keys of platform.slug, and the regex line in it for the netutils func.
+    # Build a dictionary, with keys of platform.network_driver, and the regex line in it for the netutils func.
     remove_regex_dict = {}
     for regex in ConfigRemove.objects.all():
-        if not remove_regex_dict.get(regex.platform.slug):
-            remove_regex_dict[regex.platform.slug] = []
-        remove_regex_dict[regex.platform.slug].append({"regex": regex.regex})
+        if not remove_regex_dict.get(regex.platform.network_driver):
+            remove_regex_dict[regex.platform.network_driver] = []
+        remove_regex_dict[regex.platform.network_driver].append({"regex": regex.regex})
 
-    # Build a dictionary, with keys of platform.slug, and the regex and replace keys for the netutils func.
+    # Build a dictionary, with keys of platform.network_driver, and the regex and replace keys for the netutils func.
     replace_regex_dict = {}
     for regex in ConfigReplace.objects.all():
-        if not replace_regex_dict.get(regex.platform.slug):
-            replace_regex_dict[regex.platform.slug] = []
-        replace_regex_dict[regex.platform.slug].append({"replace": regex.replace, "regex": regex.regex})
+        if not replace_regex_dict.get(regex.platform.network_driver):
+            replace_regex_dict[regex.platform.network_driver] = []
+        replace_regex_dict[regex.platform.network_driver].append({"replace": regex.replace, "regex": regex.regex})
     try:
         with InitNornir(
             runner=NORNIR_SETTINGS.get("runner"),
@@ -131,7 +133,7 @@ def config_backup(job_result, data):
         ) as nornir_obj:
             nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
 
-            logger.log_debug("Run nornir backup tasks.")
+            logger.debug("Run nornir backup tasks.")
             nr_with_processors.run(
                 task=run_backup,
                 name="BACKUP CONFIG",
@@ -140,10 +142,11 @@ def config_backup(job_result, data):
                 remove_regex_dict=remove_regex_dict,
                 replace_regex_dict=replace_regex_dict,
             )
-            logger.log_debug("Completed configuration from devices.")
+            logger.debug("Completed configuration from devices.")
 
     except Exception as err:
-        logger.log_failure(None, err)
-        raise
+        error_msg = f"E3001: {err}"
+        logger.error(error_msg)
+        raise NornirNautobotException(error_msg)
 
-    logger.log_debug("Completed configuration backup job for devices.")
+    logger.debug("Completed configuration backup job for devices.")

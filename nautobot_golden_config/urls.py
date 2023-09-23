@@ -24,9 +24,9 @@ urlpatterns = [
     path("config-compliance/overview/", views.ConfigComplianceOverview.as_view(), name="configcompliance_report"),
     path("config-compliance/<uuid:pk>", views.ConfigComplianceView.as_view(), name="configcompliance"),
     path(
-        "config-compliance/devicedetail/<uuid:pk>",
+        "devices/<uuid:pk>/config-compliance-tab/",
         views.ConfigComplianceDeviceView.as_view(),
-        name="configcompliance_devicedetail",
+        name="configcompliance_tab",
     ),
     path(
         "config-compliance/<uuid:pk>/delete/",
@@ -37,11 +37,6 @@ urlpatterns = [
         "config-compliance/details/<uuid:pk>/<str:config_type>/",
         views.ConfigComplianceDetails.as_view(),
         name="configcompliance_details",
-    ),
-    path(
-        "config-compliance/filtered/<uuid:pk>/<str:compliance>/",
-        views.ComplianceDeviceFilteredReport.as_view(),
-        name="configcompliance_filter_report",
     ),
     path("config-plan/bulk_deploy/", views.ConfigPlanBulkDeploy.as_view(), name="configplan_bulk_deploy"),
 ] + router.urls

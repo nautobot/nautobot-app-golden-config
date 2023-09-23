@@ -1,15 +1,30 @@
 """Utility functions."""
 
+from nautobot.apps.config import get_app_settings_or_config
 from nautobot.extras.choices import SecretsGroupAccessTypeChoices
 from nautobot.extras.models.secrets import SecretsGroupAssociation
-from nautobot_golden_config.utilities.constant import PLUGIN_CFG
+
+from nautobot_golden_config import config
 
 
-def get_platform(platform):
-    """Utility method to map user defined platform slug to netutils named entity."""
-    if not PLUGIN_CFG.get("platform_slug_map"):
-        return platform
-    return PLUGIN_CFG.get("platform_slug_map").get(platform, platform)
+def default_framework():
+    """Function to get near constant so the data is fresh for `default_framework`."""
+    return get_app_settings_or_config(config.name, "default_framework")
+
+
+def get_config_framework():
+    """Function to get near constant so the data is fresh for `get_config_framework`."""
+    return get_app_settings_or_config(config.name, "get_config_framework")
+
+
+def merge_config_framework():
+    """Function to get near constant so the data is fresh for `merge_config_framework`."""
+    return get_app_settings_or_config(config.name, "merge_config_framework")
+
+
+def replace_config_framework():
+    """Function to get near constant so the data is fresh for `replace_config_framework`."""
+    return get_app_settings_or_config(config.name, "replace_config_framework")
 
 
 def get_secret_value(secret_type, git_obj):

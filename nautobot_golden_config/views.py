@@ -16,31 +16,36 @@ from django.db.models import Count, ExpressionWrapper, F, FloatField, Max, Prote
 from django.forms import ModelMultipleChoiceField, MultipleHiddenInput
 from django.shortcuts import redirect, render
 from django.utils.module_loading import import_string
+from django.utils.timezone import make_aware
 from django.views.generic import View
 from django_pivot.pivot import pivot
 from nautobot.core.views import generic
 from nautobot.core.views.viewsets import NautobotUIViewSet
 from nautobot.dcim.forms import DeviceFilterForm
 from nautobot.dcim.models import Device
-from nautobot.extras.jobs import run_job
+from nautobot.core.forms import ConfirmationForm
+from nautobot.core.views.utils import handle_protectederror
+from nautobot.core.views.mixins import ContentTypePermissionRequiredMixin, ObjectPermissionRequiredMixin
+
+
 from nautobot.extras.models import Job, JobResult
-from nautobot.extras.utils import get_job_content_type
-from nautobot.utilities.error_handlers import handle_protectederror
-from nautobot.utilities.forms import ConfirmationForm
-from nautobot.utilities.utils import copy_safe_request, csv_format
-from nautobot.utilities.views import ContentTypePermissionRequiredMixin, ObjectPermissionRequiredMixin
+
+from nautobot.core.choices import ColorChoices
+
+# from nautobot.extras.utils import get_job_content_type
+# from nautobot.utilities.utils import copy_safe_request, csv_format
 
 from nautobot_golden_config import filters, forms, models, tables
 from nautobot_golden_config.api import serializers
+
+# from nautobot_golden_config.jobs import DeployConfigPlans
+# from nautobot_golden_config.utilities import utils
 from nautobot_golden_config.utilities import constant
 from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import add_message, get_device_to_settings_map
 
 LOGGER = logging.getLogger(__name__)
-
-GREEN = "#D5E8D4"  # TODO: 2.0: change all to ColorChoices.COLOR_GREEN
-RED = "#F8CECC"
 
 #
 # GoldenConfig
@@ -88,26 +93,6 @@ class GoldenConfigListView(generic.ObjectListView):
         for setting in models.GoldenConfigSetting.objects.all():
             golden_config_device_queryset = golden_config_device_queryset | setting.dynamic_group.members
         return golden_config_device_queryset & self.queryset.distinct()
-
-    def queryset_to_csv(self):
-        """Override nautobot default to account for using Device model for GoldenConfig data."""
-        golden_config_devices_in_scope = self.dynamic_group_queryset
-        csv_headers = models.GoldenConfig.csv_headers.copy()
-        # Exclude GoldenConfig entries no longer in scope
-        golden_config_entries_in_scope = models.GoldenConfig.objects.filter(device__in=golden_config_devices_in_scope)
-        golden_config_entries_as_csv = [csv_format(entry.to_csv()) for entry in golden_config_entries_in_scope]
-        # Account for devices in scope without GoldenConfig entries
-        commas = "," * (len(csv_headers) - 1)
-        devices_in_scope_without_golden_config_entries_as_csv = [
-            f"{device.name}{commas}" for device in golden_config_devices_in_scope.filter(goldenconfig__isnull=True)
-        ]
-        csv_data = (
-            [",".join(csv_headers)]
-            + golden_config_entries_as_csv
-            + devices_in_scope_without_golden_config_entries_as_csv
-        )
-
-        return "\n".join(csv_data)
 
 
 class GoldenConfigBulkDeleteView(generic.BulkDeleteView):
@@ -161,7 +146,7 @@ class GoldenConfigBulkDeleteView(generic.BulkDeleteView):
                     "return_url": self.get_return_url(request),
                 }
             )
-        # Levarge a custom table just for deleting
+        # Leverage a custom table just for deleting
         table = tables.DeleteGoldenConfigTable(models.GoldenConfig.objects.filter(pk__in=obj_to_del), orderable=False)
         if not table.rows:
             messages.warning(
@@ -222,28 +207,6 @@ class ConfigComplianceListView(generic.ObjectListView):
         job = Job.objects.filter(module_name="nautobot_golden_config.jobs", job_class_name="ComplianceJob").first()
         add_message([[job, self.request, constant.ENABLE_COMPLIANCE]])
         return {"compliance": constant.ENABLE_COMPLIANCE}
-
-    def queryset_to_csv(self):
-        """Export queryset of objects as comma-separated value (CSV)."""
-
-        def convert_to_str(val):
-            if val is None:
-                return "N/A"
-            if bool(val) is False:
-                return "non-compliant"
-            if bool(val) is True:
-                return "compliant"
-            raise ValueError(f"Expecting one of 'N/A', 0, or 1, got {val}")
-
-        csv_data = []
-        headers = sorted(list(models.ComplianceFeature.objects.values_list("slug", flat=True).distinct()))
-        csv_data.append(",".join(list(["Device name"] + headers)))
-        for obj in self.alter_queryset(None):
-            # From all of the unique fields, obtain the columns, using list comprehension, add values per column,
-            # as some fields may not exist for every device.
-            row = [obj.get("device__name")] + [convert_to_str(obj.get(header)) for header in headers]
-            csv_data.append(csv_format(row))
-        return "\n".join(csv_data)
 
 
 class ConfigComplianceView(generic.ObjectView):
@@ -344,50 +307,24 @@ class ConfigComplianceDeleteView(generic.ObjectDeleteView):
 # ConfigCompliance Non-Standards
 
 
-class ConfigComplianceDeviceView(ContentTypePermissionRequiredMixin, generic.View):
+class ConfigComplianceDeviceView(generic.ObjectView):
     """View for individual device detailed information."""
+
+    queryset = Device.objects.all()
+    template_name = ("nautobot_golden_config/compliance_device_report.html",)
 
     def get_required_permission(self):
         """Manually set permission when not tied to a model for device report."""
         return "nautobot_golden_config.view_configcompliance"
 
-    def get(self, request, pk):  # pylint: disable=invalid-name
-        """Read request into a view of a single device."""
-        device = Device.objects.get(pk=pk)
-        compliance_details = models.ConfigCompliance.objects.filter(device=device)
-
-        config_details = {"compliance_details": compliance_details, "device": device}
-
-        return render(
-            request,
-            "nautobot_golden_config/compliance_device_report.html",
-            config_details,
-        )
-
-
-class ComplianceDeviceFilteredReport(ContentTypePermissionRequiredMixin, generic.View):
-    """View for the single device detailed information."""
-
-    def get_required_permission(self):
-        """Manually set permission when not tied to a model for filtered report."""
-        return "nautobot_golden_config.view_configcompliance"
-
-    def get(self, request, pk, compliance):  # pylint: disable=invalid-name
-        """Read request into a view of a single device."""
-        device = Device.objects.get(pk=pk)
-        compliance_details = models.ConfigCompliance.objects.filter(device=device)
-
-        if compliance == "compliant":
+    def get_extra_context(self, request, instance=None):
+        """A ComplianceFeature helper function to warn if the Job is not enabled to run."""
+        compliance_details = models.ConfigCompliance.objects.filter(device=instance)
+        if request.GET.get("compliance") == "compliant":
             compliance_details = compliance_details.filter(compliance=True)
-        else:
+        elif request.GET.get("compliance") == "non-compliant":
             compliance_details = compliance_details.filter(compliance=False)
-
-        config_details = {"compliance_details": compliance_details, "device": device}
-        return render(
-            request,
-            "nautobot_golden_config/compliance_device_report.html",
-            config_details,
-        )
+        return {"compliance_details": compliance_details, "device": instance, "active_tab": request.GET.get("tab")}
 
 
 class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
@@ -452,11 +389,11 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
                 if config_details.backup_last_success_date:
                     backup_date = str(config_details.backup_last_success_date.strftime("%b %d %Y"))
                 else:
-                    backup_date = datetime.now().strftime("%b %d %Y")
+                    backup_date = make_aware(datetime.now()).strftime("%b %d %Y")
                 if config_details.intended_last_success_date:
                     intended_date = str(config_details.intended_last_success_date.strftime("%b %d %Y"))
                 else:
-                    intended_date = datetime.now().strftime("%b %d %Y")
+                    intended_date = make_aware(datetime.now()).strftime("%b %d %Y")
             elif config_type == "json_compliance":
                 # The JSON compliance runs differently then CLI, it grabs all configcompliance objects for
                 # a given device and merges them, sorts them, and diffs them.
@@ -543,7 +480,7 @@ class ConfigComplianceOverviewOverviewHelper(ContentTypePermissionRequiredMixin,
                 explode=explode,
                 labels=labels,
                 autopct="%1.1f%%",
-                colors=[GREEN, RED],
+                colors=[ColorChoices.COLOR_GREEN, ColorChoices.COLOR_RED],
                 shadow=True,
                 startangle=90,
             )
@@ -576,8 +513,12 @@ class ConfigComplianceOverviewOverviewHelper(ContentTypePermissionRequiredMixin,
         width = per_feature_bar_width  # the width of the bars
 
         fig, axis = plt.subplots(figsize=(per_feature_width, per_feature_height))
-        rects1 = axis.bar(label_locations - width / 2, compliant, width, label="Compliant", color=GREEN)
-        rects2 = axis.bar(label_locations + width / 2, non_compliant, width, label="Non Compliant", color=RED)
+        rects1 = axis.bar(
+            label_locations - width / 2, compliant, width, label="Compliant", color=ColorChoices.COLOR_GREEN
+        )
+        rects2 = axis.bar(
+            label_locations + width / 2, non_compliant, width, label="Non Compliant", color=ColorChoices.COLOR_RED
+        )
 
         # Add some text for labels, title and custom x-axis tick labels, etc.
         axis.set_ylabel("Compliance")
@@ -698,45 +639,10 @@ class ConfigComplianceOverview(generic.ObjectListView):
         add_message([[job, self.request, constant.ENABLE_COMPLIANCE]])
         return self.extra_content
 
-    def queryset_to_csv(self):
-        """Export queryset of objects as comma-separated value (CSV)."""
-        csv_data = []
-
-        csv_data.append(",".join(["Type", "Total", "Compliant", "Non-Compliant", "Compliance"]))
-        csv_data.append(
-            ",".join(
-                ["Devices"]
-                + [
-                    f"{str(val)} %" if key == "comp_percents" else str(val)
-                    for key, val in self.extra_content["device_aggr"].items()
-                ]
-            )
-        )
-        csv_data.append(
-            ",".join(
-                ["Features"]
-                + [
-                    f"{str(val)} %" if key == "comp_percents" else str(val)
-                    for key, val in self.extra_content["feature_aggr"].items()
-                ]
-            )
-        )
-        csv_data.append(",".join([]))
-
-        qs = self.queryset.values("rule__feature__name", "count", "compliant", "non_compliant", "comp_percent")
-        csv_data.append(",".join(["Total" if item == "count" else item.capitalize() for item in qs[0].keys()]))
-        for obj in qs:
-            csv_data.append(
-                ",".join([f"{str(val)} %" if key == "comp_percent" else str(val) for key, val in obj.items()])
-            )
-
-        return "\n".join(csv_data)
-
 
 class ComplianceFeatureUIViewSet(NautobotUIViewSet):
     """Views for the ComplianceFeature model."""
 
-    bulk_create_form_class = forms.ComplianceFeatureCSVForm
     bulk_update_form_class = forms.ComplianceFeatureBulkEditForm
     filterset_class = filters.ComplianceFeatureFilterSet
     filterset_form_class = forms.ComplianceFeatureFilterForm
@@ -756,7 +662,6 @@ class ComplianceFeatureUIViewSet(NautobotUIViewSet):
 class ComplianceRuleUIViewSet(NautobotUIViewSet):
     """Views for the ComplianceRule model."""
 
-    bulk_create_form_class = forms.ComplianceRuleCSVForm
     bulk_update_form_class = forms.ComplianceRuleBulkEditForm
     filterset_class = filters.ComplianceRuleFilterSet
     filterset_form_class = forms.ComplianceRuleFilterForm
@@ -776,7 +681,6 @@ class ComplianceRuleUIViewSet(NautobotUIViewSet):
 class GoldenConfigSettingUIViewSet(NautobotUIViewSet):
     """Views for the GoldenConfigSetting model."""
 
-    bulk_create_form_class = forms.GoldenConfigSettingCSVForm
     bulk_update_form_class = forms.GoldenConfigSettingBulkEditForm
     filterset_class = filters.GoldenConfigSettingFilterSet
     filterset_form_class = forms.GoldenConfigSettingFilterForm
@@ -854,7 +758,6 @@ class GoldenConfigSettingUIViewSet(NautobotUIViewSet):
 class ConfigRemoveUIViewSet(NautobotUIViewSet):
     """Views for the ConfigRemove model."""
 
-    bulk_create_form_class = forms.ConfigRemoveCSVForm
     bulk_update_form_class = forms.ConfigRemoveBulkEditForm
     filterset_class = filters.ConfigRemoveFilterSet
     filterset_form_class = forms.ConfigRemoveFilterForm
@@ -874,7 +777,6 @@ class ConfigRemoveUIViewSet(NautobotUIViewSet):
 class ConfigReplaceUIViewSet(NautobotUIViewSet):
     """Views for the ConfigReplace model."""
 
-    bulk_create_form_class = forms.ConfigReplaceCSVForm
     bulk_update_form_class = forms.ConfigReplaceBulkEditForm
     filterset_class = filters.ConfigReplaceFilterSet
     filterset_form_class = forms.ConfigReplaceFilterForm
@@ -894,7 +796,7 @@ class ConfigReplaceUIViewSet(NautobotUIViewSet):
 class RemediationSettingUIViewSet(NautobotUIViewSet):
     """Views for the RemediationSetting model."""
 
-    bulk_create_form_class = forms.RemediationSettingCSVForm
+    # bulk_create_form_class = forms.RemediationSettingCSVForm
     bulk_update_form_class = forms.RemediationSettingBulkEditForm
     filterset_class = filters.RemediationSettingFilterSet
     filterset_form_class = forms.RemediationSettingFilterForm
@@ -961,7 +863,15 @@ class ConfigPlanUIViewSet(NautobotUIViewSet):
             ]
         )
         add_message(jobs)
-        return {}
+        # TODO: 2.0 the name in html should be enough, this should not be needed
+        data = {}
+        data["generate_job"] = Job.objects.get(
+            module_name="nautobot_golden_config.jobs", job_class_name="GenerateConfigPlans"
+        )
+        data["deploy_job"] = Job.objects.get(
+            module_name="nautobot_golden_config.jobs", job_class_name="DeployConfigPlans"
+        )
+        return data
 
 
 class ConfigPlanBulkDeploy(ObjectPermissionRequiredMixin, View):
@@ -981,15 +891,24 @@ class ConfigPlanBulkDeploy(ObjectPermissionRequiredMixin, View):
             return redirect("plugins:nautobot_golden_config:configplan_list")
 
         job_data = {"config_plan": config_plan_pks}
+        job = Job.objects.get(name="Generate Config Plans")
 
-        result = JobResult.enqueue_job(
-            func=run_job,
-            name=import_string("nautobot_golden_config.jobs.DeployConfigPlans").class_path,
-            obj_type=get_job_content_type(),
-            user=request.user,
+        # TODO: 2.0 re-enable
+        # result = JobResult.enqueue_job(
+        #     func=run_job,
+        #     name=import_string("nautobot_golden_config.jobs.DeployConfigPlans").class_path,
+        #     obj_type=get_job_content_type(),
+        #     user=request.user,
+        #     data=job_data,
+        #     request=copy_safe_request(request),
+        #     commit=request.POST.get("commit", False),
+        # )
+        job_result = JobResult.enqueue_job(
+            job,
+            request.user,
+            # task_queue=task_queue,
             data=job_data,
-            request=copy_safe_request(request),
-            commit=request.POST.get("commit", False),
+            **job.job_class.serialize_data(request),
         )
 
-        return redirect(result.get_absolute_url())
+        return redirect(job_result.get_absolute_url())

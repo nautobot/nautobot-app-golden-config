@@ -1,9 +1,13 @@
 """Jobs to run backups, intended config, and compliance."""
-# pylint: disable=too-many-function-args
+# pylint: disable=too-many-function-args,logging-fstring-interpolation
+# TODO: Remove the following ignore, added to be able to pass pylint in CI.
+# pylint: disable=arguments-differ
 
 from datetime import datetime
+from django.utils.timezone import make_aware
 
-from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Platform, Rack, RackGroup, Region, Site
+from nautobot.core.celery import register_jobs
+from nautobot.dcim.models import Device, DeviceType, Manufacturer, Platform, Rack, RackGroup, Location
 from nautobot.extras.datasources.git import ensure_git_repository
 from nautobot.extras.jobs import (
     BooleanVar,
@@ -15,8 +19,9 @@ from nautobot.extras.jobs import (
     StringVar,
     TextVar,
 )
-from nautobot.extras.models import DynamicGroup, GitRepository, Status, Tag
+from nautobot.extras.models import DynamicGroup, GitRepository, Status, Tag, Role
 from nautobot.tenancy.models import Tenant, TenantGroup
+
 from nornir_nautobot.exceptions import NornirNautobotException
 
 from nautobot_golden_config.choices import ConfigPlanTypeChoice
@@ -51,24 +56,15 @@ def get_refreshed_repos(job_obj, repo_type, data=None):
     repositories = []
     for repository_record in repository_records:
         repo = GitRepository.objects.get(id=repository_record)
-        ensure_git_repository(repo, job_obj.job_result)
+        ensure_git_repository(repo, job_obj.logger)
         git_repo = GitRepo(repo)
+        # TODO: 2.0 add secret check here
         repositories.append(git_repo)
 
     return repositories
 
 
-def commit_check(method):
-    """Decorator to check if a "dry-run" attempt was made."""
-
-    def inner(obj, data, commit):
-        """Decorator bolierplate code."""
-        msg = "Dry-run mode is not supported, please set the commit flag to proceed."
-        if not commit:
-            raise ValueError(msg)
-        return method(obj, data, commit)
-
-    return inner
+# TODO: 2.0: Does changing region/site to location affect nornir jobs?
 
 
 class FormEntry:  # pylint disable=too-few-public-method
@@ -76,16 +72,15 @@ class FormEntry:  # pylint disable=too-few-public-method
 
     tenant_group = MultiObjectVar(model=TenantGroup, required=False)
     tenant = MultiObjectVar(model=Tenant, required=False)
-    region = MultiObjectVar(model=Region, required=False)
-    site = MultiObjectVar(model=Site, required=False)
+    location = MultiObjectVar(model=Location, required=False)
     rack_group = MultiObjectVar(model=RackGroup, required=False)
     rack = MultiObjectVar(model=Rack, required=False)
-    role = MultiObjectVar(model=DeviceRole, required=False)
+    role = MultiObjectVar(model=Role, required=False)
     manufacturer = MultiObjectVar(model=Manufacturer, required=False)
     platform = MultiObjectVar(model=Platform, required=False)
     device_type = MultiObjectVar(model=DeviceType, required=False, display_field="display_name")
     device = MultiObjectVar(model=Device, required=False)
-    tag = MultiObjectVar(model=Tag, required=False)
+    tags = MultiObjectVar(model=Tag, required=False, display_field="name")
     status = MultiObjectVar(
         model=Status,
         required=False,
@@ -106,19 +101,17 @@ class ComplianceJob(Job, FormEntry):
         description = "Run configuration compliance on your network infrastructure."
         has_sensitive_variables = False
 
-    @commit_check
-    def run(self, data, commit):  # pylint: disable=too-many-branches
+    def run(self, *args, **data):
         """Run config compliance report script."""
-        # pylint: disable=unused-argument
-        self.log_debug("Starting compliance job.")
-
-        self.log_debug("Refreshing intended configuration git repository.")
+        self.logger.debug("Starting compliance job.")
+        self.logger.debug("Refreshing intended configuration git repository.")
         get_refreshed_repos(job_obj=self, repo_type="intended_repository", data=data)
-        self.log_debug("Refreshing backup configuration git repository.")
+        self.logger.debug("Refreshing backup configuration git repository.")
         get_refreshed_repos(job_obj=self, repo_type="backup_repository", data=data)
 
-        self.log_debug("Starting config compliance nornir play.")
-        config_compliance(self, data)
+        self.logger.debug("Starting config compliance nornir play.")
+        # config_compliance(self.logger, data, self.job_result)
+        config_compliance(self.job_result, self.logger.getEffectiveLevel(), data)
 
 
 class IntendedJob(Job, FormEntry):
@@ -131,26 +124,23 @@ class IntendedJob(Job, FormEntry):
         description = "Generate the configuration for your intended state."
         has_sensitive_variables = False
 
-    @commit_check
-    def run(self, data, commit):
+    def run(self, *args, **data):
         """Run config generation script."""
-        self.log_debug("Starting intended job.")
-
-        now = datetime.now()
-
-        self.log_debug("Pull Jinja template repos.")
+        self.logger.debug("Starting intended job.")
+        now = make_aware(datetime.now())
+        self.logger.debug("Pull Jinja template repos.")
         get_refreshed_repos(job_obj=self, repo_type="jinja_repository", data=data)
 
-        self.log_debug("Pull Intended config repos.")
+        self.logger.debug("Pull Intended config repos.")
         # Instantiate a GitRepo object for each GitRepository in GoldenConfigSettings.
         intended_repos = get_refreshed_repos(job_obj=self, repo_type="intended_repository", data=data)
 
-        self.log_debug("Building device settings mapping and running intended config nornir play.")
-        config_intended(self, data)
+        self.logger.debug("Building device settings mapping and running intended config nornir play.")
+        config_intended(self.job_result, self.logger.getEffectiveLevel(), data, self)
 
         # Commit / Push each repo after job is completed.
         for intended_repo in intended_repos:
-            self.log_debug(f"Push new intended configs to repo {intended_repo.url}.")
+            self.logger.debug("Push new intended configs to repo %s.", intended_repo.url)
             intended_repo.commit_with_added(f"INTENDED CONFIG CREATION JOB - {now}")
             intended_repo.push()
 
@@ -165,24 +155,22 @@ class BackupJob(Job, FormEntry):
         description = "Backup the configurations of your network devices."
         has_sensitive_variables = False
 
-    @commit_check
-    def run(self, data, commit):
+    def run(self, *args, **data):
         """Run config backup process."""
-        self.log_debug("Starting backup job.")
-        now = datetime.now()
-        self.log_debug("Pull Backup config repo.")
+        self.logger.debug("Starting backup job.")
+        now = make_aware(datetime.now())
+        self.logger.debug("Pull Backup config repo.")
 
         # Instantiate a GitRepo object for each GitRepository in GoldenConfigSettings.
         backup_repos = get_refreshed_repos(job_obj=self, repo_type="backup_repository", data=data)
 
-        self.log_debug(f"Starting backup jobs to the following repos: {backup_repos}")
-
-        self.log_debug("Starting config backup nornir play.")
-        config_backup(self, data)
+        self.logger.debug("Starting backup jobs to the following repos: %s", backup_repos)
+        self.logger.debug("Starting config backup nornir play.")
+        config_backup(self.job_result, self.logger.getEffectiveLevel(), data)
 
         # Commit / Push each repo after job is completed.
         for backup_repo in backup_repos:
-            self.log_debug(f"Pushing Backup config repo {backup_repo.url}.")
+            self.logger.debug("Pushing Backup config repo %s.", backup_repo.url)
             backup_repo.commit_with_added(f"BACKUP JOB {now}")
             backup_repo.push()
 
@@ -200,8 +188,7 @@ class AllGoldenConfig(Job):
         description = "Process to run all Golden Configuration jobs configured."
         has_sensitive_variables = False
 
-    @commit_check
-    def run(self, data, commit):
+    def run(self, *args, **data):
         """Run all jobs."""
         if constant.ENABLE_INTENDED:
             IntendedJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
@@ -221,8 +208,7 @@ class AllDevicesGoldenConfig(Job, FormEntry):
         description = "Process to run all Golden Configuration jobs configured against multiple devices."
         has_sensitive_variables = False
 
-    @commit_check
-    def run(self, data, commit):
+    def run(self, *args, **data):
         """Run all jobs."""
         if constant.ENABLE_INTENDED:
             IntendedJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
@@ -260,7 +246,14 @@ class GenerateConfigPlans(Job, FormEntry):
         self._change_control_url = None
         self._commands = None
         self._device_qs = Device.objects.none()
-        self._status = config_plan_default_status()
+        self._plan_status = None
+
+    @property
+    def plan_status(self):
+        """The default status for ConfigPlan."""
+        if self._plan_status is None:
+            self._plan_status = config_plan_default_status()
+        return self._plan_status
 
     def _validate_inputs(self, data):
         self._plan_type = data["plan_type"]
@@ -273,9 +266,9 @@ class GenerateConfigPlans(Job, FormEntry):
                 self._feature = ComplianceFeature.objects.all()
         if self._plan_type in ["manual"]:
             if not self._commands:
-                self.log_failure("No commands entered for config plan generation.")
-                return False
-        return True
+                error_msg = "No commands entered for config plan generation."
+                self.logger.error(error_msg)
+                raise ValueError(error_msg)
 
     def _generate_config_plan_from_feature(self):
         """Generate config plans from features."""
@@ -291,7 +284,7 @@ class GenerateConfigPlans(Job, FormEntry):
 
             if not config_sets:
                 _features = ", ".join([str(feat) for feat in self._feature])
-                self.log_debug(f"Device `{device}` does not have `{self._plan_type}` configs for `{_features}`.")
+                self.logger.debug(f"Device `{device}` does not have `{self._plan_type}` configs for `{_features}`.")
                 continue
             config_plan = ConfigPlan.objects.create(
                 device=device,
@@ -299,24 +292,26 @@ class GenerateConfigPlans(Job, FormEntry):
                 config_set="\n".join(config_sets),
                 change_control_id=self._change_control_id,
                 change_control_url=self._change_control_url,
-                status=self._status,
+                status=self.plan_status,
                 plan_result=self.job_result,
             )
             config_plan.feature.set(features)
             config_plan.validated_save()
             _features = ", ".join([str(feat) for feat in features])
-            self.log_success(obj=config_plan, message=f"Config plan created for `{device}` with feature `{_features}`.")
+            self.logger.info(obj=config_plan, message=f"Config plan created for `{device}` with feature `{_features}`.")
 
     def _generate_config_plan_from_manual(self):
         """Generate config plans from manual."""
         default_context = {
             "request": self.request,
-            "user": self.request.user,
+            "user": self.user,
         }
         for device in self._device_qs:
             config_set = generate_config_set_from_manual(device, self._commands, context=default_context)
             if not config_set:
-                self.log_debug(f"Device {self.device} did not return a rendered config set from the provided commands.")
+                self.logger.debug(
+                    f"Device {self.device} did not return a rendered config set from the provided commands."
+                )
                 continue
             config_plan = ConfigPlan.objects.create(
                 device=device,
@@ -324,30 +319,31 @@ class GenerateConfigPlans(Job, FormEntry):
                 config_set=config_set,
                 change_control_id=self._change_control_id,
                 change_control_url=self._change_control_url,
-                status=self._status,
+                status=self.plan_status,
                 plan_result=self.job_result,
             )
-            self.log_success(obj=config_plan, message=f"Config plan created for {device} with manual commands.")
+            self.logger.info(f"Config plan created for {device} with manual commands.", extra={"object": config_plan})
 
-    def run(self, data, commit):
+    def run(self, **data):
         """Run config plan generation process."""
-        self.log_debug("Starting config plan generation job.")
-        if not self._validate_inputs(data):
-            return
+        self.logger.debug("Starting config plan generation job.")
+        self._validate_inputs(data)
         try:
             self._device_qs = get_job_filter(data)
-        except NornirNautobotException as exc:
-            self.log_failure(str(exc))
-            return
+        except NornirNautobotException as error:
+            error_msg = str(error)
+            self.logger.error(error_msg)
+            raise NornirNautobotException(error_msg) from error
         if self._plan_type in ["intended", "missing", "remediation"]:
-            self.log_debug("Starting config plan generation for compliance features.")
+            self.logger.debug("Starting config plan generation for compliance features.")
             self._generate_config_plan_from_feature()
         elif self._plan_type in ["manual"]:
-            self.log_debug("Starting config plan generation for manual commands.")
+            self.logger.debug("Starting config plan generation for manual commands.")
             self._generate_config_plan_from_manual()
         else:
-            self.log_failure(f"Unknown config plan type {self._plan_type}.")
-            return
+            error_msg = f"Unknown config plan type {self._plan_type}."
+            self.logger.error(error_msg)
+            raise ValueError(error_msg)
 
 
 class DeployConfigPlans(Job):
@@ -363,10 +359,10 @@ class DeployConfigPlans(Job):
         description = "Deploy config plans to devices."
         has_sensitive_variables = False
 
-    def run(self, data, commit):
+    def run(self, **data):  # pylint: disable=arguments-differ
         """Run config plan deployment process."""
-        self.log_debug("Starting config plan deployment job.")
-        config_deployment(self, data, commit)
+        self.logger.debug("Starting config plan deployment job.")
+        config_deployment(self.job_result, self.logger.getEffectiveLevel(), data)
 
 
 class DeployConfigPlanJobButtonReceiver(JobButtonReceiver):
@@ -380,27 +376,20 @@ class DeployConfigPlanJobButtonReceiver(JobButtonReceiver):
 
     def receive_job_button(self, obj):
         """Run config plan deployment process."""
-        self.log_debug("Starting config plan deployment job.")
+        self.logger.debug("Starting config plan deployment job.")
         data = {"debug": False, "config_plan": ConfigPlan.objects.filter(id=obj.id)}
-        config_deployment(self, data, commit=True)
+        config_deployment(self.job_result, self.logger.getEffectiveLevel(), data)
 
 
 # Conditionally allow jobs based on whether or not turned on.
-jobs = []
 if constant.ENABLE_BACKUP:
-    jobs.append(BackupJob)
+    register_jobs(BackupJob)
 if constant.ENABLE_INTENDED:
-    jobs.append(IntendedJob)
+    register_jobs(IntendedJob)
 if constant.ENABLE_COMPLIANCE:
-    jobs.append(ComplianceJob)
-if constant.ENABLE_PLAN:
-    jobs.append(GenerateConfigPlans)
-if constant.ENABLE_DEPLOY:
-    jobs.append(DeployConfigPlans)
-    jobs.append(DeployConfigPlanJobButtonReceiver)
-jobs.extend(
-    [
-        AllGoldenConfig,
-        AllDevicesGoldenConfig,
-    ]
-)
+    register_jobs(ComplianceJob)
+register_jobs(GenerateConfigPlans)
+register_jobs(DeployConfigPlans)
+register_jobs(DeployConfigPlanJobButtonReceiver)
+register_jobs(AllGoldenConfig)
+register_jobs(AllDevicesGoldenConfig)

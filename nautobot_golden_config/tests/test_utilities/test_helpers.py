@@ -152,6 +152,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
     @patch("nautobot.dcim.models.Device")
     def test_render_filters_work(self, mock_device):
         """Test Jinja filters are still there."""
+        # This has failed because of import issues in the past, see #607 for an example failure and fix.
         self.assertIn("is_ip", engines["jinja"].env.filters)
         self.assertIn("humanize_speed", engines["jinja"].env.filters)
         rendered_template = render_jinja_template(mock_device, "logger", "{{ '10.1.1.1' | is_ip }}")

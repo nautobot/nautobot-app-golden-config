@@ -62,7 +62,7 @@ PLUGINS_CONFIG = {
         "postprocessing_subscribed": [],
         "platform_slug_map": None,
         "jinja_env": {
-            "undefined": StrictUndefined,  # jinja2.StrictUndefined
+            "undefined": "jinja2.StrictUndefined",
             "trim_blocks": True,
             "lstrip_blocks": False,
         },
@@ -123,7 +123,7 @@ The plugin behavior can be controlled with the following list of settings.
 
     ```python
         jinja_env = {
-            "undefined": import_string("jinja2.StrictUndefined"),
+            "undefined": "jinja2.StrictUndefined",
             "trim_blocks": True,
             "lstrip_blocks": False,
         }

@@ -3,7 +3,6 @@
 import os
 import sys
 
-from django.utils.module_loading import import_string
 from nautobot.core.settings import *  # noqa: F403
 from nautobot.core.settings_funcs import is_truthy, parse_redis_connection
 
@@ -177,7 +176,7 @@ PLUGINS_CONFIG = {
         "postprocessing_callables": os.environ.get("POSTPROCESSING_CALLABLES", []),
         "postprocessing_subscribed": os.environ.get("POSTPROCESSING_SUBSCRIBED", []),
         "jinja_env": {
-            "undefined": import_string("jinja2.StrictUndefined"),
+            "undefined": "jinja2.StrictUndefined",
             "trim_blocks": is_truthy(os.getenv("NAUTOBOT_JINJA_ENV_TRIM_BLOCKS", True)),
             "lstrip_blocks": is_truthy(os.getenv("NAUTOBOT_JINJA_ENV_LSTRIP_BLOCKS", False)),
         },

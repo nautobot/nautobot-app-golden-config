@@ -17,7 +17,10 @@ from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, Confi
 
 # ConfigCompliance
 
+
 class DeviceRelatedFilterForm:
+    """Base FilterForm for below FilterForms."""
+
     tenant_group_id = apps_forms.DynamicModelMultipleChoiceField(
         queryset=TenantGroup.objects.all(), to_field_name="id", required=False, label="Tenant group ID"
     )
@@ -107,7 +110,7 @@ class GoldenConfigForm(NautobotModelForm):
         fields = ("name", "slug", "description", "tags")
 
 
-class GoldenConfigFilterForm(NautobotFilterForm):
+class GoldenConfigFilterForm(NautobotFilterForm, DeviceRelatedFilterForm):
     """Filter Form for GoldenConfig."""
 
     model = models.GoldenConfig
@@ -128,19 +131,6 @@ class GoldenConfigFilterForm(NautobotFilterForm):
         "device",
     ]
     q = forms.CharField(required=False, label="Search")
-    tenant_group_id = DeviceRelatedFilterForm.tenant_group_id
-    tenant_group = DeviceRelatedFilterForm.tenant_group
-    tenant = DeviceRelatedFilterForm.tenant
-    location_id = DeviceRelatedFilterForm.location_id
-    location = DeviceRelatedFilterForm.location
-    rack_group_id = DeviceRelatedFilterForm.rack_group_id
-    rack_group = DeviceRelatedFilterForm.rack_group
-    rack_id = DeviceRelatedFilterForm.rack_id
-    role = DeviceRelatedFilterForm.role
-    manufacturer = DeviceRelatedFilterForm.manufacturer
-    device_type = DeviceRelatedFilterForm.device_type
-    platform = DeviceRelatedFilterForm.platform
-    device = DeviceRelatedFilterForm.device
 
 
 class GoldenConfigBulkEditForm(NautobotBulkEditForm):
@@ -165,7 +155,7 @@ class ConfigComplianceForm(NautobotModelForm):
         fields = []
 
 
-class ConfigComplianceFilterForm(NautobotFilterForm):
+class ConfigComplianceFilterForm(NautobotFilterForm, DeviceRelatedFilterForm):
     """Filter Form for ConfigCompliance instances."""
 
     model = models.ConfigCompliance
@@ -188,19 +178,6 @@ class ConfigComplianceFilterForm(NautobotFilterForm):
     ]
 
     q = forms.CharField(required=False, label="Search")
-    tenant_group_id = DeviceRelatedFilterForm.tenant_group_id
-    tenant_group = DeviceRelatedFilterForm.tenant_group
-    tenant = DeviceRelatedFilterForm.tenant
-    location_id = DeviceRelatedFilterForm.location_id
-    location = DeviceRelatedFilterForm.location
-    rack_group_id = DeviceRelatedFilterForm.rack_group_id
-    rack_group = DeviceRelatedFilterForm.rack_group
-    rack_id = DeviceRelatedFilterForm.rack_id
-    role = DeviceRelatedFilterForm.role
-    manufacturer = DeviceRelatedFilterForm.manufacturer
-    device_type = DeviceRelatedFilterForm.device_type
-    platform = DeviceRelatedFilterForm.platform
-    device = DeviceRelatedFilterForm.device
 
     def __init__(self, *args, **kwargs):
         """Required for status to work."""
@@ -583,7 +560,7 @@ class ConfigPlanUpdateForm(NautobotModelForm):
         )
 
 
-class ConfigPlanFilterForm(NautobotFilterForm):
+class ConfigPlanFilterForm(NautobotFilterForm, DeviceRelatedFilterForm):
     """Filter Form for ConfigPlan."""
 
     model = models.ConfigPlan
@@ -630,19 +607,6 @@ class ConfigPlanFilterForm(NautobotFilterForm):
         label="Status",
         to_field_name="name",
     )
-    tenant_group_id = DeviceRelatedFilterForm.tenant_group_id
-    tenant_group = DeviceRelatedFilterForm.tenant_group
-    tenant = DeviceRelatedFilterForm.tenant
-    location_id = DeviceRelatedFilterForm.location_id
-    location = DeviceRelatedFilterForm.location
-    rack_group_id = DeviceRelatedFilterForm.rack_group_id
-    rack_group = DeviceRelatedFilterForm.rack_group
-    rack_id = DeviceRelatedFilterForm.rack_id
-    role = DeviceRelatedFilterForm.role
-    manufacturer = DeviceRelatedFilterForm.manufacturer
-    device_type = DeviceRelatedFilterForm.device_type
-    platform = DeviceRelatedFilterForm.platform
-    device = DeviceRelatedFilterForm.device
     tags = apps_forms.TagFilterField(model)
 
 

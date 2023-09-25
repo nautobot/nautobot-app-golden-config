@@ -1,7 +1,5 @@
 """Unit tests for nautobot_golden_config models."""
 
-from unittest import skip
-
 from django.test import TestCase
 from nautobot.dcim.models import Device, Platform
 from nautobot.extras.models import Status, Tag
@@ -88,7 +86,6 @@ class ConfigComplianceModelTestCase(TestCase):  # pylint: disable=too-many-publi
         unique_locations = {result.device.location for result in filter_result}
         self.assertEqual(len(unique_locations), 1)
 
-    @skip("This will not work until https://github.com/nautobot/nautobot/issues/4329 is resolved")
     def test_location_parent_name(self):
         """Test filtering by Location Parent Name."""
         params = {"location": [self.dev03.location.parent.name]}
@@ -167,7 +164,6 @@ class ConfigComplianceModelTestCase(TestCase):  # pylint: disable=too-many-publi
         unique_rack_groups = {result.device.rack.rack_group for result in filter_result}
         self.assertEqual(len(unique_rack_groups), 1)
 
-    @skip("This will not work until https://github.com/nautobot/nautobot/issues/4329 is resolved")
     def test_rack_group_parent_name(self):
         """Test filtering by Rack Group Parent Group Name."""
         params = {"rack_group": [self.dev01.rack.rack_group.parent.name]}

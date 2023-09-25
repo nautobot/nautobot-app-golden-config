@@ -198,7 +198,7 @@ class AllGoldenConfig(Job):
             ComplianceJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
 
 
-class AllDevicesGoldenConfig(Job):
+class AllDevicesGoldenConfig(Job, FormEntry):
     """Job to to run all three jobs against multiple devices."""
 
     class Meta:

@@ -186,6 +186,8 @@ def add_message(inbound):
     multiple_messages = []
     for item in inbound:
         job, request, feature_enabled = item
+        if not job:
+            continue
         if not isinstance(feature_enabled, list):
             feature_enabled = [feature_enabled]
         if not job.enabled and any(feature_enabled):

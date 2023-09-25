@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 
 from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
+from django.template import engines
 from jinja2 import exceptions as jinja_errors
 from nautobot.dcim.models import Device, Platform, Location, LocationType
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status, Tag
@@ -144,6 +145,17 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         """Test custom template and jinja filter are accessible."""
         rendered_template = render_jinja_template(mock_device, "logger", "{{ data | return_a }}")
         self.assertEqual(rendered_template, "a")
+
+    @patch("nautobot.dcim.models.Device")
+    def test_render_filters_work(self, mock_device):
+        """Test Jinja filters are still there."""
+        # This has failed because of import issues in the past, see #607 for an example failure and fix.
+        self.assertIn("is_ip", engines["jinja"].env.filters)
+        self.assertIn("humanize_speed", engines["jinja"].env.filters)
+        rendered_template = render_jinja_template(mock_device, "logger", "{{ '10.1.1.1' | is_ip }}")
+        self.assertEqual(rendered_template, "True")
+        rendered_template = render_jinja_template(mock_device, "logger", "{{ 100000 | humanize_speed }}")
+        self.assertEqual(rendered_template, "100 Mbps")
 
     # @patch("nornir_nautobot.utils.logger.NornirLogger")
     @patch("nautobot.dcim.models.Device", spec=Device)

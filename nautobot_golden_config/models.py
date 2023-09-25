@@ -393,7 +393,7 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
 class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
     """Configuration Management Model."""
 
-    device = models.ForeignKey(
+    device = models.OneToOneField(
         to="dcim.Device",
         on_delete=models.CASCADE,
         help_text="device",

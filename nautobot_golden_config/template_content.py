@@ -24,7 +24,7 @@ class ConfigComplianceDeviceCheck(PluginTemplateExtension):  # pylint: disable=a
         extra_context = {
             "compliance": comp_obj,
             "device": self.get_device(),
-            "template_type": "device-compliance",
+            "template_type": "devicetab",
         }
         return self.render(
             "nautobot_golden_config/content_template.html",
@@ -38,7 +38,8 @@ class ConfigComplianceDeviceCheck(PluginTemplateExtension):  # pylint: disable=a
                 {
                     "title": "Configuration Compliance",
                     "url": reverse(
-                        "plugins:nautobot_golden_config:configcompliance_tab", kwargs={"pk": self.get_device().pk}
+                        "plugins:nautobot_golden_config:configcompliance_devicetab",
+                        kwargs={"pk": self.get_device().pk},
                     ),
                 }
             ]

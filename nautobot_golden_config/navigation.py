@@ -57,7 +57,7 @@ if ENABLE_COMPLIANCE:
 if ENABLE_COMPLIANCE:
     items_operate.append(
         NavMenuItem(
-            link="plugins:nautobot_golden_config:configcompliance_report",
+            link="plugins:nautobot_golden_config:configcompliance_overview",
             name="Compliance Report",
             permissions=["nautobot_golden_config.view_configcompliance"],
         )

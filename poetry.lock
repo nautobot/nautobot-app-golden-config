@@ -76,13 +76,13 @@ tests = ["mypy (>=0.800)", "pytest", "pytest-asyncio"]
 
 [[package]]
 name = "astroid"
-version = "2.15.6"
+version = "2.15.7"
 description = "An abstract syntax tree for Python with inference support."
 optional = false
 python-versions = ">=3.7.2"
 files = [
-    {file = "astroid-2.15.6-py3-none-any.whl", hash = "sha256:389656ca57b6108f939cf5d2f9a2a825a3be50ba9d589670f393236e0a03b91c"},
-    {file = "astroid-2.15.6.tar.gz", hash = "sha256:903f024859b7c7687d7a7f3a3f73b17301f8e42dfd9cc9df9d4418172d3e2dbd"},
+    {file = "astroid-2.15.7-py3-none-any.whl", hash = "sha256:958f280532e36ca84a13023f15cb1556fb6792d193acb87e1f3ca536b6fa6bd2"},
+    {file = "astroid-2.15.7.tar.gz", hash = "sha256:c522f2832a900e27a7d284b9b6ef670d2495f760ede3c8c0b004a5641d3c5987"},
 ]
 
 [package.dependencies]
@@ -1453,20 +1453,20 @@ smmap = ">=3.0.1,<6"
 
 [[package]]
 name = "gitpython"
-version = "3.1.36"
+version = "3.1.37"
 description = "GitPython is a Python library used to interact with Git repositories"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "GitPython-3.1.36-py3-none-any.whl", hash = "sha256:8d22b5cfefd17c79914226982bb7851d6ade47545b1735a9d010a2a4c26d8388"},
-    {file = "GitPython-3.1.36.tar.gz", hash = "sha256:4bb0c2a6995e85064140d31a33289aa5dce80133a23d36fcd372d716c54d3ebf"},
+    {file = "GitPython-3.1.37-py3-none-any.whl", hash = "sha256:5f4c4187de49616d710a77e98ddf17b4782060a1788df441846bddefbb89ab33"},
+    {file = "GitPython-3.1.37.tar.gz", hash = "sha256:f9b9ddc0761c125d5780eab2d64be4873fc6817c2899cbcb34b02344bdc7bc54"},
 ]
 
 [package.dependencies]
 gitdb = ">=4.0.1,<5"
 
 [package.extras]
-test = ["black", "coverage[toml]", "ddt (>=1.1.1,!=1.4.3)", "mypy", "pre-commit", "pytest", "pytest-cov", "pytest-sugar", "virtualenv"]
+test = ["black", "coverage[toml]", "ddt (>=1.1.1,!=1.4.3)", "mypy", "pre-commit", "pytest", "pytest-cov", "pytest-sugar"]
 
 [[package]]
 name = "graphene"
@@ -2546,12 +2546,13 @@ mkdocstrings = ">=0.20"
 
 [[package]]
 name = "mypy-extensions"
-version = "0.4.4"
-description = "Experimental type system extensions for programs checked with the mypy typechecker."
+version = "1.0.0"
+description = "Type system extensions for programs checked with the mypy type checker."
 optional = false
-python-versions = ">=2.7"
+python-versions = ">=3.5"
 files = [
-    {file = "mypy_extensions-0.4.4.tar.gz", hash = "sha256:c8b707883a96efe9b4bb3aaf0dcc07e7e217d7d8368eec4db4049ee9e142f4fd"},
+    {file = "mypy_extensions-1.0.0-py3-none-any.whl", hash = "sha256:4392f6c0eb8a5668a69e23d168ffa70f0be9ccfd32b5cc2d26a34ae5b844552d"},
+    {file = "mypy_extensions-1.0.0.tar.gz", hash = "sha256:75dbf8955dc00442a438fc4d0666508a9a97b6bd41aa2f0ffe9d2f2725af0782"},
 ]
 
 [[package]]
@@ -2650,7 +2651,7 @@ sso = ["social-auth-core[openidconnect,saml] (>=4.4.2,<4.5.0)"]
 type = "git"
 url = "https://github.com/nautobot/nautobot.git"
 reference = "develop"
-resolved_reference = "c5ed48f81f5428e070489e2972d27e82da407856"
+resolved_reference = "640fc5fc6864a8b07f9ca7ce8124b7d84c41a001"
 
 [[package]]
 name = "nautobot-capacity-metrics"
@@ -2753,23 +2754,19 @@ optionals = ["jsonschema (>=4.17.3,<5.0.0)", "napalm (>=4.0.0,<5.0.0)"]
 
 [[package]]
 name = "nornir"
-version = "3.3.0"
+version = "3.4.1"
 description = "Pluggable multi-threaded framework with inventory management to help operate collections of devices"
 optional = false
-python-versions = ">=3.7,<4.0"
+python-versions = ">=3.8,<4.0"
 files = [
-    {file = "nornir-3.3.0-py3-none-any.whl", hash = "sha256:4590d96edb5044e6a9e6f84e15625d32932177a10654040f99e145d73b352479"},
-    {file = "nornir-3.3.0.tar.gz", hash = "sha256:1c6fd283bcdff9972358b126703c0990e9076dff1dfdc211e3077d45ada937d5"},
+    {file = "nornir-3.4.1-py3-none-any.whl", hash = "sha256:db079cb95e3baf855530f4f40cb6ee93f93e1bf3cb74ac08180546adb1b987b8"},
+    {file = "nornir-3.4.1.tar.gz", hash = "sha256:82a90a3478a3890bef8ad51b256fa966e6e4ca326cbe20a230918ef907cf68c3"},
 ]
 
 [package.dependencies]
 importlib-metadata = {version = ">=4,<5", markers = "python_version < \"3.10\""}
-mypy_extensions = ">=0.4.1,<0.5.0"
+mypy_extensions = ">=1.0.0,<2.0.0"
 "ruamel.yaml" = ">=0.17"
-typing_extensions = ">=4.1,<5.0"
-
-[package.extras]
-docs = ["jupyter (>=1,<2)", "nbsphinx (>=0.8,<0.9)", "pygments (>=2,<3)", "sphinx (>=4,<5)", "sphinx-issues (>=3.0,<4.0)", "sphinx_rtd_theme (>=1.0,<2.0)", "sphinxcontrib-napoleon (>=0.7,<0.8)"]
 
 [[package]]
 name = "nornir-jinja2"
@@ -4190,17 +4187,16 @@ testing-integration = ["build[virtualenv] (>=1.0.3)", "filelock (>=3.4.0)", "jar
 
 [[package]]
 name = "setuptools-scm"
-version = "8.0.1"
+version = "8.0.3"
 description = "the blessed package to manage your versions by scm tags"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "setuptools-scm-8.0.1.tar.gz", hash = "sha256:e69bf0b8265fdc8f4e070c98235b1b0816ffa8b7f91153400404bf68496012e3"},
-    {file = "setuptools_scm-8.0.1-py3-none-any.whl", hash = "sha256:c132f5a8dc508c8113f865c709041d1b15f7d500442220174c38397607797a91"},
+    {file = "setuptools-scm-8.0.3.tar.gz", hash = "sha256:0169fd70197efda2f8c4d0b2a7a3d614431b488116f37b79d031e9e7ec884d8c"},
+    {file = "setuptools_scm-8.0.3-py3-none-any.whl", hash = "sha256:813822234453438a13c78d05c8af29918fbc06f88efb33d38f065340bbb48c39"},
 ]
 
 [package.dependencies]
-importlib-metadata = {version = ">=4.6", markers = "python_version < \"3.10\""}
 packaging = ">=20"
 setuptools = "*"
 tomli = {version = ">=1", markers = "python_version < \"3.11\""}
@@ -4735,12 +4731,13 @@ dev = ["doc8", "flake8", "flake8-import-order", "rstcheck[sphinx]", "sphinx"]
 
 [[package]]
 name = "yamlordereddictloader"
-version = "0.4.0"
-description = "YAML loader and dump for PyYAML allowing to keep keys order."
+version = "0.4.2"
+description = "YAML loader and dumper for PyYAML allowing to keep keys order."
 optional = false
 python-versions = "*"
 files = [
-    {file = "yamlordereddictloader-0.4.0.tar.gz", hash = "sha256:7f30f0b99ea3f877f7cb340c570921fa9d639b7f69cba18be051e27f8de2080e"},
+    {file = "yamlordereddictloader-0.4.2-py3-none-any.whl", hash = "sha256:dc048adb67026786cd24119bd71241f35bc8b0fd37d24b415c37bbc8049f9cd7"},
+    {file = "yamlordereddictloader-0.4.2.tar.gz", hash = "sha256:36af2f6210fcff5da4fc4c12e1d815f973dceb41044e795e1f06115d634bca13"},
 ]
 
 [package.dependencies]

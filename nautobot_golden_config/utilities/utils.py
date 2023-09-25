@@ -1,10 +1,21 @@
 """Utility functions."""
 
-from nautobot.apps.config import get_app_settings_or_config
 from nautobot.extras.choices import SecretsGroupAccessTypeChoices
 from nautobot.extras.models.secrets import SecretsGroupAssociation
 
 from nautobot_golden_config import config
+
+
+from constance import config as constance_name
+from django.conf import settings
+
+
+def get_app_settings_or_config(app_name, variable_name):
+    """Get a value from Django settings (if specified there) or Constance configuration (otherwise)."""
+    # Explicitly set in settings.py or nautobot_config.py takes precedence, for now
+    if variable_name.lower() in settings.PLUGINS_CONFIG[app_name]:
+        return settings.PLUGINS_CONFIG[app_name][variable_name.lower()]
+    return getattr(constance_name, f"{app_name}__{variable_name.upper()}")
 
 
 def default_framework():

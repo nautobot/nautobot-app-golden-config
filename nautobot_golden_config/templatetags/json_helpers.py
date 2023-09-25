@@ -16,7 +16,8 @@ def condition_render_json(value):
         return json.dumps(value, indent=4, sort_keys=True, ensure_ascii=False)
     return value
 
-# TODO: 2.0 #4477 
+
+# TODO: 2.0 #4477
 @library.filter()
 def slugify(value):
     """Use django's slugify, but in jinja."""

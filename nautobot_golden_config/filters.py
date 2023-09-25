@@ -13,35 +13,6 @@ from nautobot.tenancy.models import Tenant, TenantGroup
 from nautobot_golden_config import models
 
 
-# TODO: 2.0: DeviceFilterSet has bugs in regards to Location in 2.0.0-rc.2 Review #2875 and #4207, make determination after.
-# Short term fix should be only use the UUID, not the natural or uuid
-class GoldenConfigDeviceFilterSet(DeviceFilterSet):  # pylint: disable=too-many-ancestors
-    """Filter capabilities that extend the standard DeviceFilterSet."""
-
-    @staticmethod
-    def _get_filter_lookup_dict(existing_filter):
-        """Extend method to account for isnull on datetime types."""
-        # Choose the lookup expression map based on the filter type
-        lookup_map = DeviceFilterSet._get_filter_lookup_dict(existing_filter)
-        if isinstance(existing_filter, MultiValueDateTimeFilter):
-            lookup_map.update({"isnull": "isnull"})
-        return lookup_map
-
-    class Meta(DeviceFilterSet.Meta):
-        """Update the Meta class, but only for fields."""
-
-        fields = DeviceFilterSet.Meta.fields + [
-            "goldenconfig__backup_config",
-            "goldenconfig__backup_last_attempt_date",
-            "goldenconfig__backup_last_success_date",
-            "goldenconfig__intended_config",
-            "goldenconfig__intended_last_attempt_date",
-            "goldenconfig__intended_last_success_date",
-            "goldenconfig__compliance_config",
-            "goldenconfig__compliance_last_attempt_date",
-            "goldenconfig__compliance_last_success_date",
-        ]
-
 
 class GoldenConfigFilterSet(NautobotFilterSet):
     """Filter capabilities for GoldenConfig instances."""
@@ -91,7 +62,7 @@ class GoldenConfigFilterSet(NautobotFilterSet):
         queryset=Location.objects.all(),
         field_name="device__location",
         to_field_name="name",
-        label="Location (ID)",
+        label="Location (name)",
     )
     rack_group_id = TreeNodeMultipleChoiceFilter(
         queryset=RackGroup.objects.all(),

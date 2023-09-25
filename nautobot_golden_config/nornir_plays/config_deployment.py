@@ -32,7 +32,7 @@ def run_deployment(task: Task, logger: logging.Logger, commit: bool, config_plan
     """Deploy configurations to device."""
     obj = task.host.data["obj"]
     plans_to_deploy = config_plan_qs.filter(device=obj)
-    plans_to_deploy.update(deploy_result=deploy_job_result.job_result)
+    plans_to_deploy.update(deploy_result=deploy_job_result)
     consolidated_config_set = "\n".join(plans_to_deploy.values_list("config_set", flat=True))
     logger.debug(f"Consolidated config set: {consolidated_config_set}")
     # TODO: Future: We should add post-processing rendering here
@@ -53,18 +53,23 @@ def run_deployment(task: Task, logger: logging.Logger, commit: bool, config_plan
             if task_changed and task_failed:
                 # means config_revert happened in `napalm_configure`
                 plans_to_deploy.update(status=Status.objects.get(name="Failed"))
-                logger.failure(obj=obj, message="Failed deployment to the device.")
+                error_msg = f"E3XXX: Failed deployment to the device."
+                logger.error(error_msg, extra={"object": obj})
+                raise NornirNautobotException(error_msg)
+
             elif not task_changed and not task_failed:
                 plans_to_deploy.update(status=Status.objects.get(name="Completed"))
-                logger.success(obj=obj, message="Nothing was deployed to the device.")
+                logger.info("Nothing was deployed to the device.", extra={"object": obj})
             else:
                 if not task_failed:
-                    logger.success(obj=obj, message="Successfully deployed configuration to device.")
+                    logger.info("Successfully deployed configuration to device.", extra={"object": obj})
                     plans_to_deploy.update(status=Status.objects.get(name="Completed"))
         except NornirSubTaskError:
             task_result = None
             plans_to_deploy.update(status=Status.objects.get(name="Failed"))
-            logger.failure(obj=obj, message="Failed deployment to the device.")
+            error_msg = f"E3XXX: Failed deployment to the device."
+            logger.error(error_msg, extra={"object": obj})
+            raise NornirNautobotException(error_msg)
     else:
         task_result = None
         logger.info(obj=obj, message="Commit not enabled. Configuration not deployed to device.")
@@ -80,13 +85,13 @@ def config_deployment(job_result, log_level, data):
     logger.debug("Starting config deployment")
     config_plan_qs = data["config_plan"]
     if config_plan_qs.filter(status__name=DEFAULT_DEPLOY_STATUS).exists():
-        message = "Cannot deploy configuration(s). One or more config plans are not approved."
-        logger.failure(obj=None, message=message)
-        raise ValueError(message)
+        error_msg = f"E3XXX: Cannot deploy configuration(s). One or more config plans are not approved."
+        logger.error(error_msg)
+        raise NornirNautobotException(error_msg)
     if config_plan_qs.filter(status__name="Completed").exists():
-        message = "Cannot deploy configuration(s). One or more config plans are already completed."
-        logger.failure(obj=None, message=message)
-        raise ValueError(message)
+        error_msg = f"E3XXX: Cannot deploy configuration(s). One or more config plans are already completed."
+        logger.error(error_msg)
+        raise NornirNautobotException(error_msg)
     device_qs = Device.objects.filter(config_plan__in=config_plan_qs).distinct()
 
     # TODO: 2.0 what do we do about commit??

@@ -12,6 +12,7 @@ from jinja2 import exceptions as jinja_errors
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.dcim.models import Device
 from nautobot.core.utils.data import render_jinja2
+from nautobot.extras.models import Job
 from nornir_nautobot.exceptions import NornirNautobotException
 
 from nautobot_golden_config import models
@@ -181,11 +182,12 @@ def list_to_string(items):
     return ", ".join(items[:-1]) + " and " + items[-1]
 
 
-def add_message(inbound):
+def add_message(combo_check, request):
     """Helper function to abstract the adding a message that the job is not enabled."""
     multiple_messages = []
-    for item in inbound:
-        job, request, feature_enabled = item
+    for item in combo_check:
+        _job, feature_enabled = item
+        job = Job.objects.filter(module_name="nautobot_golden_config.jobs", job_class_name=_job).first()
         if not job:
             continue
         if not isinstance(feature_enabled, list):
@@ -202,8 +204,8 @@ def dispatch_params(method, platform, logger):
     params = {"method": method}
 
     # If there is a custom driver we can simply return that
-    if custom_dispatcher.get(platform.network_driver):
-        params["custom_dispatcher"] = custom_dispatcher[platform.network_driver]
+    if custom_dispatcher.get(platform):
+        params["custom_dispatcher"] = custom_dispatcher[platform]
         params["framework"] = ""
         return params
     # Otherwise we are checking in order of:
@@ -211,12 +213,12 @@ def dispatch_params(method, platform, logger):
     #   2. method & all
     #   3. default and driver
     #   4. default & all
-    if FRAMEWORK_METHODS.get(method) and FRAMEWORK_METHODS[method]().get(platform.network_driver):
-        params["framework"] = FRAMEWORK_METHODS[method]()[platform.network_driver]
+    if FRAMEWORK_METHODS.get(method) and FRAMEWORK_METHODS[method]().get(platform):
+        params["framework"] = FRAMEWORK_METHODS[method]()[platform]
     elif FRAMEWORK_METHODS.get(method) and FRAMEWORK_METHODS[method]()["all"]:
         params["framework"] = FRAMEWORK_METHODS[method]()["all"]
-    elif utils.default_framework().get(platform.network_driver):
-        params["framework"] = utils.default_framework()[platform.network_driver]
+    elif utils.default_framework().get(platform):
+        params["framework"] = utils.default_framework()[platform]
     elif utils.default_framework().get("all"):
         params["framework"] = utils.default_framework()["all"]
     if not params.get("framework"):

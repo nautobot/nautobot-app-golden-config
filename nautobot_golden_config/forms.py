@@ -12,38 +12,12 @@ from nautobot.extras.forms import NautobotFilterForm, NautobotBulkEditForm, Naut
 from nautobot.extras.models import DynamicGroup, GitRepository, JobResult, Role, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
 
-# import nautobot.utilities.forms as apps_forms
-
-
 from nautobot_golden_config import models
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
 
 # ConfigCompliance
 
-
-class ConfigComplianceFilterForm(NautobotFilterForm):
-    """Filter Form for ConfigCompliance instances."""
-
-    model = models.ConfigCompliance
-    # Set field order to be explicit
-    field_order = [
-        "q",
-        "tenant_group",
-        "tenant",
-        "location_id",
-        "location",
-        "rack_group_id",
-        "rack_group",
-        "rack_id",
-        "role",
-        "manufacturer",
-        "platform",
-        "device_status",
-        "device_type_id",
-        "device_id",
-    ]
-
-    q = forms.CharField(required=False, label="Search")
+class DeviceRelatedFilterForm:
     tenant_group_id = apps_forms.DynamicModelMultipleChoiceField(
         queryset=TenantGroup.objects.all(), to_field_name="id", required=False, label="Tenant group ID"
     )
@@ -105,7 +79,7 @@ class ConfigComplianceFilterForm(NautobotFilterForm):
     manufacturer = apps_forms.DynamicModelMultipleChoiceField(
         queryset=Manufacturer.objects.all(), to_field_name="name", required=False, label="Manufacturer"
     )
-    device_type_id = apps_forms.DynamicModelMultipleChoiceField(
+    device_type = apps_forms.DynamicModelMultipleChoiceField(
         queryset=DeviceType.objects.all(),
         required=False,
         label="Model",
@@ -116,9 +90,117 @@ class ConfigComplianceFilterForm(NautobotFilterForm):
     platform = apps_forms.DynamicModelMultipleChoiceField(
         queryset=Platform.objects.all(), to_field_name="name", required=False, null_option="None"
     )
-    device_id = apps_forms.DynamicModelMultipleChoiceField(
+    device = apps_forms.DynamicModelMultipleChoiceField(
         queryset=Device.objects.all(), required=False, null_option="None", label="Device"
     )
+
+
+class GoldenConfigForm(NautobotModelForm):
+    """Filter Form for ComplianceFeature instances."""
+
+    slug = core_forms.SlugField()  # TODO: 2.1: Change from slugs once django-pivot is figured out
+
+    class Meta:
+        """Boilerplate form Meta data for compliance feature."""
+
+        model = models.ComplianceFeature
+        fields = ("name", "slug", "description", "tags")
+
+
+class GoldenConfigFilterForm(NautobotFilterForm):
+    """Filter Form for GoldenConfig."""
+
+    model = models.GoldenConfig
+    field_order = [
+        "q",
+        "tenant_group",
+        "tenant",
+        "location_id",
+        "location",
+        "rack_group_id",
+        "rack_group",
+        "rack_id",
+        "role",
+        "manufacturer",
+        "platform",
+        "device_status",
+        "device_type",
+        "device",
+    ]
+    q = forms.CharField(required=False, label="Search")
+    tenant_group_id = DeviceRelatedFilterForm.tenant_group_id
+    tenant_group = DeviceRelatedFilterForm.tenant_group
+    tenant = DeviceRelatedFilterForm.tenant
+    location_id = DeviceRelatedFilterForm.location_id
+    location = DeviceRelatedFilterForm.location
+    rack_group_id = DeviceRelatedFilterForm.rack_group_id
+    rack_group = DeviceRelatedFilterForm.rack_group
+    rack_id = DeviceRelatedFilterForm.rack_id
+    role = DeviceRelatedFilterForm.role
+    manufacturer = DeviceRelatedFilterForm.manufacturer
+    device_type = DeviceRelatedFilterForm.device_type
+    platform = DeviceRelatedFilterForm.platform
+    device = DeviceRelatedFilterForm.device
+
+
+class GoldenConfigBulkEditForm(NautobotBulkEditForm):
+    """BulkEdit form for GoldenConfig instances."""
+
+    pk = forms.ModelMultipleChoiceField(queryset=models.GoldenConfig.objects.all(), widget=forms.MultipleHiddenInput)
+    # description = forms.CharField(max_length=200, required=False)
+
+    class Meta:
+        """Boilerplate form Meta data for GoldenConfig."""
+
+        nullable_fields = []
+
+
+class ConfigComplianceForm(NautobotModelForm):
+    """Filter Form for ConfigCompliance instances."""
+
+    class Meta:
+        """Boilerplate form Meta data for compliance feature."""
+
+        model = models.ConfigCompliance
+        fields = []
+
+
+class ConfigComplianceFilterForm(NautobotFilterForm):
+    """Filter Form for ConfigCompliance instances."""
+
+    model = models.ConfigCompliance
+    # Set field order to be explicit
+    field_order = [
+        "q",
+        "tenant_group",
+        "tenant",
+        "location_id",
+        "location",
+        "rack_group_id",
+        "rack_group",
+        "rack_id",
+        "role",
+        "manufacturer",
+        "platform",
+        "device_status",
+        "device_type",
+        "device",
+    ]
+
+    q = forms.CharField(required=False, label="Search")
+    tenant_group_id = DeviceRelatedFilterForm.tenant_group_id
+    tenant_group = DeviceRelatedFilterForm.tenant_group
+    tenant = DeviceRelatedFilterForm.tenant
+    location_id = DeviceRelatedFilterForm.location_id
+    location = DeviceRelatedFilterForm.location
+    rack_group_id = DeviceRelatedFilterForm.rack_group_id
+    rack_group = DeviceRelatedFilterForm.rack_group
+    rack_id = DeviceRelatedFilterForm.rack_id
+    role = DeviceRelatedFilterForm.role
+    manufacturer = DeviceRelatedFilterForm.manufacturer
+    device_type = DeviceRelatedFilterForm.device_type
+    platform = DeviceRelatedFilterForm.platform
+    device = DeviceRelatedFilterForm.device
 
     def __init__(self, *args, **kwargs):
         """Required for status to work."""
@@ -328,8 +410,8 @@ class ConfigReplaceBulkEditForm(NautobotBulkEditForm):
 class GoldenConfigSettingForm(NautobotModelForm):
     """Filter Form for GoldenConfigSettingForm instances."""
 
-    slug = SlugField()
-    dynamic_group = apps_forms.ModelChoiceField(queryset=DynamicGroup.objects.all(), required=False)
+    slug = core_forms.SlugField()
+    dynamic_group = forms.ModelChoiceField(queryset=DynamicGroup.objects.all(), required=False)
 
     class Meta:
         """Filter Form Meta Data for GoldenConfigSettingForm instances."""
@@ -507,9 +589,9 @@ class ConfigPlanFilterForm(NautobotFilterForm):
     model = models.ConfigPlan
 
     q = forms.CharField(required=False, label="Search")
-    device_id = apps_forms.DynamicModelMultipleChoiceField(
-        queryset=Device.objects.all(), required=False, null_option="None", label="Device"
-    )
+    # device_id = apps_forms.DynamicModelMultipleChoiceField(
+    #     queryset=Device.objects.all(), required=False, null_option="None", label="Device"
+    # )
     created__lte = forms.DateTimeField(label="Created Before", required=False, widget=apps_forms.DatePicker())
     created__gte = forms.DateTimeField(label="Created After", required=False, widget=apps_forms.DatePicker())
     plan_type = forms.ChoiceField(
@@ -548,6 +630,19 @@ class ConfigPlanFilterForm(NautobotFilterForm):
         label="Status",
         to_field_name="name",
     )
+    tenant_group_id = DeviceRelatedFilterForm.tenant_group_id
+    tenant_group = DeviceRelatedFilterForm.tenant_group
+    tenant = DeviceRelatedFilterForm.tenant
+    location_id = DeviceRelatedFilterForm.location_id
+    location = DeviceRelatedFilterForm.location
+    rack_group_id = DeviceRelatedFilterForm.rack_group_id
+    rack_group = DeviceRelatedFilterForm.rack_group
+    rack_id = DeviceRelatedFilterForm.rack_id
+    role = DeviceRelatedFilterForm.role
+    manufacturer = DeviceRelatedFilterForm.manufacturer
+    device_type = DeviceRelatedFilterForm.device_type
+    platform = DeviceRelatedFilterForm.platform
+    device = DeviceRelatedFilterForm.device
     tags = apps_forms.TagFilterField(model)
 
 

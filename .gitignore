@@ -1,5 +1,6 @@
 nautobot_golden_config/transposer.py
 golden-config/
+nautobot.sql
 
 # Ansible Retry Files
 *.retry

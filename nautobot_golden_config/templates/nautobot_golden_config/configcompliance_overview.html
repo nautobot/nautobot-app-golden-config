@@ -1,21 +1,30 @@
-{% extends 'base.html' %}
+{% extends 'generic/object_list.html' %}
 {% load buttons %}
 {% load static %}
 {% load helpers %}
 
+{% block title %}Overview Reports{% endblock %}
 
-{% block content %}
-<div class="pull-right noprint">
-{% if request.user.is_authenticated and table_config_form %}
-    <button type="button" class="btn btn-default" data-toggle="modal" data-target="#ObjectTable_config" title="Configure table"><i class="mdi mdi-cog"></i>Configure</button>
-{% endif %}
-{% if request.user.is_authenticated and 'export' in action_buttons %}
-    {% export_button content_type %}
-{% endif %}
+{% block breadcrumbs %}
+<li><a href="{% url 'plugins:nautobot_golden_config:configcompliance_overview' %}">Overview Reports</a></li>  
+{% block extra_breadcrumbs %}{% endblock extra_breadcrumbs %}
+{% endblock breadcrumbs %}
+
+{% block buttons %}
+<div class="btn-group">
+    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <span class="mdi mdi-plus-thick" aria-hidden="true"></span> Execute <span class="caret"></span>
+    </button>
+    <ul class="dropdown-menu">
+        {% if compliance %}
+            <li><a href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.ComplianceJob' %}">Compliance</a></li>
+        {% endif %}
+    </ul>
 </div>
-    <h1>{% block title %}Overview Reports{% endblock %}</h1>
-    <div class="row">
-        <div class="col-md-9">
+{% endblock %}
+
+{% block table %}
+        <div class="col-md-12">
             <!-- VISUAL BLOCK -->
             {% if bar_chart is not None %}
                 {% block graphic  %}
@@ -61,9 +70,6 @@
             <h3 class="text-center m-2 p-3">Feature Summary</h3>
             {% include 'utilities/obj_table.html' %}
             </div>
-        <div class="col-md-3 noprint">
-        {% include 'inc/search_panel.html' %}
-    </div>
 </div>
 {% table_config_form table table_name="ObjectTable" %}
 {% endblock %}

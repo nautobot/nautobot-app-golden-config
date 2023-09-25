@@ -3,9 +3,8 @@
 {% load static %}
 {% load helpers %}
 
-{% block breadcrumbs %}Configuration Overview{% endblock %}
-{% block content %}
-<div class="pull-right noprint">
+<h1>{% block title %}Configuration Overview{% endblock %}</h1>
+
 {% block buttons %}
 <script src="{% static 'jquery/jquery-3.6.0.min.js' %}"></script>
 <div class="btn-group">
@@ -25,22 +24,9 @@
     </ul>
 </div>
 {% endblock %}
-    {% if request.user.is_authenticated and table_config_form %}
-        <button type="button" class="btn btn-default" data-toggle="modal" data-target="#ObjectTable_config" title="Configure table"><i class="mdi mdi-cog"></i> Configure</button>
-    {% endif %}
-    {% if request.user.is_authenticated and 'export' in action_buttons %}
-        {% export_button content_type %}
-    {% endif %}
-</div>
-<h1>{% block title %}Configuration Overview{% endblock %}</h1>
-<div class="row">
-	<div class="col-md-9">
-        {% include 'utilities/obj_table.html' with bulk_delete_url="plugins:nautobot_golden_config:goldenconfig_bulk_delete" %}
-    </div>
-	<div class="col-md-3 noprint">
-		{% include 'inc/search_panel.html' %}
-	</div>
-</div>
+{% block content %}
+  {{ block.super }}
+    
 <div class="modal fade" id="myModal" role="dialog">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -79,7 +65,6 @@
       visibility: visible;
     }
     </style>
-{% table_config_form table table_name="ObjectTable" %}
 {% endblock %}
 {% block javascript %}
 <script src="{% static 'js/tableconfig.js' %}"></script>

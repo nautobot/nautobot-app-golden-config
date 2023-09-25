@@ -1,0 +1,62 @@
+{% extends 'generic/object_detail.html' %}
+{% load helpers %}
+
+{% block content_left_page %}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <strong>Details</strong>
+        </div>
+        <table class="table table-hover panel-body attr-table">
+            <tr>
+                <td>Device Name</td>
+                <td>{{ object.device }}</td>
+            </tr>
+            <tr>
+                <td>Feature</td>
+                <td>{{ object.rule.feature.name }}</td>
+            </tr>
+            <tr>
+                <td>Compliance Status</td>
+                <td>
+                {% if object.compliance %}
+                    <span class="text-success"><i class="mdi mdi-check-bold"></i></span>
+                {% else %}
+                    <span class="text-danger"><i class="mdi mdi-close"></i></span>
+                {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td>Actual Configuration</td>
+                <td><pre>{{ object.actual }}</pre></td>
+            </tr>
+            <tr>
+                <td>Intended Configuration</td>
+                <td><pre>{{ object.intended }}</pre></td>
+            </tr>
+            <tr>
+                <td>Extra Configuration</td>
+                <td><pre>{{ object.extra }}</pre></td>
+            </tr>
+            <tr>
+                <td>Missing Configuration</td>
+                <td><pre>{{ object.missing }}</pre></td>
+            </tr>
+            <tr>
+                <td>Remediating Configuration</td>
+                <td><pre>{{ object.remediation }}</pre></td>
+            </tr>
+            <tr>
+                <td>Ordered</td>
+                <td>
+                {% if object.ordered %}
+                    <span class="text-success"><i class="mdi mdi-check-bold"></i></span>
+                {% else %}
+                    <span class="text-danger"><i class="mdi mdi-close"></i></span>
+                {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+    {% include 'inc/custom_fields_panel.html' %}
+    {% include 'inc/relationships_panel.html' %}
+{% endblock %}

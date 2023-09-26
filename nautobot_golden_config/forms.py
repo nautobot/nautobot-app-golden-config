@@ -18,7 +18,7 @@ from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, Confi
 # ConfigCompliance
 
 
-class DeviceRelatedFilterForm:
+class DeviceRelatedFilterForm(NautobotFilterForm):
     """Base FilterForm for below FilterForms."""
 
     tenant_group_id = apps_forms.DynamicModelMultipleChoiceField(
@@ -89,7 +89,6 @@ class DeviceRelatedFilterForm:
         display_field="model",
         query_params={"manufacturer": "$manufacturer"},
     )
-
     platform = apps_forms.DynamicModelMultipleChoiceField(
         queryset=Platform.objects.all(), to_field_name="name", required=False, null_option="None"
     )
@@ -110,7 +109,7 @@ class GoldenConfigForm(NautobotModelForm):
         fields = ("name", "slug", "description", "tags")
 
 
-class GoldenConfigFilterForm(NautobotFilterForm, DeviceRelatedFilterForm):
+class GoldenConfigFilterForm(DeviceRelatedFilterForm):
     """Filter Form for GoldenConfig."""
 
     model = models.GoldenConfig
@@ -155,7 +154,7 @@ class ConfigComplianceForm(NautobotModelForm):
         fields = []
 
 
-class ConfigComplianceFilterForm(NautobotFilterForm, DeviceRelatedFilterForm):
+class ConfigComplianceFilterForm(DeviceRelatedFilterForm):
     """Filter Form for ConfigCompliance instances."""
 
     model = models.ConfigCompliance
@@ -560,7 +559,7 @@ class ConfigPlanUpdateForm(NautobotModelForm):
         )
 
 
-class ConfigPlanFilterForm(NautobotFilterForm, DeviceRelatedFilterForm):
+class ConfigPlanFilterForm(DeviceRelatedFilterForm):
     """Filter Form for ConfigPlan."""
 
     model = models.ConfigPlan

@@ -15,6 +15,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, ExpressionWrapper, F, FloatField, Max, ProtectedError, Q
 from django.forms import ModelMultipleChoiceField, MultipleHiddenInput
 from django.shortcuts import redirect, render
+from django.utils.module_loading import import_string
 from django.views.generic import View
 from django_pivot.pivot import pivot
 from nautobot.core.views import generic
@@ -31,7 +32,6 @@ from nautobot.utilities.views import ContentTypePermissionRequiredMixin, ObjectP
 
 from nautobot_golden_config import filters, forms, models, tables
 from nautobot_golden_config.api import serializers
-from nautobot_golden_config.jobs import DeployConfigPlans
 from nautobot_golden_config.utilities import constant
 from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
 from nautobot_golden_config.utilities.graphql import graph_ql_query
@@ -59,9 +59,8 @@ class GoldenConfigListView(generic.ObjectListView):
 
     def extra_context(self):
         """Boilerplace code to modify data before returning."""
-        if constant.ENABLE_COMPLIANCE:
-            job = Job.objects.get(module_name="nautobot_golden_config.jobs", job_class_name="ComplianceJob")
-            add_message([[job, self.request, constant.ENABLE_COMPLIANCE]])
+        job = Job.objects.filter(module_name="nautobot_golden_config.jobs", job_class_name="ComplianceJob").first()
+        add_message([[job, self.request, constant.ENABLE_COMPLIANCE]])
         return constant.CONFIG_FEATURES
 
     def alter_queryset(self, request):
@@ -220,9 +219,8 @@ class ConfigComplianceListView(generic.ObjectListView):
 
     def extra_context(self):
         """Boilerplate code to modify before returning data."""
-        if constant.ENABLE_COMPLIANCE:
-            job = Job.objects.get(module_name="nautobot_golden_config.jobs", job_class_name="ComplianceJob")
-            add_message([[job, self.request, constant.ENABLE_COMPLIANCE]])
+        job = Job.objects.filter(module_name="nautobot_golden_config.jobs", job_class_name="ComplianceJob").first()
+        add_message([[job, self.request, constant.ENABLE_COMPLIANCE]])
         return {"compliance": constant.ENABLE_COMPLIANCE}
 
     def queryset_to_csv(self):
@@ -255,9 +253,8 @@ class ConfigComplianceView(generic.ObjectView):
 
     def get_extra_context(self, request, instance):
         """A Add extra data to detail view for Nautobot."""
-        if constant.ENABLE_COMPLIANCE:
-            job = Job.objects.get(module_name="nautobot_golden_config.jobs", job_class_name="ComplianceJob")
-            add_message([[job, request, constant.ENABLE_COMPLIANCE]])
+        job = Job.objects.filter(module_name="nautobot_golden_config.jobs", job_class_name="ComplianceJob").first()
+        add_message([[job, request, constant.ENABLE_COMPLIANCE]])
         return {}
 
 
@@ -697,9 +694,8 @@ class ConfigComplianceOverview(generic.ObjectListView):
     def extra_context(self):
         """Extra content method on."""
         # add global aggregations to extra context.
-        if constant.ENABLE_COMPLIANCE:
-            job = Job.objects.get(module_name="nautobot_golden_config.jobs", job_class_name="ComplianceJob")
-            add_message([[job, self.request, constant.ENABLE_COMPLIANCE]])
+        job = Job.objects.filter(module_name="nautobot_golden_config.jobs", job_class_name="ComplianceJob").first()
+        add_message([[job, self.request, constant.ENABLE_COMPLIANCE]])
         return self.extra_content
 
     def queryset_to_csv(self):
@@ -752,9 +748,8 @@ class ComplianceFeatureUIViewSet(NautobotUIViewSet):
 
     def get_extra_context(self, request, instance=None):
         """A ComplianceFeature helper function to warn if the Job is not enabled to run."""
-        if constant.ENABLE_COMPLIANCE:
-            job = Job.objects.get(module_name="nautobot_golden_config.jobs", job_class_name="ComplianceJob")
-            add_message([[job, request, constant.ENABLE_COMPLIANCE]])
+        job = Job.objects.filter(module_name="nautobot_golden_config.jobs", job_class_name="ComplianceJob").first()
+        add_message([[job, request, constant.ENABLE_COMPLIANCE]])
         return {}
 
 
@@ -773,9 +768,8 @@ class ComplianceRuleUIViewSet(NautobotUIViewSet):
 
     def get_extra_context(self, request, instance=None):
         """A ComplianceRule helper function to warn if the Job is not enabled to run."""
-        if constant.ENABLE_COMPLIANCE:
-            job = Job.objects.get(module_name="nautobot_golden_config.jobs", job_class_name="ComplianceJob")
-            add_message([[job, request, constant.ENABLE_COMPLIANCE]])
+        job = Job.objects.filter(module_name="nautobot_golden_config.jobs", job_class_name="ComplianceJob").first()
+        add_message([[job, request, constant.ENABLE_COMPLIANCE]])
         return {}
 
 
@@ -795,8 +789,40 @@ class GoldenConfigSettingUIViewSet(NautobotUIViewSet):
     def get_extra_context(self, request, instance=None):
         """A GoldenConfig helper function to warn if the Job is not enabled to run."""
         jobs = []
-        if constant.ENABLE_BACKUP:
-            jobs.append(
+        jobs.append(
+            [
+                Job.objects.filter(module_name="nautobot_golden_config.jobs", job_class_name="BackupJob").first(),
+                request,
+                constant.ENABLE_BACKUP,
+            ]
+        )
+        jobs.append(
+            [
+                Job.objects.filter(module_name="nautobot_golden_config.jobs", job_class_name="IntendedJob").first(),
+                request,
+                constant.ENABLE_INTENDED,
+            ]
+        )
+        jobs.append(
+            [
+                Job.objects.filter(
+                    module_name="nautobot_golden_config.jobs", job_class_name="DeployConfigPlans"
+                ).first(),
+                request,
+                constant.ENABLE_DEPLOY,
+            ]
+        )
+        jobs.append(
+            [
+                Job.objects.filter(module_name="nautobot_golden_config.jobs", job_class_name="ComplianceJob").first(),
+                request,
+                constant.ENABLE_COMPLIANCE,
+            ]
+        )
+        jobs.append(
+            [
+                Job.objects.filter(module_name="nautobot_golden_config.jobs", job_class_name="AllGoldenConfig").first(),
+                request,
                 [
                     Job.objects.get(module_name="nautobot_golden_config.jobs", job_class_name="BackupJob"),
                     request,
@@ -809,10 +835,16 @@ class GoldenConfigSettingUIViewSet(NautobotUIViewSet):
                     Job.objects.get(module_name="nautobot_golden_config.jobs", job_class_name="IntendedJob"),
                     request,
                     constant.ENABLE_INTENDED,
-                ]
-            )
-        if constant.ENABLE_DEPLOY:
-            jobs.append(
+                    constant.ENABLE_SOTAGG,
+                ],
+            ]
+        )
+        jobs.append(
+            [
+                Job.objects.filter(
+                    module_name="nautobot_golden_config.jobs", job_class_name="AllDevicesGoldenConfig"
+                ).first(),
+                request,
                 [
                     Job.objects.get(module_name="nautobot_golden_config.jobs", job_class_name="DeployConfigPlans"),
                     request,
@@ -874,9 +906,8 @@ class ConfigRemoveUIViewSet(NautobotUIViewSet):
 
     def get_extra_context(self, request, instance=None):
         """A ConfigRemove helper function to warn if the Job is not enabled to run."""
-        if constant.ENABLE_BACKUP:
-            job = Job.objects.get(module_name="nautobot_golden_config.jobs", job_class_name="BackupJob")
-            add_message([[job, request, constant.ENABLE_BACKUP]])
+        job = Job.objects.filter(module_name="nautobot_golden_config.jobs", job_class_name="BackupJob").first()
+        add_message([[job, request, constant.ENABLE_BACKUP]])
         return {}
 
 
@@ -895,9 +926,8 @@ class ConfigReplaceUIViewSet(NautobotUIViewSet):
 
     def get_extra_context(self, request, instance=None):
         """A ConfigReplace helper function to warn if the Job is not enabled to run."""
-        if constant.ENABLE_BACKUP:
-            job = Job.objects.get(module_name="nautobot_golden_config.jobs", job_class_name="BackupJob")
-            add_message([[job, request, constant.ENABLE_BACKUP]])
+        job = Job.objects.filter(module_name="nautobot_golden_config.jobs", job_class_name="BackupJob").first()
+        add_message([[job, request, constant.ENABLE_BACKUP]])
         return {}
 
 
@@ -916,9 +946,8 @@ class RemediationSettingUIViewSet(NautobotUIViewSet):
 
     def get_extra_context(self, request, instance=None):
         """A RemediationSetting helper function to warn if the Job is not enabled to run."""
-        if constant.ENABLE_COMPLIANCE:
-            job = Job.objects.get(module_name="nautobot_golden_config.jobs", job_class_name="ComplianceJob")
-            add_message([[job, request, constant.ENABLE_COMPLIANCE]])
+        job = Job.objects.filter(module_name="nautobot_golden_config.jobs", job_class_name="ComplianceJob").first()
+        add_message([[job, request, constant.ENABLE_COMPLIANCE]])
         return {}
 
 
@@ -944,31 +973,33 @@ class ConfigPlanUIViewSet(NautobotUIViewSet):
     def get_extra_context(self, request, instance=None):
         """A ConfigPlan helper function to warn if the Job is not enabled to run."""
         jobs = []
-        if constant.ENABLE_PLAN:
-            jobs.append(
-                [
-                    Job.objects.get(module_name="nautobot_golden_config.jobs", job_class_name="GenerateConfigPlans"),
-                    request,
-                    constant.ENABLE_PLAN,
-                ]
-            )
-        if constant.ENABLE_DEPLOY:
-            jobs.append(
-                [
-                    Job.objects.get(module_name="nautobot_golden_config.jobs", job_class_name="DeployConfigPlans"),
-                    request,
-                    constant.ENABLE_DEPLOY,
-                ]
-            )
-            jobs.append(
-                [
-                    Job.objects.get(
-                        module_name="nautobot_golden_config.jobs", job_class_name="DeployConfigPlanJobButtonReceiver"
-                    ),
-                    request,
-                    constant.ENABLE_DEPLOY,
-                ]
-            )
+        jobs.append(
+            [
+                Job.objects.filter(
+                    module_name="nautobot_golden_config.jobs", job_class_name="GenerateConfigPlans"
+                ).first(),
+                request,
+                constant.ENABLE_PLAN,
+            ]
+        )
+        jobs.append(
+            [
+                Job.objects.filter(
+                    module_name="nautobot_golden_config.jobs", job_class_name="DeployConfigPlans"
+                ).first(),
+                request,
+                constant.ENABLE_DEPLOY,
+            ]
+        )
+        jobs.append(
+            [
+                Job.objects.filter(
+                    module_name="nautobot_golden_config.jobs", job_class_name="DeployConfigPlanJobButtonReceiver"
+                ).first(),
+                request,
+                constant.ENABLE_DEPLOY,
+            ]
+        )
         add_message(jobs)
         return {}
 
@@ -993,7 +1024,7 @@ class ConfigPlanBulkDeploy(ObjectPermissionRequiredMixin, View):
 
         result = JobResult.enqueue_job(
             func=run_job,
-            name=DeployConfigPlans.class_path,
+            name=import_string("nautobot_golden_config.jobs.DeployConfigPlans").class_path,
             obj_type=get_job_content_type(),
             user=request.user,
             data=job_data,

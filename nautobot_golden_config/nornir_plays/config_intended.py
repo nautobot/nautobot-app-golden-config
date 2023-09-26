@@ -59,7 +59,10 @@ def run_template(  # pylint: disable=too-many-arguments
     try:
         settings = device_to_settings_map[obj.id]
     except KeyError:
-        logger.log_failure(obj, f"{obj.name} is not in scope so will be skipped.")
+        logger.log_failure(
+            obj,
+            f"There is critical issue with your data, somehow the device {obj.name} is being attempted to run, despite it not being found in any of the scopes. Please contact your admin to remedy this. Until the data has been cleaned up, you will receive this message.",
+        )
         return Result(host=task.host, result="")
 
     intended_obj = GoldenConfig.objects.filter(device=obj).first()

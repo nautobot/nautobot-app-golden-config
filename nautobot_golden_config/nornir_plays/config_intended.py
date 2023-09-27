@@ -22,6 +22,7 @@ from nautobot_golden_config.utilities.constant import JINJA_ENV
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import (
+    add_django_jinja_filters_to_env,
     get_device_to_settings_map,
     get_job_filter,
     render_jinja_template,
@@ -33,9 +34,6 @@ LOGGER = logging.getLogger(__name__)
 
 # Use a custom Jinja2 environment instead of Django's to avoid HTML escaping
 jinja_env = SandboxedEnvironment(**JINJA_ENV)
-
-# Retrieve filters from the Django jinja template engine
-jinja_env.filters = engines["jinja"].env.filters
 
 
 @close_threaded_db_connections
@@ -119,6 +117,9 @@ def config_intended(nautobot_job, data):
 
     for settings in set(device_to_settings_map.values()):
         verify_settings(logger, settings, ["jinja_path_template", "intended_path_template", "sot_agg_query"])
+
+    # Retrieve filters from the Django jinja template engine
+    add_django_jinja_filters_to_env(jinja_env)
 
     try:
         with InitNornir(

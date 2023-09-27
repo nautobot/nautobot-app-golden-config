@@ -4,6 +4,7 @@ import json
 
 from django.contrib import messages
 from django.db.models import Q
+from django.template import engines
 from django.utils.html import format_html
 from django.urls import reverse
 
@@ -94,6 +95,18 @@ def verify_settings(logger, global_settings, attrs):
         if not getattr(global_settings, item):
             logger.log_failure(None, f"Missing the required global setting: `{item}`.")
             raise NornirNautobotException()
+
+
+def add_django_jinja_filters_to_env(jinja_env):
+    """Load Django Jinja filters from the Django jinja template engine, and add them to the provided jinja_env.
+
+    Args:
+        jinja_env: The jinja environment to be modified.
+
+    Returns:
+        None
+    """
+    jinja_env.filters = engines["jinja"].env.filters
 
 
 def render_jinja_template(obj, logger, template):

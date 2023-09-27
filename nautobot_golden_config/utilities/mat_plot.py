@@ -4,6 +4,8 @@ import io
 import logging
 import urllib
 
+from django.db.models import Count, Q
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -114,3 +116,29 @@ def calculate_aggr_percentage(aggr):
     except ZeroDivisionError:
         aggr["comp_percents"] = 0
     return aggr
+
+
+def get_global_aggr(queryset, filterset, filter_params):
+    """Get device and feature global reports.
+
+    Returns:
+        device_aggr: device global report dict
+        feature_aggr: feature global report dict
+    """
+    device_aggr, feature_aggr = {}, {}
+    if filterset is not None:
+        device_aggr = (
+            filterset(filter_params, queryset)
+            .qs.values("device")
+            .annotate(compliant=Count("device", filter=Q(compliance=False)))
+            .aggregate(total=Count("device", distinct=True), compliants=Count("compliant", filter=Q(compliant=0)))
+        )
+
+        feature_aggr = filterset(filter_params, queryset).qs.aggregate(
+            total=Count("rule"), compliants=Count("rule", filter=Q(compliance=True))
+        )
+
+    return (
+        calculate_aggr_percentage(device_aggr),
+        calculate_aggr_percentage(feature_aggr),
+    )

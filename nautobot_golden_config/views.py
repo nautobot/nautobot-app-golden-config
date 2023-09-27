@@ -11,24 +11,38 @@ from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, ExpressionWrapper, F, FloatField, Max, Q
 from django.shortcuts import redirect, render
+from django.views.generic import View
 
 # from django.utils.module_loading import import_string
 from django.utils.timezone import make_aware
 from django_pivot.pivot import pivot
 
 from nautobot.apps import views
+from nautobot.core.views import generic
 from nautobot.core.views.mixins import PERMISSIONS_ACTION_MAP
 from nautobot.dcim.models import Device
 from nautobot.extras.models import Job, JobResult
+from nautobot.core.views.mixins import ObjectPermissionRequiredMixin
 
 from nautobot_golden_config import filters, forms, models, tables
 from nautobot_golden_config.api import serializers
 from nautobot_golden_config.utilities import constant
 from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
 from nautobot_golden_config.utilities.graphql import graph_ql_query
-from nautobot_golden_config.utilities.mat_plot import calculate_aggr_percentage, plot_barchart_visual, plot_visual
+from nautobot_golden_config.utilities.mat_plot import get_global_aggr, plot_barchart_visual, plot_visual
 from nautobot_golden_config.utilities.helper import add_message, get_device_to_settings_map
 
+# TODO: 2.0 #4512
+PERMISSIONS_ACTION_MAP.update(
+    {
+        "backup": "change",
+        "compliance": "change",
+        "intended": "change",
+        "sotagg": "change",
+        "postprocessing": "change",
+        "devicetab": "view",
+    }
+)
 LOGGER = logging.getLogger(__name__)
 
 #
@@ -64,27 +78,12 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
         self.config_details = None
         self.action_template_name = None
 
-    def get_queryset(self):
-        """Overload to overwrite permissiosn action map."""
-        # TODO: 2.0 #4512
-        PERMISSIONS_ACTION_MAP.update(
-            {
-                "backup": "change",
-                "compliance": "change",
-                "intended": "change",
-                "sotagg": "change",
-                "postprocessing": "change",
-            }
-        )
-        return super().get_queryset()
-
     @property
     def dynamic_group_queryset(self):
         """Return queryset of DynamicGroups associated with all GoldenConfigSettings."""
         golden_config_device_queryset = Device.objects.none()
         for setting in models.GoldenConfigSetting.objects.all():
             golden_config_device_queryset = golden_config_device_queryset | setting.dynamic_group.members
-        # print(golden_config_device_queryset)
         return golden_config_device_queryset & self.queryset.distinct()
 
     def _pre_helper(self, pk, request):
@@ -270,16 +269,6 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
 
     custom_action_permission_map = None
     action_buttons = ("export",)
-    queryset_report = (
-        models.ConfigCompliance.objects.values("rule__feature__slug")
-        .annotate(
-            count=Count("rule__feature__slug"),
-            compliant=Count("rule__feature__slug", filter=Q(compliance=True)),
-            non_compliant=Count("rule__feature__slug", filter=~Q(compliance=True)),
-            comp_percent=ExpressionWrapper(100 * F("compliant") / F("count"), output_field=FloatField()),
-        )
-        .order_by("-comp_percent")
-    )
 
     def __init__(self, *args, **kwargs):
         """Used to set default variables on ConfigComplianceUIViewSet."""
@@ -287,12 +276,6 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
         self.pk_list = None
         self.report_context = None
         self.store_table = None
-
-    def get_queryset(self):
-        """Overload to overwrite permissiosn action map."""
-        # TODO: 2.0 #4512
-        PERMISSIONS_ACTION_MAP.update({"devicetab": "change", "overview": "view"})
-        return super().get_queryset()
 
     def get_extra_context(self, request, instance=None, **kwargs):
         """A ConfigCompliance helper function to warn if the Job is not enabled to run."""
@@ -320,7 +303,6 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
 
     def perform_bulk_destroy(self, request, **kwargs):
         """Overwrite perform_bulk_destroy to handle special use case in which the UI shows devices but want to delete ConfigCompliance objects."""
-        # queryset = self.get_queryset()
         model = self.queryset.model
         # Are we deleting *all* objects in the queryset or just a selected subset?
         if request.POST.get("_all"):
@@ -380,56 +362,52 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
         context["verbose_name"] = "Device"
         return render(request, "nautobot_golden_config/configcompliance_devicetab.html", context)
 
-    @action(detail=False, methods=["get"])
-    def overview(self, request, *args, **kwargs):
-        """Custom action to show the visual report of the compliance stats."""
 
-        def _get_global_aggr(self, request, filter_params):
-            """Get device and feature global reports.
+class ConfigComplianceOverview(generic.ObjectListView):
+    """View for executive report on configuration compliance."""
 
-            Returns:
-                device_aggr: device global report dict
-                feature_aggr: feature global report dict
-            """
-            main_qs = models.ConfigCompliance.objects
+    action_buttons = ("export",)
+    filterset = filters.ConfigComplianceFilterSet
+    filterset_form = forms.ConfigComplianceFilterForm
+    table = tables.ConfigComplianceGlobalFeatureTable
+    template_name = "nautobot_golden_config/configcompliance_overview.html"
+    # kind = "Features"
 
-            device_aggr, feature_aggr = {}, {}
-            if self.filterset_class is not None:
-                device_aggr = (
-                    self.filterset_class(filter_params, main_qs)
-                    .qs.values("device")
-                    .annotate(compliant=Count("device", filter=Q(compliance=False)))
-                    .aggregate(
-                        total=Count("device", distinct=True), compliants=Count("compliant", filter=Q(compliant=0))
-                    )
-                )
+    queryset = (
+        models.ConfigCompliance.objects.values("rule__feature__slug")
+        .annotate(
+            count=Count("rule__feature__slug"),
+            compliant=Count("rule__feature__slug", filter=Q(compliance=True)),
+            non_compliant=Count("rule__feature__slug", filter=~Q(compliance=True)),
+            comp_percent=ExpressionWrapper(100 * F("compliant") / F("count"), output_field=FloatField()),
+        )
+        .order_by("-comp_percent")
+    )
+    extra_content = {}
 
-                feature_aggr = self.filterset_class(filter_params, main_qs).qs.aggregate(
-                    total=Count("rule"), compliants=Count("rule", filter=Q(compliance=True))
-                )
-
-            return (
-                calculate_aggr_percentage(device_aggr),
-                calculate_aggr_percentage(feature_aggr),
-            )
-
+    # Once https://github.com/nautobot/nautobot/issues/4529 is addressed, can turn this on.
+    # Permalink reference: https://github.com/nautobot/nautobot-plugin-golden-config/blob/017d5e1526fa9f642b9e02bfc7161f27d4948bef/nautobot_golden_config/views.py#L383
+    # @action(detail=False, methods=["get"])
+    # def overview(self, request, *args, **kwargs):
+    def setup(self, request, *args, **kwargs):
+        """Using request object to perform filtering based on query params."""
+        super().setup(request, *args, **kwargs)
         filter_params = self.get_filter_params(request)
-        device_aggr, feature_aggr = _get_global_aggr(self, request, filter_params)
-        feature_qs = self.filterset_class(request.GET, self.queryset_report).qs
-        table = tables.ConfigComplianceGlobalFeatureTable(self.queryset_report, user=request.user)
-        context = {
+        main_qs = models.ConfigCompliance.objects
+        device_aggr, feature_aggr = get_global_aggr(main_qs, self.filterset, filter_params)
+        feature_qs = self.filterset(request.GET, self.queryset).qs
+        self.extra_content = {
             "bar_chart": plot_barchart_visual(feature_qs),
             "device_aggr": device_aggr,
             "device_visual": plot_visual(device_aggr),
             "feature_aggr": feature_aggr,
             "feature_visual": plot_visual(feature_aggr),
-            "table": table,
-            "filter_form": self.filterset_form_class,
-            "action_buttons": ("export",),
-            "filter": self.filterset_class,  # TODO: is this working?
         }
-        self.report_context = context
-        return Response(context)
+
+    def extra_context(self):
+        """Extra content method on."""
+        # add global aggregations to extra context.
+        return self.extra_content
 
 
 class ComplianceFeatureUIViewSet(views.NautobotUIViewSet):
@@ -596,18 +574,21 @@ class ConfigPlanUIViewSet(views.NautobotUIViewSet):
         jobs.append(["DeployConfigPlans", constant.ENABLE_DEPLOY])
         jobs.append(["DeployConfigPlanJobButtonReceiver", constant.ENABLE_DEPLOY])
         add_message(jobs, request)
-        # TODO: 2.0 the name in html should be enough, this should not be needed
-        data = {}
-        data["generate_job"] = Job.objects.get(
-            module_name="nautobot_golden_config.jobs", job_class_name="GenerateConfigPlans"
-        )
-        data["deploy_job"] = Job.objects.get(
-            module_name="nautobot_golden_config.jobs", job_class_name="DeployConfigPlans"
-        )
-        return data
+        return {}
 
-    @action(detail=False, methods=["post"])
-    def bulk_deploy(self, request):
+
+class ConfigPlanBulkDeploy(ObjectPermissionRequiredMixin, View):
+    queryset = models.ConfigPlan.objects.all()
+
+    def get_required_permission(self):
+        """Permissions required for the view."""
+        return "extras.run_job"
+
+    # Once https://github.com/nautobot/nautobot/issues/4529 is addressed, can turn this on.
+    # Permalink reference: https://github.com/nautobot/nautobot-plugin-golden-config/blob/017d5e1526fa9f642b9e02bfc7161f27d4948bef/nautobot_golden_config/views.py#L967
+    # @action(detail=False, methods=["post"])
+    # def bulk_deploy(self, request):
+    def post(self, request):
         """Enqueue the job and redirect to the job results page."""
         config_plan_pks = request.POST.getlist("pk")
         # TODO: 2.0  check for permission

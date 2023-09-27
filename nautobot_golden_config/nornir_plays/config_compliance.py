@@ -213,7 +213,7 @@ def config_compliance(job_result, log_level, data):
             )
 
     except Exception as err:
-        error_msg = f"E3009: {err}"
+        error_msg = f"E3001: General Exception handler, original error message ```{err}```"
         logger.error(error_msg)
         raise NornirNautobotException(error_msg)
 

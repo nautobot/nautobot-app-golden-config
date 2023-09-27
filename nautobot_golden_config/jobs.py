@@ -298,7 +298,9 @@ class GenerateConfigPlans(Job, FormEntry):
             config_plan.feature.set(features)
             config_plan.validated_save()
             _features = ", ".join([str(feat) for feat in features])
-            self.logger.info(obj=config_plan, message=f"Config plan created for `{device}` with feature `{_features}`.")
+            self.logger.info(
+                f"Config plan created for `{device}` with feature `{_features}`.", extra={"object": config_plan}
+            )
 
     def _generate_config_plan_from_manual(self):
         """Generate config plans from manual."""

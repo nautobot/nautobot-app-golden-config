@@ -103,12 +103,10 @@ function openModalAndStartJob() {
     // If validation passes, trigger the modal to open
     $('#modalPopup').modal('show');
     // Start the job
-    startJob(jobClass, formatJobData($("form").serializeArray()), redirectUrlTemplate, configPlanCount);
+    startJob("Generate Config Plans", formatJobData($("form").serializeArray()), redirectUrlTemplate, configPlanCount);
   }
 }
 
-// TODO: 2.0 #4476 this should just use the job name
-var jobClass = "{{ generate_job.pk }}";
 var redirectUrlTemplate = "/plugins/golden-config/config-plan/?plan_result_id={jobData.job_result.id}";
 var changeControlUrlInput = document.getElementById("id_change_control_url");
 var startJobButton = document.getElementById("startJob");

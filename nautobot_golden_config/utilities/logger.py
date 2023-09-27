@@ -8,6 +8,7 @@ LOGGER = logging.getLogger("NORNIR_LOGGER")
 handler = logging.StreamHandler()
 handler.setLevel(logging.NOTSET)
 LOGGER.addHandler(handler)
+LOGGER_ADAPTER = logging.LoggerAdapter(LOGGER)
 
 
 class NornirLogger:
@@ -19,10 +20,10 @@ class NornirLogger:
         LOGGER.setLevel(log_level)
 
     def _logging_helper(self, attr: str, message: str, extra: Any = None):
-        """Logger helper to set both db and console logs at onec."""
+        """Logger helper to set both db and console logs at once."""
         if not extra:
             extra = {}
-        getattr(LOGGER, attr)(message, extra=extra)
+        getattr(LOGGER_ADAPTER, attr)(message, extra=extra)
         self.job_result.log(message, level_choice=attr, obj=extra.get("object"), grouping=extra.get("grouping", ""))
 
     def debug(self, message: str, extra: Any = None):

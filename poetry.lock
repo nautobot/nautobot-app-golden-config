@@ -76,13 +76,13 @@ tests = ["mypy (>=0.800)", "pytest", "pytest-asyncio"]
 
 [[package]]
 name = "astroid"
-version = "2.15.7"
+version = "2.15.8"
 description = "An abstract syntax tree for Python with inference support."
 optional = false
 python-versions = ">=3.7.2"
 files = [
-    {file = "astroid-2.15.7-py3-none-any.whl", hash = "sha256:958f280532e36ca84a13023f15cb1556fb6792d193acb87e1f3ca536b6fa6bd2"},
-    {file = "astroid-2.15.7.tar.gz", hash = "sha256:c522f2832a900e27a7d284b9b6ef670d2495f760ede3c8c0b004a5641d3c5987"},
+    {file = "astroid-2.15.8-py3-none-any.whl", hash = "sha256:1aa149fc5c6589e3d0ece885b4491acd80af4f087baafa3fb5203b113e68cd3c"},
+    {file = "astroid-2.15.8.tar.gz", hash = "sha256:6c107453dffee9055899705de3c9ead36e74119cee151e5a9aaf7f0b0e020a6a"},
 ]
 
 [package.dependencies]
@@ -1102,17 +1102,17 @@ tests = ["tox"]
 
 [[package]]
 name = "django-pivot"
-version = "1.9.0"
+version = "1.10.0"
 description = "Create pivot tables and histograms from ORM querysets"
 optional = false
-python-versions = "*"
+python-versions = ">=3.8"
 files = [
-    {file = "django-pivot-1.9.0.tar.gz", hash = "sha256:5e985d32d9ff2a6b89419dd0292c0fa2822d494ee479b5fd16cdb542abf66a88"},
-    {file = "django_pivot-1.9.0-py3-none-any.whl", hash = "sha256:1c60e18e7d5f7e42856faee0961748082ddd05b01ae7c8a4baed64d2bbacd051"},
+    {file = "django_pivot-1.10.0-py3-none-any.whl", hash = "sha256:805b7f70683d37a01c9c65c0d90057f7b675112e87b33ec3576bd032c761562d"},
+    {file = "django_pivot-1.10.0.tar.gz", hash = "sha256:30ed4e16d0ee6c7c7c1b5157b4541b10454a34ffe574228c927fea2316fcb792"},
 ]
 
 [package.dependencies]
-django = ">=2.2.0"
+django = ">=3.2"
 
 [[package]]
 name = "django-prometheus"
@@ -2651,7 +2651,7 @@ sso = ["social-auth-core[openidconnect,saml] (>=4.4.2,<4.5.0)"]
 type = "git"
 url = "https://github.com/nautobot/nautobot.git"
 reference = "develop"
-resolved_reference = "640fc5fc6864a8b07f9ca7ce8124b7d84c41a001"
+resolved_reference = "ebbd54893cfc403dc7e2dc7fce45cd94b17f418a"
 
 [[package]]
 name = "nautobot-capacity-metrics"
@@ -2688,7 +2688,7 @@ nautobot = ["nautobot (==2.0.0-rc.3)"]
 type = "git"
 url = "https://github.com/nautobot/nautobot-plugin-nornir.git"
 reference = "next-2.0"
-resolved_reference = "956826df791b654b58e1d19442621ed6ba63eb20"
+resolved_reference = "2055b8c865fc3dd90d53761c5bb4ed97e7f85052"
 
 [[package]]
 name = "ncclient"
@@ -2825,7 +2825,7 @@ mikrotik-driver = ["routeros-api (>=0.17.0,<0.18.0)"]
 type = "git"
 url = "https://github.com/nautobot/nornir-nautobot.git"
 reference = "next-2.0"
-resolved_reference = "cba65462552a125021f9e590153498b2ac518055"
+resolved_reference = "c3f3cd35848d85784a7fd96b864cb6f14b5b84bf"
 
 [[package]]
 name = "nornir-netmiko"
@@ -3373,17 +3373,17 @@ tests = ["coverage[toml] (==5.0.4)", "pytest (>=6.0.0,<7.0.0)"]
 
 [[package]]
 name = "pylint"
-version = "2.17.5"
+version = "2.17.6"
 description = "python code static checker"
 optional = false
 python-versions = ">=3.7.2"
 files = [
-    {file = "pylint-2.17.5-py3-none-any.whl", hash = "sha256:73995fb8216d3bed149c8d51bba25b2c52a8251a2c8ac846ec668ce38fab5413"},
-    {file = "pylint-2.17.5.tar.gz", hash = "sha256:f7b601cbc06fef7e62a754e2b41294c2aa31f1cb659624b9a85bcba29eaf8252"},
+    {file = "pylint-2.17.6-py3-none-any.whl", hash = "sha256:18a1412e873caf8ffb56b760ce1b5643675af23e6173a247b502406b24c716af"},
+    {file = "pylint-2.17.6.tar.gz", hash = "sha256:be928cce5c76bf9acdc65ad01447a1e0b1a7bccffc609fb7fc40f2513045bd05"},
 ]
 
 [package.dependencies]
-astroid = ">=2.15.6,<=2.17.0-dev0"
+astroid = ">=2.15.7,<=2.17.0-dev0"
 colorama = {version = ">=0.4.5", markers = "sys_platform == \"win32\""}
 dill = [
     {version = ">=0.2", markers = "python_version < \"3.11\""},
@@ -3789,13 +3789,13 @@ pyquery = ">=1.2"
 
 [[package]]
 name = "redis"
-version = "5.0.0"
+version = "5.0.1"
 description = "Python client for Redis database and key-value store"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "redis-5.0.0-py3-none-any.whl", hash = "sha256:06570d0b2d84d46c21defc550afbaada381af82f5b83e5b3777600e05d8e2ed0"},
-    {file = "redis-5.0.0.tar.gz", hash = "sha256:5cea6c0d335c9a7332a460ed8729ceabb4d0c489c7285b0a86dbbf8a017bd120"},
+    {file = "redis-5.0.1-py3-none-any.whl", hash = "sha256:ed4802971884ae19d640775ba3b03aa2e7bd5e8fb8dfaed2decce4d0fc48391f"},
+    {file = "redis-5.0.1.tar.gz", hash = "sha256:0dab495cd5753069d3bc650a0dde8a8f9edde16fc5691b689a566eda58100d0f"},
 ]
 
 [package.dependencies]
@@ -4454,13 +4454,13 @@ files = [
 
 [[package]]
 name = "traitlets"
-version = "5.10.0"
+version = "5.10.1"
 description = "Traitlets Python configuration system"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "traitlets-5.10.0-py3-none-any.whl", hash = "sha256:417745a96681fbb358e723d5346a547521f36e9bd0d50ba7ab368fff5d67aa54"},
-    {file = "traitlets-5.10.0.tar.gz", hash = "sha256:f584ea209240466e66e91f3c81aa7d004ba4cf794990b0c775938a1544217cd1"},
+    {file = "traitlets-5.10.1-py3-none-any.whl", hash = "sha256:07ab9c5bf8a0499fd7b088ba51be899c90ffc936ffc797d7b6907fc516bcd116"},
+    {file = "traitlets-5.10.1.tar.gz", hash = "sha256:db9c4aa58139c3ba850101913915c042bdba86f7c8a0dda1c6f7f92c5da8e542"},
 ]
 
 [package.extras]

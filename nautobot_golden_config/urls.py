@@ -1,4 +1,6 @@
 """Django urlpatterns declaration for config compliance plugin."""
+from django.urls import path
+
 from nautobot.core.views.routers import NautobotUIViewSetRouter
 from nautobot_golden_config import views
 
@@ -15,4 +17,7 @@ router.register("config-plan", views.ConfigPlanUIViewSet)
 router.register("config-compliance", views.ConfigComplianceUIViewSet)
 router.register("golden-config", views.GoldenConfigUIViewSet)
 
-urlpatterns = router.urls
+urlpatterns = [
+    path("config-compliance/overview/", views.ConfigComplianceOverview.as_view(), name="configcompliance_overview"),
+    path("config-plan/bulk_deploy/", views.ConfigPlanBulkDeploy.as_view(), name="configplan_bulk-deploy"),
+] + router.urls

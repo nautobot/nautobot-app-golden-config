@@ -80,7 +80,7 @@ function pollJobStatus(jobId, callBack) {
       },
       success: function(data) {
           $('#jobStatus').html(data.status.value.charAt(0).toUpperCase() + data.status.value.slice(1)).show();
-          if (["errored", "failed"].includes(data.status.value)) {
+          if (["FAILURE", "REVOKED"].includes(data.status.value)) {
               $("#loaderImg").hide();
               $('#detailMessages').show();
               $('#detailMessages').attr('class', 'alert alert-warning text-center');
@@ -91,7 +91,7 @@ function pollJobStatus(jobId, callBack) {
                   pollJobStatus(jobId, callBack);
               }, 1000); // Poll every 1 seconds
               // TODO: 2.0, should we do something else on Failure/revoked?
-          } else if (["FAILURE", "REVOKED", "SUCCESS"].includes(data.status.value)) {
+          } else if (["SUCCESS"].includes(data.status.value)) {
               $("#loaderImg").hide();
               $('#detailMessages').show();
               callBack(data.id)

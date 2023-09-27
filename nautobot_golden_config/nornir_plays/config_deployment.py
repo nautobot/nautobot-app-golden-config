@@ -47,13 +47,13 @@ def run_deployment(task: Task, logger: logging.Logger, commit: bool, config_plan
                 obj=obj,
                 logger=logger,
                 config=consolidated_config_set,
-                **dispatch_params("check_connectivity", obj.platform.network_driver, logger),
+                **dispatch_params("merge_config", obj.platform.network_driver, logger),
             )[1]
             task_changed, task_result, task_failed = result.changed, result.result, result.failed
             if task_changed and task_failed:
                 # means config_revert happened in `napalm_configure`
                 plans_to_deploy.update(status=Status.objects.get(name="Failed"))
-                error_msg = "E3XXX: Failed deployment to the device."
+                error_msg = "E3023: Failed deployment to the device."
                 logger.error(error_msg, extra={"object": obj})
                 raise NornirNautobotException(error_msg)
 
@@ -64,10 +64,10 @@ def run_deployment(task: Task, logger: logging.Logger, commit: bool, config_plan
                 if not task_failed:
                     logger.info("Successfully deployed configuration to device.", extra={"object": obj})
                     plans_to_deploy.update(status=Status.objects.get(name="Completed"))
-        except NornirSubTaskError:
+        except NornirSubTaskError as error:
             task_result = None
             plans_to_deploy.update(status=Status.objects.get(name="Failed"))
-            error_msg = "E3XXX: Failed deployment to the device."
+            error_msg = f"E3024: Failed deployment to the device with error: {error}"
             logger.error(error_msg, extra={"object": obj})
             raise NornirNautobotException(error_msg)
     else:
@@ -85,11 +85,11 @@ def config_deployment(job_result, log_level, data):
     logger.debug("Starting config deployment")
     config_plan_qs = data["config_plan"]
     if config_plan_qs.filter(status__name=DEFAULT_DEPLOY_STATUS).exists():
-        error_msg = "E3XXX: Cannot deploy configuration(s). One or more config plans are not approved."
+        error_msg = "E3025: Cannot deploy configuration(s). One or more config plans are not approved."
         logger.error(error_msg)
         raise NornirNautobotException(error_msg)
     if config_plan_qs.filter(status__name="Completed").exists():
-        error_msg = "E3XXX: Cannot deploy configuration(s). One or more config plans are already completed."
+        error_msg = "E3026: Cannot deploy configuration(s). One or more config plans are already completed."
         logger.error(error_msg)
         raise NornirNautobotException(error_msg)
     device_qs = Device.objects.filter(config_plan__in=config_plan_qs).distinct()
@@ -122,7 +122,7 @@ def config_deployment(job_result, log_level, data):
                 deploy_job_result=job_result,
             )
     except Exception as err:
-        error_msg = f"E3011: {err}"
+        error_msg = f"E3001: General Exception handler, original error message ```{err}```"
         logger.error(error_msg)
         raise NornirNautobotException(error_msg)
 

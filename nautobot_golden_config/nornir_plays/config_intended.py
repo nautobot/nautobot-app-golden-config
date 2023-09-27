@@ -157,6 +157,6 @@ def config_intended(job_result, log_level, data, job_class_instance):
             )
 
     except Exception as err:
-        error_msg = f"E3013: {err}"
+        error_msg = f"E3001: General Exception handler, original error message ```{err}```"
         logger.error(error_msg)
         raise NornirNautobotException(error_msg)

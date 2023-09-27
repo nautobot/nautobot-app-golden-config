@@ -215,7 +215,7 @@ def dispatch_params(method, platform, logger):
     #   4. default & all
     if FRAMEWORK_METHODS.get(method) and FRAMEWORK_METHODS[method]().get(platform):
         params["framework"] = FRAMEWORK_METHODS[method]()[platform]
-    elif FRAMEWORK_METHODS.get(method) and FRAMEWORK_METHODS[method]()["all"]:
+    elif FRAMEWORK_METHODS.get(method) and FRAMEWORK_METHODS[method]().get("all"):
         params["framework"] = FRAMEWORK_METHODS[method]()["all"]
     elif utils.default_framework().get(platform):
         params["framework"] = utils.default_framework()[platform]

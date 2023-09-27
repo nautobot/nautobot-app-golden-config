@@ -59,7 +59,6 @@ class ConfigComplianceModelTestCase(TestCase):
             missing={},
             extra={},
         )
-        # TODO: 2.0 This now raises a ValidationError vs an IntegrityError, are we checking the same thing??
         with self.assertRaises(ValidationError):
             ConfigCompliance.objects.create(
                 device=self.device,

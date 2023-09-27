@@ -66,7 +66,7 @@ def _get_cli_compliance(obj):
     }
     feature.update({"section": obj.rule.match_config.splitlines()})
     value = feature_compliance(
-        feature, obj.actual, obj.intended, obj.device.platform.network_driver_mappings.get("netmiko")
+        feature, obj.actual, obj.intended, obj.device.platform.network_driver_mappings.get("netutils_parser")
     )
     compliance = value["compliant"]
     if compliance:

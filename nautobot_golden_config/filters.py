@@ -5,13 +5,11 @@ from django.db.models import Q
 
 from nautobot.core.filters import MultiValueDateTimeFilter, TreeNodeMultipleChoiceFilter
 from nautobot.dcim.models import Device, DeviceType, Manufacturer, Platform, Rack, RackGroup, Location
-from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.extras.filters import NaturalKeyOrPKMultipleChoiceFilter, NautobotFilterSet, StatusFilter
 from nautobot.extras.models import JobResult, Role, Status
 from nautobot.tenancy.models import Tenant, TenantGroup
 
 from nautobot_golden_config import models
-
 
 
 class GoldenConfigFilterSet(NautobotFilterSet):

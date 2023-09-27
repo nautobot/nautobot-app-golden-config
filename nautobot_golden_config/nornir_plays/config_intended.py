@@ -4,7 +4,6 @@ import logging
 import os
 from datetime import datetime
 
-from django.template import engines
 from jinja2.sandbox import SandboxedEnvironment
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory

@@ -16,7 +16,7 @@ class GitRepoTest(unittest.TestCase):
         mock_obj.remote_url = "/fake/remote"
         mock_obj._token = "fake token"  # nosec pylint: disable=protected-access
         mock_obj.username = None
-        mock_obj.secrets_group = None
+        mock_obj.secrets_group = Mock(get_secret_value=Mock(return_value="fake token"))
         self.mock_obj = mock_obj
 
     @patch("nautobot_golden_config.utilities.git.Repo", autospec=True)

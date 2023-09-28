@@ -153,7 +153,7 @@ class ConfigPlanViewSet(
     filterset_class = filters.ConfigPlanFilterSet
 
     def get_serializer_context(self):
-        # Gather all custom fields for the model
+        """Gather all custom fields for the model. Copied from nautobot.extras.api.views.CustomFieldModelViewSet."""
         content_type = ContentType.objects.get_for_model(self.queryset.model)
         custom_fields = content_type.custom_fields.all()
 

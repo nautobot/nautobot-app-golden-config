@@ -14,6 +14,7 @@ from django.shortcuts import redirect, render
 from django.views.generic import View
 
 # from django.utils.module_loading import import_string
+from django.utils.safestring import mark_safe
 from django.utils.timezone import make_aware
 from django_pivot.pivot import pivot
 
@@ -78,13 +79,39 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
         self.config_details = None
         self.action_template_name = None
 
-    @property
-    def dynamic_group_queryset(self):
-        """Return queryset of DynamicGroups associated with all GoldenConfigSettings."""
-        golden_config_device_queryset = Device.objects.none()
+    def filter_queryset(self, queryset):
+        """Add a warning message when GoldenConfig Table is out of sync."""
+        queryset = super().filter_queryset(queryset)
+        # Only adding a message when no filters are applied
+        if self.filter_params:
+            return queryset
+
+        out_of_sync_message = mark_safe(
+            "The GoldenConfig Table is missing entries and/or has additional entries "
+            "based on what is defined for the DynamicGroups in GoldenConfigSettings. "
+            "Run this job to rectify this issue."  # TODO 2.x: Add job_url
+        )
+
+        gc_dynamic_group_device_queryset = Device.objects.none()
         for setting in models.GoldenConfigSetting.objects.all():
-            golden_config_device_queryset = golden_config_device_queryset | setting.dynamic_group.members
-        return golden_config_device_queryset & self.queryset.distinct()
+            gc_dynamic_group_device_queryset = gc_dynamic_group_device_queryset | setting.dynamic_group.members
+
+        gc_dynamic_group_device_queryset = gc_dynamic_group_device_queryset.distinct()
+        gc_dynamic_group_device_queryset_count = gc_dynamic_group_device_queryset.count()
+        gc_queryset = models.GoldenConfig.objects.all()
+        gc_queryset_count = gc_queryset.count()
+
+        # Only validating Devices are the same for count < 100, otherwise same count means they are in sync.
+        if gc_dynamic_group_device_queryset_count < 100:
+            gc_device_queryset = Device.objects.filter(pk__in=[gc.device.pk for gc in gc_queryset])
+            dg_to_gc_difference = gc_dynamic_group_device_queryset.difference(gc_device_queryset)
+            gc_to_dg_difference = gc_device_queryset.difference(gc_dynamic_group_device_queryset)
+            if dg_to_gc_difference or gc_to_dg_difference:
+                messages.warning(self.request, message=out_of_sync_message)
+        elif gc_dynamic_group_device_queryset_count != gc_queryset_count:
+            messages.warning(self.request, message=out_of_sync_message)
+
+        return queryset
 
     def _pre_helper(self, pk, request):
         self.device = Device.objects.get(pk=pk)

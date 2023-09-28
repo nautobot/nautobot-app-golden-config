@@ -352,6 +352,8 @@ class RemediationSettingTest(APIViewTestCases.APIViewTestCase):
 class ConfigPlanTest(
     APIViewTestCases.GetObjectViewTestCase,
     APIViewTestCases.ListObjectsViewTestCase,
+    APIViewTestCases.UpdateObjectViewTestCase,
+    APIViewTestCases.DeleteObjectViewTestCase,
     APIViewTestCases.NotesURLViewTestCase,
 ):
     """Test API for ConfigPlan."""

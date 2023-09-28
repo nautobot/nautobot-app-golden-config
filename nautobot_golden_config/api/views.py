@@ -3,8 +3,9 @@ import json
 
 from django.contrib.contenttypes.models import ContentType
 
+from rest_framework.mixins import DestroyModelMixin, ListModelMixin, RetrieveModelMixin, UpdateModelMixin
 from rest_framework.views import APIView
-from rest_framework.viewsets import ReadOnlyModelViewSet
+from rest_framework.viewsets import GenericViewSet
 from rest_framework.response import Response
 from rest_framework.routers import APIRootView
 from rest_framework.permissions import AllowAny, IsAuthenticated, BasePermission
@@ -129,7 +130,14 @@ class RemediationSettingViewSet(NautobotModelViewSet):  # pylint:disable=too-man
 
 
 class ConfigPlanViewSet(
-    NautobotAPIVersionMixin, NotesViewSetMixin, ModelViewSetMixin, ReadOnlyModelViewSet
+    NautobotAPIVersionMixin,
+    NotesViewSetMixin,
+    ModelViewSetMixin,
+    RetrieveModelMixin,
+    UpdateModelMixin,
+    DestroyModelMixin,
+    ListModelMixin,
+    GenericViewSet,
 ):  # pylint:disable=too-many-ancestors
     """API viewset for interacting with ConfigPlan objects."""
 

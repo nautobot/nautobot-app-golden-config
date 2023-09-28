@@ -387,7 +387,7 @@ class GoldenConfigSettingForm(NautobotModelForm):
     """Filter Form for GoldenConfigSettingForm instances."""
 
     slug = core_forms.SlugField()
-    dynamic_group = forms.ModelChoiceField(queryset=DynamicGroup.objects.all(), required=False)
+    dynamic_group = forms.ModelChoiceField(queryset=DynamicGroup.objects.all())
 
     class Meta:
         """Filter Form Meta Data for GoldenConfigSettingForm instances."""

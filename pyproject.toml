@@ -33,7 +33,7 @@ packages = [
 [tool.poetry.dependencies]
 python = ">=3.8,<3.12"
 deepdiff = ">=5.5.0,!=6.0,!=6.1,<7"
-django-pivot = "1.8.1"
+django-pivot = "1.8.1" # The signature changed to return a non-queryset, do not upgrade without ensuring it returns a queryset
 matplotlib = "^3.3.2"
 # nautobot = ">=2.0.0-rc.3"  # TODO: 2.0: Point to 2.x version
 nautobot = { git = "https://github.com/nautobot/nautobot.git", branch = "develop" }  # TODO: 2.0: Point to 2.x version

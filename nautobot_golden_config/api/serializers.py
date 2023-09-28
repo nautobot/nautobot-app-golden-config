@@ -61,9 +61,6 @@ class GoldenConfigSerializer(NautobotModelSerializer, TaggedModelSerializerMixin
 class GoldenConfigSettingSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
     """Serializer for GoldenConfigSetting object."""
 
-    # TODO: 2.0: What is correct for this with the removal of nested serializers?. Should just work with __all__
-    # dynamic_group = NestedDynamicGroupSerializer(required=False)
-
     class Meta:
         """Set Meta Data for GoldenConfigSetting, will serialize all fields."""
 
@@ -96,26 +93,15 @@ class ConfigToPushSerializer(DeviceSerializer):
 
     config = serializers.SerializerMethodField()
 
-    # TODO: 2.0 test this
-    def get_field_names(self, declared_fields, info):
-        """Ensure that 'tags' field is always present except on nested serializers."""
-        fields = list(super().get_field_names(declared_fields, info))
-        self.extend_field_names(fields, "config")
-        return fields
-
     class Meta(DeviceSerializer):
         """Extend the Device serializer with the configuration after postprocessing."""
 
-        # TODO: 2.0: Fix fields to work with Device moving to a string "__all__"
-        # fields = DeviceSerializer.Meta.fields + ["config"]
-        # View here: https://github.com/nautobot/nautobot/blob/1d372e4040a0a4d6f95d688843a76b4194283bf1/nautobot/extras/api/mixins.py#L12-L17
         fields = "__all__"
         model = Device
 
     def get_config(self, obj):
         """Provide the intended configuration ready after postprocessing to the config field."""
         request = self.context.get("request")
-
         config_details = models.GoldenConfig.objects.get(device=obj)
         return get_config_postprocessing(config_details, request)
 

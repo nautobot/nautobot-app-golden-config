@@ -28,7 +28,7 @@ from nautobot_golden_config.utilities.constant import DEFAULT_DEPLOY_STATUS
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 
 
-def run_deployment(task: Task, logger: logging.Logger, commit: bool, config_plan_qs, deploy_job_result) -> Result:
+def run_deployment(task: Task, logger: logging.Logger, config_plan_qs, deploy_job_result) -> Result:
     """Deploy configurations to device."""
     obj = task.host.data["obj"]
     plans_to_deploy = config_plan_qs.filter(device=obj)
@@ -38,41 +38,37 @@ def run_deployment(task: Task, logger: logging.Logger, commit: bool, config_plan
     # TODO: Future: We should add post-processing rendering here
     # after https://github.com/nautobot/nautobot-plugin-golden-config/issues/443
 
-    if commit:
-        plans_to_deploy.update(status=Status.objects.get(name="In Progress"))
-        try:
-            result = task.run(
-                task=dispatcher,
-                name="DEPLOY CONFIG TO DEVICE",
-                obj=obj,
-                logger=logger,
-                config=consolidated_config_set,
-                **dispatch_params("merge_config", obj.platform.network_driver, logger),
-            )[1]
-            task_changed, task_result, task_failed = result.changed, result.result, result.failed
-            if task_changed and task_failed:
-                # means config_revert happened in `napalm_configure`
-                plans_to_deploy.update(status=Status.objects.get(name="Failed"))
-                error_msg = "E3023: Failed deployment to the device."
-                logger.error(error_msg, extra={"object": obj})
-                raise NornirNautobotException(error_msg)
-
-            elif not task_changed and not task_failed:
-                plans_to_deploy.update(status=Status.objects.get(name="Completed"))
-                logger.info("Nothing was deployed to the device.", extra={"object": obj})
-            else:
-                if not task_failed:
-                    logger.info("Successfully deployed configuration to device.", extra={"object": obj})
-                    plans_to_deploy.update(status=Status.objects.get(name="Completed"))
-        except NornirSubTaskError as error:
-            task_result = None
+    plans_to_deploy.update(status=Status.objects.get(name="In Progress"))
+    try:
+        result = task.run(
+            task=dispatcher,
+            name="DEPLOY CONFIG TO DEVICE",
+            obj=obj,
+            logger=logger,
+            config=consolidated_config_set,
+            **dispatch_params("merge_config", obj.platform.network_driver, logger),
+        )[1]
+        task_changed, task_result, task_failed = result.changed, result.result, result.failed
+        if task_changed and task_failed:
+            # means config_revert happened in `napalm_configure`
             plans_to_deploy.update(status=Status.objects.get(name="Failed"))
-            error_msg = f"E3024: Failed deployment to the device with error: {error}"
+            error_msg = "E3023: Failed deployment to the device."
             logger.error(error_msg, extra={"object": obj})
             raise NornirNautobotException(error_msg)
-    else:
+
+        elif not task_changed and not task_failed:
+            plans_to_deploy.update(status=Status.objects.get(name="Completed"))
+            logger.info("Nothing was deployed to the device.", extra={"object": obj})
+        else:
+            if not task_failed:
+                logger.info("Successfully deployed configuration to device.", extra={"object": obj})
+                plans_to_deploy.update(status=Status.objects.get(name="Completed"))
+    except NornirSubTaskError as error:
         task_result = None
-        logger.info(obj=obj, message="Commit not enabled. Configuration not deployed to device.")
+        plans_to_deploy.update(status=Status.objects.get(name="Failed"))
+        error_msg = f"E3024: Failed deployment to the device with error: {error}"
+        logger.error(error_msg, extra={"object": obj})
+        raise NornirNautobotException(error_msg)
 
     return Result(host=task.host, result=task_result)
 
@@ -94,9 +90,6 @@ def config_deployment(job_result, log_level, data):
         raise NornirNautobotException(error_msg)
     device_qs = Device.objects.filter(config_plan__in=config_plan_qs).distinct()
 
-    # TODO: 2.0 what do we do about commit??
-    commit = True
-
     try:
         with InitNornir(
             runner=NORNIR_SETTINGS.get("runner"),
@@ -117,7 +110,6 @@ def config_deployment(job_result, log_level, data):
                 task=run_deployment,
                 name="DEPLOY CONFIG",
                 logger=logger,
-                commit=commit,
                 config_plan_qs=config_plan_qs,
                 deploy_job_result=job_result,
             )

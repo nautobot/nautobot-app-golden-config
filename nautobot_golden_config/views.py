@@ -580,13 +580,12 @@ class ConfigPlanBulkDeploy(ObjectPermissionRequiredMixin, View):
         return "extras.run_job"
 
     # Once https://github.com/nautobot/nautobot/issues/4529 is addressed, can turn this on.
-    # Permalink reference: https://github.com/nautobot/nautobot-plugin-golden-config/blob/017d5e1526fa9f642b9e02bfc7161f27d4948bef/nautobot_golden_config/views.py#L967
+    # Permalink reference: https://github.com/nautobot/nautobot-plugin-golden-config/blob/017d5e1526fa9f642b9e02bfc7161f27d4948bef/nautobot_golden_config/views.py#L609-L612
     # @action(detail=False, methods=["post"])
     # def bulk_deploy(self, request):
     def post(self, request):
         """Enqueue the job and redirect to the job results page."""
         config_plan_pks = request.POST.getlist("pk")
-        # TODO: 2.0  check for permission
         if not config_plan_pks:
             messages.warning(request, "No Config Plans selected for deployment.")
             return redirect("plugins:nautobot_golden_config:configplan_list")

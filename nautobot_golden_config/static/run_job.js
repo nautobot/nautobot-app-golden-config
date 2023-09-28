@@ -90,7 +90,6 @@ function pollJobStatus(jobId, callBack) {
               setTimeout(function() {
                   pollJobStatus(jobId, callBack);
               }, 1000); // Poll every 1 seconds
-              // TODO: 2.0, should we do something else on Failure/revoked?
           } else if (["SUCCESS"].includes(data.status.value)) {
               $("#loaderImg").hide();
               $('#detailMessages').show();

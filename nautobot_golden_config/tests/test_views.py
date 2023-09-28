@@ -52,8 +52,8 @@ class ConfigComplianceOverviewHelperTestCase(TestCase):
 
         # TODO: 2.0 turn this back on.
         # self.ccoh = views.ConfigComplianceOverviewOverviewHelper
-        # User.objects.create_superuser(username="views", password="incredible")
-        # self.client.login(username="views", password="incredible")
+        User.objects.create_superuser(username="views", password="incredible")
+        self.client.login(username="views", password="incredible")
 
     def test_plot_visual_no_devices(self):
         # TODO: 2.0 turn this back on.
@@ -63,12 +63,14 @@ class ConfigComplianceOverviewHelperTestCase(TestCase):
 
     @mock.patch.dict("nautobot_golden_config.tables.CONFIG_FEATURES", {"sotagg": True})
     def test_config_compliance_list_view_with_sotagg_enabled(self):
-        request = self.client.get("/plugins/golden-config/golden/")
+        models.GoldenConfig.objects.create(device=Device.objects.first())
+        request = self.client.get("/plugins/golden-config/golden-config/")
         self.assertContains(request, '<i class="mdi mdi-code-json" title="SOT Aggregate Data"></i>')
 
     @mock.patch.dict("nautobot_golden_config.tables.CONFIG_FEATURES", {"sotagg": False})
     def test_config_compliance_list_view_with_sotagg_disabled(self):
-        request = self.client.get("/plugins/golden-config/golden/")
+        models.GoldenConfig.objects.create(device=Device.objects.first())
+        request = self.client.get("/plugins/golden-config/golden-config/")
         self.assertNotContains(request, '<i class="mdi mdi-code-json" title="SOT Aggregate Data"></i>')
 
     @mock.patch.object(views, "graph_ql_query")
@@ -80,7 +82,7 @@ class ConfigComplianceOverviewHelperTestCase(TestCase):
         device = Device.objects.first()
         mock_gc_setting.sot_agg_query = None
         mock_get_device_to_settings_map.return_value = {device.id: mock_gc_setting}
-        request = self.client.get(f"/plugins/golden-config/config-compliance/details/{device.pk}/sotagg/")
+        request = self.client.get(f"/plugins/golden-config/golden-config/{device.pk}/sotagg/")
         expected = "{\n    &quot;Error&quot;: &quot;No saved `GraphQL Query` query was configured in the `Golden Config Setting`&quot;\n}"
         self.assertContains(request, expected)
         mock_graphql_query.assert_not_called()
@@ -94,7 +96,7 @@ class ConfigComplianceOverviewHelperTestCase(TestCase):
         device = Device.objects.first()
         mock_get_device_to_settings_map.return_value = {device.id: mock_gc_setting}
         mock_graph_ql_query.return_value = ("discard value", "This is a mock graphql result")
-        request = self.client.get(f"/plugins/golden-config/config-compliance/details/{device.pk}/sotagg/")
+        request = self.client.get(f"/plugins/golden-config/golden-config/{device.pk}/sotagg/")
         expected = "This is a mock graphql result"
         self.assertContains(request, expected)
         mock_graph_ql_query.assert_called()

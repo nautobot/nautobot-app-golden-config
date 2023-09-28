@@ -349,7 +349,13 @@ class RemediationSettingTest(APIViewTestCases.APIViewTestCase):
 
 
 # pylint: disable=too-many-ancestors,too-many-locals
-class ConfigPlanTest(APIViewTestCases.APIViewTestCase):
+class ConfigPlanTest(
+    APIViewTestCases.GetObjectViewTestCase,
+    APIViewTestCases.ListObjectsViewTestCase,
+    APIViewTestCases.UpdateObjectViewTestCase,
+    APIViewTestCases.DeleteObjectViewTestCase,
+    APIViewTestCases.NotesURLViewTestCase,
+):
     """Test API for ConfigPlan."""
 
     model = ConfigPlan
@@ -401,15 +407,3 @@ class ConfigPlanTest(APIViewTestCases.APIViewTestCase):
             "change_control_url": "https://5.example.com/",
             "status": approved_status.pk,
         }
-
-    def test_create_object(self):
-        """Skipping test due to POST method not allowed."""
-
-    def test_create_object_without_permission(self):
-        """Skipping test due to POST method not allowed."""
-
-    def test_bulk_create_objects(self):
-        """Skipping test due to POST method not allowed."""
-
-    def test_recreate_object_csv(self):
-        """Skipping test due to POST method not allowed."""

@@ -560,12 +560,7 @@ class ConfigPlanUIViewSet(views.NautobotUIViewSet):
     table_class = tables.ConfigPlanTable
     lookup_field = "pk"
     action_buttons = ("add",)
-
-    def get_form_class(self, **kwargs):
-        """Helper function to get form_class for different views."""
-        if self.action == "update":
-            return forms.ConfigPlanUpdateForm
-        return super().get_form_class(**kwargs)
+    update_form_class = forms.ConfigPlanUpdateForm
 
     def get_extra_context(self, request, instance=None):
         """A ConfigPlan helper function to warn if the Job is not enabled to run."""

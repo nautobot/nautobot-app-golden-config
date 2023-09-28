@@ -156,7 +156,7 @@ def get_device_to_settings_map(queryset):
     """Helper function to map settings to devices."""
     device_to_settings_map = {}
     for device in queryset:
-        dynamic_group = device.dynamic_groups.exclude(golden_config_setting__isnull=True).order_by(
+        dynamic_group = device.dynamic_groups_cached.exclude(golden_config_setting__isnull=True).order_by(
             "-golden_config_setting__weight"
         )
         if dynamic_group.exists():

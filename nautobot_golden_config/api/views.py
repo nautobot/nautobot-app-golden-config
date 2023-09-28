@@ -11,7 +11,12 @@ from rest_framework.routers import APIRootView
 from rest_framework.permissions import AllowAny, IsAuthenticated, BasePermission
 from rest_framework import mixins, viewsets
 
-from nautobot.core.api.views import ModelViewSetMixin, NautobotAPIVersionMixin
+from nautobot.core.api.views import (
+    BulkDestroyModelMixin,
+    BulkUpdateModelMixin,
+    ModelViewSetMixin,
+    NautobotAPIVersionMixin,
+)
 from nautobot.extras.api.views import NautobotModelViewSet, NotesViewSetMixin
 from nautobot.dcim.models import Device
 
@@ -137,9 +142,11 @@ class ConfigPlanViewSet(
     UpdateModelMixin,
     DestroyModelMixin,
     ListModelMixin,
+    BulkUpdateModelMixin,
+    BulkDestroyModelMixin,
     GenericViewSet,
 ):  # pylint:disable=too-many-ancestors
-    """API viewset for interacting with ConfigPlan objects."""
+    """API viewset for interacting with ConfigPlan objects. Does not support POST to create objects."""
 
     queryset = models.ConfigPlan.objects.all()
     serializer_class = serializers.ConfigPlanSerializer

@@ -30,7 +30,7 @@
     </tr>
     <tr>
       <td>Dynamic Group</td>
-      <td><a href="{{ object.dynamic_group.get_absolute_url }}">{{ object.dynamic_group.name }}</a></td>
+      <td>{{ object.dynamic_group|hyperlinked_object }}</td>
     </tr>
     <tr>
       <td>Filter Query Logic</td>
@@ -58,7 +58,7 @@
       </td>
       <td>
         {% if object.backup_repository %}
-          <a href="{{ object.backup_repository.get_absolute_url }}">{{ object.backup_repository }}</a>
+          {{ object.backup_repository|hyperlinked_object }}
         {% else %}
           <span class="text-muted">None</span>
         {% endif %}
@@ -93,7 +93,7 @@
       </td>
       <td>
         {% if object.intended_repository %}
-          <a href="{{ object.intended_repository.get_absolute_url }}">{{ object.intended_repository }}</a>
+          {{ object.intended_repository|hyperlinked_object }}
         {% else %}
           <span class="text-muted">None</span>
         {% endif %}
@@ -120,7 +120,7 @@
       </td>
       <td>
         {% if object.jinja_repository %}
-          <a href="{{ object.jinja_repository.get_absolute_url }}">{{ object.jinja_repository }}</a>
+          {{ object.jinja_repository|hyperlinked_object }}
         {% else %}
           <span class="text-muted">None</span>
         {% endif %}
@@ -138,7 +138,7 @@
       <td>GraphQL Query</td>
       <td>
         {% if object.sot_agg_query %}
-          <a href="{{ object.sot_agg_query.get_absolute_url }}">{{ object.sot_agg_query }}</a>
+          {{ object.sot_agg_query|hyperlinked_object }}
         {% else %}
           <span class="text-muted">None</span>
         {% endif %}

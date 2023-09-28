@@ -18,7 +18,7 @@
         <table class="table table-hover panel-body attr-table table-responsive">
             <tr>
                 <td>Device</td>
-                <td><a href="{{ object.device.get_absolute_url }}">{{ object.device }}</a></td>
+                <td>{{ object.device|hyperlinked_object }}</td>
             </tr>
             <tr>
                 <td>Date Created</td>
@@ -52,7 +52,7 @@
             </tr>
             <tr>
                 <td>Plan Result</td>
-                <td><a href="{{ object.plan_result.get_absolute_url }}">{{ object.plan_result.status|title }}</a></td>
+                <td>{{ object.plan_result|hyperlinked_object:"status"|title }}</td>
             </tr>
             <tr>
                 <td>Deploy Result</td>

@@ -4,8 +4,6 @@ import logging
 import os
 from datetime import datetime
 
-from django.template import engines
-from jinja2.sandbox import SandboxedEnvironment
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from nautobot_plugin_nornir.utils import get_dispatcher
@@ -18,11 +16,10 @@ from nornir_nautobot.utils.logger import NornirLogger
 
 from nautobot_golden_config.models import GoldenConfig
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
-from nautobot_golden_config.utilities.constant import JINJA_ENV
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import (
-    add_django_jinja_filters_to_env,
+    get_django_env,
     get_device_to_settings_map,
     get_job_filter,
     render_jinja_template,
@@ -32,13 +29,10 @@ from nautobot_golden_config.utilities.helper import (
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 LOGGER = logging.getLogger(__name__)
 
-# Use a custom Jinja2 environment instead of Django's to avoid HTML escaping
-jinja_env = SandboxedEnvironment(**JINJA_ENV)
-
 
 @close_threaded_db_connections
 def run_template(  # pylint: disable=too-many-arguments
-    task: Task, logger, device_to_settings_map, nautobot_job
+    task: Task, logger, device_to_settings_map, nautobot_job, jinja_env
 ) -> Result:
     """Render Jinja Template.
 
@@ -119,7 +113,7 @@ def config_intended(nautobot_job, data):
         verify_settings(logger, settings, ["jinja_path_template", "intended_path_template", "sot_agg_query"])
 
     # Retrieve filters from the Django jinja template engine
-    add_django_jinja_filters_to_env(jinja_env)
+    jinja_env = get_django_env()
 
     try:
         with InitNornir(
@@ -145,6 +139,7 @@ def config_intended(nautobot_job, data):
                 logger=logger,
                 device_to_settings_map=device_to_settings_map,
                 nautobot_job=nautobot_job,
+                jinja_env=jinja_env,
             )
 
     except Exception as err:

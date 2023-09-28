@@ -2,19 +2,21 @@
 # pylint: disable=raise-missing-from
 import json
 
+from django.template import engines
 from django.contrib import messages
 from django.db.models import Q
-from django.template import engines
 from django.utils.html import format_html
 from django.urls import reverse
 
 from jinja2 import exceptions as jinja_errors
+from jinja2.sandbox import SandboxedEnvironment
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.dcim.models import Device
 from nautobot.utilities.utils import render_jinja2
 from nornir_nautobot.exceptions import NornirNautobotException
 
 from nautobot_golden_config import models
+from nautobot_golden_config.utilities.constant import JINJA_ENV
 
 FIELDS_PK = {
     "platform",
@@ -97,16 +99,16 @@ def verify_settings(logger, global_settings, attrs):
             raise NornirNautobotException()
 
 
-def add_django_jinja_filters_to_env(jinja_env):
-    """Load Django Jinja filters from the Django jinja template engine, and add them to the provided jinja_env.
-
-    Args:
-        jinja_env: The jinja environment to be modified.
+def get_django_env():
+    """Load Django Jinja filters from the Django jinja template engine, and add them to the jinja_env.
 
     Returns:
-        None
+        SandboxedEnvironment
     """
+    # Use a custom Jinja2 environment instead of Django's to avoid HTML escaping
+    jinja_env = SandboxedEnvironment(**JINJA_ENV)
     jinja_env.filters = engines["jinja"].env.filters
+    return jinja_env
 
 
 def render_jinja_template(obj, logger, template):

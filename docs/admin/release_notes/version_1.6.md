@@ -5,6 +5,12 @@
 - Add functionality to compliance result to provide a Remediation plan.
 - Supports Nautobot >=1.6.1,<2.0.0.
 
+## v1.6.2 - 2023-09
+
+### Fixed
+
+- [#621](https://github.com/nautobot/nautobot-plugin-golden-config/pull/621) - Moved jinja to be locally scoped, this was causing issues with Jinja filters based on import order.
+
 ## v1.6.1 - 2023-09
 
 ### Changed

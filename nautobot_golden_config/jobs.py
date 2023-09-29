@@ -408,7 +408,7 @@ class SyncGoldenConfigWithDynamicGroups(Job):
         gc_entries_to_remove = GoldenConfig.objects.filter(device__in=device_pks_to_remove)
         for gc_entry_removal in gc_entries_to_remove:
             self.logger.debug(f"Removing GoldenConfig entry for {gc_entry_removal}")
-        
+
         gc_entries_to_remove.delete()
 
         devices_to_add_gc_entries = Device.objects.filter(pk__in=device_pks_to_add)

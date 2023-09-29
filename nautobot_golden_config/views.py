@@ -1,16 +1,15 @@
 """Django views for Nautobot Golden Configuration."""  # pylint: disable=too-many-lines
-import difflib
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import datetime 
 
 import yaml
 from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, ExpressionWrapper, F, FloatField, Max, Q
 from django.shortcuts import redirect, render
+from django.urls import reverse
 
-# from django.utils.module_loading import import_string
 from django.utils.html import format_html
 from django.utils.timezone import make_aware
 from django.views.generic import View
@@ -84,7 +83,9 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
         if self.filter_params:
             return queryset
 
-        sync_job = Job.objects.get(module_name="nautobot_golden_config.jobs", job_class_name="SyncGoldenConfigWithDynamicGroups")
+        sync_job = Job.objects.get(
+            module_name="nautobot_golden_config.jobs", job_class_name="SyncGoldenConfigWithDynamicGroups"
+        )
         sync_job_url = f"<a href='{reverse('extras:job_run', kwargs={'pk': sync_job.pk})}'>{sync_job.name}</a>"
         out_of_sync_message = format_html(
             "The expected devices and actual devices here are not in sync ."
@@ -186,9 +187,12 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
         self.title_name = "Aggregate Data"
         return self._post_render(request)
 
-    def _cli_compliance(self):
-        diff_type = "File"
-        output = self.config_details.compliance_config
+    @action(detail=True, methods=["get"])
+    def compliance(self, request, pk, *args, **kwargs):
+        """Additional action to handle compliance."""
+        self._pre_helper(pk, request)
+
+        self.output = self.config_details.compliance_config
         if self.config_details.backup_last_success_date:
             backup_date = str(self.config_details.backup_last_success_date.strftime("%b %d %Y"))
         else:
@@ -197,58 +201,8 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
             intended_date = str(self.config_details.intended_last_success_date.strftime("%b %d %Y"))
         else:
             intended_date = make_aware(datetime.now()).strftime("%b %d %Y")
-        return (output, diff_type, backup_date, intended_date)
 
-    def _json_compliance(self):
-        def diff_structured_data(backup_data, intended_data):
-            """Utility function to provide `Unix Diff` between two JSON snippets."""
-            backup_yaml = yaml.safe_dump(json.loads(backup_data))
-            intend_yaml = yaml.safe_dump(json.loads(intended_data))
-
-            for line in difflib.unified_diff(backup_yaml.splitlines(), intend_yaml.splitlines(), lineterm=""):
-                yield line
-
-        # The JSON compliance runs differently then CLI, it grabs all configcompliance objects for
-        # a given device and merges them, sorts them, and diffs them.
-        diff_type = "JSON"
-        # Get all compliance objects for a device.
-        compliance_objects = models.ConfigCompliance.objects.filter(device=self.device.id)
-        actual = {}
-        intended = {}
-        # Set a starting time that will be older than all last updated objects in compliance objects.
-        most_recent_time = make_aware(datetime(1970, 1, 1, tzinfo=timezone.utc))
-        # Loop through config compliance objects and merge the data into one dataset.
-        for obj in compliance_objects:
-            actual[obj.rule.feature.slug] = obj.actual
-            intended[obj.rule.feature.slug] = obj.intended
-            # Update most_recent_time each time the compliance objects time is more recent then previous.
-            if obj.last_updated > most_recent_time:
-                most_recent_time = obj.last_updated
-        self.config_details.compliance_last_attempt_date = most_recent_time
-        self.config_details.compliance_last_success_date = most_recent_time
-        # Generate the diff between both JSON objects and sort keys for accurate diff.
-        self.config_details.compliance_config = "\n".join(
-            diff_structured_data(json.dumps(actual, sort_keys=True), json.dumps(intended, sort_keys=True))
-        )
-        self.config_details.save()
-        output = self.config_details.compliance_config
-        backup_date = intended_date = str(most_recent_time.strftime("%b %d %Y"))
-        return (output, diff_type, backup_date, intended_date)
-
-    @action(detail=True, methods=["get"])
-    def compliance(self, request, pk, *args, **kwargs):
-        """Additional action to handle compliance."""
-        self._pre_helper(pk, request)
-
-        # TODO: 2.0 confirm this is not needed
-        # if not config_details and self.config_type == "json_compliance":
-        #     # Create the GoldenConfig object for the device only for JSON compliance.
-        #     config_details = models.GoldenConfig.objects.create(device=device)
-        # TODO: confirm can remove, what used case is this handleing?
-        # elif not config_details:
-        #     output = ""
-        # Compliance type is broken up into JSON(json_compliance) and CLI(compliance) compliance.
-        self.output, diff_type, backup_date, intended_date = self._cli_compliance()
+        diff_type = "File"
         self.structured_format = "diff"
 
         if self.output == "":
@@ -627,20 +581,9 @@ class ConfigPlanBulkDeploy(ObjectPermissionRequiredMixin, View):
         job_data = {"config_plan": config_plan_pks}
         job = Job.objects.get(name="Generate Config Plans")
 
-        # TODO: 2.0 re-enable
-        # result = JobResult.enqueue_job(
-        #     func=run_job,
-        #     name=import_string("nautobot_golden_config.jobs.DeployConfigPlans").class_path,
-        #     obj_type=get_job_content_type(),
-        #     user=request.user,
-        #     data=job_data,
-        #     request=copy_safe_request(request),
-        #     commit=request.POST.get("commit", False),
-        # )
         job_result = JobResult.enqueue_job(
             job,
             request.user,
-            # task_queue=task_queue,
             data=job_data,
             **job.job_class.serialize_data(request),
         )

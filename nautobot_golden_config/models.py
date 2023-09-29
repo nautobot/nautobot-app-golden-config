@@ -140,7 +140,7 @@ def _verify_get_custom_compliance_data(compliance_details):
 
 def _get_hierconfig_remediation(obj):
     """Returns the remediating config."""
-    hierconfig_os = obj.network_driver_mappings["hier_config"]  # TODO: 2.0 verify this works
+    hierconfig_os = obj.network_driver_mappings["hier_config"]
     if not hierconfig_os:
         raise ValidationError(f"platform {obj.network_driver} is not supported by hierconfig.")
 
@@ -426,7 +426,7 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
             object_data_v2=serialize_object_v2(self),
             related_object=related_object,
         )
-    
+
     @staticmethod
     def get_dynamic_group_device_pks():
         """Get all Device PKs associated with GoldenConfigSetting DynamicGroups."""

@@ -86,6 +86,18 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
             golden_config_device_queryset = golden_config_device_queryset | setting.dynamic_group.members
         return golden_config_device_queryset & self.queryset.distinct()
 
+    def get_extra_context(self, request, instance=None, **kwargs):
+        context = super().get_extra_context(request, instance)
+        context["compliance"] = constant.ENABLE_COMPLIANCE
+        context["backup"] = constant.ENABLE_BACKUP
+        context["intended"] = constant.ENABLE_INTENDED
+        jobs = []
+        jobs.append(["BackupJob", constant.ENABLE_BACKUP])
+        jobs.append(["IntendedJob", constant.ENABLE_INTENDED])
+        jobs.append(["ComplianceJob", constant.ENABLE_COMPLIANCE])
+        add_message(jobs, request)
+        return context
+
     def _pre_helper(self, pk, request):
         self.device = Device.objects.get(pk=pk)
         self.config_details = models.GoldenConfig.objects.filter(device=self.device).first()

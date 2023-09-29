@@ -21,6 +21,9 @@
         {% if backup %}
             <li><a href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.BackupJob' %}">Backup</a></li>
         {% endif %}
+        {% if not compliance and not intended and not backup %}
+            <li><a href="#" class="disabled">Features are not enabled.</a></li>
+        {% endif %}
     </ul>
 </div>
 {% endblock %}

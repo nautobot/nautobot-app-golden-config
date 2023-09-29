@@ -11,10 +11,11 @@ from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, ExpressionWrapper, F, FloatField, Max, Q
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.views.generic import View
 
 # from django.utils.module_loading import import_string
-from django.utils.safestring import mark_safe
+from django.utils.html import format_html
 from django.utils.timezone import make_aware
 from django_pivot.pivot import pivot
 
@@ -86,21 +87,18 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
         if self.filter_params:
             return queryset
 
-        out_of_sync_message = mark_safe(
+        sync_job = Job.objects.get(module_name="nautobot_golden_config.jobs", job_class_name="SyncGoldenConfigWithDynamicGroups")
+        sync_job_url = f"<a href='{reverse('extras:job_run', kwargs={'pk': sync_job.pk})}'>{sync_job.name}</a>"
+        out_of_sync_message = format_html(
             "The GoldenConfig Table is missing entries and/or has additional entries "
             "based on what is defined for the DynamicGroups in GoldenConfigSettings. "
-            "Run this job to rectify this issue."  # TODO 2.x: Add job_url
+            f"Run the job, {sync_job_url}, to rectify this issue."
         )
 
-        gc_dynamic_group_device_queryset = Device.objects.none()
-        for setting in models.GoldenConfigSetting.objects.all():
-            gc_dynamic_group_device_queryset = gc_dynamic_group_device_queryset | setting.dynamic_group.members
-
-      gc_dynamic_group_device_ids = set(gc_dynamic_group_device_queryset.distinct().values_list("pk", flat=True))
-      gc_device_ids = set(models.GoldenConfig.objects.values_list("device__pk", flat=True))
-      
-      if gc_dynamic_group_device_ids != gc_device_ids:
-          messages.warning(self.request, message=out_of_sync_message)
+        gc_dynamic_group_device_pks = models.GoldenConfig.get_dynamic_group_device_pks()
+        gc_device_pks = models.GoldenConfig.get_golden_config_device_ids()
+        if gc_dynamic_group_device_pks != gc_device_pks:
+            messages.warning(self.request, message=out_of_sync_message)
 
         return queryset
 

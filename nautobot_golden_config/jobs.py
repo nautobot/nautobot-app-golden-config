@@ -25,7 +25,7 @@ from nautobot.tenancy.models import Tenant, TenantGroup
 from nornir_nautobot.exceptions import NornirNautobotException
 
 from nautobot_golden_config.choices import ConfigPlanTypeChoice
-from nautobot_golden_config.models import ComplianceFeature, ConfigPlan
+from nautobot_golden_config.models import ComplianceFeature, ConfigPlan, GoldenConfig
 from nautobot_golden_config.nornir_plays.config_backup import config_backup
 from nautobot_golden_config.nornir_plays.config_compliance import config_compliance
 from nautobot_golden_config.nornir_plays.config_deployment import config_deployment
@@ -383,6 +383,36 @@ class DeployConfigPlanJobButtonReceiver(JobButtonReceiver):
         config_deployment(self.job_result, self.logger.getEffectiveLevel(), data)
 
 
+class SyncGoldenConfigWithDynamicGroups(Job):
+    """Job to sync (add/remove) GoldenConfig table based on DynamicGroup members."""
+
+    class Meta:
+        """Meta object boilerplate for syncing GoldenConfig table."""
+
+        name = "Sync GoldenConfig Table"
+        descritption = "Add or remove GoldenConfig entries based on GoldenConfigSettings DynamicGroup members"
+        has_sensitive_variables = False
+
+    def run(self):
+        """Run GoldenConfig sync."""
+        self.logger.debug("Starting sync of GoldenConfig with DynamicGroup membership.")
+        gc_dynamic_group_device_pks = GoldenConfig.get_dynamic_group_device_pks()
+        gc_device_pks = GoldenConfig.get_golden_config_device_ids()
+        device_pks_to_remove = gc_device_pks.difference(gc_dynamic_group_device_pks)
+        device_pks_to_add = gc_dynamic_group_device_pks.difference(gc_device_pks)
+
+        gc_entries_to_remove = GoldenConfig.objects.filter(device__in=device_pks_to_remove)
+        for gc_entry_removal in gc_entries_to_remove:
+            self.logger.debug(f"Removing GoldenConfig entry for {gc_entry_removal}")
+        
+        gc_entries_to_remove.delete()
+
+        devices_to_add_gc_entries = Device.objects.filter(pk__in=device_pks_to_add)
+        for device in devices_to_add_gc_entries:
+            self.logger.debug(f"Adding GoldenConfig entry for device {device.name}")
+            GoldenConfig.objects.create(device=device)
+
+
 register_jobs(BackupJob)
 register_jobs(IntendedJob)
 register_jobs(ComplianceJob)
@@ -391,3 +421,4 @@ register_jobs(DeployConfigPlans)
 register_jobs(DeployConfigPlanJobButtonReceiver)
 register_jobs(AllGoldenConfig)
 register_jobs(AllDevicesGoldenConfig)
+register_jobs(SyncGoldenConfigWithDynamicGroups)

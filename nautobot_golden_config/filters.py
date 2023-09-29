@@ -2,9 +2,8 @@
 
 import django_filters
 from django.db.models import Q
-
 from nautobot.core.filters import MultiValueDateTimeFilter, TreeNodeMultipleChoiceFilter
-from nautobot.dcim.models import Device, DeviceType, Manufacturer, Platform, Rack, RackGroup, Location
+from nautobot.dcim.models import Device, DeviceType, Location, Manufacturer, Platform, Rack, RackGroup
 from nautobot.extras.filters import NaturalKeyOrPKMultipleChoiceFilter, NautobotFilterSet, StatusFilter
 from nautobot.extras.models import JobResult, Role, Status
 from nautobot.tenancy.models import Tenant, TenantGroup
@@ -346,6 +345,52 @@ class ConfigPlanFilterSet(NautobotFilterSet):
         queryset=JobResult.objects.filter(config_plan__isnull=False).distinct(),
         label="Plan JobResult ID",
     )
+    tenant_group_id = TreeNodeMultipleChoiceFilter(
+        queryset=TenantGroup.objects.all(),
+        field_name="device__tenant__tenant_group",
+        to_field_name="id",
+        label="Tenant Group (ID)",
+    )
+    tenant_group = TreeNodeMultipleChoiceFilter(
+        queryset=TenantGroup.objects.all(),
+        field_name="device__tenant__tenant_group",
+        to_field_name="name",
+        label="Tenant Group (name)",
+    )
+    tenant = NaturalKeyOrPKMultipleChoiceFilter(
+        queryset=Tenant.objects.all(),
+        field_name="device__tenant",
+        to_field_name="name",
+        label="Tenant (name or ID)",
+    )
+    manufacturer = NaturalKeyOrPKMultipleChoiceFilter(
+        field_name="device__device_type__manufacturer",
+        queryset=Manufacturer.objects.all(),
+        to_field_name="name",
+        label="Manufacturer (name or ID)",
+    )
+    platform = NaturalKeyOrPKMultipleChoiceFilter(
+        field_name="device__platform",
+        queryset=Platform.objects.all(),
+        to_field_name="name",
+        label="Platform (name or ID)",
+    )
+    location_id = TreeNodeMultipleChoiceFilter(
+        # Not limiting to content_type=dcim.device to allow parent locations to be included
+        # i.e. include all Sites in a Region, even though Region can't be assigned to a Device
+        queryset=Location.objects.all(),
+        field_name="device__location",
+        to_field_name="id",
+        label="Location (ID)",
+    )
+    location = TreeNodeMultipleChoiceFilter(
+        # Not limiting to content_type=dcim.device to allow parent locations to be included
+        # i.e. include all sites in a Region, even though Region can't be assigned to a Device
+        queryset=Location.objects.all(),
+        field_name="device__location",
+        to_field_name="name",
+        label="Location (name)",
+    )
     deploy_result_id = django_filters.ModelMultipleChoiceFilter(
         queryset=JobResult.objects.filter(config_plan__isnull=False).distinct(),
         label="Deploy JobResult ID",
@@ -353,6 +398,30 @@ class ConfigPlanFilterSet(NautobotFilterSet):
     change_control_id = django_filters.CharFilter(
         field_name="change_control_id",
         lookup_expr="exact",
+    )
+    rack_group_id = TreeNodeMultipleChoiceFilter(
+        queryset=RackGroup.objects.all(),
+        field_name="device__rack__rack_group",
+        to_field_name="id",
+        label="Rack group (ID)",
+    )
+    rack_group = TreeNodeMultipleChoiceFilter(
+        queryset=RackGroup.objects.all(),
+        field_name="device__rack__rack_group",
+        to_field_name="name",
+        label="Rack group (name)",
+    )
+    rack = NaturalKeyOrPKMultipleChoiceFilter(
+        field_name="device__rack",
+        queryset=Rack.objects.all(),
+        to_field_name="name",
+        label="Rack (name or ID)",
+    )
+    role = NaturalKeyOrPKMultipleChoiceFilter(
+        field_name="device__role",
+        queryset=Role.objects.filter(content_types__model="device"),
+        to_field_name="name",
+        label="Role (name or ID)",
     )
     status_id = django_filters.ModelMultipleChoiceFilter(
         # field_name="status__id",

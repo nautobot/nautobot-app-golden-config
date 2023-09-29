@@ -92,7 +92,7 @@ class DeviceRelatedFilterForm(NautobotFilterForm):
         queryset=Platform.objects.all(), to_field_name="name", required=False, null_option="None"
     )
     device = apps_forms.DynamicModelMultipleChoiceField(
-        queryset=Device.objects.all(), required=False, null_option="None", label="Device"
+        queryset=Device.objects.all(), required=False, null_option="None", label="Device", to_field_name="name"
     )
 
 

@@ -2,7 +2,6 @@
 import json
 
 from django import template
-from django.utils.text import slugify as _slugify
 from django_jinja import library
 
 register = template.Library()

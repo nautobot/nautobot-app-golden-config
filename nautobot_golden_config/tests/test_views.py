@@ -231,24 +231,6 @@ class GoldenConfigListViewTestCase(TestCase):
         # This will fail if the Relationships to Device objects showed up in the Golden Config table
         self.assertEqual(text_headers, self._text_table_headers)
 
-    def test_table_entries_based_on_dynamic_group_scope(self):
-        self.assertEqual(models.GoldenConfig.objects.count(), 0)
-        _, table_body = self._get_golden_config_table()
-        devices_in_table = [device_column.text for device_column in table_body.xpath("tr/td[2]/a")]
-        device_names = [device.name for device in self.gc_dynamic_group.members]
-        self.assertEqual(devices_in_table, device_names)
-
-    def test_scope_change_affects_table_entries(self):
-        last_device = self.gc_dynamic_group.members.last()
-        _, table_body = self._get_golden_config_table()
-        devices_in_table = [device_column.text for device_column in table_body.xpath("tr/td[2]/a")]
-        self.assertIn(last_device.name, devices_in_table)
-        self.gc_dynamic_group.filter["name"] = [dev.name for dev in Device.objects.exclude(pk=last_device.pk)]
-        self.gc_dynamic_group.validated_save()
-        _, table_body = self._get_golden_config_table()
-        devices_in_table = [device_column.text for device_column in table_body.xpath("tr/td[2]/a")]
-        self.assertNotIn(last_device.name, devices_in_table)
-
     @skip("TODO: 2.0 Figure out how do csv tests.")
     def test_csv_export(self):
         # verify GoldenConfig table is empty

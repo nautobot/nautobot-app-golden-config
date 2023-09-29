@@ -21,6 +21,8 @@ from nautobot.extras.jobs import (
 )
 from nautobot.extras.models import DynamicGroup, GitRepository, Status, Tag, Role
 from nautobot.tenancy.models import Tenant, TenantGroup
+from nautobot.extras.datasources.git import get_repo_from_url_to_path_and_from_branch
+
 
 from nornir_nautobot.exceptions import NornirNautobotException
 
@@ -57,7 +59,9 @@ def get_refreshed_repos(job_obj, repo_type, data=None):
     for repository_record in repository_records:
         repo = GitRepository.objects.get(id=repository_record)
         ensure_git_repository(repo, job_obj.logger)
-        git_repo = GitRepo(repo)
+        git_info = get_repo_from_url_to_path_and_from_branch(repo)
+        # TODO: 2.0 Is this pulling down twice?
+        git_repo = GitRepo(git_info.to_path, git_info.from_url, remote_url=repo.remote_url)
         # TODO: 2.0 add secret check here
         repositories.append(git_repo)
 
@@ -140,7 +144,7 @@ class IntendedJob(Job, FormEntry):
 
         # Commit / Push each repo after job is completed.
         for intended_repo in intended_repos:
-            self.logger.debug("Push new intended configs to repo %s.", intended_repo.url)
+            self.logger.debug("Push new intended configs to repo %s.", intended_repo.remote_url)
             intended_repo.commit_with_added(f"INTENDED CONFIG CREATION JOB - {now}")
             intended_repo.push()
 
@@ -191,11 +195,11 @@ class AllGoldenConfig(Job):
     def run(self, *args, **data):
         """Run all jobs."""
         if constant.ENABLE_INTENDED:
-            IntendedJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
+            IntendedJob().run.__func__(self, **data)  # pylint: disable=too-many-function-args
         if constant.ENABLE_BACKUP:
-            BackupJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
+            BackupJob().run.__func__(self, **data)  # pylint: disable=too-many-function-args
         if constant.ENABLE_COMPLIANCE:
-            ComplianceJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
+            ComplianceJob().run.__func__(self, **data)  # pylint: disable=too-many-function-args
 
 
 class AllDevicesGoldenConfig(Job, FormEntry):
@@ -211,11 +215,11 @@ class AllDevicesGoldenConfig(Job, FormEntry):
     def run(self, *args, **data):
         """Run all jobs."""
         if constant.ENABLE_INTENDED:
-            IntendedJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
+            IntendedJob().run.__func__(self, **data)  # pylint: disable=too-many-function-args
         if constant.ENABLE_BACKUP:
-            BackupJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
+            BackupJob().run.__func__(self, **data)  # pylint: disable=too-many-function-args
         if constant.ENABLE_COMPLIANCE:
-            ComplianceJob().run.__func__(self, data, True)  # pylint: disable=too-many-function-args
+            ComplianceJob().run.__func__(self, **data)  # pylint: disable=too-many-function-args
 
 
 class GenerateConfigPlans(Job, FormEntry):

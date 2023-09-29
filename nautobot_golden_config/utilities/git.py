@@ -6,59 +6,24 @@ import re
 from urllib.parse import quote
 
 from git import Repo
+from nautobot.core.utils.git import GIT_ENVIRONMENT
+from nautobot.core.utils.git import GitRepo as _GitRepo
 
 from nautobot.extras.choices import SecretsGroupSecretTypeChoices
+from nautobot.extras.datasources.git import get_repo_from_url_to_path_and_from_branch
 from nautobot_golden_config.utilities.utils import get_secret_value
 
 
 LOGGER = logging.getLogger(__name__)
 
 
-class GitRepo:  # pylint: disable=too-many-instance-attributes
+class GitRepo(_GitRepo):  # pylint: disable=too-many-instance-attributes
     """Git Repo object to help with git actions."""
 
-    def __init__(self, obj):
-        """Set attributes to easily interact with Git Repositories.
-
-        Args:
-            obj (GitRepository): Django ORM object from GitRepository.
-        """
-        self.path = obj.filesystem_path
-        self.url = obj.remote_url
-        self.secrets_group = obj.secrets_group
-        if not self.secrets_group:
-            error_msg = f"E3014: The Git Repositories `{obj}` [{str(self.url)}] does not have a required token."
-            LOGGER.error(error_msg)
-            raise ValueError(error_msg)
-        self.token_user = get_secret_value(secret_type=SecretsGroupSecretTypeChoices.TYPE_USERNAME, git_obj=obj)
-        self.token = get_secret_value(secret_type=SecretsGroupSecretTypeChoices.TYPE_TOKEN, git_obj=obj)
-
-        if self.token and self.token not in self.url:
-            # Some Git Providers require a user as well as a token.
-            if self.token_user:
-                self.url = re.sub(
-                    "//", f"//{quote(str(self.token_user), safe='')}:{quote(str(self.token), safe='')}@", self.url
-                )
-            else:
-                # Github only requires the token.
-                self.url = re.sub("//", f"//{quote(str(self.token), safe='')}@", self.url)
-
-        self.branch = obj.branch
-        self.obj = obj
-
-        if os.path.isdir(self.path):
-            LOGGER.debug("Git path `%s` exists, initiate", self.path)
-            self.repo = Repo(path=self.path)
-        else:
-            LOGGER.debug("Git path `%s` does not exists, clone", self.path)
-            self.repo = Repo.clone_from(self.url, to_path=self.path)
-
-        # Disable prompting for credentials
-        self.repo.git.update_environment(GIT_TERMINAL_PROMPT="0")
-
-        if self.url not in self.repo.remotes.origin.urls:
-            LOGGER.debug("URL `%s` was not currently set, setting", self.url)
-            self.repo.remotes.origin.set_url(self.url)
+    def __init__(self, path, url, clone_initially=True, *args, **kwargs):
+        """Set attributes to easily interact with Git Repositories."""
+        super().__init__(path, url, clone_initially)
+        self.remote_url = kwargs["remote_url"]
 
     def commit_with_added(self, commit_description):
         """Make a force commit.
@@ -75,4 +40,4 @@ class GitRepo:  # pylint: disable=too-many-instance-attributes
     def push(self):
         """Push latest to the git repo."""
         LOGGER.debug("Push changes to repo")
-        self.repo.remotes.origin.push()
+        self.repo.remotes.origin.push().raise_if_error()

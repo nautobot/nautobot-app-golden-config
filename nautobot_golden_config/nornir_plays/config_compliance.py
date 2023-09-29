@@ -201,7 +201,7 @@ def config_compliance(job_result, log_level, data):
                 },
             },
         ) as nornir_obj:
-            nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger, job_result)])
+            nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
 
             logger.debug("Run nornir compliance tasks.")
             nr_with_processors.run(

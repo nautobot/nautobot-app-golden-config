@@ -20,6 +20,7 @@ def graph_ql_query(request, device, query):
 
     LOGGER.debug("GraphQL - set query variable to device.")
     variables = {"device_id": str(device.pk)}
+
     try:
         LOGGER.debug("GraphQL - test query: `%s`", str(query))
         document = backend.document_from_string(schema, query)
@@ -38,7 +39,7 @@ def graph_ql_query(request, device, query):
     data = data.get("device", {})
 
     if PLUGIN_CFG.get("sot_agg_transposer"):
-        LOGGER.debug("GraphQL - tansform data with function: `%s`", str(PLUGIN_CFG.get("sot_agg_transposer")))
+        LOGGER.debug("GraphQL - transform data with function: `%s`", str(PLUGIN_CFG.get("sot_agg_transposer")))
         try:
             data = import_string(PLUGIN_CFG.get("sot_agg_transposer"))(data)
         except Exception as error:  # pylint: disable=broad-except

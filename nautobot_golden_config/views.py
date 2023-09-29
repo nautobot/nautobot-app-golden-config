@@ -402,6 +402,7 @@ class ConfigComplianceOverview(generic.ObjectListView):
             "device_visual": plot_visual(device_aggr),
             "feature_aggr": feature_aggr,
             "feature_visual": plot_visual(feature_aggr),
+            "compliance": constant.ENABLE_COMPLIANCE,
         }
 
     def extra_context(self):
@@ -573,6 +574,8 @@ class ConfigPlanUIViewSet(views.NautobotUIViewSet):
 
 
 class ConfigPlanBulkDeploy(ObjectPermissionRequiredMixin, View):
+    """View to run the Config Plan Deploy Job."""
+
     queryset = models.ConfigPlan.objects.all()
 
     def get_required_permission(self):

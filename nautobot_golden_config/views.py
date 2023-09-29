@@ -1,5 +1,5 @@
 """Django views for Nautobot Golden Configuration."""  # pylint: disable=too-many-lines
-import difflib
+import difflib 
 import json
 import logging
 from datetime import datetime, timezone
@@ -304,7 +304,7 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
         return context
 
     def alter_queryset(self, request):
-        """Build actual runtime queryset as the build time queryset provides no information."""
+        """Build actual runtime queryset as the build time queryset of table `pivoted`."""
         return pivot(
             self.queryset,
             ["device", "device__name"],
@@ -574,6 +574,12 @@ class ConfigPlanUIViewSet(views.NautobotUIViewSet):
     lookup_field = "pk"
     action_buttons = ("add",)
     update_form_class = forms.ConfigPlanUpdateForm
+
+    def alter_queryset(self, request):
+        """Build actual runtime queryset to automatically remove `Completed` by default."""
+        if "Completed" not in request.GET.getlist("status"):
+            return self.queryset.exclude(status__name="Completed")
+        return self.queryset
 
     def get_extra_context(self, request, instance=None):
         """A ConfigPlan helper function to warn if the Job is not enabled to run."""

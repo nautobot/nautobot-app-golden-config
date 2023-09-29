@@ -221,9 +221,8 @@ class ConfigComplianceDeleteTable(BaseTable):
         """Metaclass attributes of ConfigComplianceDeleteTable."""
 
         device = Column(accessor="device__name", verbose_name="Device Name")
-        compliance = Column(accessor="compliance", verbose_name="Compliance")
         model = models.ConfigCompliance
-        fields = ("device", "feature", "compliance")
+        fields = ("device", "feature")
 
 
 class DeleteGoldenConfigTable(BaseTable):

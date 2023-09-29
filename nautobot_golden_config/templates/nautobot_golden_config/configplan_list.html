@@ -3,8 +3,8 @@
 
 
 {% block buttons %}
-<a href="{% url 'plugins:nautobot_golden_config:configplan_list' %}?status=Approved&status=Failed&status=In%20Progress&status=Not%20Approved" class="btn btn-primary" id="completed-button">
-  <span class="mdi mdi-link" aria-hidden="true"></span> Unfinished Plans
+<a href="{% url 'plugins:nautobot_golden_config:configplan_list' %}?status=Completed" class="btn btn-primary" id="completed-button">
+  <span class="mdi mdi-link" aria-hidden="true"></span> Completed Plans
 </a>
 {% endblock %}
 

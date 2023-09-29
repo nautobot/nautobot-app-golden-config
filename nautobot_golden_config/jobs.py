@@ -174,7 +174,7 @@ class BackupJob(Job, FormEntry):
 
         # Commit / Push each repo after job is completed.
         for backup_repo in backup_repos:
-            self.logger.debug("Pushing Backup config repo %s.", backup_repo.url)
+            self.logger.debug("Pushing Backup config repo %s.", backup_repo.base_url)
             backup_repo.commit_with_added(f"BACKUP JOB {now}")
             backup_repo.push()
 

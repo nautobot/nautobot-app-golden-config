@@ -108,12 +108,11 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
             sot_agg_query=graphql_query,
         )
 
-        # Device.objects.all().delete()
         create_device(name="test_device")
         create_orphan_device(name="orphan_device")
         self.job_result = MagicMock()
         self.data = MagicMock()
-        self.logger = logging.getLogger(__name__)  # TODO: 2.0, this work?
+        self.logger = logging.getLogger(__name__)
         self.device_to_settings_map = get_device_to_settings_map(queryset=Device.objects.all())
 
     def test_null_to_empty_null(self):

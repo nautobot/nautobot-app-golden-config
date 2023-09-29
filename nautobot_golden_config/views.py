@@ -32,7 +32,7 @@ from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import add_message, get_device_to_settings_map
 from nautobot_golden_config.utilities.mat_plot import get_global_aggr, plot_barchart_visual, plot_visual
 
-# TODO: 2.0 #4512
+# TODO: Future #4512
 PERMISSIONS_ACTION_MAP.update(
     {
         "backup": "change",
@@ -88,9 +88,8 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
         sync_job = Job.objects.get(module_name="nautobot_golden_config.jobs", job_class_name="SyncGoldenConfigWithDynamicGroups")
         sync_job_url = f"<a href='{reverse('extras:job_run', kwargs={'pk': sync_job.pk})}'>{sync_job.name}</a>"
         out_of_sync_message = format_html(
-            "The GoldenConfig Table is missing entries and/or has additional entries "
-            "based on what is defined for the DynamicGroups in GoldenConfigSettings. "
-            f"Run the job, {sync_job_url}, to rectify this issue."
+            "The expected devices and actual devices here are not in sync ."
+            f"Running the job {sync_job_url} will put it back in sync."
         )
 
         gc_dynamic_group_device_pks = models.GoldenConfig.get_dynamic_group_device_pks()

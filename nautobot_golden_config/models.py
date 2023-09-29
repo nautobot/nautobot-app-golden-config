@@ -12,6 +12,7 @@ from django.utils.module_loading import import_string
 from hier_config import Host as HierConfigHost
 
 from nautobot.core.models.generics import PrimaryModel
+from nautobot.dcim.models import Device
 from nautobot.extras.models import ObjectChange
 from nautobot.extras.models.statuses import StatusField
 from nautobot.extras.utils import extras_features
@@ -425,6 +426,21 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
             object_data_v2=serialize_object_v2(self),
             related_object=related_object,
         )
+    
+    @staticmethod
+    def get_dynamic_group_device_pks():
+        """Get all Device PKs associated with GoldenConfigSetting DynamicGroups."""
+        gc_dynamic_group_device_queryset = Device.objects.none()
+        for setting in GoldenConfigSetting.objects.all():
+            # using "|" should not require calling distinct afterwards
+            gc_dynamic_group_device_queryset = gc_dynamic_group_device_queryset | setting.dynamic_group.members
+
+        return set(gc_dynamic_group_device_queryset.values_list("pk", flat=True))
+
+    @classmethod
+    def get_golden_config_device_ids(cls):
+        """Get all Device PKs associated with GoldenConfig entries."""
+        return set(cls.objects.values_list("device__pk", flat=True))
 
     class Meta:
         """Set unique together fields for model."""

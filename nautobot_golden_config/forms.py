@@ -493,12 +493,20 @@ class ConfigPlanForm(NautobotModelForm):
     )
 
     tenant_group = apps_forms.DynamicModelMultipleChoiceField(queryset=TenantGroup.objects.all(), required=False)
-    tenant = apps_forms.DynamicModelMultipleChoiceField(queryset=Tenant.objects.all(), required=False, query_params={"tenant_group": "$tenant_group"})
+    tenant = apps_forms.DynamicModelMultipleChoiceField(
+        queryset=Tenant.objects.all(), required=False, query_params={"tenant_group": "$tenant_group"}
+    )
     # Requires https://github.com/nautobot/nautobot-plugin-golden-config/issues/430
     location = apps_forms.DynamicModelMultipleChoiceField(queryset=Location.objects.all(), required=False)
-    rack_group = apps_forms.DynamicModelMultipleChoiceField(queryset=RackGroup.objects.all(), required=False, query_params={"location": "$location"})
-    rack = apps_forms.DynamicModelMultipleChoiceField(queryset=Rack.objects.all(), required=False, query_params={"rack_group": "$rack_group", "location": "$location"})
-    role = apps_forms.DynamicModelMultipleChoiceField(queryset=Role.objects.all(), required=False, query_params={"content_types": "dcim.device"})
+    rack_group = apps_forms.DynamicModelMultipleChoiceField(
+        queryset=RackGroup.objects.all(), required=False, query_params={"location": "$location"}
+    )
+    rack = apps_forms.DynamicModelMultipleChoiceField(
+        queryset=Rack.objects.all(), required=False, query_params={"rack_group": "$rack_group", "location": "$location"}
+    )
+    role = apps_forms.DynamicModelMultipleChoiceField(
+        queryset=Role.objects.all(), required=False, query_params={"content_types": "dcim.device"}
+    )
     manufacturer = apps_forms.DynamicModelMultipleChoiceField(queryset=Manufacturer.objects.all(), required=False)
     platform = apps_forms.DynamicModelMultipleChoiceField(queryset=Platform.objects.all(), required=False)
     device_type = apps_forms.DynamicModelMultipleChoiceField(queryset=DeviceType.objects.all(), required=False)

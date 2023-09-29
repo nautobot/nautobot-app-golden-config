@@ -423,7 +423,7 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
             object_data_v2=serialize_object_v2(self),
             related_object=related_object,
         )
-    
+
     @staticmethod
     def get_dynamic_group_device_pks():
         """Get all Device PKs associated with GoldenConfigSetting DynamicGroups."""

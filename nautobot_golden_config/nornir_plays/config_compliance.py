@@ -70,6 +70,16 @@ def get_config_element(rule, config, obj, logger):
             config_element = config_json
 
     elif rule["obj"].config_type == ComplianceRuleConfigTypeChoice.TYPE_CLI:
+        if not obj.platform:
+            error_msg = f"E3008: Platform is not defined for device `{obj}`, preemptively failed."
+            logger.error(error_msg, extra={"object": obj})
+            raise NornirNautobotException(error_msg)
+
+        if not obj.platform.network_driver_mapper:
+            error_msg = f"E3009: Network driver is not defined for Platform `{obj.platform}`, preemptively failed."
+            logger.error(error_msg, extra={"object": obj})
+            raise NornirNautobotException(error_msg)
+
         if obj.platform.network_driver_mapper["netmiko"] not in parser_map.keys():
             error_msg = f"E3003: There is currently no CLI-config parser support for platform network_driver `{obj.platform.network_driver}`, preemptively failed."
             logger.error(error_msg, extra={"object": obj})

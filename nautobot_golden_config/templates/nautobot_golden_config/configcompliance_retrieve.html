@@ -9,11 +9,11 @@
         <table class="table table-hover panel-body attr-table">
             <tr>
                 <td>Device Name</td>
-                <td>{{ object.device }}</td>
+                <td>{{ object.device|hyperlinked_object }}</td>
             </tr>
             <tr>
                 <td>Feature</td>
-                <td>{{ object.rule.feature.name }}</td>
+                <td>{{ object.rule.feature|hyperlinked_object }}</td>
             </tr>
             <tr>
                 <td>Compliance Status</td>

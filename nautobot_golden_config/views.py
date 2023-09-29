@@ -96,20 +96,11 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
         for setting in models.GoldenConfigSetting.objects.all():
             gc_dynamic_group_device_queryset = gc_dynamic_group_device_queryset | setting.dynamic_group.members
 
-        gc_dynamic_group_device_queryset = gc_dynamic_group_device_queryset.distinct()
-        gc_dynamic_group_device_queryset_count = gc_dynamic_group_device_queryset.count()
-        gc_queryset = models.GoldenConfig.objects.all()
-        gc_queryset_count = gc_queryset.count()
-
-        # Only validating Devices are the same for count < 100, otherwise same count means they are in sync.
-        if gc_dynamic_group_device_queryset_count < 100:
-            gc_device_queryset = Device.objects.filter(pk__in=[gc.device.pk for gc in gc_queryset])
-            dg_to_gc_difference = gc_dynamic_group_device_queryset.difference(gc_device_queryset)
-            gc_to_dg_difference = gc_device_queryset.difference(gc_dynamic_group_device_queryset)
-            if dg_to_gc_difference or gc_to_dg_difference:
-                messages.warning(self.request, message=out_of_sync_message)
-        elif gc_dynamic_group_device_queryset_count != gc_queryset_count:
-            messages.warning(self.request, message=out_of_sync_message)
+      gc_dynamic_group_device_ids = set(gc_dynamic_group_device_queryset.distinct().values_list("pk", flat=True))
+      gc_device_ids = set(models.GoldenConfig.objects.values_list("device__pk", flat=True))
+      
+      if gc_dynamic_group_device_ids != gc_device_ids:
+          messages.warning(self.request, message=out_of_sync_message)
 
         return queryset
 

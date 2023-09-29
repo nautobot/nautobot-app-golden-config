@@ -3,12 +3,11 @@
 
 import json
 
-from django import forms
-
 import nautobot.apps.forms as apps_forms
 import nautobot.core.forms as core_forms
-from nautobot.dcim.models import Device, Platform, Location, DeviceType, Manufacturer, Rack, RackGroup
-from nautobot.extras.forms import NautobotFilterForm, NautobotBulkEditForm, NautobotModelForm
+from django import forms
+from nautobot.dcim.models import Device, DeviceType, Location, Manufacturer, Platform, Rack, RackGroup
+from nautobot.extras.forms import NautobotBulkEditForm, NautobotFilterForm, NautobotModelForm
 from nautobot.extras.models import DynamicGroup, GitRepository, JobResult, Role, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
 
@@ -494,12 +493,12 @@ class ConfigPlanForm(NautobotModelForm):
     )
 
     tenant_group = apps_forms.DynamicModelMultipleChoiceField(queryset=TenantGroup.objects.all(), required=False)
-    tenant = apps_forms.DynamicModelMultipleChoiceField(queryset=Tenant.objects.all(), required=False)
+    tenant = apps_forms.DynamicModelMultipleChoiceField(queryset=Tenant.objects.all(), required=False, query_params={"tenant_group": "$tenant_group"})
     # Requires https://github.com/nautobot/nautobot-plugin-golden-config/issues/430
     location = apps_forms.DynamicModelMultipleChoiceField(queryset=Location.objects.all(), required=False)
-    rack_group = apps_forms.DynamicModelMultipleChoiceField(queryset=RackGroup.objects.all(), required=False)
-    rack = apps_forms.DynamicModelMultipleChoiceField(queryset=Rack.objects.all(), required=False)
-    role = apps_forms.DynamicModelMultipleChoiceField(queryset=Role.objects.all(), required=False)
+    rack_group = apps_forms.DynamicModelMultipleChoiceField(queryset=RackGroup.objects.all(), required=False, query_params={"location": "$location"})
+    rack = apps_forms.DynamicModelMultipleChoiceField(queryset=Rack.objects.all(), required=False, query_params={"rack_group": "$rack_group", "location": "$location"})
+    role = apps_forms.DynamicModelMultipleChoiceField(queryset=Role.objects.all(), required=False, query_params={"content_types": "dcim.device"})
     manufacturer = apps_forms.DynamicModelMultipleChoiceField(queryset=Manufacturer.objects.all(), required=False)
     platform = apps_forms.DynamicModelMultipleChoiceField(queryset=Platform.objects.all(), required=False)
     device_type = apps_forms.DynamicModelMultipleChoiceField(queryset=DeviceType.objects.all(), required=False)

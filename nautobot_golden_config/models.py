@@ -7,16 +7,13 @@ from deepdiff import DeepDiff
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.module_loading import import_string
-
-
 from hier_config import Host as HierConfigHost
-
 from nautobot.core.models.generics import PrimaryModel
+from nautobot.core.models.utils import serialize_object, serialize_object_v2
 from nautobot.dcim.models import Device
 from nautobot.extras.models import ObjectChange
 from nautobot.extras.models.statuses import StatusField
 from nautobot.extras.utils import extras_features
-from nautobot.core.models.utils import serialize_object, serialize_object_v2
 from netutils.config.compliance import feature_compliance
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
@@ -140,7 +137,7 @@ def _verify_get_custom_compliance_data(compliance_details):
 
 def _get_hierconfig_remediation(obj):
     """Returns the remediating config."""
-    hierconfig_os = obj.network_driver_mappings["hier_config"]  # TODO: 2.0 verify this works
+    hierconfig_os = obj.device.platform.network_driver_mappings["hier_config"]
     if not hierconfig_os:
         raise ValidationError(f"platform {obj.network_driver} is not supported by hierconfig.")
 

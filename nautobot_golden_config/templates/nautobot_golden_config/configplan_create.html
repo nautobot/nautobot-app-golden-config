@@ -73,7 +73,6 @@ function isValidURL(url) {
 
 function configPlanCount(jobResultId) {
   return new Promise(function(resolve, reject) {
-    // TODO: 2.0 what if there is no objects created, what should this be? 
     var configPlanApi = `/api/plugins/golden-config/config-plan/?plan_result_id=${jobResultId}`;
     $.ajax({
       url: configPlanApi,

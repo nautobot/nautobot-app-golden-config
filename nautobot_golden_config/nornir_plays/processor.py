@@ -15,7 +15,6 @@ class ProcessGoldenConfig(BaseLoggingProcessor):
     def task_completed(self, task: Task, result: AggregatedResult) -> None:
         """Task outside of thread to determine what to do."""
         if result.failed:
-            # TODO: 2.0 fully capture the results and figure out what to do
             self.logger.error(f"{task.name} failed: {result}")
             raise ValueError(result)
 
@@ -60,15 +59,7 @@ class ProcessGoldenConfig(BaseLoggingProcessor):
             self.logger.error(f"{task.name} failed: {exception_string}", extra={"object": task.host.data["obj"]})
             for exception in exceptions:
                 # Log full exception and traceback to debug
-                self.logger.info(
+                self.logger.warning(
                     f"""{task.host}, {task.name} failed: {exception[0]} {exception[1]}""",
                     extra={"object": task.host.data["obj"]},
                 )
-        # if result.failed:
-        #     for level_1_result in result:
-        #         if hasattr(level_1_result, "exception") and hasattr(level_1_result.exception, "result"):
-        #             for level_2_result in level_1_result.exception.result:
-        #                 if isinstance(level_2_result.exception, NornirNautobotException):
-        #                     return
-        #     self.logger.error(f"{task.name} failed: {result.exception}", extra={"object": task.host.data["obj"]})
-        #     # TODO 2.0: update the state???? Create a recursive function to review each result properly?

@@ -74,6 +74,7 @@ def run_template(  # pylint: disable=too-many-arguments
     output_file_location = os.path.join(intended_directory, intended_path_template_obj)
 
     jinja_template = render_jinja_template(obj, logger, settings.jinja_path_template)
+    job_class_instance.request.user = job_class_instance.user
     status, device_data = graph_ql_query(job_class_instance.request, obj, settings.sot_agg_query.query)
     if status != 200:
         error_msg = f"E3012: The GraphQL query return a status of {str(status)} with error of {str(device_data)}"
@@ -98,7 +99,7 @@ def run_template(  # pylint: disable=too-many-arguments
     intended_obj.intended_config = generated_config
     intended_obj.save()
 
-    logger.info(obj, "Successfully generated the intended configuration.")
+    logger.info("Successfully generated the intended configuration.", extra={"object": obj})
 
     return Result(host=task.host, result=generated_config)
 

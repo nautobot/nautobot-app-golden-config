@@ -87,7 +87,7 @@ def run_backup(  # pylint: disable=too-many-arguments
     backup_obj.backup_config = running_config
     backup_obj.save()
 
-    logger.info(obj, "Successfully extracted running configuration from device.")
+    logger.info("Successfully extracted running configuration from device.", extra={"object": obj})
 
     return Result(host=task.host, result=running_config)
 

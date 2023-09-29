@@ -167,7 +167,7 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     compliance_obj.compliance_last_success_date = task.host.defaults.data["now"]
     compliance_obj.compliance_config = "\n".join(diff_files(backup_file, intended_file))
     compliance_obj.save()
-    logger.info(obj, "Successfully tested compliance job.")
+    logger.info("Successfully tested compliance job.", extra={"object": obj})
 
     return Result(host=task.host)
 

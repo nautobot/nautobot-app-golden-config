@@ -30,13 +30,13 @@
 {% block content %}
   {{ block.super }}
     
-<div class="modal fade" id="myModal" role="dialog">
+<div class="modal fade" id="gcModal" role="dialog">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h1 class="modal-title">Golden Configuration</h4>
             </div>
-            <div class="modal-body">
+            <div id="gc-modal-body" class="modal-body">
             </div>
             <div class="modal-footer">
                 <a id="detail_view" class="btn btn-primary">Detailed View</a>
@@ -78,8 +78,8 @@
             $('#detail_view').attr("href", ref);
             $('#detail_view').attr("target", "_blank");
             var dataURL = $(this).attr('data-href');
-            $('.modal-body').load(dataURL,function(){
-                $('#myModal').modal({show:true});
+            $('#gc-modal-body').load(dataURL,function(){
+                $('#gcModal').modal({show:true});
             });
         });
     });

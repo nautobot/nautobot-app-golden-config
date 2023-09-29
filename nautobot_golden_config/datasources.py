@@ -1,14 +1,15 @@
 """Data source plugin extension to register additional git repo types."""
 import os
-from django.db import IntegrityError
+
 import yaml
+from django.db import IntegrityError
+from nautobot.dcim.models.devices import Platform
 from nautobot.extras.choices import LogLevelChoices
 from nautobot.extras.registry import DatasourceContent
-from nautobot.dcim.models.devices import Platform
 
-from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
-from nautobot_golden_config.models import ComplianceFeature, ComplianceRule, ConfigReplace, ConfigRemove
 from nautobot_golden_config.exceptions import MissingReference
+from nautobot_golden_config.models import ComplianceFeature, ComplianceRule, ConfigRemove, ConfigReplace
+from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
 
 
 def refresh_git_jinja(repository_record, job_result, delete=False):  # pylint: disable=unused-argument
@@ -70,7 +71,7 @@ def refresh_git_gc_properties(repository_record, job_result, delete=False):  # p
             "class": ComplianceRule,
             "id_keys": (
                 ("feature", "feature_slug"),
-                ("platform", "platform_name"),
+                ("platform", "platform_network_driver"),
             ),
         },
         {
@@ -78,7 +79,7 @@ def refresh_git_gc_properties(repository_record, job_result, delete=False):  # p
             "class": ConfigRemove,
             "id_keys": (
                 ("name", "name"),
-                ("platform", "platform_name"),
+                ("platform", "platform_network_driver"),
             ),
         },
         {
@@ -86,7 +87,7 @@ def refresh_git_gc_properties(repository_record, job_result, delete=False):  # p
             "class": ConfigReplace,
             "id_keys": (
                 ("name", "name"),
-                ("platform", "platform_name"),
+                ("platform", "platform_network_driver"),
             ),
         },
     )
@@ -105,6 +106,9 @@ def get_id_kwargs(gc_config_item_dict, id_keys, job_result):
     # fk_class_mapping contains a mapping of the FK attributes to the related model
     fk_class_mapping = {"feature": ComplianceFeature, "platform": Platform}
 
+    if "platform_slug" in gc_config_item_dict.keys():
+        gc_config_item_dict["platform_network_driver"] = gc_config_item_dict.pop("platform_slug")
+
     id_kwargs = {}
     for id_key in id_keys:
         actual_attr_name = id_key[0]
@@ -112,7 +116,10 @@ def get_id_kwargs(gc_config_item_dict, id_keys, job_result):
 
         # If the attribute is actually a FK reference, we need to resolve the related object
         if actual_attr_name in fk_class_mapping:
-            _, field_name = yaml_attr_name.split("_")
+            if "network_driver" in yaml_attr_name:
+                field_name = "network_driver"
+            else:
+                _, field_name = yaml_attr_name.split("_")
             kwargs = {field_name: gc_config_item_dict[yaml_attr_name]}
             try:
                 id_kwargs[actual_attr_name] = fk_class_mapping[actual_attr_name].objects.get(**kwargs)

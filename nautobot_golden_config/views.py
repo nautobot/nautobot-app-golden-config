@@ -1,36 +1,34 @@
 """Django views for Nautobot Golden Configuration."""  # pylint: disable=too-many-lines
-import difflib 
+import difflib
 import json
 import logging
 from datetime import datetime, timezone
-from rest_framework.response import Response
-from rest_framework.decorators import action
 
 import yaml
 from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, ExpressionWrapper, F, FloatField, Max, Q
 from django.shortcuts import redirect, render
-from django.views.generic import View
 
 # from django.utils.module_loading import import_string
 from django.utils.timezone import make_aware
+from django.views.generic import View
 from django_pivot.pivot import pivot
-
 from nautobot.apps import views
 from nautobot.core.views import generic
-from nautobot.core.views.mixins import PERMISSIONS_ACTION_MAP
+from nautobot.core.views.mixins import ObjectPermissionRequiredMixin, PERMISSIONS_ACTION_MAP
 from nautobot.dcim.models import Device
 from nautobot.extras.models import Job, JobResult
-from nautobot.core.views.mixins import ObjectPermissionRequiredMixin
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
 from nautobot_golden_config import filters, forms, models, tables
 from nautobot_golden_config.api import serializers
 from nautobot_golden_config.utilities import constant
 from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
 from nautobot_golden_config.utilities.graphql import graph_ql_query
-from nautobot_golden_config.utilities.mat_plot import get_global_aggr, plot_barchart_visual, plot_visual
 from nautobot_golden_config.utilities.helper import add_message, get_device_to_settings_map
+from nautobot_golden_config.utilities.mat_plot import get_global_aggr, plot_barchart_visual, plot_visual
 
 # TODO: 2.0 #4512
 PERMISSIONS_ACTION_MAP.update(
@@ -87,6 +85,7 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
         return golden_config_device_queryset & self.queryset.distinct()
 
     def get_extra_context(self, request, instance=None, **kwargs):
+        """Get extra context data."""
         context = super().get_extra_context(request, instance)
         context["compliance"] = constant.ENABLE_COMPLIANCE
         context["backup"] = constant.ENABLE_BACKUP

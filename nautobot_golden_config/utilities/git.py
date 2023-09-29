@@ -9,10 +9,10 @@ LOGGER = logging.getLogger(__name__)
 class GitRepo(_GitRepo):  # pylint: disable=too-many-instance-attributes
     """Git Repo object to help with git actions."""
 
-    def __init__(self, path, url, clone_initially=True, remote_url=None):
+    def __init__(self, path, url, clone_initially=True, base_url=None):
         """Set attributes to easily interact with Git Repositories."""
         super().__init__(path, url, clone_initially)
-        self.remote_url = remote_url
+        self.base_url = base_url
 
     def commit_with_added(self, commit_description):
         """Make a force commit.

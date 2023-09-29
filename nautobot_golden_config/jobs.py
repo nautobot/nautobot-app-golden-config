@@ -59,10 +59,10 @@ def get_refreshed_repos(job_obj, repo_type, data=None):
     for repository_record in repository_records:
         repo = GitRepository.objects.get(id=repository_record)
         ensure_git_repository(repo, job_obj.logger)
+        # TODO: Should this not point to non-nautobot.core import
+        # We should ask in nautobot core for the `from_url` constructor to be it's own function
         git_info = get_repo_from_url_to_path_and_from_branch(repo)
-        # TODO: 2.0 Is this pulling down twice?
-        git_repo = GitRepo(git_info.to_path, git_info.from_url, remote_url=repo.remote_url)
-        # TODO: 2.0 add secret check here
+        git_repo = GitRepo(repo.filesystem_path, git_info.from_url, clone_initially=False, base_url=repo.remote_url)
         repositories.append(git_repo)
 
     return repositories
@@ -144,7 +144,7 @@ class IntendedJob(Job, FormEntry):
 
         # Commit / Push each repo after job is completed.
         for intended_repo in intended_repos:
-            self.logger.debug("Push new intended configs to repo %s.", intended_repo.remote_url)
+            self.logger.debug("Push new intended configs to repo %s.", intended_repo.base_url)
             intended_repo.commit_with_added(f"INTENDED CONFIG CREATION JOB - {now}")
             intended_repo.push()
 

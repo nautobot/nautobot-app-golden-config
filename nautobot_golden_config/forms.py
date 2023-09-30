@@ -593,17 +593,17 @@ class ConfigPlanFilterForm(DeviceRelatedFilterForm):
     change_control_id = forms.CharField(required=False, label="Change Control ID")
     plan_result_id = apps_forms.DynamicModelMultipleChoiceField(
         queryset=JobResult.objects.all(),
-        query_params={"name": "plugins/nautobot_golden_config.jobs/GenerateConfigPlans"},
+        query_params={"job_model": "Generate Config Plans"},
         label="Plan Result",
         required=False,
-        display_field="created",
+        display_field="date_created",
     )
     deploy_result_id = apps_forms.DynamicModelMultipleChoiceField(
         queryset=JobResult.objects.all(),
-        query_params={"name": "plugins/nautobot_golden_config.jobs/DeployConfigPlans"},
+        query_params={"job_model": "Deploy Config Plans"},
         label="Deploy Result",
         required=False,
-        display_field="created",
+        display_field="date_created",
     )
     status = apps_forms.DynamicModelMultipleChoiceField(
         required=False,

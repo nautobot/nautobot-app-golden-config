@@ -344,6 +344,7 @@ class ConfigPlanFilterSet(NautobotFilterSet):
     plan_result_id = django_filters.ModelMultipleChoiceFilter(
         queryset=JobResult.objects.filter(config_plan__isnull=False).distinct(),
         label="Plan JobResult ID",
+        to_field_name="id"
     )
     tenant_group_id = TreeNodeMultipleChoiceFilter(
         queryset=TenantGroup.objects.all(),
@@ -394,6 +395,7 @@ class ConfigPlanFilterSet(NautobotFilterSet):
     deploy_result_id = django_filters.ModelMultipleChoiceFilter(
         queryset=JobResult.objects.filter(config_plan__isnull=False).distinct(),
         label="Deploy JobResult ID",
+        to_field_name="id",
     )
     change_control_id = django_filters.CharFilter(
         field_name="change_control_id",

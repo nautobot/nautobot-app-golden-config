@@ -25,7 +25,6 @@ class ProcessGoldenConfig(BaseLoggingProcessor):
         """
         valid_exceptions = []
         if result.failed:
-            print(result)
             if isinstance(result, MultiResult) and hasattr(result, "exception"):
                 if not isinstance(result.exception, NornirNautobotException):
                     # return exception and traceback output

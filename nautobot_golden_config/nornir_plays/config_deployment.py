@@ -56,7 +56,7 @@ def run_deployment(task: Task, logger: logging.Logger, config_plan_qs, deploy_jo
             logger.error(error_msg, extra={"object": obj})
             raise NornirNautobotException(error_msg)
 
-        elif not task_changed and not task_failed:
+        if not task_changed and not task_failed:
             plans_to_deploy.update(status=Status.objects.get(name="Completed"))
             logger.info("Nothing was deployed to the device.", extra={"object": obj})
         else:
@@ -68,7 +68,7 @@ def run_deployment(task: Task, logger: logging.Logger, config_plan_qs, deploy_jo
         plans_to_deploy.update(status=Status.objects.get(name="Failed"))
         error_msg = f"E3024: Failed deployment to the device with error: {error}"
         logger.error(error_msg, extra={"object": obj})
-        raise NornirNautobotException(error_msg)
+        raise NornirNautobotException(error_msg) from error
 
     return Result(host=task.host, result=task_result)
 
@@ -113,9 +113,9 @@ def config_deployment(job_result, log_level, data):
                 config_plan_qs=config_plan_qs,
                 deploy_job_result=job_result,
             )
-    except Exception as err:
-        error_msg = f"E3001: General Exception handler, original error message ```{err}```"
+    except Exception as error:
+        error_msg = f"E3001: General Exception handler, original error message ```{error}```"
         logger.error(error_msg)
-        raise NornirNautobotException(error_msg)
+        raise NornirNautobotException(error_msg) from error
 
     logger.debug("Completed configuration deployment.")

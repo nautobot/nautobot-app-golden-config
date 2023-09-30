@@ -16,12 +16,14 @@ class GitRepoTest(unittest.TestCase):
         """Setup a reusable mock object to pass into GitRepo."""
         mock_obj = Mock()
 
-        def mock_get_secret_value(access_type, secret_type, **kwargs):
+        def mock_get_secret_value(  # pylint: disable=unused-argument,inconsistent-return-statements
+            access_type, secret_type, **kwargs
+        ):
             """Mock SecretsGroup.get_secret_value()."""
             if secret_type == "username":
                 return mock_obj.username
             if secret_type == "token":
-                return mock_obj._token
+                return mock_obj._token  # pylint: disable=protected-access
 
         mock_obj.filesystem_path = "/fake/path"
         mock_obj.remote_url = "https://fake.git/org/repository.git"
@@ -54,10 +56,10 @@ class GitRepoTest(unittest.TestCase):
     def test_path_noexist_token_and_username_with_symbols(self, mock_repo):
         """Test Repo clone_from is called when path is not valid, with username and token."""
         self.mock_obj.username = "Test User"
-        self.mock_obj._token = "Fake Token"
+        self.mock_obj._token = "Fake Token"  # pylint: disable=protected-access
         git_info = get_repo_from_url_to_path_and_from_branch(self.mock_obj)
         self.assertIn(quote(self.mock_obj.username), git_info.from_url)
-        self.assertIn(quote(self.mock_obj._token), git_info.from_url)
+        self.assertIn(quote(self.mock_obj._token), git_info.from_url)  # pylint: disable=protected-access
         GitRepo(self.mock_obj.filesystem_path, git_info.from_url, base_url=self.mock_obj.remote_url)
         mock_repo.assert_not_called()
         mock_repo.clone_from.assert_called_with(git_info.from_url, to_path=self.mock_obj.filesystem_path, env=None)

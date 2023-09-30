@@ -121,9 +121,10 @@ def config_intended(job_result, log_level, data, job_class_instance):
 
     try:
         qs = get_job_filter(data)
-    except NornirNautobotException as error_msg:
+    except NornirNautobotException as error:
+        error_msg = f"E3008: General Exception handler, original error message ```{error}```"
         logger.error(error_msg)
-        raise NornirNautobotException(error_msg)
+        raise NornirNautobotException(error_msg) from error
 
     logger.debug("Compiling device data for intended configuration.")
     device_to_settings_map = get_device_to_settings_map(queryset=qs)
@@ -157,7 +158,7 @@ def config_intended(job_result, log_level, data, job_class_instance):
                 job_class_instance=job_class_instance,
             )
 
-    except Exception as err:
-        error_msg = f"E3001: General Exception handler, original error message ```{err}```"
+    except Exception as error:
+        error_msg = f"E3001: General Exception handler, original error message ```{error}```"
         logger.error(error_msg)
-        raise NornirNautobotException(error_msg)
+        raise NornirNautobotException(error_msg) from error

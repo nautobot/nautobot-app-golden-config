@@ -70,7 +70,7 @@ def get_config_element(rule, config, obj, logger):
             config_element = config_json
 
     elif rule["obj"].config_type == ComplianceRuleConfigTypeChoice.TYPE_CLI:
-        if obj.platform.network_driver_mappings["netmiko"] not in parser_map.keys():
+        if obj.platform.network_driver_mappings["netmiko"] not in parser_map:
             error_msg = f"E3003: There is currently no CLI-config parser support for platform network_driver `{obj.platform.network_driver}`, preemptively failed."
             logger.error(error_msg, extra={"object": obj})
             raise NornirNautobotException(error_msg)
@@ -87,10 +87,12 @@ def get_config_element(rule, config, obj, logger):
 
 def diff_files(backup_file, intended_file):
     """Utility function to provide `Unix Diff` between two files."""
-    bkup = open(backup_file).readlines()
-    intended = open(intended_file).readlines()
+    with open(backup_file, encoding="utf-8") as file:
+        backup = file.read()
+    with open(intended_file, encoding="utf-8") as file:
+        intended = file.read()
 
-    for line in difflib.unified_diff(bkup, intended, lineterm=""):
+    for line in difflib.unified_diff(backup, intended, lineterm=""):
         yield line
 
 
@@ -212,9 +214,9 @@ def config_compliance(job_result, log_level, data):
                 rules=rules,
             )
 
-    except Exception as err:
-        error_msg = f"E3001: General Exception handler, original error message ```{err}```"
+    except Exception as error:
+        error_msg = f"E3001: General Exception handler, original error message ```{error}```"
         logger.error(error_msg)
-        raise NornirNautobotException(error_msg)
+        raise NornirNautobotException(error_msg) from error
 
     logger.debug("Completed compliance job for devices.")

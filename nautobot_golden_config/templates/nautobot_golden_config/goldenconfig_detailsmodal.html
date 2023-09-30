@@ -30,9 +30,6 @@
 <div class="panel panel-default" style="padding-bottom: 5px">
     <div style="padding-left: 10px">
         {% if format in 'json,yaml' %}
-            <div class="panel-heading"><strong>Output</strong>
-                {% include include_file %}
-            </div>
             <pre id="{{ title_name|slugify }}_{{ device_name|slugify }}">{{ output }}</pre>
         {% elif format == 'diff' %}
             <div id="diffoutput" value="{{ output }}"></div>

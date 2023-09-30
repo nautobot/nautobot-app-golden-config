@@ -39,7 +39,7 @@ FIELDS_PK = {
     "device_type",
 }
 
-FIELDS_NAME = {"tags", "status"}  # TODO: 2.0: Change tag to tags, this should be good now, verify
+FIELDS_NAME = {"tags", "status"}
 
 
 def get_job_filter(data=None):

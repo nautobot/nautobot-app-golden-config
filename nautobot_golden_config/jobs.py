@@ -68,9 +68,6 @@ def get_refreshed_repos(job_obj, repo_type, data=None):
     return repositories
 
 
-# TODO: 2.0: Does changing region/site to location affect nornir jobs?
-
-
 class FormEntry:  # pylint disable=too-few-public-method
     """Class definition to use as Mixin for form definitions."""
 
@@ -84,7 +81,9 @@ class FormEntry:  # pylint disable=too-few-public-method
     platform = MultiObjectVar(model=Platform, required=False)
     device_type = MultiObjectVar(model=DeviceType, required=False, display_field="display_name")
     device = MultiObjectVar(model=Device, required=False)
-    tags = MultiObjectVar(model=Tag, required=False, display_field="name")
+    tags = MultiObjectVar(
+        model=Tag, required=False, display_field="name", query_params={"content_types": "dcim.device"}
+    )
     status = MultiObjectVar(
         model=Status,
         required=False,

@@ -35,14 +35,14 @@ python = ">=3.8,<3.12"
 deepdiff = ">=5.5.0,!=6.0,!=6.1,<7"
 django-pivot = "1.8.1" # The signature changed to return a non-queryset, do not upgrade without ensuring it returns a queryset
 matplotlib = "^3.3.2"
-nautobot = ">=2.0.0rc3,<2.0.0rc99"  # TODO: 2.0: Point to 2.x version
+nautobot = "^2.0.0"
 nautobot-plugin-nornir = { git = "https://github.com/nautobot/nautobot-plugin-nornir.git", branch = "next-2.0" }  # TODO: 2.0: Point to 2.x version
 nornir-nautobot = { git = "https://github.com/nautobot/nornir-nautobot.git", branch = "next-2.0" }  # TODO: 2.0: Point to 2.x version
 
 toml = "^0.10.2"
 netutils = "^1.5.0"
 hier-config = "^2.2.2"
-nautobot-capacity-metrics = "3.0.0-rc.3" # TODO: 2.0: Point to non-RC version
+nautobot-capacity-metrics = "^3.0.0"
 
 [tool.poetry.group.dev.dependencies]
 bandit = "*"

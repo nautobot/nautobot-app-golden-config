@@ -1,7 +1,7 @@
 """Django views for Nautobot Golden Configuration."""  # pylint: disable=too-many-lines
 import json
 import logging
-from datetime import datetime 
+from datetime import datetime
 
 import yaml
 from django.contrib import messages
@@ -127,10 +127,8 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
             "output": self.output,
             "device": self.device,
             "device_name": self.device.name,
-            # "config_type": self.config_type,
             "format": self.structured_format,
             "title_name": self.title_name,
-            "include_file": "extras/inc/json_format.html",
             "is_modal": self.is_modal,
         }
         return render(request, self.action_template_name, context)

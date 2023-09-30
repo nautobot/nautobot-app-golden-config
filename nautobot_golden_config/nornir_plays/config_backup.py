@@ -1,36 +1,29 @@
 """Nornir job for backing up actual config."""
 # pylint: disable=relative-beyond-top-level
-import os
 import logging
+import os
 from datetime import datetime
+
 from django.utils.timezone import make_aware
-
+from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
+from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from nornir import InitNornir
-from nornir.core.task import Result, Task
 from nornir.core.plugins.inventory import InventoryPluginRegister
-
+from nornir.core.task import Result, Task
 from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
 
-from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
-from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
-
+from nautobot_golden_config.models import ConfigRemove, ConfigReplace, GoldenConfig
+from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.utilities.helper import (
     dispatch_params,
     get_device_to_settings_map,
     get_job_filter,
-    verify_settings,
     render_jinja_template,
+    verify_settings,
 )
 from nautobot_golden_config.utilities.logger import NornirLogger
-
-from nautobot_golden_config.models import (
-    GoldenConfig,
-    ConfigRemove,
-    ConfigReplace,
-)
-from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 

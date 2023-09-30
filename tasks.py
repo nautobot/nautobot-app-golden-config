@@ -12,9 +12,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from distutils.util import strtobool
-from invoke import Collection, task as invoke_task
 import os
+from distutils.util import strtobool
+
+from invoke import Collection
+from invoke import task as invoke_task
 
 # from dotenv import load_dotenv
 
@@ -98,7 +100,7 @@ def docker_compose(context, command, **kwargs):
         **kwargs.pop("env", {}),
     }
     compose_command_tokens = [
-        "docker compose",
+        "docker-compose",
         f"--project-name {context.nautobot_golden_config.project_name}",
         f'--project-directory "{context.nautobot_golden_config.compose_dir}"',
     ]

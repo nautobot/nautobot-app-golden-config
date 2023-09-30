@@ -5,7 +5,7 @@ from django.utils.html import format_html
 from django_tables2 import Column, LinkColumn, TemplateColumn
 from django_tables2.utils import A
 from nautobot.extras.tables import StatusTableMixin
-from nautobot.core.tables import BaseTable, TagColumn, ToggleColumn
+from nautobot.apps.tables import BaseTable, BooleanColumn, TagColumn, ToggleColumn
 
 from nautobot_golden_config import models
 from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
@@ -344,6 +344,9 @@ class ComplianceRuleTable(BaseTable):
     pk = ToggleColumn()
     feature = LinkColumn("plugins:nautobot_golden_config:compliancerule", args=[A("pk")])
     match_config = TemplateColumn(template_code=MATCH_CONFIG)
+    config_ordered = BooleanColumn()
+    custom_compliance = BooleanColumn()
+    config_remediation = BooleanColumn()
 
     class Meta(BaseTable.Meta):
         """Table to display Compliance Rules Meta Data."""
@@ -427,21 +430,20 @@ class GoldenConfigSettingTable(BaseTable):
     )
 
     def _render_capability(self, record, column, record_attribute):  # pylint: disable=unused-argument
-        if getattr(record, record_attribute, None):  # pylint: disable=no-else-return
-            return "✔"
-
-        return "✘"
+        if getattr(record, record_attribute, None):
+            return format_html('<span class="text-success"><i class="mdi mdi-check-bold"></i></span>')
+        return format_html('<span class="text-danger"><i class="mdi mdi-close-thick"></i></span>')
 
     def render_backup_repository(self, record, column):
-        """Render backup repository YES/NO value."""
+        """Render backup repository boolean value."""
         return self._render_capability(record=record, column=column, record_attribute="backup_repository")
 
     def render_intended_repository(self, record, column):
-        """Render intended repository YES/NO value."""
+        """Render intended repository boolean value."""
         return self._render_capability(record=record, column=column, record_attribute="intended_repository")
 
     def render_jinja_repository(self, record, column):
-        """Render jinja repository YES/NO value."""
+        """Render jinja repository boolean value."""
         return self._render_capability(record=record, column=column, record_attribute="jinja_repository")
 
     class Meta(BaseTable.Meta):

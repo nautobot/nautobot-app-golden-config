@@ -1,8 +1,8 @@
 """Filters for UI and API Views."""
 
 import django_filters
-from django.db.models import Q
-from nautobot.core.filters import MultiValueDateTimeFilter, TreeNodeMultipleChoiceFilter
+
+from nautobot.core.filters import MultiValueDateTimeFilter, TreeNodeMultipleChoiceFilter, SearchFilter
 from nautobot.dcim.models import Device, DeviceType, Location, Manufacturer, Platform, Rack, RackGroup
 from nautobot.extras.filters import NaturalKeyOrPKMultipleChoiceFilter, NautobotFilterSet, StatusFilter
 from nautobot.extras.models import JobResult, Role, Status
@@ -23,9 +23,13 @@ class GoldenConfigFilterSet(NautobotFilterSet):
             lookup_map.update({"isnull": "isnull"})
         return lookup_map
 
-    q = django_filters.CharFilter(
-        method="search",
-        label="Search",
+    q = SearchFilter(
+        filter_predicates={
+            "device__name": {
+                "lookup_expr": "icontains",
+                "preprocessor": str,
+            },
+        },
     )
     tenant_group_id = TreeNodeMultipleChoiceFilter(
         queryset=TenantGroup.objects.all(),
@@ -115,14 +119,6 @@ class GoldenConfigFilterSet(NautobotFilterSet):
         label="Device (name or ID)",
     )
 
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument
-        """Perform the filtered search."""
-        if not value.strip():
-            return queryset
-        # Chose only device, can be convinced more should be included
-        qs_filter = Q(device__name__icontains=value)
-        return queryset.filter(qs_filter)
-
     class Meta:
         """Meta class attributes for GoldenConfigFilter."""
 
@@ -167,17 +163,14 @@ class ConfigComplianceFilterSet(GoldenConfigFilterSet):  # pylint: disable=too-m
 class ComplianceFeatureFilterSet(NautobotFilterSet):
     """Inherits Base Class NautobotFilterSet."""
 
-    q = django_filters.CharFilter(
-        method="search",
-        label="Search",
+    q = SearchFilter(
+        filter_predicates={
+            "name": {
+                "lookup_expr": "icontains",
+                "preprocessor": str,
+            },
+        },
     )
-
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument
-        """Perform the filtered search."""
-        if not value.strip():
-            return queryset
-        qs_filter = Q(name__icontains=value)
-        return queryset.filter(qs_filter)
 
     class Meta:
         """Boilerplate filter Meta data for compliance feature."""
@@ -189,9 +182,13 @@ class ComplianceFeatureFilterSet(NautobotFilterSet):
 class ComplianceRuleFilterSet(NautobotFilterSet):
     """Inherits Base Class NautobotFilterSet."""
 
-    q = django_filters.CharFilter(
-        method="search",
-        label="Search",
+    q = SearchFilter(
+        filter_predicates={
+            "feature__name": {
+                "lookup_expr": "icontains",
+                "preprocessor": str,
+            },
+        },
     )
     platform = NaturalKeyOrPKMultipleChoiceFilter(
         field_name="platform",
@@ -199,13 +196,6 @@ class ComplianceRuleFilterSet(NautobotFilterSet):
         to_field_name="name",
         label="Platform (name or ID)",
     )
-
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument
-        """Perform the filtered search."""
-        if not value.strip():
-            return queryset
-        qs_filter = Q(feature__name__icontains=value)
-        return queryset.filter(qs_filter)
 
     class Meta:
         """Boilerplate filter Meta data for compliance rule."""
@@ -217,9 +207,13 @@ class ComplianceRuleFilterSet(NautobotFilterSet):
 class ConfigRemoveFilterSet(NautobotFilterSet):
     """Inherits Base Class NautobotFilterSet."""
 
-    q = django_filters.CharFilter(
-        method="search",
-        label="Search",
+    q = SearchFilter(
+        filter_predicates={
+            "name": {
+                "lookup_expr": "icontains",
+                "preprocessor": str,
+            },
+        },
     )
     platform = NaturalKeyOrPKMultipleChoiceFilter(
         field_name="platform",
@@ -227,13 +221,6 @@ class ConfigRemoveFilterSet(NautobotFilterSet):
         to_field_name="name",
         label="Platform (name or ID)",
     )
-
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument
-        """Perform the filtered search."""
-        if not value.strip():
-            return queryset
-        qs_filter = Q(name__icontains=value)
-        return queryset.filter(qs_filter)
 
     class Meta:
         """Boilerplate filter Meta data for Config Remove."""
@@ -245,9 +232,13 @@ class ConfigRemoveFilterSet(NautobotFilterSet):
 class ConfigReplaceFilterSet(NautobotFilterSet):
     """Inherits Base Class NautobotFilterSet."""
 
-    q = django_filters.CharFilter(
-        method="search",
-        label="Search",
+    q = SearchFilter(
+        filter_predicates={
+            "name": {
+                "lookup_expr": "icontains",
+                "preprocessor": str,
+            },
+        },
     )
     platform = NaturalKeyOrPKMultipleChoiceFilter(
         field_name="platform",
@@ -255,13 +246,6 @@ class ConfigReplaceFilterSet(NautobotFilterSet):
         to_field_name="name",
         label="Platform (name or ID)",
     )
-
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument
-        """Perform the filtered search."""
-        if not value.strip():
-            return queryset
-        qs_filter = Q(name__icontains=value)
-        return queryset.filter(qs_filter)
 
     class Meta:
         """Boilerplate filter Meta data for Config Replace."""
@@ -283,9 +267,17 @@ class GoldenConfigSettingFilterSet(NautobotFilterSet):
 class RemediationSettingFilterSet(NautobotFilterSet):
     """Inherits Base Class CustomFieldModelFilterSet."""
 
-    q = django_filters.CharFilter(
-        method="search",
-        label="Search",
+    q = SearchFilter(
+        filter_predicates={
+            "platform__name": {
+                "lookup_expr": "icontains",
+                "preprocessor": str,
+            },
+            "remediation_type": {
+                "lookup_expr": "icontains",
+                "preprocessor": str,
+            },
+        },
     )
     platform = django_filters.ModelMultipleChoiceFilter(
         field_name="platform__name",
@@ -297,13 +289,6 @@ class RemediationSettingFilterSet(NautobotFilterSet):
         queryset=Platform.objects.all(),
         label="Platform ID",
     )
-
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument
-        """Perform the filtered search."""
-        if not value.strip():
-            return queryset
-        qs_filter = Q(platform__name__icontains=value) | Q(remediation_type__icontains=value)
-        return queryset.filter(qs_filter)
 
     class Meta:
         """Boilerplate filter Meta data for Remediation Setting."""
@@ -344,7 +329,7 @@ class ConfigPlanFilterSet(NautobotFilterSet):
     plan_result_id = django_filters.ModelMultipleChoiceFilter(
         queryset=JobResult.objects.filter(config_plan__isnull=False).distinct(),
         label="Plan JobResult ID",
-        to_field_name="id"
+        to_field_name="id",
     )
     tenant_group_id = TreeNodeMultipleChoiceFilter(
         queryset=TenantGroup.objects.all(),
@@ -438,12 +423,18 @@ class ConfigPlanFilterSet(NautobotFilterSet):
     )
     # tags = TagFilter()
 
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument
-        """Perform the filtered search."""
-        if not value.strip():
-            return queryset
-        qs_filter = Q(device__name__icontains=value) | Q(change_control_id__icontains=value)
-        return queryset.filter(qs_filter)
+    q = SearchFilter(
+        filter_predicates={
+            "device__name": {
+                "lookup_expr": "icontains",
+                "preprocessor": str,
+            },
+            "change_control_id": {
+                "lookup_expr": "icontains",
+                "preprocessor": str,
+            },
+        },
+    )
 
     class Meta:
         """Boilerplate filter Meta data for Config Plan."""

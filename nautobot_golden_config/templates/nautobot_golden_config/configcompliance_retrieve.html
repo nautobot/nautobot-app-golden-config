@@ -1,8 +1,24 @@
 {% extends 'generic/object_detail.html' %}
 {% load helpers %}
+{% load static %}
 
 {% block content_left_page %}
-    <div class="panel panel-default">
+<script src="{% static 'clipboard.js-2.0.9/clipboard.min.js' %}"></script>
+<script>    
+    var clipboard = new ClipboardJS('.btn');
+    clipboard.on('success', function (e) {});
+    clipboard.on('error', function (e) {});
+</script>
+<style>
+    #config-output pre {
+        white-space: pre-wrap;       /* CSS 2.1 */
+        white-space: -moz-pre-wrap;  /* Firefox < 3.5 */
+        white-space: -pre-wrap;      /* Opera 4-6 */
+        white-space: -o-pre-wrap;    /* Opera 7 */
+        word-wrap: break-word;       /* IE >= 5.5 */
+    }
+</style>
+    <div id="config-output" class="panel panel-default">
         <div class="panel-heading">
             <strong>Details</strong>
         </div>
@@ -27,23 +43,38 @@
             </tr>
             <tr>
                 <td>Actual Configuration</td>
-                <td><pre>{{ object.actual }}</pre></td>
+                <td>
+                    <pre id="actual_config">{{ object.actual }}</pre>
+                    {% include "nautobot_golden_config/include/span_button.html" with target="actual_config" %}
+                </td>
             </tr>
             <tr>
                 <td>Intended Configuration</td>
-                <td><pre>{{ object.intended }}</pre></td>
+                <td>
+                    <pre id="intended_config">{{ object.intended }}</pre>
+                    {% include "nautobot_golden_config/include/span_button.html" with target="intended_config" %}
+                </td>
             </tr>
             <tr>
                 <td>Extra Configuration</td>
-                <td><pre>{{ object.extra }}</pre></td>
+                <td>
+                    <pre id="extra_config">{{ object.extra }}</pre>
+                    {% include "nautobot_golden_config/include/span_button.html" with target="extra_config" %}
+                </td>
             </tr>
             <tr>
                 <td>Missing Configuration</td>
-                <td><pre>{{ object.missing }}</pre></td>
+                <td>
+                    <pre id="missing_config">{{ object.missing }}</pre>
+                    {% include "nautobot_golden_config/include/span_button.html" with target="missing_config" %}
+                </td>
             </tr>
             <tr>
                 <td>Remediating Configuration</td>
-                <td><pre>{{ object.remediation }}</pre></td>
+                <td>
+                    <pre id="remediation_config">{{ object.remediation }}</pre>
+                    {% include "nautobot_golden_config/include/span_button.html" with target="remediation_config" %}
+                </td>
             </tr>
             <tr>
                 <td>Ordered</td>

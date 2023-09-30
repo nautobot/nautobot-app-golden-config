@@ -48,7 +48,7 @@ ALL_ACTIONS = """
 {% endif %}
 {% if compliance == True %}
     {% if record.intended_config and record.backup_config %}
-        <a value="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=record.device.pk %}?" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=record.device.pk %}?modal=true">
+        <a value="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=record.device.pk %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=record.device.pk %}?modal=true">
             <i class="mdi mdi-file-compare" title="Compliance Details"></i>
         </a>
     {% else %}

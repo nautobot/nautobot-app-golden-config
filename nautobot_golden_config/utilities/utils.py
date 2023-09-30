@@ -1,4 +1,7 @@
 """Utility functions."""
+from django.conf import settings
+
+from constance import config as constance_name
 
 from constance import config as constance_name
 from django.conf import settings
@@ -18,24 +21,32 @@ def get_app_settings_or_config(app_name, variable_name):
     return getattr(constance_name, f"{app_name}__{variable_name.upper()}")
 
 
+def normalize_setting(app_name, variable_name):
+    """Get a value from Django settings (if specified there) or Constance configuration (otherwise)."""
+    # Explicitly set in settings.py or nautobot_config.py takes precedence, for now
+    if variable_name.lower() in settings.PLUGINS_CONFIG[app_name]:
+        return settings.PLUGINS_CONFIG[app_name][variable_name.lower()]
+    return getattr(constance_name, f"{app_name}__{variable_name.upper()}")
+
+
 def default_framework():
     """Function to get near constant so the data is fresh for `default_framework`."""
-    return get_app_settings_or_config(config.name, "default_framework")
+    return normalize_setting(config.name, "default_framework")
 
 
 def get_config_framework():
     """Function to get near constant so the data is fresh for `get_config_framework`."""
-    return get_app_settings_or_config(config.name, "get_config_framework")
+    return normalize_setting(config.name, "get_config_framework")
 
 
 def merge_config_framework():
     """Function to get near constant so the data is fresh for `merge_config_framework`."""
-    return get_app_settings_or_config(config.name, "merge_config_framework")
+    return normalize_setting(config.name, "merge_config_framework")
 
 
 def replace_config_framework():
     """Function to get near constant so the data is fresh for `replace_config_framework`."""
-    return get_app_settings_or_config(config.name, "replace_config_framework")
+    return normalize_setting(config.name, "replace_config_framework")
 
 
 def get_secret_value(secret_type, git_obj):

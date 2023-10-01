@@ -52,11 +52,11 @@ To update existing settings click on one of the `Settings` name.
 |Setting|Explanation|
 |:--|:--|
 |Backup Repositories |The Git Repository where your backup configurations will be found. |
-|Backup Path|A Jinja template which defines the path and name of backup files within the backup repository. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.location.name}}/{{obj.name}}.cfg`|
+|Backup Path|A Jinja template which defines the path and name of backup files within the backup repository. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.location.name\|slugify}}/{{obj.name}}.cfg`|
 |Intended Repositories |The Git Repository where your intended configuration state files will be found. |
-|Intended Path|A Jinja template which defines the path and name of intended configuration state files within the intended state repository. e.g. `{{obj.location.name}}/{{obj.name}}.intended_cfg`|
+|Intended Path|A Jinja template which defines the path and name of intended configuration state files within the intended state repository. e.g. `{{obj.location.name\|slugify}}/{{obj.name}}.intended_cfg`|
 |Jinja Repository |The Git Repository where your jinja templates will be found. |
-|Jinja Path|A Jinja template which defines the path (within the repository) and name of the Jinja template file. e.g. `{{obj.platform.name}}/{{obj.role.name}}/main.j2`|
+|Jinja Path|A Jinja template which defines the path (within the repository) and name of the Jinja template file. e.g. `{{obj.platform.network_driver}}/{{obj.role.name}}/main.j2`|
 |Dynamic Group|The scope of devices on which Golden Config's jobs can operate. |
 |GraphQL Query|A query that is evaluated and used to render the config. The query must start with `query ($device_id: ID!)`.|
 
@@ -132,6 +132,8 @@ Parameters:
 |Token|The token is a personal access token for the `username` provided.  For more information on generating a personal access token. [Github Personal Access Token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token)
 |Username|The Git username that corresponds with the personal access token above.|
 |Provides|Valid providers for Git Repo.|
+
+TODO: 2.0 replace with secrets
 
 
 !!! note

@@ -144,17 +144,7 @@ PLUGINS_CONFIG = {
                 },
             },
         },
-        # dispatcher_mapping may be necessary if you get an error `Cannot import "<foo>". Is the library installed?`
-        # when you run a backup job, and <foo> is the name of the platform applied to the device.
-        # to the Nornir driver names ("arista_eos", "cisco_ios", etc.).
-        # "dispatcher_mapping": {
-        #     "eos": "nornir_nautobot.plugins.tasks.dispatcher.arista_eos.NautobotNornirDriver",
-        #     "arbitrary_platform_name": "nornir_nautobot.plugins.tasks.dispatcher.arista_eos.NautobotNornirDriver",
-        #     "ios": "nornir_nautobot.plugins.tasks.dispatcher.cisco_ios.NautobotNornirDriver",
-        #     "iosxe": "nornir_nautobot.plugins.tasks.dispatcher.cisco_ios.NautobotNornirDriver",
-        #     "junos": "nornir_nautobot.plugins.tasks.dispatcher.juniper_junos.NautobotNornirDriver",
-        #     "nxos": "nornir_nautobot.plugins.tasks.dispatcher.cisco_nxos.NautobotNornirDriver",
-        # },
+
     },
     "nautobot_golden_config": {
         "per_feature_bar_width": float(os.environ.get("PER_FEATURE_BAR_WIDTH", 0.15)),
@@ -177,6 +167,15 @@ PLUGINS_CONFIG = {
         },
         # "get_custom_compliance": "my.custom_compliance.func",
         # "default_deploy_status": "Not Approved",
+        #
+        #
+        # custom_dispatcher is not required for preferring a framework such as netmiko or napalm.
+        # Instead, this is only required if you are truly "rolling your own" dispatcher, potentially
+        # to accommodate OS's not currently supported or to add your own business logic.
+        # "custom_dispatcher": {
+        #     "arista_eos": "my_custom.dispatcher.NornirDriver",
+        #     "arbitrary_platform_name": "my_custom.dispatcher.OtherNornirDriver",
+        # },
     },
 }
 

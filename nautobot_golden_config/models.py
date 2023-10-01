@@ -474,7 +474,7 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         max_length=255,
         blank=True,
         verbose_name="Backup Path in Jinja Template Form",
-        help_text="The Jinja path representation of where the backup file will be found. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.location.name}}/{{obj.name}}.cfg`",
+        help_text="The Jinja path representation of where the backup file will be found. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.location.name|slugify}}/{{obj.name}}.cfg`",
     )
     intended_repository = models.ForeignKey(
         to="extras.GitRepository",
@@ -488,7 +488,7 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         max_length=255,
         blank=True,
         verbose_name="Intended Path in Jinja Template Form",
-        help_text="The Jinja path representation of where the generated file will be places. e.g. `{{obj.location.name}}/{{obj.name}}.cfg`",
+        help_text="The Jinja path representation of where the generated file will be places. e.g. `{{obj.location.name|slugify}}/{{obj.name}}.cfg`",
     )
     jinja_repository = models.ForeignKey(
         to="extras.GitRepository",

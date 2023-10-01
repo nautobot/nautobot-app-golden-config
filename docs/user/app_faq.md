@@ -91,7 +91,7 @@ The current supported platform and the associated *default* platform network_dri
 * ruckus_fastiron
 * ruckus_smartzone_api
 
-In many use cases, this can be extended with a custom dispatcher for nornir tasks, which is controlled in the [nornir-nautobot](https://github.com/nautobot/nornir-nautobot) repository. Additionally the [`nautobot_plugin_nornir`](https://pypi.org/project/nautobot-plugin-nornir/) provide the ability to leverage the `dispatcher_mapping` configuration parameter to map and/or extend for your environment. Please see the instructions there for further details.
+In many use cases, this can be extended with a custom dispatcher for nornir tasks, which is controlled in the [nornir-nautobot](https://github.com/nautobot/nornir-nautobot) repository. Additionally you can "roll your own" dispatcher with the `custom_dispatcher` configuration parameter to map and/or extend for your environment. Please see the instructions there for further details.
 
 ## _Why not provide the corrective configurations?_
 

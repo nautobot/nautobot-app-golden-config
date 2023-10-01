@@ -7,7 +7,6 @@ from datetime import datetime
 from django.template import engines
 from django.utils.timezone import make_aware
 
-from jinja2.sandbox import SandboxedEnvironment
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 
@@ -20,12 +19,12 @@ from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
 from nautobot_golden_config.models import GoldenConfig
 
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
-from nautobot_golden_config.utilities.constant import JINJA_ENV
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import (
     dispatch_params,
+    get_django_env,
     get_device_to_settings_map,
     get_job_filter,
     render_jinja_template,
@@ -36,16 +35,10 @@ from nautobot_golden_config.utilities.logger import NornirLogger
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 LOGGER = logging.getLogger(__name__)
 
-# Use a custom Jinja2 environment instead of Django's to avoid HTML escaping
-jinja_env = SandboxedEnvironment(**JINJA_ENV)
-
-# Retrieve filters from the Django jinja template engine
-jinja_env.filters = engines["jinja"].env.filters
-
 
 @close_threaded_db_connections
 def run_template(  # pylint: disable=too-many-arguments
-    task: Task, logger: NornirLogger, device_to_settings_map, job_class_instance
+    task: Task, logger: NornirLogger, device_to_settings_map, job_class_instance, jinja_env
 ) -> Result:
     """Render Jinja Template.
 
@@ -132,6 +125,9 @@ def config_intended(job_result, log_level, data, job_class_instance):
     for settings in set(device_to_settings_map.values()):
         verify_settings(logger, settings, ["jinja_path_template", "intended_path_template", "sot_agg_query"])
 
+    # Retrieve filters from the Django jinja template engine
+    jinja_env = get_django_env()
+
     try:
         with InitNornir(
             runner=NORNIR_SETTINGS.get("runner"),
@@ -156,6 +152,7 @@ def config_intended(job_result, log_level, data, job_class_instance):
                 logger=logger,
                 device_to_settings_map=device_to_settings_map,
                 job_class_instance=job_class_instance,
+                jinja_env=jinja_env,
             )
 
     except Exception as error:

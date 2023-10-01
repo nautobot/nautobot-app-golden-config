@@ -4,9 +4,12 @@
 - Integrated all relevant sections with `Platform.network_driver`.
 - Added a standard way to provide error codes.
 - Changed Config Compliance view to be based on model, not dynamic group and provide a `message` when they have drifted.
-- Added constance settings (DEFAULT_FRAMEWORK, GET_CONFIG_FRAMEWORK, MERGE_CONFIG_FRAMEWORK, and REPLACE_CONFIG_FRAMEWORK) and customer_dispatcher to remove dispatcher_mapping.
+- Added constance settings (`DEFAULT_FRAMEWORK`, `GET_CONFIG_FRAMEWORK`, `MERGE_CONFIG_FRAMEWORK`, and `REPLACE_CONFIG_FRAMEWORK`) and customer_dispatcher to remove dispatcher_mapping.
 - Moved config compliance view to be a tab within device instead of a dedicated page.
 - Removed management command in favor of Nautobot Core's.
+
+!!! note
+    Please see [migrating guide](../migrating_to_v2.md) for details on migration.
 
 ## v2.0.0 - 2023-09
 

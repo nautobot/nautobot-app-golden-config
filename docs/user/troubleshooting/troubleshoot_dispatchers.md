@@ -2,25 +2,22 @@
 
 At a high-level the default dispatchers that Golden Config uses are actually sourced from another open source library. [nornir-nautobot](https://docs.nautobot.com/projects/nornir-nautobot/en/latest/) contains the Nornir tasks that define the methods that Golden Config utilizes.
 
-This dispatcher task is explained in the [nornir-nautobot docs](https://docs.nautobot.com/projects/nornir-nautobot/en/latest/task/task/)
+## Dispatcher Sender
 
-Golden config uses the `get_dispatcher()` function from the Nautobot Plugin Nornir plugin. General information on dispatchers can be found in the [dispatcher](https://docs.nautobot.com/projects/plugin-nornir/en/latest/user/app_feature_dispatcher/) documentation.
+This dispatcher task is explained in the [nornir-nautobot docs](https://docs.nautobot.com/projects/nornir-nautobot/en/latest/task/task/), but provided here is a simple overview.
 
-Although this functionality is simply used by Golden Config and isn't directly developed within this application the below troubleshooting sections may help.
+- If exists check `custom_dispatcher`, for network_driver, if a custom_dispatcher is used but not found, fail immediately
+- Check for framework & driver `f"nornir_nautobot.plugins.tasks.dispatcher.{network_driver}.{framework.title()}{network_driver_title}"`
+- Check for default, e.g. `f"nornir_nautobot.plugins.tasks.dispatcher.default.{framework.title()}Default"`
+
+!!! info
+    Where `framework` is a library like `netmiko` or `napalm` and `network_driver` is the platform like `cisco_ios` or `arista_eos`.
 
 ### Cannot import <os> is the library installed?
 
 This occurs when a Golden Config job is executed with a Nautobot `platform`, and that platform network_driver is not found for the Nornir "method" the job is attempting to run.
 
-How is the dispatcher loaded?
-
-TODO: 2.0: Change to custom_dispatcher
-
-1. Job initializes Nornir and the method is called with `get_dispatcher()` function from Nautobot-Plugin-Nornir.
-2. Nornir initialization looks in the DEFAULT_DISPATCHER map for the platform network_driver from [nornir-nautobot](https://github.com/nautobot/nornir-nautobot/blob/64baa8a24d21d9ec14c32be569e2b51cd0bd1cd1/nornir_nautobot/plugins/tasks/dispatcher/__init__.py#L12) mapping.
-3. Merge this mapping with anything directly configured in Golden Config [dispatcher mapping]().
-4. Load the dispatcher based on network_driver, or load the default dispatcher if the dictionary mapping doesn't include it.
-5. The default dispatcher by default uses NAPALM and attempts to load the **getter**. Alternatively there is a `default_netmiko` dispatcher that will default to loading the driver via Netmiko instead of NAPALM.
+_How is the dispatcher loaded?_ Please review the 3 previous sections for understanding how it is is loaded.
 
 This error is actually generated [here](https://github.com/napalm-automation/napalm/blob/50ab9f73a2afd8c84c430e5d844e570f28adc917/napalm/base/__init__.py#L100C17-L100C17) in the NAPALM core code.
 

@@ -15,6 +15,9 @@
 
 The Golden Config plugin is a Nautobot plugin that provides a NetDevOps approach to golden configuration and configuration compliance.
 
+!!! info
+    Upgrading to Nautobot and Nautobot Golden Config 2.0, see our [migration guide](https://docs.nautobot.com/projects/golden-config/en/latest/admin/migrating_to_v2/)!
+
 ### Key Use Cases
 
 This plugin enable six (6) key use cases.

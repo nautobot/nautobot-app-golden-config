@@ -74,19 +74,19 @@ def get_job_filter(data=None):
 
     if not base_qs.exists():
         raise NornirNautobotException(
-            "E3015: The base queryset didn't find any devices. Please check the Golden Config Setting scope."
+            "`E3015:` The base queryset didn't find any devices. Please check the Golden Config Setting scope."
         )
 
     devices_filtered = DeviceFilterSet(data=query, queryset=base_qs)
 
     if not devices_filtered.qs.exists():
         raise NornirNautobotException(
-            "E3016: The provided job parameters didn't match any devices detected by the Golden Config scope. Please check the scope defined within Golden Config Settings or select the correct job parameters to correctly match devices."
+            "`E3016:` The provided job parameters didn't match any devices detected by the Golden Config scope. Please check the scope defined within Golden Config Settings or select the correct job parameters to correctly match devices."
         )
     devices_no_platform = devices_filtered.qs.filter(platform__isnull=True)
     if devices_no_platform.exists():
         raise NornirNautobotException(
-            f"E3017: The following device(s) {', '.join([device.name for device in devices_no_platform])} have no platform defined. Platform is required."
+            f"`E3017:` The following device(s) {', '.join([device.name for device in devices_no_platform])} have no platform defined. Platform is required."
         )
 
     return devices_filtered.qs
@@ -103,7 +103,7 @@ def verify_settings(logger, global_settings, attrs):
     """Helper function to verify required attributes are set before a Nornir play start."""
     for item in attrs:
         if not getattr(global_settings, item):
-            error_msg = f"E3018: Missing the required global setting: `{item}`."
+            error_msg = f"`E3018:` Missing the required global setting: `{item}`."
             logger.error(error_msg)
             raise NornirNautobotException(error_msg)
 
@@ -127,7 +127,7 @@ def render_jinja_template(obj, logger, template):
         return render_jinja2(template_code=template, context={"obj": obj})
     except jinja_errors.UndefinedError as error:
         error_msg = (
-            "E3019: Jinja encountered and UndefinedError`, check the template for missing variable definitions.\n"
+            "`E3019:` Jinja encountered and UndefinedError`, check the template for missing variable definitions.\n"
             f"Template:\n{template}\n"
             f"Original Error: {error}"
         )
@@ -136,7 +136,7 @@ def render_jinja_template(obj, logger, template):
 
     except jinja_errors.TemplateSyntaxError as error:  # Also catches subclass of TemplateAssertionError
         error_msg = (
-            f"E3020: Jinja encountered a SyntaxError at line number {error.lineno},"
+            f"`E3020:` Jinja encountered a SyntaxError at line number {error.lineno},"
             f"check the template for invalid Jinja syntax.\nTemplate:\n{template}\n"
             f"Original Error: {error}"
         )
@@ -145,7 +145,7 @@ def render_jinja_template(obj, logger, template):
     # Intentionally not catching TemplateNotFound errors since template is passes as a string and not a filename
     except jinja_errors.TemplateError as error:  # Catches all remaining Jinja errors
         error_msg = (
-            "E3021: Jinja encountered an unexpected TemplateError; check the template for correctness\n"
+            "`E3021:` Jinja encountered an unexpected TemplateError; check the template for correctness\n"
             f"Template:\n{template}\n"
             f"Original Error: {error}"
         )
@@ -222,7 +222,7 @@ def dispatch_params(method, platform, logger):
     elif utils.default_framework().get("all"):
         params["framework"] = utils.default_framework()["all"]
     if not params.get("framework"):
-        error_msg = "E3022: Could not find a valid framework (e.g. netmiko) given a method (e.g. merge_config) and a driver (e.g. cisco_ios)."
+        error_msg = "`E3022:` Could not find a valid framework (e.g. netmiko) given a method (e.g. merge_config) and a driver (e.g. cisco_ios)."
         logger.error(error_msg)
         raise NornirNautobotException(error_msg)
     return params

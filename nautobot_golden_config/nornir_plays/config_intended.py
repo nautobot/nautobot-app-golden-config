@@ -77,7 +77,7 @@ def run_template(  # pylint: disable=too-many-arguments
     job_class_instance.request.user = job_class_instance.user
     status, device_data = graph_ql_query(job_class_instance.request, obj, settings.sot_agg_query.query)
     if status != 200:
-        error_msg = f"E3012: The GraphQL query return a status of {str(status)} with error of {str(device_data)}"
+        error_msg = f"`E3012:` The GraphQL query return a status of {str(status)} with error of {str(device_data)}"
         logger.error(error_msg, extra={"object": obj})
         raise NornirNautobotException(error_msg)
 
@@ -122,7 +122,7 @@ def config_intended(job_result, log_level, data, job_class_instance):
     try:
         qs = get_job_filter(data)
     except NornirNautobotException as error:
-        error_msg = f"E3008: General Exception handler, original error message ```{error}```"
+        error_msg = f"`E3008:` General Exception handler, original error message ```{error}```"
         logger.error(error_msg)
         raise NornirNautobotException(error_msg) from error
 
@@ -159,6 +159,6 @@ def config_intended(job_result, log_level, data, job_class_instance):
             )
 
     except Exception as error:
-        error_msg = f"E3001: General Exception handler, original error message ```{error}```"
+        error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
         logger.error(error_msg)
         raise NornirNautobotException(error_msg) from error

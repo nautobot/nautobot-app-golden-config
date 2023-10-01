@@ -60,7 +60,7 @@ def get_config_element(rule, config, obj, logger):
         config_json = get_json_config(config)
 
         if not config_json:
-            error_msg = "E3002: Unable to interpret configuration as JSON."
+            error_msg = "`E3002:` Unable to interpret configuration as JSON."
             logger.error(error_msg, extra={"object": obj})
             raise NornirNautobotException(error_msg)
 
@@ -71,14 +71,14 @@ def get_config_element(rule, config, obj, logger):
 
     elif rule["obj"].config_type == ComplianceRuleConfigTypeChoice.TYPE_CLI:
         if obj.platform.network_driver_mappings["netmiko"] not in parser_map:
-            error_msg = f"E3003: There is currently no CLI-config parser support for platform network_driver `{obj.platform.network_driver}`, preemptively failed."
+            error_msg = f"`E3003:` There is currently no CLI-config parser support for platform network_driver `{obj.platform.network_driver}`, preemptively failed."
             logger.error(error_msg, extra={"object": obj})
             raise NornirNautobotException(error_msg)
 
         config_element = section_config(rule, config, obj.platform.network_driver_mappings["netmiko"])
 
     else:
-        error_msg = f"E3004: There rule type ({rule['obj'].config_type}) is not recognized."
+        error_msg = f"`E3004:` There rule type ({rule['obj'].config_type}) is not recognized."
         logger.error(error_msg, extra={"object": obj})
         raise NornirNautobotException(error_msg)
 
@@ -125,7 +125,7 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     intended_file = os.path.join(intended_directory, intended_path_template_obj)
 
     if not os.path.exists(intended_file):
-        error_msg = f"E3005: Unable to locate intended file for device at {intended_file}, preemptively failed."
+        error_msg = f"`E3005:` Unable to locate intended file for device at {intended_file}, preemptively failed."
         logger.error(error_msg, extra={"object": obj})
         raise NornirNautobotException(error_msg)
 
@@ -134,14 +134,14 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     backup_file = os.path.join(backup_directory, backup_template)
 
     if not os.path.exists(backup_file):
-        error_msg = f"E3006: Unable to locate backup file for device at {backup_file}, preemptively failed."
+        error_msg = f"`E3006:` Unable to locate backup file for device at {backup_file}, preemptively failed."
         logger.error(error_msg, extra={"object": obj})
         raise NornirNautobotException(error_msg)
 
     platform = obj.platform.network_driver
     if not rules.get(platform):
         error_msg = (
-            f"E3007: There is no defined `Configuration Rule` for platform network_driver `{platform}`, "
+            f"`E3007:` There is no defined `Configuration Rule` for platform network_driver `{platform}`, "
             "preemptively failed."
         )
         logger.error(error_msg, extra={"object": obj})
@@ -215,7 +215,7 @@ def config_compliance(job_result, log_level, data):
             )
 
     except Exception as error:
-        error_msg = f"E3001: General Exception handler, original error message ```{error}```"
+        error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
         logger.error(error_msg)
         raise NornirNautobotException(error_msg) from error
 

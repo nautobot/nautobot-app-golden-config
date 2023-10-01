@@ -1,6 +1,6 @@
 # Frequently Asked Questions
 
-## _Why doesn't the compliance behaviour work the way I expected it to?_
+## _Why doesn't the compliance behavior work the way I expected it to?_
 
 There are many ways to consider golden configs as shown in this [blog](https://blog.networktocode.com/post/journey-in-golden-config/). We cannot provide accommodations for all versions as it will both bloat the system, create a more complex system, and ultimately run into conflicting interpretations. Keeping the process focused but allowing anyone to override their interpretation of how compliance should work is both a powerful (via sane defaults) and complete (via custom compliance) solution.
 
@@ -60,19 +60,21 @@ The current supported platform and the associated *default* platform network_dri
 * nokia_sros
 * paloalto_panos
 
-The expected "network_os" parameter must be as defined by netutils and golden config uses the platform network_driver to map from the device to the appropriate "network_os" that netutils expects. However, there an ability to map the actual platform network_driver for compliance and parsing tasks via the plugin settings in your "nautobot_config.py", and documented in [App Configuration](../admin/admin_install.md#app-configuration).
+The expected "network_os" parameter must be set using the platform `network_driver`, which then in turn provides you the `network_driver_mappings` to map out the framework, such as netmiko and napalm. This should solve most use cases, but occasionally you may want to extend this mapping, for further understand see [the docs](https://docs.nautobot.com/projects/core/en/stable/user-guide/core-data-model/dcim/platform/) and simply update the [NETWORK_DRIVER](https://docs.nautobot.com/projects/core/en/stable/user-guide/administration/configuration/optional-settings/#network_drivers) configuration.
 
+Here is an example Device object representation, e.g. `device.platform.network_driver_mappings` to help provide some context.
 
-TODO: 2.0 Change this out to config 
-
-To provide a concrete example of this, note the following example that demonstrates how you can transpose any platform network_driver name to the expected one, as well as map multiple keys to a single netutils expected key. The `platform_network_driver_map` is only used for configuration compliance job. The json key is the Nautobot platform network_driver, and the json value is the "network_os" parameter defined in `netutils.config.compliance.parser_map`.
-```json
+```python
 {
-    "platform_network_driver_map":  {
-        "cisco_aireos": "cisco_wlc",
-        "ios": "cisco_ios",
-        "iosxe": "cisco_ios"
-    }
+    "ansible": "cisco.nxos.nxos",
+    "hier_config": "nxos",
+    "napalm": "nxos",
+    "netmiko": "cisco_nxos",
+    "netutils_parser": "cisco_nxos",
+    "ntc_templates": "cisco_nxos",
+    "pyats": "nxos",
+    "pyntc": "cisco_nxos_nxapi",
+    "scrapli": "cisco_nxos",
 }
 ```
 
@@ -146,6 +148,8 @@ These errors have been accurate so far, that is not to say that there is no way 
 * Incorrectly configured Secrets
 * Filtering to nothing when presumption is the filter works a certain way
 * Referencing an OS that is not recognized
+
+There is an ongoing effort to better document each [troubleshooting case](../admin/troubleshooting/index.md).
 
 ## _Why is the `_isnull` on DateTime filters considered experimental?_
 

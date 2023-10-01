@@ -107,6 +107,62 @@ Adding a "has_primary_ip" check.
 
 When viewing the settings, the scope of devices is actually a link to the query built in the Devices view. Click that link to understand which devices are permitted by the filter.
 
+### Create Secret Groups
+
+!!! info
+    Unless you are **only** using configuration compliance with backup and intended configurations in repositories that do not require credentials, you will have to go through these steps.
+
+The Git Settings requires a Secret Group to be attached which in turn requires a Secret to be required. The Secret can use any provider, you are encouraged to read the [Nautobot docs on Secret Providers](https://docs.nautobot.com/projects/core/en/stable/user-guide/platform-functionality/secret/#secrets-providers), but for our purposes we will simply use the _Environment Variable_ option, so keep in mind that detail during the coming instructions.
+
+Create a new secret by navigating to `Secrets -> Secret -> add (button)`.
+
+!!! info
+    See [GitHub Personal Access Token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) for an example method to generate a token in GitHub.
+
+Parameters:
+
+| Field | Explanation |
+| ----- | ----------- |
+| Name  | User friendly name for secret. |
+| Provider | The [Secret Provider](https://docs.nautobot.com/projects/core/en/stable/user-guide/platform-functionality/secret/#secrets-providers) to the docs. |
+| Parameter | This will be dependant based on the provider. |
+
+For our example, let's configure and create with:
+
+| Field | Value       |
+| ----- | ----------- |
+| Name  | GIT-TOKEN |
+| Provider | Environment Variable |
+| Variable | NAUTOBOT_GOLDEN_CONFIG_GIT_TOKEN. |
+
+![Secret Creation](../images/secret-step1.png)
+
+Depending on your provider, you may also need a username, so you would repeat the process such as:
+
+| Field | Explanation |
+| ----- | ----------- |
+| Name  | GIT-TOKEN |
+| Provider | Environment Variable |
+| Variable | NAUTOBOT_GOLDEN_CONFIG_GIT_USERNAME. |
+
+Now we need to create the Secret Group, navigate to `Secrets -> Secret Group -> add (button)`.
+
+For our example, let's configure and create with:
+
+| Field | Value       |
+| ----- | ----------- |
+| Name  | Git Secret Group |
+| Access Type | HTTP(S) |
+| Secret Type | Token |
+| Secret | GIT-TOKEN. |
+
+!!! tip
+    If your instance requires a username as well, please ensure to add that as well.
+
+![Secret Group Creation](../images/secret-step2.png)
+
+The steps to add the variables to your environment are outside the scope of this document and may or may not be needed depending on how you manage your Secrets in your environment, but please be mindful of ensuring the Secrets end up on your system.
+
 ### Git Settings
 
 The plugin makes heavy use of the Nautobot git data sources feature. There are up to three repositories used in the application. This set of instructions will walk an operator through setting up the backup repository. The steps are the same, except for the "Provides" field name chosen.
@@ -129,15 +185,11 @@ Parameters:
 |Slug|Auto-generated based on the `name` provided.|
 |Remote URL|The URL pointing to the Git repo that stores the backup configuration files. Current git url usage is limited to `http` or `https`.|
 |Branch|The branch in the Git repo to use. Defaults to `main`.|
-|Token|The token is a personal access token for the `username` provided.  For more information on generating a personal access token. [Github Personal Access Token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token)
-|Username|The Git username that corresponds with the personal access token above.|
+|Secrets Group| The secret group configured that will define you credential information. |
 |Provides|Valid providers for Git Repo.|
 
-TODO: 2.0 replace with secrets
-
-
 !!! note
-    If Secret Group is used for the Repositories the secrets type HTTP(S) is required for this plugin.
+    When Secret Group is used for a Repository the secrets type HTTP(S) is required for this plugin, as shown previously.
 
 ![Example Git Backups](../images/backup-git-step2.png)
 

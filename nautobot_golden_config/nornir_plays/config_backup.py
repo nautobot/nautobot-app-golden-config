@@ -138,7 +138,7 @@ def config_backup(job_result, log_level, data):
             logger.debug("Completed configuration from devices.")
 
     except Exception as error:
-        error_msg = f"E3001: General Exception handler, original error message ```{error}```"
+        error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
         logger.error(error_msg)
         raise NornirNautobotException(error_msg) from error
 

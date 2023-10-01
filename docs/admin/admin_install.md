@@ -129,3 +129,28 @@ The plugin behavior can be controlled with the following list of settings.
             "lstrip_blocks": False,
         }
     ```
+
+## Custom Dispatcher
+
+Please note, that this should only be used in rare circumstances not covered in the previous constance settings, when you are truly "rolling your own" dispatcher. Previously, the `dispatcher_mapping` covered use cases that are now more easily handled. The only two use cases that should be required are.
+
+- Provide support for network drivers not currently supported.
+- Provide some custom business logic you need.
+
+That being said, if you do fall into one of those use cases, you can set the dispatcher as followed:
+
+```python
+PLUGINS_CONFIG = {
+    "nautobot_plugin_nornir": {
+    },
+    "nautobot_golden_config": {
+        "custom_dispatcher": {
+            "arista_eos": "my_custom.dispatcher.NornirDriver",
+            "arbitrary_platform_name": "my_custom.dispatcher.OtherNornirDriver",
+        },
+
+    },
+}
+```
+
+The format for defining these methods is via the dotted string format that will be imported by Django. For example, the Netmiko Cisco IOS dispatcher is defined as `nornir_nautobot.plugins.tasks.dispatcher.cisco_ios.NetmikoCiscoIos`. You also must hand any installation of the packaging and assurance that the value you provide is importable in the environment you run it on.

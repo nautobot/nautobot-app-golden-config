@@ -4,7 +4,6 @@ import logging
 import os
 from datetime import datetime
 
-from django.template import engines
 from django.utils.timezone import make_aware
 
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
@@ -37,7 +36,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 @close_threaded_db_connections
-def run_template(  # pylint: disable=too-many-arguments
+def run_template(  # pylint: disable=too-many-arguments,too-many-locals
     task: Task, logger: NornirLogger, device_to_settings_map, job_class_instance, jinja_env
 ) -> Result:
     """Render Jinja Template.

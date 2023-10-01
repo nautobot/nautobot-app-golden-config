@@ -23,7 +23,6 @@ from nautobot_golden_config.utilities.constant import JINJA_ENV
 from nautobot_golden_config import config as app_config
 
 
-
 FRAMEWORK_METHODS = {
     "default": utils.default_framework,
     "get_config": utils.get_config_framework,

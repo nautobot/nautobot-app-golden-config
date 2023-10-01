@@ -1,0 +1,15 @@
+{% extends 'generic/object_list.html' %}
+{% load static %}
+
+{% block buttons %}
+<div class="btn-group">
+    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <span class="mdi mdi-plus-thick" aria-hidden="true"></span> Execute <span class="caret"></span>
+    </button>
+    <ul class="dropdown-menu">
+        {% if compliance %}
+            <li><a href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.ComplianceJob' %}">Compliance</a></li>
+        {% endif %}
+    </ul>
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends 'generic/object_detail.html' %}
+{% load helpers %}
+
+{% block content_left_page %}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <strong>Golden Config Details</strong>
+        </div>
+        <table class="table table-hover panel-body attr-table">
+            <tr>
+                <td>Device</td>
+                <td>{{ object.device|hyperlinked_object }}</td>
+            </tr>
+            <tr>
+                <td>Backup Config</td>
+                <td><a href="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=object.device.pk %}"><i class="mdi mdi-file-document-outline" title="Backup Configuration"></i></a></td>
+            </tr>
+            <tr>
+                <td>Backup Config Last Attempt</td>
+                <td>{{ object.backup_last_attempt_date|placeholder }}</td>
+            </tr>
+            <tr>
+                <td>Backup Config Last Successful</td>
+                <td>{{ object.backup_last_success_date|placeholder }}</td>
+            </tr>
+            <tr>
+                <td>Intended Config</td>
+                <td><a href="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=object.device.pk %}"><i class="mdi mdi-text-box-check-outline" title="Intended Configuration"></i></a></td>
+            </tr>
+            <tr>
+                <td>Intended Config Last Attempt</td>
+                <td>{{ object.intended_last_attempt_date|placeholder }}</td>
+            </tr>
+            <tr>
+                <td>Intended Config Last Successful</td>
+                <td>{{ object.intended_last_success_date|placeholder }}</td>
+            </tr>
+            <tr>
+                <td>Compliance Config</td>
+                <td><a href="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=object.device.pk %}"><i class="mdi mdi-file-compare" title="Compliance"></i></a></td>
+            </tr>
+            <tr>
+                <td>Compliance Config Last Attempt</td>
+                <td>{{ object.compliance_last_attempt_date|placeholder }}</td>
+            </tr>
+            <tr>
+                <td>Compliance Config Last Successful</td>
+                <td>{{ object.compliance_last_success_date|placeholder }}</td>
+            </tr>
+        </table>
+    </div>
+    {% include 'inc/custom_fields_panel.html' %}
+    {% include 'inc/relationships_panel.html' %}
+{% endblock %}

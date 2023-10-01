@@ -19,18 +19,18 @@ from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import get_device_to_settings_map
 
 
-def get_secret_by_secret_group_slug(
+def get_secret_by_secret_group_name(
     user: User,
-    secrets_group_slug: str,
+    secrets_group_name: str,
     secret_type: str,
     secret_access_type: Optional[str] = SecretsGroupAccessTypeChoices.TYPE_GENERIC,
     **kwargs,
 ) -> Optional[str]:
-    """Gets the secret from a Secret Group slug. To be used as a Jinja filter.
+    """Gets the secret from a Secret Group name. To be used as a Jinja filter.
 
     Args:
         user (User): User object that performs API call to render push template with secrets.
-        secrets_group_slug (str): Secrets Group slug. It needs to be part of the GraphQL query.
+        secrets_group_name (str): Secrets Group name. It needs to be part of the GraphQL query.
         secret_type (str): Type of secret, such as "username", "password", "token", "secret", or "key".
         secret_access_type (Optional[str], optional): Type of secret such as "Generic", "gNMI", "HTTP(S)". Defaults to "Generic".
 
@@ -38,12 +38,12 @@ def get_secret_by_secret_group_slug(
         Optional[str] : Secret value. None if there is no match. An error string if there is an error.
     """
     try:
-        secrets_group = SecretsGroup.objects.get(slug=secrets_group_slug)
+        secrets_group = SecretsGroup.objects.get(name=secrets_group_name)
     except ObjectDoesNotExist:
-        return f"{secrets_group_slug} doesn't exist."
+        return f"{secrets_group_name} doesn't exist."
 
     if not user.has_perm("extras.view_secretsgroup", secrets_group):
-        return f"You have no permission to read this secret {secrets_group_slug}."
+        return f"You have no permission to read this secret {secrets_group_name}."
 
     return secrets_group.get_secret_value(
         access_type=secret_access_type,
@@ -69,7 +69,7 @@ def render_secrets(config_postprocessing: str, configs: models.GoldenConfig, req
     .. rubric:: Example Jinja render_secrets filters usage
     .. highlight:: jinja
     .. code-block:: jinja
-        ppp pap sent-username {{ secrets_group["slug"] | get_secret_by_secret_group_slug("password") | encrypt_type7 }}
+        ppp pap sent-username {{ secrets_group["name"] | get_secret_by_secret_group_name("password") | encrypt_type7 }}
 
     Returns:
         str : Return a string, with the rendered intended configuration with secrets, or an error message.
@@ -85,7 +85,7 @@ def render_secrets(config_postprocessing: str, configs: models.GoldenConfig, req
     # This can only be done safely since the Jinja2 environment does not persist beyond this function.
     # If the code is changed to use the Nautobot Jinja2 environment, then the request's user must be passed
     # in via the template code.
-    jinja_env.filters["get_secret_by_secret_group_slug"] = partial(get_secret_by_secret_group_slug, request.user)
+    jinja_env.filters["get_secret_by_secret_group_name"] = partial(get_secret_by_secret_group_name, request.user)
 
     netutils_filters = jinja2_convenience_function()
     for template_name in [

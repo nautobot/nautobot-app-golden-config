@@ -1,21 +1,22 @@
 """Data source plugin extension to register additional git repo types."""
 import os
-from django.db import IntegrityError
+
 import yaml
+from django.db import IntegrityError
+from nautobot.dcim.models.devices import Platform
 from nautobot.extras.choices import LogLevelChoices
 from nautobot.extras.registry import DatasourceContent
-from nautobot.dcim.models.devices import Platform
 
-from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
-from nautobot_golden_config.models import ComplianceFeature, ComplianceRule, ConfigReplace, ConfigRemove
 from nautobot_golden_config.exceptions import MissingReference
+from nautobot_golden_config.models import ComplianceFeature, ComplianceRule, ConfigRemove, ConfigReplace
+from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
 
 
 def refresh_git_jinja(repository_record, job_result, delete=False):  # pylint: disable=unused-argument
     """Callback for gitrepository updates on Jinja Template repo."""
     job_result.log(
         "Successfully Pulled git repo",
-        level_choice=LogLevelChoices.LOG_SUCCESS,
+        level_choice=LogLevelChoices.LOG_DEBUG,
     )
 
 
@@ -23,7 +24,7 @@ def refresh_git_intended(repository_record, job_result, delete=False):  # pylint
     """Callback for gitrepository updates on Intended Config repo."""
     job_result.log(
         "Successfully Pulled git repo",
-        level_choice=LogLevelChoices.LOG_SUCCESS,
+        level_choice=LogLevelChoices.LOG_DEBUG,
     )
 
 
@@ -31,7 +32,7 @@ def refresh_git_backup(repository_record, job_result, delete=False):  # pylint: 
     """Callback for gitrepository updates on Git Backup repo."""
     job_result.log(
         "Successfully Pulled git repo",
-        level_choice=LogLevelChoices.LOG_SUCCESS,
+        level_choice=LogLevelChoices.LOG_DEBUG,
     )
 
 
@@ -70,7 +71,7 @@ def refresh_git_gc_properties(repository_record, job_result, delete=False):  # p
             "class": ComplianceRule,
             "id_keys": (
                 ("feature", "feature_slug"),
-                ("platform", "platform_slug"),
+                ("platform", "platform_network_driver"),
             ),
         },
         {
@@ -78,7 +79,7 @@ def refresh_git_gc_properties(repository_record, job_result, delete=False):  # p
             "class": ConfigRemove,
             "id_keys": (
                 ("name", "name"),
-                ("platform", "platform_slug"),
+                ("platform", "platform_network_driver"),
             ),
         },
         {
@@ -86,7 +87,7 @@ def refresh_git_gc_properties(repository_record, job_result, delete=False):  # p
             "class": ConfigReplace,
             "id_keys": (
                 ("name", "name"),
-                ("platform", "platform_slug"),
+                ("platform", "platform_network_driver"),
             ),
         },
     )
@@ -96,14 +97,17 @@ def refresh_git_gc_properties(repository_record, job_result, delete=False):  # p
 
     job_result.log(
         "Successfully Completed sync of Golden Config properties",
-        level_choice=LogLevelChoices.LOG_SUCCESS,
+        level_choice=LogLevelChoices.LOG_DEBUG,
     )
 
 
 def get_id_kwargs(gc_config_item_dict, id_keys, job_result):
     """Method to get the proper id kwargs and remove them from gc_config_item_dict."""
-    # fk_slug_class_mapping contains a mapping of the FK attributes to the related model
-    fk_slug_class_mapping = {"feature": ComplianceFeature, "platform": Platform}
+    # fk_class_mapping contains a mapping of the FK attributes to the related model
+    fk_class_mapping = {"feature": ComplianceFeature, "platform": Platform}
+
+    if "platform_slug" in gc_config_item_dict.keys():
+        gc_config_item_dict["platform_network_driver"] = gc_config_item_dict.pop("platform_slug")
 
     id_kwargs = {}
     for id_key in id_keys:
@@ -111,12 +115,15 @@ def get_id_kwargs(gc_config_item_dict, id_keys, job_result):
         yaml_attr_name = id_key[1]
 
         # If the attribute is actually a FK reference, we need to resolve the related object
-        if actual_attr_name in fk_slug_class_mapping:
+        if actual_attr_name in fk_class_mapping:
+            if "network_driver" in yaml_attr_name:
+                field_name = "network_driver"
+            else:
+                _, field_name = yaml_attr_name.split("_")
+            kwargs = {field_name: gc_config_item_dict[yaml_attr_name]}
             try:
-                id_kwargs[actual_attr_name] = fk_slug_class_mapping[actual_attr_name].objects.get(
-                    slug=gc_config_item_dict[yaml_attr_name]
-                )
-            except fk_slug_class_mapping[actual_attr_name].DoesNotExist:
+                id_kwargs[actual_attr_name] = fk_class_mapping[actual_attr_name].objects.get(**kwargs)
+            except fk_class_mapping[actual_attr_name].DoesNotExist:
                 job_result.log(
                     (
                         f"Reference to {yaml_attr_name}: {gc_config_item_dict[yaml_attr_name]}",
@@ -124,7 +131,7 @@ def get_id_kwargs(gc_config_item_dict, id_keys, job_result):
                     ),
                     level_choice=LogLevelChoices.LOG_WARNING,
                 )
-                raise MissingReference from fk_slug_class_mapping[actual_attr_name].DoesNotExist
+                raise MissingReference from fk_class_mapping[actual_attr_name].DoesNotExist
         else:
             id_kwargs[actual_attr_name] = gc_config_item_dict[yaml_attr_name]
 
@@ -186,7 +193,7 @@ def update_git_gc_properties(golden_config_path, job_result, gc_config_item):  #
 
                 job_result.log(
                     log_message,
-                    level_choice=LogLevelChoices.LOG_SUCCESS,
+                    level_choice=LogLevelChoices.LOG_DEBUG,
                 )
 
         except MissingReference:

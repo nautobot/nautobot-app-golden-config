@@ -16,19 +16,19 @@ class ConfigComplianceTest(unittest.TestCase):
         features = {"config_ordered": "test_ordered", "match_config": "aaa\nsnmp\n"}
         mock_obj = Mock(**features)
         mock_obj.name = "test_name"
-        mock_obj.platform = Mock(slug="test_slug")
+        mock_obj.platform = Mock(network_driver="test_driver")
         mock_compliance_rule.objects.all.return_value = [mock_obj]
         features = get_rules()
         mock_compliance_rule.objects.all.assert_called_once()
         self.assertEqual(
-            features, {"test_slug": [{"obj": mock_obj, "ordered": "test_ordered", "section": ["aaa", "snmp"]}]}
+            features, {"test_driver": [{"obj": mock_obj, "ordered": "test_ordered", "section": ["aaa", "snmp"]}]}
         )
 
     def test_get_config_element_match_config_present(self):
         """Test proper return when Config JSON is returned with match_config"""
         mock_config = json.dumps({"key1": "value1", "key2": "value2", "key3": "value3"})
         mock_obj = MagicMock(name="Device")
-        mock_obj.platform = Mock(slug="test_slug")
+        mock_obj.platform = Mock(network_driver="test_driver")
         mock_rule = MagicMock(name="ComplianceRule")
         mock_rule["obj"].match_config = "key1"
         mock_rule["obj"].config_ordered = True
@@ -40,7 +40,7 @@ class ConfigComplianceTest(unittest.TestCase):
         """Test proper return when Config JSON is returned without match_config"""
         mock_config = json.dumps({"key1": "value1", "key2": "value2", "key3": "value3"})
         mock_obj = MagicMock(name="Device")
-        mock_obj.platform = Mock(slug="test_slug")
+        mock_obj.platform = Mock(network_driver="test_driver")
         mock_rule = MagicMock(name="ComplianceRule")
         mock_rule["obj"].match_config = ""
         mock_rule["obj"].config_ordered = True

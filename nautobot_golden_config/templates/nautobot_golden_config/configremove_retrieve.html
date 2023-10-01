@@ -13,7 +13,7 @@
             </tr>
             <tr>
                 <td>Platform</td>
-                <td><a href="{{ object.platform.get_absolute_url }}">{{ object.platform.name }}</a></td>
+                <td>{{ object.platform|hyperlinked_object }}</td>
             </tr>
             <tr>
                 <td>Description</td>

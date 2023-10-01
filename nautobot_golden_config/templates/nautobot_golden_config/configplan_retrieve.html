@@ -18,7 +18,7 @@
         <table class="table table-hover panel-body attr-table table-responsive">
             <tr>
                 <td>Device</td>
-                <td><a href="{{ object.device.get_absolute_url }}">{{ object.device }}</a></td>
+                <td>{{ object.device|hyperlinked_object }}</td>
             </tr>
             <tr>
                 <td>Date Created</td>
@@ -26,7 +26,7 @@
             </tr>
             <tr>
                 <td>Plan Type</td>
-                <td>{{ object.plan_type | title }}</td>
+                <td>{{ object.plan_type|title }}</td>
             </tr>
             <tr>
                 <td>Features</td>
@@ -38,13 +38,13 @@
                             {% endfor %}
                         </ul>
                     {% else %}
-                        {{ None | placeholder }}
+                        {{ None|placeholder }}
                     {% endif %}
                 </td>
             </tr>
             <tr>
                 <td>Change Control ID</td>
-                <td>{{ object.change_control_id | placeholder }}</td>
+                <td>{{ object.change_control_id|placeholder }}</td>
             </tr>
             <tr>
                 <td>Change Control URL</td>
@@ -52,15 +52,11 @@
             </tr>
             <tr>
                 <td>Plan Result</td>
-                <td><a href="{{ object.plan_result.get_absolute_url }}">{{ object.plan_result.status|title }}</a></td>
+                <td>{{ object.plan_result|hyperlinked_object:"status" }}</td>
             </tr>
             <tr>
                 <td>Deploy Result</td>
-                {% if object.deploy_result %}
-                <td><a href="{{ object.deploy_result.get_absolute_url }}">{{ object.deploy_result.status|title }}</a>
-                {% else %}
-                <td>{{ object.deploy_result|placeholder }}</td>
-                {% endif %}
+                <td>{{ object.deploy_result|hyperlinked_object:"status"|placeholder }}</a>
                 </td>
             </tr>
             <tr>

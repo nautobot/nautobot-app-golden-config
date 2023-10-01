@@ -10,8 +10,8 @@ from django.test.client import RequestFactory
 from graphql import get_default_backend
 from graphene_django.settings import graphene_settings
 
-from nautobot.dcim.models import Platform, Site, Device, Manufacturer, DeviceRole, DeviceType
-from nautobot.extras.models import GitRepository, GraphQLQuery, DynamicGroup
+from nautobot.dcim.models import Platform, LocationType, Location, Device, Manufacturer, DeviceType
+from nautobot.extras.models import GitRepository, GraphQLQuery, DynamicGroup, Role, Status
 
 from nautobot_golden_config.models import (
     ComplianceFeature,
@@ -32,49 +32,37 @@ GIT_DATA = [
     {
         "created": "2021-02-22",
         "last_updated": "2021-02-23T03:32:46.414Z",
-        "_custom_field_data": {},
         "name": "backups",
-        "slug": "backups",
         "remote_url": "https://github.com/nautobot/demo-gc-backups",
         "branch": "main",
         "current_head": "c87710902da71e24c1b308a5ac12e33292726e4e",
-        "username": "",
         "provided_contents": ["nautobot_golden_config.backupconfigs"],
     },
     {
         "created": "2021-02-22",
         "last_updated": "2021-02-23T03:32:46.868Z",
-        "_custom_field_data": {},
         "name": "configs",
-        "slug": "configs",
         "remote_url": "https://github.com/nautobot/demo-gc-generated-configs",
         "branch": "main",
         "current_head": "e975bbf3054778bf3f2d971e1b8d100a371b417e",
-        "username": "",
         "provided_contents": ["nautobot_golden_config.intendedconfigs"],
     },
     {
         "created": "2021-02-22",
         "last_updated": "2021-02-22T05:01:21.863Z",
-        "_custom_field_data": {},
         "name": "data",
-        "slug": "data",
         "remote_url": "https://github.com/nautobot/demo-git-datasource",
         "branch": "main",
         "current_head": "f18b081ed8ca28fd7c4a8a3e46ef9cf909e29a57",
-        "username": "",
         "provided_contents": ["extras.configcontext"],
     },
     {
         "created": "2021-02-22",
         "last_updated": "2021-02-22T05:01:32.046Z",
-        "_custom_field_data": {},
         "name": "templates",
-        "slug": "templates",
         "remote_url": "https://github.com/nautobot/demo-gc-templates",
         "branch": "main",
         "current_head": "f62171f19e4c743669120363779340b1b188b0dd",
-        "username": "",
         "provided_contents": ["nautobot_golden_config.jinjatemplate"],
     },
 ]
@@ -97,24 +85,32 @@ class TestGraphQLQuery(TestCase):  # pylint: disable=too-many-instance-attribute
         self.backend = get_default_backend()
         self.schema = graphene_settings.SCHEMA
 
-        manufacturer = Manufacturer.objects.create(name="Manufacturer 1", slug="manufacturer-1")
-        self.devicetype = DeviceType.objects.create(
-            manufacturer=manufacturer, model="Device Type 1", slug="device-type-1"
-        )
-        self.devicerole1 = DeviceRole.objects.create(name="Device Role 1", slug="device-role-1")
+        self.inventory_status = Status.objects.get(name="Inventory")
+        self.ct_device = ContentType.objects.get_for_model(Device)
+        manufacturer = Manufacturer.objects.create(name="Manufacturer 1")
+        self.devicetype = DeviceType.objects.create(manufacturer=manufacturer, model="Device Type 1")
+        self.devicerole1 = Role.objects.create(name="Device Role 1")
 
-        self.site1 = Site.objects.create(name="Site-1", slug="site-1", asn=65000)
-        self.platform1 = Platform.objects.create(
-            name="Platform1",
-            slug="platform1",
+        self.lt_region = LocationType.objects.create(name="LT Region")
+        self.lt_site = LocationType.objects.create(name="LT Site", parent=self.lt_region)
+        self.lt_site.content_types.set([self.ct_device])
+
+        self.region1 = Location.objects.create(
+            name="region", location_type=self.lt_region, status=self.inventory_status
         )
+        self.site1 = Location.objects.create(
+            name="Site-1", location_type=self.lt_site, status=self.inventory_status, parent=self.region1, asn=65000
+        )
+
+        self.platform1 = Platform.objects.create(name="Platform1")
 
         self.device1 = Device.objects.create(
             name="Device 1",
+            status=self.inventory_status,
             device_type=self.devicetype,
-            device_role=self.devicerole1,
+            role=self.devicerole1,
             platform=self.platform1,
-            site=self.site1,
+            location=self.site1,
             comments="First Device",
         )
 
@@ -125,12 +121,9 @@ class TestGraphQLQuery(TestCase):  # pylint: disable=too-many-instance-attribute
         # Since we enforce a singleton pattern on this model, nuke the auto-created object.
         GoldenConfigSetting.objects.all().delete()
 
-        self.content_type = ContentType.objects.get(app_label="dcim", model="device")
-
         dynamic_group = DynamicGroup.objects.create(
             name="test1 site site-4",
-            slug="test1-site-site-4",
-            content_type=self.content_type,
+            content_type=self.ct_device,
             filter={"platform": ["platform1"]},
         )
 

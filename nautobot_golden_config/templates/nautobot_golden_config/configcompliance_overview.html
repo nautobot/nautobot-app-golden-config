@@ -1,0 +1,78 @@
+{% extends 'generic/object_list.html' %}
+{% load buttons %}
+{% load static %}
+{% load helpers %}
+
+{% block title %}Overview Reports{% endblock %}
+
+{% block breadcrumbs %}
+<li><a href="{% url 'plugins:nautobot_golden_config:configcompliance_overview' %}">Overview Reports</a></li>  
+{% block extra_breadcrumbs %}{% endblock extra_breadcrumbs %}
+{% endblock breadcrumbs %}
+
+{% block buttons %}
+<div class="btn-group">
+    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <span class="mdi mdi-plus-thick" aria-hidden="true"></span> Execute <span class="caret"></span>
+    </button>
+    <ul class="dropdown-menu">
+        {% if compliance %}
+            <li><a href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.ComplianceJob' %}">Compliance</a></li>
+        {% endif %}
+    </ul>
+</div>
+{% endblock %}
+
+{% block table %}
+        <div class="col-md-12">
+            <!-- VISUAL BLOCK -->
+            {% if bar_chart is not None %}
+                {% block graphic  %}
+                    <div id="content">
+                        <img src="data:image/png;base64,{{ bar_chart|safe }}" style="width:100%">
+                    </div>
+                {% endblock %}
+            {% else %}
+                    <span class=" text-center alert-danger p-4 m-4 ">-- Oops, no config compliances found, visual not made! --</span>
+            {% endif %}
+            <!-- END VISUAL BLOCK -->
+            <h3 class="text-center m-2 p-3">Executive Summary</h3>
+            <table class="table table-hover table-headings">
+                <thead>
+                    <tr>
+                        <th><a>Type</a></th>
+                        <th><a>Total</a></th>
+                        <th><a >Compliant</a></th>
+                        <th ><a>Non-Compliant</a></th>
+                        <th ><a>Compliance (%)</a></th>
+                        <th ><a>Summary</a></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="even">
+                        <td>Devices</td>
+                        <td>{% if device_aggr.total is not None %} {{ device_aggr.total }} {% else %} -- {% endif %}</td>
+                        <td>{% if device_aggr.compliants is not None %} {{ device_aggr.compliants }} {% else %} -- {% endif %}</td>
+                        <td>{% if device_aggr.non_compliants is not None %} {{ device_aggr.non_compliants }} {% else %} -- {% endif %}</td>
+                        <td>{% if device_aggr.comp_percents is not None %} {{ device_aggr.comp_percents }} % {% else %} -- {% endif %}</td>
+                        <td><img style="width:120px;" src= "data:image/png;base64,{{ device_visual|safe }}" ></td>
+                    </tr>
+                        <tr class="even">
+                        <td>Features</td>
+                        <td>{% if feature_aggr.total is not None %} {{ feature_aggr.total }} {% else %} -- {% endif %}</td>
+                        <td>{% if feature_aggr.compliants is not None %} {{ feature_aggr.compliants }} {% else %} -- {% endif %}</td>
+                        <td>{% if feature_aggr.non_compliants is not None %} {{ feature_aggr.non_compliants }} {% else %} -- {% endif %}</td>
+                        <td>{% if feature_aggr.comp_percents is not None %} {{ feature_aggr.comp_percents }} % {% else %} -- {% endif %}</td>
+                        <td ><img style="width:120px;" src= "data:image/png;base64,{{ feature_visual|safe }}" ></td>
+                    </tr>
+                </tbody>
+            </table>
+            <h3 class="text-center m-2 p-3">Feature Summary</h3>
+            {% include 'utilities/obj_table.html' %}
+            </div>
+</div>
+{% table_config_form table table_name="ObjectTable" %}
+{% endblock %}
+{% block javascript %}
+<script src="{% static 'js/tableconfig.js' %}"></script>
+{% endblock %}

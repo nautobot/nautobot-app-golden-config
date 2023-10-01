@@ -2,7 +2,7 @@
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.db.utils import IntegrityError
+from django.db.models.deletion import ProtectedError
 from django.test import TestCase
 from nautobot.dcim.models import Platform
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status
@@ -59,7 +59,7 @@ class ConfigComplianceModelTestCase(TestCase):
             missing={},
             extra={},
         )
-        with self.assertRaises(IntegrityError):
+        with self.assertRaises(ValidationError):
             ConfigCompliance.objects.create(
                 device=self.device,
                 rule=self.compliance_rule_json,
@@ -92,7 +92,7 @@ class ConfigComplianceModelTestCase(TestCase):
             intended={"foo": {"bar-1": "baz"}},
         )
         self.assertEqual(ConfigCompliance.objects.filter(device=self.device).count(), 1)
-        self.device.platform = Platform.objects.create(name="Platform Change", slug="platform-change")
+        self.device.platform = Platform.objects.create(name="Platform Change")
         new_rule_json = create_feature_rule_json(self.device)
 
         ConfigCompliance.objects.create(
@@ -125,7 +125,6 @@ class GoldenConfigSettingModelTestCase(TestCase):
         content_type = ContentType.objects.get(app_label="dcim", model="device")
         dynamic_group = DynamicGroup.objects.create(
             name="test1 site site-4",
-            slug="test1-site-site-4",
             content_type=content_type,
             filter={},
         )
@@ -135,11 +134,11 @@ class GoldenConfigSettingModelTestCase(TestCase):
             slug="test",
             weight=1000,
             description="Test Description.",
-            backup_path_template="{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg",
-            intended_path_template="{{ obj.site.slug }}/{{ obj.name }}.cfg",
+            backup_path_template="{{ obj.location.parant.name }}/{{obj.name}}.cfg",
+            intended_path_template="{{ obj.location.name }}/{{ obj.name }}.cfg",
             backup_test_connectivity=True,
             jinja_repository=GitRepository.objects.get(name="test-jinja-repo-1"),
-            jinja_path_template="{{ obj.platform.slug }}/main.j2",
+            jinja_path_template="{{ obj.platform.name }}/main.j2",
             backup_repository=GitRepository.objects.get(name="test-backup-repo-1"),
             intended_repository=GitRepository.objects.get(name="test-intended-repo-1"),
             dynamic_group=dynamic_group,
@@ -176,7 +175,6 @@ class GoldenConfigSettingGitModelTestCase(TestCase):
         content_type = ContentType.objects.get(app_label="dcim", model="device")
         dynamic_group = DynamicGroup.objects.create(
             name="test1 site site-4",
-            slug="test1-site-site-4",
             content_type=content_type,
             filter={},
         )
@@ -187,11 +185,11 @@ class GoldenConfigSettingGitModelTestCase(TestCase):
             slug="test",
             weight=1000,
             description="Test Description.",
-            backup_path_template="{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg",
-            intended_path_template="{{ obj.site.slug }}/{{ obj.name }}.cfg",
+            backup_path_template="{{ obj.location.parant.name }}/{{obj.name}}.cfg",
+            intended_path_template="{{ obj.location.name }}/{{ obj.name }}.cfg",
             backup_test_connectivity=True,
             jinja_repository=GitRepository.objects.get(name="test-jinja-repo-1"),
-            jinja_path_template="{{ obj.platform.slug }}/main.j2",
+            jinja_path_template="{{ obj.platform.name }}/main.j2",
             backup_repository=GitRepository.objects.get(name="test-backup-repo-1"),
             intended_repository=GitRepository.objects.get(name="test-intended-repo-1"),
             dynamic_group=dynamic_group,
@@ -203,21 +201,18 @@ class GoldenConfigSettingGitModelTestCase(TestCase):
         self.assertEqual(self.golden_config.slug, "test")
         self.assertEqual(self.golden_config.weight, 1000)
         self.assertEqual(self.golden_config.description, "Test Description.")
-        self.assertEqual(self.golden_config.backup_path_template, "{{ obj.site.region.parent.slug }}/{{obj.name}}.cfg")
-        self.assertEqual(self.golden_config.intended_path_template, "{{ obj.site.slug }}/{{ obj.name }}.cfg")
+        self.assertEqual(self.golden_config.backup_path_template, "{{ obj.location.parant.name }}/{{obj.name}}.cfg")
+        self.assertEqual(self.golden_config.intended_path_template, "{{ obj.location.name }}/{{ obj.name }}.cfg")
         self.assertTrue(self.golden_config.backup_test_connectivity)
         self.assertEqual(self.golden_config.jinja_repository, GitRepository.objects.get(name="test-jinja-repo-1"))
-        self.assertEqual(self.golden_config.jinja_path_template, "{{ obj.platform.slug }}/main.j2")
+        self.assertEqual(self.golden_config.jinja_path_template, "{{ obj.platform.name }}/main.j2")
         self.assertEqual(self.golden_config.backup_repository, GitRepository.objects.get(name="test-backup-repo-1"))
         self.assertEqual(self.golden_config.intended_repository, GitRepository.objects.get(name="test-intended-repo-1"))
 
     def test_removing_git_repos(self):
-        """Ensure we can remove the Git Repository objects from GoldenConfigSetting."""
-        GitRepository.objects.all().delete()
-        gc = GoldenConfigSetting.objects.all().first()  # pylint: disable=invalid-name
-        self.assertEqual(gc.intended_repository, None)
-        self.assertEqual(gc.backup_repository, None)
-        self.assertEqual(GoldenConfigSetting.objects.all().count(), 1)
+        """Ensure we cannot remove the Git Repository objects while still attached to GC setting."""
+        with self.assertRaises(ProtectedError):
+            GitRepository.objects.all().delete()
 
     def test_clean_up(self):
         """Delete all objects created of GoldenConfigSetting type."""
@@ -230,7 +225,7 @@ class ConfigRemoveModelTestCase(TestCase):
 
     def setUp(self):
         """Setup Object."""
-        self.platform = Platform.objects.create(slug="cisco_ios")
+        self.platform = Platform.objects.create(name="Cisco IOS", network_driver="cisco_ios")
         self.line_removal = ConfigRemove.objects.create(
             name="foo", platform=self.platform, description="foo bar", regex="^Back.*"
         )
@@ -261,7 +256,7 @@ class ConfigReplaceModelTestCase(TestCase):
 
     def setUp(self):
         """Setup Object."""
-        self.platform = Platform.objects.create(slug="cisco_ios")
+        self.platform = Platform.objects.create(name="Cisco IOS", network_driver="cisco_ios")
         self.line_replace = ConfigReplace.objects.create(
             name="foo",
             platform=self.platform,
@@ -301,7 +296,7 @@ class ConfigPlanModelTestCase(TestCase):
         self.device = create_device()
         self.rule = create_feature_rule_json(self.device)
         self.feature = self.rule.feature
-        self.status = Status.objects.get(slug="not-approved")
+        self.status = Status.objects.get(name="Not Approved")
         self.job_result = create_job_result()
 
     def test_create_config_plan_intended(self):
@@ -404,7 +399,7 @@ class RemediationSettingModelTestCase(TestCase):
 
     def setUp(self):
         """Setup Object."""
-        self.platform = Platform.objects.create(slug="cisco_ios")
+        self.platform = Platform.objects.create(name="Cisco IOS", network_driver="cisco_ios")
         self.remediation_options = {
             "optionA": "someValue",
             "optionB": "someotherValue",

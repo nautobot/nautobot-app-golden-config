@@ -2,6 +2,9 @@
 
 import unittest
 from unittest.mock import Mock, patch
+from urllib.parse import quote
+
+from nautobot.extras.datasources.git import get_repo_from_url_to_path_and_from_branch
 
 from nautobot_golden_config.utilities.git import GitRepo
 
@@ -12,55 +15,51 @@ class GitRepoTest(unittest.TestCase):
     def setUp(self):
         """Setup a reusable mock object to pass into GitRepo."""
         mock_obj = Mock()
+
+        def mock_get_secret_value(  # pylint: disable=unused-argument,inconsistent-return-statements
+            access_type, secret_type, **kwargs
+        ):
+            """Mock SecretsGroup.get_secret_value()."""
+            if secret_type == "username":
+                return mock_obj.username
+            if secret_type == "token":
+                return mock_obj._token  # pylint: disable=protected-access
+
         mock_obj.filesystem_path = "/fake/path"
-        mock_obj.remote_url = "/fake/remote"
+        mock_obj.remote_url = "https://fake.git/org/repository.git"
         mock_obj._token = "fake token"  # nosec pylint: disable=protected-access
         mock_obj.username = None
-        mock_obj.secrets_group = None
+        mock_obj.secrets_group = Mock(get_secret_value=mock_get_secret_value)
         self.mock_obj = mock_obj
 
-    @patch("nautobot_golden_config.utilities.git.Repo", autospec=True)
+    @patch("nautobot.core.utils.git.GIT_ENVIRONMENT", None)
+    @patch("nautobot.core.utils.git.os.path.isdir", Mock(return_value=False))
+    @patch("nautobot.core.utils.git.Repo", autospec=True)
     def test_gitrepo_path_noexist(self, mock_repo):
-        """Test Repo is not called when path isn't valid, ensure clone is called."""
-        self.mock_obj.username = None
-        GitRepo(self.mock_obj)
+        """Test Repo is not called when path isn't valid, ensure clone_from is called."""
+        git_info = get_repo_from_url_to_path_and_from_branch(self.mock_obj)
+        GitRepo(self.mock_obj.filesystem_path, git_info.from_url, base_url=self.mock_obj.remote_url)
         mock_repo.assert_not_called()
-        mock_repo.clone_from.assert_called_with("/fake/remote", to_path="/fake/path")
+        mock_repo.clone_from.assert_called_with(git_info.from_url, to_path=self.mock_obj.filesystem_path, env=None)
 
-    @patch("nautobot_golden_config.utilities.git.os")
-    @patch("nautobot_golden_config.utilities.git.Repo", autospec=True)
-    def test_gitrepo_path_exist(self, mock_repo, mock_os):
-        """Test Repo is not called when path is valid, ensure Repo is called."""
-        mock_os.path.isdir.return_value = True
-        self.mock_obj.username = None
-        GitRepo(self.mock_obj)
-        mock_repo.assert_called_once()
-        mock_repo.assert_called_with(path="/fake/path")
+    @patch("nautobot.core.utils.git.os.path.isdir", Mock(return_value=True))
+    @patch("nautobot.core.utils.git.Repo", autospec=True)
+    def test_gitrepo_path_exist(self, mock_repo):
+        """Test Repo is called when path is valid."""
+        git_info = get_repo_from_url_to_path_and_from_branch(self.mock_obj)
+        GitRepo(self.mock_obj.filesystem_path, git_info.from_url, base_url=self.mock_obj.remote_url)
+        mock_repo.assert_called_once_with(path=self.mock_obj.filesystem_path)
 
-    @patch("nautobot_golden_config.utilities.git.os")
-    @patch("nautobot_golden_config.utilities.git.Repo", autospec=True)
-    def test_path_exist_token_and_username(self, mock_repo, mock_os):
-        """Test Repo is not called when path is valid, ensure Repo is called."""
-        mock_os.path.isdir.return_value = True
+    @patch("nautobot.core.utils.git.GIT_ENVIRONMENT", None)
+    @patch("nautobot.core.utils.git.os.path.isdir", Mock(return_value=False))
+    @patch("nautobot.core.utils.git.Repo", autospec=True)
+    def test_path_noexist_token_and_username_with_symbols(self, mock_repo):
+        """Test Repo clone_from is called when path is not valid, with username and token."""
         self.mock_obj.username = "Test User"
-        GitRepo(self.mock_obj)
-        mock_repo.assert_called_once()
-        mock_repo.assert_called_with(path="/fake/path")
-
-    @patch("nautobot_golden_config.utilities.git.os")
-    @patch("nautobot_golden_config.utilities.git.Repo", autospec=True)
-    def test_username_with_symbols(self, mock_repo, mock_os):
-        """Test Repo is not called when path is valid, ensure Repo is called."""
-        mock_os.path.isdir.return_value = True
-        self.mock_obj.username = "user@fakeemail.local"
-        GitRepo(self.mock_obj)
-        mock_repo.assert_called_once()
-        mock_repo.assert_called_with(path="/fake/path")
-
-    @patch("nautobot_golden_config.utilities.git.os")
-    @patch("nautobot_golden_config.utilities.git.Repo", autospec=True)
-    def test_git_with_username(self, mock_repo, mock_os):  # pylint: disable=unused-argument
-        """Test username with special character works."""
-        self.mock_obj.username = "admin@ntc.com"
-        GitRepo(self.mock_obj)
-        mock_repo.assert_called_once()
+        self.mock_obj._token = "Fake Token"  # pylint: disable=protected-access
+        git_info = get_repo_from_url_to_path_and_from_branch(self.mock_obj)
+        self.assertIn(quote(self.mock_obj.username), git_info.from_url)
+        self.assertIn(quote(self.mock_obj._token), git_info.from_url)  # pylint: disable=protected-access
+        GitRepo(self.mock_obj.filesystem_path, git_info.from_url, base_url=self.mock_obj.remote_url)
+        mock_repo.assert_not_called()
+        mock_repo.clone_from.assert_called_with(git_info.from_url, to_path=self.mock_obj.filesystem_path, env=None)

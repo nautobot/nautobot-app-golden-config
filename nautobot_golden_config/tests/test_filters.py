@@ -1,18 +1,15 @@
 """Unit tests for nautobot_golden_config models."""
 
-from unittest import skip
-
 from django.test import TestCase
 from nautobot.dcim.models import Device, Platform
 from nautobot.extras.models import Status, Tag
-from nautobot.utilities.testing import FilterTestCases
-
+from nautobot.core.testing import FilterTestCases
 from nautobot_golden_config import filters, models
 
 from .conftest import create_device_data, create_feature_rule_cli, create_feature_rule_json, create_job_result
 
 
-class ConfigComplianceModelTestCase(TestCase):
+class ConfigComplianceModelTestCase(TestCase):  # pylint: disable=too-many-public-methods
     """Test filtering operations for ConfigCompliance Model."""
 
     queryset = models.ConfigCompliance.objects.all()
@@ -23,18 +20,24 @@ class ConfigComplianceModelTestCase(TestCase):
         create_device_data()
         self.dev01 = Device.objects.get(name="Device 1")
         dev02 = Device.objects.get(name="Device 2")
-        dev03 = Device.objects.get(name="Device 3")
+        self.dev03 = Device.objects.get(name="Device 3")
         dev04 = Device.objects.get(name="Device 4")
+        dev05 = Device.objects.get(name="Device 5")
+        dev06 = Device.objects.get(name="Device 6")
 
         feature_dev01 = create_feature_rule_json(self.dev01)
         feature_dev02 = create_feature_rule_json(dev02)
-        feature_dev03 = create_feature_rule_json(dev03)
+        feature_dev03 = create_feature_rule_json(self.dev03)
+        feature_dev05 = create_feature_rule_json(dev05, feature="baz")
+        feature_dev06 = create_feature_rule_json(dev06, feature="bar")
 
         updates = [
             {"device": self.dev01, "feature": feature_dev01},
             {"device": dev02, "feature": feature_dev02},
-            {"device": dev03, "feature": feature_dev03},
+            {"device": self.dev03, "feature": feature_dev03},
             {"device": dev04, "feature": feature_dev01},
+            {"device": dev05, "feature": feature_dev05},
+            {"device": dev06, "feature": feature_dev06},
         ]
         for update in updates:
             models.ConfigCompliance.objects.create(
@@ -51,13 +54,13 @@ class ConfigComplianceModelTestCase(TestCase):
 
     def test_full(self):
         """Test without filtering to ensure all devices have been added."""
-        self.assertEqual(self.queryset.count(), 4)
+        self.assertEqual(self.queryset.count(), 6)
 
     def test_device(self):
         """Test filtering by Device."""
         params = {"device": [self.dev01.name]}
         self.assertEqual(self.filterset(params, self.queryset).qs.count(), 1)
-        params = {"device_id": [self.dev01.id]}
+        params = {"device": [self.dev01.id]}
         self.assertEqual(self.filterset(params, self.queryset).qs.count(), 1)
 
     def test_search(self):
@@ -65,83 +68,155 @@ class ConfigComplianceModelTestCase(TestCase):
         params = {"q": self.dev01.name[-1:]}
         self.assertEqual(self.filterset(params, self.queryset).qs.count(), 1)
 
-    def test_region(self):
-        """Test filtering by Region."""
-        params = {"region": [self.dev01.site.region]}
-        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 2)
-        params = {"region_id": [self.dev01.site.region.id]}
-        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 2)
+    def test_location(self):
+        """Test filtering by Location Name."""
+        params = {"location": [self.dev01.location.name]}
+        filter_result = self.filterset(params, self.queryset).qs
+        self.assertEqual(filter_result.count(), 4)
+        # Devices are assigned to 2 different Locations that share the same Name
+        unique_locations = {result.device.location for result in filter_result}
+        self.assertEqual(len(unique_locations), 2)
 
-    def test_site(self):
-        """Test filtering by Site."""
-        params = {"site": [self.dev01.site.slug]}
-        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 2)
-        params = {"site_id": [self.dev01.site.id]}
-        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 2)
+    def test_location_id(self):
+        """Test filtering by Location ID."""
+        params = {"location_id": [self.dev01.location.id]}
+        filter_result = self.filterset(params, self.queryset).qs
+        self.assertEqual(filter_result.count(), 3)
+        # Devices are assigned to 1 Location since ID is used instead of Name
+        unique_locations = {result.device.location for result in filter_result}
+        self.assertEqual(len(unique_locations), 1)
+
+    def test_location_parent_name(self):
+        """Test filtering by Location Parent Name."""
+        params = {"location": [self.dev03.location.parent.name]}
+        filter_result = self.filterset(params, self.queryset).qs
+        self.assertEqual(filter_result.count(), 2)
+        # Devices are assigned to 2 different Locations that share the same Parent
+        unique_locations = {result.device.location for result in filter_result}
+        self.assertEqual(len(unique_locations), 2)
+        device_names = {result.device.name for result in filter_result}
+        self.assertEqual({"Device 3", "Device 5"}, device_names)
+
+    def test_location_parent_id(self):
+        """Test filtering by Location Parent ID."""
+        params = {"location_id": [self.dev03.location.parent.id]}
+        filter_result = self.filterset(params, self.queryset).qs
+        self.assertEqual(filter_result.count(), 2)
+        # Devices are assigned to 2 different Locations that share the same Parent
+        unique_locations = {result.device.location for result in filter_result}
+        self.assertEqual(len(unique_locations), 2)
+        device_names = {result.device.name for result in filter_result}
+        self.assertEqual({"Device 3", "Device 5"}, device_names)
 
     def test_tenant(self):
         """Test filtering by Tenant."""
-        params = {"tenant": [self.dev01.tenant.slug]}
-        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 2)
-        params = {"tenant_id": [self.dev01.tenant.id]}
-        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 2)
+        params = {"tenant": [self.dev01.tenant.name]}
+        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 4)
+        params = {"tenant": [self.dev01.tenant.id]}
+        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 4)
 
     def test_tenant_group(self):
-        """Test filtering by Tenant Group."""
-        params = {"tenant_group": [self.dev01.tenant.group.slug]}
-        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 2)
-        params = {"tenant_group_id": [self.dev01.tenant.group.id]}
-        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 2)
+        """Test filtering by Tenant Group Name."""
+        params = {"tenant_group": [self.dev01.tenant.tenant_group.name]}
+        filter_result = self.filterset(params, self.queryset).qs
+        self.assertEqual(filter_result.count(), 4)
+
+    def test_tenant_group_id(self):
+        """Test filtering by Tenant Group ID."""
+        params = {"tenant_group": [self.dev01.tenant.tenant_group.id]}
+        filter_result = self.filterset(params, self.queryset).qs
+        self.assertEqual(filter_result.count(), 4)
+
+    def test_tenant_group_parent(self):
+        """Test filtering by Tenant Group Parent Name."""
+        params = {"tenant_group": [self.dev01.tenant.tenant_group.parent.name]}
+        filter_result = self.filterset(params, self.queryset).qs
+        self.assertEqual(filter_result.count(), 5)
+
+    def test_tenant_group_parent_id(self):
+        """Test filtering by Tenant Group Parent ID."""
+        params = {"tenant_group": [self.dev01.tenant.tenant_group.parent.id]}
+        filter_result = self.filterset(params, self.queryset).qs
+        self.assertEqual(filter_result.count(), 5)
 
     def test_rack(self):
         """Test filtering by Rack."""
         params = {"rack": [self.dev01.rack.name]}
         self.assertEqual(self.filterset(params, self.queryset).qs.count(), 2)
-        params = {"rack_id": [self.dev01.rack.id]}
+        params = {"rack": [self.dev01.rack.id]}
         self.assertEqual(self.filterset(params, self.queryset).qs.count(), 2)
 
     def test_rack_group(self):
-        """Test filtering by Rack Group."""
-        params = {"rack_group": [self.dev01.rack.group.slug]}
-        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 2)
-        params = {"rack_group_id": [self.dev01.rack.group.id]}
-        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 2)
+        """Test filtering by Rack Group Name."""
+        params = {"rack_group": [self.dev01.rack.rack_group.name]}
+        filter_result = self.filterset(params, self.queryset).qs
+        self.assertEqual(filter_result.count(), 3)
+        # Devices are assigned to 2 different Rack Groups that share the same Name
+        unique_rack_groups = {result.device.rack.rack_group for result in filter_result}
+        self.assertEqual(len(unique_rack_groups), 2)
+
+    def test_rack_group_id(self):
+        """Test filtering by Rack Group ID."""
+        params = {"rack_group_id": [self.dev01.rack.rack_group.id]}
+        filter_result = self.filterset(params, self.queryset).qs
+        self.assertEqual(filter_result.count(), 2)
+        # Devices are assigned to 1 Rack Group since ID is used instead of Name
+        unique_rack_groups = {result.device.rack.rack_group for result in filter_result}
+        self.assertEqual(len(unique_rack_groups), 1)
+
+    def test_rack_group_parent_name(self):
+        """Test filtering by Rack Group Parent Group Name."""
+        params = {"rack_group": [self.dev01.rack.rack_group.parent.name]}
+        filter_result = self.filterset(params, self.queryset).qs
+        self.assertEqual(filter_result.count(), 3)
+        # Devices are assigned to 2 different Rack Groups that share the same Parent
+        unique_rack_groups = {result.device.rack.rack_group for result in filter_result}
+        self.assertEqual(len(unique_rack_groups), 2)
+        device_names = {result.device.name for result in filter_result}
+        self.assertEqual({"Device 1", "Device 4", "Device 6"}, device_names)
+
+    def test_rack_group_parent_id(self):
+        """Test filtering by Rack Group Parent Group ID."""
+        params = {"rack_group_id": [self.dev01.rack.rack_group.parent.id]}
+        filter_result = self.filterset(params, self.queryset).qs
+        self.assertEqual(filter_result.count(), 3)
+        # Devices are assigned to 2 different Rack Groups that share the same Parent
+        unique_rack_groups = {result.device.rack.rack_group for result in filter_result}
+        self.assertEqual(len(unique_rack_groups), 2)
+        device_names = {result.device.name for result in filter_result}
+        self.assertEqual({"Device 1", "Device 4", "Device 6"}, device_names)
 
     def test_role(self):
-        """Test filtering by Role."""
-        params = {"role": [self.dev01.device_role.slug]}
-        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 2)
-        params = {"role_id": [self.dev01.device_role.id]}
-        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 2)
+        params = {"role": [self.dev01.role.name]}
+        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 4)
+        params = {"role": [self.dev01.role.id]}
+        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 4)
 
     def test_platform(self):
         """Test filtering by Platform."""
-        params = {"platform": [self.dev01.platform.slug]}
-        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 2)
-        params = {"platform_id": [self.dev01.platform.id]}
-        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 2)
+        params = {"platform": [self.dev01.platform.name]}
+        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 4)
+        params = {"platform": [self.dev01.platform.id]}
+        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 4)
 
     def test_manufacturer(self):
         """Test filtering by Manufacturer."""
-        params = {"manufacturer": [self.dev01.device_type.manufacturer.slug]}
-        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 2)
-        params = {"manufacturer_id": [self.dev01.device_type.manufacturer.id]}
-        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 2)
+        params = {"manufacturer": [self.dev01.device_type.manufacturer.name]}
+        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 4)
+        params = {"manufacturer": [self.dev01.device_type.manufacturer.id]}
+        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 4)
 
     def test_device_type(self):
         """Test filtering by Device Type."""
-        params = {"device_type": [self.dev01.device_type.slug]}
-        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 2)
-        params = {"device_type_id": [self.dev01.device_type.id]}
-        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 2)
+        params = {"device_type": [self.dev01.device_type.model]}
+        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 4)
+        params = {"device_type": [self.dev01.device_type.id]}
+        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 4)
 
-    @skip("Update Status filtering")
     def test_device_status(self):
         """Test filtering by Device Status."""
-        params = {"device_status": [self.dev01.status.slug]}
-        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 2)
-        params = {"device_status_id": [self.dev01.status.id]}
-        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 2)
+        params = {"device_status": [self.dev01.status.name]}
+        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 4)
 
 
 class GoldenConfigModelTestCase(ConfigComplianceModelTestCase):
@@ -155,10 +230,12 @@ class GoldenConfigModelTestCase(ConfigComplianceModelTestCase):
         create_device_data()
         self.dev01 = Device.objects.get(name="Device 1")
         dev02 = Device.objects.get(name="Device 2")
-        dev03 = Device.objects.get(name="Device 3")
+        self.dev03 = Device.objects.get(name="Device 3")
         dev04 = Device.objects.get(name="Device 4")
+        dev05 = Device.objects.get(name="Device 5")
+        dev06 = Device.objects.get(name="Device 6")
 
-        updates = [self.dev01, dev02, dev03, dev04]
+        updates = [self.dev01, dev02, self.dev03, dev04, dev05, dev06]
         for update in updates:
             models.GoldenConfig.objects.create(
                 device=update,
@@ -173,8 +250,8 @@ class ConfigRemoveModelTestCase(TestCase):
 
     def setUp(self):
         """Setup Object."""
-        self.platform1 = Platform.objects.create(name="Platform 1", slug="platform-1")
-        platform2 = Platform.objects.create(name="Platform 2", slug="platform-2")
+        self.platform1 = Platform.objects.create(name="Platform 1")
+        platform2 = Platform.objects.create(name="Platform 2")
         self.obj1 = models.ConfigRemove.objects.create(
             name="Remove 1", platform=self.platform1, description="Description 1", regex="^Remove 1"
         )
@@ -206,9 +283,9 @@ class ConfigRemoveModelTestCase(TestCase):
 
     def test_platform(self):
         """Test filtering by Platform."""
-        params = {"platform": [self.platform1]}
+        params = {"platform": [self.platform1.name]}
         self.assertEqual(self.filterset(params, self.queryset).qs.count(), 2)
-        params = {"platform_id": [self.platform1.id]}
+        params = {"platform": [self.platform1.id]}
         self.assertEqual(self.filterset(params, self.queryset).qs.count(), 2)
 
 
@@ -220,8 +297,8 @@ class ConfigReplaceModelTestCase(ConfigRemoveModelTestCase):
 
     def setUp(self):
         """Setup Object."""
-        self.platform1 = Platform.objects.create(name="Platform 1", slug="platform-1")
-        platform2 = Platform.objects.create(name="Platform 2", slug="platform-2")
+        self.platform1 = Platform.objects.create(name="Platform 1")
+        platform2 = Platform.objects.create(name="Platform 2")
         self.obj1 = models.ConfigReplace.objects.create(
             name="Remove 1",
             platform=self.platform1,
@@ -249,8 +326,8 @@ class ComplianceRuleModelTestCase(ConfigRemoveModelTestCase):
 
     def setUp(self):
         """Setup Object."""
-        self.platform1 = Platform.objects.create(name="Platform 1", slug="platform-1")
-        platform2 = Platform.objects.create(name="Platform 2", slug="platform-2")
+        self.platform1 = Platform.objects.create(name="Platform 1")
+        platform2 = Platform.objects.create(name="Platform 2")
         feature1 = models.ComplianceFeature.objects.create(name="Feature 1", slug="feature-1")
         feature2 = models.ComplianceFeature.objects.create(name="Feature 2", slug="feature-2")
         self.obj1 = models.ComplianceRule.objects.create(
@@ -381,6 +458,11 @@ class ConfigPlanFilterTestCase(FilterTestCases.FilterTestCase):
         """Test without filtering to ensure all have been added."""
         self.assertEqual(self.queryset.count(), 4)
 
+    def test_tags_filter(self):
+        self.config_plan1.tags.add(self.tag2)
+        self.config_plan1.validated_save()
+        super().test_tags_filter()
+
     def test_search_device_name(self):
         """Test filtering by Q search value."""
         params = {"q": "Device 1"}
@@ -450,7 +532,7 @@ class ConfigPlanFilterTestCase(FilterTestCases.FilterTestCase):
 
     def test_filter_plan_type(self):
         """Test filtering by Plan Type."""
-        params = {"plan_type": self.config_plan1.plan_type}
+        params = {"plan_type": [self.config_plan1.plan_type]}
         filterset = self.filterset(params, self.queryset)
         self.assertEqual(filterset.qs.count(), 1)
         self.assertQuerysetEqualAndNotEmpty(
@@ -459,7 +541,7 @@ class ConfigPlanFilterTestCase(FilterTestCases.FilterTestCase):
 
     def test_filter_tag(self):
         """Test filtering by Tag."""
-        params = {"tag": [self.tag1.slug]}
+        params = {"tags": [self.tag1.name]}
         filterset = self.filterset(params, self.queryset)
         self.assertEqual(filterset.qs.count(), 2)
         self.assertQuerysetEqualAndNotEmpty(filterset.qs, self.queryset.filter(tags__name=self.tag1.name).distinct())

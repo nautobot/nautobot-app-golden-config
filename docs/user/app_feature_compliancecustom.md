@@ -35,7 +35,7 @@ The interface of contract provided to your custom function is based on the follo
 - The `obj` parameter, is the `self` instance object of a `ConfigCompliance` model, review the documentation for the all attributes of a `ConfigCompliance` instance, but the common ones are documented below.
     - `obj.actual` - The **actual** configuration parsed out by the `match_config` logic, or what was sent via the API.
     - `obj.intended` - The **intended** configuration parsed out by the `match_config` logic, or what was sent via the API.
-    - `obj.device.platform.slug` -  The platform slug name.
+    - `obj.device.platform.network_driver` -  The platform network_driver name.
     - `obj.rule.config_ordered` - describes whether or not the rule was configured to be ordered, such as an ACL, or not such as SNMP servers
     - `obj.rule` - The name of the rule.
     - `obj.rule.match_config` - The match_config text the rule was configured with.
@@ -104,7 +104,7 @@ import re
 BGP_PATTERN = re.compile("\s*neighbor (?P<ip>\d+\.\d+\.\d+\.\d+) .*")
 BGP_SECRET = re.compile("\s*neighbor (?P<ip>\d+\.\d+\.\d+\.\d+) password (\S+).*")
 def custom_compliance_func(obj):
-    if obj.rule == 'bgp' and obj.device.platform.slug == 'ios':
+    if obj.rule == 'bgp' and obj.device.platform.network_driver == 'cisco_ios':
         actual_config = obj.actual
         neighbors = []
         secrets = []

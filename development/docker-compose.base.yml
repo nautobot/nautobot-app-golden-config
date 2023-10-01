@@ -22,13 +22,13 @@ services:
       db:
         condition: "service_healthy"
     <<:
-      - *nautobot-build
       - *nautobot-base
+      - *nautobot-build
   worker:
     entrypoint:
       - "sh"
       - "-c"  # this is to evaluate the $NAUTOBOT_LOG_LEVEL from the env
-      - "nautobot-server celery worker -l $$NAUTOBOT_LOG_LEVEL"  ## $$ because of docker-compose
+      - "nautobot-server celery worker -l $$NAUTOBOT_LOG_LEVEL --events"  ## $$ because of docker-compose
     depends_on:
       - "nautobot"
     healthcheck:

@@ -35,10 +35,10 @@ obj = Device.objects.get(name="nyc-rt01")
 
 An example would be:
 ```python
-backup_path_template = "{{obj.site.slug}}/{{obj.name}}.cfg"
+backup_path_template = "{{obj.location.name|slugify}}/{{obj.name}}.cfg"
 ```
 
-With a Sydney, AU device `SYD001AURTR32`, in the site named `Sydney001` and the GraphQL query and `backup_path_template` configured above, our backed-up config would be placed in the repo in `/sydney001/SYD001AURTR32.cfg`.  The site value `sydney001` here is lower case because our template refers to the `slug` value, which by default will be lower case.
+With a Sydney, AU device `SYD001AURTR32`, in the location named `Sydney001` and the GraphQL query and `backup_path_template` configured above, our backed-up config would be placed in the repo in `/sydney001/SYD001AURTR32.cfg`.
 
 The backup process will automatically create folders as required based on the path definition. 
 

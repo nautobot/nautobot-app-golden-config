@@ -1,9 +1,9 @@
+{% if compliance %}
 <div class="panel panel-default">
-  {% if template_type == "device-compliance" %}
+  {% if template_type == "devicetab" %}
   <div class="panel-heading">
-    <a href="{% url 'plugins:nautobot_golden_config:configcompliance_devicedetail' pk=device.pk %}"
-      ><strong>Config Compliance Validation</strong></a
-    >
+    <a href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab=nautobot_golden_config:1"
+      ><strong>Config Compliance Validation</strong></a>
   </div>
   <div class="panel panel-default">
     <table class="table table-hover panel-body report">
@@ -31,7 +31,7 @@
       </tbody>
     </table>
   </div>
-  {% endif %} {% if template_type == 'site' %}
+  {% endif %} {% if template_type == 'location' %}
   <div class="panel panel-default">
     <table class="table table-hover panel-body report">
       <thead>
@@ -123,3 +123,4 @@
   </div>
   {% endif %}
 </div>
+{% endif %}

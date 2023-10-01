@@ -38,25 +38,25 @@ There are two different ways to customize the default behavior of `get_config_po
 
 The `render_secrets` function performs an extra Jinja rendering on top of an intended configuration, exposing new custom Jinja filters:
 
-- `get_secret_by_secret_group_slug`: as the name suggests, it returns the secret_group value, for a secret type, from its `slug`.
+- `get_secret_by_secret_group_name`: as the name suggests, it returns the secret_group value, for a secret type, from its `name`.
 
 !!! note
     Other default Django or Netutils filters are not available in this Jinja environment. Only `encrypt_<vendor>_type5` and `encrypt_<vendor>_type7` can be used together with the `get_secret` filters.
 
 Because this rendering is separated from the standard generation of the intended configuration, you must use the `{% raw %}` Jinja syntax to avoid being processed by the initial generation stage.
 
-1. For example, an original template like this, `{% raw %}ppp pap sent-username {{ secrets_group["slug"] | get_secret_by_secret_group_slug("username")}}{% endraw %}`
-2. Produces an intended configuration as `ppp pap sent-username {{ secrets_group["slug"] | get_secret_by_secret_group_slug("username") }}`
+1. For example, an original template like this, `{% raw %}ppp pap sent-username {{ secrets_group["name"] | get_secret_by_secret_group_name("username")}}{% endraw %}`
+2. Produces an intended configuration as `ppp pap sent-username {{ secrets_group["name"] | get_secret_by_secret_group_name("username") }}`
 3. After the `render_secrets`, it becomes `ppp pap sent-username my_username`.
 
-Notice that the `get_secret` filters take arguments. In the example, the `Secret_group` slug is passed, together with the type of the `Secret`. Check every signature for extra customization.
+Notice that the `get_secret` filters take arguments. In the example, the `secret_group` name is passed, together with the type of the `Secret`. Check every signature for extra customization.
 
 !!! note
     Remember that to render these secrets, the user requesting it via UI or API, MUST have read permissions to Secrets Groups, Golden Config, and the specific Device object.
 
 #### Render Secrets Example
 
-This shows how Render the Secrets feature for a `Device`, for the default `Secrets Group` FK, and for custom relationships, in the example, at `Site` level.
+This shows how Render the Secrets feature for a `Device`, for the default `Secrets Group` FK, and for custom relationships, in the example, at `Location` level.
 
 ##### GraphQL query
 
@@ -64,11 +64,11 @@ This shows how Render the Secrets feature for a `Device`, for the default `Secre
 query ($device_id: ID!) {
   device(id: $device_id) {
     secrets_group {
-      slug
+      name
     }
-    site {
-      rel_my_secret_relationship_for_site {
-        slug
+    location {
+      rel_my_secret_relationship_for_location {
+        name
       }
     }
   }
@@ -80,13 +80,13 @@ query ($device_id: ID!) {
 Using the default `secrets_group` FK in `Device`:
 
 ```jinja2
-{% raw %}{{ secrets_group["slug"] | get_secret_by_secret_group_slug("password") | default('no password') }}{% endraw %}
+{% raw %}{{ secrets_group["name"] | get_secret_by_secret_group_name("password") | default('no password') }}{% endraw %}
 ```
 
-Using the custom relationship at the `Site` level:
+Using the custom relationship at the `Location` level:
 
 ```jinja2
-{% raw %}{{ site["rel_my_secret_relationship_for_site"][0]["slug"] | get_secret_by_secret_group_slug("password") | default('no password') }}{% endraw %}
+{% raw %}{{ location["rel_my_secret_relationship_for_location"][0]["name"] | get_secret_by_secret_group_name("password") | default('no password') }}{% endraw %}
 ```
 
 This will end up rendering the secret, of type "password", for the corresponding `SecretGroup`.
@@ -96,5 +96,5 @@ This will end up rendering the secret, of type "password", for the corresponding
 Obviously, the rendering process can find multiple challenges, that are managed, and properly explained to take corrective actions:
 
 ```
-Found an error rendering the configuration to push: Jinja encountered and UndefinedError: 'None' has no attribute 'slug', check the template for missing variable definitions.
+Found an error rendering the configuration to push: Jinja encountered and UndefinedError: 'None' has no attribute 'name', check the template for missing variable definitions.
 ```

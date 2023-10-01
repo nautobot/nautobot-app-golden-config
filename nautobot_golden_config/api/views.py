@@ -1,13 +1,23 @@
 """View for Golden Config APIs."""
 import json
 
+from django.contrib.contenttypes.models import ContentType
+
+from rest_framework.mixins import DestroyModelMixin, ListModelMixin, RetrieveModelMixin, UpdateModelMixin
 from rest_framework.views import APIView
+from rest_framework.viewsets import GenericViewSet
 from rest_framework.response import Response
 from rest_framework.routers import APIRootView
 from rest_framework.permissions import AllowAny, IsAuthenticated, BasePermission
 from rest_framework import mixins, viewsets
 
-from nautobot.extras.api.views import NautobotModelViewSet
+from nautobot.core.api.views import (
+    BulkDestroyModelMixin,
+    BulkUpdateModelMixin,
+    ModelViewSetMixin,
+    NautobotAPIVersionMixin,
+)
+from nautobot.extras.api.views import NautobotModelViewSet, NotesViewSetMixin
 from nautobot.dcim.models import Device
 
 
@@ -124,12 +134,33 @@ class RemediationSettingViewSet(NautobotModelViewSet):  # pylint:disable=too-man
     filterset_class = filters.RemediationSettingFilterSet
 
 
-class ConfigPlanViewSet(NautobotModelViewSet):  # pylint:disable=too-many-ancestors
-    """API viewset for interacting with ConfigPlan objects."""
+class ConfigPlanViewSet(
+    NautobotAPIVersionMixin,
+    NotesViewSetMixin,
+    ModelViewSetMixin,
+    RetrieveModelMixin,
+    UpdateModelMixin,
+    DestroyModelMixin,
+    ListModelMixin,
+    BulkUpdateModelMixin,
+    BulkDestroyModelMixin,
+    GenericViewSet,
+):  # pylint:disable=too-many-ancestors
+    """API viewset for interacting with ConfigPlan objects. Does not support POST to create objects."""
 
     queryset = models.ConfigPlan.objects.all()
     serializer_class = serializers.ConfigPlanSerializer
     filterset_class = filters.ConfigPlanFilterSet
 
-    # Disabling POST as these should only be created via Job.
-    http_method_names = ["get", "put", "patch", "delete", "head", "options"]
+    def get_serializer_context(self):
+        """Gather all custom fields for the model. Copied from nautobot.extras.api.views.CustomFieldModelViewSet."""
+        content_type = ContentType.objects.get_for_model(self.queryset.model)
+        custom_fields = content_type.custom_fields.all()
+
+        context = super().get_serializer_context()
+        context.update(
+            {
+                "custom_fields": custom_fields,
+            }
+        )
+        return context

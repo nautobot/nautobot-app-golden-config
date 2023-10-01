@@ -1,7 +1,8 @@
 """Add the configuration compliance buttons to the Plugins Navigation."""
 
-from nautobot.core.apps import NavMenuGroup, NavMenuItem, NavMenuTab, NavMenuAddButton
-from nautobot_golden_config.utilities.constant import ENABLE_COMPLIANCE, ENABLE_BACKUP, ENABLE_PLAN
+from nautobot.apps.ui import NavMenuAddButton, NavMenuGroup, NavMenuItem, NavMenuTab
+
+from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_PLAN
 
 items_operate = [
     NavMenuItem(
@@ -56,7 +57,7 @@ if ENABLE_COMPLIANCE:
 if ENABLE_COMPLIANCE:
     items_operate.append(
         NavMenuItem(
-            link="plugins:nautobot_golden_config:configcompliance_report",
+            link="plugins:nautobot_golden_config:configcompliance_overview",
             name="Compliance Report",
             permissions=["nautobot_golden_config.view_configcompliance"],
         )

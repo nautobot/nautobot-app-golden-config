@@ -60,12 +60,12 @@ PLUGINS_CONFIG = {
         "sot_agg_transposer": None,
         "postprocessing_callables": [],
         "postprocessing_subscribed": [],
-        "platform_slug_map": None,
         "jinja_env": {
             "undefined": "jinja2.StrictUndefined",
             "trim_blocks": True,
             "lstrip_blocks": False,
         },
+        # "default_deploy_status": "Not Approved",
         # "get_custom_compliance": "my.custom_compliance.func"
     },
 }
@@ -100,9 +100,10 @@ The plugin behavior can be controlled with the following list of settings.
 | enable_compliance         | True                          | True    | A boolean to represent whether or not to run the compliance process within the plugin.                                                                                     |
 | enable_intended           | True                          | True    | A boolean to represent whether or not to generate intended configurations within the plugin.                                                                               |
 | enable_sotagg             | True                          | True    | A boolean to represent whether or not to provide a GraphQL query per device to allow the intended configuration to provide data variables to the plugin.                   |
-| enable_plan               | True                          | True    | A boolean to represent whether or not to allow the config plan job to run.                                                                                                          |
-| enable_deploy             | True                          | True    | A boolean to represent whether or not to be able to deploy configs to network devices.                                                                             |
+| enable_plan               | True                          | True    | A boolean to represent whether or not to allow the config plan job to run.                                                                                                 |
+| enable_deploy             | True                          | True    | A boolean to represent whether or not to be able to deploy configs to network devices.                                                                                     |
 | enable_postprocessing     | True                          | False    | A boolean to represent whether or not to generate intended configurations to push, with extra processing such as secrets rendering.                                       |
+| default_deploy_status     | "Not Approved"                | "Not Approved" | A string that will be the name of the status you want as the default when create new config plans, you MUST create the status yourself before starting the app.     |
 | postprocessing_callables  | ['mypackage.myfunction']      | []      | A list of function paths, in dotted format, that are appended to the available methods for post-processing the intended configuration, for instance, the `render_secrets`. |
 | postprocessing_subscribed | ['mypackage.myfunction']      | []      | A list of function paths, that should exist as postprocessing_callables, that defines the order of application of during the post-processing process.                      |
 | platform_slug_map         | {"cisco_wlc": "cisco_aireos"} | None    | A dictionary in which the key is the platform slug and the value is what netutils uses in any "network_os" parameter within `netutils.config.compliance.parser_map`.       |
@@ -128,3 +129,28 @@ The plugin behavior can be controlled with the following list of settings.
             "lstrip_blocks": False,
         }
     ```
+
+## Custom Dispatcher
+
+Please note, that this should only be used in rare circumstances not covered in the previous constance settings, when you are truly "rolling your own" dispatcher. Previously, the `dispatcher_mapping` covered use cases that are now more easily handled. The only two use cases that should be required are.
+
+- Provide support for network drivers not currently supported.
+- Provide some custom business logic you need.
+
+That being said, if you do fall into one of those use cases, you can set the dispatcher as followed:
+
+```python
+PLUGINS_CONFIG = {
+    "nautobot_plugin_nornir": {
+    },
+    "nautobot_golden_config": {
+        "custom_dispatcher": {
+            "arista_eos": "my_custom.dispatcher.NornirDriver",
+            "arbitrary_platform_name": "my_custom.dispatcher.OtherNornirDriver",
+        },
+
+    },
+}
+```
+
+The format for defining these methods is via the dotted string format that will be imported by Django. For example, the Netmiko Cisco IOS dispatcher is defined as `nornir_nautobot.plugins.tasks.dispatcher.cisco_ios.NetmikoCiscoIos`. You also must hand any installation of the packaging and assurance that the value you provide is importable in the environment you run it on.

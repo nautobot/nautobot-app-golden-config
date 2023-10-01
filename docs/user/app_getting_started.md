@@ -324,7 +324,7 @@ Using the previous example, everything will use the napalm dispatcher **except**
 
 Using the previous example, everything will use the napalm dispatcher **except** forinet **and** when using the `get_config` method for `arista_eos` and `cisco_nxos`, use netmiko.
 
-As you can see, you now have the flexibility to control which network_driver will use which framework for every method. Additionally, if the current `network_driver` and associated `network_driver_mappings` is not sufficient as is, you can extend the [NETWORK DRIVER](https://docs.nautobot.com/projects/core/en/stable/user-guide/administration/configuration/optional-settings/#network_drivers) settings as well.
+As you can see, you now have the flexibility to control which network_driver will use which framework for every method, as each constance setting is sanely named to match the method name (e.g. `GET_CONFIG_FRAMEWORK` maps the `get_config` method). Additionally, if the current `network_driver` and associated `network_driver_mappings` is not sufficient as is, you can extend the [NETWORK DRIVER](https://docs.nautobot.com/projects/core/en/stable/user-guide/administration/configuration/optional-settings/#network_drivers) settings as well.
 
 Golden Config leverages the [config framework](https://docs.nautobot.com/projects/core/en/stable/development/apps/api/database-backend-config/) from [constance](https://django-constance.readthedocs.io/en/latest/), please refer to that documentation for how to use. You can access your configurations from your name in the top right of the UI, followed by `Admin -> Configuration -> Config` and locate your setting.
 

@@ -88,7 +88,7 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
         )
         sync_job_url = f"<a href='{reverse('extras:job_run', kwargs={'pk': sync_job.pk})}'>{sync_job.name}</a>"
         out_of_sync_message = format_html(
-            "The expected devices and actual devices here are not in sync ."
+            "The expected devices and actual devices here are not in sync. "
             f"Running the job {sync_job_url} will put it back in sync."
         )
 

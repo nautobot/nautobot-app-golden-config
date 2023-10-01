@@ -268,7 +268,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
             golden_settings.validated_save()
         with self.assertRaises(NornirNautobotException) as failure:
             get_job_filter()
-        self.assertEqual(failure.exception.args[0][:6], "`E3015:`")
+        self.assertEqual(failure.exception.args[0][:8], "`E3015:`")
 
     def test_get_job_filter_filtered_devices_raise(self):
         """Verify we get raise for having providing site that doesn't have any devices in scope."""
@@ -276,7 +276,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         Location.objects.create(name="New Site", status=Status.objects.get(name="Active"), location_type=location_type)
         with self.assertRaises(NornirNautobotException) as failure:
             get_job_filter(data={"location": Location.objects.filter(name="New Site")})
-        self.assertEqual(failure.exception.args[0][:6], "`E3016:`")
+        self.assertEqual(failure.exception.args[0][:8], "`E3016:`")
 
     def test_get_job_filter_device_no_platform_raise(self):
         """Verify we get raise for not having a platform set on a device."""
@@ -286,7 +286,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         device.validated_save()
         with self.assertRaises(NornirNautobotException) as failure:
             get_job_filter()
-        self.assertEqual(failure.exception.args[0][:6], "`E3017:`")
+        self.assertEqual(failure.exception.args[0][:8], "`E3017:`")
 
     def test_device_to_settings_map(self):
         """Verify Golden Config Settings are properly mapped to devices."""

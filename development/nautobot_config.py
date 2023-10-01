@@ -144,7 +144,6 @@ PLUGINS_CONFIG = {
                 },
             },
         },
-
     },
     "nautobot_golden_config": {
         "per_feature_bar_width": float(os.environ.get("PER_FEATURE_BAR_WIDTH", 0.15)),

@@ -52,11 +52,11 @@ To update existing settings click on one of the `Settings` name.
 |Setting|Explanation|
 |:--|:--|
 |Backup Repositories |The Git Repository where your backup configurations will be found. |
-|Backup Path|A Jinja template which defines the path and name of backup files within the backup repository. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.site.slug}}/{{obj.name}}.cfg`|
+|Backup Path|A Jinja template which defines the path and name of backup files within the backup repository. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.location.name\|slugify}}/{{obj.name}}.cfg`|
 |Intended Repositories |The Git Repository where your intended configuration state files will be found. |
-|Intended Path|A Jinja template which defines the path and name of intended configuration state files within the intended state repository. e.g. `{{obj.site.slug}}/{{obj.name}}.intended_cfg`|
+|Intended Path|A Jinja template which defines the path and name of intended configuration state files within the intended state repository. e.g. `{{obj.location.name\|slugify}}/{{obj.name}}.intended_cfg`|
 |Jinja Repository |The Git Repository where your jinja templates will be found. |
-|Jinja Path|A Jinja template which defines the path (within the repository) and name of the Jinja template file. e.g. `{{obj.platform.slug}}/{{obj.device_role.slug}}/main.j2`|
+|Jinja Path|A Jinja template which defines the path (within the repository) and name of the Jinja template file. e.g. `{{obj.platform.network_driver}}/{{obj.role.name}}/main.j2`|
 |Dynamic Group|The scope of devices on which Golden Config's jobs can operate. |
 |GraphQL Query|A query that is evaluated and used to render the config. The query must start with `query ($device_id: ID!)`.|
 
@@ -76,42 +76,92 @@ Within the Detail view of a Golden Config Setting the section to denote the scop
 
 ![Dynamic Group](../images/setting-dynamic-group.png)
 
-!!! note
-    The Golden Config Setting API endpoint still supports the `scope` attribute as a setter for a Dynamic Group, but this is a deprecated feature and all are encouraged to use the `dynamic_group` attribute. The attributes `dynamic_group` & `scope` **CANNOT** be used in same PUT/PATCH/POST payload. The use of `scope` will create or update the assigned Dynamic Group if used.
-
 The below configurations of scope can either be removed or specified for pre 1.2 only, the same logic applies in 1.2 and onwards but via DynamicGroups.
 
-Filtering to specific platforms, based on their slug.
+Filtering to specific platforms, based on their name.
 
 ```json
 {
   "platform": [
-    "cisco_ios",
-    "cisco_nxos",
-    "arista_eos",
-    "juniper_junos"
+    "Cisco IOS",
+    "Cisco NXOS",
+    "Arista EOS",
+    "Juniper Junos"
   ]
 }
 ```
-
-!!! note
-    The Platform slug is an important value, see the [FAQ](./app_faq.md) for further details.
 
 Adding a "has_primary_ip" check.
 
 ```json
 {
   "platform": [
-    "cisco_ios",
-    "cisco_nxos",
-    "arista_eos",
-    "juniper_junos"
+    "Cisco IOS",
+    "Cisco NXOS",
+    "Arista EOS",
+    "Juniper Junos"
   ],
   "has_primary_ip": "True"
 }
 ```
 
 When viewing the settings, the scope of devices is actually a link to the query built in the Devices view. Click that link to understand which devices are permitted by the filter.
+
+### Create Secret Groups
+
+!!! info
+    Unless you are **only** using configuration compliance with backup and intended configurations in repositories that do not require credentials, you will have to go through these steps.
+
+The Git Settings requires a Secret Group to be attached which in turn requires a Secret to be required. The Secret can use any provider, you are encouraged to read the [Nautobot docs on Secret Providers](https://docs.nautobot.com/projects/core/en/stable/user-guide/platform-functionality/secret/#secrets-providers), but for our purposes we will simply use the _Environment Variable_ option, so keep in mind that detail during the coming instructions.
+
+Create a new secret by navigating to `Secrets -> Secret -> add (button)`.
+
+!!! info
+    See [GitHub Personal Access Token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) for an example method to generate a token in GitHub.
+
+Parameters:
+
+| Field | Explanation |
+| ----- | ----------- |
+| Name  | User friendly name for secret. |
+| Provider | The [Secret Provider](https://docs.nautobot.com/projects/core/en/stable/user-guide/platform-functionality/secret/#secrets-providers) to the docs. |
+| Parameter | This will be dependant based on the provider. |
+
+For our example, let's configure and create with:
+
+| Field | Value       |
+| ----- | ----------- |
+| Name  | GIT-TOKEN |
+| Provider | Environment Variable |
+| Variable | NAUTOBOT_GOLDEN_CONFIG_GIT_TOKEN. |
+
+![Secret Creation](../images/secret-step1.png)
+
+Depending on your provider, you may also need a username, so you would repeat the process such as:
+
+| Field | Explanation |
+| ----- | ----------- |
+| Name  | GIT-TOKEN |
+| Provider | Environment Variable |
+| Variable | NAUTOBOT_GOLDEN_CONFIG_GIT_USERNAME. |
+
+Now we need to create the Secret Group, navigate to `Secrets -> Secret Group -> add (button)`.
+
+For our example, let's configure and create with:
+
+| Field | Value       |
+| ----- | ----------- |
+| Name  | Git Secret Group |
+| Access Type | HTTP(S) |
+| Secret Type | Token |
+| Secret | GIT-TOKEN. |
+
+!!! tip
+    If your instance requires a username as well, please ensure to add that as well.
+
+![Secret Group Creation](../images/secret-step2.png)
+
+The steps to add the variables to your environment are outside the scope of this document and may or may not be needed depending on how you manage your Secrets in your environment, but please be mindful of ensuring the Secrets end up on your system.
 
 ### Git Settings
 
@@ -135,13 +185,11 @@ Parameters:
 |Slug|Auto-generated based on the `name` provided.|
 |Remote URL|The URL pointing to the Git repo that stores the backup configuration files. Current git url usage is limited to `http` or `https`.|
 |Branch|The branch in the Git repo to use. Defaults to `main`.|
-|Token|The token is a personal access token for the `username` provided.  For more information on generating a personal access token. [Github Personal Access Token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token)
-|Username|The Git username that corresponds with the personal access token above.|
+|Secrets Group| The secret group configured that will define you credential information. |
 |Provides|Valid providers for Git Repo.|
 
-
 !!! note
-    If Secret Group is used for the Repositories the secrets type HTTP(S) is required for this plugin.
+    When Secret Group is used for a Repository the secrets type HTTP(S) is required for this plugin, as shown previously.
 
 ![Example Git Backups](../images/backup-git-step2.png)
 
@@ -165,9 +213,9 @@ above), which will allow the user to limit the scope of the request.
 
 The plugin makes use of template content `right_page` in order to use display in-line the status of that device in the traditional Nautobot view. From here you can click the link to see the detail compliance view.
 
-### Site Template Content
+### Location Template Content
 
-The plugin makes use of template content `right_page` in order to use display in-line the status of that entire site in the traditional Nautobot view.
+The plugin makes use of template content `right_page` in order to use display in-line the status of that entire location in the traditional Nautobot view. This sums the total for all locations for parent locations.
 
 ### API
 
@@ -180,7 +228,7 @@ garbage collection and it is up to the operator to remove such data.
 
 ### Network Operating System Support
 
-The version of OS's supported is documented in the [FAQ](./app_faq.md) and is controlled the platform slug. The platform slug must be exactly as expected or leverage
+The version of OS's supported is documented in the [FAQ](./app_faq.md) and is controlled the platform network_driver. The platform network_driver must be exactly as expected or leverage
 a configuration option--which is described the the FAQ--for the plugin to work.
 
 ### Use-cases and common workflows

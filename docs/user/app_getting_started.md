@@ -9,7 +9,7 @@
 - [Config Deploy](#config-deploy)
 - [Load Properties from Git](#load-properties-from-git)
 
-# Backup Configuration
+## Backup Configuration
 
 Follow the steps below to get up and running for the configuration backup element of the plugin.
 
@@ -26,7 +26,7 @@ Follow the steps below to get up and running for the configuration backup elemen
     1. Navigate to `Golden Config -> Settings` under the Golden Configuration Section.
     2. Create new or select one of the existing `Settings` objects
     3. Fill out the Backup Repository. (The dropdown will show the repository that was just created.)
-    4. Fill out Backup Path Template. Typically `{{obj.site.slug}}/{{obj.name}}.cfg`, see [Setting Details](./app_use_cases.md#application-settings)
+    4. Fill out Backup Path Template. Typically `{{obj.location.name|slugify}}/{{obj.name}}.cfg`, see [Setting Details](./app_use_cases.md#application-settings)
     5. Select whether or not to do a connectivity check per device.
     6. Click Save.
 
@@ -44,7 +44,7 @@ Follow the steps below to get up and running for the configuration backup elemen
 
 > For in-depth details see [Navigating Backup](./app_feature_backup.md)
 
-# Intended Configuration
+## Intended Configuration
 
 Follow the steps below to get up and running for the intended configuration element of the plugin.
 
@@ -76,9 +76,9 @@ Follow the steps below to get up and running for the intended configuration elem
     1. Navigate to `Golden Config -> Settings` under the Golden Configuration Section.
     2. Create new or select one of the existing `Settings` objects
     3. Fill out the Intended Repository. (The dropdown will show the repository that was just created.)
-    4. Fill out Intended Path Template. Typically `{{obj.site.slug}}/{{obj.name}}.cfg`, see [Setting Details](./app_feature_backup.md#application-settings)
+    4. Fill out Intended Path Template. Typically `{{obj.location.name|slugify}}/{{obj.name}}.cfg`, see [Setting Details](./app_feature_backup.md#application-settings)
     5. Fill out Jinja Repository. (The dropdown will show the repository that was just created.)
-    6. Fill out Jinja Path Template.  Typically `{{obj.platform.slug}}.j2`.
+    6. Fill out Jinja Path Template.  Typically `{{obj.platform.network_driver}}.j2`.
 
 5. Determine what data(variables) the Jinja2 templates need from Nautobot.
 
@@ -99,7 +99,7 @@ Follow the steps below to get up and running for the intended configuration elem
 
 > For in-depth details see [Navigating Intended](./app_feature_intended.md)
 
-# Compliance
+## Compliance
 
 Compliance requires Backups and Intended Configurations in order to be executed.
 
@@ -125,7 +125,7 @@ Compliance requires Backups and Intended Configurations in order to be executed.
 
 > For in-depth details see [Navigating Compliance](./app_feature_compliance.md)
 
-# Config Remediation
+## Config Remediation
 
 Follow the steps below to get up and running for the configuration remediation element of the plugin.
 
@@ -137,7 +137,7 @@ Follow the steps below to get up and running for the configuration remediation e
 
 > For in-depth details see [Navigating Config Plans](./app_feature_remediation.md)
 
-# Config Plans
+## Config Plans
 
 Follow the steps below to get up and running for the configuration plans element of the plugin.
 
@@ -159,7 +159,7 @@ Follow the steps below to get up and running for the configuration plans element
 
 > For in-depth details see [Navigating Config Plans](./app_feature_config_plans.md)
 
-# Config Deploy
+## Config Deploy
 
 Follow the steps below to get up and running for the configuration deployment element of the plugin.
 
@@ -172,7 +172,7 @@ Follow the steps below to get up and running for the configuration deployment el
 
 > Config Deployments utilize the dispatchers from nornir-nautobot just like the other functionality of Golden Config. See [Troubleshooting Dispatchers](./troubleshooting/troubleshoot_dispatchers.md) for more details.
 
-# Load Properties from Git
+## Load Properties from Git
 
 Golden Config properties include: Compliance Features, Compliance Rules, Config Removals, and Config Replacements. They can be created via the UI, API, or alternatively you can load these properties from a Git repository, defined in YAML files following the this directory structure (you can skip any of them if not apply):
 
@@ -203,7 +203,7 @@ The files within these folders can follow any naming pattern or nested folder st
 │   │   └── juniper_junos.yml
 ```
 
-The `YAML` files will contain all the attributes necessary to identify an object (for instance, a `ComplianceRule` is identified by the `feature_slug` and the `platform_slug` together) and the other attributes (the ones that are not used to identify the object). For example:
+The `YAML` files will contain all the attributes necessary to identify an object (for instance, a `ComplianceRule` is identified by the `feature_slug` and the `platform_network_driver` together) and the other attributes (the ones that are not used to identify the object). For example:
 
 `compliance_features` example:
 
@@ -219,7 +219,7 @@ The `YAML` files will contain all the attributes necessary to identify an object
 ```yaml
 ---
 - feature_slug: "aaa"
-  platform_slug: "cisco_ios"
+  platform_network_driver: "Cisco IOS"
   config_ordered: true
   match_config: |
     aaa
@@ -234,7 +234,7 @@ The `YAML` files will contain all the attributes necessary to identify an object
 
 ```yaml
 ---
-- platform_slug: "cisco_ios"
+- platform_network_driver: "Cisco IOS"
   name: "Build config"
   regex: '^Building\s+configuration.*\n'
 ```
@@ -244,7 +244,7 @@ The `YAML` files will contain all the attributes necessary to identify an object
 ```yaml
 ---
 - name: "username"
-  platform_slug: "cisco_ios"
+  platform_network_driver: "Cisco IOS"
   description: "username"
   regex: '(username\s+\S+\spassword\s+5\s+)\S+(\s+role\s+\S+)'
   replace: '\1<redacted_config>\2'
@@ -263,7 +263,7 @@ CustomField data can be added using the `_custom_field_data` attribute, that tak
 ```
 
 !!! note
-    For Foreign Key references to `ComplianceFeature` and `Platform` we use the keywords `feature_slug` and `platform_slug` respectively.
+    For Foreign Key references to `ComplianceFeature` and `Platform` we use the keywords `feature_slug` and `platform_network_driver` respectively.
 
 1. Add the Git repository that will be used to sync Git properties.
 
@@ -273,3 +273,58 @@ CustomField data can be added using the `_custom_field_data` attribute, that tak
     4. Click Create (This step runs an automatic sync).
 
 2. Run `sync` and all the properties will be created/updated in a declarative way and following the right order to respect the dependencies between objects. The import task will raise a `warning` if the dependencies are not available yet (for instance, a referenced `Platform` is not created), so the `sync` process will continue, and you could then fix these warnings by reviewing the mismatch (maybe creating the required object) and run the `sync` process again.
+
+## Constance Settings
+
+Golden config uses the `dispatch_params()` function in conjunction with the constance settings DEFAULT_FRAMEWORK, GET_CONFIG_FRAMEWORK, MERGE_CONFIG_FRAMEWORK, and REPLACE_CONFIG_FRAMEWORK. This allows you to define in this order of precedence:
+
+- For a specific method, such as get_config, which framework do I want to use, netmiko or napalm **for a specific network_driver** such as `cisco_ios`?
+- For a specific method, such as get_config, which framework do I want to use, netmiko or napalm  **for all** network_drivers?
+- By default, which framework do I want to use, netmiko or napalm **for a specific network_driver** such as `cisco_ios`?
+- By default, which framework do I want to use, netmiko or napalm **for all** network_drivers?
+
+!!! info
+    These settings are not considered when using a custom_dispatcher as described below.
+
+Each of the constance settings allow for the usage of either a key named **exactly** as the `network_driver` or the key of `all`, anything else will not result in anything valid. The value, should only be napalm or netmiko at this point, but subject to change in the future.
+
+Let's take a few examples to bring this to life a bit more.
+
+```json
+# DEFAULT_FRAMEWORK
+{
+  "all": "napalm"
+}
+```
+
+Using the previous example, everything will use the napalm dispatcher, this is in fact the default settings
+
+```json
+# DEFAULT_FRAMEWORK
+{
+  "all": "napalm",
+  "fortinet": "netmiko"
+}
+```
+
+Using the previous example, everything will use the napalm dispatcher **except** forinet, which would use netmiko.
+
+```json
+# DEFAULT_FRAMEWORK
+{
+  "all": "napalm",
+  "fortinet": "netmiko"
+}
+# GET_CONFIG_FRAMEWORK
+{
+  "arista_eos": "netmiko",
+  "cisco_nxos": "netmiko"
+}
+```
+
+Using the previous example, everything will use the napalm dispatcher **except** forinet **and** when using the `get_config` method for `arista_eos` and `cisco_nxos`, use netmiko.
+
+As you can see, you now have the flexibility to control which network_driver will use which framework for every method, as each constance setting is sanely named to match the method name (e.g. `GET_CONFIG_FRAMEWORK` maps the `get_config` method). Additionally, if the current `network_driver` and associated `network_driver_mappings` is not sufficient as is, you can extend the [NETWORK DRIVER](https://docs.nautobot.com/projects/core/en/stable/user-guide/administration/configuration/optional-settings/#network_drivers) settings as well.
+
+Golden Config leverages the [config framework](https://docs.nautobot.com/projects/core/en/stable/development/apps/api/database-backend-config/) from [constance](https://django-constance.readthedocs.io/en/latest/), please refer to that documentation for how to use. You can access your configurations from your name in the top right of the UI, followed by `Admin -> Configuration -> Config` and locate your setting.
+

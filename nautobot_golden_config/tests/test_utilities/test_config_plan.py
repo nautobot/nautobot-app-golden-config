@@ -58,4 +58,3 @@ class ConfigPlanTest(unittest.TestCase):
         """Test config_plan_default_status."""
         status = config_plan_default_status()
         self.assertEqual(status.name, "Not Approved")
-        self.assertEqual(status.slug, "not-approved")

@@ -4,24 +4,20 @@ import json
 import logging
 
 from deepdiff import DeepDiff
-from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.shortcuts import reverse
 from django.utils.module_loading import import_string
-from django.utils.text import slugify
 from hier_config import Host as HierConfigHost
 from nautobot.core.models.generics import PrimaryModel
-from nautobot.extras.models import DynamicGroup, ObjectChange
+from nautobot.core.models.utils import serialize_object, serialize_object_v2
+from nautobot.dcim.models import Device
+from nautobot.extras.models import ObjectChange
 from nautobot.extras.models.statuses import StatusField
 from nautobot.extras.utils import extras_features
-from nautobot.utilities.utils import serialize_object, serialize_object_v2
 from netutils.config.compliance import feature_compliance
-from netutils.lib_mapper import HIERCONFIG_LIB_MAPPER_REVERSE
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
-from nautobot_golden_config.utilities.utils import get_platform
 
 LOGGER = logging.getLogger(__name__)
 GRAPHQL_STR_START = "query ($device_id: ID!)"
@@ -67,7 +63,9 @@ def _get_cli_compliance(obj):
         "name": obj.rule,
     }
     feature.update({"section": obj.rule.match_config.splitlines()})
-    value = feature_compliance(feature, obj.actual, obj.intended, get_platform(obj.device.platform.slug))
+    value = feature_compliance(
+        feature, obj.actual, obj.intended, obj.device.platform.network_driver_mappings.get("netutils_parser")
+    )
     compliance = value["compliant"]
     if compliance:
         compliance_int = 1
@@ -139,14 +137,14 @@ def _verify_get_custom_compliance_data(compliance_details):
 
 def _get_hierconfig_remediation(obj):
     """Returns the remediating config."""
-    hierconfig_os = HIERCONFIG_LIB_MAPPER_REVERSE.get(get_platform(obj.device.platform.slug))
+    hierconfig_os = obj.device.platform.network_driver_mappings["hier_config"]
     if not hierconfig_os:
-        raise ValidationError(f"platform {obj.device.platform.slug} is not supported by hierconfig.")
+        raise ValidationError(f"platform {obj.network_driver} is not supported by hierconfig.")
 
     try:
         remediation_setting_obj = RemediationSetting.objects.get(platform=obj.rule.platform)
     except Exception as err:  # pylint: disable=broad-except:
-        raise ValidationError(f"Platform {obj.device.platform.slug} has no Remediation Settings defined.") from err
+        raise ValidationError(f"Platform {obj.network_driver} has no Remediation Settings defined.") from err
 
     remediation_options = remediation_setting_obj.remediation_options
 
@@ -204,12 +202,6 @@ class ComplianceFeature(PrimaryModel):  # pylint: disable=too-many-ancestors
     slug = models.SlugField(max_length=100, unique=True)
     description = models.CharField(max_length=200, blank=True)
 
-    csv_headers = ["name", "slug", "description"]
-
-    def to_csv(self):
-        """Indicates model fields to return as csv."""
-        return (self.name, self.slug, self.description)
-
     class Meta:
         """Meta information for ComplianceFeature model."""
 
@@ -218,10 +210,6 @@ class ComplianceFeature(PrimaryModel):  # pylint: disable=too-many-ancestors
     def __str__(self):
         """Return a sane string representation of the instance."""
         return self.slug
-
-    def get_absolute_url(self):
-        """Absolute url for the ComplianceFeature instance."""
-        return reverse("plugins:nautobot_golden_config:compliancefeature", args=[self.pk])
 
 
 @extras_features(
@@ -235,24 +223,21 @@ class ComplianceFeature(PrimaryModel):  # pylint: disable=too-many-ancestors
 class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
     """ComplianceRule details."""
 
-    feature = models.ForeignKey(to="ComplianceFeature", on_delete=models.CASCADE, blank=False, related_name="feature")
+    feature = models.ForeignKey(to="ComplianceFeature", on_delete=models.CASCADE, related_name="feature")
 
     platform = models.ForeignKey(
         to="dcim.Platform",
         on_delete=models.CASCADE,
         related_name="compliance_rules",
-        null=False,
-        blank=False,
     )
     description = models.CharField(
         max_length=200,
         blank=True,
     )
     config_ordered = models.BooleanField(
-        null=False,
-        blank=False,
         verbose_name="Configured Ordered",
         help_text="Whether or not the configuration order matters, such as in ACLs.",
+        default=False,
     )
 
     config_remediation = models.BooleanField(
@@ -262,7 +247,6 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
     )
 
     match_config = models.TextField(
-        null=True,
         blank=True,
         verbose_name="Config to Match",
         help_text="The config to match that is matched based on the parent most configuration. E.g.: For CLI `router bgp` or `ntp`. For JSON this is a top level key name.",
@@ -273,39 +257,14 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
         choices=ComplianceRuleConfigTypeChoice,
         help_text="Whether the configuration is in CLI or JSON/structured format.",
     )
-
     custom_compliance = models.BooleanField(
         default=False, help_text="Whether this Compliance Rule is proceeded as custom."
     )
-
-    csv_headers = [
-        "platform",
-        "feature",
-        "description",
-        "config_ordered",
-        "match_config",
-        "config_type",
-        "custom_compliance",
-        "config_remediation",
-    ]
 
     @property
     def remediation_setting(self):
         """Returns remediation settings for a particular platform."""
         return RemediationSetting.objects.filter(platform=self.platform).first()
-
-    def to_csv(self):
-        """Indicates model fields to return as csv."""
-        return (
-            self.platform.slug,
-            self.feature.name,
-            self.description,
-            self.config_ordered,
-            self.match_config,
-            self.config_type,
-            self.custom_compliance,
-            self.config_remediation,
-        )
 
     class Meta:
         """Meta information for ComplianceRule model."""
@@ -319,10 +278,6 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
     def __str__(self):
         """Return a sane string representation of the instance."""
         return f"{self.platform} - {self.feature.name}"
-
-    def get_absolute_url(self):
-        """Absolute url for the ComplianceRule instance."""
-        return reverse("plugins:nautobot_golden_config:compliancerule", args=[self.pk])
 
     def clean(self):
         """Verify that if cli, then match_config is set."""
@@ -342,28 +297,18 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
 class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
     """Configuration compliance details."""
 
-    device = models.ForeignKey(to="dcim.Device", on_delete=models.CASCADE, help_text="The device", blank=False)
-    rule = models.ForeignKey(to="ComplianceRule", on_delete=models.CASCADE, blank=False, related_name="rule")
-    compliance = models.BooleanField(null=True, blank=True)
+    device = models.ForeignKey(to="dcim.Device", on_delete=models.CASCADE, help_text="The device")
+    rule = models.ForeignKey(to="ComplianceRule", on_delete=models.CASCADE, related_name="rule")
+    compliance = models.BooleanField(blank=True)
     actual = models.JSONField(blank=True, help_text="Actual Configuration for feature")
     intended = models.JSONField(blank=True, help_text="Intended Configuration for feature")
     # these three are config snippets exposed for the ConfigDeployment.
-    remediation = models.JSONField(blank=True, null=True, help_text="Remediation Configuration for the device")
+    remediation = models.JSONField(blank=True, help_text="Remediation Configuration for the device")
     missing = models.JSONField(blank=True, help_text="Configuration that should be on the device.")
     extra = models.JSONField(blank=True, help_text="Configuration that should not be on the device.")
-    ordered = models.BooleanField(default=True)
+    ordered = models.BooleanField(default=False)
     # Used for django-pivot, both compliance and compliance_int should be set.
-    compliance_int = models.IntegerField(null=True, blank=True)
-
-    csv_headers = ["Device Name", "Feature", "Compliance"]
-
-    def get_absolute_url(self):
-        """Return absolute URL for instance."""
-        return reverse("plugins:nautobot_golden_config:configcompliance", args=[self.pk])
-
-    def to_csv(self):
-        """Indicates model fields to return as csv."""
-        return (self.device.name, self.rule.feature.name, self.compliance)
+    compliance_int = models.IntegerField(blank=True)
 
     def to_objectchange(
         self, action, *, related_object=None, object_data_extra=None, object_data_exclude=None
@@ -411,15 +356,15 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
     def remediation_on_save(self):
         """The actual remediation happens here, before saving the object."""
         if self.compliance:
-            self.remediation = None
+            self.remediation = ""
             return
 
         if not self.rule.config_remediation:
-            self.remediation = None
+            self.remediation = ""
             return
 
         if not self.rule.remediation_setting:
-            self.remediation = None
+            self.remediation = ""
             return
 
         remediation_config = FUNC_MAPPER[self.rule.remediation_setting.remediation_type](obj=self)
@@ -429,6 +374,7 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
         """The actual configuration compliance happens here, but the details for actual compliance job would be found in FUNC_MAPPER."""
         self.compliance_on_save()
         self.remediation_on_save()
+        self.full_clean()
 
         super().save(*args, **kwargs)
 
@@ -445,45 +391,23 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
 class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
     """Configuration Management Model."""
 
-    device = models.ForeignKey(
+    device = models.OneToOneField(
         to="dcim.Device",
         on_delete=models.CASCADE,
         help_text="device",
         blank=False,
     )
     backup_config = models.TextField(blank=True, help_text="Full backup config for device.")
-    backup_last_attempt_date = models.DateTimeField(null=True)
-    backup_last_success_date = models.DateTimeField(null=True)
+    backup_last_attempt_date = models.DateTimeField(null=True, blank=True)
+    backup_last_success_date = models.DateTimeField(null=True, blank=True)
 
     intended_config = models.TextField(blank=True, help_text="Intended config for the device.")
-    intended_last_attempt_date = models.DateTimeField(null=True)
-    intended_last_success_date = models.DateTimeField(null=True)
+    intended_last_attempt_date = models.DateTimeField(null=True, blank=True)
+    intended_last_success_date = models.DateTimeField(null=True, blank=True)
 
     compliance_config = models.TextField(blank=True, help_text="Full config diff for device.")
-    compliance_last_attempt_date = models.DateTimeField(null=True)
-    compliance_last_success_date = models.DateTimeField(null=True)
-
-    csv_headers = [
-        "Device Name",
-        "backup attempt",
-        "backup successful",
-        "intended attempt",
-        "intended successful",
-        "compliance attempt",
-        "compliance successful",
-    ]
-
-    def to_csv(self):
-        """Indicates model fields to return as csv."""
-        return (
-            self.device,
-            self.backup_last_attempt_date,
-            self.backup_last_success_date,
-            self.intended_last_attempt_date,
-            self.intended_last_success_date,
-            self.compliance_last_attempt_date,
-            self.compliance_last_success_date,
-        )
+    compliance_last_attempt_date = models.DateTimeField(null=True, blank=True)
+    compliance_last_success_date = models.DateTimeField(null=True, blank=True)
 
     def to_objectchange(
         self, action, *, related_object=None, object_data_extra=None, object_data_exclude=None
@@ -499,6 +423,21 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
             object_data_v2=serialize_object_v2(self),
             related_object=related_object,
         )
+
+    @staticmethod
+    def get_dynamic_group_device_pks():
+        """Get all Device PKs associated with GoldenConfigSetting DynamicGroups."""
+        gc_dynamic_group_device_queryset = Device.objects.none()
+        for setting in GoldenConfigSetting.objects.all():
+            # using "|" should not require calling distinct afterwards
+            gc_dynamic_group_device_queryset = gc_dynamic_group_device_queryset | setting.dynamic_group.members
+
+        return set(gc_dynamic_group_device_queryset.values_list("pk", flat=True))
+
+    @classmethod
+    def get_golden_config_device_ids(cls):
+        """Get all Device PKs associated with GoldenConfig entries."""
+        return set(cls.objects.values_list("device__pk", flat=True))
 
     class Meta:
         """Set unique together fields for model."""
@@ -516,16 +455,16 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
 class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     """GoldenConfigSetting Model definition. This provides global configs instead of via configs.py."""
 
-    name = models.CharField(max_length=100, unique=True, blank=False)
-    slug = models.SlugField(max_length=100, unique=True, blank=False)
-    weight = models.PositiveSmallIntegerField(default=1000, blank=False)
+    name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=100, unique=True)
+    weight = models.PositiveSmallIntegerField(default=1000)
     description = models.CharField(
         max_length=200,
         blank=True,
     )
     backup_repository = models.ForeignKey(
         to="extras.GitRepository",
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name="backup_repository",
@@ -533,14 +472,13 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     )
     backup_path_template = models.CharField(
         max_length=255,
-        null=False,
         blank=True,
         verbose_name="Backup Path in Jinja Template Form",
-        help_text="The Jinja path representation of where the backup file will be found. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.site.slug}}/{{obj.name}}.cfg`",
+        help_text="The Jinja path representation of where the backup file will be found. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.location.name|slugify}}/{{obj.name}}.cfg`",
     )
     intended_repository = models.ForeignKey(
         to="extras.GitRepository",
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name="intended_repository",
@@ -548,14 +486,13 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     )
     intended_path_template = models.CharField(
         max_length=255,
-        null=False,
         blank=True,
         verbose_name="Intended Path in Jinja Template Form",
-        help_text="The Jinja path representation of where the generated file will be places. e.g. `{{obj.site.slug}}/{{obj.name}}.cfg`",
+        help_text="The Jinja path representation of where the generated file will be places. e.g. `{{obj.location.name|slugify}}/{{obj.name}}.cfg`",
     )
     jinja_repository = models.ForeignKey(
         to="extras.GitRepository",
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         null=True,
         blank=True,
         related_name="jinja_template",
@@ -563,13 +500,11 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     )
     jinja_path_template = models.CharField(
         max_length=255,
-        null=False,
         blank=True,
         verbose_name="Template Path in Jinja Template Form",
-        help_text="The Jinja path representation of where the Jinja template can be found. e.g. `{{obj.platform.slug}}.j2`",
+        help_text="The Jinja path representation of where the Jinja template can be found. e.g. `{{obj.platform.network_driver}}.j2`",
     )
     backup_test_connectivity = models.BooleanField(
-        null=False,
         default=True,
         verbose_name="Backup Test",
         help_text="Whether or not to pretest the connectivity of the device by verifying there is a resolvable IP that can connect to port 22.",
@@ -587,55 +522,9 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         related_name="golden_config_setting",
     )
 
-    csv_headers = [
-        "name",
-        "slug",
-        "weight",
-        "description",
-    ]
-
-    def to_csv(self):
-        """Indicates model fields to return as csv."""
-        return (
-            self.name,
-            self.slug,
-            self.weight,
-            self.description,
-        )
-
-    def get_absolute_url(self):
-        """Return absolute URL for instance."""
-        return reverse("plugins:nautobot_golden_config:goldenconfigsetting", args=[self.pk])
-
     def __str__(self):
         """Return a simple string if model is called."""
         return f"Golden Config Setting - {self.name}"
-
-    @property
-    def scope(self):
-        """Returns filter from DynamicGroup."""
-        if self.dynamic_group:
-            return self.dynamic_group.filter
-        return {}
-
-    @scope.setter
-    def scope(self, value):
-        """Create DynamicGroup based on original scope JSON data."""
-        if hasattr(self, "dynamic_group"):
-            self.dynamic_group.filter = value
-            self.dynamic_group.validated_save()
-        else:
-            name = f"GoldenConfigSetting {self.name} scope"
-            content_type = ContentType.objects.get(app_label="dcim", model="device")
-            dynamic_group = DynamicGroup.objects.create(
-                name=name,
-                slug=slugify(name),
-                filter=value,
-                content_type=content_type,
-                description="Automatically generated for nautobot_golden_config GoldenConfigSetting.",
-            )
-            self.dynamic_group = dynamic_group
-            self.validated_save()
 
     class Meta:
         """Set unique fields for model.
@@ -685,13 +574,11 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
 class ConfigRemove(PrimaryModel):  # pylint: disable=too-many-ancestors
     """ConfigRemove for Regex Line Removals from Backup Configuration Model definition."""
 
-    name = models.CharField(max_length=255, null=False, blank=False)
+    name = models.CharField(max_length=255)
     platform = models.ForeignKey(
         to="dcim.Platform",
         on_delete=models.CASCADE,
         related_name="backup_line_remove",
-        null=False,
-        blank=False,
     )
     description = models.CharField(
         max_length=200,
@@ -704,11 +591,6 @@ class ConfigRemove(PrimaryModel):  # pylint: disable=too-many-ancestors
     )
 
     clone_fields = ["platform", "description", "regex"]
-    csv_headers = ["name", "platform", "description", "regex"]
-
-    def to_csv(self):
-        """Indicates model fields to return as csv."""
-        return (self.name, self.platform.slug, self.regex)
 
     class Meta:
         """Meta information for ConfigRemove model."""
@@ -719,10 +601,6 @@ class ConfigRemove(PrimaryModel):  # pylint: disable=too-many-ancestors
     def __str__(self):
         """Return a simple string if model is called."""
         return self.name
-
-    def get_absolute_url(self):
-        """Return absolute URL for instance."""
-        return reverse("plugins:nautobot_golden_config:configremove", args=[self.pk])
 
 
 @extras_features(
@@ -737,13 +615,11 @@ class ConfigRemove(PrimaryModel):  # pylint: disable=too-many-ancestors
 class ConfigReplace(PrimaryModel):  # pylint: disable=too-many-ancestors
     """ConfigReplace for Regex Line Replacements from Backup Configuration Model definition."""
 
-    name = models.CharField(max_length=255, null=False, blank=False)
+    name = models.CharField(max_length=255)
     platform = models.ForeignKey(
         to="dcim.Platform",
         on_delete=models.CASCADE,
         related_name="backup_line_replace",
-        null=False,
-        blank=False,
     )
     description = models.CharField(
         max_length=200,
@@ -761,21 +637,12 @@ class ConfigReplace(PrimaryModel):  # pylint: disable=too-many-ancestors
     )
 
     clone_fields = ["platform", "description", "regex", "replace"]
-    csv_headers = ["name", "platform", "description", "regex", "replace"]
-
-    def to_csv(self):
-        """Indicates model fields to return as csv."""
-        return (self.name, self.platform.slug, self.description, self.regex, self.replace)
 
     class Meta:
         """Meta information for ConfigReplace model."""
 
         ordering = ("platform", "name")
         unique_together = ("name", "platform")
-
-    def get_absolute_url(self):
-        """Return absolute URL for instance."""
-        return reverse("plugins:nautobot_golden_config:configreplace", args=[self.pk])
 
     def __str__(self):
         """Return a simple string if model is called."""
@@ -834,11 +701,7 @@ class RemediationSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
 
     def __str__(self):
         """Return a sane string representation of the instance."""
-        return str(self.platform.slug)
-
-    def get_absolute_url(self):
-        """Absolute url for the RemediationRule instance."""
-        return reverse("plugins:nautobot_golden_config:remediationsetting", args=[self.pk])
+        return str(self.platform)
 
 
 @extras_features(
@@ -893,11 +756,12 @@ class ConfigPlan(PrimaryModel):  # pylint: disable=too-many-ancestors
         """Meta information for ConfigPlan model."""
 
         ordering = ("-created", "device")
+        unique_together = (
+            "plan_type",
+            "device",
+            "created",
+        )
 
     def __str__(self):
         """Return a simple string if model is called."""
         return f"{self.device.name}-{self.plan_type}-{self.created}"
-
-    def get_absolute_url(self):
-        """Return absolute URL for instance."""
-        return reverse("plugins:nautobot_golden_config:configplan", args=[self.pk])

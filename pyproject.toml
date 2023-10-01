@@ -1,20 +1,14 @@
 [tool.poetry]
 name = "nautobot-golden-config"
-version = "1.6.1"
+version = "2.0.0"
 description = "A plugin for configuration on nautobot"
-authors = ["Network to Code, LLC", "<opensource@networktocode.com>"]
-
+authors = ["Network to Code, LLC <opensource@networktocode.com>"]
 license = "Apache-2.0"
-
 readme = "README.md"
-homepage = "https://github.com/nautobot/nautobot-plugin-golden-config"
+homepage = "https://docs.nautobot.com/projects/golden-config/en/latest/"
 repository = "https://github.com/nautobot/nautobot-plugin-golden-config"
-documentation = "https://github.com/nautobot/nautobot-plugin-golden-config"
+documentation = "https://docs.nautobot.com/projects/golden-config/en/latest/"
 keywords = ["nautobot", "nautobot-plugin"]
-include = [
-    "LICENSE",
-    "README.md",
-]
 classifiers = [
     "Intended Audience :: Developers",
     "Development Status :: 5 - Production/Stable",
@@ -23,6 +17,10 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+]
+include = [
+    "LICENSE",
+    "README.md",
 ]
 packages = [
     { include = "nautobot_golden_config" },
@@ -35,29 +33,31 @@ packages = [
 [tool.poetry.dependencies]
 python = ">=3.8,<3.12"
 deepdiff = ">=5.5.0,!=6.0,!=6.1,<7"
-django-pivot = "^1.8.1"
+django-pivot = "1.8.1" # The signature changed to return a non-queryset, do not upgrade without ensuring it returns a queryset
 matplotlib = "^3.3.2"
-nautobot = "^1.6.1"
-nautobot-plugin-nornir = ">=1.0.1"
+nautobot = "^2.0.0"
+nautobot-plugin-nornir = "^2.0.0"
+
+toml = "^0.10.2"
 netutils = "^1.5.0"
-# Already a dependecy of nautobot-plugin-nornir, but adding the required minimum version needed
-nornir-nautobot = "^2.6.1"
 hier-config = "^2.2.2"
-nautobot-capacity-metrics = "2.0.0"
+nautobot-capacity-metrics = "^3.0.0"
 
 [tool.poetry.group.dev.dependencies]
 bandit = "*"
-# Black 23.x.x configuration changes and migration files are taken into account
 black = "*"
+coverage = "*"
 django-debug-toolbar = "*"
-# we need to pin flake8 because of package dependencies that cause it to downgrade and
-# therefore cause issues with linting since older versions do not take .flake8 as config
-flake8 = "^3.9.2"
+flake8 = "*"
 invoke = "*"
+ipython = "*"
 pydocstyle = "*"
 pylint = "*"
 pylint-django = "*"
+pylint-nautobot = "*"
+python-dotenv = "^1.0.0"
 yamllint = "*"
+toml = "*"
 Markdown = "*"
 # Rendering docs to HTML
 mkdocs = "1.5.2"
@@ -94,13 +94,14 @@ exclude = '''
 
 [tool.pylint.master]
 # Include the pylint_django plugin to avoid spurious warnings about Django patterns
-load-plugins="pylint_django"
+load-plugins="pylint_django, pylint_nautobot"
 ignore-patterns=["jinja_filters.py", ".venv"]
 ignore-paths = '^.*/migrations/.*$'
 
 [tool.pylint.basic]
 # No docstrings required for private methods (Pylint default), or for test_ functions, or for inner Meta classes.
 no-docstring-rgx="^(_|test_|Meta$)"
+good-names = ["pk"]
 
 [tool.pylint.messages_control]
 # Line length is enforced by Black, so pylint doesn't need to check it.
@@ -128,6 +129,7 @@ match-dir = "(?!tests|migrations|development)[^\\.].*"
 # My docstring is on the line after the opening quotes instead of on the same line as them.
 # """
 # We've discussed and concluded that we consider this to be a valid style choice.
+# TODO D417 is not in the template, verify this
 add_ignore = "D212,D417"
 
 [build-system]
@@ -139,3 +141,6 @@ testpaths = [
     "tests"
 ]
 addopts = "-vv --doctest-modules"
+
+[tool.pylint-nautobot]
+supported_nautobot_versions = ["2"]

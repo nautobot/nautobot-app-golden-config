@@ -4,7 +4,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from nautobot.dcim.models import Platform
 
-from nautobot.utilities.choices import ColorChoices
+from nautobot.core.choices import ColorChoices
 from nautobot_golden_config import models
 
 
@@ -15,7 +15,6 @@ def post_migrate_create_statuses(sender, apps=global_apps, **kwargs):  # pylint:
     for status_config in [
         {
             "name": "Approved",
-            "slug": "approved",
             "defaults": {
                 "description": "Config plan is approved",
                 "color": ColorChoices.COLOR_GREEN,
@@ -23,7 +22,6 @@ def post_migrate_create_statuses(sender, apps=global_apps, **kwargs):  # pylint:
         },
         {
             "name": "Not Approved",
-            "slug": "not-approved",
             "defaults": {
                 "description": "Config plan is not approved",
                 "color": ColorChoices.COLOR_RED,
@@ -31,7 +29,6 @@ def post_migrate_create_statuses(sender, apps=global_apps, **kwargs):  # pylint:
         },
         {
             "name": "In Progress",
-            "slug": "in-progress",
             "defaults": {
                 "description": "Config deployment has started and not completed or failed",
                 "color": ColorChoices.COLOR_GREY,
@@ -39,7 +36,6 @@ def post_migrate_create_statuses(sender, apps=global_apps, **kwargs):  # pylint:
         },
         {
             "name": "Completed",
-            "slug": "completed",
             "defaults": {
                 "description": "Config deploy has been successfully completed",
                 "color": ColorChoices.COLOR_DARK_GREY,
@@ -47,7 +43,6 @@ def post_migrate_create_statuses(sender, apps=global_apps, **kwargs):  # pylint:
         },
         {
             "name": "Failed",
-            "slug": "failed",
             "defaults": {
                 "description": "Config deploy has failed",
                 "color": ColorChoices.COLOR_DARK_RED,
@@ -60,13 +55,18 @@ def post_migrate_create_statuses(sender, apps=global_apps, **kwargs):  # pylint:
 
 def post_migrate_create_job_button(sender, apps=global_apps, **kwargs):  # pylint: disable=unused-argument
     """Callback function for post_migrate() -- create JobButton records."""
-    JobButton = apps.get_model("extras", "JobButton")  # pylint: disable=invalid-name
     Job = apps.get_model("extras", "Job")  # pylint: disable=invalid-name
+    try:
+        deploy_job_button = Job.objects.get(job_class_name="DeployConfigPlanJobButtonReceiver")
+    except Job.DoesNotExist:
+        return
+
+    JobButton = apps.get_model("extras", "JobButton")  # pylint: disable=invalid-name
     ContentType = apps.get_model("contenttypes", "ContentType")  # pylint: disable=invalid-name
     configplan_type = ContentType.objects.get_for_model(models.ConfigPlan)
     job_button_config = {
         "name": "Deploy Config Plan",
-        "job": Job.objects.get(job_class_name="DeployConfigPlanJobButtonReceiver"),
+        "job": deploy_job_button,
         "defaults": {
             "text": "Deploy",
             "button_class": "primary",
@@ -80,7 +80,7 @@ def post_migrate_create_job_button(sender, apps=global_apps, **kwargs):  # pylin
 def config_compliance_platform_cleanup(sender, instance, **kwargs):  # pylint: disable=unused-argument
     """Signal helper to delete any orphaned ConfigCompliance objects. Caused by device platform changes."""
     cc_wrong_platform = models.ConfigCompliance.objects.filter(device=instance.device).filter(
-        rule__platform__in=Platform.objects.exclude(slug=instance.device.platform.slug)
+        rule__platform__in=Platform.objects.exclude(id=instance.device.platform.id)
     )
     if cc_wrong_platform.count() > 0:
         cc_wrong_platform.delete()

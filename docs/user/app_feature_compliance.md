@@ -48,7 +48,7 @@ Each configuration can be added and edits from this table. When editing/adding t
 
 ![Configuration Rule Edit](../images/ss_compliance-rule.png)
 
-The platform must refer to a platform with a valid slug supported by the configuration compliance engine. While there is no enforcement of this data from
+The platform must refer to a platform with a valid network_driver supported by the configuration compliance engine. While there is no enforcement of this data from
 a database perspective, the job will never run successfully, rendering the additional configuration ineffective.
 
 The Feature is a unique identifier, that should prefer shorter names, as this effects the width of the compliance overview and thus it's readability as a
@@ -90,8 +90,8 @@ Please note the following about the compliance details page.
 ## Supported Platforms
 
 Platforms support technically come from the options provided by [nornir-nautobot](https://github.com/nautobot/nornir-nautobot) for Nornir dispatcher tasks and
-[netutils](https://github.com/networktocode/netutils) for configuration compliance and parsing. However, for reference, the valid slug's of the platforms are
-provided in the [FAQ](./app_faq).
+[netutils](https://github.com/networktocode/netutils) for configuration compliance and parsing. However, for reference, the valid network_driver's of the platforms are
+provided in the [FAQ](./app_faq.md).
 
 ## Overview Report
 

@@ -88,7 +88,7 @@ There is a function mapper for the diff logic. This allows for the diff logic to
 
 ## Dynamic Group
 
-There was originally a `scope` associated with the project, this was changed to a Dynamic Group to make use of the features within Core. There is backwards compatibility for the time being.
+There was originally a `scope` associated with the project, this was changed to a Dynamic Group to make use of the features within Core. There is backwards compatibility until version 2.0.0.
 
 ## Management Commands
 

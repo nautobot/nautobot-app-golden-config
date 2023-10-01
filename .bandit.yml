@@ -2,6 +2,6 @@
 # No need to check for security issues in the test scripts!
 exclude_dirs:
   - "./nautobot_golden_config/tests/"
-
+  - "./.venv/"
 skips:
   - "B404"

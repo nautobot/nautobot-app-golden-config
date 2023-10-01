@@ -1,43 +1,14 @@
 """Filters for UI and API Views."""
 
 import django_filters
-from django.db.models import Q
-from nautobot.dcim.filters import DeviceFilterSet
-from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Platform, Rack, RackGroup, Region, Site
-from nautobot.extras.filters import NautobotFilterSet, StatusFilter
-from nautobot.extras.models import JobResult, Status
+
+from nautobot.core.filters import MultiValueDateTimeFilter, TreeNodeMultipleChoiceFilter, SearchFilter
+from nautobot.dcim.models import Device, DeviceType, Location, Manufacturer, Platform, Rack, RackGroup
+from nautobot.extras.filters import NaturalKeyOrPKMultipleChoiceFilter, NautobotFilterSet, StatusFilter
+from nautobot.extras.models import JobResult, Role, Status
 from nautobot.tenancy.models import Tenant, TenantGroup
-from nautobot.utilities.filters import MultiValueDateTimeFilter, TagFilter, TreeNodeMultipleChoiceFilter
 
 from nautobot_golden_config import models
-
-
-class GoldenConfigDeviceFilterSet(DeviceFilterSet):  # pylint: disable=too-many-ancestors
-    """Filter capabilities that extend the standard DeviceFilterSet."""
-
-    @staticmethod
-    def _get_filter_lookup_dict(existing_filter):
-        """Extend method to account for isnull on datetime types."""
-        # Choose the lookup expression map based on the filter type
-        lookup_map = DeviceFilterSet._get_filter_lookup_dict(existing_filter)
-        if isinstance(existing_filter, MultiValueDateTimeFilter):
-            lookup_map.update({"isnull": "isnull"})
-        return lookup_map
-
-    class Meta(DeviceFilterSet.Meta):
-        """Update the Meta class, but only for fields."""
-
-        fields = DeviceFilterSet.Meta.fields + [
-            "goldenconfig__backup_config",
-            "goldenconfig__backup_last_attempt_date",
-            "goldenconfig__backup_last_success_date",
-            "goldenconfig__intended_config",
-            "goldenconfig__intended_last_attempt_date",
-            "goldenconfig__intended_last_success_date",
-            "goldenconfig__compliance_config",
-            "goldenconfig__compliance_last_attempt_date",
-            "goldenconfig__compliance_last_success_date",
-        ]
 
 
 class GoldenConfigFilterSet(NautobotFilterSet):
@@ -52,147 +23,101 @@ class GoldenConfigFilterSet(NautobotFilterSet):
             lookup_map.update({"isnull": "isnull"})
         return lookup_map
 
-    q = django_filters.CharFilter(
-        method="search",
-        label="Search",
+    q = SearchFilter(
+        filter_predicates={
+            "device__name": {
+                "lookup_expr": "icontains",
+                "preprocessor": str,
+            },
+        },
     )
     tenant_group_id = TreeNodeMultipleChoiceFilter(
         queryset=TenantGroup.objects.all(),
-        field_name="device__tenant__group",
+        field_name="device__tenant__tenant_group",
+        to_field_name="id",
         label="Tenant Group (ID)",
     )
     tenant_group = TreeNodeMultipleChoiceFilter(
         queryset=TenantGroup.objects.all(),
-        field_name="device__tenant__group",
-        to_field_name="slug",
-        label="Tenant Group (slug)",
+        field_name="device__tenant__tenant_group",
+        to_field_name="name",
+        label="Tenant Group (name)",
     )
-    tenant_id = django_filters.ModelMultipleChoiceFilter(
+    tenant = NaturalKeyOrPKMultipleChoiceFilter(
         queryset=Tenant.objects.all(),
-        field_name="device__tenant_id",
-        label="Tenant (ID)",
+        field_name="device__tenant",
+        to_field_name="name",
+        label="Tenant (name or ID)",
     )
-    tenant = django_filters.ModelMultipleChoiceFilter(
-        queryset=Tenant.objects.all(),
-        field_name="device__tenant__slug",
-        to_field_name="slug",
-        label="Tenant (slug)",
+    location_id = TreeNodeMultipleChoiceFilter(
+        # Not limiting to content_type=dcim.device to allow parent locations to be included
+        # i.e. include all Sites in a Region, even though Region can't be assigned to a Device
+        queryset=Location.objects.all(),
+        field_name="device__location",
+        to_field_name="id",
+        label="Location (ID)",
     )
-    region_id = TreeNodeMultipleChoiceFilter(
-        queryset=Region.objects.all(),
-        field_name="device__site__region",
-        label="Region (ID)",
-    )
-    region = TreeNodeMultipleChoiceFilter(
-        queryset=Region.objects.all(),
-        field_name="device__site__region",
-        to_field_name="slug",
-        label="Region (slug)",
-    )
-    site_id = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__site",
-        queryset=Site.objects.all(),
-        label="Site (ID)",
-    )
-    site = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__site__slug",
-        queryset=Site.objects.all(),
-        to_field_name="slug",
-        label="Site name (slug)",
+    location = TreeNodeMultipleChoiceFilter(
+        # Not limiting to content_type=dcim.device to allow parent locations to be included
+        # i.e. include all sites in a Region, even though Region can't be assigned to a Device
+        queryset=Location.objects.all(),
+        field_name="device__location",
+        to_field_name="name",
+        label="Location (name)",
     )
     rack_group_id = TreeNodeMultipleChoiceFilter(
         queryset=RackGroup.objects.all(),
-        field_name="device__rack__group",
+        field_name="device__rack__rack_group",
+        to_field_name="id",
         label="Rack group (ID)",
     )
     rack_group = TreeNodeMultipleChoiceFilter(
-        field_name="device__rack__group",
         queryset=RackGroup.objects.all(),
-        label="Rack group (slug)",
+        field_name="device__rack__rack_group",
+        to_field_name="name",
+        label="Rack group (name)",
     )
-    rack_id = django_filters.ModelMultipleChoiceFilter(
+    rack = NaturalKeyOrPKMultipleChoiceFilter(
         field_name="device__rack",
         queryset=Rack.objects.all(),
-        label="Rack (ID)",
-    )
-    rack = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__rack__name",
-        queryset=Rack.objects.all(),
         to_field_name="name",
-        label="Rack (name)",
+        label="Rack (name or ID)",
     )
-    role_id = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__device_role_id",
-        queryset=DeviceRole.objects.all(),
-        label="Role (ID)",
+    role = NaturalKeyOrPKMultipleChoiceFilter(
+        field_name="device__role",
+        queryset=Role.objects.filter(content_types__model="device"),
+        to_field_name="name",
+        label="Role (name or ID)",
     )
-    role = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__device_role__slug",
-        queryset=DeviceRole.objects.all(),
-        to_field_name="slug",
-        label="Role (slug)",
-    )
-    manufacturer_id = django_filters.ModelMultipleChoiceFilter(
+    manufacturer = NaturalKeyOrPKMultipleChoiceFilter(
         field_name="device__device_type__manufacturer",
         queryset=Manufacturer.objects.all(),
-        label="Manufacturer (ID)",
+        to_field_name="name",
+        label="Manufacturer (name or ID)",
     )
-    manufacturer = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__device_type__manufacturer__slug",
-        queryset=Manufacturer.objects.all(),
-        to_field_name="slug",
-        label="Manufacturer (slug)",
-    )
-    platform_id = django_filters.ModelMultipleChoiceFilter(
+    platform = NaturalKeyOrPKMultipleChoiceFilter(
         field_name="device__platform",
         queryset=Platform.objects.all(),
-        label="Platform (ID)",
-    )
-    platform = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__platform__slug",
-        queryset=Platform.objects.all(),
-        to_field_name="slug",
-        label="Platform (slug)",
-    )
-    device_status_id = StatusFilter(
-        field_name="device__status_id",
-        queryset=Status.objects.all(),
-        label="Device Status",
+        to_field_name="name",
+        label="Platform (name or ID)",
     )
     device_status = StatusFilter(
         field_name="device__status",
         queryset=Status.objects.all(),
         label="Device Status",
     )
-    device_type_id = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__device_type_id",
+    device_type = NaturalKeyOrPKMultipleChoiceFilter(
+        field_name="device__device_type",
         queryset=DeviceType.objects.all(),
-        label="Device type (ID)",
+        to_field_name="model",
+        label="DeviceType (model or ID)",
     )
-    device_type = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__device_type__slug",
-        queryset=DeviceType.objects.all(),
-        to_field_name="slug",
-        label="DeviceType (slug)",
-    )
-    device_id = django_filters.ModelMultipleChoiceFilter(
-        queryset=Device.objects.all(),
-        label="Device ID",
-    )
-    device = django_filters.ModelMultipleChoiceFilter(
-        field_name="device__name",
+    device = NaturalKeyOrPKMultipleChoiceFilter(
+        field_name="device",
         queryset=Device.objects.all(),
         to_field_name="name",
-        label="Device Name",
+        label="Device (name or ID)",
     )
-
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument
-        """Perform the filtered search."""
-        if not value.strip():
-            return queryset
-        # Chose only device, can be convinced more should be included
-        qs_filter = Q(device__name__icontains=value)
-        return queryset.filter(qs_filter)
 
     class Meta:
         """Meta class attributes for GoldenConfigFilter."""
@@ -238,17 +163,14 @@ class ConfigComplianceFilterSet(GoldenConfigFilterSet):  # pylint: disable=too-m
 class ComplianceFeatureFilterSet(NautobotFilterSet):
     """Inherits Base Class NautobotFilterSet."""
 
-    q = django_filters.CharFilter(
-        method="search",
-        label="Search",
+    q = SearchFilter(
+        filter_predicates={
+            "name": {
+                "lookup_expr": "icontains",
+                "preprocessor": str,
+            },
+        },
     )
-
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument
-        """Perform the filtered search."""
-        if not value.strip():
-            return queryset
-        qs_filter = Q(name__icontains=value)
-        return queryset.filter(qs_filter)
 
     class Meta:
         """Boilerplate filter Meta data for compliance feature."""
@@ -260,27 +182,20 @@ class ComplianceFeatureFilterSet(NautobotFilterSet):
 class ComplianceRuleFilterSet(NautobotFilterSet):
     """Inherits Base Class NautobotFilterSet."""
 
-    q = django_filters.CharFilter(
-        method="search",
-        label="Search",
+    q = SearchFilter(
+        filter_predicates={
+            "feature__name": {
+                "lookup_expr": "icontains",
+                "preprocessor": str,
+            },
+        },
     )
-    platform_id = django_filters.ModelMultipleChoiceFilter(
+    platform = NaturalKeyOrPKMultipleChoiceFilter(
+        field_name="platform",
         queryset=Platform.objects.all(),
-        label="Platform (ID)",
+        to_field_name="name",
+        label="Platform (name or ID)",
     )
-    platform = django_filters.ModelMultipleChoiceFilter(
-        field_name="platform__slug",
-        queryset=Platform.objects.all(),
-        to_field_name="slug",
-        label="Platform (slug)",
-    )
-
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument
-        """Perform the filtered search."""
-        if not value.strip():
-            return queryset
-        qs_filter = Q(feature__name__icontains=value)
-        return queryset.filter(qs_filter)
 
     class Meta:
         """Boilerplate filter Meta data for compliance rule."""
@@ -292,27 +207,20 @@ class ComplianceRuleFilterSet(NautobotFilterSet):
 class ConfigRemoveFilterSet(NautobotFilterSet):
     """Inherits Base Class NautobotFilterSet."""
 
-    q = django_filters.CharFilter(
-        method="search",
-        label="Search",
+    q = SearchFilter(
+        filter_predicates={
+            "name": {
+                "lookup_expr": "icontains",
+                "preprocessor": str,
+            },
+        },
     )
-    platform_id = django_filters.ModelMultipleChoiceFilter(
+    platform = NaturalKeyOrPKMultipleChoiceFilter(
+        field_name="platform",
         queryset=Platform.objects.all(),
-        label="Platform (ID)",
+        to_field_name="name",
+        label="Platform (name or ID)",
     )
-    platform = django_filters.ModelMultipleChoiceFilter(
-        field_name="platform__slug",
-        queryset=Platform.objects.all(),
-        to_field_name="slug",
-        label="Platform (slug)",
-    )
-
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument
-        """Perform the filtered search."""
-        if not value.strip():
-            return queryset
-        qs_filter = Q(name__icontains=value)
-        return queryset.filter(qs_filter)
 
     class Meta:
         """Boilerplate filter Meta data for Config Remove."""
@@ -324,27 +232,20 @@ class ConfigRemoveFilterSet(NautobotFilterSet):
 class ConfigReplaceFilterSet(NautobotFilterSet):
     """Inherits Base Class NautobotFilterSet."""
 
-    q = django_filters.CharFilter(
-        method="search",
-        label="Search",
+    q = SearchFilter(
+        filter_predicates={
+            "name": {
+                "lookup_expr": "icontains",
+                "preprocessor": str,
+            },
+        },
     )
-    platform_id = django_filters.ModelMultipleChoiceFilter(
+    platform = NaturalKeyOrPKMultipleChoiceFilter(
+        field_name="platform",
         queryset=Platform.objects.all(),
-        label="Platform (ID)",
+        to_field_name="name",
+        label="Platform (name or ID)",
     )
-    platform = django_filters.ModelMultipleChoiceFilter(
-        field_name="platform__slug",
-        queryset=Platform.objects.all(),
-        to_field_name="slug",
-        label="Platform (slug)",
-    )
-
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument
-        """Perform the filtered search."""
-        if not value.strip():
-            return queryset
-        qs_filter = Q(name__icontains=value)
-        return queryset.filter(qs_filter)
 
     class Meta:
         """Boilerplate filter Meta data for Config Replace."""
@@ -366,9 +267,17 @@ class GoldenConfigSettingFilterSet(NautobotFilterSet):
 class RemediationSettingFilterSet(NautobotFilterSet):
     """Inherits Base Class CustomFieldModelFilterSet."""
 
-    q = django_filters.CharFilter(
-        method="search",
-        label="Search",
+    q = SearchFilter(
+        filter_predicates={
+            "platform__name": {
+                "lookup_expr": "icontains",
+                "preprocessor": str,
+            },
+            "remediation_type": {
+                "lookup_expr": "icontains",
+                "preprocessor": str,
+            },
+        },
     )
     platform = django_filters.ModelMultipleChoiceFilter(
         field_name="platform__name",
@@ -381,13 +290,6 @@ class RemediationSettingFilterSet(NautobotFilterSet):
         label="Platform ID",
     )
 
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument
-        """Perform the filtered search."""
-        if not value.strip():
-            return queryset
-        qs_filter = Q(platform__name__icontains=value) | Q(remediation_type__icontains=value)
-        return queryset.filter(qs_filter)
-
     class Meta:
         """Boilerplate filter Meta data for Remediation Setting."""
 
@@ -396,7 +298,7 @@ class RemediationSettingFilterSet(NautobotFilterSet):
 
 
 class ConfigPlanFilterSet(NautobotFilterSet):
-    """Inherits Base Class BaseFilterSet."""
+    """Inherits Base Class NautobotFilterSet."""
 
     q = django_filters.CharFilter(
         method="search",
@@ -427,16 +329,89 @@ class ConfigPlanFilterSet(NautobotFilterSet):
     plan_result_id = django_filters.ModelMultipleChoiceFilter(
         queryset=JobResult.objects.filter(config_plan__isnull=False).distinct(),
         label="Plan JobResult ID",
+        to_field_name="id",
+    )
+    tenant_group_id = TreeNodeMultipleChoiceFilter(
+        queryset=TenantGroup.objects.all(),
+        field_name="device__tenant__tenant_group",
+        to_field_name="id",
+        label="Tenant Group (ID)",
+    )
+    tenant_group = TreeNodeMultipleChoiceFilter(
+        queryset=TenantGroup.objects.all(),
+        field_name="device__tenant__tenant_group",
+        to_field_name="name",
+        label="Tenant Group (name)",
+    )
+    tenant = NaturalKeyOrPKMultipleChoiceFilter(
+        queryset=Tenant.objects.all(),
+        field_name="device__tenant",
+        to_field_name="name",
+        label="Tenant (name or ID)",
+    )
+    manufacturer = NaturalKeyOrPKMultipleChoiceFilter(
+        field_name="device__device_type__manufacturer",
+        queryset=Manufacturer.objects.all(),
+        to_field_name="name",
+        label="Manufacturer (name or ID)",
+    )
+    platform = NaturalKeyOrPKMultipleChoiceFilter(
+        field_name="device__platform",
+        queryset=Platform.objects.all(),
+        to_field_name="name",
+        label="Platform (name or ID)",
+    )
+    location_id = TreeNodeMultipleChoiceFilter(
+        # Not limiting to content_type=dcim.device to allow parent locations to be included
+        # i.e. include all Sites in a Region, even though Region can't be assigned to a Device
+        queryset=Location.objects.all(),
+        field_name="device__location",
+        to_field_name="id",
+        label="Location (ID)",
+    )
+    location = TreeNodeMultipleChoiceFilter(
+        # Not limiting to content_type=dcim.device to allow parent locations to be included
+        # i.e. include all sites in a Region, even though Region can't be assigned to a Device
+        queryset=Location.objects.all(),
+        field_name="device__location",
+        to_field_name="name",
+        label="Location (name)",
     )
     deploy_result_id = django_filters.ModelMultipleChoiceFilter(
         queryset=JobResult.objects.filter(config_plan__isnull=False).distinct(),
         label="Deploy JobResult ID",
+        to_field_name="id",
     )
     change_control_id = django_filters.CharFilter(
         field_name="change_control_id",
         lookup_expr="exact",
     )
+    rack_group_id = TreeNodeMultipleChoiceFilter(
+        queryset=RackGroup.objects.all(),
+        field_name="device__rack__rack_group",
+        to_field_name="id",
+        label="Rack group (ID)",
+    )
+    rack_group = TreeNodeMultipleChoiceFilter(
+        queryset=RackGroup.objects.all(),
+        field_name="device__rack__rack_group",
+        to_field_name="name",
+        label="Rack group (name)",
+    )
+    rack = NaturalKeyOrPKMultipleChoiceFilter(
+        field_name="device__rack",
+        queryset=Rack.objects.all(),
+        to_field_name="name",
+        label="Rack (name or ID)",
+    )
+    role = NaturalKeyOrPKMultipleChoiceFilter(
+        field_name="device__role",
+        queryset=Role.objects.filter(content_types__model="device"),
+        to_field_name="name",
+        label="Role (name or ID)",
+    )
     status_id = django_filters.ModelMultipleChoiceFilter(
+        # field_name="status__id",
         queryset=Status.objects.all(),
         label="Status ID",
     )
@@ -446,17 +421,23 @@ class ConfigPlanFilterSet(NautobotFilterSet):
         to_field_name="name",
         label="Status",
     )
-    tag = TagFilter()
+    # tags = TagFilter()
 
-    def search(self, queryset, name, value):  # pylint: disable=unused-argument
-        """Perform the filtered search."""
-        if not value.strip():
-            return queryset
-        qs_filter = Q(device__name__icontains=value) | Q(change_control_id__icontains=value)
-        return queryset.filter(qs_filter)
+    q = SearchFilter(
+        filter_predicates={
+            "device__name": {
+                "lookup_expr": "icontains",
+                "preprocessor": str,
+            },
+            "change_control_id": {
+                "lookup_expr": "icontains",
+                "preprocessor": str,
+            },
+        },
+    )
 
     class Meta:
         """Boilerplate filter Meta data for Config Plan."""
 
         model = models.ConfigPlan
-        fields = ["id", "created", "change_control_id", "plan_type"]
+        fields = ["id", "created", "change_control_id", "plan_type", "tags"]

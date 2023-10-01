@@ -1,18 +1,15 @@
 """Functions to support config plan."""
+from nautobot.core.utils.data import render_jinja2
 from nautobot.dcim.models import Device
 from nautobot.extras.models import Status
-from nautobot.utilities.utils import render_jinja2
 
 from nautobot_golden_config.models import ComplianceFeature
+from nautobot_golden_config.utilities.constant import DEFAULT_DEPLOY_STATUS
 
 
-# TODO: Make the default Status configurable
 def config_plan_default_status():
     """Return the default status for config plan."""
-    return Status.objects.filter(
-        content_types__model="configplan",
-        slug="not-approved",
-    ).first()
+    return Status.objects.get(name=DEFAULT_DEPLOY_STATUS)
 
 
 def generate_config_set_from_compliance_feature(device: Device, plan_type: str, feature: ComplianceFeature):

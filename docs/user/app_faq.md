@@ -1,6 +1,6 @@
 # Frequently Asked Questions
 
-## _Why doesn't the compliance behaviour work the way I expected it to?_
+## _Why doesn't the compliance behavior work the way I expected it to?_
 
 There are many ways to consider golden configs as shown in this [blog](https://blog.networktocode.com/post/journey-in-golden-config/). We cannot provide accommodations for all versions as it will both bloat the system, create a more complex system, and ultimately run into conflicting interpretations. Keeping the process focused but allowing anyone to override their interpretation of how compliance should work is both a powerful (via sane defaults) and complete (via custom compliance) solution.
 
@@ -40,7 +40,7 @@ Understanding that there will never be consensus on what should go into a featur
 
 ## _What are the supported platforms for Compliance jobs? How do I configure a device with a specific OS?_
 
-The current supported platform and the associated *default* platform slug names are the following for:
+The current supported platform and the associated *default* platform network_driver names are the following for:
 
 * arista_eos
 * aruba_aoscx
@@ -60,22 +60,27 @@ The current supported platform and the associated *default* platform slug names 
 * nokia_sros
 * paloalto_panos
 
-The expected "network_os" parameter must be as defined by netutils and golden config uses the platform slug to map from the device to the appropriate "network_os" that netutils expects. However, there an ability to map the actual platform slug for compliance and parsing tasks via the plugin settings in your "nautobot_config.py", and documented on the primary Readme.
+The expected "network_os" parameter must be set using the platform `network_driver`, which then in turn provides you the `network_driver_mappings` to map out the framework, such as netmiko and napalm. This should solve most use cases, but occasionally you may want to extend this mapping, for further understand see [the docs](https://docs.nautobot.com/projects/core/en/stable/user-guide/core-data-model/dcim/platform/) and simply update the [NETWORK_DRIVER](https://docs.nautobot.com/projects/core/en/stable/user-guide/administration/configuration/optional-settings/#network_drivers) configuration.
 
-To provide a concrete example of this, note the following example that demonstrates how you can transpose any platform slug name to the expected one, as well as map multiple keys to a single netutils expected key. The `platform_slug_map` is only used for configuration compliance job. The json key is the Nautobot platform slug, and the json value is the "network_os" parameter defined in `netutils.config.compliance.parser_map`.
-```json
+Here is an example Device object representation, e.g. `device.platform.network_driver_mappings` to help provide some context.
+
+```python
 {
-    "platform_slug_map":  {
-        "cisco_aireos": "cisco_wlc",
-        "ios": "cisco_ios",
-        "iosxe": "cisco_ios"
-    }
+    "ansible": "cisco.nxos.nxos",
+    "hier_config": "nxos",
+    "napalm": "nxos",
+    "netmiko": "cisco_nxos",
+    "netutils_parser": "cisco_nxos",
+    "ntc_templates": "cisco_nxos",
+    "pyats": "nxos",
+    "pyntc": "cisco_nxos_nxapi",
+    "scrapli": "cisco_nxos",
 }
 ```
 
 ## _What are the supported platforms for Backup and Intended Configuration jobs? How do I configure a device with a specific OS?_
 
-The current supported platform and the associated *default* platform slug names are the following for:
+The current supported platform and the associated *default* platform network_driver names are the following for:
 
 * arista_eos
 * cisco_asa
@@ -88,7 +93,7 @@ The current supported platform and the associated *default* platform slug names 
 * ruckus_fastiron
 * ruckus_smartzone_api
 
-In many use cases, this can be extended with a custom dispatcher for nornir tasks, which is controlled in the [nornir-nautobot](https://github.com/nautobot/nornir-nautobot) repository. Additionally the [`nautobot_plugin_nornir`](https://pypi.org/project/nautobot-plugin-nornir/) provide the ability to leverage the `dispatcher_mapping` configuration parameter to map and/or extend for your environment. Please see the instructions there for further details.
+In many use cases, this can be extended with a custom dispatcher for nornir tasks, which is controlled in the [nornir-nautobot](https://github.com/nautobot/nornir-nautobot) repository. Additionally you can "roll your own" dispatcher with the `custom_dispatcher` configuration parameter to map and/or extend for your environment. Please see the instructions there for further details.
 
 ## _Why not provide the corrective configurations?_
 
@@ -143,6 +148,8 @@ These errors have been accurate so far, that is not to say that there is no way 
 * Incorrectly configured Secrets
 * Filtering to nothing when presumption is the filter works a certain way
 * Referencing an OS that is not recognized
+
+There is an ongoing effort to better document each [troubleshooting case](../admin/troubleshooting/index.md).
 
 ## _Why is the `_isnull` on DateTime filters considered experimental?_
 

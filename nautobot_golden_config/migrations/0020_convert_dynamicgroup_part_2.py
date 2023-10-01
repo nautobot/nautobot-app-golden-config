@@ -15,7 +15,6 @@ def create_dynamic_groups(apps, schedma_editor):
         name = f"GoldenConfigSetting {i.name} scope"
         d_group = model.objects.create(
             name=name,
-            slug=slugify(name),
             filter=i.scope,
             content_type=content_type,
             description="Automatically generated for nautobot_golden_config version 1.2.0.",

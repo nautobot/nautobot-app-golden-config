@@ -8,7 +8,7 @@ LOGGER = logging.getLogger("NORNIR_LOGGER")
 handler = logging.StreamHandler()
 handler.setLevel(logging.NOTSET)
 LOGGER.addHandler(handler)
-LOGGER_ADAPTER = logging.LoggerAdapter(LOGGER)
+LOGGER_ADAPTER = logging.LoggerAdapter(LOGGER, extra={})
 
 
 class NornirLogger:

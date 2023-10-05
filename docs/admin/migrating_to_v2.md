@@ -41,14 +41,14 @@ If previously you have leveraged the `dispatcher_mapping` to use your preferred 
 ## Dynamic Group
 
 !!! tip
-    You can safely skip this section if your Dynamic Groups did not use slugs or one of the removed models or you Dynamic Groups are currently in the required state.
+    You can safely skip this section if your Dynamic Groups was not using slugs/Site/Region/DeviceRole or your Dynamic Groups are currently in the required state.
 
 In an effort to guide you along, you are highly encouraged to leverage the `nautobot-server audit_dynamic_groups` as [documented](https://docs.nautobot.com/projects/core/en/v2.0.0/user-guide/administration/tools/nautobot-server/#audit_dynamic_groups). You will know you have completed this step, when the scope of devices in your Dynamic Group match your expectations.
 
 ## GraphQL
 
 !!! tip
-    You can safely skip this section if your GraphQL did not use slugs or one of the removed models or your saved GraphQL currently renders to the appropriate state.
+    You can safely skip this section if your GraphQL Query was not using slugs/Site/Region/DeviceRole or your saved GraphQL Query currently renders to the appropriate state.
 
 As mentioned, any reference to slug or to one of the removed models will need to be updated to reflect Nautobot 2.0 standards, in this example we will review what would need to change.
 
@@ -145,9 +145,8 @@ _Path for backup and intended_
 _Path for templates_
 
 ```jinja
-{{obj.platform.slug}}.j2
-{{obj.platform.network_driver}}.j2               <---- old way of doing it
-{{obj.location.name|slugify}}/{{obj.name}}       <---- new way of doing it
+{{obj.platform.slug}}.j2                         <---- old way of doing it
+{{obj.platform.network_driver}}.j2               <---- new way of doing it
 ```
 
 ## Custom Dispatcher
@@ -190,12 +189,12 @@ PLUGINS_CONFIG = {
 }
 ```
 
-You can also see information within the [custom dispatcher docs](../admin/admin_install.md#custom-dispatcher).
+The [custom dispatcher docs](../admin/admin_install.md#custom-dispatcher) will provide further clarification if needed.
 
 ## Secrets
 
 !!! tip
-    You can safely skip this section if you have already been using Nautobot Secrets vs Git Repository Token.
+    You can safely skip this section if you have already been using Nautobot Secrets and not Git Repository Token.
 
 Nautobot initially had the ability to store some secrets, this was deprecated when [Secrets framework](https://docs.nautobot.com/projects/core/en/stable/user-guide/platform-functionality/secret/) was added in Nautobot 1.2. The feature to directly store Secrets in the database has been removed in 2.0.
 

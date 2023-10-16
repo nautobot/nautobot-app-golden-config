@@ -19,20 +19,21 @@ FROM ghcr.io/nautobot/nautobot-dev:${NAUTOBOT_VER}-py${PYTHON_VER}
 ARG NAUTOBOT_ROOT=/opt/nautobot
 
 ENV prometheus_multiproc_dir=/prom_cache
-ENV NAUTOBOT_ROOT ${NAUTOBOT_ROOT}
+ENV NAUTOBOT_ROOT=${NAUTOBOT_ROOT}
+ENV INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL=true
 
 # Install Poetry manually via its installer script;
 # We might be using an older version of Nautobot that includes an older version of Poetry
 # and CI and local development may have a newer version of Poetry
 # Since this is only used for development and we don't ship this container, pinning Poetry back is not expressly necessary
 # We also don't need virtual environments in container
-RUN curl -sSL https://install.python-poetry.org | python3 - && \
+RUN which poetry || curl -sSL https://install.python-poetry.org | python3 - && \
   poetry config virtualenvs.create false
 
 # !!! USE CAUTION WHEN MODIFYING LINES ABOVE
 # -------------------------------------------------------------------------------------
 # App-specifc system build/test dependencies.
-# 
+#
 # Example: LDAP requires `libldap2-dev` to be apt-installed before the Python package.
 # -------------------------------------------------------------------------------------
 # --> Start safe to modify section
@@ -68,11 +69,13 @@ RUN sort poetry_freeze_base.txt poetry_freeze_all.txt | uniq -u > poetry_freeze_
 
 # Install all local project as editable, constrained on Nautobot version, to get any additional
 #   direct dependencies of the app
-RUN pip install -c constraints.txt -e .
+RUN --mount=type=cache,target="/root/.cache/pip",sharing=locked \
+    pip install -c constraints.txt -e .[all]
 
 # Install any dev dependencies frozen from Poetry
 # Can be improved in Poetry 1.2 which allows `poetry install --only dev`
-RUN pip install -c constraints.txt -r poetry_freeze_dev.txt
+RUN --mount=type=cache,target="/root/.cache/pip",sharing=locked \
+    pip install -c constraints.txt -r poetry_freeze_dev.txt
 
 COPY development/nautobot_config.py ${NAUTOBOT_ROOT}/nautobot_config.py
 # !!! USE CAUTION WHEN MODIFYING LINES ABOVE

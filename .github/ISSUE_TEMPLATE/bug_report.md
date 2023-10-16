@@ -4,7 +4,7 @@ about: Report a reproducible bug in the current release of nautobot-golden-confi
 ---
 
 ### Environment
-* Python version:  <!-- Example: 3.7.7 -->
+* Python version:  <!-- Example: 3.11.4 -->
 * Nautobot version:  <!-- Example: 1.4.0 -->
 * nautobot-golden-config version:  <!-- Example: 1.0.0 -->
 

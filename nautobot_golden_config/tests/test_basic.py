@@ -20,7 +20,7 @@ class TestDocsPackaging(unittest.TestCase):
     """Test Version in doc requirements is the same pyproject."""
 
     def test_version(self):
-        """Verify that pyproject.toml dev dependecies have the same versions as in the docs requirements.txt."""
+        """Verify that pyproject.toml dev dependencies have the same versions as in the docs requirements.txt."""
         parent_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
         poetry_path = os.path.join(parent_path, "pyproject.toml")
         poetry_details = toml.load(poetry_path)["tool"]["poetry"]["group"]["dev"]["dependencies"]

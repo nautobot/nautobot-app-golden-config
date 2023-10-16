@@ -83,7 +83,7 @@ jobs:
       fail-fast: true
       matrix:
         python-version: ["3.11"]
-        nautobot-version: ["1.4.0"]
+        nautobot-version: ["2.0.0"]
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_PYTHON_VER: "${{ matrix.python-version }}"
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_NAUTOBOT_VER: "${{ matrix.nautobot-version }}"
@@ -128,7 +128,7 @@ jobs:
         include:
           - python-version: "3.11"
             db-backend: "postgresql"
-            nautobot-version: "1.4.0"
+            nautobot-version: "2.0.0"
           - python-version: "3.11"
             db-backend: "mysql"
             nautobot-version: "2.0.0"

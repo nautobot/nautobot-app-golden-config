@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nautobot-golden-config"
-version = "0.1.0"
+version = "2.0.0"
 description = "A plugin for configuration on nautobot"
 authors = ["Network to Code, LLC <opensource@networktocode.com>"]
 license = "Apache-2.0"
@@ -32,8 +32,15 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.8,<3.12"
-# Used for local development
-nautobot = "^1.4.0"
+deepdiff = ">=5.5.0,!=6.0,!=6.1,<7"
+django-pivot = "1.8.1" # The signature changed to return a non-queryset, do not upgrade without ensuring it returns a queryset
+matplotlib = "^3.3.2"
+nautobot-plugin-nornir = "^2.0.0"
+
+toml = "^0.10.2"
+netutils = "^1.5.0"
+hier-config = "^2.2.2"
+nautobot-capacity-metrics = "^3.0.1"
 
 [tool.poetry.group.dev.dependencies]
 bandit = "*"
@@ -48,7 +55,6 @@ pylint = "*"
 pylint-django = "*"
 pylint-nautobot = "*"
 yamllint = "*"
-toml = "*"
 Markdown = "*"
 # Rendering docs to HTML
 mkdocs = "1.5.2"
@@ -126,3 +132,6 @@ add_ignore = "D212,D417"
 [build-system]
 requires = ["poetry_core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pylint-nautobot]
+supported_nautobot_versions = ["2"]

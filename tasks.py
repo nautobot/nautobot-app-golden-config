@@ -13,7 +13,6 @@ limitations under the License.
 """
 
 import os
-from distutils.util import strtobool
 
 from invoke.collection import Collection
 from invoke.tasks import task as invoke_task

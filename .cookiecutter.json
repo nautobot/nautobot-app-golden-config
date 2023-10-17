@@ -10,8 +10,8 @@
         "project_slug": "nautobot-plugin-golden-config",
         "repo_url": "https://github.com/nautobot/nautobot-plugin-golden-config",
         "base_url": "golden-config",
-        "min_nautobot_version": "1.4.0",
-        "max_nautobot_version": "1.9999",
+        "min_nautobot_version": "2.0.0",
+        "max_nautobot_version": "2.9999",
         "camel_name": "NautobotGoldenConfig",
         "project_short_description": "A plugin for configuration on nautobot",
         "model_class_name": "None",
@@ -21,10 +21,10 @@
         "_drift_manager": {
             "template": "https://github.com/nautobot/cookiecutter-nautobot-app.git",
             "template_dir": "nautobot-app",
-            "template_ref": "develop",
+            "template_ref": "u/snaselj-ci-checks",
             "cookie_dir": "",
             "branch_prefix": "drift-manager",
-            "pull_request_strategy": "create",
+            "pull_request_strategy": "update-or-create",
             "post_actions": [
                 "black"
             ],

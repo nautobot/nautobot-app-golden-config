@@ -17,6 +17,7 @@ import os
 from invoke.collection import Collection
 from invoke.tasks import task as invoke_task
 
+
 def is_truthy(arg):
     """Convert "truthy" strings into Booleans.
 
@@ -45,7 +46,7 @@ namespace = Collection("nautobot_golden_config")
 namespace.configure(
     {
         "nautobot_golden_config": {
-            "nautobot_ver": "1.4.0",
+            "nautobot_ver": "2.0.0",
             "project_name": "nautobot-golden-config",
             "python_ver": "3.11",
             "local": False,
@@ -171,10 +172,17 @@ def generate_packages(context):
     run_command(context, command)
 
 
-@task
-def lock(context):
+@task(
+    help={
+        "check": (
+            "If enabled, check for outdated dependencies in the poetry.lock file, "
+            "instead of generating a new one. (default: disabled)"
+        )
+    }
+)
+def lock(context, check=False):
     """Generate poetry.lock inside the Nautobot container."""
-    run_command(context, "poetry lock --no-update")
+    run_command(context, f"poetry {'check' if check else 'lock --no-update'}")
 
 
 # ------------------------------------------------------------------------------
@@ -677,6 +685,10 @@ def tests(context, failfast=False, keepdb=False, lint_only=False):
     pydocstyle(context)
     print("Running yamllint...")
     yamllint(context)
+    print("Running poetry check...")
+    lock(context, check=True)
+    print("Running migrations check...")
+    check_migrations(context)
     print("Running pylint...")
     pylint(context)
     print("Running mkdocs...")

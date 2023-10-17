@@ -28,7 +28,7 @@ packages = [
 [tool.poetry.dependencies]
 python = ">=3.8,<3.12"
 # Used for local development
-nautobot = "^1.4.0"
+nautobot = "^2.0.0"
 
 [tool.poetry.group.dev.dependencies]
 bandit = "*"
@@ -103,7 +103,7 @@ notes = """,
 
 [tool.pylint-nautobot]
 supported_nautobot_versions = [
-    "1.4.0"
+    "2.0.0"
 ]
 
 [tool.pydocstyle]

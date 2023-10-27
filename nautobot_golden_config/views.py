@@ -2,6 +2,7 @@
 import json
 import logging
 from datetime import datetime
+import os
 
 import yaml
 from django.contrib import messages
@@ -27,7 +28,7 @@ from nautobot_golden_config.api import serializers
 from nautobot_golden_config.utilities import constant
 from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
 from nautobot_golden_config.utilities.graphql import graph_ql_query
-from nautobot_golden_config.utilities.helper import add_message, get_device_to_settings_map
+from nautobot_golden_config.utilities.helper import add_message, get_device_to_settings_map, render_jinja_template
 from nautobot_golden_config.utilities.mat_plot import get_global_aggr, plot_barchart_visual, plot_visual
 
 # TODO: Future #4512
@@ -38,6 +39,7 @@ PERMISSIONS_ACTION_MAP.update(
         "intended": "change",
         "sotagg": "change",
         "postprocessing": "change",
+        "template": "change",
         "devicetab": "view",
     }
 )
@@ -184,6 +186,26 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
             self.output = json.dumps(self.output, indent=4)
         self.title_name = "Aggregate Data"
         return self._post_render(request)
+
+    @action(detail=True, methods=["get"])
+    def template(self, request, pk, *args, **kwargs):
+        """Additional action to handle retreiving the template for a device."""
+        self._pre_helper(pk, request)
+        self.structured_format = "cli"
+        settings = get_device_to_settings_map([self.device])
+        self.title_name = "Template Details"
+        if self.device.id in settings:
+            gc_settings = settings[self.device.id]
+            template_directory = gc_settings.jinja_repository.filesystem_path
+            template_obj = render_jinja_template(self.device, LOGGER, gc_settings.jinja_path_template)
+            template_file = os.path.join(template_directory, template_obj)
+            if os.path.isfile(template_file):
+                with open(template_file, "r") as f:
+                    self.output = f.read()
+            else:
+                self.output = "Unable to open expected file, please contact your administrator for assistance"
+            return self._post_render(request)
+        raise ObjectDoesNotExist(f"{self.device.name} does not map to a Golden Config Setting.")
 
     @action(detail=True, methods=["get"])
     def compliance(self, request, pk, *args, **kwargs):

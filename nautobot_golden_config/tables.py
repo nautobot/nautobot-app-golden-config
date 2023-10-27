@@ -27,6 +27,7 @@ ALL_ACTIONS = """
 {% if intended == True %}
     {% if record.config_type == 'json' %}
         <i class="mdi mdi-circle-small"></i>
+        <i class="mdi mdi-circle-small"></i>
     {% else %}
         {% if record.intended_config %}
             <a value="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=record.device.pk %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=record.device.pk %}?modal=true">
@@ -35,6 +36,9 @@ ALL_ACTIONS = """
         {% else %}
             <i class="mdi mdi-circle-small"></i>
         {% endif %}
+        <a value="{% url 'plugins:nautobot_golden_config:goldenconfig_template' pk=record.device.pk %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_template' pk=record.device.pk %}?modal=true">
+            <i class="mdi mdi-file-document-outline" title="Template"></i>
+        </a>
     {% endif %}
 {% endif %}
 {% if postprocessing == True %}

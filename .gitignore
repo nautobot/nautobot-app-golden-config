@@ -310,3 +310,4 @@ invoke.yml
 public
 /compose.yaml
 /dump.sql
+/nautobot_golden_config/static/nautobot_golden_config/docs

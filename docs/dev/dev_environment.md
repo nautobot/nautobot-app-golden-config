@@ -13,8 +13,8 @@ This is a quick reference guide if you're already familiar with the development 
 
 The [Invoke](http://www.pyinvoke.org/) library is used to provide some helper commands based on the environment. There are a few configuration parameters which can be passed to Invoke to override the default configuration:
 
-- `nautobot_ver`: the version of Nautobot to use as a base for any built docker containers (default: latest)
-- `project_name`: the default docker compose project name (default: `nautobot_golden_config`)
+- `nautobot_ver`: the version of Nautobot to use as a base for any built docker containers (default: 2.0.0)
+- `project_name`: the default docker compose project name (default: `nautobot-golden-config`)
 - `python_ver`: the version of Python to use as a base for any built docker containers (default: 3.11)
 - `local`: a boolean flag indicating if invoke tasks should be run on the host or inside the docker containers (default: False, commands will be run in docker containers)
 - `compose_dir`: the full path to a directory containing the project compose files
@@ -57,8 +57,6 @@ To either stop or destroy the development environment use the following options.
 ---
 nautobot_golden_config:
   local: true
-  compose_files:
-    - "docker-compose.requirements.yml"
 ```
 
 Run the following commands:
@@ -136,7 +134,6 @@ Each command can be executed with `invoke <command>`. All commands support the a
   unittest         Run Django unit tests for the plugin.
 ```
 
-
 ## Project Overview
 
 This project provides the ability to develop and manage the Nautobot server locally (with supporting services being *Dockerized*) or by using only Docker containers to manage Nautobot. The main difference between the two environments is the ability to debug and use **pdb** when developing locally. Debugging with **pdb** within the Docker container is more complicated, but can still be accomplished by either entering into the container (via `docker exec`) or attaching your IDE to the container and running the Nautobot service manually within the container.
@@ -187,7 +184,7 @@ The first thing you need to do is build the necessary Docker image for Nautobot 
 #14 exporting layers
 #14 exporting layers 1.2s done
 #14 writing image sha256:2d524bc1665327faa0d34001b0a9d2ccf450612bf8feeb969312e96a2d3e3503 done
-#14 naming to docker.io/nautobot-golden-config/nautobot:latest-py3.11 done
+#14 naming to docker.io/nautobot-golden-config/nautobot:2.0.0-py3.11 done
 ```
 
 ### Invoke - Starting the Development Environment
@@ -218,9 +215,9 @@ This will start all of the Docker containers used for hosting Nautobot. You shou
 ```bash
 ➜ docker ps
 ****CONTAINER ID   IMAGE                            COMMAND                  CREATED          STATUS          PORTS                                       NAMES
-ee90fbfabd77   nautobot-golden-config/nautobot:latest-py3.11   "nautobot-server rqw…"   16 seconds ago   Up 13 seconds                                               nautobot_golden_config_worker_1
-b8adb781d013   nautobot-golden-config/nautobot:latest-py3.11   "/docker-entrypoint.…"   20 seconds ago   Up 15 seconds   0.0.0.0:8080->8080/tcp, :::8080->8080/tcp   nautobot_golden_config_nautobot_1
-d64ebd60675d   nautobot-golden-config/nautobot:latest-py3.11   "mkdocs serve -v -a …"   25 seconds ago   Up 18 seconds   0.0.0.0:8001->8080/tcp, :::8001->8080/tcp   nautobot_golden_config_docs_1
+ee90fbfabd77   nautobot-golden-config/nautobot:2.0.0-py3.11  "nautobot-server rqw…"   16 seconds ago   Up 13 seconds                                               nautobot_golden_config_worker_1
+b8adb781d013   nautobot-golden-config/nautobot:2.0.0-py3.11  "/docker-entrypoint.…"   20 seconds ago   Up 15 seconds   0.0.0.0:8080->8080/tcp, :::8080->8080/tcp   nautobot_golden_config_nautobot_1
+d64ebd60675d   nautobot-golden-config/nautobot:2.0.0-py3.11  "mkdocs serve -v -a …"   25 seconds ago   Up 18 seconds   0.0.0.0:8001->8080/tcp, :::8001->8080/tcp   nautobot_golden_config_docs_1
 e72d63129b36   postgres:13-alpine               "docker-entrypoint.s…"   25 seconds ago   Up 19 seconds   0.0.0.0:5432->5432/tcp, :::5432->5432/tcp   nautobot_golden_config_postgres_1
 96c6ff66997c   redis:6-alpine                   "docker-entrypoint.s…"   25 seconds ago   Up 21 seconds   0.0.0.0:6379->6379/tcp, :::6379->6379/tcp   nautobot_golden_config_redis_1
 ```

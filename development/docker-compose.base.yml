@@ -38,3 +38,13 @@ services:
       retries: 3
       test: ["CMD", "bash", "-c", "nautobot-server celery inspect ping --destination celery@$$HOSTNAME"]  ## $$ because of docker-compose
     <<: *nautobot-base
+  beat:
+    entrypoint:
+      - "sh"
+      - "-c"  # this is to evaluate the $NAUTOBOT_LOG_LEVEL from the env
+      - "nautobot-server celery beat -l $$NAUTOBOT_LOG_LEVEL"  ## $$ because of docker-compose
+    depends_on:
+      - "nautobot"
+    healthcheck:
+      disable: true
+    <<: *nautobot-base

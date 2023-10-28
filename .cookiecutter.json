@@ -10,12 +10,10 @@
         "project_slug": "nautobot-plugin-golden-config",
         "repo_url": "https://github.com/nautobot/nautobot-plugin-golden-config",
         "base_url": "golden-config",
-        "min_nautobot_version": "1.4.0",
-        "max_nautobot_version": "1.9999",
-        "nautobot_version": "latest",
+        "min_nautobot_version": "2.0.0",
+        "max_nautobot_version": "2.9999",
         "camel_name": "NautobotGoldenConfig",
         "project_short_description": "A plugin for configuration on nautobot",
-        "version": "1.0.0",
         "model_class_name": "None",
         "open_source_license": "Apache-2.0",
         "docs_base_url": "https://docs.nautobot.com",
@@ -27,7 +25,11 @@
             "cookie_dir": "",
             "branch_prefix": "drift-manager",
             "pull_request_strategy": "create",
-            "post_actions": []
+            "post_actions": [
+                "black"
+            ],
+            "draft": true,
+            "baked_commit_ref": "c6963e367d835faf66a9f4ac63267b6ce5811577"
         }
     }
 }

@@ -64,7 +64,6 @@
           <th>Config</th>
         </tr>
       </thead>
-      {% if matched_config_setting %}
       <tbody>
         {% if config_features.compliance and golden_config.compliance_config %}
         <tr>
@@ -118,7 +117,6 @@
         </tr>
         {% endif %}
       </tbody>
-      {% endif %}
     </table>
   </div>
   {% endif %}

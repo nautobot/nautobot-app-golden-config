@@ -1,10 +1,8 @@
 """Added content to the device model view for config compliance."""
 from django.db.models import Count, Q
-from nautobot.dcim.models import Device
 from nautobot.extras.plugins import PluginTemplateExtension
 from nautobot_golden_config.models import ConfigCompliance, GoldenConfig
 from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_COMPLIANCE
-from nautobot_golden_config.utilities.helper import get_device_to_settings_map
 
 
 class ConfigComplianceDeviceCheck(PluginTemplateExtension):  # pylint: disable=abstract-method

@@ -1,9 +1,11 @@
 """Django Tables2 classes for golden_config plugin."""
+from builtins import property, staticmethod
 import copy
 
 from django.utils.html import format_html
 from django_tables2 import Column, LinkColumn, TemplateColumn
 from django_tables2.utils import A
+from nautobot.extras.models import Job
 from nautobot.extras.tables import StatusTableMixin
 from nautobot.utilities.tables import BaseTable, TagColumn, ToggleColumn
 
@@ -16,7 +18,7 @@ ALL_ACTIONS = """
         <i class="mdi mdi-circle-small"></i>
     {% else %}
         {% if record.backup_config %}
-            <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='backup' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='backup' %}?modal=true">
+            <a value="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=record.device.pk %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=record.device.pk %}?modal=true">
                 <i class="mdi mdi-file-document-outline" title="Backup Configuration"></i>
             </a>
         {% else %}
@@ -29,7 +31,7 @@ ALL_ACTIONS = """
         <i class="mdi mdi-circle-small"></i>
     {% else %}
         {% if record.intended_config %}
-            <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='intended' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='intended' %}?modal=true">
+            <a value="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=record.device.pk %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=record.device.pk %}?modal=true">
                 <i class="mdi mdi-text-box-check-outline" title="Intended Configuration"></i>
             </a>
         {% else %}
@@ -39,7 +41,7 @@ ALL_ACTIONS = """
 {% endif %}
 {% if postprocessing == True %}
     {% if record.intended_config %}
-        <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='postprocessing' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='postprocessing' %}?modal=true">
+        <a value="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=record.device.pk %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=record.device.pk %}?modal=true">
             <i class="mdi mdi-text-box-check" title="Configuration after Postprocessing"></i>
         </a>
     {% else %}
@@ -47,28 +49,22 @@ ALL_ACTIONS = """
     {% endif %}
 {% endif %}
 {% if compliance == True %}
-    {% if record.config_type == 'json' %}
-            <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='json_compliance' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='json_compliance' %}?modal=true">
-                <i class="mdi mdi-file-compare" title="Compliance Details JSON"></i>
-            </a>
+    {% if record.intended_config and record.backup_config %}
+        <a value="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=record.device.pk %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=record.device.pk %}?modal=true">
+            <i class="mdi mdi-file-compare" title="Compliance Details"></i>
+        </a>
     {% else %}
-        {% if record.compliance_config %}
-            <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='compliance' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='compliance' %}?modal=true">
-                <i class="mdi mdi-file-compare" title="Compliance Details"></i>
-            </a>
-        {% else %}
-            <i class="mdi mdi-circle-small"></i>
-        {% endif %}
+        <i class="mdi mdi-circle-small"></i>
     {% endif %}
 {% endif %}
 {% if sotagg == True %}
-    <a value="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='sotagg' %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=record.pk config_type='sotagg' %}?modal=true">
+    <a value="{% url 'plugins:nautobot_golden_config:goldenconfig_sotagg' pk=record.device.pk %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_sotagg' pk=record.device.pk %}?modal=true">
         <i class="mdi mdi-code-json" title="SOT Aggregate Data"></i>
     </a>
     {% if record.config_type == 'json' %}
         <i class="mdi mdi-circle-small"></i>
     {% else %}
-        <a href="{% url 'extras:job' class_path='plugins/nautobot_golden_config.jobs/AllGoldenConfig' %}?device={{ record.pk }}"
+        <a href="{% url 'extras:job' class_path='plugins/nautobot_golden_config.jobs/AllGoldenConfig' %}?device={{ record.device.pk }}"
             <span class="text-primary">
                 <i class="mdi mdi-play-circle" title="Execute All Golden Config Jobs"></i>
             </span>
@@ -262,8 +258,10 @@ class GoldenConfigTable(BaseTable):
     """Table to display Config Management Status."""
 
     pk = ToggleColumn()
-    name = TemplateColumn(
-        template_code="""<a href="{% url 'dcim:device' pk=record.pk %}">{{ record.name }}</a>""",
+    name = LinkColumn(
+        "plugins:nautobot_golden_config:goldenconfig",
+        args=[A("pk")],
+        text=lambda record: record.device.name,
         verbose_name="Device",
     )
 

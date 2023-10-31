@@ -19,10 +19,12 @@ class ConfigComplianceDeviceCheck(PluginTemplateExtension):  # pylint: disable=a
     def right_page(self):
         """Content to add to the configuration compliance."""
         comp_obj = ConfigCompliance.objects.filter(device=self.get_device()).values("rule__feature__name", "compliance")
+        if not comp_obj:
+            return ""
         extra_context = {
             "compliance": comp_obj,
             "device": self.get_device(),
-            "template_type": "device-compliance",
+            "template_type": "devicetab",
         }
         return self.render(
             "nautobot_golden_config/content_template.html",
@@ -52,7 +54,9 @@ class ConfigComplianceSiteCheck(PluginTemplateExtension):  # pylint: disable=abs
             .order_by("rule__feature__name")
             .values("rule__feature__name", "compliant", "non_compliant")
         )
-        extra_context = {"compliance": comp_obj, "template_type": "site"}
+        if not comp_obj:
+            return ""
+        extra_context = {"compliance": comp_obj, "template_type": "location"}
         return self.render(
             "nautobot_golden_config/content_template.html",
             extra_context=extra_context,
@@ -72,13 +76,13 @@ class ConfigDeviceDetails(PluginTemplateExtension):  # pylint: disable=abstract-
         """Content to add to the configuration compliance."""
         device = self.get_device()
         golden_config = GoldenConfig.objects.filter(device=device).first()
-        settings = get_device_to_settings_map(queryset=Device.objects.filter(id=device.id))
+        if not golden_config:
+            return ""
         extra_context = {
-            "device": self.get_device(),  # device,
+            "device": device,
             "golden_config": golden_config,
             "template_type": "device-configs",
             "config_features": CONFIG_FEATURES,
-            "matched_config_setting": settings.get(device.id, False),
         }
         return self.render(
             "nautobot_golden_config/content_template.html",
@@ -108,7 +112,9 @@ class ConfigComplianceTenantCheck(PluginTemplateExtension):  # pylint: disable=a
             .order_by("rule__feature__name")
             .values("rule__feature__name", "compliant", "non_compliant")
         )
-        extra_context = {"compliance": comp_obj, "template_type": "site"}
+        if not comp_obj:
+            return ""
+        extra_context = {"compliance": comp_obj, "template_type": "location"}
         return self.render(
             "nautobot_golden_config/content_template.html",
             extra_context=extra_context,

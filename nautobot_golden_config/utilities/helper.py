@@ -12,6 +12,7 @@ from jinja2 import exceptions as jinja_errors
 from jinja2.sandbox import SandboxedEnvironment
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.dcim.models import Device
+from nautobot.extras.models import Job
 from nautobot.utilities.utils import render_jinja2
 from nornir_nautobot.exceptions import NornirNautobotException
 
@@ -181,11 +182,12 @@ def list_to_string(items):
     return ", ".join(items[:-1]) + " and " + items[-1]
 
 
-def add_message(inbound):
+def add_message(combo_check, request):
     """Helper function to abstract the adding a message that the job is not enabled."""
     multiple_messages = []
-    for item in inbound:
-        job, request, feature_enabled = item
+    for item in combo_check:
+        _job, feature_enabled = item
+        job = Job.objects.filter(module_name="nautobot_golden_config.jobs", job_class_name=_job).first()
         if not job:
             continue
         if not isinstance(feature_enabled, list):

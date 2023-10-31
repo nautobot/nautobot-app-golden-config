@@ -1,0 +1,67 @@
+{% load static %}
+<!-- Reference https://cdn.jsdelivr.net/npm/diff2html/bundles/ and obtain files and version folder name -->
+<link rel="stylesheet" type="text/css" href="{% static 'nautobot_golden_config/diff2html-3.4.43/diff2html.min.css' %}"/>
+<script type="text/javascript" src="{% static 'nautobot_golden_config/diff2html-3.4.43/diff2html.min.js' %}"></script>
+<script src="{% static 'clipboard.js-2.0.9/clipboard.min.js' %}"></script>
+<script>    
+    var clipboard = new ClipboardJS('.btn');
+    clipboard.on('success', function (e) {});
+    clipboard.on('error', function (e) {});
+</script>
+
+<style>
+    .d2h-tag {
+        display: none;
+    }
+    .d2h-file-collapse {
+        display:none;
+    } 
+</style>
+<h1>{{ title_name }} - {{ device_name }}
+    {% if format != 'diff' %}
+        <span class="config_hover_button">
+            <button type="button" class="btn btn-inline btn-default hover_copy_button" data-clipboard-action="copy" data-clipboard-target="#{{ title_name|slugify }}_{{ device_name|slugify }}">
+                <span class="mdi mdi-content-copy"></span>
+            </button>
+        </span>
+    {% endif %}
+</h1>
+
+<div class="panel panel-default" style="padding-bottom: 5px">
+    <div style="padding-left: 10px">
+        {% if format in 'json,yaml' %}
+            <pre id="{{ title_name|slugify }}_{{ device_name|slugify }}">{{ output }}</pre>
+        {% elif format == 'diff' %}
+            <div id="diffoutput" value="{{ output }}"></div>
+            <div id="diffrender"></div>
+        {% else %}
+            <pre id="{{ title_name|slugify }}_{{ device_name|slugify }}">{{ output }}</pre>
+        {% endif %}
+    </div>
+</div>
+<script type="text/javascript">
+    var str_input = document.getElementById("diffoutput").getAttribute("value");
+    var isModal = "{{ is_modal }}";
+    if (isModal === "True") {
+        var diffHtml = Diff2Html.html(str_input, {
+            drawFileList: true,
+            matching: 'lines',
+            outputFormat: 'line_by_line',
+            }
+        )
+        // TODO: Fixed, but didn't update querySelectorAll
+        let elements = document.querySelectorAll('#diffrender');
+        elements.forEach((element) => {
+            element.innerHTML = diffHtml;
+        });    
+    } else {
+        document.addEventListener('DOMContentLoaded', () => {
+            var diffHtml = Diff2Html.html(str_input, {
+                drawFileList: true,
+                matching: 'lines',
+                outputFormat: 'side-by-side',
+            });
+        document.getElementById('diffrender').innerHTML = diffHtml;
+        });
+    }
+</script>

@@ -1,9 +1,8 @@
 <div class="panel panel-default">
-  {% if template_type == "device-compliance" %}
+  {% if template_type == "devicetab" %}
   <div class="panel-heading">
-    <a href="{% url 'plugins:nautobot_golden_config:configcompliance_devicedetail' pk=device.pk %}"
-      ><strong>Config Compliance Validation</strong></a
-    >
+    <a href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab=nautobot_golden_config:1"
+      ><strong>Config Compliance Validation</strong></a>
   </div>
   <div class="panel panel-default">
     <table class="table table-hover panel-body report">
@@ -31,7 +30,7 @@
       </tbody>
     </table>
   </div>
-  {% endif %} {% if template_type == 'site' %}
+  {% endif %} {% if template_type == 'location' %}
   <div class="panel panel-default">
     <table class="table table-hover panel-body report">
       <thead>
@@ -64,14 +63,13 @@
           <th>Config</th>
         </tr>
       </thead>
-      {% if matched_config_setting %}
       <tbody>
         {% if config_features.compliance and golden_config.compliance_config %}
         <tr>
           <td>Compliance</td>
           <td>
             <a
-              href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=device.pk config_type='compliance' %}"
+              href="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=device.pk %}"
               ><i class="mdi mdi-file-compare"></i
             ></a>
           </td>
@@ -81,7 +79,7 @@
           <td>Intended</td>
           <td>
             <a
-              href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=device.pk config_type='intended' %}"
+              href="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=device.pk %}"
               ><i class="mdi mdi-text-box-check-outline"></i
             ></a>
           </td>
@@ -91,7 +89,7 @@
           <td>Configuration Postprocessing</td>
           <td>
             <a
-              href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=device.pk config_type='postprocessing' %}"
+              href="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=device.pk %}"
               ><i class="mdi mdi-text-box-check"></i
             ></a>
           </td>
@@ -101,7 +99,7 @@
           <td>Actual</td>
           <td>
             <a
-              href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=device.pk config_type='backup' %}"
+              href="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=device.pk %}"
               ><i class="mdi mdi-file-document-outline"></i
             ></a>
           </td>
@@ -111,14 +109,13 @@
           <td>SoT Aggregation Data</td>
           <td>
             <a
-              href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=device.pk config_type='sotagg' %}"
+              href="{% url 'plugins:nautobot_golden_config:goldenconfig_sotagg' pk=device.pk %}"
               ><i class="mdi mdi-code-json"></i
             ></a>
           </td>
         </tr>
         {% endif %}
       </tbody>
-      {% endif %}
     </table>
   </div>
   {% endif %}

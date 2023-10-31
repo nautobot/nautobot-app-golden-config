@@ -5,6 +5,12 @@
 - Add functionality to compliance result to provide a Remediation plan.
 - Supports Nautobot >=1.6.1,<2.0.0.
 
+## v1.6.3 - 2023-10
+
+### Fixed
+
+- [#668](https://github.com/nautobot/nautobot-plugin-golden-config/issue/668) - Removed unneeded lookup for GoldenConfigSetting
+
 ## v1.6.2 - 2023-09
 
 ### Fixed

@@ -1,5 +1,7 @@
 # Using the App
 
+This document describes common use-cases and scenarios for this App.
+
 ## General Usage
 
 ### Home
@@ -52,11 +54,11 @@ To update existing settings click on one of the `Settings` name.
 |Setting|Explanation|
 |:--|:--|
 |Backup Repositories |The Git Repository where your backup configurations will be found. |
-|Backup Path|A Jinja template which defines the path and name of backup files within the backup repository. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.location.name\|slugify}}/{{obj.name}}.cfg`|
+|Backup Path|A Jinja template which defines the path and name of backup files within the backup repository. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.location.name}}/{{obj.name}}.cfg`|
 |Intended Repositories |The Git Repository where your intended configuration state files will be found. |
-|Intended Path|A Jinja template which defines the path and name of intended configuration state files within the intended state repository. e.g. `{{obj.location.name\|slugify}}/{{obj.name}}.intended_cfg`|
+|Intended Path|A Jinja template which defines the path and name of intended configuration state files within the intended state repository. e.g. `{{obj.location.name}}/{{obj.name}}.intended_cfg`|
 |Jinja Repository |The Git Repository where your jinja templates will be found. |
-|Jinja Path|A Jinja template which defines the path (within the repository) and name of the Jinja template file. e.g. `{{obj.platform.network_driver}}/{{obj.role.name}}/main.j2`|
+|Jinja Path|A Jinja template which defines the path (within the repository) and name of the Jinja template file. e.g. `{{obj.platform.name}}/{{obj.role.name}}/main.j2`|
 |Dynamic Group|The scope of devices on which Golden Config's jobs can operate. |
 |GraphQL Query|A query that is evaluated and used to render the config. The query must start with `query ($device_id: ID!)`.|
 
@@ -107,62 +109,6 @@ Adding a "has_primary_ip" check.
 
 When viewing the settings, the scope of devices is actually a link to the query built in the Devices view. Click that link to understand which devices are permitted by the filter.
 
-### Create Secret Groups
-
-!!! info
-    Unless you are **only** using configuration compliance with backup and intended configurations in repositories that do not require credentials, you will have to go through these steps.
-
-The Git Settings requires a Secret Group to be attached which in turn requires a Secret to be required. The Secret can use any provider, you are encouraged to read the [Nautobot docs on Secret Providers](https://docs.nautobot.com/projects/core/en/stable/user-guide/platform-functionality/secret/#secrets-providers), but for our purposes we will simply use the _Environment Variable_ option, so keep in mind that detail during the coming instructions.
-
-Create a new secret by navigating to `Secrets -> Secret -> add (button)`.
-
-!!! info
-    See [GitHub Personal Access Token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) for an example method to generate a token in GitHub.
-
-Parameters:
-
-| Field | Explanation |
-| ----- | ----------- |
-| Name  | User friendly name for secret. |
-| Provider | The [Secret Provider](https://docs.nautobot.com/projects/core/en/stable/user-guide/platform-functionality/secret/#secrets-providers) to the docs. |
-| Parameter | This will be dependant based on the provider. |
-
-For our example, let's configure and create with:
-
-| Field | Value       |
-| ----- | ----------- |
-| Name  | GIT-TOKEN |
-| Provider | Environment Variable |
-| Variable | NAUTOBOT_GOLDEN_CONFIG_GIT_TOKEN. |
-
-![Secret Creation](../images/secret-step1.png)
-
-Depending on your provider, you may also need a username, so you would repeat the process such as:
-
-| Field | Explanation |
-| ----- | ----------- |
-| Name  | GIT-TOKEN |
-| Provider | Environment Variable |
-| Variable | NAUTOBOT_GOLDEN_CONFIG_GIT_USERNAME. |
-
-Now we need to create the Secret Group, navigate to `Secrets -> Secret Group -> add (button)`.
-
-For our example, let's configure and create with:
-
-| Field | Value       |
-| ----- | ----------- |
-| Name  | Git Secret Group |
-| Access Type | HTTP(S) |
-| Secret Type | Token |
-| Secret | GIT-TOKEN. |
-
-!!! tip
-    If your instance requires a username as well, please ensure to add that as well.
-
-![Secret Group Creation](../images/secret-step2.png)
-
-The steps to add the variables to your environment are outside the scope of this document and may or may not be needed depending on how you manage your Secrets in your environment, but please be mindful of ensuring the Secrets end up on your system.
-
 ### Git Settings
 
 The plugin makes heavy use of the Nautobot git data sources feature. There are up to three repositories used in the application. This set of instructions will walk an operator through setting up the backup repository. The steps are the same, except for the "Provides" field name chosen.
@@ -185,11 +131,13 @@ Parameters:
 |Slug|Auto-generated based on the `name` provided.|
 |Remote URL|The URL pointing to the Git repo that stores the backup configuration files. Current git url usage is limited to `http` or `https`.|
 |Branch|The branch in the Git repo to use. Defaults to `main`.|
-|Secrets Group| The secret group configured that will define you credential information. |
+|Token|The token is a personal access token for the `username` provided.  For more information on generating a personal access token. [Github Personal Access Token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token)
+|Username|The Git username that corresponds with the personal access token above.|
 |Provides|Valid providers for Git Repo.|
 
+
 !!! note
-    When Secret Group is used for a Repository the secrets type HTTP(S) is required for this plugin, as shown previously.
+    If Secret Group is used for the Repositories the secrets type HTTP(S) is required for this plugin.
 
 ![Example Git Backups](../images/backup-git-step2.png)
 
@@ -231,7 +179,7 @@ garbage collection and it is up to the operator to remove such data.
 The version of OS's supported is documented in the [FAQ](./app_faq.md) and is controlled the platform network_driver. The platform network_driver must be exactly as expected or leverage
 a configuration option--which is described the the FAQ--for the plugin to work.
 
-### Use-cases and common workflows
+## Use-cases and common workflows
 
 This plugin enable four (4) key use cases.
 

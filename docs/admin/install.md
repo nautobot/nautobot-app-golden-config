@@ -2,21 +2,14 @@
 
 Here you will find detailed instructions on how to **install** and **configure** the App within your Nautobot environment.
 
-!!! warning "Developer Note - Remove Me!"
-    Detailed instructions on installing the App. You will need to update this section based on any additional dependencies or prerequisites.
-
 ## Prerequisites
 
-- The plugin is compatible with Nautobot 1.4.0 and higher.
+- The plugin is compatible with Nautobot 2.0.0 and higher.
+- The plugin relies on [`nautobot_plugin_nornir`](https://pypi.org/project/nautobot-plugin-nornir/) to be installed and both plugins to be enabled in your configuration settings.
 - Databases supported: PostgreSQL, MySQL
 
 !!! note
     Please check the [dedicated page](compatibility_matrix.md) for a full compatibility matrix and the deprecation policy.
-
-### Access Requirements
-
-!!! warning "Developer Note - Remove Me!"
-    What external systems (if any) it needs access to in order to work.
 
 ## Install Guide
 
@@ -29,7 +22,7 @@ The plugin is available as a Python package via PyPI and can be installed with `
 pip install nautobot-golden-config
 ```
 
-To ensure Golden Config is automatically re-installed during future upgrades, create a file named `local_requirements.txt` (if not already existing) in the Nautobot root directory (alongside `requirements.txt`) and list the `nautobot-golden-config` package:
+To ensure Nautobot Golden Config is automatically re-installed during future upgrades, create a file named `local_requirements.txt` (if not already existing) in the Nautobot root directory (alongside `requirements.txt`) and list the `nautobot-golden-config` package:
 
 ```shell
 echo nautobot-golden-config >> local_requirements.txt
@@ -37,27 +30,54 @@ echo nautobot-golden-config >> local_requirements.txt
 
 Once installed, the plugin needs to be enabled in your Nautobot configuration. The following block of code below shows the additional configuration required to be added to your `nautobot_config.py` file:
 
-- Append `"nautobot_golden_config"` to the `PLUGINS` list.
-- Append the `"nautobot_golden_config"` dictionary to the `PLUGINS_CONFIG` dictionary and override any defaults.
+- Append `"nautobot_golden_config"` to the `PLUGINS` list, and `"nautobot_plugin_nornir"` if it was not already there (more info [here](https://docs.nautobot.com/projects/plugin-nornir/en/latest/)).
+- Append the `"nautobot_golden_config"` dictionary to the `PLUGINS_CONFIG` dictionary, and `"nautobot_plugin_nornir"` if it was not already there.
 
 ```python
-# In your nautobot_config.py
-PLUGINS = ["nautobot_golden_config"]
+PLUGINS = ["nautobot_plugin_nornir", "nautobot_golden_config"]
 
-# PLUGINS_CONFIG = {
-#   "nautobot_golden_config": {
-#     ADD YOUR SETTINGS HERE
-#   }
-# }
+PLUGINS_CONFIG = {
+    "nautobot_plugin_nornir": {
+        "nornir_settings": {
+            "credentials": "nautobot_plugin_nornir.plugins.credentials.env_vars.CredentialsEnvVars",
+            "runner": {
+                "plugin": "threaded",
+                "options": {
+                    "num_workers": 20,
+                },
+            },
+        },
+    },
+    "nautobot_golden_config": {
+        "per_feature_bar_width": 0.15,
+        "per_feature_width": 13,
+        "per_feature_height": 4,
+        "enable_backup": True,
+        "enable_compliance": True,
+        "enable_intended": True,
+        "enable_sotagg": True,
+        "sot_agg_transposer": None,
+        "enable_postprocessing": False,
+        "postprocessing_callables": [],
+        "postprocessing_subscribed": [],
+        "platform_network_driver_map": None,
+        "jinja_env": {
+            "undefined": StrictUndefined,  # jinja2.StrictUndefined
+            "trim_blocks": True,
+            "lstrip_blocks": False,
+        },
+        # "get_custom_compliance": "my.custom_compliance.func"
+    },
+}
 ```
 
-Once the Nautobot configuration is updated, run the Post Upgrade command (`nautobot-server post_upgrade`) to run migrations and clear any cache:
+Once the Nautobot configuration is updated, run the Post Upgrade command (`nautobot-server post_upgrade`) to run migrations and clear any cache.
 
 ```shell
 nautobot-server post_upgrade
 ```
 
-Then restart (if necessary) the Nautobot services which may include:
+Then restart the Nautobot services which may include:
 
 - Nautobot
 - Nautobot Workers
@@ -69,13 +89,40 @@ sudo systemctl restart nautobot nautobot-worker nautobot-scheduler
 
 ## App Configuration
 
-!!! warning "Developer Note - Remove Me!"
-    Any configuration required to get the App set up. Edit the table below as per the examples provided.
+The plugin behavior can be controlled with the following list of settings.
 
-The plugin behavior can be controlled with the following list of settings:
+!!! note
+    The `enable_backup`, `enable_compliance`, `enable_intended`, `enable_sotagg` and `enable_postprocessing` will toggle inclusion of the entire component.
 
-| Key     | Example | Default | Description                          |
-| ------- | ------ | -------- | ------------------------------------- |
-| `enable_backup` | `True` | `True` | A boolean to represent whether or not to run backup configurations within the plugin. |
-| `platform_slug_map` | `{"cisco_wlc": "cisco_aireos"}` | `None` | A dictionary in which the key is the platform slug and the value is what netutils uses in any "network_os" parameter. |
-| `per_feature_bar_width` | `0.15` | `0.15` | The width of the table bar within the overview report |
+| Key                                 | Example                       | Default        | Description                                                                                                                                                                |
+| ----------------------------------- | ----------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| enable_backup                       | True                          | True           | A boolean to represent whether or not to run backup configurations within the plugin.                                                                                      |
+| enable_compliance                   | True                          | True           | A boolean to represent whether or not to run the compliance process within the plugin.                                                                                     |
+| enable_intended                     | True                          | True           | A boolean to represent whether or not to generate intended configurations within the plugin.                                                                               |
+| enable_sotagg                       | True                          | True           | A boolean to represent whether or not to provide a GraphQL query per device to allow the intended configuration to provide data variables to the plugin.                   |
+| enable_postprocessing               | True                          | False          | A boolean to represent whether or not to generate intended configurations to push, with extra processing such as secrets rendering.                                        |
+| postprocessing_callables            | ['mypackage.myfunction']      | []             | A list of function paths, in dotted format, that are appended to the available methods for post-processing the intended configuration, for instance, the `render_secrets`. |
+| postprocessing_subscribed           | ['mypackage.myfunction']      | []             | A list of function paths, that should exist as postprocessing_callables, that defines the order of application of during the post-processing process.                      |
+| platform_network_driver_map         | {"cisco_wlc": "cisco_aireos"} | None           | A dictionary in which the key is the platform slug and the value is what netutils uses in any "network_os" parameter within `netutils.config.compliance.parser_map`.       |
+| sot_agg_transposer                  | "mypkg.transposer"            | None           | A string representation of a function that can post-process the graphQL data.                                                                                              |
+| per_feature_bar_width               | 0.15                          | 0.15           | The width of the table bar within the overview report                                                                                                                      |
+| per_feature_width                   | 13                            | 13             | The width in inches that the overview table can be.                                                                                                                        |
+| per_feature_height                  | 4                             | 4              | The height in inches that the overview table can be.                                                                                                                       |
+| jinja_env                           | {"lstrip_blocks": False}      | See Note Below | A dictionary of Jinja2 Environment options compatible with Jinja2.SandboxEnvironment()                                                                                     |
+
+!!! note
+    Over time the compliance report will become more dynamic, but for now allow users to configure the `per_*` configs in a way that fits best for them.
+
+!!! note
+    Review [`nautobot_plugin_nornir`](https://docs.nautobot.com/projects/plugin-nornir/en/latest/user/app_feature_dispatcher/) for Nornir and dispatcher configuration options.
+
+!!! note
+    Defaults for Jinja2 environment settings (`jinja_env`) are as follows:
+
+    ```python
+        jinja_env = {
+            "undefined": import_string("jinja2.StrictUndefined"),
+            "trim_blocks": True,
+            "lstrip_blocks": False,
+        }
+    ```

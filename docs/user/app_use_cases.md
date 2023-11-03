@@ -176,7 +176,7 @@ garbage collection and it is up to the operator to remove such data.
 
 ### Network Operating System Support
 
-The version of OS's supported is documented in the [FAQ](./app_faq.md) and is controlled the platform network_driver. The platform network_driver must be exactly as expected or leverage
+The version of OS's supported is documented in the [FAQ](./faq.md) and is controlled the platform network_driver. The platform network_driver must be exactly as expected or leverage
 a configuration option--which is described the the FAQ--for the plugin to work.
 
 ## Use-cases and common workflows

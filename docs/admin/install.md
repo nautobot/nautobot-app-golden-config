@@ -1,13 +1,19 @@
 # Installing the App in Nautobot
 
+Here you will find detailed instructions on how to **install** and **configure** the App within your Nautobot environment.
+
 ## Prerequisites
 
 - The plugin relies on [`nautobot_plugin_nornir`](https://pypi.org/project/nautobot-plugin-nornir/) to be installed and both plugins to be enabled in your configuration settings.
-- The plugin is compatible with Nautobot 1.4.0 and higher.
+- The plugin is compatible with Nautobot 2.0.0 and higher.
 - Databases supported: PostgreSQL, MySQL
 
 !!! note
     Please check the [dedicated page](compatibility_matrix.md) for a full compatibility matrix and the deprecation policy.
+
+### Access Requirements
+
+There are no access requirements from external systems to this plugin.
 
 ## Install Guide
 
@@ -71,13 +77,13 @@ PLUGINS_CONFIG = {
 }
 ```
 
-Once the Nautobot configuration is updated, run the Post Upgrade command (`nautobot-server post_upgrade`) to run migrations and clear any cache.
+Once the Nautobot configuration is updated, run the Post Upgrade command (`nautobot-server post_upgrade`) to run migrations and clear any cache:
 
 ```shell
 nautobot-server post_upgrade
 ```
 
-Then restart the Nautobot services which may include:
+Then restart (if necessary) the Nautobot services which may include:
 
 - Nautobot
 - Nautobot Workers
@@ -89,7 +95,7 @@ sudo systemctl restart nautobot nautobot-worker nautobot-scheduler
 
 ## App Configuration
 
-The plugin behavior can be controlled with the following list of settings.
+The plugin behavior can be controlled with the following list of settings:
 
 !!! note
     The `enable_backup`, `enable_compliance`, `enable_intended`, `enable_sotagg`, `enable_plan`, `enable_deploy`, and `enable_postprocessing` will toggle inclusion of the entire component.

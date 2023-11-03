@@ -1,11 +1,11 @@
 # Building Your Development Environment
 
-## Quickstart
+## Quickstart Guide
 
 The development environment can be used in two ways:
 
-1. `Recommended` All services are spun up using Docker and a local volume mount attached so you can develop locally, but Nautobot is spun up within the Docker container.
-2. With a local poetry environment if you wish to develop outside of Docker with the caveat of using external services provided by Docker for PostgresQL and Redis.
+1. **(Recommended)** All services, including Nautobot, are spun up using Docker containers and a volume mount so you can develop locally.
+2. With a local Poetry environment if you wish to develop outside of Docker, with the caveat of using external services provided by Docker for the database (PostgreSQL by default, MySQL optionally) and Redis services.
 
 This is a quick reference guide if you're already familiar with the development environment provided, which you can read more about later in this document.
 
@@ -99,12 +99,9 @@ The project features a CLI helper based on [Invoke](https://www.pyinvoke.org/) t
 
 Each command can be executed with `invoke <command>`. All commands support the arguments `--nautobot-ver` and `--python-ver` if you want to manually define the version of Python and Nautobot to use. Each command also has its own help `invoke <command> --help`
 
-!!! note
-    To run the mysql (mariadb) development environment, set the environment variable as such `export NAUTOBOT_USE_MYSQL=1`.
-
 #### Local Development Environment
 
-```shell
+```
   build            Build all docker images.
   debug            Start Nautobot and its dependencies in debug mode.
   destroy          Destroy all containers and volumes.
@@ -115,7 +112,7 @@ Each command can be executed with `invoke <command>`. All commands support the a
 
 #### Utility
 
-```shell
+```
   cli              Launch a bash shell inside the running Nautobot container.
   create-user      Create a new user in django (default: admin), will prompt for password.
   makemigrations   Run Make Migration in Django.
@@ -124,7 +121,7 @@ Each command can be executed with `invoke <command>`. All commands support the a
 
 #### Testing
 
-```shell
+```
   bandit           Run bandit to validate basic static code security analysis.
   black            Run black to check that Python files adhere to its style standards.
   flake8           Run flake8 to check that Python files adhere to its style standards.
@@ -157,8 +154,6 @@ The `pyproject.toml` file outlines all of the relevant dependencies for the proj
 The `poetry shell` command is used to create and enable a virtual environment managed by Poetry, so all commands ran going forward are executed within the virtual environment. This is similar to running the `source venv/bin/activate` command with virtualenvs. To install project dependencies in the virtual environment, you should run `poetry install` - this will install **both** project and development dependencies.
 
 For more details about Poetry and its commands please check out its [online documentation](https://python-poetry.org/docs/).
-
-
 
 ## Full Docker Development Environment
 

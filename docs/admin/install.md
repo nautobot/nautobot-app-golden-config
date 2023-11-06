@@ -5,11 +5,8 @@ Here you will find detailed instructions on how to **install** and **configure**
 ## Prerequisites
 
 - The plugin relies on [`nautobot_plugin_nornir`](https://pypi.org/project/nautobot-plugin-nornir/) to be installed and both plugins to be enabled in your configuration settings.
-- The plugin is compatible with Nautobot 2.0.0 and higher.
+- The latest version of this plugin is compatible with Nautobot 2.0.0 and higher, see [this dedicated page](compatibility_matrix.md) for a full compatibility matrix and the deprecation policy.
 - Databases supported: PostgreSQL, MySQL
-
-!!! note
-    Please check the [dedicated page](compatibility_matrix.md) for a full compatibility matrix and the deprecation policy.
 
 ### Access Requirements
 

@@ -1,11 +1,9 @@
 # Navigating Compliance With Custom Logic
 
 ## Introduction
-Custom compliance is a powerful method to alter the default behaviour and results of the natively provided `CLI` and `JSON` config type based configuration compliance.
+Custom compliance is a powerful method to alter the default behavior and results of the natively provided `CLI` and `JSON` config type based configuration compliance.
 The high level idea is to provide a Python code containing custom logic defined by the User. This code is called by the Golden Configuration Plugin in the compliance process,
-allowing the user to change the default behaviour of the Golden Configuration Plugin.
-
-
+allowing the user to change the default behavior of the Golden Configuration Plugin.
 
 ## Caveats
 

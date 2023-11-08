@@ -39,11 +39,14 @@ Utilizing these components, you can define the Golden Configuration standard for
 
 ## Nautobot Features Used
 
-!!! warning "Developer Note - Remove Me!"
-    What is shown today in the Installed Plugins page in Nautobot. What parts of Nautobot does it interact with, what does it add etc. ?
+- Dynamic Groups
+- Jobs
+- Job Buttons
+- Secret Groups
+- Git Repositories
+- Git as a Data Source
+- GraphQL Saved Queries
 
 ### Extras
 
-!!! warning "Developer Note - Remove Me!"
-    Custom Fields - things like which CFs are created by this app?
-    Jobs - are jobs, if so, which ones, installed by this app?
+The extras and features that Golden Config utilizes are covered in depth in [App Use Cases](./app_use_cases.md).

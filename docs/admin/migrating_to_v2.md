@@ -189,7 +189,7 @@ PLUGINS_CONFIG = {
 }
 ```
 
-The [custom dispatcher docs](../admin/admin_install.md#custom-dispatcher) will provide further clarification if needed.
+The [custom dispatcher docs](../admin/install.md#custom-dispatcher) will provide further clarification if needed.
 
 ## Secrets
 

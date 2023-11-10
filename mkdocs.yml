@@ -1,11 +1,11 @@
 ---
 dev_addr: "127.0.0.1:8001"
-edit_uri: "edit/main/docs"
-site_dir: "golden-config/static/golden-config/docs"
-site_name: "Golden Configuration Documentation"
+edit_uri: "edit/main/nautobot-plugin-golden-config/docs"
+site_dir: "nautobot_golden_config/static/nautobot_golden_config/docs"
+site_name: "Nautobot Golden Configuration Documentation"
 site_url: "https://docs.nautobot.com/projects/golden-config/en/latest/"
 repo_url: "https://github.com/nautobot/nautobot-plugin-golden-config"
-copyright: "Copyright &copy; 2023 The Authors"
+copyright: "Copyright &copy; The Authors"
 theme:
   name: "material"
   navigation_depth: 4
@@ -14,14 +14,17 @@ theme:
     - "django"
     - "yaml"
   features:
+    - "content.action.edit"
+    - "content.action.view"
     - "content.code.copy"
-    - "navigation.tracking"
+    - "navigation.footer"
+    - "navigation.indexes"
     - "navigation.tabs"
     - "navigation.tabs.sticky"
-    - "search.suggest"
+    - "navigation.tracking"
     - "search.highlight"
     - "search.share"
-    - "navigation.indexes"
+    - "search.suggest"
   favicon: "assets/favicon.ico"
   logo: "assets/nautobot_logo.svg"
   palette:
@@ -79,8 +82,10 @@ markdown_extensions:
   - "pymdownx.inlinehilite"
   - "pymdownx.snippets"
   - "pymdownx.superfences"
+  - "footnotes"
 plugins:
   - "search"
+  - "mkdocs-version-annotations"
   - "mkdocstrings":
       default_handler: "python"
       handlers:
@@ -95,6 +100,7 @@ nav:
   - Overview: "index.md"
   - User Guide:
       - App Overview: "user/app_overview.md"
+      - Getting Started: "user/app_getting_started.md"
       - Using the App: "user/app_use_cases.md"
       - Navigate Backup: "user/app_feature_backup.md"
       - Navigate Compliance: "user/app_feature_compliance.md"
@@ -106,17 +112,17 @@ nav:
       - Navigate Configuration Post-Processing: "user/app_feature_config_postprocessing.md"
       - Navigate Config Plans: "user/app_feature_config_plans.md"
       - Navigate Remediation: "user/app_feature_remediation.md"
-      - Getting Started: "user/app_getting_started.md"
-      - Frequently Asked Questions: "user/app_faq.md"
+      - Frequently Asked Questions: "user/faq.md"
+      - External Interactions: "user/external_interactions.md"
       - External Interactions: "user/app_external_interactions.md"
       - Troubleshooting:
           - General: "user/troubleshooting/troubleshoot_general.md"
           - Credentials: "user/troubleshooting/troubleshoot_credentials.md"
           - Dispatchers: "user/troubleshooting/troubleshoot_dispatchers.md"
   - Administrator Guide:
-      - Install and Configure: "admin/admin_install.md"
-      - Upgrade: "admin/admin_upgrade.md"
-      - Uninstall: "admin/admin_uninstall.md"
+      - Install and Configure: "admin/install.md"
+      - Upgrade: "admin/upgrade.md"
+      - Uninstall: "admin/uninstall.md"
       - Compatibility Matrix: "admin/compatibility_matrix.md"
       - Troubleshooting:
           - "admin/troubleshooting/index.md"
@@ -160,12 +166,13 @@ nav:
           - v0.10: "admin/release_notes/version_0.10.md"
           - v0.9: "admin/release_notes/version_0.9.md"
   - Developer Guide:
-      - Extending the App: "dev/dev_extending.md"
-      - Contributing to the App: "dev/dev_contributing.md"
+      - Extending the App: "dev/extending.md"
+      - Contributing to the App: "dev/contributing.md"
       - Development Environment: "dev/dev_environment.md"
-      - Architecture Decision Record: "dev/dev_adr.md"
+      - Architecture Decision Records: "dev/arch_decision.md"
       - Code Reference:
           - "dev/code_reference/index.md"
           - Models: "dev/code_reference/models.md"
+          - Package: "dev/code_reference/package.md"
           - API: "dev/code_reference/api.md"
-  - Nautobot Docs Home ↗︎: "https://docs.nautobot.com/"
+  - Nautobot Docs Home ↗︎: "https://docs.nautobot.com"

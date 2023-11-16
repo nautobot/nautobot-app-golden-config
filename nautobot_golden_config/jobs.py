@@ -143,7 +143,10 @@ class IntendedJob(Job, FormEntry):
 
         # Commit / Push each repo after job is completed.
         for intended_repo in intended_repos:
-            self.logger.debug("Push new intended configs to repo %s.", intended_repo.base_url)
+            # TODO: Should this not point to non-nautobot.core import
+            # We should ask in nautobot core for the `from_url` constructor to be it's own function
+            git_info = get_repo_from_url_to_path_and_from_branch(intended_repo)
+            self.logger.debug("Push new intended configs to repo %s.", git_info.from_url)
             intended_repo.commit_with_added(f"INTENDED CONFIG CREATION JOB - {now}")
             intended_repo.push()
 
@@ -173,7 +176,10 @@ class BackupJob(Job, FormEntry):
 
         # Commit / Push each repo after job is completed.
         for backup_repo in backup_repos:
-            self.logger.debug("Pushing Backup config repo %s.", backup_repo.base_url)
+            # TODO: Should this not point to non-nautobot.core import
+            # We should ask in nautobot core for the `from_url` constructor to be it's own function
+            git_info = get_repo_from_url_to_path_and_from_branch(backup_repo)
+            self.logger.debug("Pushing Backup config repo %s.", git_info.from_url)
             backup_repo.commit_with_added(f"BACKUP JOB {now}")
             backup_repo.push()
 

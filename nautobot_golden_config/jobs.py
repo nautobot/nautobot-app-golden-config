@@ -4,11 +4,11 @@
 # pylint: disable=arguments-differ
 
 from datetime import datetime
-from django.utils.timezone import make_aware
 
+from django.utils.timezone import make_aware
 from nautobot.core.celery import register_jobs
-from nautobot.dcim.models import Device, DeviceType, Manufacturer, Platform, Rack, RackGroup, Location
-from nautobot.extras.datasources.git import ensure_git_repository
+from nautobot.dcim.models import Device, DeviceType, Location, Manufacturer, Platform, Rack, RackGroup
+from nautobot.extras.datasources.git import ensure_git_repository, get_repo_from_url_to_path_and_from_branch
 from nautobot.extras.jobs import (
     BooleanVar,
     ChoiceVar,
@@ -19,11 +19,8 @@ from nautobot.extras.jobs import (
     StringVar,
     TextVar,
 )
-from nautobot.extras.models import DynamicGroup, GitRepository, Status, Tag, Role
+from nautobot.extras.models import DynamicGroup, GitRepository, Role, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
-from nautobot.extras.datasources.git import get_repo_from_url_to_path_and_from_branch
-
-
 from nornir_nautobot.exceptions import NornirNautobotException
 
 from nautobot_golden_config.choices import ConfigPlanTypeChoice
@@ -94,7 +91,35 @@ class FormEntry:  # pylint disable=too-few-public-method
     debug = BooleanVar(description="Enable for more verbose debug logging")
 
 
-class ComplianceJob(Job, FormEntry):
+class GoldenConfigJobMixin(Job):  # pylint: disable=abstract-method
+    """Reused mixin to be able to reuse common celery primitives in all GC jobs."""
+
+    def __init__(self, *args, **kwargs):
+        """Initialize the job."""
+        super().__init__(*args, **kwargs)
+        self.repos = []
+
+    def before_start(self, repo_types, *args, **data):
+        """Ensure repos before tasks runs."""
+        self.logger.debug(f"Repository types to sync: {', '.join(repo_types)}")
+        for repo in repo_types:
+            self.logger.debug(f"Refreshing repositories of type {repo}.")
+            current_repos = get_refreshed_repos(job_obj=self, repo_type=repo, data=data)
+            if not repo == "jinja_repository":
+                for current_repo in current_repos:
+                    self.repos.append(current_repo)
+
+    def after_return(self, job_type, *args):
+        """Commit and Push each repo after job is completed."""
+        now = make_aware(datetime.now())
+        if self.repos:
+            for repo in self.repos:
+                self.logger.debug(f"Pushing {job_type} results to repo %s.", repo.base_url)
+                repo.commit_with_added(f"{job_type} JOB {now}")
+                repo.push()
+
+
+class ComplianceJob(GoldenConfigJobMixin, FormEntry):
     """Job to to run the compliance engine."""
 
     class Meta:
@@ -104,20 +129,22 @@ class ComplianceJob(Job, FormEntry):
         description = "Run configuration compliance on your network infrastructure."
         has_sensitive_variables = False
 
+    def before_start(self, *args, **data):
+        """Ensure repos before tasks runs."""
+        self.logger.debug("Starting compliance job.")
+        super().before_start(["intended_repository", "backup_repository"], *args, **data)
+
     def run(self, *args, **data):
         """Run config compliance report script."""
-        self.logger.debug("Starting compliance job.")
-        self.logger.debug("Refreshing intended configuration git repository.")
-        get_refreshed_repos(job_obj=self, repo_type="intended_repository", data=data)
-        self.logger.debug("Refreshing backup configuration git repository.")
-        get_refreshed_repos(job_obj=self, repo_type="backup_repository", data=data)
-
         self.logger.debug("Starting config compliance nornir play.")
-        # config_compliance(self.logger, data, self.job_result)
         config_compliance(self.job_result, self.logger.getEffectiveLevel(), data)
 
+    def after_return(self, *args):
+        """Commit and Push each repo after job is completed."""
+        self.logger.debug("Compliance job completed, no repositories need to be synced in this task.")
 
-class IntendedJob(Job, FormEntry):
+
+class IntendedJob(GoldenConfigJobMixin, FormEntry):
     """Job to to run generation of intended configurations."""
 
     class Meta:
@@ -127,28 +154,23 @@ class IntendedJob(Job, FormEntry):
         description = "Generate the configuration for your intended state."
         has_sensitive_variables = False
 
+    def before_start(self, *args, **data):
+        """Ensure repos before tasks runs."""
+        self.logger.debug("Starting intended job.")
+        super().before_start(["jinja_repository", "intended_repository"], *args, **data)
+
     def run(self, *args, **data):
         """Run config generation script."""
-        self.logger.debug("Starting intended job.")
-        now = make_aware(datetime.now())
-        self.logger.debug("Pull Jinja template repos.")
-        get_refreshed_repos(job_obj=self, repo_type="jinja_repository", data=data)
-
-        self.logger.debug("Pull Intended config repos.")
-        # Instantiate a GitRepo object for each GitRepository in GoldenConfigSettings.
-        intended_repos = get_refreshed_repos(job_obj=self, repo_type="intended_repository", data=data)
-
         self.logger.debug("Building device settings mapping and running intended config nornir play.")
         config_intended(self.job_result, self.logger.getEffectiveLevel(), data, self)
 
-        # Commit / Push each repo after job is completed.
-        for intended_repo in intended_repos:
-            self.logger.debug("Push new intended configs to repo %s.", intended_repo.base_url)
-            intended_repo.commit_with_added(f"INTENDED CONFIG CREATION JOB - {now}")
-            intended_repo.push()
+    def after_return(self, *args, **data):
+        """Commit and Push each repo after job is completed."""
+        self.logger.debug("Finished the intended job execution.")
+        super().after_return("INTENDED CONFIG CREATION JOB", *args, **data)
 
 
-class BackupJob(Job, FormEntry):
+class BackupJob(GoldenConfigJobMixin, FormEntry):
     """Job to to run the backup job."""
 
     class Meta:
@@ -158,27 +180,23 @@ class BackupJob(Job, FormEntry):
         description = "Backup the configurations of your network devices."
         has_sensitive_variables = False
 
+    def before_start(self, *args, **data):
+        """Ensure repos before tasks runs."""
+        self.logger.debug("Starting backup job.")
+        super().before_start(["backup_repository"], *args, **data)
+
     def run(self, *args, **data):
         """Run config backup process."""
-        self.logger.debug("Starting backup job.")
-        now = make_aware(datetime.now())
-        self.logger.debug("Pull Backup config repo.")
-
-        # Instantiate a GitRepo object for each GitRepository in GoldenConfigSettings.
-        backup_repos = get_refreshed_repos(job_obj=self, repo_type="backup_repository", data=data)
-
-        self.logger.debug("Starting backup jobs to the following repos: %s", backup_repos)
         self.logger.debug("Starting config backup nornir play.")
         config_backup(self.job_result, self.logger.getEffectiveLevel(), data)
 
-        # Commit / Push each repo after job is completed.
-        for backup_repo in backup_repos:
-            self.logger.debug("Pushing Backup config repo %s.", backup_repo.base_url)
-            backup_repo.commit_with_added(f"BACKUP JOB {now}")
-            backup_repo.push()
+    def after_return(self, *args, **data):
+        """Commit and Push each repo after job is completed."""
+        self.logger.debug("Finished the backup job execution.")
+        super().after_return("BACKUP", *args, **data)
 
 
-class AllGoldenConfig(Job):
+class AllGoldenConfig(GoldenConfigJobMixin):
     """Job to to run all three jobs against a single device."""
 
     device = ObjectVar(model=Device, required=True)
@@ -191,6 +209,11 @@ class AllGoldenConfig(Job):
         description = "Process to run all Golden Configuration jobs configured."
         has_sensitive_variables = False
 
+    def before_start(self, *args, **data):
+        """Ensure repos before tasks runs."""
+        self.logger.debug("Starting all golden config jobs.")
+        super().before_start(["jinja_repository", "intended_repository", "backup_repository"], *args, **data)
+
     def run(self, *args, **data):
         """Run all jobs."""
         if constant.ENABLE_INTENDED:
@@ -200,8 +223,13 @@ class AllGoldenConfig(Job):
         if constant.ENABLE_COMPLIANCE:
             ComplianceJob().run.__func__(self, **data)  # pylint: disable=too-many-function-args
 
+    def after_return(self, *args, **data):
+        """Commit and Push each repo after job is completed."""
+        self.logger.debug("Finished all golden config job execution.")
+        super().after_return("Golden Config JOB", *args, **data)
 
-class AllDevicesGoldenConfig(Job, FormEntry):
+
+class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
     """Job to to run all three jobs against multiple devices."""
 
     class Meta:
@@ -211,6 +239,11 @@ class AllDevicesGoldenConfig(Job, FormEntry):
         description = "Process to run all Golden Configuration jobs configured against multiple devices."
         has_sensitive_variables = False
 
+    def before_start(self, *args, **data):
+        """Ensure repos before tasks runs."""
+        self.logger.debug("Starting all golden config jobs.")
+        super().before_start(["jinja_repository", "intended_repository", "backup_repository"], *args, **data)
+
     def run(self, *args, **data):
         """Run all jobs."""
         if constant.ENABLE_INTENDED:
@@ -219,6 +252,11 @@ class AllDevicesGoldenConfig(Job, FormEntry):
             BackupJob().run.__func__(self, **data)  # pylint: disable=too-many-function-args
         if constant.ENABLE_COMPLIANCE:
             ComplianceJob().run.__func__(self, **data)  # pylint: disable=too-many-function-args
+
+    def after_return(self, *args, **data):
+        """Commit and Push each repo after job is completed."""
+        self.logger.debug("Finished all golden config job execution.")
+        super().after_return("Golden Config JOB", *args, **data)
 
 
 class GenerateConfigPlans(Job, FormEntry):

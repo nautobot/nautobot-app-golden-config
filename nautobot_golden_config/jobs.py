@@ -37,7 +37,6 @@ from nautobot_golden_config.utilities.config_plan import (
 from nautobot_golden_config.utilities.git import GitRepo
 from nautobot_golden_config.utilities.helper import get_job_filter
 
-
 name = "Golden Configuration"  # pylint: disable=invalid-name
 
 
@@ -185,10 +184,20 @@ class AllGoldenConfig(GoldenConfigJobMixin):
         name = "Execute All Golden Configuration Jobs - Single Device"
         description = "Process to run all Golden Configuration jobs configured."
         has_sensitive_variables = False
-        repo_types = ["jinja_repository", "intended_repository", "backup_repository"]
+        repo_types = []
 
     def run(self, *args, **data):
         """Run all jobs."""
+        repo_types = []
+        if constant.ENABLE_INTENDED:
+            repo_types.extend(["jinja_repository", "intended_repository"])
+        if constant.ENABLE_BACKUP:
+            repo_types.extend(["backup_repository"])
+            repo_types = list(set(repo_types) - set())
+        if constant.ENABLE_COMPLIANCE:
+            repo_types.extend(["intended_repository", "backup_repository"])
+
+        self.Meta.repo_types = repo_types
         if constant.ENABLE_INTENDED:
             IntendedJob().run.__func__(self, **data)  # pylint: disable=too-many-function-args
         if constant.ENABLE_BACKUP:
@@ -206,10 +215,20 @@ class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
         name = "Execute All Golden Configuration Jobs - Multiple Device"
         description = "Process to run all Golden Configuration jobs configured against multiple devices."
         has_sensitive_variables = False
-        repo_types = ["jinja_repository", "intended_repository", "backup_repository"]
+        repo_types = []
 
     def run(self, *args, **data):
         """Run all jobs."""
+        repo_types = []
+        if constant.ENABLE_INTENDED:
+            repo_types.extend(["jinja_repository", "intended_repository"])
+        if constant.ENABLE_BACKUP:
+            repo_types.extend(["backup_repository"])
+            repo_types = list(set(repo_types) - set())
+        if constant.ENABLE_COMPLIANCE:
+            repo_types.extend(["intended_repository", "backup_repository"])
+
+        self.Meta.repo_types = repo_types
         if constant.ENABLE_INTENDED:
             IntendedJob().run.__func__(self, **data)  # pylint: disable=too-many-function-args
         if constant.ENABLE_BACKUP:

@@ -93,28 +93,37 @@ class FormEntry:  # pylint disable=too-few-public-method
 class GoldenConfigJobMixin(Job):  # pylint: disable=abstract-method
     """Reused mixin to be able to reuse common celery primitives in all GC jobs."""
 
-    def before_start(self, *args, **data):
+    def before_start(self, task_id, args, kwargs):
         """Ensure repos before tasks runs."""
+        super().before_start(task_id, args, kwargs)
         self.repos = []
-        self.logger.debug("Repository types to sync: %s", ", ".join(self.Meta.repo_types))  # pylint: disable=no-member
+        self.logger.debug(
+            f"Repository types to sync: {', '.join(self.Meta.repo_types)}",  # pylint: disable=no-member
+            extra={"grouping": "GC Repo Syncs"},
+        )
         for repo_type in self.Meta.repo_types:  # pylint: disable=no-member
-            self.logger.debug("Refreshing repositories of type %s.", repo_type)
-            current_repos = get_refreshed_repos(job_obj=self, repo_type=repo_type, data=data)
+            self.logger.debug(f"Refreshing repositories of type {repo_type}.", extra={"grouping": "GC Repo Syncs"})
+            current_repos = get_refreshed_repos(job_obj=self, repo_type=repo_type, data=self.deserialize_data(kwargs))
             if not repo_type == "jinja_repository":
                 for current_repo in current_repos:
                     self.repos.append(current_repo)
 
-    def after_return(self, *args):
+    def after_return(self, status, retval, task_id, args, kwargs, einfo):  # pylint: disable=too-many-arguments
         """Commit and Push each repo after job is completed."""
         now = make_aware(datetime.now())
-        self.logger.debug("Finished the %s job execution.", self.Meta.name)  # pylint: disable=no-member
+        self.logger.debug(
+            f"Finished the {self.Meta.name} job execution.",  # pylint: disable=no-member
+            extra={"grouping": "GC After Run"},
+        )
         if self.repos:
             for repo in self.repos:
                 self.logger.debug(
-                    "Pushing %s results to repo %s.", self.Meta.name, repo.base_url  # pylint: disable=no-member
+                    f"Pushing {self.Meta.name} results to repo {repo.base_url}.",  # pylint: disable=no-member
+                    extra={"grouping": "GC Repo Commit and Push"},
                 )
                 repo.commit_with_added(f"{self.Meta.name.upper()} JOB {now}")  # pylint: disable=no-member
                 repo.push()
+        super().after_return(status, retval, task_id, args, kwargs, einfo=einfo)
 
 
 class ComplianceJob(GoldenConfigJobMixin, FormEntry):

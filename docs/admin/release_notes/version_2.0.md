@@ -11,6 +11,23 @@
 !!! note
     Please see [migrating guide](../migrating_to_v2.md) for details on migration.
 
+
+## v2.0.1 - 2023-12
+
+### Fixed
+
+- [#676](https://github.com/nautobot/nautobot-plugin-golden-config/pull/676) - Fixes docs for running config plan job in 2.0.
+- [#680](https://github.com/nautobot/nautobot-plugin-golden-config/pull/680) - Resolve RTD build issue.
+- [#684](https://github.com/nautobot/nautobot-plugin-golden-config/pull/684) - Fix repo sync not executing on any task failure.
+- [#685](https://github.com/nautobot/nautobot-plugin-golden-config/pull/685) - Cherry-pick #669 - Removed unneeded lookup for GoldenConfigSetting.
+- [#686](https://github.com/nautobot/nautobot-plugin-golden-config/pull/686) - Fix incorrect permissions.
+
+
+### Changed
+
+- [#658](https://github.com/nautobot/nautobot-plugin-golden-config/pull/658) - Cookie updated by NetworkToCode Cookie Drift Manager Tool
+- [#671](https://github.com/nautobot/nautobot-plugin-golden-config/pull/671) - Finish Documentation Updates from Drift Manager
+
 ## v2.0.0 - 2023-09
 
 ### Changed

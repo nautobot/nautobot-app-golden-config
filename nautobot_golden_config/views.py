@@ -33,11 +33,11 @@ from nautobot_golden_config.utilities.mat_plot import get_global_aggr, plot_barc
 # TODO: Future #4512
 PERMISSIONS_ACTION_MAP.update(
     {
-        "backup": "change",
-        "compliance": "change",
-        "intended": "change",
-        "sotagg": "change",
-        "postprocessing": "change",
+        "backup": "view",
+        "compliance": "view",
+        "intended": "view",
+        "sotagg": "view",
+        "postprocessing": "view",
         "devicetab": "view",
     }
 )

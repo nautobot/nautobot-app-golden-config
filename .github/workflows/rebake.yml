@@ -1,0 +1,118 @@
+---
+name: "Rebake Cookie"
+on:  # yamllint disable-line rule:truthy
+  workflow_call:
+    inputs:
+      cookie:
+        description: "The cookie to rebake"
+        type: "string"
+        default: ""
+      draft:
+        description: "Whether to create the pull request as a draft"
+        type: "string"
+        default: ""
+      pull-request:
+        description: "The pull request strategy"
+        type: "string"
+        default: ""
+      template:
+        description: "The template repository URL"
+        type: "string"
+        default: ""
+      template-dir:
+        description: "The directory within the template repository to use as the template"
+        type: "string"
+        default: ""
+      template-ref:
+        description: "The branch or tag to use for the template"
+        type: "string"
+        default: ""
+      drift-manager-tag:
+        description: "The drift manager Docker image tag to use"
+        type: "string"
+        default: "prod"
+  workflow_dispatch:
+    inputs:
+      cookie:
+        description: "The cookie to rebake"
+        type: "string"
+        default: ""
+      draft:
+        description: "Whether to create the pull request as a draft"
+        type: "string"
+        default: ""
+      pull-request:
+        description: "The pull request strategy"
+        type: "string"
+        default: ""
+      template:
+        description: "The template repository URL"
+        type: "string"
+        default: ""
+      template-dir:
+        description: "The directory within the template repository to use as the template"
+        type: "string"
+        default: ""
+      template-ref:
+        description: "The branch or tag to use for the template"
+        type: "string"
+        default: ""
+      drift-manager-tag:
+        description: "The drift manager Docker image tag to use"
+        type: "string"
+        default: "prod"
+jobs:
+  rebake:
+    runs-on: "ubuntu-22.04"
+    permissions:
+      actions: "write"
+      contents: "write"
+      packages: "read"
+      pull-requests: "write"
+    container: "ghcr.io/nautobot/cookiecutter-nautobot-app-drift-manager/prod:${{ github.event.inputs.drift-manager-tag }}"
+    env:
+      GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+    steps:
+      - name: "Configure Rebake Arguments"
+        id: "config"
+        shell: "bash"
+        run: |
+          ARGS='--push'
+
+          if [[ '${{ github.event.inputs.draft }}' == 'true' ]]; then
+            ARGS="$ARGS --draft"
+          elif [[ '${{ github.event.inputs.draft }}' == 'false' ]]; then
+            ARGS="$ARGS --no-draft"
+          elif [[ '${{ github.event.inputs.draft }}' == '' ]]; then
+            echo "Using repo default value for --draft"
+          else
+            echo "ERROR: Invalid value for draft: '${{ github.event.inputs.draft }}'"
+            exit 1
+          fi
+
+          if [[ '${{ github.event.inputs.pull-request }}' != '' ]]; then
+            ARGS="$ARGS --pull-request='${{ github.event.inputs.pull-request }}'"
+          fi
+
+          if [[ '${{ github.event.inputs.template }}' != '' ]]; then
+            ARGS="$ARGS --template='${{ github.event.inputs.template }}'"
+          fi
+
+          if [[ '${{ github.event.inputs.template-dir }}' != '' ]]; then
+            ARGS="$ARGS --template-dir='${{ github.event.inputs.template-dir }}'"
+          fi
+
+          if [[ '${{ github.event.inputs.template-ref }}' != '' ]]; then
+            ARGS="$ARGS --template-ref='${{ github.event.inputs.template-ref }}'"
+          fi
+
+          if [[ '${{ github.event.inputs.cookie }}' == '' ]]; then
+            ARGS="$ARGS '${{ github.repositoryUrl }}'"
+          else
+            ARGS="$ARGS '${{ github.event.inputs.cookie }}'"
+          fi
+
+          echo "args=$ARGS" >> $GITHUB_OUTPUT
+      - name: "Rebake"
+        run: |
+          python -m ntc_cookie_drift_manager rebake ${{ steps.config.outputs.args }}

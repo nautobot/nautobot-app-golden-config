@@ -54,9 +54,7 @@ pydocstyle = "*"
 pylint = "*"
 pylint-django = "*"
 pylint-nautobot = "*"
-python-dotenv = "^1.0.0"
 yamllint = "*"
-toml = "*"
 Markdown = "*"
 # Rendering docs to HTML
 mkdocs = "1.5.2"
@@ -134,12 +132,6 @@ add_ignore = "D212,D417"
 [build-system]
 requires = ["poetry_core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
-
-[tool.pytest.ini_options]
-testpaths = [
-    "tests"
-]
-addopts = "-vv --doctest-modules"
 
 [tool.pylint-nautobot]
 supported_nautobot_versions = ["2"]

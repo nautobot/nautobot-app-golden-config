@@ -1,15 +1,14 @@
-# Quick Start Guides
+# Getting Started with the App
 
-- [Quick Start Guides](#quick-start-guides)
-- [Backup Configuration](#backup-configuration)
-- [Intended Configuration](#intended-configuration)
-- [Compliance](#compliance)
-- [Config Remediation](#config-remediation)
-- [Config Plans](#config-plans)
-- [Config Deploy](#config-deploy)
-- [Load Properties from Git](#load-properties-from-git)
+This document provides a step-by-step tutorial on how to get the App going and how to use it.
 
-## Backup Configuration
+## Install the App
+
+To install the App, please follow the instructions detailed in the [Installation Guide](../admin/install.md).
+
+## First steps with the App
+
+### Backup Configuration
 
 Follow the steps below to get up and running for the configuration backup element of the plugin.
 
@@ -44,7 +43,7 @@ Follow the steps below to get up and running for the configuration backup elemen
 
 > For in-depth details see [Navigating Backup](./app_feature_backup.md)
 
-## Intended Configuration
+### Intended Configuration
 
 Follow the steps below to get up and running for the intended configuration element of the plugin.
 
@@ -99,7 +98,7 @@ Follow the steps below to get up and running for the intended configuration elem
 
 > For in-depth details see [Navigating Intended](./app_feature_intended.md)
 
-## Compliance
+### Compliance
 
 Compliance requires Backups and Intended Configurations in order to be executed.
 
@@ -125,7 +124,7 @@ Compliance requires Backups and Intended Configurations in order to be executed.
 
 > For in-depth details see [Navigating Compliance](./app_feature_compliance.md)
 
-## Config Remediation
+### Config Remediation
 
 Follow the steps below to get up and running for the configuration remediation element of the plugin.
 
@@ -137,7 +136,7 @@ Follow the steps below to get up and running for the configuration remediation e
 
 > For in-depth details see [Navigating Config Plans](./app_feature_remediation.md)
 
-## Config Plans
+### Config Plans
 
 Follow the steps below to get up and running for the configuration plans element of the plugin.
 
@@ -159,7 +158,7 @@ Follow the steps below to get up and running for the configuration plans element
 
 > For in-depth details see [Navigating Config Plans](./app_feature_config_plans.md)
 
-## Config Deploy
+### Config Deploy
 
 Follow the steps below to get up and running for the configuration deployment element of the plugin.
 
@@ -172,7 +171,7 @@ Follow the steps below to get up and running for the configuration deployment el
 
 > Config Deployments utilize the dispatchers from nornir-nautobot just like the other functionality of Golden Config. See [Troubleshooting Dispatchers](./troubleshooting/troubleshoot_dispatchers.md) for more details.
 
-## Load Properties from Git
+### Load Properties from Git
 
 Golden Config properties include: Compliance Features, Compliance Rules, Config Removals, and Config Replacements. They can be created via the UI, API, or alternatively you can load these properties from a Git repository, defined in YAML files following the this directory structure (you can skip any of them if not apply):
 
@@ -274,7 +273,7 @@ CustomField data can be added using the `_custom_field_data` attribute, that tak
 
 2. Run `sync` and all the properties will be created/updated in a declarative way and following the right order to respect the dependencies between objects. The import task will raise a `warning` if the dependencies are not available yet (for instance, a referenced `Platform` is not created), so the `sync` process will continue, and you could then fix these warnings by reviewing the mismatch (maybe creating the required object) and run the `sync` process again.
 
-## Constance Settings
+### Constance Settings
 
 Golden config uses the `dispatch_params()` function in conjunction with the constance settings DEFAULT_FRAMEWORK, GET_CONFIG_FRAMEWORK, MERGE_CONFIG_FRAMEWORK, and REPLACE_CONFIG_FRAMEWORK. This allows you to define in this order of precedence:
 
@@ -328,3 +327,6 @@ As you can see, you now have the flexibility to control which network_driver wil
 
 Golden Config leverages the [config framework](https://docs.nautobot.com/projects/core/en/stable/development/apps/api/database-backend-config/) from [constance](https://django-constance.readthedocs.io/en/latest/), please refer to that documentation for how to use. You can access your configurations from your name in the top right of the UI, followed by `Admin -> Configuration -> Config` and locate your setting.
 
+## What are the next steps?
+
+You can check out the [Use Cases](app_use_cases.md) section for more examples.

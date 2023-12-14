@@ -48,7 +48,7 @@ Once you have selected the appropriate options, you can click the **Generate** b
 
 ### Generating Config Plans via API
 
-The HTTP(S) POST method is not currently enabled for the Config Plan serializer to create plans directly via API. Instead you may run the **GenerateConfigPlans** Job directly via the `plugins/nautobot_golden_config.jobs/GenerateConfigPlans` API endpoint.
+The HTTP(S) POST method is not currently enabled for the Config Plan serializer to create plans directly via API. Instead you may run the **Generate Config Plans** Job directly via the `/api/extras/jobs/Generate Config Plans/run/` API endpoint.
 
 ## Editing a Config Plan
 

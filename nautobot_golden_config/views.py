@@ -20,6 +20,7 @@ from nautobot.core.views import generic
 from nautobot.core.views.mixins import ObjectPermissionRequiredMixin, PERMISSIONS_ACTION_MAP
 from nautobot.dcim.models import Device
 from nautobot.extras.models import Job, JobResult
+from nautobot.extras.datasources.git import ensure_git_repository
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -196,6 +197,7 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
         self.title_name = "Template Details"
         if self.device.id in settings:
             gc_settings = settings[self.device.id]
+            ensure_git_repository(gc_settings.jinja_repository)
             template_directory = gc_settings.jinja_repository.filesystem_path
             template_obj = render_jinja_template(self.device, LOGGER, gc_settings.jinja_path_template)
             template_file = os.path.join(template_directory, template_obj)

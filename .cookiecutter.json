@@ -4,16 +4,16 @@
         "full_name": "Network to Code, LLC",
         "email": "opensource@networktocode.com",
         "github_org": "nautobot",
-        "plugin_name": "nautobot_golden_config",
+        "app_name": "nautobot_golden_config",
         "verbose_name": "Golden Config",
-        "plugin_slug": "nautobot-golden-config",
-        "project_slug": "nautobot-plugin-golden-config",
-        "repo_url": "https://github.com/nautobot/nautobot-plugin-golden-config",
+        "app_slug": "nautobot-golden-config",
+        "project_slug": "nautobot-app-golden-config",
+        "repo_url": "https://github.com/nautobot/nautobot-app-golden-config",
         "base_url": "golden-config",
         "min_nautobot_version": "2.0.0",
         "max_nautobot_version": "2.9999",
         "camel_name": "NautobotGoldenConfig",
-        "project_short_description": "A plugin for configuration on nautobot",
+        "project_short_description": "An app for configuration on nautobot",
         "model_class_name": "None",
         "open_source_license": "Apache-2.0",
         "docs_base_url": "https://docs.nautobot.com",
@@ -33,3 +33,4 @@
         }
     }
 }
+

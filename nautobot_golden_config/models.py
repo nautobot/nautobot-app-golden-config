@@ -25,7 +25,7 @@ GRAPHQL_STR_START = "query ($device_id: ID!)"
 ERROR_MSG = (
     "There was an issue with the data that was returned by your get_custom_compliance function. "
     "This is a local issue that requires the attention of your systems administrator and not something "
-    "that can be fixed within the Golden Config plugin. "
+    "that can be fixed within the Golden Config app. "
 )
 MISSING_MSG = (
     ERROR_MSG + "Specifically the `{}` key was not found in value the get_custom_compliance function provided."
@@ -182,7 +182,7 @@ for custom_function, custom_type in CUSTOM_FUNCTIONS.items():
             msg = (
                 "There was an issue attempting to import the custom function of"
                 f"{PLUGIN_CFG[custom_function]}, this is expected with a local configuration issue "
-                "and not related to the Golden Configuration Plugin, please contact your system admin for further details"
+                "and not related to the Golden Configuration App, please contact your system admin for further details"
             )
             raise Exception(msg).with_traceback(error.__traceback__)
 
@@ -531,7 +531,7 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
 
         Provide ordering used in tables and get_device_to_settings_map.
         Sorting on weight is performed from the highest weight value to the lowest weight value.
-        This is to ensure only one plugin settings could be applied per single device based on priority and name.
+        This is to ensure only one app settings could be applied per single device based on priority and name.
         """
 
         verbose_name = "Golden Config Setting"

@@ -13,7 +13,7 @@ When engineers are starting their network automation journey, everybody asks whe
 - Multiple individuals independently making changes
 - Mergers and acquisitions
 
-Thankfully, this issue can be addressed without making any changes on your devices. You might ask, “How do I do that?” That is where the Golden Configuration plugin for Nautobot comes in. The Golden Configuration plugin is comprised of four components:
+Thankfully, this issue can be addressed without making any changes on your devices. You might ask, “How do I do that?” That is where the Golden Configuration app for Nautobot comes in. The Golden Configuration app is comprised of four components:
 
 - Configuration Backup
 - Source of Truth Aggregation

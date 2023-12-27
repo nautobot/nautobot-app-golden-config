@@ -1,4 +1,4 @@
-"""Golden Configuration Plugin GraphQL Testing."""
+"""Golden Configuration App GraphQL Testing."""
 
 import uuid
 
@@ -69,7 +69,7 @@ GIT_DATA = [
 
 
 class TestGraphQLQuery(TestCase):  # pylint: disable=too-many-instance-attributes
-    """Test GraphQL Queries for Golden Config Plugin."""
+    """Test GraphQL Queries for Golden Config app."""
 
     def setUp(self):
         """Setup request and create test data to validate GraphQL."""

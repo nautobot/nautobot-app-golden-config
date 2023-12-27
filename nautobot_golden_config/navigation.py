@@ -1,4 +1,4 @@
-"""Add the configuration compliance buttons to the Plugins Navigation."""
+"""Add the configuration compliance buttons to the Apps Navigation."""
 
 from nautobot.apps.ui import NavMenuAddButton, NavMenuGroup, NavMenuItem, NavMenuTab
 

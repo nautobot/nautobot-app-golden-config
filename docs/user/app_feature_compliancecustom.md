@@ -2,8 +2,8 @@
 
 ## Introduction
 Custom compliance is a powerful method to alter the default behavior and results of the natively provided `CLI` and `JSON` config type based configuration compliance.
-The high level idea is to provide a Python code containing custom logic defined by the User. This code is called by the Golden Configuration Plugin in the compliance process,
-allowing the user to change the default behavior of the Golden Configuration Plugin.
+The high level idea is to provide a Python code containing custom logic defined by the User. This code is called by the Golden Configuration App in the compliance process,
+allowing the user to change the default behavior of the Golden Configuration App.
 
 ## Caveats
 
@@ -21,7 +21,7 @@ state vs actual state, we are conscious that this may not always be a viable sol
 
 Providing additional opinionated solutions is both not in-line with the intention of the project nor is it feasible to provide a solution that will work for many people. For those reasons, it was decided to create an extendible interface for developers/operators to create their custom compliance logic.
 
-Finally, it is understood that one of the key values provided by the Golden Config plugin is the visualization of the compliance and quick access to the tooling. Providing the interface to `get_custom_compliance` function allows the developers/operators the ability to get their own compliance process integrated with the user experience provided by the plugin.
+Finally, it is understood that one of the key values provided by the Golden Config app is the visualization of the compliance and quick access to the tooling. Providing the interface to `get_custom_compliance` function allows the developers/operators the ability to get their own compliance process integrated with the user experience provided by the app.
 
 ## The Interface
 

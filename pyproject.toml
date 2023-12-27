@@ -1,14 +1,14 @@
 [tool.poetry]
 name = "nautobot-golden-config"
 version = "2.0.0"
-description = "A plugin for configuration on nautobot"
+description = "An app for configuration on nautobot"
 authors = ["Network to Code, LLC <opensource@networktocode.com>"]
 license = "Apache-2.0"
 readme = "README.md"
 homepage = "https://docs.nautobot.com/projects/golden-config/en/latest/"
-repository = "https://github.com/nautobot/nautobot-plugin-golden-config"
+repository = "https://github.com/nautobot/nautobot-app-golden-config"
 documentation = "https://docs.nautobot.com/projects/golden-config/en/latest/"
-keywords = ["nautobot", "nautobot-plugin"]
+keywords = ["nautobot", "nautobot-plugin", "nautobot-app"]
 classifiers = [
     "Intended Audience :: Developers",
     "Development Status :: 5 - Production/Stable",
@@ -28,7 +28,7 @@ packages = [
 
 [tool.poetry.urls]
 "Changelog" = "https://docs.nautobot.com/projects/golden-config/en/latest/admin/release_notes/"
-"Bug Tracker" = "https://github.com/nautobot/nautobot-plugin-golden-config/issues"
+"Bug Tracker" = "https://github.com/nautobot/nautobot-app-golden-config/issues"
 
 [tool.poetry.dependencies]
 python = ">=3.8,<3.12"

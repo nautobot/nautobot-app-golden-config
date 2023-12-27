@@ -1,7 +1,7 @@
 # Navigating Configuration Remediation
 
 Automated network configuration remediation is a systematic approach that leverages technology and processes to address and rectify configuration issues in network devices. 
-It involves the use of the Golden Configuration plugin to understand the current configuration state, compare it against the intended configuration state, and automatically generate remediation data.
+It involves the use of the Golden Configuration app to understand the current configuration state, compare it against the intended configuration state, and automatically generate remediation data.
 Automated network configuration remediation improves efficiency by eliminating manual efforts and reducing the risk of human errors. It enables rapid response to security vulnerabilities, minimizes downtime, and enhances compliance with regulatory and industry standards.
 
 

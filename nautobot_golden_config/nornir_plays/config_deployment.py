@@ -36,7 +36,7 @@ def run_deployment(task: Task, logger: logging.Logger, config_plan_qs, deploy_jo
     consolidated_config_set = "\n".join(plans_to_deploy.values_list("config_set", flat=True))
     logger.debug(f"Consolidated config set: {consolidated_config_set}")
     # TODO: Future: We should add post-processing rendering here
-    # after https://github.com/nautobot/nautobot-plugin-golden-config/issues/443
+    # after https://github.com/nautobot/nautobot-app-golden-config/issues/443
 
     plans_to_deploy.update(status=Status.objects.get(name="In Progress"))
     try:

@@ -156,7 +156,7 @@ _Path for templates_
 
 If you have previously used the `dispatcher_mapping` settings to prefer the framework (such as netmiko or napalm), please see the Platform Network Driver section above. If you were truly "rolling your own dispatcher", then it is simply a matter of updating your settings.
 
-The `custom_dispatcher` settings are Golden Config settings (and **NOT** Nautobot Plugin Nornir settings), and the key name is `custom_dispatcher`. For your protection, the application will not start if you have either `dispatcher_mapping` or `custom_dispatcher` in Nautobot Plugin Nornir.
+The `custom_dispatcher` settings are Golden Config settings (and **NOT** Nautobot App Nornir settings), and the key name is `custom_dispatcher`. For your protection, the application will not start if you have either `dispatcher_mapping` or `custom_dispatcher` in Nautobot App Nornir.
 
 Previous relevant Settings:
 

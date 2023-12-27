@@ -131,9 +131,7 @@ def get_config_postprocessing(configs: models.GoldenConfig, request: HttpRequest
         request (HttpRequest): HTTP request for context.
     """
     if not ENABLE_POSTPROCESSING:
-        return (
-            "Generation of intended configurations postprocessing it is not enabled, check your plugin configuration."
-        )
+        return "Generation of intended configurations postprocessing it is not enabled, check your app configuration."
 
     config_postprocessing = configs.intended_config
     if not config_postprocessing:
@@ -166,7 +164,7 @@ def get_config_postprocessing(configs: models.GoldenConfig, request: HttpRequest
                 msg = (
                     "There was an issue attempting to import a `postprocessing_callables` function of "
                     f"{func_name_subscribed}, this is expected with a local configuration issue and not related to"
-                    " the Golden Configuration Plugin, please contact your system admin for further details.\n"
+                    " the Golden Configuration App, please contact your system admin for further details.\n"
                 )
                 raise ValueError(msg + str(error)) from error
         else:

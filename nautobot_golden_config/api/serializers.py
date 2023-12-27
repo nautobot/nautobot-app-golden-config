@@ -1,4 +1,4 @@
-"""REST API serializer capabilities for graphql plugin."""
+"""REST API serializer capabilities for graphql app."""
 # pylint: disable=too-many-ancestors
 from rest_framework import serializers
 

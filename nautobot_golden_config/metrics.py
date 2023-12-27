@@ -1,4 +1,4 @@
-"""Nautobot Golden Config plugin application level metrics ."""
+"""Nautobot Golden Config app application level metrics ."""
 from django.conf import settings
 from django.db.models import Count, F, Q
 from nautobot.dcim.models import Device

@@ -6,7 +6,7 @@ This is an ongoing effort, but the foundation has been built.
 
 Within the Nautobot ecosystem, you may see various errors, they are distributed between 3 libraries as followed.
 
-| Error Range | Plugin Docs |
+| Error Range | App Docs |
 | ----------- | ----------- |
 | E1001-E1999 | [Nornir Nautobot](https://docs.nautobot.com/projects/nornir-nautobot/en/latest/task/troubleshooting/) |
 | E2001-E2999 | [Nautobot Plugin Nornir](https://docs.nautobot.com/projects/plugin-nornir/en/latest/admin/troubleshooting/) |

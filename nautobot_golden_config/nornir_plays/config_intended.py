@@ -46,7 +46,7 @@ def run_template(  # pylint: disable=too-many-arguments,too-many-locals
     Args:
         task (Task): Nornir task individual object
         logger (NornirLogger): Logger to log messages to.
-        global_settings (GoldenConfigSetting): The settings for GoldenConfigPlugin.
+        global_settings (GoldenConfigSetting): The settings for GoldenConfigApp.
         job_class_instance (Result): The the output from the Nautobot Job instance being run.
 
     Returns:

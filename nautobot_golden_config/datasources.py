@@ -1,4 +1,4 @@
-"""Data source plugin extension to register additional git repo types."""
+"""Data source app extension to register additional git repo types."""
 import os
 
 import yaml

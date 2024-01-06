@@ -669,7 +669,7 @@ def unittest_coverage(context):
     }
 )
 def tests(context, failfast=False, keepdb=False, lint_only=False):
-    """Run all tests for this plugin."""
+    """Run all tests for this app."""
     # If we are not running locally, start the docker containers so we don't have to for each test
     if not is_truthy(context.nautobot_golden_config.local):
         print("Starting Docker Containers...")

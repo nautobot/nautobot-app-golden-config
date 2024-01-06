@@ -9,5 +9,5 @@ Within the Nautobot ecosystem, you may see various errors, they are distributed 
 | Error Range | App Docs |
 | ----------- | ----------- |
 | E1001-E1999 | [Nornir Nautobot](https://docs.nautobot.com/projects/nornir-nautobot/en/latest/task/troubleshooting/) |
-| E2001-E2999 | [Nautobot App Nornir](https://docs.nautobot.com/projects/plugin-nornir/en/latest/admin/troubleshooting/) |
+| E2001-E2999 | [Nautobot Plugin Nornir](https://docs.nautobot.com/projects/plugin-nornir/en/latest/admin/troubleshooting/) |
 | E3001-E3999 | [Nautobot Golden Config](https://docs.nautobot.com/projects/golden-config/en/latest/admin/troubleshooting/) |

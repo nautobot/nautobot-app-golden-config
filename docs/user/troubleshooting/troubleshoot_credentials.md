@@ -8,7 +8,7 @@ At the time of writing this there are three main credentials types that Golden C
 - Configuration Settings Variables
 - Nautobot Integrated Secrets Group Functionality
 
-These are documented in the [Nautobot App Nornir](https://docs.nautobot.com/projects/plugin-nornir/en/latest/user/app_feature_credentials/) documentation.
+These are documented in the [Nautobot Plugin Nornir](https://docs.nautobot.com/projects/plugin-nornir/en/latest/user/app_feature_credentials/) documentation.
 
 ### No Username/Password Preemptively Failed
 

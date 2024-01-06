@@ -16,7 +16,7 @@ services:
       # have all of your projects in the same directory. Uncomment out as required.
       # - "../../netutils/netutils:/usr/local/lib/python3.11/site-packages/netutils"
       # - "../../nornir-nautobot/nornir_nautobot:/usr/local/lib/python3.11/site-packages/nornir_nautobot"
-      # - "../../nautobot-app-nornir/nautobot_plugin_nornir:/usr/local/lib/python3.11/site-packages/nautobot_plugin_nornir"
+      # - "../../nautobot-plugin-nornir/nautobot_plugin_nornir:/usr/local/lib/python3.11/site-packages/nautobot_plugin_nornir"
       # - "../../nautobot/nautobot:/usr/local/lib/python3.11/site-packages/nautobot"
 
     healthcheck:
@@ -44,7 +44,7 @@ services:
       # have all of your projects in the same directory. Uncomment out as required.
       # - "../../netutils/netutils:/usr/local/lib/python3.11/site-packages/netutils"
       # - "../../nornir-nautobot/nornir_nautobot:/usr/local/lib/python3.11/site-packages/nornir_nautobot"
-      # - "../../nautobot-app-nornir/nautobot_plugin_nornir:/usr/local/lib/python3.11/site-packages/nautobot_plugin_nornir"
+      # - "../../nautobot-plugin-nornir/nautobot_plugin_nornir:/usr/local/lib/python3.11/site-packages/nautobot_plugin_nornir"
       # - "../../nautobot/nautobot:/usr/local/lib/python3.11/site-packages/nautobot"
     healthcheck:
       test: ["CMD", "true"]  # Due to layering, disable: true won't work. Instead, change the test

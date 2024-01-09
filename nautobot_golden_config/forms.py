@@ -502,7 +502,7 @@ class ConfigPlanForm(NautobotModelForm):
     tenant = forms.DynamicModelMultipleChoiceField(
         queryset=Tenant.objects.all(), required=False, query_params={"tenant_group": "$tenant_group"}
     )
-    # Requires https://github.com/nautobot/nautobot-plugin-golden-config/issues/430
+    # Requires https://github.com/nautobot/nautobot-app-golden-config/issues/430
     location = forms.DynamicModelMultipleChoiceField(queryset=Location.objects.all(), required=False)
     rack_group = forms.DynamicModelMultipleChoiceField(
         queryset=RackGroup.objects.all(), required=False, query_params={"location": "$location"}

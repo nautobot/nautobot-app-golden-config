@@ -10,7 +10,7 @@ To install the App, please follow the instructions detailed in the [Installation
 
 ### Backup Configuration
 
-Follow the steps below to get up and running for the configuration backup element of the plugin.
+Follow the steps below to get up and running for the configuration backup element of the app.
 
 1. Enable the feature in the `PLUGIN_SETTINGS`. The configuration should have `"enable_backup": True` set in the `PLUGINS_CONFIG` dictionary for `nautobot_golden_config`.
 
@@ -21,7 +21,7 @@ Follow the steps below to get up and running for the configuration backup elemen
     3. Make sure to select the **Provides** called `backup configs`.
     4. Click Create.
 
-3. Next, make sure to create new or update existing Plugins **Settings** with the backup details.
+3. Next, make sure to create new or update existing Apps **Settings** with the backup details.
     1. Navigate to `Golden Config -> Settings` under the Golden Configuration Section.
     2. Create new or select one of the existing `Settings` objects
     3. Fill out the Backup Repository. (The dropdown will show the repository that was just created.)
@@ -45,13 +45,13 @@ Follow the steps below to get up and running for the configuration backup elemen
 
 ### Intended Configuration
 
-Follow the steps below to get up and running for the intended configuration element of the plugin.
+Follow the steps below to get up and running for the intended configuration element of the app.
 
 !!! note
-    Intended Configuration requires the `enable_intended` and `enabled_sotAgg` plugin features to be used.
+    Intended Configuration requires the `enable_intended` and `enabled_sotAgg` app features to be used.
 
 !!! note
-    If Secret Group is used for the Repositories the secrets type HTTP(S) is required for this plugin.
+    If Secret Group is used for the Repositories the secrets type HTTP(S) is required for this app.
 
 1. Enable the feature in the `PLUGIN_SETTINGS`. The configuration should have `"enable_intended": True` set in the `PLUGINS_CONFIG` dictionary for `nautobot_golden_config`.
 
@@ -70,7 +70,7 @@ Follow the steps below to get up and running for the intended configuration elem
     3. Make sure to select the **Provides** called `jinja templates`.
     4. Click Create.
 
-4. Next, make sure to create new or update existing Plugins **Settings** with the intended and jinja2 template details.
+4. Next, make sure to create new or update existing Apps **Settings** with the intended and jinja2 template details.
 
     1. Navigate to `Golden Config -> Settings` under the Golden Configuration Section.
     2. Create new or select one of the existing `Settings` objects
@@ -126,7 +126,7 @@ Compliance requires Backups and Intended Configurations in order to be executed.
 
 ### Config Remediation
 
-Follow the steps below to get up and running for the configuration remediation element of the plugin.
+Follow the steps below to get up and running for the configuration remediation element of the app.
 
 1. Navigate to `Golden Config -> Compliance Rules`.
 2. Select the rules in which you'd like to enable remediation on.
@@ -138,7 +138,7 @@ Follow the steps below to get up and running for the configuration remediation e
 
 ### Config Plans
 
-Follow the steps below to get up and running for the configuration plans element of the plugin.
+Follow the steps below to get up and running for the configuration plans element of the app.
 
 1. Enable the feature in the `PLUGIN_SETTINGS`. The configuration should have `"enable_plan": True` set in the `PLUGINS_CONFIG` dictionary for `nautobot_golden_config`.
 2. Follow the steps in [Compliance](#compliance).
@@ -160,7 +160,7 @@ Follow the steps below to get up and running for the configuration plans element
 
 ### Config Deploy
 
-Follow the steps below to get up and running for the configuration deployment element of the plugin.
+Follow the steps below to get up and running for the configuration deployment element of the app.
 
 1. Enable the feature in the `PLUGIN_SETTINGS`. The configuration should have `"enable_deploy": True` set in the `PLUGINS_CONFIG` dictionary for `nautobot_golden_config`.
 2. Follow the steps in [Config Plans](#config-plans).

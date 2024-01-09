@@ -8,7 +8,7 @@ from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_CO
 
 
 class ConfigComplianceDeviceCheck(PluginTemplateExtension):  # pylint: disable=abstract-method
-    """Plugin extension class for config compliance."""
+    """App extension class for config compliance."""
 
     model = "dcim.device"
 
@@ -48,7 +48,7 @@ class ConfigComplianceDeviceCheck(PluginTemplateExtension):  # pylint: disable=a
 
 
 class ConfigComplianceLocationCheck(PluginTemplateExtension):  # pylint: disable=abstract-method
-    """Plugin extension class for config compliance."""
+    """App extension class for config compliance."""
 
     model = "dcim.location"
 
@@ -82,7 +82,7 @@ class ConfigComplianceLocationCheck(PluginTemplateExtension):  # pylint: disable
 
 
 class ConfigDeviceDetails(PluginTemplateExtension):  # pylint: disable=abstract-method
-    """Plugin extension class for config compliance."""
+    """App extension class for config compliance."""
 
     model = "dcim.device"
 
@@ -109,7 +109,7 @@ class ConfigDeviceDetails(PluginTemplateExtension):  # pylint: disable=abstract-
 
 
 class ConfigComplianceTenantCheck(PluginTemplateExtension):  # pylint: disable=abstract-method
-    """Plugin extension class for config compliance."""
+    """App extension class for config compliance."""
 
     model = "tenancy.tenant"
 

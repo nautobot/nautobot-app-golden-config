@@ -1,9 +1,9 @@
 # Nautobot Golden Config
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/nautobot/nautobot-plugin-golden-config/develop/docs/images/icon-NautobotGoldenConfig.png" class="logo" height="200px">
+  <img src="https://raw.githubusercontent.com/nautobot/nautobot-app-golden-config/develop/docs/images/icon-NautobotGoldenConfig.png" class="logo" height="200px">
   <br>
-  <a href="https://github.com/nautobot/nautobot-plugin-golden-config/actions"><img src="https://github.com/nautobot/nautobot-plugin-golden-config/actions/workflows/ci.yml/badge.svg?branch=main"></a>
+  <a href="https://github.com/nautobot/nautobot-app-golden-config/actions"><img src="https://github.com/nautobot/nautobot-app-golden-config/actions/workflows/ci.yml/badge.svg?branch=main"></a>
   <a href="https://docs.nautobot.com/projects/golden-config/en/latest/"><img src="https://readthedocs.org/projects/nautobot-plugin-golden-config/badge/"></a>
   <a href="https://pypi.org/project/nautobot-golden-config/"><img src="https://img.shields.io/pypi/v/nautobot-golden-config"></a>
   <a href="https://pypi.org/project/nautobot-golden-config/"><img src="https://img.shields.io/pypi/dm/nautobot-golden-config"></a>
@@ -13,14 +13,14 @@
 
 ## Overview
 
-The Golden Config plugin is a Nautobot plugin that provides a NetDevOps approach to golden configuration and configuration compliance.
+The Golden Config App is a Nautobot App that provides a NetDevOps approach to golden configuration and configuration compliance.
 
 !!! info
     Upgrading to Nautobot and Nautobot Golden Config 2.0, see our [migration guide](https://docs.nautobot.com/projects/golden-config/en/latest/admin/migrating_to_v2/)!
 
 ### Key Use Cases
 
-This plugin enable six (6) key use cases.
+This app enable six (6) key use cases.
 
 1. **Configuration Backups** - Is a Nornir process to connect to devices, optionally parse out lines/secrets, backup the configuration, and save to a Git repository.
 2. **Intended Configuration** - Is a Nornir process to generate configuration based on a Git repo of Jinja files to combine with a GraphQL generated data and a Git repo to store the intended configuration.
@@ -35,22 +35,22 @@ This plugin enable six (6) key use cases.
 
 ## Screenshots
 
-There are many features and capabilities the plugin provides into the Nautobot ecosystem. The following screenshots are intended to provide a quick visual overview of some of these features.
+There are many features and capabilities the app provides into the Nautobot ecosystem. The following screenshots are intended to provide a quick visual overview of some of these features.
 
 The golden configuration is driven by jobs that run a series of tasks and the result is captured in this overview.
 
-![Overview](https://raw.githubusercontent.com/nautobot/nautobot-plugin-golden-config/develop/docs/images/ss_golden-overview.png)
+![Overview](https://raw.githubusercontent.com/nautobot/nautobot-app-golden-config/develop/docs/images/ss_golden-overview.png)
 
 The compliance report provides a high-level overview on the compliance of your network.
-![Compliance Report](https://raw.githubusercontent.com/nautobot/nautobot-plugin-golden-config/develop/docs/images/ss_compliance-report.png)
+![Compliance Report](https://raw.githubusercontent.com/nautobot/nautobot-app-golden-config/develop/docs/images/ss_compliance-report.png)
 
 The compliance overview will provide a per device and feature overview on the compliance of your network devices.
-![Compliance Overview](https://raw.githubusercontent.com/nautobot/nautobot-plugin-golden-config/develop/docs/images/ss_compliance-overview.png)
+![Compliance Overview](https://raw.githubusercontent.com/nautobot/nautobot-app-golden-config/develop/docs/images/ss_compliance-overview.png)
 
 Drilling into a specific device and feature, you can get an immediate detailed understanding of your device.
-![Compliance Device](https://raw.githubusercontent.com/nautobot/nautobot-plugin-golden-config/develop/docs/images/ss_compliance-device.png)
+![Compliance Device](https://raw.githubusercontent.com/nautobot/nautobot-app-golden-config/develop/docs/images/ss_compliance-device.png)
 
-![Compliance Rule](https://raw.githubusercontent.com/nautobot/nautobot-plugin-golden-config/develop/docs/images/ss_compliance-rule.png)
+![Compliance Rule](https://raw.githubusercontent.com/nautobot/nautobot-app-golden-config/develop/docs/images/ss_compliance-rule.png)
 
 ## Try it out!
 
@@ -70,7 +70,7 @@ Full web-based HTML documentation for this app can be found over on the [Nautobo
 
 ### Contributing to the Docs
 
-You can find all the Markdown source for the App documentation under the [docs](https://github.com/nautobot/nautobot-plugin-golden-config/tree/develop/docs) folder in this repository. For simple edits, a Markdown capable editor is sufficient - clone the repository and edit away.
+You can find all the Markdown source for the App documentation under the [docs](https://github.com/nautobot/nautobot-app-golden-config/tree/develop/docs) folder in this repository. For simple edits, a Markdown capable editor is sufficient - clone the repository and edit away.
 
 If you need to view the fully generated documentation site, you can build it with [mkdocs](https://www.mkdocs.org/). A container hosting the docs will be started using the invoke commands (details in the [Development Environment Guide](https://docs.nautobot.com/projects/golden-config/en/latest/dev/dev_environment/#docker-development-environment)) on [http://localhost:8001](http://localhost:8001). As your changes are saved, the live docs will be automatically reloaded.
 

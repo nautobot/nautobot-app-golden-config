@@ -67,4 +67,4 @@ If none of these troubleshooting steps helped identify the problem please visit 
 
 ### Detailed Diagrams
 
-Golden config flow diagrams are available on the repositories [wiki](https://github.com/nautobot/nautobot-plugin-golden-config/wiki#diagrams).
+Golden config flow diagrams are available on the repositories [wiki](https://github.com/nautobot/nautobot-app-golden-config/wiki#diagrams).

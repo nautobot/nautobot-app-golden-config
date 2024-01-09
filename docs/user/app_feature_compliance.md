@@ -37,7 +37,7 @@ To start a compliance job manually:
 
 ## Configuration Compliance Settings
 
-Configuration compliance requires the Git Repo settings for `config backups` and `intended configs`--which are covered in their respective sections--regardless if they are actually managed via the plugin or not. The same is true for the `Backup Path` and `Intended Path`.
+Configuration compliance requires the Git Repo settings for `config backups` and `intended configs`--which are covered in their respective sections--regardless if they are actually managed via the app or not. The same is true for the `Backup Path` and `Intended Path`.
 
 The Configuration compliance rule map must be created per the operator/user. You can find these configurations via `Golden Config -> Compliance Rules`
 links, which brings up the specific configurations.
@@ -65,7 +65,7 @@ For JSON based configs, the match is based on JSON's structure top level key nam
     If the data is accidentally "corrupted" with a bad tested match, simply delete the devices an re-run the compliance process.
 
 !!! note
-    The mapping of "network_os" as defined by netutils is provided via the plugin settings in your nautobot_config.py, and documented on the primary Readme.
+    The mapping of "network_os" as defined by netutils is provided via the app settings in your nautobot_config.py, and documented on the primary Readme.
 
 ## Compliance View
 

@@ -10,4 +10,4 @@ jobs:
     uses: "nautobot/nautobot/.github/workflows/plugin_upstream_testing_base.yml@develop"
     with:  # Below could potentially be collapsed into a single argument if a concrete relationship between both is enforced
       invoke_context_name: "NAUTOBOT_GOLDEN_CONFIG"
-      plugin_name: "nautobot-plugin-golden-config"
+      plugin_name: "nautobot-app-golden-config"

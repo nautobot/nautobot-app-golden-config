@@ -179,12 +179,13 @@ class GoldenConfigListViewTestCase(TestCase):
         self.gc_dynamic_group = self.gc_settings.dynamic_group
         self.gc_dynamic_group.filter = {"name": [dev.name for dev in Device.objects.all()]}
         self.gc_dynamic_group.validated_save()
+        models.GoldenConfig.objects.create(device=Device.objects.first())
 
-    def _get_golden_config_table(self):
+    def _get_golden_config_table_header(self):
         response = self.client.get(f"{self._url}")
         html_parsed = html.fromstring(response.content.decode())
         golden_config_table = html_parsed.find_class("table")[0]
-        return golden_config_table.iterchildren()
+        return golden_config_table.find("thead")
 
     @property
     def _text_table_headers(self):
@@ -199,7 +200,7 @@ class GoldenConfigListViewTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_headers_in_table(self):
-        table_header, _ = self._get_golden_config_table()
+        table_header = self._get_golden_config_table_header()
         headers = table_header.iterdescendants("th")
         checkbox_header = next(headers)
         checkbox_element = checkbox_header.find("input")
@@ -225,7 +226,7 @@ class GoldenConfigListViewTestCase(TestCase):
             destination_id=device.id,
             relationship_id=relationship.id,
         )
-        table_header, _ = self._get_golden_config_table()
+        table_header = self._get_golden_config_table_header()
         # xpath expression excludes the pk checkbox column (i.e. the first column)
         text_headers = [header.text_content() for header in table_header.xpath("tr/th[position()>1]")]
         # This will fail if the Relationships to Device objects showed up in the Golden Config table

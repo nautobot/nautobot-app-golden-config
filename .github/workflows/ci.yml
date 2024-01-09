@@ -14,7 +14,7 @@ on: # yamllint disable-line rule:truthy rule:comments
   pull_request: ~
 
 env:
-  PLUGIN_NAME: "nautobot-plugin-golden-config"
+  PLUGIN_NAME: "nautobot-app-golden-config"
 
 jobs:
   black:

@@ -1,4 +1,4 @@
-"""Django urlpatterns declaration for config compliance plugin."""
+"""Django urlpatterns declaration for config compliance app."""
 from django.urls import path
 
 from nautobot.core.views.routers import NautobotUIViewSetRouter

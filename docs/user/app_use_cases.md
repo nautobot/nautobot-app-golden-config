@@ -28,7 +28,7 @@ components against all of the devices.
 
 ### Jobs
 
-There are a series of Jobs that are registered via the Plugin. They can be viewed from the standard Jobs view.
+There are a series of Jobs that are registered via the App. They can be viewed from the standard Jobs view.
 
 ![Job Overview](../images/job-overview.png)
 
@@ -38,8 +38,8 @@ Each Job attempts to provide sane error handling, and respects the `debug` flag 
 
 ### Application Settings
 
-The golden configuration plugin settings can be found by navigating to `Golden Config -> Settings` button. Select one of the Settings, under the `Golden Configuration` section.
-Since Golden Configuration Plugin version 1.0, the plugin allows for multiple settings to be configured by the User.
+The golden configuration app settings can be found by navigating to `Golden Config -> Settings` button. Select one of the Settings, under the `Golden Configuration` section.
+Since Golden Configuration App version 1.0, the app allows for multiple settings to be configured by the User.
 Each of the settings, has the individual repositories and configuration details, as well as a Dynamic Group.
 You could use a combination of settings to customize your Configuration Compliance behavior.
 Settings have a name and a weight. The weight parameter indicates the priority of given Settings - the higher the weight, the device matching the Dynamic Group defined will be assigned to the scope.
@@ -167,7 +167,7 @@ The steps to add the variables to your environment are outside the scope of this
 
 ### Git Settings
 
-The plugin makes heavy use of the Nautobot git data sources feature. There are up to three repositories used in the application. This set of instructions will walk an operator through setting up the backup repository. The steps are the same, except for the "Provides" field name chosen.
+The app makes heavy use of the Nautobot git data sources feature. There are up to three repositories used in the application. This set of instructions will walk an operator through setting up the backup repository. The steps are the same, except for the "Provides" field name chosen.
 
 In order to setup this repository, go to Nautobot and navigate to the Data Sources Git integration. `Extensibility -> Git Repositories`.
 
@@ -202,22 +202,22 @@ Once you click `Create` and the repository syncs, the main page will now show th
 
 For their respective features, the "Provides" field could be backup intended configs and jinja templates.
 
-### Plugins Buttons
+### Apps Buttons
 
-The plugins buttons provides you with the ability to navigate to Run the script, overview report, and detailed report.
+The apps buttons provides you with the ability to navigate to Run the script, overview report, and detailed report.
 
 ### Run Script
 
-This can be accessed via the Plugins drop-down via `Run Script` button of the `Home` view, the user will be provided a form of the Job (as described
+This can be accessed via the Apps drop-down via `Run Script` button of the `Home` view, the user will be provided a form of the Job (as described
 above), which will allow the user to limit the scope of the request.
 
 ### Device Template Content
 
-The plugin makes use of template content `right_page` in order to use display in-line the status of that device in the traditional Nautobot view. From here you can click the link to see the detail compliance view.
+The app makes use of template content `right_page` in order to use display in-line the status of that device in the traditional Nautobot view. From here you can click the link to see the detail compliance view.
 
 ### Location Template Content
 
-The plugin makes use of template content `right_page` in order to use display in-line the status of that entire location in the traditional Nautobot view. This sums the total for all locations for parent locations.
+The app makes use of template content `right_page` in order to use display in-line the status of that entire location in the traditional Nautobot view. This sums the total for all locations for parent locations.
 
 ### API
 
@@ -231,11 +231,11 @@ garbage collection and it is up to the operator to remove such data.
 ### Network Operating System Support
 
 The version of OS's supported is documented in the [FAQ](./faq.md) and is controlled the platform network_driver. The platform network_driver must be exactly as expected or leverage
-a configuration option--which is described the the FAQ--for the plugin to work.
+a configuration option--which is described the the FAQ--for the app to work.
 
 ### Use-cases and common workflows
 
-This plugin enable four (4) key use cases.
+This app enable four (4) key use cases.
 
 1. **Configuration Backups** - Is a Nornir process to connect to devices, optionally parse out lines/secrets, backup the configuration, and save to a Git repository.
 2. **Intended Configuration** - Is a Nornir process to generate configuration based on a Git repo of Jinja files to combine with a GraphQL generated data and a Git repo to store the intended configuration.
@@ -247,7 +247,7 @@ This plugin enable four (4) key use cases.
 
 ## Screenshots
 
-There are many features and capabilities the plugin provides into the Nautobot ecosystem. The following screenshots are intended to provide a quick visual overview of some of these features.
+There are many features and capabilities the app provides into the Nautobot ecosystem. The following screenshots are intended to provide a quick visual overview of some of these features.
 
 The golden configuration is driven by jobs that run a series of tasks and the result is captured in this overview.
 

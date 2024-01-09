@@ -363,7 +363,7 @@ class ConfigComplianceOverview(generic.ObjectListView):
     extra_content = {}
 
     # Once https://github.com/nautobot/nautobot/issues/4529 is addressed, can turn this on.
-    # Permalink reference: https://github.com/nautobot/nautobot-plugin-golden-config/blob/017d5e1526fa9f642b9e02bfc7161f27d4948bef/nautobot_golden_config/views.py#L383
+    # Permalink reference: https://github.com/nautobot/nautobot-app-golden-config/blob/017d5e1526fa9f642b9e02bfc7161f27d4948bef/nautobot_golden_config/views.py#L383
     # @action(detail=False, methods=["get"])
     # def overview(self, request, *args, **kwargs):
     def setup(self, request, *args, **kwargs):
@@ -566,7 +566,7 @@ class ConfigPlanBulkDeploy(ObjectPermissionRequiredMixin, View):
         return "extras.run_job"
 
     # Once https://github.com/nautobot/nautobot/issues/4529 is addressed, can turn this on.
-    # Permalink reference: https://github.com/nautobot/nautobot-plugin-golden-config/blob/017d5e1526fa9f642b9e02bfc7161f27d4948bef/nautobot_golden_config/views.py#L609-L612
+    # Permalink reference: https://github.com/nautobot/nautobot-app-golden-config/blob/017d5e1526fa9f642b9e02bfc7161f27d4948bef/nautobot_golden_config/views.py#L609-L612
     # @action(detail=False, methods=["post"])
     # def bulk_deploy(self, request):
     def post(self, request):

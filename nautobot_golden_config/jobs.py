@@ -41,7 +41,7 @@ name = "Golden Configuration"  # pylint: disable=invalid-name
 
 
 def get_refreshed_repos(job_obj, repo_type, data=None):
-    """Small wrapper to pull latest branch, and return a GitRepo plugin specific object."""
+    """Small wrapper to pull latest branch, and return a GitRepo app specific object."""
     devices = get_job_filter(data)
     dynamic_groups = DynamicGroup.objects.exclude(golden_config_setting__isnull=True)
     repository_records = set()

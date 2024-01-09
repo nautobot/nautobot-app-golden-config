@@ -128,11 +128,11 @@ if not _TESTING:
 # Apps
 #
 
-# Enable installed plugins. Add the name of each plugin to the list.
+# Enable installed apps. Add the name of each app to the list.
 PLUGINS = ["nautobot_plugin_nornir", "nautobot_golden_config"]
 
-# Plugins configuration settings. These settings are used by various plugins that the user may have installed.
-# Each key in the dictionary is the name of an installed plugin and its value is a dictionary of settings.
+# Apps configuration settings. These settings are used by various apps that the user may have installed.
+# Each key in the dictionary is the name of an installed app and its value is a dictionary of settings.
 PLUGINS_CONFIG = {
     "nautobot_plugin_nornir": {
         "nornir_settings": {

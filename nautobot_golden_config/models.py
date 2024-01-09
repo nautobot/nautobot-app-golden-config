@@ -488,7 +488,7 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         max_length=255,
         blank=True,
         verbose_name="Intended Path in Jinja Template Form",
-        help_text="The Jinja path representation of where the generated file will be places. e.g. `{{obj.location.name|slugify}}/{{obj.name}}.cfg`",
+        help_text="The Jinja path representation of where the generated file will be placed. e.g. `{{obj.location.name|slugify}}/{{obj.name}}.cfg`",
     )
     jinja_repository = models.ForeignKey(
         to="extras.GitRepository",

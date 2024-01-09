@@ -37,7 +37,7 @@ from nautobot_golden_config.utilities.helper import get_job_filter
 name = "Golden Configuration"  # pylint: disable=invalid-name
 
 
-def get_refreshed_repos(job_obj, repo_type, data=None):
+def get_refreshed_repos(job_obj, repo_type, data=None):  # pylint: disable=unused-argument
     """Small wrapper to pull latest branch, and return a GitRepo plugin specific object."""
     devices = get_job_filter(data)
     dynamic_groups = DynamicGroup.objects.exclude(golden_config_setting__isnull=True)

@@ -5,6 +5,16 @@
 - Add functionality to compliance result to provide a Remediation plan.
 - Supports Nautobot >=1.6.1,<2.0.0.
 
+## v1.6.4 - 2024-01
+
+### Fixed
+
+- [#695](https://github.com/nautobot/nautobot-app-golden-config/pull/695) - Removed optional job_result parameter from ensure_git_repository
+
+### Changed
+
+- [#670](https://github.com/nautobot/nautobot-app-golden-config/pull/670) - Update Nautobot Nornir Dependency
+
 ## v1.6.3 - 2023-10
 
 ### Fixed

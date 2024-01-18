@@ -109,12 +109,14 @@ The app behavior can be controlled with the following list of settings:
 | default_deploy_status     | "Not Approved"                | "Not Approved" | A string that will be the name of the status you want as the default when create new config plans, you MUST create the status yourself before starting the app.     |
 | postprocessing_callables  | ['mypackage.myfunction']      | []      | A list of function paths, in dotted format, that are appended to the available methods for post-processing the intended configuration, for instance, the `render_secrets`. |
 | postprocessing_subscribed | ['mypackage.myfunction']      | []      | A list of function paths, that should exist as postprocessing_callables, that defines the order of application of during the post-processing process.                      |
-| platform_slug_map         | {"cisco_wlc": "cisco_aireos"} | None    | A dictionary in which the key is the platform slug and the value is what netutils uses in any "network_os" parameter within `netutils.config.compliance.parser_map`.       |
 | sot_agg_transposer        | "mypkg.transposer"            | None    | A string representation of a function that can post-process the graphQL data.                                                                                              |
 | per_feature_bar_width     | 0.15                          | 0.15    | The width of the table bar within the overview report                                                                                                                      |
 | per_feature_width         | 13                            | 13      | The width in inches that the overview table can be.                                                                                                                        |
 | per_feature_height        | 4                             | 4       | The height in inches that the overview table can be.                                                                                                                       |
 | jinja_env | {"lstrip_blocks": False} | See Note Below | A dictionary of Jinja2 Environment options compatible with Jinja2.SandboxEnvironment() |
+
+!!! note
+    `platform_slug_map` configuration was removed as of the `v2.0.0` release of Golden Config, for more information please review the [v2 Migration Guide](./migrating_to_v2.md)
 
 !!! note
     Over time the compliance report will become more dynamic, but for now allow users to configure the `per_*` configs in a way that fits best for them.

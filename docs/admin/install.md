@@ -122,9 +122,6 @@ The app behavior can be controlled with the following list of settings:
     Over time the compliance report will become more dynamic, but for now allow users to configure the `per_*` configs in a way that fits best for them.
 
 !!! note
-    Review [`nautobot_plugin_nornir`](https://docs.nautobot.com/projects/plugin-nornir/en/latest/user/app_feature_dispatcher/) for Nornir and dispatcher configuration options.
-
-!!! note
     Defaults for Jinja2 environment settings (`jinja_env`) are as follows:
 
     ```python

@@ -43,7 +43,7 @@ If previously you have leveraged the `dispatcher_mapping` to use your preferred 
 !!! tip
     You can safely skip this section if your Dynamic Groups was not using slugs/Site/Region/DeviceRole or your Dynamic Groups are currently in the required state.
 
-In an effort to guide you along, you are highly encouraged to leverage the `nautobot-server audit_dynamic_groups` as [documented](https://docs.nautobot.com/projects/core/en/v2.0.0/user-guide/administration/tools/nautobot-server/#audit_dynamic_groups). You will know you have completed this step, when the scope of devices in your Dynamic Group match your expectations.
+In an effort to guide you along, you are highly encouraged to leverage the `nautobot-server audit_dynamic_groups` as [documented](https://docs.nautobot.com/projects/core/en/stable/user-guide/administration/tools/nautobot-server/#audit_dynamic_groups). You will know you have completed this step, when the scope of devices in your Dynamic Group match your expectations.
 
 ## GraphQL
 

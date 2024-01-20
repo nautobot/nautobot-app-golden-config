@@ -78,7 +78,7 @@ def render_secrets(config_postprocessing: str, configs: models.GoldenConfig, req
     if not config_postprocessing:
         return ""
 
-    # Based on https://docs.nautobot.com/projects/golden-config/en/latest/dev/dev_adr/#renders-secrets
+    # Based on https://docs.nautobot.com/projects/golden-config/en/latest/user/app_feature_config_postprocessing/?h=secrets#render-secrets
     # the Jinja2 environment that starts with Nautobot should not be used.
     jinja_env = SandboxedEnvironment(autoescape=True)
 

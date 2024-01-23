@@ -1,13 +1,15 @@
 """Unit tests for nautobot_golden_config nornir compliance."""
 
-import unittest
 import json
-from unittest.mock import patch, Mock, MagicMock
+import unittest
+from unittest.mock import MagicMock, Mock, patch
+
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
-from nautobot_golden_config.nornir_plays.config_compliance import get_rules, get_config_element
+from nautobot_golden_config.nornir_plays.config_compliance import get_config_element, get_rules
+from nautobot_golden_config.tests.conftest import create_device, create_feature_rule_cli
 
 
-class ConfigComplianceTest(unittest.TestCase):
+class ConfigComplianceJsonTest(unittest.TestCase):
     """Test Nornir Compliance Task."""
 
     @patch("nautobot_golden_config.nornir_plays.config_compliance.ComplianceRule", autospec=True)
@@ -47,3 +49,36 @@ class ConfigComplianceTest(unittest.TestCase):
         mock_rule["obj"].config_type = ComplianceRuleConfigTypeChoice.TYPE_JSON
         return_config = json.dumps(get_config_element(mock_rule, mock_config, mock_obj, None))
         self.assertEqual(return_config, mock_config)
+
+
+class ConfigComplianceCliTest(unittest.TestCase):
+    """Test Nornir Compliance Task."""
+
+    def setUp(self):
+        """Setup test."""
+
+        self.device = create_device(name="config_plan_utility_test")
+        self.feature_rule = create_feature_rule_cli(self.device)
+        self.feature_rule.match_config = "aaa\nsnmp\n"
+        self.feature_rule.save()
+
+    def test_get_config_element_match_config_present(self):
+        """Test proper return when Config CLI is returned with match_config"""
+        mock_config = "router bgp 123\naaa 123\n  with a child line"
+        features = {'ordered': False, 'obj': self.feature_rule, 'section': ['aaa', 'snmp']}
+        return_config = get_config_element(features, mock_config, self.device, None)
+        self.assertEqual(return_config, "aaa 123\n  with a child line")
+
+    def test_get_config_element_match_nonduplicate_line_broken(self):
+        """Test proper return when Config CLI is returned with match_config"""
+        mock_config = "aaa 123\n  with a child line\naccess-list 93 remark abcd\naccess-list 93 deny any any\n"
+        features = {'ordered': False, 'obj': self.feature_rule, 'section': ['aaa', 'snmp']}
+        return_config = get_config_element(features, mock_config, self.device, None)
+        self.assertEqual(return_config, "aaa 123\n  with a child line")
+
+    def test_get_config_element_match_duplicate_line_broken(self):
+        """Test proper return when Config CLI is returned with match_config"""
+        mock_config = "aaa 123\n  with a child line\naccess-list 93 remark abcd\naccess-list 93 deny any any\naccess-list 93 remark abcd\n"
+        features = {'ordered': False, 'obj': self.feature_rule, 'section': ['aaa', 'snmp']}
+        return_config = get_config_element(features, mock_config, self.device, None)
+        self.assertEqual(return_config, "aaa 123\n  with a child line")

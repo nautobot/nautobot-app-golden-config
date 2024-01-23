@@ -65,20 +65,20 @@ class ConfigComplianceCliTest(unittest.TestCase):
     def test_get_config_element_match_config_present(self):
         """Test proper return when Config CLI is returned with match_config"""
         mock_config = "router bgp 123\naaa 123\n  with a child line"
-        features = {'ordered': False, 'obj': self.feature_rule, 'section': ['aaa', 'snmp']}
+        features = {"ordered": False, "obj": self.feature_rule, "section": ["aaa", "snmp"]}
         return_config = get_config_element(features, mock_config, self.device, None)
         self.assertEqual(return_config, "aaa 123\n  with a child line")
 
     def test_get_config_element_match_nonduplicate_line_broken(self):
         """Test proper return when Config CLI is returned with match_config"""
         mock_config = "aaa 123\n  with a child line\naccess-list 93 remark abcd\naccess-list 93 deny any any\n"
-        features = {'ordered': False, 'obj': self.feature_rule, 'section': ['aaa', 'snmp']}
+        features = {"ordered": False, "obj": self.feature_rule, "section": ["aaa", "snmp"]}
         return_config = get_config_element(features, mock_config, self.device, None)
         self.assertEqual(return_config, "aaa 123\n  with a child line")
 
     def test_get_config_element_match_duplicate_line_broken(self):
         """Test proper return when Config CLI is returned with match_config"""
         mock_config = "aaa 123\n  with a child line\naccess-list 93 remark abcd\naccess-list 93 deny any any\naccess-list 93 remark abcd\n"
-        features = {'ordered': False, 'obj': self.feature_rule, 'section': ['aaa', 'snmp']}
+        features = {"ordered": False, "obj": self.feature_rule, "section": ["aaa", "snmp"]}
         return_config = get_config_element(features, mock_config, self.device, None)
         self.assertEqual(return_config, "aaa 123\n  with a child line")

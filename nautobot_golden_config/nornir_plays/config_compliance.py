@@ -6,6 +6,7 @@ import os
 from collections import defaultdict
 from datetime import datetime
 from django.utils.timezone import make_aware
+from lxml import etree
 
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
@@ -24,6 +25,7 @@ from nautobot_golden_config.utilities.helper import (
     get_device_to_settings_map,
     get_job_filter,
     get_json_config,
+    get_xml_config,
     render_jinja_template,
     verify_settings,
 )
@@ -68,6 +70,18 @@ def get_config_element(rule, config, obj, logger):
             config_element = {k: config_json.get(k) for k in rule["obj"].match_config.splitlines() if k in config_json}
         else:
             config_element = config_json
+
+    elif rule["obj"].config_type == ComplianceRuleConfigTypeChoice.TYPE_XML:
+        config_xml = get_xml_config(config)
+
+        if rule["obj"].match_config:
+            config_element = config_xml.xpath("//" + rule["obj"].match_config)
+            if config_element:
+                config_element = "".join(
+                    etree.tostring(element, encoding="unicode", pretty_print=True) for element in config_element
+                )
+            else:
+                config_element = "<root/>"
 
     elif rule["obj"].config_type == ComplianceRuleConfigTypeChoice.TYPE_CLI:
         if obj.platform.network_driver_mappings["netmiko"] not in parser_map:

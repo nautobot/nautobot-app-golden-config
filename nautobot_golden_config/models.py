@@ -15,6 +15,10 @@ from nautobot.extras.models import ObjectChange
 from nautobot.extras.models.statuses import StatusField
 from nautobot.extras.utils import extras_features
 from netutils.config.compliance import feature_compliance
+from xmldiff import main, formatting
+from lxml import etree
+from copy import deepcopy
+
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
@@ -118,6 +122,58 @@ def _get_json_compliance(obj):
     }
 
 
+def _get_xml_compliance(obj):
+    """This function performs the actual compliance for xml serializable data."""
+
+    def _remove_elements(root, tag, ns):
+        elements = root.xpath(f".//*[@{tag}]", namespaces=ns)
+        for elem in elements:
+            parent = elem.getparent()
+            if parent is not None:
+                parent.remove(elem)
+        return root
+
+    def _convert_tree_to_string(root):
+        result = etree.tostring(root, encoding="unicode")
+        if "diff:" not in result:
+            result = ""
+        return result.replace("http://namespaces.shoobx.com/diff", "xmldiff")
+
+    def _create_return_dict(compliance, compliance_int, obj, missing, extra):
+        if compliance:
+            extra = ""
+            missing = ""
+        return {
+            "compliance": compliance,
+            "compliance_int": compliance_int,
+            "ordered": obj.ordered,
+            "missing": _null_to_empty(missing),
+            "extra": _null_to_empty(extra),
+        }
+
+    formatter = formatting.XMLFormatter(normalize=formatting.WS_BOTH)
+    diff = main.diff_texts(obj.actual, obj.intended, formatter=formatter)
+
+    compliance = "diff:" not in diff
+    compliance_int = int(compliance)
+
+    # Parse the diff XML and make a copy for extra and missing
+    root = etree.fromstring(diff)
+    extra_root = deepcopy(root)
+    missing_root = deepcopy(root)
+
+    # Remove elements with diff:insert from extra and diff:delete from missing
+    ns = {"diff": "http://namespaces.shoobx.com/diff"}
+    extra_root = _remove_elements(extra_root, "diff:insert", ns)
+    missing_root = _remove_elements(missing_root, "diff:delete", ns)
+
+    # Convert back to strings
+    extra = _convert_tree_to_string(extra_root)
+    missing = _convert_tree_to_string(missing_root)
+
+    return _create_return_dict(compliance, compliance_int, obj, missing, extra)
+
+
 def _verify_get_custom_compliance_data(compliance_details):
     """This function verifies the data is as expected when a custom function is used."""
     for val in ["compliance", "compliance_int", "ordered", "missing", "extra"]:
@@ -171,6 +227,7 @@ def _get_hierconfig_remediation(obj):
 FUNC_MAPPER = {
     ComplianceRuleConfigTypeChoice.TYPE_CLI: _get_cli_compliance,
     ComplianceRuleConfigTypeChoice.TYPE_JSON: _get_json_compliance,
+    ComplianceRuleConfigTypeChoice.TYPE_XML: _get_xml_compliance,
     RemediationTypeChoice.TYPE_HIERCONFIG: _get_hierconfig_remediation,
 }
 # The below conditionally add the custom provided compliance type

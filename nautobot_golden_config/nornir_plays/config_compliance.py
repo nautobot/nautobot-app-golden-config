@@ -6,8 +6,9 @@ import logging
 import os
 from collections import defaultdict
 from datetime import datetime
-
 from django.utils.timezone import make_aware
+from lxml import etree
+
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from netutils.config.compliance import _open_file_config, parser_map, section_config
@@ -20,8 +21,13 @@ from nautobot_golden_config.exceptions import ComplianceFailure
 from nautobot_golden_config.models import ComplianceRule, ConfigCompliance, GoldenConfig
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
-from nautobot_golden_config.utilities.helper import get_json_config, render_jinja_template, verify_settings
 from nautobot_golden_config.utilities.logger import NornirLogger
+from nautobot_golden_config.utilities.helper import (
+    get_json_config,
+    get_xml_config,
+    render_jinja_template,
+    verify_settings,
+)
 
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 LOGGER = logging.getLogger(__name__)
@@ -63,6 +69,18 @@ def get_config_element(rule, config, obj, logger):
             config_element = {k: config_json.get(k) for k in rule["obj"].match_config.splitlines() if k in config_json}
         else:
             config_element = config_json
+
+    elif rule["obj"].config_type == ComplianceRuleConfigTypeChoice.TYPE_XML:
+        config_xml = get_xml_config(config)
+
+        if rule["obj"].match_config:
+            config_element = config_xml.xpath("//" + rule["obj"].match_config)
+            if config_element:
+                config_element = "".join(
+                    etree.tostring(element, encoding="unicode", pretty_print=True) for element in config_element
+                )
+            else:
+                config_element = "<root/>"
 
     elif rule["obj"].config_type == ComplianceRuleConfigTypeChoice.TYPE_CLI:
         if obj.platform.network_driver_mappings["netutils_parser"] not in parser_map:

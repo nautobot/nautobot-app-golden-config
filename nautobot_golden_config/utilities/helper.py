@@ -1,7 +1,7 @@
 """Helper functions."""
 # pylint: disable=raise-missing-from
 import json
-from lxml import etree as ET
+from lxml import etree
 
 from django.conf import settings
 from django.contrib import messages
@@ -192,8 +192,9 @@ def get_json_config(config):
 def get_xml_config(config):
     """Helper to parse XML config files."""
     try:
-        return ET.fromstring(config)
-    except ET.ParseError:
+        parser = etree.XMLParser(remove_blank_text=True)
+        return etree.fromstring(config, parser=parser)
+    except etree.ParseError:
         return None
 
 

@@ -70,17 +70,21 @@ def get_config_element(rule, config, obj, logger):
         else:
             config_element = config_json
 
-    elif rule["obj"].config_type == ComplianceRuleConfigTypeChoice.TYPE_XML:
+    if rule["obj"].config_type == ComplianceRuleConfigTypeChoice.TYPE_XML:
         config_xml = get_xml_config(config)
 
         if rule["obj"].match_config:
             config_element = config_xml.xpath("//" + rule["obj"].match_config)
             if config_element:
-                config_element = "".join(
-                    etree.tostring(element, encoding="unicode", pretty_print=True) for element in config_element
-                )
+                new_root = etree.Element(config_xml.tag)
+                for element in config_element:
+                    new_root.append(element)
+                config_element = etree.ElementTree(new_root)
             else:
-                config_element = "<root/>"
+                new_root = etree.Element(config_xml.tag)
+                config_element = etree.ElementTree(new_root)
+
+            config_element = etree.tostring(new_root, encoding="unicode", pretty_print=True)
 
     elif rule["obj"].config_type == ComplianceRuleConfigTypeChoice.TYPE_CLI:
         if obj.platform.network_driver_mappings["netutils_parser"] not in parser_map:

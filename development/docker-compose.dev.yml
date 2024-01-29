@@ -13,6 +13,10 @@ services:
       - "./nautobot_config.py:/opt/nautobot/nautobot_config.py"
       - "../:/source"
     healthcheck:
+      interval: "30s"
+      timeout: "10s"
+      start_period: "60s"
+      retries: 3
       test: ["CMD", "true"]  # Due to layering, disable: true won't work. Instead, change the test
   docs:
     entrypoint: "mkdocs serve -v -a 0.0.0.0:8080"
@@ -34,6 +38,14 @@ services:
       - "../:/source"
     healthcheck:
       test: ["CMD", "true"]  # Due to layering, disable: true won't work. Instead, change the test
+  beat:
+    entrypoint:
+      - "sh"
+      - "-c"  # this is to evaluate the $NAUTOBOT_LOG_LEVEL from the env
+      - "watchmedo auto-restart --directory './' --pattern '*.py' --recursive -- nautobot-server celery beat -l $$NAUTOBOT_LOG_LEVEL"  ## $$ because of docker-compose
+    volumes:
+      - "./nautobot_config.py:/opt/nautobot/nautobot_config.py"
+      - "../:/source"
 # To expose postgres or redis to the host uncomment the following
 # postgres:
 #   ports:

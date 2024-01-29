@@ -21,7 +21,7 @@ This document provides an overview of the App including critical information and
 ## Nautobot Features Used
 
 !!! warning "Developer Note - Remove Me!"
-    What is shown today in the Installed Plugins page in Nautobot. What parts of Nautobot does it interact with, what does it add etc. ?
+    What is shown today in the Installed Apps page in Nautobot. What parts of Nautobot does it interact with, what does it add etc. ?
 
 ### Extras
 

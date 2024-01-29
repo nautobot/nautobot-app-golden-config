@@ -63,8 +63,8 @@ RUN pip show nautobot | grep "^Version: " | sed -e 's/Version: /nautobot==/' > c
 #
 # We can't use the entire freeze as it takes forever to resolve with rigidly fixed non-direct dependencies,
 #   especially those that are only direct to Nautobot but the container included versions slightly mismatch
-RUN poetry export -f requirements.txt --without-hashes --output poetry_freeze_base.txt
-RUN poetry export -f requirements.txt --with dev --without-hashes --output poetry_freeze_all.txt
+RUN poetry export -f requirements.txt --without-hashes --extras all --output poetry_freeze_base.txt
+RUN poetry export -f requirements.txt --without-hashes --extras all --with dev --output poetry_freeze_all.txt
 RUN sort poetry_freeze_base.txt poetry_freeze_all.txt | uniq -u > poetry_freeze_dev.txt
 
 # Install all local project as editable, constrained on Nautobot version, to get any additional

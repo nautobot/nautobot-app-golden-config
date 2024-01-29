@@ -2,6 +2,7 @@
 
 import json
 import logging
+import pprint
 
 from deepdiff import DeepDiff
 from django.core.exceptions import ValidationError
@@ -15,9 +16,7 @@ from nautobot.extras.models import ObjectChange
 from nautobot.extras.models.statuses import StatusField
 from nautobot.extras.utils import extras_features
 from netutils.config.compliance import feature_compliance
-from xmldiff import main, formatting
-from lxml import etree
-from copy import deepcopy
+from xmldiff import main, actions
 
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
@@ -125,53 +124,31 @@ def _get_json_compliance(obj):
 def _get_xml_compliance(obj):
     """This function performs the actual compliance for xml serializable data."""
 
-    def _remove_elements(root, tag, ns):
-        elements = root.xpath(f".//*[@{tag}]", namespaces=ns)
-        for elem in elements:
-            parent = elem.getparent()
-            if parent is not None:
-                parent.remove(elem)
-        return root
+    def _normalize_diff(diff):
+        formatted_diff = []
+        for operation in diff:
+            if isinstance(operation, actions.UpdateTextIn):
+                formatted_operation = f"{operation.node}, {operation.text}"
+                formatted_diff.append(formatted_operation)
+        return "\n".join(formatted_diff)
 
-    def _convert_tree_to_string(root):
-        result = etree.tostring(root, encoding="unicode")
-        if "diff:" not in result:
-            result = ""
-        return result.replace("http://namespaces.shoobx.com/diff", "xmldiff")
+    diff_options = {"F": 0.1, "ratio_mode": "accurate", "fast_match": True}
+    missing = main.diff_texts(obj.actual, obj.intended, diff_options=diff_options)
+    extra = main.diff_texts(obj.intended, obj.actual, diff_options=diff_options)
+    LOGGER.debug(f"missing:\n{pprint.pformat(missing)}\n")
+    LOGGER.debug(f"extra:\n{pprint.pformat(extra)}\n")
 
-    def _create_return_dict(compliance, compliance_int, obj, missing, extra):
-        if compliance:
-            extra = ""
-            missing = ""
-        return {
-            "compliance": compliance,
-            "compliance_int": compliance_int,
-            "ordered": obj.ordered,
-            "missing": _null_to_empty(missing),
-            "extra": _null_to_empty(extra),
-        }
-
-    formatter = formatting.XMLFormatter(normalize=formatting.WS_BOTH)
-    diff = main.diff_texts(obj.actual, obj.intended, formatter=formatter)
-
-    compliance = "diff:" not in diff
+    compliance = not missing and not extra
     compliance_int = int(compliance)
+    ordered = obj.ordered
 
-    # Parse the diff XML and make a copy for extra and missing
-    root = etree.fromstring(diff)
-    extra_root = deepcopy(root)
-    missing_root = deepcopy(root)
-
-    # Remove elements with diff:insert from extra and diff:delete from missing
-    ns = {"diff": "http://namespaces.shoobx.com/diff"}
-    extra_root = _remove_elements(extra_root, "diff:insert", ns)
-    missing_root = _remove_elements(missing_root, "diff:delete", ns)
-
-    # Convert back to strings
-    extra = _convert_tree_to_string(extra_root)
-    missing = _convert_tree_to_string(missing_root)
-
-    return _create_return_dict(compliance, compliance_int, obj, missing, extra)
+    return {
+        "compliance": compliance,
+        "compliance_int": compliance_int,
+        "ordered": ordered,
+        "missing": _null_to_empty(_normalize_diff(missing)),
+        "extra": _null_to_empty(_normalize_diff(extra)),
+    }
 
 
 def _verify_get_custom_compliance_data(compliance_details):

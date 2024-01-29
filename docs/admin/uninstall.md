@@ -13,3 +13,9 @@ nautobot-server migrate nautobot_golden_config zero
 ## Remove App configuration
 
 Remove the configuration you added in `nautobot_config.py` from `PLUGINS` & `PLUGINS_CONFIG`.
+
+## Uninstall the package
+
+```bash
+$ pip3 uninstall nautobot-golden-config
+```

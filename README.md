@@ -1,10 +1,10 @@
 # Nautobot Golden Config
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/nautobot/nautobot-app-golden-config/develop/docs/images/icon-NautobotGoldenConfig.png" class="logo" height="200px">
+  <img src="https://raw.githubusercontent.com/nautobot/nautobot-app-golden-config/develop/docs/images/icon-nautobot-golden-config.png" class="logo" height="200px">
   <br>
   <a href="https://github.com/nautobot/nautobot-app-golden-config/actions"><img src="https://github.com/nautobot/nautobot-app-golden-config/actions/workflows/ci.yml/badge.svg?branch=main"></a>
-  <a href="https://docs.nautobot.com/projects/golden-config/en/latest/"><img src="https://readthedocs.org/projects/nautobot-plugin-golden-config/badge/"></a>
+  <a href="https://docs.nautobot.com/projects/golden-config/en/latest"><img src="https://readthedocs.org/projects/nautobot-app-golden-config/badge/"></a>
   <a href="https://pypi.org/project/nautobot-golden-config/"><img src="https://img.shields.io/pypi/v/nautobot-golden-config"></a>
   <a href="https://pypi.org/project/nautobot-golden-config/"><img src="https://img.shields.io/pypi/dm/nautobot-golden-config"></a>
   <br>
@@ -20,37 +20,11 @@ The Golden Config App is a Nautobot App that provides a NetDevOps approach to go
 
 ### Key Use Cases
 
-This app enable six (6) key use cases.
+> Developer Note: Place the files in the `docs/images/` folder and link them using only full URLs from GitHub, for example: `![Overview](https://raw.githubusercontent.com/nautobot/nautobot-app-golden-config/develop/docs/images/app-overview.png)`. This absolute static linking is required to ensure the README renders properly in GitHub, the docs site, and any other external sites like PyPI.
 
-1. **Configuration Backups** - Is a Nornir process to connect to devices, optionally parse out lines/secrets, backup the configuration, and save to a Git repository.
-2. **Intended Configuration** - Is a Nornir process to generate configuration based on a Git repo of Jinja files to combine with a GraphQL generated data and a Git repo to store the intended configuration.
-3. **Source of Truth Aggregation** - Is a GraphQL query per device that creates a data structure used in the generation of configuration.
-4. **Configuration Compliance** - Is a process to run comparison of the actual (via backups) and intended (via Jinja file creation) CLI configurations upon saving the actual and intended configuration. This is started by either a Nornir process for cli-like configurations or calling the API for json-like configurations
-5. **Configuration Remediation** - Is a process of generating a partial device configuration that would get a configuration feature into a compliant state. 
-6. **Configuration Deployment** - Is a process to generate a device configuration and push it to the network device. It supports compliance features, remediation engine and manual definitions.
+More screenshots can be found in the [Using the App](https://docs.nautobot.com/projects/golden-config/en/latest/user/app_use_cases/) page in the documentation. Here's a quick overview of some of the app's added functionality:
 
-> Notice: **Configuration Postprocessing** - (beta feature) This process renders a valid configuration artifact from an intended configuration, that can be pushed to devices. The current implementation renders this configuration; however, **it doesn't push it** to the target device.
-
-> Notice: The operators of their own Nautobot instance are welcome to use any combination of these features. Though the appearance may seem like they are tightly coupled, this isn't actually the case. For example, one can obtain backup configurations from their current RANCID/Oxidized process and simply provide a Git Repo of the location of the backup configurations, and the compliance process would work the same way. Also, another user may only want to generate configurations, but not want to use other features, which is perfectly fine to do so.
-
-## Screenshots
-
-There are many features and capabilities the app provides into the Nautobot ecosystem. The following screenshots are intended to provide a quick visual overview of some of these features.
-
-The golden configuration is driven by jobs that run a series of tasks and the result is captured in this overview.
-
-![Overview](https://raw.githubusercontent.com/nautobot/nautobot-app-golden-config/develop/docs/images/ss_golden-overview.png)
-
-The compliance report provides a high-level overview on the compliance of your network.
-![Compliance Report](https://raw.githubusercontent.com/nautobot/nautobot-app-golden-config/develop/docs/images/ss_compliance-report.png)
-
-The compliance overview will provide a per device and feature overview on the compliance of your network devices.
-![Compliance Overview](https://raw.githubusercontent.com/nautobot/nautobot-app-golden-config/develop/docs/images/ss_compliance-overview.png)
-
-Drilling into a specific device and feature, you can get an immediate detailed understanding of your device.
-![Compliance Device](https://raw.githubusercontent.com/nautobot/nautobot-app-golden-config/develop/docs/images/ss_compliance-device.png)
-
-![Compliance Rule](https://raw.githubusercontent.com/nautobot/nautobot-app-golden-config/develop/docs/images/ss_compliance-rule.png)
+![](https://raw.githubusercontent.com/nautobot/nautobot-app-golden-config/develop/docs/images/placeholder.png)
 
 ## Try it out!
 
@@ -70,7 +44,7 @@ Full web-based HTML documentation for this app can be found over on the [Nautobo
 
 ### Contributing to the Docs
 
-You can find all the Markdown source for the App documentation under the [docs](https://github.com/nautobot/nautobot-app-golden-config/tree/develop/docs) folder in this repository. For simple edits, a Markdown capable editor is sufficient - clone the repository and edit away.
+You can find all the Markdown source for the App documentation under the [`docs`](https://github.com/nautobot/nautobot-app-golden-config/tree/develop/docs) folder in this repository. For simple edits, a Markdown capable editor is sufficient: clone the repository and edit away.
 
 If you need to view the fully generated documentation site, you can build it with [mkdocs](https://www.mkdocs.org/). A container hosting the docs will be started using the invoke commands (details in the [Development Environment Guide](https://docs.nautobot.com/projects/golden-config/en/latest/dev/dev_environment/#docker-development-environment)) on [http://localhost:8001](http://localhost:8001). As your changes are saved, the live docs will be automatically reloaded.
 

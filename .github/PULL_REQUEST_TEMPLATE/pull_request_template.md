@@ -1,5 +1,5 @@
 <!--
-    Thank you for your interest in contributing to Nautobot! Please note
+    Thank you for your interest in contributing to Golden Config! Please note
     that our contribution policy recommends that a feature request or bug
     report be opened for approval prior to filing a pull request. This
     helps avoid wasting time and effort on something that we might not

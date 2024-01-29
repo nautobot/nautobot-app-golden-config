@@ -159,3 +159,8 @@ a.autorefs-external:hover::after {
     -webkit-mask-image: var(--md-admonition-icon--version-removed);
     mask-image: var(--md-admonition-icon--version-removed);
 }
+
+/* Do not wrap code blocks in markdown tables. */
+div.md-typeset__table>table>tbody>tr>td>code {
+    white-space: nowrap;
+}

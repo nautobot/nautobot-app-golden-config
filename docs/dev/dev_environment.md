@@ -29,8 +29,9 @@ Using **Invoke** these configuration options can be overridden using [several me
 
 This project is managed by [Python Poetry](https://python-poetry.org/) and has a few requirements to setup your development environment:
 
-1. Install Poetry, see the [Poetry Documentation](https://python-poetry.org/docs/#installation) for your operating system.
+1. Install Poetry, see the [Poetry documentation](https://python-poetry.org/docs/#installation) for your operating system.
 2. Install Docker, see the [Docker documentation](https://docs.docker.com/get-docker/) for your operating system.
+3. Install Docker-compose, see the [Docker-compose documentation](https://github.com/docker/compose) for your operation system.
 
 Once you have Poetry and Docker installed you can run the following commands (in the root of the repository) to install all other development dependencies in an isolated Python virtual environment:
 
@@ -125,7 +126,7 @@ Each command can be executed with `invoke <command>`. All commands support the a
   bandit           Run bandit to validate basic static code security analysis.
   black            Run black to check that Python files adhere to its style standards.
   flake8           Run flake8 to check that Python files adhere to its style standards.
-  pydocstyle       Run pydocstyle to validate docstring formatting adheres to NTC defined standards.
+  ruff             Run ruff to validate docstring formatting adheres to NTC defined standards.
   pylint           Run pylint code analysis.
   tests            Run all tests for this app.
   unittest         Run Django unit tests for the app.
@@ -466,6 +467,6 @@ To run an individual test, you can run any or all of the following:
 ➜ invoke bandit
 ➜ invoke black
 ➜ invoke flake8
-➜ invoke pydocstyle
+➜ invoke ruff
 ➜ invoke pylint
 ```

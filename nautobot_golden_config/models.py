@@ -282,13 +282,13 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
     match_config = models.TextField(
         blank=True,
         verbose_name="Config to Match",
-        help_text="The config to match that is matched based on the parent most configuration. E.g.: For CLI `router bgp` or `ntp`. For JSON this is a top level key name.",
+        help_text="The config to match that is matched based on the parent most configuration. E.g.: For CLI `router bgp` or `ntp`. For JSON this is a top level key name. For XML this is a xpath query.",
     )
     config_type = models.CharField(
         max_length=20,
         default=ComplianceRuleConfigTypeChoice.TYPE_CLI,
         choices=ComplianceRuleConfigTypeChoice,
-        help_text="Whether the configuration is in CLI or JSON/structured format.",
+        help_text="Whether the configuration is in CLI, JSON, or XML format.",
     )
     custom_compliance = models.BooleanField(
         default=False, help_text="Whether this Compliance Rule is proceeded as custom."

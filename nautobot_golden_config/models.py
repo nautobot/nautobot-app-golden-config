@@ -135,19 +135,19 @@ def _get_xml_compliance(obj):
     diff_options = {"F": 0.1, "ratio_mode": "accurate", "fast_match": True}
     missing = main.diff_texts(obj.actual, obj.intended, diff_options=diff_options)
     extra = main.diff_texts(obj.intended, obj.actual, diff_options=diff_options)
-    LOGGER.debug(f"missing:\n{pprint.pformat(missing)}\n")
-    LOGGER.debug(f"extra:\n{pprint.pformat(extra)}\n")
 
     compliance = not missing and not extra
     compliance_int = int(compliance)
     ordered = obj.ordered
+    missing = _null_to_empty(_normalize_diff(missing))
+    extra = _null_to_empty(_normalize_diff(extra))
 
     return {
         "compliance": compliance,
         "compliance_int": compliance_int,
         "ordered": ordered,
-        "missing": _null_to_empty(_normalize_diff(missing)),
-        "extra": _null_to_empty(_normalize_diff(extra)),
+        "missing": missing,
+        "extra": extra,
     }
 
 

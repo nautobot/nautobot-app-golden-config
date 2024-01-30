@@ -99,6 +99,7 @@ exclude = '''
 
 [tool.pylint.master]
 # Include the pylint_django plugin to avoid spurious warnings about Django patterns
+extension-pkg-allow-list = ["lxml"]
 load-plugins="pylint_django, pylint_nautobot"
 ignore-patterns=["jinja_filters.py", ".venv"]
 ignore-paths = '^.*/migrations/.*$'

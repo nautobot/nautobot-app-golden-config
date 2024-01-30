@@ -7,7 +7,7 @@ import os
 from collections import defaultdict
 from datetime import datetime
 from django.utils.timezone import make_aware
-from lxml import etree
+from lxml import etree  # nosec
 
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
@@ -78,7 +78,7 @@ def get_config_element(rule, config, obj, logger):
             error_msg = "`E3002:` Unable to interpret configuration as XML."
             logger.error(error_msg, extra={"object": obj})
             raise NornirNautobotException(error_msg)
-        
+
         if rule["obj"].match_config:
             config_element = get_xml_subtree_with_full_path(config_xml, rule["obj"].match_config)
         else:

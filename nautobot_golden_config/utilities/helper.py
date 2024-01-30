@@ -256,7 +256,7 @@ def dispatch_params(method, platform, logger):
 
 
 def get_xml_subtree_with_full_path(config_xml, match_config):
-    """Helper function to get the full path of a subtree in an XML config."""
+    """Helper function to get a subtree of an XML config with the full path."""
     config_elements = config_xml.xpath(match_config)
     new_root = etree.Element(config_xml.tag)
     for element in config_elements:

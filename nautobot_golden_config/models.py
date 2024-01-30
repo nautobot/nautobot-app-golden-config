@@ -2,7 +2,6 @@
 
 import json
 import logging
-import pprint
 
 from deepdiff import DeepDiff
 from django.core.exceptions import ValidationError

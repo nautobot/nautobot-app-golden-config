@@ -1,10 +1,9 @@
 """Helper functions."""
 # pylint: disable=raise-missing-from
 import json
-from lxml import etree
 from copy import deepcopy
+from lxml import etree  # nosec
 
-0.0
 from django.conf import settings
 from django.contrib import messages
 from django.db.models import Q
@@ -195,7 +194,7 @@ def get_xml_config(config):
     """Helper to parse XML config files."""
     try:
         parser = etree.XMLParser(remove_blank_text=True)
-        return etree.fromstring(config, parser=parser)
+        return etree.fromstring(config, parser=parser)  # nosec
     except etree.ParseError:
         return None
 

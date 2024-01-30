@@ -27,6 +27,7 @@ from nautobot_golden_config.utilities.helper import (
     get_xml_config,
     render_jinja_template,
     verify_settings,
+    get_xml_subtree_with_full_path,
 )
 
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
@@ -73,18 +74,15 @@ def get_config_element(rule, config, obj, logger):
     if rule["obj"].config_type == ComplianceRuleConfigTypeChoice.TYPE_XML:
         config_xml = get_xml_config(config)
 
+        if not config_xml:
+            error_msg = "`E3002:` Unable to interpret configuration as XML."
+            logger.error(error_msg, extra={"object": obj})
+            raise NornirNautobotException(error_msg)
+        
         if rule["obj"].match_config:
-            config_element = config_xml.xpath("//" + rule["obj"].match_config)
-            if config_element:
-                new_root = etree.Element(config_xml.tag)
-                for element in config_element:
-                    new_root.append(element)
-                config_element = etree.ElementTree(new_root)
-            else:
-                new_root = etree.Element(config_xml.tag)
-                config_element = etree.ElementTree(new_root)
-
-            config_element = etree.tostring(new_root, encoding="unicode", pretty_print=True)
+            config_element = get_xml_subtree_with_full_path(config_xml, rule["obj"].match_config)
+        else:
+            config_element = etree.tostring(config_xml, encoding="unicode", pretty_print=True)
 
     elif rule["obj"].config_type == ComplianceRuleConfigTypeChoice.TYPE_CLI:
         if obj.platform.network_driver_mappings["netutils_parser"] not in parser_map:

@@ -124,6 +124,7 @@ def _get_xml_compliance(obj):
     """This function performs the actual compliance for xml serializable data."""
 
     def _normalize_diff(diff):
+        """Format the diff output to a list of nodes with values that have updated."""
         formatted_diff = []
         for operation in diff:
             if isinstance(operation, actions.UpdateTextIn):
@@ -131,7 +132,11 @@ def _get_xml_compliance(obj):
                 formatted_diff.append(formatted_operation)
         return "\n".join(formatted_diff)
 
-    diff_options = {"F": 0.1, "ratio_mode": "accurate", "fast_match": True}
+    # Options for the diff operation. These are set to prefer updates over node insertions/deletions.
+    diff_options = {
+        "F": 0.1,
+        "fast_match": True,
+    }
     missing = main.diff_texts(obj.actual, obj.intended, diff_options=diff_options)
     extra = main.diff_texts(obj.intended, obj.actual, diff_options=diff_options)
 

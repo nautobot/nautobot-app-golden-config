@@ -1,1 +1,1 @@
-"""Nornir Plays for Nautobot Nornir Plugin."""
+"""Nornir Plays for Nautobot Golden Config App."""

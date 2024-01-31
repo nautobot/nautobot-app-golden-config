@@ -1,12 +1,13 @@
 [tool.poetry]
 name = "nautobot-golden-config"
-version = "0.1.0"
+version = "2.0.0"
 description = "An app for configuration on nautobot"
 authors = ["Network to Code, LLC <opensource@networktocode.com>"]
 license = "Apache-2.0"
 readme = "README.md"
 homepage = "https://github.com/nautobot/nautobot-app-golden-config"
 repository = "https://github.com/nautobot/nautobot-app-golden-config"
+documentation = "https://docs.nautobot.com/projects/golden-config/en/latest/"
 keywords = ["nautobot", "nautobot-app", "nautobot-plugin"]
 classifiers = [
     "Intended Audience :: Developers",
@@ -21,6 +22,8 @@ packages = [
     { include = "nautobot_golden_config" },
 ]
 include = [
+    "LICENSE",
+    "README.md",
     # Poetry by default will exclude files that are in .gitignore
     "nautobot_golden_config/static/nautobot_golden_config/docs/**/*",
 ]
@@ -149,6 +152,9 @@ ignore = [
     "D401",  # First line of docstring should be in imperative mood
     "D407",  # Missing dashed underline after section
     "D416",  # Section name ends in colon
+
+    # Package specific ignores for backwards compatibility
+    "D417",  # Missing argument descriptions in Docstrings
 ]
 
 [tool.ruff.lint.pydocstyle]

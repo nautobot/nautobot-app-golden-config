@@ -23,8 +23,7 @@ from invoke.tasks import task as invoke_task
 def is_truthy(arg):
     """Convert "truthy" strings into Booleans.
 
-    Examples
-    --------
+    Examples:
         >>> is_truthy('yes')
         True
     Args:
@@ -112,7 +111,6 @@ def docker_compose(context, command, **kwargs):
     """Helper function for running a specific docker compose command with all appropriate parameters and environment.
 
     Args:
-    ----
         context (obj): Used to run specific commands
         command (str): Command string to append to the "docker compose ..." command, such as "build", "up", etc.
         **kwargs: Passed through to the context.run() call.
@@ -710,7 +708,6 @@ def yamllint(context):
     """Run yamllint to validate formatting adheres to NTC defined YAML standards.
 
     Args:
-    ----
         context (obj): Used to run specific commands
     """
     command = "yamllint . --format standard"

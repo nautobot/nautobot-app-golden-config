@@ -22,8 +22,6 @@ packages = [
     { include = "nautobot_golden_config" },
 ]
 include = [
-    "LICENSE",
-    "README.md",
     # Poetry by default will exclude files that are in .gitignore
     "nautobot_golden_config/static/nautobot_golden_config/docs/**/*",
 ]

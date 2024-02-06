@@ -1,4 +1,5 @@
 """Nornir job for deploying configurations."""
+
 from datetime import datetime
 
 from nautobot.dcim.models import Device
@@ -13,11 +14,13 @@ from nornir.core.task import Result, Task
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
 from nornir_nautobot.utils.logger import NornirLogger
 
+from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 
 
+@close_threaded_db_connections
 def run_deployment(task: Task, logger: NornirLogger, commit: bool, config_plan_qs, deploy_job_result) -> Result:
     """Deploy configurations to device."""
     obj = task.host.data["obj"]

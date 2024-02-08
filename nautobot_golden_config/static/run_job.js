@@ -52,7 +52,7 @@ function startJob(jobClass, data, redirectUrlTemplate, callBack) {
                 $('#jobStatus').html("Unknown").show();
                 $('#detailMessages').show();
                 $('#detailMessages').attr('class', 'alert alert-danger text-center');
-                $('#detailMessages').html("<p>The call to launch the job was successful but unable to determin job status, response has been logged to the browser console.</p>");
+                $('#detailMessages').html("<p>The call to launch the job was successful but unable to determine job status, response has been logged to the browser console.</p>");
                 console.log("error: " + JSON.stringify(jobData));
             }
         },

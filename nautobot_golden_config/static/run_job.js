@@ -33,8 +33,8 @@ function startJob(jobClass, data, redirectUrlTemplate, callBack) {
             $('#detailMessages').hide();
         },
         success: function (jobData) {
-            // if you get a 200 response and job_result data is there, you know it was a good run
             if (jobData.job_result) {
+                // if you get a 200 response and job_result data is there, you know it was a good run
                 $('#jobStatus').html("Started").show();
                 var jobResultUrl = "/extras/job-results/" + jobData.job_result.id + "/";
                 $('#jobResults').html(iconLink(jobResultUrl, "mdi-open-in-new", "Job Details")).show();
@@ -43,18 +43,19 @@ function startJob(jobClass, data, redirectUrlTemplate, callBack) {
                     var redirectUrl = _renderTemplate(redirectUrlTemplate, jobData);
                     $('#redirectLink').html(iconLink(redirectUrl, "mdi-open-in-new", "Info"));
                 }
-            // Job approvals have this relevant data structure { "scheduled_job": {"approval_required": true }}
             } else if (jobData.scheduled_job && jobData.scheduled_job.approval_required) {
+                // Job approvals have this relevant data structure { "scheduled_job": {"approval_required": true }}
                 $("#loaderImg").hide();
                 $('#jobStatus').html("Pending Approval").show();
                 $('#detailMessages').show();
                 $('#detailMessages').html(`<p>Job is pending approval, please review <a href="/extras/jobs/scheduled-jobs/approval-queue/${jobData.scheduled_job.id}/">Job Approval</a></p>`);
             } else {
+                // Response was 200 but did not return a job_result OR a scheduled_job pending approval, this condition should not be possible at the time of development but was added to prevent the modal going into a hung state
                 $("#loaderImg").hide();
                 $('#jobStatus').html("Unknown").show();
                 $('#detailMessages').show();
                 $('#detailMessages').attr('class', 'alert alert-danger text-center');
-                $('#detailMessages').html("<p>The call to launch the job was successful but unable to determine job status, response has been logged to the browser console.</p>");
+                $('#detailMessages').html("<p>The call to launch the job was successful but an unknown error has occurred, response has been logged to the browser console.</p>");
                 console.log("error: " + JSON.stringify(jobData));
             }
         },

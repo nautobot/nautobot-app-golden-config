@@ -43,6 +43,7 @@ function startJob(jobClass, data, redirectUrlTemplate, callBack) {
                     var redirectUrl = _renderTemplate(redirectUrlTemplate, jobData);
                     $('#redirectLink').html(iconLink(redirectUrl, "mdi-open-in-new", "Info"));
                 }
+            // Job approvals have this relevant data structure { "scheduled_job": {"approval_required": true }}
             } else if (jobData.scheduled_job && jobData.scheduled_job.approval_required) {
                 $("#loaderImg").hide();
                 $('#jobStatus').html("Pending Approval").show();

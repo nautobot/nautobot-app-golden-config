@@ -33,6 +33,7 @@ function startJob(jobClass, data, redirectUrlTemplate, callBack) {
             $('#detailMessages').hide();
         },
         success: function (jobData) {
+            // if you get a 200 response and job_result data is there, you know it was a good run
             if (jobData.job_result) {
                 $('#jobStatus').html("Started").show();
                 var jobResultUrl = "/extras/job-results/" + jobData.job_result.id + "/";

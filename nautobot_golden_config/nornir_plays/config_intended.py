@@ -1,4 +1,5 @@
 """Nornir job for generating the intended config."""
+
 # pylint: disable=relative-beyond-top-level
 import logging
 import os
@@ -118,8 +119,11 @@ def config_intended(job_result, log_level, data, job_class_instance):
         logger.error(error_msg)
         raise NornirNautobotException(error_msg) from error
 
-    logger.debug("Compiling device data for intended configuration.")
-    device_to_settings_map = get_device_to_settings_map(queryset=qs)
+    if data.get("settings_map"):
+        device_to_settings_map = data["settings_map"]
+    else:
+        logger.debug("Compiling device data for intended configuration.")
+        device_to_settings_map = get_device_to_settings_map(queryset=qs)
 
     for settings in set(device_to_settings_map.values()):
         verify_settings(logger, settings, ["jinja_path_template", "intended_path_template", "sot_agg_query"])

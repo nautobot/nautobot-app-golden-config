@@ -1,4 +1,5 @@
 """Nornir job for generating the compliance data."""
+
 # pylint: disable=relative-beyond-top-level
 import difflib
 import logging
@@ -184,7 +185,10 @@ def config_compliance(job_result, log_level, data):
     qs = get_job_filter(data)
     logger.debug("Compiling device data for compliance job.")
 
-    device_to_settings_map = get_device_to_settings_map(queryset=qs)
+    if data.get("settings_map"):
+        device_to_settings_map = data["settings_map"]
+    else:
+        device_to_settings_map = get_device_to_settings_map(queryset=qs)
 
     for settings in set(device_to_settings_map.values()):
         verify_settings(logger, settings, ["backup_path_template", "intended_path_template"])

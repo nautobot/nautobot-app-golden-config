@@ -1,4 +1,5 @@
 """Jobs to run backups, intended config, and compliance."""
+
 # pylint: disable=too-many-function-args,logging-fstring-interpolation
 # TODO: Remove the following ignore, added to be able to pass pylint in CI.
 # pylint: disable=arguments-differ
@@ -35,7 +36,7 @@ from nautobot_golden_config.utilities.config_plan import (
     generate_config_set_from_manual,
 )
 from nautobot_golden_config.utilities.git import GitRepo
-from nautobot_golden_config.utilities.helper import get_job_filter
+from nautobot_golden_config.utilities.helper import get_device_to_settings_map, get_job_filter
 
 name = "Golden Configuration"  # pylint: disable=invalid-name
 
@@ -197,6 +198,11 @@ class AllGoldenConfig(GoldenConfigJobMixin):
 
     def run(self, *args, **data):
         """Run all jobs."""
+        qs = get_job_filter(data)
+        device_to_settings_map = get_device_to_settings_map(queryset=qs)
+
+        data["settings_map"] = device_to_settings_map
+
         repo_types = []
         if constant.ENABLE_INTENDED:
             repo_types.extend(["jinja_repository", "intended_repository"])
@@ -228,6 +234,11 @@ class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
 
     def run(self, *args, **data):
         """Run all jobs."""
+        qs = get_job_filter(data)
+        device_to_settings_map = get_device_to_settings_map(queryset=qs)
+
+        data["settings_map"] = device_to_settings_map
+
         repo_types = []
         if constant.ENABLE_INTENDED:
             repo_types.extend(["jinja_repository", "intended_repository"])

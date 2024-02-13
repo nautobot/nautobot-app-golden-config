@@ -21,7 +21,6 @@ from nautobot.extras.jobs import (
 )
 from nautobot.extras.models import DynamicGroup, GitRepository, Role, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
-from nornir_nautobot.exceptions import NornirNautobotException
 from nautobot_golden_config.choices import ConfigPlanTypeChoice
 from nautobot_golden_config.models import ComplianceFeature, ConfigPlan, GoldenConfig
 from nautobot_golden_config.nornir_plays.config_backup import config_backup
@@ -35,7 +34,16 @@ from nautobot_golden_config.utilities.config_plan import (
     generate_config_set_from_manual,
 )
 from nautobot_golden_config.utilities.git import GitRepo
-from nautobot_golden_config.utilities.helper import get_job_filter
+from nautobot_golden_config.utilities.helper import get_device_to_settings_map, get_job_filter
+
+# from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
+from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
+
+# from nornir import InitNornir
+from nornir.core.plugins.inventory import InventoryPluginRegister
+from nornir_nautobot.exceptions import NornirNautobotException
+
+InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 
 name = "Golden Configuration"  # pylint: disable=invalid-name
 
@@ -96,6 +104,10 @@ class GoldenConfigJobMixin(Job):  # pylint: disable=abstract-method
     def before_start(self, task_id, args, kwargs):
         """Ensure repos before tasks runs."""
         super().before_start(task_id, args, kwargs)
+        self.logger.debug("Compiling device data for GC job.", extra={"grouping": "Get Job Filter"})
+        self.qs = get_job_filter(self.deserialize_data(kwargs))
+        self.logger.debug("Compiling device to settings map.", extra={"grouping": "Device to Settings Map"})
+        self.device_to_settings_map = get_device_to_settings_map(queryset=self.qs)
         self.repos = []
         self.logger.debug(
             f"Repository types to sync: {', '.join(self.Meta.repo_types)}",  # pylint: disable=no-member
@@ -140,7 +152,7 @@ class ComplianceJob(GoldenConfigJobMixin, FormEntry):
     def run(self, *args, **data):
         """Run config compliance report script."""
         self.logger.debug("Starting config compliance nornir play.")
-        config_compliance(self.job_result, self.logger.getEffectiveLevel(), data)
+        config_compliance(self.job_result, self.logger.getEffectiveLevel(), data, self.qs, self.device_to_settings_map)
 
     def after_return(self, *args):
         """Commit and Push each repo after job is completed."""
@@ -161,7 +173,9 @@ class IntendedJob(GoldenConfigJobMixin, FormEntry):
     def run(self, *args, **data):
         """Run config generation script."""
         self.logger.debug("Building device settings mapping and running intended config nornir play.")
-        config_intended(self.job_result, self.logger.getEffectiveLevel(), data, self)
+        config_intended(
+            self.job_result, self.logger.getEffectiveLevel(), data, self, self.qs, self.device_to_settings_map
+        )
 
 
 class BackupJob(GoldenConfigJobMixin, FormEntry):
@@ -178,7 +192,7 @@ class BackupJob(GoldenConfigJobMixin, FormEntry):
     def run(self, *args, **data):
         """Run config backup process."""
         self.logger.debug("Starting config backup nornir play.")
-        config_backup(self.job_result, self.logger.getEffectiveLevel(), data)
+        config_backup(self.job_result, self.logger.getEffectiveLevel(), data, self.qs, self.device_to_settings_map)
 
 
 class AllGoldenConfig(GoldenConfigJobMixin):

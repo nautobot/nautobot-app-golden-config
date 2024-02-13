@@ -5,8 +5,18 @@ import logging
 import os
 from collections import defaultdict
 from datetime import datetime
-from django.utils.timezone import make_aware
 
+from django.utils.timezone import make_aware
+from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
+from nautobot_golden_config.models import ComplianceRule, ConfigCompliance, GoldenConfig
+from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
+from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
+from nautobot_golden_config.utilities.helper import (  # get_device_to_settings_map,; get_job_filter,
+    get_json_config,
+    render_jinja_template,
+    verify_settings,
+)
+from nautobot_golden_config.utilities.logger import NornirLogger
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from netutils.config.compliance import _open_file_config, parser_map, section_config
@@ -14,19 +24,6 @@ from nornir import InitNornir
 from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir.core.task import Result, Task
 from nornir_nautobot.exceptions import NornirNautobotException
-
-from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
-from nautobot_golden_config.utilities.logger import NornirLogger
-from nautobot_golden_config.models import ComplianceRule, ConfigCompliance, GoldenConfig
-from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
-from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
-from nautobot_golden_config.utilities.helper import (
-    get_device_to_settings_map,
-    get_job_filter,
-    get_json_config,
-    render_jinja_template,
-    verify_settings,
-)
 
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 LOGGER = logging.getLogger(__name__)
@@ -174,17 +171,17 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     return Result(host=task.host)
 
 
-def config_compliance(job_result, log_level, data):
+def config_compliance(job_result, log_level, data, qs, device_to_settings_map):
     """Nornir play to generate configurations."""
     now = make_aware(datetime.now())
     logger = NornirLogger(job_result, log_level)
 
     rules = get_rules()
 
-    qs = get_job_filter(data)
-    logger.debug("Compiling device data for compliance job.")
+    # qs = get_job_filter(data)
+    # logger.debug("Compiling device data for compliance job.")
 
-    device_to_settings_map = get_device_to_settings_map(queryset=qs)
+    # device_to_settings_map = get_device_to_settings_map(queryset=qs)
 
     for settings in set(device_to_settings_map.values()):
         verify_settings(logger, settings, ["backup_path_template", "intended_path_template"])

@@ -71,7 +71,7 @@ def get_config_element(rule, config, obj, logger):
         else:
             config_element = config_json
 
-    if rule["obj"].config_type == ComplianceRuleConfigTypeChoice.TYPE_XML:
+    elif rule["obj"].config_type == ComplianceRuleConfigTypeChoice.TYPE_XML:
         config_xml = get_xml_config(config)
 
         if not config_xml:

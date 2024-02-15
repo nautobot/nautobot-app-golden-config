@@ -57,7 +57,22 @@ clearFields(hideFormData)
 setupFieldListeners(hideFormData)
 
 function formatJobData(data) {
-  var arrayFields = ["feature", "device_type", "tenant_group", "tenant","location", "rack_group","rack","role","manufacturer","platform","device_type","device","tags"]
+  var arrayFields = [
+    "feature",
+    "device_type",
+    "tenant_group",
+    "tenant",
+    "location",
+    "rack_group",
+    "rack",
+    "role",
+    "manufacturer",
+    "platform",
+    "device_type",
+    "device",
+    "tags",
+    "status"
+  ]
   var form_data = formDataToDictionary(data, arrayFields);
   delete form_data.csrfmiddlewaretoken;
   delete form_data.q;

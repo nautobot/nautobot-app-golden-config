@@ -1,4 +1,5 @@
 """Nornir job for generating the compliance data."""
+
 # pylint: disable=relative-beyond-top-level
 import difflib
 import logging
@@ -85,9 +86,9 @@ def get_config_element(rule, config, obj, logger):
 def diff_files(backup_file, intended_file):
     """Utility function to provide `Unix Diff` between two files."""
     with open(backup_file, encoding="utf-8") as file:
-        backup = file.read()
+        backup = file.readlines()
     with open(intended_file, encoding="utf-8") as file:
-        intended = file.read()
+        intended = file.readlines()
 
     for line in difflib.unified_diff(backup, intended, lineterm=""):
         yield line

@@ -1,4 +1,5 @@
 """Jobs to run backups, intended config, and compliance."""
+
 # pylint: disable=too-many-function-args,logging-fstring-interpolation
 # TODO: Remove the following ignore, added to be able to pass pylint in CI.
 # pylint: disable=arguments-differ
@@ -209,18 +210,19 @@ class AllGoldenConfig(GoldenConfigJobMixin):
         has_sensitive_variables = False
         repo_types = []
 
-    def run(self, *args, **data):
-        """Run all jobs."""
+    def before_start(self, task_id, args, kwargs):
         repo_types = []
         if constant.ENABLE_INTENDED:
             repo_types.extend(["jinja_repository", "intended_repository"])
         if constant.ENABLE_BACKUP:
             repo_types.extend(["backup_repository"])
-            repo_types = list(set(repo_types) - set())
         if constant.ENABLE_COMPLIANCE:
             repo_types.extend(["intended_repository", "backup_repository"])
+        self.Meta.repo_types = list(set(repo_types) - set())
+        return super().before_start(task_id, args, kwargs)
 
-        self.Meta.repo_types = repo_types
+    def run(self, *args, **data):
+        """Run all jobs."""
         if constant.ENABLE_INTENDED:
             IntendedJob().run.__func__(self, **data)  # pylint: disable=too-many-function-args
         if constant.ENABLE_BACKUP:
@@ -240,18 +242,19 @@ class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
         has_sensitive_variables = False
         repo_types = []
 
-    def run(self, *args, **data):
-        """Run all jobs."""
+    def before_start(self, task_id, args, kwargs):
         repo_types = []
         if constant.ENABLE_INTENDED:
             repo_types.extend(["jinja_repository", "intended_repository"])
         if constant.ENABLE_BACKUP:
             repo_types.extend(["backup_repository"])
-            repo_types = list(set(repo_types) - set())
         if constant.ENABLE_COMPLIANCE:
             repo_types.extend(["intended_repository", "backup_repository"])
+        self.Meta.repo_types = list(set(repo_types) - set())
+        return super().before_start(task_id, args, kwargs)
 
-        self.Meta.repo_types = repo_types
+    def run(self, *args, **data):
+        """Run all jobs."""
         if constant.ENABLE_INTENDED:
             IntendedJob().run.__func__(self, **data)  # pylint: disable=too-many-function-args
         if constant.ENABLE_BACKUP:

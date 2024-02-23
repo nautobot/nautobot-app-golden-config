@@ -129,6 +129,11 @@ class GoldenConfigJobMixin(Job):  # pylint: disable=abstract-method
             extra={"grouping": "GC After Run"},
         )
         if self.repos:
+            # There is no reason to try and "push" when the GC doesn't 'own' the functionality.
+            if not constant.ENABLE_INTENDED:
+                self.repos.remove["intended_repository"]
+            if not constant.ENABLE_BACKUP:
+                self.repos.remove["backup_repository"]
             for repo in self.repos:
                 self.logger.debug(
                     f"Pushing {self.Meta.name} results to repo {repo.base_url}.",  # pylint: disable=no-member

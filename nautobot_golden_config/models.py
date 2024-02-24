@@ -15,6 +15,8 @@ from nautobot.extras.models import ObjectChange
 from nautobot.extras.models.statuses import StatusField
 from nautobot.extras.utils import extras_features
 from netutils.config.compliance import feature_compliance
+from xmldiff import main, actions
+
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
@@ -118,6 +120,41 @@ def _get_json_compliance(obj):
     }
 
 
+def _get_xml_compliance(obj):
+    """This function performs the actual compliance for xml serializable data."""
+
+    def _normalize_diff(diff):
+        """Format the diff output to a list of nodes with values that have updated."""
+        formatted_diff = []
+        for operation in diff:
+            if isinstance(operation, actions.UpdateTextIn):
+                formatted_operation = f"{operation.node}, {operation.text}"
+                formatted_diff.append(formatted_operation)
+        return "\n".join(formatted_diff)
+
+    # Options for the diff operation. These are set to prefer updates over node insertions/deletions.
+    diff_options = {
+        "F": 0.1,
+        "fast_match": True,
+    }
+    missing = main.diff_texts(obj.actual, obj.intended, diff_options=diff_options)
+    extra = main.diff_texts(obj.intended, obj.actual, diff_options=diff_options)
+
+    compliance = not missing and not extra
+    compliance_int = int(compliance)
+    ordered = obj.ordered
+    missing = _null_to_empty(_normalize_diff(missing))
+    extra = _null_to_empty(_normalize_diff(extra))
+
+    return {
+        "compliance": compliance,
+        "compliance_int": compliance_int,
+        "ordered": ordered,
+        "missing": missing,
+        "extra": extra,
+    }
+
+
 def _verify_get_custom_compliance_data(compliance_details):
     """This function verifies the data is as expected when a custom function is used."""
     for val in ["compliance", "compliance_int", "ordered", "missing", "extra"]:
@@ -171,6 +208,7 @@ def _get_hierconfig_remediation(obj):
 FUNC_MAPPER = {
     ComplianceRuleConfigTypeChoice.TYPE_CLI: _get_cli_compliance,
     ComplianceRuleConfigTypeChoice.TYPE_JSON: _get_json_compliance,
+    ComplianceRuleConfigTypeChoice.TYPE_XML: _get_xml_compliance,
     RemediationTypeChoice.TYPE_HIERCONFIG: _get_hierconfig_remediation,
 }
 # The below conditionally add the custom provided compliance type
@@ -249,13 +287,13 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
     match_config = models.TextField(
         blank=True,
         verbose_name="Config to Match",
-        help_text="The config to match that is matched based on the parent most configuration. E.g.: For CLI `router bgp` or `ntp`. For JSON this is a top level key name.",
+        help_text="The config to match that is matched based on the parent most configuration. E.g.: For CLI `router bgp` or `ntp`. For JSON this is a top level key name. For XML this is a xpath query.",
     )
     config_type = models.CharField(
         max_length=20,
         default=ComplianceRuleConfigTypeChoice.TYPE_CLI,
         choices=ComplianceRuleConfigTypeChoice,
-        help_text="Whether the configuration is in CLI or JSON/structured format.",
+        help_text="Whether the configuration is in CLI, JSON, or XML format.",
     )
     custom_compliance = models.BooleanField(
         default=False, help_text="Whether this Compliance Rule is proceeded as custom."

@@ -1,6 +1,8 @@
 """Helper functions."""
 # pylint: disable=raise-missing-from
 import json
+from copy import deepcopy
+from lxml import etree  # nosec
 
 from django.conf import settings
 from django.contrib import messages
@@ -188,6 +190,15 @@ def get_json_config(config):
         return None
 
 
+def get_xml_config(config):
+    """Helper to parse XML config files."""
+    try:
+        parser = etree.XMLParser(remove_blank_text=True)
+        return etree.fromstring(config, parser=parser)  # nosec
+    except etree.ParseError:
+        return None
+
+
 def list_to_string(items):
     """Helper function to set the proper list of items sentence."""
     if len(items) == 1:
@@ -241,3 +252,20 @@ def dispatch_params(method, platform, logger):
         logger.error(error_msg)
         raise NornirNautobotException(error_msg)
     return params
+
+
+def get_xml_subtree_with_full_path(config_xml, match_config):
+    """Helper function to get a subtree of an XML config with the full path."""
+    config_elements = config_xml.xpath(match_config)
+    new_root = etree.Element(config_xml.tag)
+    for element in config_elements:
+        current_element = new_root
+        for parent in reversed(list(element.iterancestors())):
+            if parent is config_xml:  # skip the root
+                continue
+            copied_parent = deepcopy(parent)
+            copied_parent[:] = []  # remove children
+            current_element.append(copied_parent)
+            current_element = copied_parent
+        current_element.append(deepcopy(element))
+    return etree.tostring(new_root, encoding="unicode", pretty_print=True)

@@ -6,6 +6,7 @@ import os
 from collections import defaultdict
 from datetime import datetime
 from django.utils.timezone import make_aware
+from lxml import etree  # nosec
 
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
@@ -24,8 +25,10 @@ from nautobot_golden_config.utilities.helper import (
     get_device_to_settings_map,
     get_job_filter,
     get_json_config,
+    get_xml_config,
     render_jinja_template,
     verify_settings,
+    get_xml_subtree_with_full_path,
 )
 
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
@@ -68,6 +71,19 @@ def get_config_element(rule, config, obj, logger):
             config_element = {k: config_json.get(k) for k in rule["obj"].match_config.splitlines() if k in config_json}
         else:
             config_element = config_json
+
+    elif rule["obj"].config_type == ComplianceRuleConfigTypeChoice.TYPE_XML:
+        config_xml = get_xml_config(config)
+
+        if not config_xml:
+            error_msg = "`E3002:` Unable to interpret configuration as XML."
+            logger.error(error_msg, extra={"object": obj})
+            raise NornirNautobotException(error_msg)
+
+        if rule["obj"].match_config:
+            config_element = get_xml_subtree_with_full_path(config_xml, rule["obj"].match_config)
+        else:
+            config_element = etree.tostring(config_xml, encoding="unicode", pretty_print=True)
 
     elif rule["obj"].config_type == ComplianceRuleConfigTypeChoice.TYPE_CLI:
         if obj.platform.network_driver_mappings["netmiko"] not in parser_map:

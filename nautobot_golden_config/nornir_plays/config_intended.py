@@ -5,6 +5,13 @@ import os
 from datetime import datetime
 
 from django.utils.timezone import make_aware
+from nornir import InitNornir
+from nornir.core.plugins.inventory import InventoryPluginRegister
+from nornir.core.task import Result, Task
+from nornir_nautobot.exceptions import NornirNautobotException
+from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
+from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
+from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from nautobot_golden_config.models import GoldenConfig
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
@@ -16,13 +23,7 @@ from nautobot_golden_config.utilities.helper import (
     verify_settings,
 )
 from nautobot_golden_config.utilities.logger import NornirLogger
-from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
-from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
-from nornir import InitNornir
-from nornir.core.plugins.inventory import InventoryPluginRegister
-from nornir.core.task import Result, Task
-from nornir_nautobot.exceptions import NornirNautobotException
-from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
+
 
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 LOGGER = logging.getLogger(__name__)
@@ -89,7 +90,7 @@ def run_template(  # pylint: disable=too-many-arguments,too-many-locals
     return Result(host=task.host, result=generated_config)
 
 
-def config_intended(job_result, log_level, data, job_class_instance, qs, device_to_settings_map):
+def config_intended(job_result, log_level, job_class_instance, qs, device_to_settings_map):
     """
     Nornir play to generate configurations.
 

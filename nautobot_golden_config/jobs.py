@@ -20,8 +20,11 @@ from nautobot.extras.jobs import (
     StringVar,
     TextVar,
 )
-from nautobot.extras.models import DynamicGroup, GitRepository, Role, Status, Tag
+from nautobot.extras.models import DynamicGroup, Role, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
+from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
+from nornir.core.plugins.inventory import InventoryPluginRegister
+from nornir_nautobot.exceptions import NornirNautobotException
 from nautobot_golden_config.choices import ConfigPlanTypeChoice
 from nautobot_golden_config.models import ComplianceFeature, ConfigPlan, GoldenConfig
 from nautobot_golden_config.nornir_plays.config_backup import config_backup
@@ -36,13 +39,6 @@ from nautobot_golden_config.utilities.config_plan import (
 )
 from nautobot_golden_config.utilities.git import GitRepo
 from nautobot_golden_config.utilities.helper import get_device_to_settings_map, get_job_filter
-
-# from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
-from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
-
-# from nornir import InitNornir
-from nornir.core.plugins.inventory import InventoryPluginRegister
-from nornir_nautobot.exceptions import NornirNautobotException
 
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 
@@ -69,12 +65,16 @@ def get_refreshed_repos(job_obj, repo_type, data=None):
 
     repositories = []
     for repository_record in repository_records:
-        repo = GitRepository.objects.get(id=repository_record.id)
-        ensure_git_repository(repo, job_obj.logger)
+        ensure_git_repository(repository_record, job_obj.logger)
         # TODO: Should this not point to non-nautobot.core import
         # We should ask in nautobot core for the `from_url` constructor to be it's own function
-        git_info = get_repo_from_url_to_path_and_from_branch(repo)
-        git_repo = GitRepo(repo.filesystem_path, git_info.from_url, clone_initially=False, base_url=repo.remote_url)
+        git_info = get_repo_from_url_to_path_and_from_branch(repository_record)
+        git_repo = GitRepo(
+            repository_record.filesystem_path,
+            git_info.from_url,
+            clone_initially=False,
+            base_url=repository_record.remote_url,
+        )
         git_repo.to_commit = repository_record.to_commit
         repositories.append(git_repo)
 
@@ -159,10 +159,10 @@ class ComplianceJob(GoldenConfigJobMixin, FormEntry):
         has_sensitive_variables = False
         repo_types = ["intended_repository", "backup_repository"]
 
-    def run(self, *args, **data):
+    def run(self, *args, **data):  # pylint: disable=unused-argument
         """Run config compliance report script."""
         self.logger.debug("Starting config compliance nornir play.")
-        config_compliance(self.job_result, self.logger.getEffectiveLevel(), data, self.qs, self.device_to_settings_map)
+        config_compliance(self.job_result, self.logger.getEffectiveLevel(), self.qs, self.device_to_settings_map)
 
     def after_return(self, *args):
         """Commit and Push each repo after job is completed."""
@@ -180,12 +180,10 @@ class IntendedJob(GoldenConfigJobMixin, FormEntry):
         has_sensitive_variables = False
         repo_types = ["jinja_repository", "intended_repository"]
 
-    def run(self, *args, **data):
+    def run(self, *args, **data):  # pylint: disable=unused-argument
         """Run config generation script."""
         self.logger.debug("Building device settings mapping and running intended config nornir play.")
-        config_intended(
-            self.job_result, self.logger.getEffectiveLevel(), data, self, self.qs, self.device_to_settings_map
-        )
+        config_intended(self.job_result, self.logger.getEffectiveLevel(), self, self.qs, self.device_to_settings_map)
 
 
 class BackupJob(GoldenConfigJobMixin, FormEntry):
@@ -199,10 +197,10 @@ class BackupJob(GoldenConfigJobMixin, FormEntry):
         has_sensitive_variables = False
         repo_types = ["backup_repository"]
 
-    def run(self, *args, **data):
+    def run(self, *args, **data):  # pylint: disable=unused-argument
         """Run config backup process."""
         self.logger.debug("Starting config backup nornir play.")
-        config_backup(self.job_result, self.logger.getEffectiveLevel(), data, self.qs, self.device_to_settings_map)
+        config_backup(self.job_result, self.logger.getEffectiveLevel(), self.qs, self.device_to_settings_map)
 
 
 class AllGoldenConfig(GoldenConfigJobMixin):

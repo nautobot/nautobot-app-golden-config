@@ -12,11 +12,7 @@ from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
 from nautobot_golden_config.models import ComplianceRule, ConfigCompliance, GoldenConfig
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
-from nautobot_golden_config.utilities.helper import (  # get_device_to_settings_map,; get_job_filter,
-    get_json_config,
-    render_jinja_template,
-    verify_settings,
-)
+from nautobot_golden_config.utilities.helper import get_json_config, render_jinja_template, verify_settings
 from nautobot_golden_config.utilities.logger import NornirLogger
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory

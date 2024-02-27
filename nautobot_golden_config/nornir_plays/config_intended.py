@@ -9,7 +9,7 @@ from nautobot_golden_config.models import GoldenConfig
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.utilities.graphql import graph_ql_query
-from nautobot_golden_config.utilities.helper import (  # get_device_to_settings_map,; get_job_filter,
+from nautobot_golden_config.utilities.helper import (
     dispatch_params,
     get_django_env,
     render_jinja_template,
@@ -103,16 +103,6 @@ def config_intended(job_result, log_level, data, job_class_instance, qs, device_
     """
     now = make_aware(datetime.now())
     logger = NornirLogger(job_result, log_level)
-
-    # try:
-    #     qs = get_job_filter(data)
-    # except NornirNautobotException as error:
-    #     error_msg = f"`E3008:` General Exception handler, original error message ```{error}```"
-    #     logger.error(error_msg)
-    #     raise NornirNautobotException(error_msg) from error
-
-    # logger.debug("Compiling device data for intended configuration.")
-    # device_to_settings_map = get_device_to_settings_map(queryset=qs)
 
     for settings in set(device_to_settings_map.values()):
         verify_settings(logger, settings, ["jinja_path_template", "intended_path_template", "sot_agg_query"])

@@ -57,17 +57,25 @@ def get_refreshed_repos(job_obj, repo_type, data=None):
     # Iterate through DynamicGroups then apply the DG's filter to the devices filtered by job.
     for group in dynamic_groups:
         repo = getattr(group.golden_config_setting, repo_type, None)
+        # Setting a new to_commit attribute to track what needs to be pushed.
+        repo.to_commit = False
+        # Only commit "push" when the GC 'owns' the functionality.
+        if repo_type == "backup_repository" and constant.ENABLE_BACKUP:
+            repo.to_commit = True
+        if repo_type == "intended_repository" and constant.ENABLE_INTENDED:
+            repo.to_commit = True
         if repo and devices.filter(group.generate_query()).exists():
-            repository_records.add(repo.id)
+            repository_records.add(repo)
 
     repositories = []
     for repository_record in repository_records:
-        repo = GitRepository.objects.get(id=repository_record)
+        repo = GitRepository.objects.get(id=repository_record.id)
         ensure_git_repository(repo, job_obj.logger)
         # TODO: Should this not point to non-nautobot.core import
         # We should ask in nautobot core for the `from_url` constructor to be it's own function
         git_info = get_repo_from_url_to_path_and_from_branch(repo)
         git_repo = GitRepo(repo.filesystem_path, git_info.from_url, clone_initially=False, base_url=repo.remote_url)
+        git_repo.to_commit = repository_record.to_commit
         repositories.append(git_repo)
 
     return repositories
@@ -129,18 +137,14 @@ class GoldenConfigJobMixin(Job):  # pylint: disable=abstract-method
             extra={"grouping": "GC After Run"},
         )
         if self.repos:
-            # There is no reason to try and "push" when the GC doesn't 'own' the functionality.
-            if not constant.ENABLE_INTENDED:
-                self.repos.remove["intended_repository"]
-            if not constant.ENABLE_BACKUP:
-                self.repos.remove["backup_repository"]
             for repo in self.repos:
-                self.logger.debug(
-                    f"Pushing {self.Meta.name} results to repo {repo.base_url}.",  # pylint: disable=no-member
-                    extra={"grouping": "GC Repo Commit and Push"},
-                )
-                repo.commit_with_added(f"{self.Meta.name.upper()} JOB {now}")  # pylint: disable=no-member
-                repo.push()
+                if repo.to_commit:
+                    self.logger.debug(
+                        f"Pushing {self.Meta.name} results to repo {repo.base_url}.",  # pylint: disable=no-member
+                        extra={"grouping": "GC Repo Commit and Push"},
+                    )
+                    repo.commit_with_added(f"{self.Meta.name.upper()} JOB {now}")  # pylint: disable=no-member
+                    repo.push()
         super().after_return(status, retval, task_id, args, kwargs, einfo=einfo)
 
 
@@ -216,6 +220,7 @@ class AllGoldenConfig(GoldenConfigJobMixin):
         repo_types = []
 
     def before_start(self, task_id, args, kwargs):
+        """Set the repo_types that are in scope based on settings."""
         repo_types = []
         if constant.ENABLE_INTENDED:
             repo_types.extend(["jinja_repository", "intended_repository"])
@@ -248,6 +253,7 @@ class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
         repo_types = []
 
     def before_start(self, task_id, args, kwargs):
+        """Set the repo_types that are in scope based on settings."""
         repo_types = []
         if constant.ENABLE_INTENDED:
             repo_types.extend(["jinja_repository", "intended_repository"])

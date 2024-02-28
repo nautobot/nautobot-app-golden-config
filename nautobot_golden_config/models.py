@@ -314,14 +314,18 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
         self, action, *, related_object=None, object_data_extra=None, object_data_exclude=None
     ):  # pylint: disable=arguments-differ
         """Remove actual and intended configuration from changelog."""
+        fields_to_exclude = ["actual", "intended"]
         if not object_data_exclude:
-            object_data_exclude = ["actual", "intended"]
+            object_data_exclude = fields_to_exclude
+        data_v2 = serialize_object_v2(self)
+        for field in fields_to_exclude:
+            data_v2.pop(field)
         return ObjectChange(
             changed_object=self,
             object_repr=str(self),
             action=action,
             object_data=serialize_object(self, extra=object_data_extra, exclude=object_data_exclude),
-            object_data_v2=serialize_object_v2(self),
+            object_data_v2=data_v2,
             related_object=related_object,
         )
 
@@ -413,14 +417,18 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
         self, action, *, related_object=None, object_data_extra=None, object_data_exclude=None
     ):  # pylint: disable=arguments-differ
         """Remove actual and intended configuration from changelog."""
+        fields_to_exclude = ["backup_config", "intended_config", "compliance_config"]
         if not object_data_exclude:
-            object_data_exclude = ["backup_config", "intended_config", "compliance_config"]
+            object_data_exclude = fields_to_exclude
+        data_v2 = serialize_object_v2(self)
+        for field in fields_to_exclude:
+            data_v2.pop(field)
         return ObjectChange(
             changed_object=self,
             object_repr=str(self),
             action=action,
             object_data=serialize_object(self, extra=object_data_extra, exclude=object_data_exclude),
-            object_data_v2=serialize_object_v2(self),
+            object_data_v2=data_v2,
             related_object=related_object,
         )
 

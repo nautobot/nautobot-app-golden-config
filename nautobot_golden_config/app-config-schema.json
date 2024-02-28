@@ -1,0 +1,129 @@
+{
+  "type": "object",
+  "properties": {
+    "allowed_os": {
+      "type": "string",
+      "default": "all"
+    },
+    "per_feature_bar_width": {
+      "type": "number",
+      "default": 0.15
+    },
+    "per_feature_width": {
+      "type": "integer",
+      "default": 13
+    },
+    "per_feature_height": {
+      "type": "integer",
+      "default": 4
+    },
+    "enable_backup": {
+      "type": "boolean",
+      "default": true
+    },
+    "enable_compliance": {
+      "type": "boolean",
+      "default": true
+    },
+    "enable_intended": {
+      "type": "boolean",
+      "default": true
+    },
+    "enable_sotagg": {
+      "type": "boolean",
+      "default": true
+    },
+    "enable_postprocessing": {
+      "type": "boolean",
+      "default": false
+    },
+    "postprocessing_callables": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "postprocessing_subscribed": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "sot_agg_transposer": {
+      "type": ["boolean", "null"],
+      "default": null
+    },
+    "platform_slug_map": {
+      "type": ["object", "null"],
+      "default": null
+    },
+    "jinja_env": {
+      "type": "object",
+      "properties": {
+        "undefined": {
+          "type": "string",
+          "default": "jinja2.StrictUndefined"
+        },
+        "trim_blocks": {
+          "type": "boolean",
+          "default": true
+        },
+        "lstrip_blocks": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "primary": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      },
+      "default": [
+        {
+          "name": "enable_backup",
+          "label": "Enable Backup"
+        },
+        {
+          "name": "enable_compliance",
+          "label": "Enable Compliance"
+        },
+        {
+          "name": "enable_intended",
+          "label": "Enable Intended"
+        },
+        {
+          "name": "enable_postprocessing",
+          "label": "Enable Postprocessing"
+        }
+      ]
+    }
+  },
+  "required": [
+    "allowed_os",
+    "per_feature_bar_width",
+    "per_feature_width",
+    "per_feature_height",
+    "enable_backup",
+    "enable_compliance",
+    "enable_intended",
+    "enable_sotagg",
+    "enable_postprocessing",
+    "postprocessing_callables",
+    "postprocessing_subscribed",
+    "sot_agg_transposer",
+    "platform_slug_map",
+    "jinja_env"
+  ],
+  "additionalProperties": false
+}

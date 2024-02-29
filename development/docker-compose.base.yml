@@ -30,7 +30,8 @@ services:
       - "-c"  # this is to evaluate the $NAUTOBOT_LOG_LEVEL from the env
       - "nautobot-server celery worker -l $$NAUTOBOT_LOG_LEVEL --events"  ## $$ because of docker-compose
     depends_on:
-      - "nautobot"
+      nautobot:
+        condition: "service_healthy"
     healthcheck:
       interval: "30s"
       timeout: "10s"
@@ -44,7 +45,8 @@ services:
       - "-c"  # this is to evaluate the $NAUTOBOT_LOG_LEVEL from the env
       - "nautobot-server celery beat -l $$NAUTOBOT_LOG_LEVEL"  ## $$ because of docker-compose
     depends_on:
-      - "nautobot"
+      nautobot:
+        condition: "service_healthy"
     healthcheck:
       disable: true
     <<: *nautobot-base

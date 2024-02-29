@@ -74,9 +74,6 @@ CACHES = {
     }
 }
 
-# Redis Cacheops
-CACHEOPS_REDIS = parse_redis_connection(redis_database=1)
-
 #
 # Celery settings are not defined here because they can be overloaded with
 # environment variables. By default they use `CACHES["default"]["LOCATION"]`.

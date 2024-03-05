@@ -5,7 +5,6 @@
 # pylint: disable=arguments-differ
 
 from datetime import datetime
-
 from django.utils.timezone import make_aware
 from nautobot.core.celery import register_jobs
 from nautobot.dcim.models import Device, DeviceType, Location, Manufacturer, Platform, Rack, RackGroup
@@ -107,12 +106,11 @@ class FormEntry:  # pylint disable=too-few-public-method
     debug = BooleanVar(description="Enable for more verbose debug logging")
 
 
-class GoldenConfigJobMixin(Job):  # pylint: disable=abstract-method
-    """Reused mixin to be able to reuse common celery primitives in all GC jobs."""
+def gc_repos(func):
+    """Decorator used for handle repo syncing, commiting, and pushing."""
 
-    def before_start(self, task_id, args, kwargs):
-        """Ensure repos before tasks runs."""
-        super().before_start(task_id, args, kwargs)
+    def gc_repo_wrapper(self, *args, **kwargs):
+        """Decorator used for handle repo syncing, commiting, and pushing."""
         self.logger.debug("Compiling device data for GC job.", extra={"grouping": "Get Job Filter"})
         self.qs = get_job_filter(self.deserialize_data(kwargs))
         self.logger.debug("Compiling device to settings map.", extra={"grouping": "Device to Settings Map"})
@@ -128,27 +126,30 @@ class GoldenConfigJobMixin(Job):  # pylint: disable=abstract-method
             if not repo_type == "jinja_repository":
                 for current_repo in current_repos:
                     self.repos.append(current_repo)
-
-    def after_return(self, status, retval, task_id, args, kwargs, einfo):  # pylint: disable=too-many-arguments
-        """Commit and Push each repo after job is completed."""
+        # This is where the specific jobs run method runs.
+        func(self, *args, **kwargs)
         now = make_aware(datetime.now())
         self.logger.debug(
             f"Finished the {self.Meta.name} job execution.",  # pylint: disable=no-member
             extra={"grouping": "GC After Run"},
         )
-        if self.repos:
-            for repo in self.repos:
-                if repo.to_commit:
-                    self.logger.debug(
-                        f"Pushing {self.Meta.name} results to repo {repo.base_url}.",  # pylint: disable=no-member
-                        extra={"grouping": "GC Repo Commit and Push"},
-                    )
-                    repo.commit_with_added(f"{self.Meta.name.upper()} JOB {now}")  # pylint: disable=no-member
-                    repo.push()
-        super().after_return(status, retval, task_id, args, kwargs, einfo=einfo)
+        print(self.name)
+        if "Compliance" not in self.name:
+            self.logger.debug("Compliance job completed, no repositories need to be synced in this task.")
+            if self.repos:
+                for repo in self.repos:
+                    if repo.to_commit:
+                        self.logger.debug(
+                            f"Pushing {self.Meta.name} results to repo {repo.base_url}.",  # pylint: disable=no-member
+                            extra={"grouping": "GC Repo Commit and Push"},
+                        )
+                        repo.commit_with_added(f"{self.Meta.name.upper()} JOB {now}")  # pylint: disable=no-member
+                        repo.push()
+
+    return gc_repo_wrapper
 
 
-class ComplianceJob(GoldenConfigJobMixin, FormEntry):
+class ComplianceJob(Job, FormEntry):
     """Job to to run the compliance engine."""
 
     class Meta:
@@ -159,17 +160,19 @@ class ComplianceJob(GoldenConfigJobMixin, FormEntry):
         has_sensitive_variables = False
         repo_types = ["intended_repository", "backup_repository"]
 
+    @gc_repos
     def run(self, *args, **data):  # pylint: disable=unused-argument
         """Run config compliance report script."""
         self.logger.debug("Starting config compliance nornir play.")
-        config_compliance(self.job_result, self.logger.getEffectiveLevel(), self.qs, self.device_to_settings_map)
+        config_compliance(
+            self.job_result,
+            self.logger.getEffectiveLevel(),
+            self.qs,  # pylint: disable=no-member
+            self.device_to_settings_map,  # pylint: disable=no-member
+        )
 
-    def after_return(self, *args):
-        """Commit and Push each repo after job is completed."""
-        self.logger.debug("Compliance job completed, no repositories need to be synced in this task.")
 
-
-class IntendedJob(GoldenConfigJobMixin, FormEntry):
+class IntendedJob(Job, FormEntry):
     """Job to to run generation of intended configurations."""
 
     class Meta:
@@ -180,13 +183,20 @@ class IntendedJob(GoldenConfigJobMixin, FormEntry):
         has_sensitive_variables = False
         repo_types = ["jinja_repository", "intended_repository"]
 
+    @gc_repos
     def run(self, *args, **data):  # pylint: disable=unused-argument
         """Run config generation script."""
         self.logger.debug("Building device settings mapping and running intended config nornir play.")
-        config_intended(self.job_result, self.logger.getEffectiveLevel(), self, self.qs, self.device_to_settings_map)
+        config_intended(
+            self.job_result,
+            self.logger.getEffectiveLevel(),
+            self,
+            self.qs,  # pylint: disable=no-member
+            self.device_to_settings_map,  # pylint: disable=no-member
+        )
 
 
-class BackupJob(GoldenConfigJobMixin, FormEntry):
+class BackupJob(Job, FormEntry):
     """Job to to run the backup job."""
 
     class Meta:
@@ -197,13 +207,19 @@ class BackupJob(GoldenConfigJobMixin, FormEntry):
         has_sensitive_variables = False
         repo_types = ["backup_repository"]
 
+    @gc_repos
     def run(self, *args, **data):  # pylint: disable=unused-argument
         """Run config backup process."""
         self.logger.debug("Starting config backup nornir play.")
-        config_backup(self.job_result, self.logger.getEffectiveLevel(), self.qs, self.device_to_settings_map)
+        config_backup(
+            self.job_result,
+            self.logger.getEffectiveLevel(),
+            self.qs,  # pylint: disable=no-member
+            self.device_to_settings_map,  # pylint: disable=no-member
+        )
 
 
-class AllGoldenConfig(GoldenConfigJobMixin):
+class AllGoldenConfig(Job):
     """Job to to run all three jobs against a single device."""
 
     device = ObjectVar(model=Device, required=True)
@@ -217,18 +233,7 @@ class AllGoldenConfig(GoldenConfigJobMixin):
         has_sensitive_variables = False
         repo_types = []
 
-    def before_start(self, task_id, args, kwargs):
-        """Set the repo_types that are in scope based on settings."""
-        repo_types = []
-        if constant.ENABLE_INTENDED:
-            repo_types.extend(["jinja_repository", "intended_repository"])
-        if constant.ENABLE_BACKUP:
-            repo_types.extend(["backup_repository"])
-        if constant.ENABLE_COMPLIANCE:
-            repo_types.extend(["intended_repository", "backup_repository"])
-        self.Meta.repo_types = list(set(repo_types) - set())
-        return super().before_start(task_id, args, kwargs)
-
+    @gc_repos
     def run(self, *args, **data):
         """Run all jobs."""
         if constant.ENABLE_INTENDED:
@@ -239,7 +244,7 @@ class AllGoldenConfig(GoldenConfigJobMixin):
             ComplianceJob().run.__func__(self, **data)  # pylint: disable=too-many-function-args
 
 
-class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
+class AllDevicesGoldenConfig(Job, FormEntry):
     """Job to to run all three jobs against multiple devices."""
 
     class Meta:
@@ -250,18 +255,7 @@ class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
         has_sensitive_variables = False
         repo_types = []
 
-    def before_start(self, task_id, args, kwargs):
-        """Set the repo_types that are in scope based on settings."""
-        repo_types = []
-        if constant.ENABLE_INTENDED:
-            repo_types.extend(["jinja_repository", "intended_repository"])
-        if constant.ENABLE_BACKUP:
-            repo_types.extend(["backup_repository"])
-        if constant.ENABLE_COMPLIANCE:
-            repo_types.extend(["intended_repository", "backup_repository"])
-        self.Meta.repo_types = list(set(repo_types) - set())
-        return super().before_start(task_id, args, kwargs)
-
+    @gc_repos
     def run(self, *args, **data):
         """Run all jobs."""
         if constant.ENABLE_INTENDED:

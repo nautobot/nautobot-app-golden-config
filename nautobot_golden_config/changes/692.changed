@@ -1,0 +1,1 @@
+Changed QuerySet and device_to_settings map into new decorator to run only one time instead of multiple.

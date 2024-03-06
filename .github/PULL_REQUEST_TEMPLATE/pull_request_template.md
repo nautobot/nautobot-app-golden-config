@@ -31,5 +31,4 @@
 - [ ] Attached Screenshots, Payload Example
 - [ ] Unit, Integration Tests
 - [ ] Documentation Updates (when adding/changing features)
-- [ ] Example App Updates (when adding/changing features)
 - [ ] Outline Remaining Work, Constraints from Design

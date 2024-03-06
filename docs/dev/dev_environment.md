@@ -74,7 +74,7 @@ nautobot-server migrate
 !!! note
     If you want to develop on the latest develop branch of Nautobot, run the following command: `poetry add --optional git+https://github.com/nautobot/nautobot@develop`. After the `@` symbol must match either a branch or a tag.
 
-You can now run `nautobot-server` commands as you would from the [Nautobot documentation](https://nautobot.readthedocs.io/en/latest/) for example to start the development server:
+You can now run `nautobot-server` commands as you would from the [Nautobot documentation](https://docs.nautobot.com/projects/core/en/stable/user-guide/administration/tools/nautobot-server/) for example to start the development server:
 
 ```shell
 nautobot-server runserver 0.0.0.0:8080 --insecure
@@ -470,3 +470,21 @@ To run an individual test, you can run any or all of the following:
 ➜ invoke ruff
 ➜ invoke pylint
 ```
+
+### App Configuration Schema
+
+In the package source, there is the `nautobot_golden_config/app-config-schema.json` file, conforming to the [JSON Schema](https://json-schema.org/) format. This file is used to validate the configuration of the app in CI pipelines.
+
+If you make changes to `PLUGINS_CONFIG` or the configuration schema, you can run the following command to validate the schema:
+
+```bash
+invoke validate-app-config
+```
+
+To generate the `app-config-schema.json` file based on the current `PLUGINS_CONFIG` configuration, run the following command:
+
+```bash
+invoke generate-app-config-schema
+```
+
+This command can only guess the schema, so it's up to the developer to manually update the schema as needed.

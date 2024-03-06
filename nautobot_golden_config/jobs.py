@@ -126,15 +126,14 @@ def gc_repos(func):
             if not repo_type == "jinja_repository":
                 for current_repo in current_repos:
                     self.repos.append(current_repo)
-        # This is where the specific jobs run method runs.
+        # This is where the specific jobs run method runs via this decorator.
         func(self, *args, **kwargs)
         now = make_aware(datetime.now())
         self.logger.debug(
             f"Finished the {self.Meta.name} job execution.",  # pylint: disable=no-member
             extra={"grouping": "GC After Run"},
         )
-        print(self.name)
-        if "Compliance" not in self.name:
+        if self.name == "Perform Configuration Compliance":
             self.logger.debug("Compliance job completed, no repositories need to be synced in this task.")
             if self.repos:
                 for repo in self.repos:

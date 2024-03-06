@@ -1,19 +1,16 @@
 """Basic Job Test."""
 from unittest.mock import patch, MagicMock
-from django.contrib.contenttypes.models import ContentType
 from nautobot.apps.testing import TransactionTestCase
 from nautobot.extras.models import Job
-from nautobot.extras.models import GitRepository, GraphQLQuery, DynamicGroup
 from nautobot.dcim.models import Device
 from nautobot_golden_config.tests.conftest import (
     create_git_repos,
     create_device,
-    create_saved_queries,
     create_orphan_device,
+    dgs_gc_settings_and_job_repo_objects,
 )
 from nautobot_golden_config.utilities import constant
 from nautobot_golden_config.jobs import get_refreshed_repos
-from nautobot_golden_config.models import GoldenConfigSetting
 
 
 class DefaultRepoTypesTestCase(TransactionTestCase):
@@ -70,64 +67,7 @@ class GCReposBackupTestCase(TransactionTestCase):
         """Setup test data."""
         self.device = create_device(name="foobaz")
         self.device2 = create_orphan_device(name="foobaz2")
-        create_git_repos()
-        create_saved_queries()
-        # Since we enforce a singleton pattern on this model, nuke the auto-created object.
-        GoldenConfigSetting.objects.all().delete()
-
-        dynamic_group1 = DynamicGroup.objects.create(
-            name="dg foobaz",
-            content_type=ContentType.objects.get_for_model(Device),
-            filter={"platform": ["Platform 1"]},
-        )
-        dynamic_group2 = DynamicGroup.objects.create(
-            name="dg foobaz2",
-            content_type=ContentType.objects.get_for_model(Device),
-            filter={"platform": ["Platform 4"]},
-        )
-
-        GoldenConfigSetting.objects.create(
-            name="test_name",
-            slug="test_slug",
-            weight=1000,
-            description="Test Description.",
-            backup_path_template="test/backup",
-            intended_path_template="test/intended",
-            jinja_path_template="{{jinja_path}}",
-            backup_test_connectivity=True,
-            dynamic_group=dynamic_group1,
-            sot_agg_query=GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1"),
-            backup_repository=GitRepository.objects.filter(
-                provided_contents__contains="nautobot_golden_config.backupconfigs"
-            ).first(),
-            intended_repository=GitRepository.objects.filter(
-                provided_contents__contains="nautobot_golden_config.intendedconfigs"
-            ).first(),
-            jinja_repository=GitRepository.objects.filter(
-                provided_contents__contains="nautobot_golden_config.jinjatemplate"
-            ).first(),
-        )
-        GoldenConfigSetting.objects.create(
-            name="test_name2",
-            slug="test_slug2",
-            weight=1000,
-            description="Test Description.",
-            backup_path_template="test/backup",
-            intended_path_template="test/intended",
-            jinja_path_template="{{jinja_path}}",
-            backup_test_connectivity=True,
-            dynamic_group=dynamic_group2,
-            sot_agg_query=GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1"),
-            backup_repository=GitRepository.objects.filter(
-                provided_contents__contains="nautobot_golden_config.backupconfigs"
-            ).last(),
-            intended_repository=GitRepository.objects.filter(
-                provided_contents__contains="nautobot_golden_config.intendedconfigs"
-            ).last(),
-            jinja_repository=GitRepository.objects.filter(
-                provided_contents__contains="nautobot_golden_config.jinjatemplate"
-            ).last(),
-        )
+        dgs_gc_settings_and_job_repo_objects()
         super().setUp()
 
     def test_get_refreshed_repos_backup_only_sync_one_setting(self, mock_ensure_git_repository):
@@ -135,11 +75,11 @@ class GCReposBackupTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         job_obj = MagicMock()
         job_obj.logger = MagicMock()
-        repositories = get_refreshed_repos(
+        backup_repositories = get_refreshed_repos(
             job_obj, "backup_repository", data={"device": Device.objects.get(name=self.device.name)}
         )
         self.assertTrue(constant.ENABLE_BACKUP)
-        self.assertEqual(len(repositories), 1)
+        self.assertEqual(len(backup_repositories), 1)
 
     @patch("nautobot_golden_config.utilities.constant.ENABLE_BACKUP", False)
     def test_get_refreshed_repos_backup_only_sync_one_setting_backup_disabled(self, mock_ensure_git_repository):
@@ -147,20 +87,20 @@ class GCReposBackupTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         job_obj = MagicMock()
         job_obj.logger = MagicMock()
-        repositories = get_refreshed_repos(
+        backup_repositories = get_refreshed_repos(
             job_obj, "backup_repository", data={"device": Device.objects.get(name=self.device.name)}
         )
         self.assertFalse(constant.ENABLE_BACKUP)
-        self.assertEqual(len(repositories), 1)
+        self.assertEqual(len(backup_repositories), 1)
 
     def test_get_refreshed_repos_backup_only_sync_two_setting(self, mock_ensure_git_repository):
         """Test refreshed repos multiple GC setting."""
         mock_ensure_git_repository.return_value = True
         job_obj = MagicMock()
         job_obj.logger = MagicMock()
-        repositories = get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
+        backup_repositories = get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
         self.assertTrue(constant.ENABLE_BACKUP)
-        self.assertEqual(len(repositories), 2)
+        self.assertEqual(len(backup_repositories), 2)
 
     @patch("nautobot_golden_config.utilities.constant.ENABLE_BACKUP", False)
     def test_get_refreshed_repos_backup_only_sync_two_setting_backup_disabled(self, mock_ensure_git_repository):
@@ -168,19 +108,19 @@ class GCReposBackupTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         job_obj = MagicMock()
         job_obj.logger = MagicMock()
-        repositories = get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
+        backup_repositories = get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
         self.assertFalse(constant.ENABLE_BACKUP)
-        self.assertEqual(len(repositories), 2)
+        self.assertEqual(len(backup_repositories), 2)
 
     def test_get_refreshed_repos_backup_to_commit(self, mock_ensure_git_repository):
         """Test whicgh repos should be commited multiple GC setting backups enabled."""
         mock_ensure_git_repository.return_value = True
         job_obj = MagicMock()
         job_obj.logger = MagicMock()
-        repositories = get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
+        backup_repositories = get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
         self.assertTrue(constant.ENABLE_BACKUP)
-        self.assertTrue(repositories[0].to_commit)
-        self.assertTrue(repositories[1].to_commit)
+        self.assertTrue(backup_repositories[0].to_commit)
+        self.assertTrue(backup_repositories[1].to_commit)
 
     @patch("nautobot_golden_config.utilities.constant.ENABLE_BACKUP", False)
     def test_get_refreshed_repos_backup_to_commit_backup_disabled(self, mock_ensure_git_repository):
@@ -188,10 +128,10 @@ class GCReposBackupTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         job_obj = MagicMock()
         job_obj.logger = MagicMock()
-        repositories = get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
+        backup_repositories = get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
         self.assertFalse(constant.ENABLE_BACKUP)
-        self.assertFalse(repositories[0].to_commit)
-        self.assertFalse(repositories[1].to_commit)
+        self.assertFalse(backup_repositories[0].to_commit)
+        self.assertFalse(backup_repositories[1].to_commit)
 
 
 @patch("nautobot_golden_config.nornir_plays.config_intended.run_template", MagicMock(return_value="foo"))
@@ -205,64 +145,7 @@ class GCReposIntendedTestCase(TransactionTestCase):
         """Setup test data."""
         self.device = create_device(name="foobaz")
         self.device2 = create_orphan_device(name="foobaz2")
-        create_git_repos()
-        create_saved_queries()
-        # Since we enforce a singleton pattern on this model, nuke the auto-created object.
-        GoldenConfigSetting.objects.all().delete()
-
-        dynamic_group1 = DynamicGroup.objects.create(
-            name="dg foobaz",
-            content_type=ContentType.objects.get_for_model(Device),
-            filter={"platform": ["Platform 1"]},
-        )
-        dynamic_group2 = DynamicGroup.objects.create(
-            name="dg foobaz2",
-            content_type=ContentType.objects.get_for_model(Device),
-            filter={"platform": ["Platform 4"]},
-        )
-
-        GoldenConfigSetting.objects.create(
-            name="test_name",
-            slug="test_slug",
-            weight=1000,
-            description="Test Description.",
-            backup_path_template="test/backup",
-            intended_path_template="test/intended",
-            jinja_path_template="{{jinja_path}}",
-            backup_test_connectivity=True,
-            dynamic_group=dynamic_group1,
-            sot_agg_query=GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1"),
-            backup_repository=GitRepository.objects.filter(
-                provided_contents__contains="nautobot_golden_config.backupconfigs"
-            ).first(),
-            intended_repository=GitRepository.objects.filter(
-                provided_contents__contains="nautobot_golden_config.intendedconfigs"
-            ).first(),
-            jinja_repository=GitRepository.objects.filter(
-                provided_contents__contains="nautobot_golden_config.jinjatemplate"
-            ).first(),
-        )
-        GoldenConfigSetting.objects.create(
-            name="test_name2",
-            slug="test_slug2",
-            weight=1000,
-            description="Test Description.",
-            backup_path_template="test/backup",
-            intended_path_template="test/intended",
-            jinja_path_template="{{jinja_path}}",
-            backup_test_connectivity=True,
-            dynamic_group=dynamic_group2,
-            sot_agg_query=GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1"),
-            backup_repository=GitRepository.objects.filter(
-                provided_contents__contains="nautobot_golden_config.backupconfigs"
-            ).last(),
-            intended_repository=GitRepository.objects.filter(
-                provided_contents__contains="nautobot_golden_config.intendedconfigs"
-            ).last(),
-            jinja_repository=GitRepository.objects.filter(
-                provided_contents__contains="nautobot_golden_config.jinjatemplate"
-            ).last(),
-        )
+        dgs_gc_settings_and_job_repo_objects()
         super().setUp()
 
     def test_get_refreshed_repos_intended_only_sync_one_setting(self, mock_ensure_git_repository):
@@ -270,11 +153,15 @@ class GCReposIntendedTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         job_obj = MagicMock()
         job_obj.logger = MagicMock()
-        repositories = get_refreshed_repos(
+        intended_repositories = get_refreshed_repos(
             job_obj, "intended_repository", data={"device": Device.objects.get(name=self.device.name)}
         )
         self.assertTrue(constant.ENABLE_INTENDED)
-        self.assertEqual(len(repositories), 1)
+        self.assertEqual(len(intended_repositories), 1)
+        template_repositories = get_refreshed_repos(
+            job_obj, "jinja_repository", data={"device": Device.objects.get(name=self.device.name)}
+        )
+        self.assertEqual(len(template_repositories), 1)
 
     @patch("nautobot_golden_config.utilities.constant.ENABLE_INTENDED", False)
     def test_get_refreshed_repos_intended_only_sync_one_setting_intended_disabled(self, mock_ensure_git_repository):
@@ -282,20 +169,28 @@ class GCReposIntendedTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         job_obj = MagicMock()
         job_obj.logger = MagicMock()
-        repositories = get_refreshed_repos(
+        intended_repositories = get_refreshed_repos(
             job_obj, "intended_repository", data={"device": Device.objects.get(name=self.device.name)}
         )
         self.assertFalse(constant.ENABLE_INTENDED)
-        self.assertEqual(len(repositories), 1)
+        self.assertEqual(len(intended_repositories), 1)
+        template_repositories = get_refreshed_repos(
+            job_obj, "jinja_repository", data={"device": Device.objects.get(name=self.device.name)}
+        )
+        self.assertEqual(len(template_repositories), 1)
 
     def test_get_refreshed_repos_intended_only_sync_two_setting(self, mock_ensure_git_repository):
         """Test refreshed repos multiple GC setting."""
         mock_ensure_git_repository.return_value = True
         job_obj = MagicMock()
         job_obj.logger = MagicMock()
-        repositories = get_refreshed_repos(job_obj, "intended_repository", data={"device": Device.objects.all()})
+        intended_repositories = get_refreshed_repos(
+            job_obj, "intended_repository", data={"device": Device.objects.all()}
+        )
         self.assertTrue(constant.ENABLE_INTENDED)
-        self.assertEqual(len(repositories), 2)
+        self.assertEqual(len(intended_repositories), 2)
+        template_repositories = get_refreshed_repos(job_obj, "jinja_repository", data={"device": Device.objects.all()})
+        self.assertEqual(len(template_repositories), 1)
 
     @patch("nautobot_golden_config.utilities.constant.ENABLE_INTENDED", False)
     def test_get_refreshed_repos_intended_only_sync_two_setting_intended_disabled(self, mock_ensure_git_repository):
@@ -303,19 +198,25 @@ class GCReposIntendedTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         job_obj = MagicMock()
         job_obj.logger = MagicMock()
-        repositories = get_refreshed_repos(job_obj, "intended_repository", data={"device": Device.objects.all()})
+        intended_repositories = get_refreshed_repos(
+            job_obj, "intended_repository", data={"device": Device.objects.all()}
+        )
         self.assertFalse(constant.ENABLE_INTENDED)
-        self.assertEqual(len(repositories), 2)
+        self.assertEqual(len(intended_repositories), 2)
+        template_repositories = get_refreshed_repos(job_obj, "jinja_repository", data={"device": Device.objects.all()})
+        self.assertEqual(len(template_repositories), 1)
 
     def test_get_refreshed_repos_intended_to_commit(self, mock_ensure_git_repository):
         """Test whicgh repos should be commited multiple GC setting intendeds enabled."""
         mock_ensure_git_repository.return_value = True
         job_obj = MagicMock()
         job_obj.logger = MagicMock()
-        repositories = get_refreshed_repos(job_obj, "intended_repository", data={"device": Device.objects.all()})
+        intended_repositories = get_refreshed_repos(
+            job_obj, "intended_repository", data={"device": Device.objects.all()}
+        )
         self.assertTrue(constant.ENABLE_INTENDED)
-        self.assertTrue(repositories[0].to_commit)
-        self.assertTrue(repositories[1].to_commit)
+        self.assertTrue(intended_repositories[0].to_commit)
+        self.assertTrue(intended_repositories[1].to_commit)
 
     @patch("nautobot_golden_config.utilities.constant.ENABLE_INTENDED", False)
     def test_get_refreshed_repos_intended_to_commit_intended_disabled(self, mock_ensure_git_repository):
@@ -323,10 +224,12 @@ class GCReposIntendedTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         job_obj = MagicMock()
         job_obj.logger = MagicMock()
-        repositories = get_refreshed_repos(job_obj, "intended_repository", data={"device": Device.objects.all()})
+        intended_repositories = get_refreshed_repos(
+            job_obj, "intended_repository", data={"device": Device.objects.all()}
+        )
         self.assertFalse(constant.ENABLE_INTENDED)
-        self.assertFalse(repositories[0].to_commit)
-        self.assertFalse(repositories[1].to_commit)
+        self.assertFalse(intended_repositories[0].to_commit)
+        self.assertFalse(intended_repositories[1].to_commit)
 
     # @patch("nautobot_golden_config.nornir_plays.config_backup.run_backup", MagicMock(return_value="foo"))
     # def test_backup_job_repos(self):
@@ -336,3 +239,216 @@ class GCReposIntendedTestCase(TransactionTestCase):
 
     #     log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
     #     self.assertEqual(log_entries.first().message, "Repository types to sync: backup_repository")
+
+
+@patch("nautobot_golden_config.nornir_plays.config_compliance.run_compliance", MagicMock(return_value="foo"))
+@patch("nautobot_golden_config.jobs.ensure_git_repository")
+class GCReposComplianceTestCase(TransactionTestCase):
+    """Test the repos to sync and commit are working for compliance job."""
+
+    databases = ("default", "job_logs")
+
+    def setUp(self) -> None:
+        """Setup test data."""
+        self.device = create_device(name="foobaz")
+        self.device2 = create_orphan_device(name="foobaz2")
+        dgs_gc_settings_and_job_repo_objects()
+        super().setUp()
+
+    def test_get_refreshed_repos_compliance_only_sync_one_setting(self, mock_ensure_git_repository):
+        """Test refreshed repos single GC setting."""
+        mock_ensure_git_repository.return_value = True
+        job_obj = MagicMock()
+        job_obj.logger = MagicMock()
+        backup_repositories = get_refreshed_repos(
+            job_obj, "backup_repository", data={"device": Device.objects.get(name=self.device.name)}
+        )
+        self.assertTrue(constant.ENABLE_INTENDED)
+        self.assertEqual(len(backup_repositories), 1)
+        intended_repositories = get_refreshed_repos(
+            job_obj, "intended_repository", data={"device": Device.objects.get(name=self.device.name)}
+        )
+        self.assertEqual(len(intended_repositories), 1)
+
+    @patch("nautobot_golden_config.utilities.constant.ENABLE_INTENDED", False)
+    def test_get_refreshed_repos_compliance_only_sync_one_setting_compliance_disabled(self, mock_ensure_git_repository):
+        """Test refreshed repos single GC setting intended disabled."""
+        mock_ensure_git_repository.return_value = True
+        job_obj = MagicMock()
+        job_obj.logger = MagicMock()
+        backup_repositories = get_refreshed_repos(
+            job_obj, "backup_repository", data={"device": Device.objects.get(name=self.device.name)}
+        )
+        self.assertFalse(constant.ENABLE_INTENDED)
+        self.assertEqual(len(backup_repositories), 1)
+        intended_repositories = get_refreshed_repos(
+            job_obj, "intended_repository", data={"device": Device.objects.get(name=self.device.name)}
+        )
+        self.assertEqual(len(intended_repositories), 1)
+
+    def test_get_refreshed_repos_compliance_only_sync_two_setting(self, mock_ensure_git_repository):
+        """Test refreshed repos multiple GC setting."""
+        mock_ensure_git_repository.return_value = True
+        job_obj = MagicMock()
+        job_obj.logger = MagicMock()
+        backup_repositories = get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
+        self.assertTrue(constant.ENABLE_INTENDED)
+        self.assertEqual(len(backup_repositories), 2)
+        intended_repositories = get_refreshed_repos(
+            job_obj, "intended_repository", data={"device": Device.objects.all()}
+        )
+        self.assertEqual(len(intended_repositories), 2)
+
+    @patch("nautobot_golden_config.utilities.constant.ENABLE_INTENDED", False)
+    def test_get_refreshed_repos_compliance_only_sync_two_setting_compliance_disabled(self, mock_ensure_git_repository):
+        """Test refreshed repos multiple GC setting."""
+        mock_ensure_git_repository.return_value = True
+        job_obj = MagicMock()
+        job_obj.logger = MagicMock()
+        backup_repositories = get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
+        self.assertFalse(constant.ENABLE_INTENDED)
+        self.assertEqual(len(backup_repositories), 2)
+        intended_repositories = get_refreshed_repos(
+            job_obj, "intended_repository", data={"device": Device.objects.all()}
+        )
+        self.assertEqual(len(intended_repositories), 2)
+
+    def test_get_refreshed_repos_compliance_to_commit(self, mock_ensure_git_repository):
+        """Test whicgh repos should be commited multiple GC setting intendeds enabled."""
+        mock_ensure_git_repository.return_value = True
+        job_obj = MagicMock()
+        job_obj.logger = MagicMock()
+        backup_repositories = get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
+        self.assertTrue(constant.ENABLE_INTENDED)
+        self.assertTrue(backup_repositories[0].to_commit)
+        self.assertTrue(backup_repositories[1].to_commit)
+        intended_repositories = get_refreshed_repos(
+            job_obj, "intended_repository", data={"device": Device.objects.all()}
+        )
+        self.assertEqual(len(intended_repositories), 2)
+        self.assertTrue(intended_repositories[0].to_commit)
+        self.assertTrue(intended_repositories[1].to_commit)
+
+    @patch("nautobot_golden_config.utilities.constant.ENABLE_INTENDED", False)
+    @patch("nautobot_golden_config.utilities.constant.ENABLE_BACKUP", False)
+    def test_get_refreshed_repos_compliance_to_commit_both_disabled(self, mock_ensure_git_repository):
+        """Test whicgh repos should be commited multiple GC setting intendeds disabled."""
+        mock_ensure_git_repository.return_value = True
+        job_obj = MagicMock()
+        job_obj.logger = MagicMock()
+        backup_repositories = get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
+        self.assertFalse(constant.ENABLE_INTENDED)
+        self.assertFalse(constant.ENABLE_BACKUP)
+        self.assertFalse(backup_repositories[0].to_commit)
+        self.assertFalse(backup_repositories[1].to_commit)
+        intended_repositories = get_refreshed_repos(
+            job_obj, "intended_repository", data={"device": Device.objects.all()}
+        )
+        self.assertEqual(len(intended_repositories), 2)
+        self.assertFalse(intended_repositories[0].to_commit)
+        self.assertFalse(intended_repositories[1].to_commit)
+
+
+@patch("nautobot_golden_config.nornir_plays.config_backup.run_backup", MagicMock(return_value="backup_foo"))
+@patch("nautobot_golden_config.nornir_plays.config_intended.run_template", MagicMock(return_value="template_foo"))
+@patch("nautobot_golden_config.nornir_plays.config_compliance.run_compliance", MagicMock(return_value="compliance_foo"))
+@patch("nautobot_golden_config.jobs.ensure_git_repository")
+class GCReposRunAllTestCase(TransactionTestCase):
+    """Test the repos to sync and commit are working for compliance job."""
+
+    databases = ("default", "job_logs")
+
+    def setUp(self) -> None:
+        """Setup test data."""
+        self.device = create_device(name="foobaz")
+        self.device2 = create_orphan_device(name="foobaz2")
+        dgs_gc_settings_and_job_repo_objects()
+        super().setUp()
+
+    def test_get_refreshed_repos_run_all_settings_true(self, mock_ensure_git_repository):
+        """Test refreshed repos backups true intended true."""
+        mock_ensure_git_repository.return_value = True
+        job_obj = MagicMock()
+        job_obj.logger = MagicMock()
+        self.assertTrue(constant.ENABLE_INTENDED)
+        self.assertTrue(constant.ENABLE_BACKUP)
+        backup_repositories = get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
+        self.assertEqual(len(backup_repositories), 2)
+        self.assertTrue(backup_repositories[0].to_commit)
+        self.assertTrue(backup_repositories[1].to_commit)
+        intended_repositories = get_refreshed_repos(
+            job_obj, "intended_repository", data={"device": Device.objects.all()}
+        )
+        self.assertEqual(len(intended_repositories), 2)
+        self.assertTrue(intended_repositories[0].to_commit)
+        self.assertTrue(intended_repositories[1].to_commit)
+        template_repositories = get_refreshed_repos(job_obj, "jinja_repository", data={"device": Device.objects.all()})
+        self.assertEqual(len(template_repositories), 1)
+        self.assertFalse(template_repositories[0].to_commit)
+
+    @patch("nautobot_golden_config.utilities.constant.ENABLE_INTENDED", False)
+    def test_get_refreshed_repos_run_backup_true_intended_false(self, mock_ensure_git_repository):
+        """Test refreshed repos backups true intended false."""
+        mock_ensure_git_repository.return_value = True
+        job_obj = MagicMock()
+        job_obj.logger = MagicMock()
+        self.assertFalse(constant.ENABLE_INTENDED)
+        self.assertTrue(constant.ENABLE_BACKUP)
+        backup_repositories = get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
+        self.assertEqual(len(backup_repositories), 2)
+        self.assertTrue(backup_repositories[0].to_commit)
+        self.assertTrue(backup_repositories[1].to_commit)
+        intended_repositories = get_refreshed_repos(
+            job_obj, "intended_repository", data={"device": Device.objects.all()}
+        )
+        self.assertEqual(len(intended_repositories), 2)
+        self.assertFalse(intended_repositories[0].to_commit)
+        self.assertFalse(intended_repositories[1].to_commit)
+        template_repositories = get_refreshed_repos(job_obj, "jinja_repository", data={"device": Device.objects.all()})
+        self.assertEqual(len(template_repositories), 1)
+        self.assertFalse(template_repositories[0].to_commit)
+
+    @patch("nautobot_golden_config.utilities.constant.ENABLE_BACKUP", False)
+    def test_get_refreshed_repos_run_backup_false_intended_true(self, mock_ensure_git_repository):
+        """Test refreshed repos backups true intended false."""
+        mock_ensure_git_repository.return_value = True
+        job_obj = MagicMock()
+        job_obj.logger = MagicMock()
+        self.assertTrue(constant.ENABLE_INTENDED)
+        self.assertFalse(constant.ENABLE_BACKUP)
+        backup_repositories = get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
+        self.assertEqual(len(backup_repositories), 2)
+        self.assertFalse(backup_repositories[0].to_commit)
+        self.assertFalse(backup_repositories[1].to_commit)
+        intended_repositories = get_refreshed_repos(
+            job_obj, "intended_repository", data={"device": Device.objects.all()}
+        )
+        self.assertEqual(len(intended_repositories), 2)
+        self.assertTrue(intended_repositories[0].to_commit)
+        self.assertTrue(intended_repositories[1].to_commit)
+        template_repositories = get_refreshed_repos(job_obj, "jinja_repository", data={"device": Device.objects.all()})
+        self.assertEqual(len(template_repositories), 1)
+        self.assertFalse(template_repositories[0].to_commit)
+
+    @patch("nautobot_golden_config.utilities.constant.ENABLE_BACKUP", False)
+    @patch("nautobot_golden_config.utilities.constant.ENABLE_INTENDED", False)
+    def test_get_refreshed_repos_run_backup_false_intended_false(self, mock_ensure_git_repository):
+        """Test refreshed repos backups true intended false."""
+        mock_ensure_git_repository.return_value = True
+        job_obj = MagicMock()
+        job_obj.logger = MagicMock()
+        self.assertFalse(constant.ENABLE_INTENDED)
+        self.assertFalse(constant.ENABLE_BACKUP)
+        backup_repositories = get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
+        self.assertEqual(len(backup_repositories), 2)
+        self.assertFalse(backup_repositories[0].to_commit)
+        self.assertFalse(backup_repositories[1].to_commit)
+        intended_repositories = get_refreshed_repos(
+            job_obj, "intended_repository", data={"device": Device.objects.all()}
+        )
+        self.assertEqual(len(intended_repositories), 2)
+        self.assertFalse(intended_repositories[0].to_commit)
+        self.assertFalse(intended_repositories[1].to_commit)
+        template_repositories = get_refreshed_repos(job_obj, "jinja_repository", data={"device": Device.objects.all()})
+        self.assertEqual(len(template_repositories), 1)
+        self.assertFalse(template_repositories[0].to_commit)

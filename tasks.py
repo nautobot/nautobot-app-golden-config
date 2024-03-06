@@ -149,15 +149,27 @@ def docker_compose(context, command, **kwargs):
 def run_command(context, command, **kwargs):
     """Wrapper to run a command locally or inside the nautobot container."""
     if is_truthy(context.nautobot_golden_config.local):
+        if "command_env" in kwargs:
+            kwargs["env"] = {
+                **kwargs.get("env", {}),
+                **kwargs.pop("command_env"),
+            }
         context.run(command, **kwargs)
     else:
         # Check if nautobot is running, no need to start another nautobot container to run a command
         docker_compose_status = "ps --services --filter status=running"
         results = docker_compose(context, docker_compose_status, hide="out")
         if "nautobot" in results.stdout:
-            compose_command = f"exec nautobot {command}"
+            compose_command = "exec"
         else:
-            compose_command = f"run --rm --entrypoint '{command}' nautobot"
+            compose_command = "run --rm --entrypoint=''"
+
+        if "command_env" in kwargs:
+            command_env = kwargs.pop("command_env")
+            for key, value in command_env.items():
+                compose_command += f' --env="{key}={value}"'
+
+        compose_command += f" -- nautobot {command}"
 
         pty = kwargs.pop("pty", True)
 
@@ -327,15 +339,22 @@ def logs(context, service="", follow=False, tail=0):
 # ------------------------------------------------------------------------------
 # ACTIONS
 # ------------------------------------------------------------------------------
-@task(help={"file": "Python file to execute"})
-def nbshell(context, file=""):
+@task(
+    help={
+        "file": "Python file to execute",
+        "env": "Environment variables to pass to the command",
+        "plain": "Flag to run nbshell in plain mode (default: False)",
+    },
+)
+def nbshell(context, file="", env={}, plain=False):
     """Launch an interactive nbshell session."""
     command = [
         "nautobot-server",
         "nbshell",
+        "--plain" if plain else "",
         f"< '{file}'" if file else "",
     ]
-    run_command(context, " ".join(command), pty=not bool(file))
+    run_command(context, " ".join(command), pty=not bool(file), command_env=env)
 
 
 @task
@@ -798,8 +817,33 @@ def tests(context, failfast=False, keepdb=False, lint_only=False):
     pylint(context)
     print("Running mkdocs...")
     build_and_check_docs(context)
+    print("Checking app config schema...")
+    validate_app_config(context)
     if not lint_only:
         print("Running unit tests...")
         unittest(context, failfast=failfast, keepdb=keepdb)
         unittest_coverage(context)
     print("All tests have passed!")
+
+
+@task
+def generate_app_config_schema(context):
+    """Generate the app config schema from the current app config.
+
+    WARNING: Review and edit the generated file before committing.
+
+    Its content is inferred from:
+
+    - The current configuration in `PLUGINS_CONFIG`
+    - `NautobotAppConfig.default_settings`
+    - `NautobotAppConfig.required_settings`
+    """
+    start(context, service="nautobot")
+    nbshell(context, file="development/app_config_schema.py", env={"APP_CONFIG_SCHEMA_COMMAND": "generate"})
+
+
+@task
+def validate_app_config(context):
+    """Validate the app config based on the app config schema."""
+    start(context, service="nautobot")
+    nbshell(context, plain=True, file="development/app_config_schema.py", env={"APP_CONFIG_SCHEMA_COMMAND": "validate"})

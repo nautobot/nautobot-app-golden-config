@@ -10,8 +10,9 @@ from nautobot_golden_config.tests.conftest import (
     dgs_gc_settings_and_job_repo_objects,
 )
 from nautobot_golden_config.utilities import constant
-from nautobot_golden_config.jobs import get_refreshed_repos
-
+# from nautobot_golden_config.jobs import get_refreshed_repos
+# import nautobot_golden_config.jobs as gc_jobs
+from nautobot_golden_config import jobs
 
 class DefaultRepoTypesTestCase(TransactionTestCase):
     """Test a job that default Repo_Types are Set properly."""
@@ -75,7 +76,7 @@ class GCReposBackupTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         job_obj = MagicMock()
         job_obj.logger = MagicMock()
-        backup_repositories = get_refreshed_repos(
+        backup_repositories = jobs.get_refreshed_repos(
             job_obj, "backup_repository", data={"device": Device.objects.get(name=self.device.name)}
         )
         self.assertTrue(constant.ENABLE_BACKUP)
@@ -87,7 +88,7 @@ class GCReposBackupTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         job_obj = MagicMock()
         job_obj.logger = MagicMock()
-        backup_repositories = get_refreshed_repos(
+        backup_repositories = jobs.get_refreshed_repos(
             job_obj, "backup_repository", data={"device": Device.objects.get(name=self.device.name)}
         )
         self.assertFalse(constant.ENABLE_BACKUP)
@@ -98,7 +99,7 @@ class GCReposBackupTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         job_obj = MagicMock()
         job_obj.logger = MagicMock()
-        backup_repositories = get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
+        backup_repositories = jobs.get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
         self.assertTrue(constant.ENABLE_BACKUP)
         self.assertEqual(len(backup_repositories), 2)
 
@@ -108,7 +109,7 @@ class GCReposBackupTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         job_obj = MagicMock()
         job_obj.logger = MagicMock()
-        backup_repositories = get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
+        backup_repositories = jobs.get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
         self.assertFalse(constant.ENABLE_BACKUP)
         self.assertEqual(len(backup_repositories), 2)
 
@@ -117,7 +118,7 @@ class GCReposBackupTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         job_obj = MagicMock()
         job_obj.logger = MagicMock()
-        backup_repositories = get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
+        backup_repositories = jobs.get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
         self.assertTrue(constant.ENABLE_BACKUP)
         self.assertTrue(backup_repositories[0].to_commit)
         self.assertTrue(backup_repositories[1].to_commit)
@@ -128,7 +129,7 @@ class GCReposBackupTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         job_obj = MagicMock()
         job_obj.logger = MagicMock()
-        backup_repositories = get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
+        backup_repositories = jobs.get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
         self.assertFalse(constant.ENABLE_BACKUP)
         self.assertFalse(backup_repositories[0].to_commit)
         self.assertFalse(backup_repositories[1].to_commit)
@@ -153,12 +154,12 @@ class GCReposIntendedTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         job_obj = MagicMock()
         job_obj.logger = MagicMock()
-        intended_repositories = get_refreshed_repos(
+        intended_repositories = jobs.get_refreshed_repos(
             job_obj, "intended_repository", data={"device": Device.objects.get(name=self.device.name)}
         )
         self.assertTrue(constant.ENABLE_INTENDED)
         self.assertEqual(len(intended_repositories), 1)
-        template_repositories = get_refreshed_repos(
+        template_repositories = jobs.get_refreshed_repos(
             job_obj, "jinja_repository", data={"device": Device.objects.get(name=self.device.name)}
         )
         self.assertEqual(len(template_repositories), 1)
@@ -169,12 +170,12 @@ class GCReposIntendedTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         job_obj = MagicMock()
         job_obj.logger = MagicMock()
-        intended_repositories = get_refreshed_repos(
+        intended_repositories = jobs.get_refreshed_repos(
             job_obj, "intended_repository", data={"device": Device.objects.get(name=self.device.name)}
         )
         self.assertFalse(constant.ENABLE_INTENDED)
         self.assertEqual(len(intended_repositories), 1)
-        template_repositories = get_refreshed_repos(
+        template_repositories = jobs.get_refreshed_repos(
             job_obj, "jinja_repository", data={"device": Device.objects.get(name=self.device.name)}
         )
         self.assertEqual(len(template_repositories), 1)
@@ -184,12 +185,12 @@ class GCReposIntendedTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         job_obj = MagicMock()
         job_obj.logger = MagicMock()
-        intended_repositories = get_refreshed_repos(
+        intended_repositories = jobs.get_refreshed_repos(
             job_obj, "intended_repository", data={"device": Device.objects.all()}
         )
         self.assertTrue(constant.ENABLE_INTENDED)
         self.assertEqual(len(intended_repositories), 2)
-        template_repositories = get_refreshed_repos(job_obj, "jinja_repository", data={"device": Device.objects.all()})
+        template_repositories = jobs.get_refreshed_repos(job_obj, "jinja_repository", data={"device": Device.objects.all()})
         self.assertEqual(len(template_repositories), 1)
 
     @patch("nautobot_golden_config.utilities.constant.ENABLE_INTENDED", False)
@@ -198,12 +199,12 @@ class GCReposIntendedTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         job_obj = MagicMock()
         job_obj.logger = MagicMock()
-        intended_repositories = get_refreshed_repos(
+        intended_repositories = jobs.get_refreshed_repos(
             job_obj, "intended_repository", data={"device": Device.objects.all()}
         )
         self.assertFalse(constant.ENABLE_INTENDED)
         self.assertEqual(len(intended_repositories), 2)
-        template_repositories = get_refreshed_repos(job_obj, "jinja_repository", data={"device": Device.objects.all()})
+        template_repositories = jobs.get_refreshed_repos(job_obj, "jinja_repository", data={"device": Device.objects.all()})
         self.assertEqual(len(template_repositories), 1)
 
     def test_get_refreshed_repos_intended_to_commit(self, mock_ensure_git_repository):
@@ -211,7 +212,7 @@ class GCReposIntendedTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         job_obj = MagicMock()
         job_obj.logger = MagicMock()
-        intended_repositories = get_refreshed_repos(
+        intended_repositories = jobs.get_refreshed_repos(
             job_obj, "intended_repository", data={"device": Device.objects.all()}
         )
         self.assertTrue(constant.ENABLE_INTENDED)
@@ -224,7 +225,7 @@ class GCReposIntendedTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         job_obj = MagicMock()
         job_obj.logger = MagicMock()
-        intended_repositories = get_refreshed_repos(
+        intended_repositories = jobs.get_refreshed_repos(
             job_obj, "intended_repository", data={"device": Device.objects.all()}
         )
         self.assertFalse(constant.ENABLE_INTENDED)
@@ -260,12 +261,12 @@ class GCReposComplianceTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         job_obj = MagicMock()
         job_obj.logger = MagicMock()
-        backup_repositories = get_refreshed_repos(
+        backup_repositories = jobs.get_refreshed_repos(
             job_obj, "backup_repository", data={"device": Device.objects.get(name=self.device.name)}
         )
         self.assertTrue(constant.ENABLE_INTENDED)
         self.assertEqual(len(backup_repositories), 1)
-        intended_repositories = get_refreshed_repos(
+        intended_repositories = jobs.get_refreshed_repos(
             job_obj, "intended_repository", data={"device": Device.objects.get(name=self.device.name)}
         )
         self.assertEqual(len(intended_repositories), 1)
@@ -276,12 +277,12 @@ class GCReposComplianceTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         job_obj = MagicMock()
         job_obj.logger = MagicMock()
-        backup_repositories = get_refreshed_repos(
+        backup_repositories = jobs.get_refreshed_repos(
             job_obj, "backup_repository", data={"device": Device.objects.get(name=self.device.name)}
         )
         self.assertFalse(constant.ENABLE_INTENDED)
         self.assertEqual(len(backup_repositories), 1)
-        intended_repositories = get_refreshed_repos(
+        intended_repositories = jobs.get_refreshed_repos(
             job_obj, "intended_repository", data={"device": Device.objects.get(name=self.device.name)}
         )
         self.assertEqual(len(intended_repositories), 1)
@@ -291,10 +292,10 @@ class GCReposComplianceTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         job_obj = MagicMock()
         job_obj.logger = MagicMock()
-        backup_repositories = get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
+        backup_repositories = jobs.get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
         self.assertTrue(constant.ENABLE_INTENDED)
         self.assertEqual(len(backup_repositories), 2)
-        intended_repositories = get_refreshed_repos(
+        intended_repositories = jobs.get_refreshed_repos(
             job_obj, "intended_repository", data={"device": Device.objects.all()}
         )
         self.assertEqual(len(intended_repositories), 2)
@@ -305,10 +306,10 @@ class GCReposComplianceTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         job_obj = MagicMock()
         job_obj.logger = MagicMock()
-        backup_repositories = get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
+        backup_repositories = jobs.get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
         self.assertFalse(constant.ENABLE_INTENDED)
         self.assertEqual(len(backup_repositories), 2)
-        intended_repositories = get_refreshed_repos(
+        intended_repositories = jobs.get_refreshed_repos(
             job_obj, "intended_repository", data={"device": Device.objects.all()}
         )
         self.assertEqual(len(intended_repositories), 2)
@@ -318,11 +319,11 @@ class GCReposComplianceTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         job_obj = MagicMock()
         job_obj.logger = MagicMock()
-        backup_repositories = get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
+        backup_repositories = jobs.get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
         self.assertTrue(constant.ENABLE_INTENDED)
         self.assertTrue(backup_repositories[0].to_commit)
         self.assertTrue(backup_repositories[1].to_commit)
-        intended_repositories = get_refreshed_repos(
+        intended_repositories = jobs.get_refreshed_repos(
             job_obj, "intended_repository", data={"device": Device.objects.all()}
         )
         self.assertEqual(len(intended_repositories), 2)
@@ -336,12 +337,12 @@ class GCReposComplianceTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         job_obj = MagicMock()
         job_obj.logger = MagicMock()
-        backup_repositories = get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
+        backup_repositories = jobs.get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
         self.assertFalse(constant.ENABLE_INTENDED)
         self.assertFalse(constant.ENABLE_BACKUP)
         self.assertFalse(backup_repositories[0].to_commit)
         self.assertFalse(backup_repositories[1].to_commit)
-        intended_repositories = get_refreshed_repos(
+        intended_repositories = jobs.get_refreshed_repos(
             job_obj, "intended_repository", data={"device": Device.objects.all()}
         )
         self.assertEqual(len(intended_repositories), 2)
@@ -372,17 +373,17 @@ class GCReposRunAllTestCase(TransactionTestCase):
         job_obj.logger = MagicMock()
         self.assertTrue(constant.ENABLE_INTENDED)
         self.assertTrue(constant.ENABLE_BACKUP)
-        backup_repositories = get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
+        backup_repositories = jobs.get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
         self.assertEqual(len(backup_repositories), 2)
         self.assertTrue(backup_repositories[0].to_commit)
         self.assertTrue(backup_repositories[1].to_commit)
-        intended_repositories = get_refreshed_repos(
+        intended_repositories = jobs.get_refreshed_repos(
             job_obj, "intended_repository", data={"device": Device.objects.all()}
         )
         self.assertEqual(len(intended_repositories), 2)
         self.assertTrue(intended_repositories[0].to_commit)
         self.assertTrue(intended_repositories[1].to_commit)
-        template_repositories = get_refreshed_repos(job_obj, "jinja_repository", data={"device": Device.objects.all()})
+        template_repositories = jobs.get_refreshed_repos(job_obj, "jinja_repository", data={"device": Device.objects.all()})
         self.assertEqual(len(template_repositories), 1)
         self.assertFalse(template_repositories[0].to_commit)
 
@@ -394,17 +395,17 @@ class GCReposRunAllTestCase(TransactionTestCase):
         job_obj.logger = MagicMock()
         self.assertFalse(constant.ENABLE_INTENDED)
         self.assertTrue(constant.ENABLE_BACKUP)
-        backup_repositories = get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
+        backup_repositories = jobs.get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
         self.assertEqual(len(backup_repositories), 2)
         self.assertTrue(backup_repositories[0].to_commit)
         self.assertTrue(backup_repositories[1].to_commit)
-        intended_repositories = get_refreshed_repos(
+        intended_repositories = jobs.get_refreshed_repos(
             job_obj, "intended_repository", data={"device": Device.objects.all()}
         )
         self.assertEqual(len(intended_repositories), 2)
         self.assertFalse(intended_repositories[0].to_commit)
         self.assertFalse(intended_repositories[1].to_commit)
-        template_repositories = get_refreshed_repos(job_obj, "jinja_repository", data={"device": Device.objects.all()})
+        template_repositories = jobs.get_refreshed_repos(job_obj, "jinja_repository", data={"device": Device.objects.all()})
         self.assertEqual(len(template_repositories), 1)
         self.assertFalse(template_repositories[0].to_commit)
 
@@ -416,17 +417,17 @@ class GCReposRunAllTestCase(TransactionTestCase):
         job_obj.logger = MagicMock()
         self.assertTrue(constant.ENABLE_INTENDED)
         self.assertFalse(constant.ENABLE_BACKUP)
-        backup_repositories = get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
+        backup_repositories = jobs.get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
         self.assertEqual(len(backup_repositories), 2)
         self.assertFalse(backup_repositories[0].to_commit)
         self.assertFalse(backup_repositories[1].to_commit)
-        intended_repositories = get_refreshed_repos(
+        intended_repositories = jobs.get_refreshed_repos(
             job_obj, "intended_repository", data={"device": Device.objects.all()}
         )
         self.assertEqual(len(intended_repositories), 2)
         self.assertTrue(intended_repositories[0].to_commit)
         self.assertTrue(intended_repositories[1].to_commit)
-        template_repositories = get_refreshed_repos(job_obj, "jinja_repository", data={"device": Device.objects.all()})
+        template_repositories = jobs.get_refreshed_repos(job_obj, "jinja_repository", data={"device": Device.objects.all()})
         self.assertEqual(len(template_repositories), 1)
         self.assertFalse(template_repositories[0].to_commit)
 
@@ -439,16 +440,16 @@ class GCReposRunAllTestCase(TransactionTestCase):
         job_obj.logger = MagicMock()
         self.assertFalse(constant.ENABLE_INTENDED)
         self.assertFalse(constant.ENABLE_BACKUP)
-        backup_repositories = get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
+        backup_repositories = jobs.get_refreshed_repos(job_obj, "backup_repository", data={"device": Device.objects.all()})
         self.assertEqual(len(backup_repositories), 2)
         self.assertFalse(backup_repositories[0].to_commit)
         self.assertFalse(backup_repositories[1].to_commit)
-        intended_repositories = get_refreshed_repos(
+        intended_repositories = jobs.get_refreshed_repos(
             job_obj, "intended_repository", data={"device": Device.objects.all()}
         )
         self.assertEqual(len(intended_repositories), 2)
         self.assertFalse(intended_repositories[0].to_commit)
         self.assertFalse(intended_repositories[1].to_commit)
-        template_repositories = get_refreshed_repos(job_obj, "jinja_repository", data={"device": Device.objects.all()})
+        template_repositories = jobs.get_refreshed_repos(job_obj, "jinja_repository", data={"device": Device.objects.all()})
         self.assertEqual(len(template_repositories), 1)
         self.assertFalse(template_repositories[0].to_commit)

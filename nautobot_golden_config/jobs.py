@@ -44,25 +44,33 @@ InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 name = "Golden Configuration"  # pylint: disable=invalid-name
 
 
-def get_refreshed_repos(job_obj, repo_type, data=None):
+def get_repo_types_for_job(job_name):
+    """Logic to determine which repo_types are needed based on job + plugin settings."""
+    repo_types = []
+    if constant.ENABLE_BACKUP and job_name == "nautobot_golden_config.jobs.BackupJob":
+        repo_types.extend(["backup_repository"])
+    if constant.ENABLE_INTENDED and job_name == "nautobot_golden_config.jobs.IntendedJob":
+        repo_types.extend(["jinja_repository", "intended_repository"])
+    if constant.ENABLE_COMPLIANCE and job_name == "nautobot_golden_config.jobs.ComplianceJob":
+        repo_types.extend(["intended_repository", "backup_repository"])
+    if "All" in job_name:
+        repo_types.extend(["backup_repository", "jinja_repository", "intended_repository"])
+    return repo_types
+
+
+def get_refreshed_repos(job_obj, repo_types, data=None):
     """Small wrapper to pull latest branch, and return a GitRepo app specific object."""
-    devices = get_job_filter(data)
     dynamic_groups = DynamicGroup.objects.exclude(golden_config_setting__isnull=True)
     repository_records = set()
-    # Iterate through DynamicGroups then apply the DG's filter to the devices filtered by job.
     for group in dynamic_groups:
-        repo = getattr(group.golden_config_setting, repo_type, None)
-        # Setting a new to_commit attribute to track what needs to be pushed.
-        repo.to_commit = False
-        # Only commit "push" when the GC 'owns' the functionality.
-        if repo_type == "backup_repository" and constant.ENABLE_BACKUP:
-            repo.to_commit = True
-        if repo_type == "intended_repository" and constant.ENABLE_INTENDED:
-            repo.to_commit = True
-        if repo and devices.filter(group.generate_query()).exists():
-            repository_records.add(repo)
+        # Make sure the data(device qs) device exist in the dg first.
+        if data.filter(group.generate_query()).exists():
+            for repo_type in repo_types:
+                repo = getattr(group.golden_config_setting, repo_type, None)
+                if repo:
+                    repository_records.add(repo)
 
-    repositories = []
+    repositories = {}
     for repository_record in repository_records:
         ensure_git_repository(repository_record, job_obj.logger)
         # TODO: Should this not point to non-nautobot.core import
@@ -73,11 +81,60 @@ def get_refreshed_repos(job_obj, repo_type, data=None):
             git_info.from_url,
             clone_initially=False,
             base_url=repository_record.remote_url,
+            nautobot_repo_obj=repository_record,
         )
-        git_repo.to_commit = repository_record.to_commit
-        repositories.append(git_repo)
+        commit = False
 
+        if (
+            constant.ENABLE_INTENDED
+            and "nautobot_golden_config.intendedconfigs" in git_repo.nautobot_repo_obj.provided_contents
+        ):
+            commit = True
+        if (
+            constant.ENABLE_BACKUP
+            and "nautobot_golden_config.backupconfigs" in git_repo.nautobot_repo_obj.provided_contents
+        ):
+            commit = True
+        repositories[str(git_repo.nautobot_repo_obj.id)] = {"repo_obj": git_repo, "to_commit": commit}
     return repositories
+
+
+def gc_repos(func):
+    """Decorator used for handle repo syncing, commiting, and pushing."""
+
+    def gc_repo_wrapper(self, *args, **kwargs):
+        """Decorator used for handle repo syncing, commiting, and pushing."""
+        self.logger.debug("Compiling device data for GC job.", extra={"grouping": "Get Job Filter"})
+        self.qs = get_job_filter(kwargs)
+        self.logger.debug(
+            f"In scope device count for this job: {self.qs.count()}", extra={"grouping": "Get Job Filter"}
+        )
+        self.logger.debug("Mapping device(s) to GC Settings.", extra={"grouping": "Device to Settings Map"})
+        self.device_to_settings_map = get_device_to_settings_map(queryset=self.qs)
+        gitrepo_types = list(set(get_repo_types_for_job(self.name)))
+        self.logger.debug(
+            f"Repository types to sync: {', '.join(gitrepo_types)}",
+            extra={"grouping": "GC Repo Syncs"},
+        )
+        current_repos = get_refreshed_repos(job_obj=self, repo_types=gitrepo_types, data=self.qs)
+        # This is where the specific jobs run method runs via this decorator.
+        func(self, *args, **kwargs)
+        now = make_aware(datetime.now())
+        self.logger.debug(
+            f"Finished the {self.Meta.name} job execution.",
+            extra={"grouping": "GC After Run"},
+        )
+        if current_repos:
+            for _, repo in current_repos.items():
+                if repo["to_commit"]:
+                    self.logger.debug(
+                        f"Pushing {self.Meta.name} results to repo {repo['repo_obj'].base_url}.",
+                        extra={"grouping": "GC Repo Commit and Push"},
+                    )
+                    repo["repo_obj"].commit_with_added(f"{self.Meta.name.upper()} JOB {now}")
+                    repo["repo_obj"].push()
+
+    return gc_repo_wrapper
 
 
 class FormEntry:  # pylint disable=too-few-public-method
@@ -106,49 +163,17 @@ class FormEntry:  # pylint disable=too-few-public-method
     debug = BooleanVar(description="Enable for more verbose debug logging")
 
 
-def gc_repos(func):
-    """Decorator used for handle repo syncing, commiting, and pushing."""
+class GoldenConfigJobMixin(Job):  # pylint: disable=abstract-method
+    """Reused mixin to be able to set defaults for instance attributes in all GC jobs."""
 
-    def gc_repo_wrapper(self, *args, **kwargs):
-        """Decorator used for handle repo syncing, commiting, and pushing."""
-        self.logger.debug("Compiling device data for GC job.", extra={"grouping": "Get Job Filter"})
-        self.qs = get_job_filter(self.deserialize_data(kwargs))
-        self.logger.debug("Compiling device to settings map.", extra={"grouping": "Device to Settings Map"})
-        self.device_to_settings_map = get_device_to_settings_map(queryset=self.qs)
-        self.repos = []
-        self.logger.debug(
-            f"Repository types to sync: {', '.join(self.Meta.repo_types)}",  # pylint: disable=no-member
-            extra={"grouping": "GC Repo Syncs"},
-        )
-        for repo_type in self.Meta.repo_types:  # pylint: disable=no-member
-            self.logger.debug(f"Refreshing repositories of type {repo_type}.", extra={"grouping": "GC Repo Syncs"})
-            current_repos = get_refreshed_repos(job_obj=self, repo_type=repo_type, data=self.deserialize_data(kwargs))
-            if not repo_type == "jinja_repository":
-                for current_repo in current_repos:
-                    self.repos.append(current_repo)
-        # This is where the specific jobs run method runs via this decorator.
-        func(self, *args, **kwargs)
-        now = make_aware(datetime.now())
-        self.logger.debug(
-            f"Finished the {self.Meta.name} job execution.",  # pylint: disable=no-member
-            extra={"grouping": "GC After Run"},
-        )
-        if self.name == "Perform Configuration Compliance":
-            self.logger.debug("Compliance job completed, no repositories need to be synced in this task.")
-            if self.repos:
-                for repo in self.repos:
-                    if repo.to_commit:
-                        self.logger.debug(
-                            f"Pushing {self.Meta.name} results to repo {repo.base_url}.",  # pylint: disable=no-member
-                            extra={"grouping": "GC Repo Commit and Push"},
-                        )
-                        repo.commit_with_added(f"{self.Meta.name.upper()} JOB {now}")  # pylint: disable=no-member
-                        repo.push()
-
-    return gc_repo_wrapper
+    def __init__(self, *args, **kwargs):
+        """Initialize the job."""
+        super().__init__(*args, **kwargs)
+        self.qs = None
+        self.device_to_settings_map = {}
 
 
-class ComplianceJob(Job, FormEntry):
+class ComplianceJob(GoldenConfigJobMixin, FormEntry):
     """Job to to run the compliance engine."""
 
     class Meta:
@@ -157,7 +182,6 @@ class ComplianceJob(Job, FormEntry):
         name = "Perform Configuration Compliance"
         description = "Run configuration compliance on your network infrastructure."
         has_sensitive_variables = False
-        repo_types = ["intended_repository", "backup_repository"]
 
     @gc_repos
     def run(self, *args, **data):  # pylint: disable=unused-argument
@@ -171,7 +195,7 @@ class ComplianceJob(Job, FormEntry):
         )
 
 
-class IntendedJob(Job, FormEntry):
+class IntendedJob(GoldenConfigJobMixin, FormEntry):
     """Job to to run generation of intended configurations."""
 
     class Meta:
@@ -180,7 +204,6 @@ class IntendedJob(Job, FormEntry):
         name = "Generate Intended Configurations"
         description = "Generate the configuration for your intended state."
         has_sensitive_variables = False
-        repo_types = ["jinja_repository", "intended_repository"]
 
     @gc_repos
     def run(self, *args, **data):  # pylint: disable=unused-argument
@@ -195,7 +218,7 @@ class IntendedJob(Job, FormEntry):
         )
 
 
-class BackupJob(Job, FormEntry):
+class BackupJob(GoldenConfigJobMixin, FormEntry):
     """Job to to run the backup job."""
 
     class Meta:
@@ -204,7 +227,6 @@ class BackupJob(Job, FormEntry):
         name = "Backup Configurations"
         description = "Backup the configurations of your network devices."
         has_sensitive_variables = False
-        repo_types = ["backup_repository"]
 
     @gc_repos
     def run(self, *args, **data):  # pylint: disable=unused-argument
@@ -213,12 +235,12 @@ class BackupJob(Job, FormEntry):
         config_backup(
             self.job_result,
             self.logger.getEffectiveLevel(),
-            self.qs,  # pylint: disable=no-member
-            self.device_to_settings_map,  # pylint: disable=no-member
+            self.qs,
+            self.device_to_settings_map,
         )
 
 
-class AllGoldenConfig(Job):
+class AllGoldenConfig(GoldenConfigJobMixin):
     """Job to to run all three jobs against a single device."""
 
     device = ObjectVar(model=Device, required=True)
@@ -230,20 +252,35 @@ class AllGoldenConfig(Job):
         name = "Execute All Golden Configuration Jobs - Single Device"
         description = "Process to run all Golden Configuration jobs configured."
         has_sensitive_variables = False
-        repo_types = []
 
     @gc_repos
-    def run(self, *args, **data):
-        """Run all jobs."""
+    def run(self, *args, **data):  # pylint: disable=unused-argument
+        """Run all jobs on a single device."""
         if constant.ENABLE_INTENDED:
-            IntendedJob().run.__func__(self, **data)  # pylint: disable=too-many-function-args
+            config_intended(
+                self.job_result,
+                self.logger.getEffectiveLevel(),
+                self,
+                self.qs,
+                self.device_to_settings_map,
+            )
         if constant.ENABLE_BACKUP:
-            BackupJob().run.__func__(self, **data)  # pylint: disable=too-many-function-args
+            config_backup(
+                self.job_result,
+                self.logger.getEffectiveLevel(),
+                self.qs,
+                self.device_to_settings_map,
+            )
         if constant.ENABLE_COMPLIANCE:
-            ComplianceJob().run.__func__(self, **data)  # pylint: disable=too-many-function-args
+            config_compliance(
+                self.job_result,
+                self.logger.getEffectiveLevel(),
+                self.qs,
+                self.device_to_settings_map,
+            )
 
 
-class AllDevicesGoldenConfig(Job, FormEntry):
+class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
     """Job to to run all three jobs against multiple devices."""
 
     class Meta:
@@ -252,17 +289,32 @@ class AllDevicesGoldenConfig(Job, FormEntry):
         name = "Execute All Golden Configuration Jobs - Multiple Device"
         description = "Process to run all Golden Configuration jobs configured against multiple devices."
         has_sensitive_variables = False
-        repo_types = []
 
     @gc_repos
-    def run(self, *args, **data):
-        """Run all jobs."""
+    def run(self, *args, **data):  # pylint: disable=unused-argument
+        """Run all jobs on multiple devices."""
         if constant.ENABLE_INTENDED:
-            IntendedJob().run.__func__(self, **data)  # pylint: disable=too-many-function-args
+            config_intended(
+                self.job_result,
+                self.logger.getEffectiveLevel(),
+                self,
+                self.qs,
+                self.device_to_settings_map,
+            )
         if constant.ENABLE_BACKUP:
-            BackupJob().run.__func__(self, **data)  # pylint: disable=too-many-function-args
+            config_backup(
+                self.job_result,
+                self.logger.getEffectiveLevel(),
+                self.qs,
+                self.device_to_settings_map,
+            )
         if constant.ENABLE_COMPLIANCE:
-            ComplianceJob().run.__func__(self, **data)  # pylint: disable=too-many-function-args
+            config_compliance(
+                self.job_result,
+                self.logger.getEffectiveLevel(),
+                self.qs,
+                self.device_to_settings_map,
+            )
 
 
 class GenerateConfigPlans(Job, FormEntry):

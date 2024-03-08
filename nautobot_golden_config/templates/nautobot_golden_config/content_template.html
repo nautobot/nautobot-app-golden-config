@@ -52,7 +52,10 @@
       </tbody>
     </table>
   </div>
-  {% endif %} {% if template_type == "device-configs" %}
+</div>
+{% endif %}
+{% elif template_type == "device-configs" %}
+<div class="panel panel-default">
   <div class="panel-heading">
     <strong>Configuration Types</strong>
   </div>
@@ -70,7 +73,7 @@
           <td>Compliance</td>
           <td>
             <a
-              href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=device.pk config_type='compliance' %}"
+              href="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=device.pk %}"
               ><i class="mdi mdi-file-compare"></i
             ></a>
           </td>
@@ -80,7 +83,7 @@
           <td>Intended</td>
           <td>
             <a
-              href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=device.pk config_type='intended' %}"
+              href="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=device.pk %}"
               ><i class="mdi mdi-text-box-check-outline"></i
             ></a>
           </td>
@@ -90,7 +93,7 @@
           <td>Configuration Postprocessing</td>
           <td>
             <a
-              href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=device.pk config_type='postprocessing' %}"
+              href="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=device.pk %}"
               ><i class="mdi mdi-text-box-check"></i
             ></a>
           </td>
@@ -100,7 +103,7 @@
           <td>Actual</td>
           <td>
             <a
-              href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=device.pk config_type='backup' %}"
+              href="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=device.pk %}"
               ><i class="mdi mdi-file-document-outline"></i
             ></a>
           </td>
@@ -110,7 +113,7 @@
           <td>SoT Aggregation Data</td>
           <td>
             <a
-              href="{% url 'plugins:nautobot_golden_config:configcompliance_details' pk=device.pk config_type='sotagg' %}"
+              href="{% url 'plugins:nautobot_golden_config:goldenconfig_sotagg' pk=device.pk %}"
               ><i class="mdi mdi-code-json"></i
             ></a>
           </td>
@@ -121,4 +124,3 @@
   </div>
   {% endif %}
 </div>
-{% endif %}

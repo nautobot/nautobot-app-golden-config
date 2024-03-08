@@ -113,7 +113,7 @@ def gc_repos(func):
         self.device_to_settings_map = get_device_to_settings_map(queryset=self.qs)
         gitrepo_types = list(set(get_repo_types_for_job(self.name)))
         self.logger.debug(
-            f"Repository types to sync: {', '.join(gitrepo_types)}",
+            f"Repository types to sync: {', '.join(sorted(gitrepo_types))}",
             extra={"grouping": "GC Repo Syncs"},
         )
         current_repos = get_refreshed_repos(job_obj=self, repo_types=gitrepo_types, data=self.qs)
@@ -186,7 +186,10 @@ class ComplianceJob(GoldenConfigJobMixin, FormEntry):
     @gc_repos
     def run(self, *args, **data):  # pylint: disable=unused-argument
         """Run config compliance report script."""
-        self.logger.debug("Starting config compliance nornir play.")
+        self.logger.warning("Starting config compliance nornir play.")
+        if not constant.ENABLE_COMPLIANCE:
+            self.logger.critical("Compliance is disabled in application settings.")
+            raise ValueError("Compliance is disabled in application settings.")
         config_compliance(
             self.job_result,
             self.logger.getEffectiveLevel(),
@@ -209,6 +212,9 @@ class IntendedJob(GoldenConfigJobMixin, FormEntry):
     def run(self, *args, **data):  # pylint: disable=unused-argument
         """Run config generation script."""
         self.logger.debug("Building device settings mapping and running intended config nornir play.")
+        if not constant.ENABLE_INTENDED:
+            self.logger.critical("Intended Generation is disabled in application settings.")
+            raise ValueError("Intended Generation is disabled in application settings.")
         config_intended(
             self.job_result,
             self.logger.getEffectiveLevel(),
@@ -232,6 +238,9 @@ class BackupJob(GoldenConfigJobMixin, FormEntry):
     def run(self, *args, **data):  # pylint: disable=unused-argument
         """Run config backup process."""
         self.logger.debug("Starting config backup nornir play.")
+        if not constant.ENABLE_BACKUP:
+            self.logger.critical("Backups are disabled in application settings.")
+            raise ValueError("Backups are disabled in application settings.")
         config_backup(
             self.job_result,
             self.logger.getEffectiveLevel(),

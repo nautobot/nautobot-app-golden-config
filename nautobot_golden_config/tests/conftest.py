@@ -231,7 +231,9 @@ def create_orphan_device(name="orphan"):
     manufacturer, _ = Manufacturer.objects.get_or_create(name="Manufacturer 4")
     device_role, _ = Role.objects.get_or_create(name="Role 4")
     device_type, _ = DeviceType.objects.get_or_create(manufacturer=manufacturer, model="Device Type 4")
-    platform, _ = Platform.objects.get_or_create(manufacturer=manufacturer, name="Platform 4")
+    platform, _ = Platform.objects.get_or_create(
+        manufacturer=manufacturer, name="Platform 4", network_driver="cisco_ios"
+    )
     tag, _ = Tag.objects.get_or_create(name="Orphaned")
     tag.content_types.add(ct_device)
     device = Device.objects.create(
@@ -521,7 +523,7 @@ def create_job_result() -> None:
     return result
 
 
-def dgs_gc_settings_and_job_repo_objects() -> None:
+def dgs_gc_settings_and_job_repo_objects():
     """Create Multiple DGS GC settings and other objects."""
     create_git_repos()
     create_saved_queries()
@@ -550,15 +552,9 @@ def dgs_gc_settings_and_job_repo_objects() -> None:
         backup_test_connectivity=True,
         dynamic_group=dynamic_group1,
         sot_agg_query=GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1"),
-        backup_repository=GitRepository.objects.filter(
-            provided_contents__contains="nautobot_golden_config.backupconfigs"
-        ).first(),
-        intended_repository=GitRepository.objects.filter(
-            provided_contents__contains="nautobot_golden_config.intendedconfigs"
-        ).first(),
-        jinja_repository=GitRepository.objects.filter(
-            provided_contents__contains="nautobot_golden_config.jinjatemplate"
-        ).first(),
+        backup_repository=GitRepository.objects.get(name="test-backup-repo-1"),
+        intended_repository=GitRepository.objects.get(name="test-intended-repo-1"),
+        jinja_repository=GitRepository.objects.get(name="test-jinja-repo-1"),
     )
     GoldenConfigSetting.objects.create(
         name="test_name2",
@@ -571,13 +567,7 @@ def dgs_gc_settings_and_job_repo_objects() -> None:
         backup_test_connectivity=True,
         dynamic_group=dynamic_group2,
         sot_agg_query=GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1"),
-        backup_repository=GitRepository.objects.filter(
-            provided_contents__contains="nautobot_golden_config.backupconfigs"
-        ).last(),
-        intended_repository=GitRepository.objects.filter(
-            provided_contents__contains="nautobot_golden_config.intendedconfigs"
-        ).last(),
-        jinja_repository=GitRepository.objects.filter(
-            provided_contents__contains="nautobot_golden_config.jinjatemplate"
-        ).last(),
+        backup_repository=GitRepository.objects.get(name="test-backup-repo-2"),
+        intended_repository=GitRepository.objects.get(name="test-intended-repo-2"),
+        jinja_repository=GitRepository.objects.get(name="test-jinja-repo-1"),
     )

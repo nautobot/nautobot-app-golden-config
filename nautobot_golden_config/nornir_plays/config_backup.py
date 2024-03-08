@@ -12,14 +12,11 @@ from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir.core.task import Result, Task
 from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
-
 from nautobot_golden_config.models import ConfigRemove, ConfigReplace, GoldenConfig
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
-from nautobot_golden_config.utilities.helper import (
+from nautobot_golden_config.utilities.helper import (  # get_device_to_settings_map,; get_job_filter,
     dispatch_params,
-    get_device_to_settings_map,
-    get_job_filter,
     render_jinja_template,
     verify_settings,
 )
@@ -85,14 +82,10 @@ def run_backup(  # pylint: disable=too-many-arguments
     return Result(host=task.host, result=running_config)
 
 
-def config_backup(job_result, log_level, data):
+def config_backup(job_result, log_level, qs, device_to_settings_map):
     """Nornir play to backup configurations."""
     now = make_aware(datetime.now())
     logger = NornirLogger(job_result, log_level)
-
-    qs = get_job_filter(data)
-    logger.debug("Compiling device data for backup.")
-    device_to_settings_map = get_device_to_settings_map(queryset=qs)
 
     for settings in set(device_to_settings_map.values()):
         verify_settings(logger, settings, ["backup_path_template"])

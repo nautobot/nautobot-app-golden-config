@@ -1,0 +1,2 @@
+Fixed performance issue on UNIX file diff view by reverting back to readlines().
+Fixed non-working repos list creation and syncing from run method to new decorator.

@@ -66,6 +66,8 @@ mkdocs-version-annotations = "1.0.0"
 mkdocstrings = "0.22.0"
 mkdocstrings-python = "1.5.2"
 towncrier = "~23.6.0"
+to-json-schema = "*"
+jsonschema = "*"
 
 [tool.poetry.extras]
 all = [
@@ -171,7 +173,7 @@ requires = ["poetry_core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.towncrier]
-package = "nautobot"
+package = "nautobot_golden_config"
 directory = "changes"
 filename = "docs/admin/release_notes/version_X.Y.md"
 template = "development/towncrier_template.j2"

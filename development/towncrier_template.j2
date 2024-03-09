@@ -1,6 +1,6 @@
 
 {% if render_title %}
-## v{{ versiondata.version }} ({{ versiondata.date }})
+## [v{{ versiondata.version }} ({{ versiondata.date }})]({{ cookiecutter.repo_url }}/releases/tag/v{{ versiondata.version}})
 
 {% endif %}
 {% for section, _ in sections.items() %}

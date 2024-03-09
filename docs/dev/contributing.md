@@ -62,7 +62,7 @@ When a release is ready to be created from either `develop` or `ltm-x.x`, the fo
         - Please consider adding changelog's from ltm releases in current release, as applicable.
     - Update the mkdocs.yml file to include the reference to `docs/admin/release_notes/version_<major>.<minor>.md` as applicable.
     - Change the version from `<major>.<minor>.<patch>-beta` to `<major>.<minor>.<patch>` in `pyproject.toml`.
-    - Set the PR to the `main` or `ltm-<major>.<minor>` branch respectivly.
+    - Set the PR to the `main` or `ltm-<major>.<minor>` branch respectively.
 - Ensure the tests for the PR pass.
 - Merge the PR.
 - Create a new tag:

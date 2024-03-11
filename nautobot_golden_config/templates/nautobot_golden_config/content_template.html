@@ -56,6 +56,7 @@
     {% endif %}
   </div>
 {% endif %}
+{# The panel will not show up, since it is returned early in template_content.py based on an actual GoldenConfig object existing #}
 {% if template_type == "device-configs" %}
   <div class="panel panel-default">
     <div class="panel-heading">

@@ -64,12 +64,12 @@ def get_config_element(rule, config, obj, logger):
             config_element = config_json
 
     elif rule["obj"].config_type == ComplianceRuleConfigTypeChoice.TYPE_CLI:
-        if obj.platform.network_driver_mappings["netmiko"] not in parser_map:
+        if obj.platform.network_driver_mappings["netutils_parser"] not in parser_map:
             error_msg = f"`E3003:` There is currently no CLI-config parser support for platform network_driver `{obj.platform.network_driver}`, preemptively failed."
             logger.error(error_msg, extra={"object": obj})
             raise NornirNautobotException(error_msg)
 
-        config_element = section_config(rule, config, obj.platform.network_driver_mappings["netmiko"])
+        config_element = section_config(rule, config, obj.platform.network_driver_mappings["netutils_parser"])
 
     else:
         error_msg = f"`E3004:` There rule type ({rule['obj'].config_type}) is not recognized."

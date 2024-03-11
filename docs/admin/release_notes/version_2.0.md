@@ -28,6 +28,7 @@
 - [#724](https://github.com/nautobot/nautobot-app-golden-config/pull/724) - Fixed performance issue on UNIX file diff view.
 - [#724](https://github.com/nautobot/nautobot-app-golden-config/pull/724) - Fixed non-working repos list creation and syncing.
 - [#731](https://github.com/nautobot/nautobot-app-golden-config/pull/731) - Fixed missing right panel with config types.
+- [#734](https://github.com/nautobot/nautobot-app-golden-config/pull/734) - Fixed incorrect netutils_parser lookup.
 
 ### Changed
 

@@ -53,20 +53,26 @@ Golden Config will observe semantic versioning, as of 1.0. This may result in a 
 
 Golden Config has currently no intended scheduled release schedule, and will release new features in minor versions.
 
-When a new release, from `develop` to `main`, is created the following should happen.
+When a release is ready to be created from either `develop` or `ltm-x.x`, the following should happen.
 
-- A release PR is created from `develop` with:
-  - Update the release notes in `docs/admin/release_notes/version_<major>.<minor>.md` file to reflect the changes.
-  - Change the version from `<major>.<minor>.<patch>-beta` to `<major>.<minor>.<patch>` in `pyproject.toml`.
-  - Set the PR to the `main` branch.
+- Create a release PR by:
+    - Source from `develop` or `ltm-<major>.<minor>` branch and creatch new branch, generally `release/<major>.<minor>.<patch>`.
+    - Update the release notes in `docs/admin/release_notes/version_<major>.<minor>.md` file to reflect the changes.
+        - You can run `invoke generate-release-notes` to generate these notes and delete the legacy towncrier fragments.
+        - Please consider adding changelog's from ltm releases in current release, as applicable.
+    - Update the mkdocs.yml file to include the reference to `docs/admin/release_notes/version_<major>.<minor>.md` as applicable.
+    - Change the version from `<major>.<minor>.<patch>-beta` to `<major>.<minor>.<patch>` in `pyproject.toml`.
+    - Set the PR to the `main` or `ltm-<major>.<minor>` branch respectively.
 - Ensure the tests for the PR pass.
 - Merge the PR.
 - Create a new tag:
-  - The tag should be in the form of `v<major>.<minor>.<patch>`.
-  - The title should be in the form of `v<major>.<minor>.<patch>`.
-  - The description should be the changes that were added to the `version_<major>.<minor>.md` document.
+    - The tag should be in the form of `v<major>.<minor>.<patch>`.
+    - The title should be in the form of `v<major>.<minor>.<patch>`.
+    - The description should be the changes that were added to the `version_<major>.<minor>.md` document.
+    - Include full changelog in description `**Full Changelog**: https://github.com/nautobot/<repo-name>/compare/v<prior-verion>...v<current-verion>`.
+    - **Note** Please ensure to uncheck `Set as the latest release` when updating an ltm release.
 - If merged into `main`, then push from `main` to `develop`, in order to retain the merge commit created when the PR was merged
 - A post release PR is created with:
-  - Change the version from `<major>.<minor>.<patch>` to `<major>.<minor>.<patch + 1>-beta` in both `pyproject.toml` and `nautobot.__init__.__version__`.
-  - Set the PR to the proper branch, `develop`.
-  - Once tests pass, merge.
+    - Change the version from `<major>.<minor>.<patch>` to `<major>.<minor>.<patch + 1>-beta` in `pyproject.toml`.
+    - Set the PR to the proper branch, `develop`.
+    - Once tests pass, merge.

@@ -11,6 +11,30 @@
 !!! note
     Please see [migrating guide](../migrating_to_v2.md) for details on migration.
 
+## v2.0.2 - 2024-03
+
+### Added
+
+- [#707](https://github.com/nautobot/nautobot-app-golden-config/pull/707) - Added autoformat invoke command.
+- [#730](https://github.com/nautobot/nautobot-app-golden-config/pull/730) - Added app config schema generator and validator.
+
+### Fixed
+
+- [#699](https://github.com/nautobot/nautobot-app-golden-config/pull/699) - Fixed stale reference to platform_slug_map.
+- [#719](https://github.com/nautobot/nautobot-app-golden-config/pull/719) - Fixed generate config plans Status filter.
+- [#715](https://github.com/nautobot/nautobot-app-golden-config/pull/715) - Fixed close threaded db connections during config deployment.
+- [#726](https://github.com/nautobot/nautobot-app-golden-config/pull/726) - Fixed objectchange log excludes for object_data_v2 data as well.
+- [#718](https://github.com/nautobot/nautobot-app-golden-config/pull/718) - Fixed logic to handle jobs requiring approvals.
+- [#724](https://github.com/nautobot/nautobot-app-golden-config/pull/724) - Fixed performance issue on UNIX file diff view.
+- [#724](https://github.com/nautobot/nautobot-app-golden-config/pull/724) - Fixed non-working repos list creation and syncing.
+- [#731](https://github.com/nautobot/nautobot-app-golden-config/pull/731) - Fixed missing right panel with config types.
+- [#734](https://github.com/nautobot/nautobot-app-golden-config/pull/734) - Fixed incorrect netutils_parser lookup.
+
+### Changed
+
+- [#691](https://github.com/nautobot/nautobot-app-golden-config/pull/691) - Changed repo name and references to nautobot-app-golden-config.
+- [#707](https://github.com/nautobot/nautobot-app-golden-config/pull/707) - Changed from pydocstyle to ruff.
+- [#707](https://github.com/nautobot/nautobot-app-golden-config/pull/707) - Changed release notes to towncrier based.
 
 ## v2.0.1 - 2023-12
 
@@ -25,8 +49,8 @@
 
 ### Changed
 
-- [#658](https://github.com/nautobot/nautobot-app-golden-config/pull/658) - Cookie updated by NetworkToCode Cookie Drift Manager Tool
-- [#671](https://github.com/nautobot/nautobot-app-golden-config/pull/671) - Finish Documentation Updates from Drift Manager
+- [#658](https://github.com/nautobot/nautobot-app-golden-config/pull/658) - Cookie updated by NetworkToCode Cookie Drift Manager Tool.
+- [#671](https://github.com/nautobot/nautobot-app-golden-config/pull/671) - Finish Documentation Updates from Drift Manager.
 
 ## v2.0.0 - 2023-09
 

@@ -1,4 +1,5 @@
 """Nornir job for deploying configurations."""
+
 from datetime import datetime
 import logging
 
@@ -21,13 +22,13 @@ from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInv
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.helper import dispatch_params
 from nautobot_golden_config.utilities.logger import NornirLogger
-
-
+from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.utilities.constant import DEFAULT_DEPLOY_STATUS
 
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 
 
+@close_threaded_db_connections
 def run_deployment(task: Task, logger: logging.Logger, config_plan_qs, deploy_job_result) -> Result:
     """Deploy configurations to device."""
     obj = task.host.data["obj"]
@@ -36,7 +37,7 @@ def run_deployment(task: Task, logger: logging.Logger, config_plan_qs, deploy_jo
     consolidated_config_set = "\n".join(plans_to_deploy.values_list("config_set", flat=True))
     logger.debug(f"Consolidated config set: {consolidated_config_set}")
     # TODO: Future: We should add post-processing rendering here
-    # after https://github.com/nautobot/nautobot-plugin-golden-config/issues/443
+    # after https://github.com/nautobot/nautobot-app-golden-config/issues/443
 
     plans_to_deploy.update(status=Status.objects.get(name="In Progress"))
     try:

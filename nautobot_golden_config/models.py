@@ -25,7 +25,7 @@ GRAPHQL_STR_START = "query ($device_id: ID!)"
 ERROR_MSG = (
     "There was an issue with the data that was returned by your get_custom_compliance function. "
     "This is a local issue that requires the attention of your systems administrator and not something "
-    "that can be fixed within the Golden Config plugin. "
+    "that can be fixed within the Golden Config app. "
 )
 MISSING_MSG = (
     ERROR_MSG + "Specifically the `{}` key was not found in value the get_custom_compliance function provided."
@@ -182,7 +182,7 @@ for custom_function, custom_type in CUSTOM_FUNCTIONS.items():
             msg = (
                 "There was an issue attempting to import the custom function of"
                 f"{PLUGIN_CFG[custom_function]}, this is expected with a local configuration issue "
-                "and not related to the Golden Configuration Plugin, please contact your system admin for further details"
+                "and not related to the Golden Configuration App, please contact your system admin for further details"
             )
             raise Exception(msg).with_traceback(error.__traceback__)
 
@@ -314,14 +314,18 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
         self, action, *, related_object=None, object_data_extra=None, object_data_exclude=None
     ):  # pylint: disable=arguments-differ
         """Remove actual and intended configuration from changelog."""
+        fields_to_exclude = ["actual", "intended"]
         if not object_data_exclude:
-            object_data_exclude = ["actual", "intended"]
+            object_data_exclude = fields_to_exclude
+        data_v2 = serialize_object_v2(self)
+        for field in fields_to_exclude:
+            data_v2.pop(field)
         return ObjectChange(
             changed_object=self,
             object_repr=str(self),
             action=action,
             object_data=serialize_object(self, extra=object_data_extra, exclude=object_data_exclude),
-            object_data_v2=serialize_object_v2(self),
+            object_data_v2=data_v2,
             related_object=related_object,
         )
 
@@ -413,14 +417,18 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
         self, action, *, related_object=None, object_data_extra=None, object_data_exclude=None
     ):  # pylint: disable=arguments-differ
         """Remove actual and intended configuration from changelog."""
+        fields_to_exclude = ["backup_config", "intended_config", "compliance_config"]
         if not object_data_exclude:
-            object_data_exclude = ["backup_config", "intended_config", "compliance_config"]
+            object_data_exclude = fields_to_exclude
+        data_v2 = serialize_object_v2(self)
+        for field in fields_to_exclude:
+            data_v2.pop(field)
         return ObjectChange(
             changed_object=self,
             object_repr=str(self),
             action=action,
             object_data=serialize_object(self, extra=object_data_extra, exclude=object_data_exclude),
-            object_data_v2=serialize_object_v2(self),
+            object_data_v2=data_v2,
             related_object=related_object,
         )
 
@@ -488,7 +496,7 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         max_length=255,
         blank=True,
         verbose_name="Intended Path in Jinja Template Form",
-        help_text="The Jinja path representation of where the generated file will be places. e.g. `{{obj.location.name|slugify}}/{{obj.name}}.cfg`",
+        help_text="The Jinja path representation of where the generated file will be placed. e.g. `{{obj.location.name|slugify}}/{{obj.name}}.cfg`",
     )
     jinja_repository = models.ForeignKey(
         to="extras.GitRepository",
@@ -531,7 +539,7 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
 
         Provide ordering used in tables and get_device_to_settings_map.
         Sorting on weight is performed from the highest weight value to the lowest weight value.
-        This is to ensure only one plugin settings could be applied per single device based on priority and name.
+        This is to ensure only one app settings could be applied per single device based on priority and name.
         """
 
         verbose_name = "Golden Config Setting"

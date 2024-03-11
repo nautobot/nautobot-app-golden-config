@@ -8,7 +8,7 @@ Any other interpretations of how compliance should be viewed are encouraged to u
 
 ## _Why don't the configurations match like the vendor cli?_
 
-A vendor processes configuration understanding constructs such as knowing that `int g0/0` and `interface GigabitEthernet0/0` are the same. Each one of these rules a subject to a given vendor's OS implementation. The ability to track these changes for all vendors/OS/versions is nearly impossible. Additionally, this practice would be error prone and not follow the principal of least astonishment. Notwithstanding a major change in the network industry, adjusting this strategy is outside the scope of the plugin.
+A vendor processes configuration understanding constructs such as knowing that `int g0/0` and `interface GigabitEthernet0/0` are the same. Each one of these rules a subject to a given vendor's OS implementation. The ability to track these changes for all vendors/OS/versions is nearly impossible. Additionally, this practice would be error prone and not follow the principal of least astonishment. Notwithstanding a major change in the network industry, adjusting this strategy is outside the scope of the app.
 
 Instead, the operator is required to ensure their configurations match exactly as the configurations show in the running configuration. This includes all spacing, special characters, or literally anything that result in a string comparison not returning true.
 
@@ -20,7 +20,7 @@ On a technical level, those changes enable the model `GoldenConfig` to *not* fil
 
 ## _Why aren't configurations generated or compliance generated real time?_
 
-The plugin make no assumptions about your intention and expects the operator to manage the configurations as they see fit. As as example, in preparation for a change, one may update data to reflect these changes, but not want to generate or run compliance against these configurations.
+The app make no assumptions about your intention and expects the operator to manage the configurations as they see fit. As as example, in preparation for a change, one may update data to reflect these changes, but not want to generate or run compliance against these configurations.
 
 Additionally, configurations generated would have to either update the Git Repo immediately or generate locally only and not update the Git Repo, both of which may not be as the user expected.
 
@@ -30,7 +30,7 @@ The current design allows for the maximum amount of use cases and make little as
 
 Backup configurations solutions are simple to start with and grow to hundreds or thousands of requests. That added complexity is not something that is in scope for the project.
 
-Many people will have different opinions about what should or should not be filtered or substituted. Providing the flexibility allows the user to have it operate as they intend it, without burdening the plugins goals.
+Many people will have different opinions about what should or should not be filtered or substituted. Providing the flexibility allows the user to have it operate as they intend it, without burdening the apps goals.
 
 ## _Why not predefine the configuration feature map?_
 
@@ -97,7 +97,7 @@ In many use cases, this can be extended with a custom dispatcher for nornir task
 
 ## _Why not provide the corrective configurations?_
 
-Configuration enforcement is a difficult problem to attack. While potentially could integrate with a system to provide the enforcement, this is currently out-of-scope for the plugin.
+Configuration enforcement is a difficult problem to attack. While potentially could integrate with a system to provide the enforcement, this is currently out-of-scope for the app.
 
 ## _Why does the compliance section scroll so much?_
 
@@ -139,7 +139,7 @@ django.core.signing.BadSignature: Signature "b'A9QMEEeCk2+tAc6naf2KDiZBvACNWGNHG
 ERROR: 1
 ```
 
-If you receive this error, the issue is the secret key has been changed, and **does not** have anything to do with the Golden Config plugin. You can either delete the entries from your data source and the reference to those in the Golden Config settings or revert the secret key back so it matches the original deployment. Any issues opened will be closed and this faq referred to. If you still need help, feel free to join the Slack community.
+If you receive this error, the issue is the secret key has been changed, and **does not** have anything to do with the Golden Config app. You can either delete the entries from your data source and the reference to those in the Golden Config settings or revert the secret key back so it matches the original deployment. Any issues opened will be closed and this faq referred to. If you still need help, feel free to join the Slack community.
 
 ## _I got a `preemptively failed` error, but I know my system is setup correctly?_
 

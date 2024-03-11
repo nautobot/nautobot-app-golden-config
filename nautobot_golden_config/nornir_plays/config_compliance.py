@@ -1,12 +1,13 @@
 """Nornir job for generating the compliance data."""
+
 # pylint: disable=relative-beyond-top-level
 import difflib
 import logging
 import os
 from collections import defaultdict
 from datetime import datetime
-from django.utils.timezone import make_aware
 
+from django.utils.timezone import make_aware
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from netutils.config.compliance import _open_file_config, parser_map, section_config
@@ -14,19 +15,12 @@ from nornir import InitNornir
 from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir.core.task import Result, Task
 from nornir_nautobot.exceptions import NornirNautobotException
-
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
-from nautobot_golden_config.utilities.logger import NornirLogger
 from nautobot_golden_config.models import ComplianceRule, ConfigCompliance, GoldenConfig
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
-from nautobot_golden_config.utilities.helper import (
-    get_device_to_settings_map,
-    get_job_filter,
-    get_json_config,
-    render_jinja_template,
-    verify_settings,
-)
+from nautobot_golden_config.utilities.helper import get_json_config, render_jinja_template, verify_settings
+from nautobot_golden_config.utilities.logger import NornirLogger
 
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 LOGGER = logging.getLogger(__name__)
@@ -70,12 +64,12 @@ def get_config_element(rule, config, obj, logger):
             config_element = config_json
 
     elif rule["obj"].config_type == ComplianceRuleConfigTypeChoice.TYPE_CLI:
-        if obj.platform.network_driver_mappings["netmiko"] not in parser_map:
+        if obj.platform.network_driver_mappings["netutils_parser"] not in parser_map:
             error_msg = f"`E3003:` There is currently no CLI-config parser support for platform network_driver `{obj.platform.network_driver}`, preemptively failed."
             logger.error(error_msg, extra={"object": obj})
             raise NornirNautobotException(error_msg)
 
-        config_element = section_config(rule, config, obj.platform.network_driver_mappings["netmiko"])
+        config_element = section_config(rule, config, obj.platform.network_driver_mappings["netutils_parser"])
 
     else:
         error_msg = f"`E3004:` There rule type ({rule['obj'].config_type}) is not recognized."
@@ -88,9 +82,9 @@ def get_config_element(rule, config, obj, logger):
 def diff_files(backup_file, intended_file):
     """Utility function to provide `Unix Diff` between two files."""
     with open(backup_file, encoding="utf-8") as file:
-        backup = file.read()
+        backup = file.readlines()
     with open(intended_file, encoding="utf-8") as file:
-        intended = file.read()
+        intended = file.readlines()
 
     for line in difflib.unified_diff(backup, intended, lineterm=""):
         yield line
@@ -174,17 +168,12 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     return Result(host=task.host)
 
 
-def config_compliance(job_result, log_level, data):
+def config_compliance(job_result, log_level, qs, device_to_settings_map):
     """Nornir play to generate configurations."""
     now = make_aware(datetime.now())
     logger = NornirLogger(job_result, log_level)
 
     rules = get_rules()
-
-    qs = get_job_filter(data)
-    logger.debug("Compiling device data for compliance job.")
-
-    device_to_settings_map = get_device_to_settings_map(queryset=qs)
 
     for settings in set(device_to_settings_map.values()):
         verify_settings(logger, settings, ["backup_path_template", "intended_path_template"])

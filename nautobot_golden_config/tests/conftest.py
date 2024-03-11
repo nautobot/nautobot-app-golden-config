@@ -7,9 +7,10 @@ from django.utils.text import slugify
 from nautobot.dcim.models import Device, DeviceType, Location, LocationType, Manufacturer, Platform, Rack, RackGroup
 from nautobot.extras.choices import JobResultStatusChoices
 from nautobot.extras.datasources.registry import get_datasource_contents
-from nautobot.extras.models import GitRepository, GraphQLQuery, JobResult, Role, Status, Tag
+from nautobot.extras.models import GitRepository, GraphQLQuery, JobResult, Role, Status, Tag, DynamicGroup
 from nautobot.tenancy.models import Tenant, TenantGroup
 import pytz
+from nautobot_golden_config.models import GoldenConfigSetting
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
 from nautobot_golden_config.models import ComplianceFeature, ComplianceRule, ConfigCompliance
 
@@ -230,7 +231,9 @@ def create_orphan_device(name="orphan"):
     manufacturer, _ = Manufacturer.objects.get_or_create(name="Manufacturer 4")
     device_role, _ = Role.objects.get_or_create(name="Role 4")
     device_type, _ = DeviceType.objects.get_or_create(manufacturer=manufacturer, model="Device Type 4")
-    platform, _ = Platform.objects.get_or_create(manufacturer=manufacturer, name="Platform 4")
+    platform, _ = Platform.objects.get_or_create(
+        manufacturer=manufacturer, name="Platform 4", network_driver="cisco_ios"
+    )
     tag, _ = Tag.objects.get_or_create(name="Orphaned")
     tag.content_types.add(ct_device)
     device = Device.objects.create(
@@ -518,3 +521,53 @@ def create_job_result() -> None:
     result.completed = datetime.now(pytz.UTC)
     result.validated_save()
     return result
+
+
+def dgs_gc_settings_and_job_repo_objects():
+    """Create Multiple DGS GC settings and other objects."""
+    create_git_repos()
+    create_saved_queries()
+    # Since we enforce a singleton pattern on this model, nuke the auto-created object.
+    GoldenConfigSetting.objects.all().delete()
+
+    dynamic_group1 = DynamicGroup.objects.create(
+        name="dg foobaz",
+        content_type=ContentType.objects.get_for_model(Device),
+        filter={"platform": ["Platform 1"]},
+    )
+    dynamic_group2 = DynamicGroup.objects.create(
+        name="dg foobaz2",
+        content_type=ContentType.objects.get_for_model(Device),
+        filter={"platform": ["Platform 4"]},
+    )
+
+    GoldenConfigSetting.objects.create(
+        name="test_name",
+        slug="test_slug",
+        weight=1000,
+        description="Test Description.",
+        backup_path_template="test/backup",
+        intended_path_template="test/intended",
+        jinja_path_template="{{jinja_path}}",
+        backup_test_connectivity=True,
+        dynamic_group=dynamic_group1,
+        sot_agg_query=GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1"),
+        backup_repository=GitRepository.objects.get(name="test-backup-repo-1"),
+        intended_repository=GitRepository.objects.get(name="test-intended-repo-1"),
+        jinja_repository=GitRepository.objects.get(name="test-jinja-repo-1"),
+    )
+    GoldenConfigSetting.objects.create(
+        name="test_name2",
+        slug="test_slug2",
+        weight=1000,
+        description="Test Description.",
+        backup_path_template="test/backup",
+        intended_path_template="test/intended",
+        jinja_path_template="{{jinja_path}}",
+        backup_test_connectivity=True,
+        dynamic_group=dynamic_group2,
+        sot_agg_query=GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1"),
+        backup_repository=GitRepository.objects.get(name="test-backup-repo-2"),
+        intended_repository=GitRepository.objects.get(name="test-intended-repo-2"),
+        jinja_repository=GitRepository.objects.get(name="test-jinja-repo-1"),
+    )

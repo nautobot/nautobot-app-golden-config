@@ -4,20 +4,20 @@ Here you will find detailed instructions on how to **install** and **configure**
 
 ## Prerequisites
 
-- The plugin relies on [`nautobot_plugin_nornir`](https://pypi.org/project/nautobot-plugin-nornir/) to be installed and both plugins to be enabled in your configuration settings.
-- The latest version of this plugin is compatible with Nautobot 2.0.0 and higher, see [this dedicated page](compatibility_matrix.md) for a full compatibility matrix and the deprecation policy.
+- The app relies on [`nautobot_plugin_nornir`](https://pypi.org/project/nautobot-plugin-nornir/) to be installed and both apps to be enabled in your configuration settings.
+- The latest version of this app is compatible with Nautobot 2.0.0 and higher, see [this dedicated page](compatibility_matrix.md) for a full compatibility matrix and the deprecation policy.
 - Databases supported: PostgreSQL, MySQL
 
 ### Access Requirements
 
-There are no access requirements from external systems to this plugin.
+There are no access requirements from external systems to this app.
 
 ## Install Guide
 
 !!! note
-    Plugins can be installed manually or using Python's `pip`. See the [nautobot documentation](https://nautobot.readthedocs.io/en/latest/plugins/#install-the-package) for more details. The pip package name for this plugin is [`nautobot-golden-config`](https://pypi.org/project/nautobot-golden-config/).
+    Apps can be installed from the [Python Package Index](https://pypi.org/) or locally. See the [Nautobot documentation](https://docs.nautobot.com/projects/core/en/stable/user-guide/administration/installation/app-install/) for more details. The pip package name for this app is [`nautobot-golden-config`](https://pypi.org/project/nautobot-golden-config/).
 
-The plugin is available as a Python package via PyPI and can be installed with `pip`:
+The app is available as a Python package via PyPI and can be installed with `pip`:
 
 ```shell
 pip install nautobot-golden-config
@@ -29,7 +29,7 @@ To ensure Nautobot Golden Config is automatically re-installed during future upg
 echo nautobot-golden-config >> local_requirements.txt
 ```
 
-Once installed, the plugin needs to be enabled in your Nautobot configuration. The following block of code below shows the additional configuration required to be added to your `nautobot_config.py` file:
+Once installed, the app needs to be enabled in your Nautobot configuration. The following block of code below shows the additional configuration required to be added to your `nautobot_config.py` file:
 
 - Append `"nautobot_golden_config"` to the `PLUGINS` list, and `"nautobot_plugin_nornir"` if it was not already there (more info [here](https://docs.nautobot.com/projects/plugin-nornir/en/latest/)).
 - Append the `"nautobot_golden_config"` dictionary to the `PLUGINS_CONFIG` dictionary, and `"nautobot_plugin_nornir"` if it was not already there.
@@ -92,24 +92,23 @@ sudo systemctl restart nautobot nautobot-worker nautobot-scheduler
 
 ## App Configuration
 
-The plugin behavior can be controlled with the following list of settings:
+The app behavior can be controlled with the following list of settings:
 
 !!! note
     The `enable_backup`, `enable_compliance`, `enable_intended`, `enable_sotagg`, `enable_plan`, `enable_deploy`, and `enable_postprocessing` will toggle inclusion of the entire component.
 
 | Key                       | Example                       | Default | Description                                                                                                                                                                |
 | ------------------------- | ----------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| enable_backup             | True                          | True    | A boolean to represent whether or not to run backup configurations within the plugin.                                                                                      |
-| enable_compliance         | True                          | True    | A boolean to represent whether or not to run the compliance process within the plugin.                                                                                     |
-| enable_intended           | True                          | True    | A boolean to represent whether or not to generate intended configurations within the plugin.                                                                               |
-| enable_sotagg             | True                          | True    | A boolean to represent whether or not to provide a GraphQL query per device to allow the intended configuration to provide data variables to the plugin.                   |
+| enable_backup             | True                          | True    | A boolean to represent whether or not to run backup configurations within the app.                                                                                      |
+| enable_compliance         | True                          | True    | A boolean to represent whether or not to run the compliance process within the app.                                                                                     |
+| enable_intended           | True                          | True    | A boolean to represent whether or not to generate intended configurations within the app.                                                                               |
+| enable_sotagg             | True                          | True    | A boolean to represent whether or not to provide a GraphQL query per device to allow the intended configuration to provide data variables to the app.                   |
 | enable_plan               | True                          | True    | A boolean to represent whether or not to allow the config plan job to run.                                                                                                 |
 | enable_deploy             | True                          | True    | A boolean to represent whether or not to be able to deploy configs to network devices.                                                                                     |
 | enable_postprocessing     | True                          | False    | A boolean to represent whether or not to generate intended configurations to push, with extra processing such as secrets rendering.                                       |
 | default_deploy_status     | "Not Approved"                | "Not Approved" | A string that will be the name of the status you want as the default when create new config plans, you MUST create the status yourself before starting the app.     |
 | postprocessing_callables  | ['mypackage.myfunction']      | []      | A list of function paths, in dotted format, that are appended to the available methods for post-processing the intended configuration, for instance, the `render_secrets`. |
 | postprocessing_subscribed | ['mypackage.myfunction']      | []      | A list of function paths, that should exist as postprocessing_callables, that defines the order of application of during the post-processing process.                      |
-| platform_slug_map         | {"cisco_wlc": "cisco_aireos"} | None    | A dictionary in which the key is the platform slug and the value is what netutils uses in any "network_os" parameter within `netutils.config.compliance.parser_map`.       |
 | sot_agg_transposer        | "mypkg.transposer"            | None    | A string representation of a function that can post-process the graphQL data.                                                                                              |
 | per_feature_bar_width     | 0.15                          | 0.15    | The width of the table bar within the overview report                                                                                                                      |
 | per_feature_width         | 13                            | 13      | The width in inches that the overview table can be.                                                                                                                        |
@@ -117,10 +116,10 @@ The plugin behavior can be controlled with the following list of settings:
 | jinja_env | {"lstrip_blocks": False} | See Note Below | A dictionary of Jinja2 Environment options compatible with Jinja2.SandboxEnvironment() |
 
 !!! note
-    Over time the compliance report will become more dynamic, but for now allow users to configure the `per_*` configs in a way that fits best for them.
+    `platform_slug_map` configuration was removed as of the `v2.0.0` release of Golden Config, for more information please review the [v2 Migration Guide](./migrating_to_v2.md)
 
 !!! note
-    Review [`nautobot_plugin_nornir`](https://docs.nautobot.com/projects/plugin-nornir/en/latest/user/app_feature_dispatcher/) for Nornir and dispatcher configuration options.
+    Over time the compliance report will become more dynamic, but for now allow users to configure the `per_*` configs in a way that fits best for them.
 
 !!! note
     Defaults for Jinja2 environment settings (`jinja_env`) are as follows:

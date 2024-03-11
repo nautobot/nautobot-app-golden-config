@@ -74,9 +74,6 @@ CACHES = {
     }
 }
 
-# Redis Cacheops
-CACHEOPS_REDIS = parse_redis_connection(redis_database=1)
-
 #
 # Celery settings are not defined here because they can be overloaded with
 # environment variables. By default they use `CACHES["default"]["LOCATION"]`.
@@ -95,11 +92,11 @@ if not _TESTING:
         "disable_existing_loggers": False,
         "formatters": {
             "normal": {
-                "format": "%(asctime)s.%(msecs)03d %(levelname)-7s %(name)s :\n  %(message)s",
+                "format": "%(asctime)s.%(msecs)03d %(levelname)-7s %(name)s : %(message)s",
                 "datefmt": "%H:%M:%S",
             },
             "verbose": {
-                "format": "%(asctime)s.%(msecs)03d %(levelname)-7s %(name)-20s %(filename)-15s %(funcName)30s() :\n  %(message)s",
+                "format": "%(asctime)s.%(msecs)03d %(levelname)-7s %(name)-20s %(filename)-15s %(funcName)30s() : %(message)s",
                 "datefmt": "%H:%M:%S",
             },
         },
@@ -128,11 +125,11 @@ if not _TESTING:
 # Apps
 #
 
-# Enable installed plugins. Add the name of each plugin to the list.
+# Enable installed apps. Add the name of each app to the list.
 PLUGINS = ["nautobot_plugin_nornir", "nautobot_golden_config"]
 
-# Plugins configuration settings. These settings are used by various plugins that the user may have installed.
-# Each key in the dictionary is the name of an installed plugin and its value is a dictionary of settings.
+# Apps configuration settings. These settings are used by various apps that the user may have installed.
+# Each key in the dictionary is the name of an installed app and its value is a dictionary of settings.
 PLUGINS_CONFIG = {
     "nautobot_plugin_nornir": {
         "nornir_settings": {

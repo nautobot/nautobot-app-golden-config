@@ -4,46 +4,75 @@ The project is packaged with a light [development environment](dev_environment.m
 
 The project is following Network to Code software development guidelines and is leveraging the following:
 
-- Python linting and formatting: `black`, `pylint`, `bandit`, `flake8`, and `pydocstyle`.
+- Python linting and formatting: `black`, `pylint`, `bandit`, `flake8`, and `ruff`.
 - YAML linting is done with `yamllint`.
-- Django unit test to ensure the plugin is working properly.
+- Django unit test to ensure the app is working properly.
 
 Documentation is built using [mkdocs](https://www.mkdocs.org/). The [Docker based development environment](dev_environment.md#docker-development-environment) automatically starts a container hosting a live version of the documentation website on [http://localhost:8001](http://localhost:8001) that auto-refreshes when you make any changes to your local files.
+
+## Creating Changelog Fragments
+
+All pull requests to `next` or `develop` must include a changelog fragment file in the `./changes` directory. To create a fragment, use your GitHub issue number and fragment type as the filename. For example, `2362.added`. Valid fragment types are `added`, `changed`, `deprecated`, `fixed`, `removed`, and `security`. The change summary is added to the file in plain text. Change summaries should be complete sentences, starting with a capital letter and ending with a period, and be in past tense. Each line of the change fragment will generate a single change entry in the release notes. Use multiple lines in the same file if your change needs to generate multiple release notes in the same category. If the change needs to create multiple entries in separate categories, create multiple files.
+
+!!! example
+
+    **Wrong**
+    ```plaintext title="changes/1234.fixed"
+    fix critical bug in documentation
+    ```
+
+    **Right**
+    ```plaintext title="changes/1234.fixed"
+    Fixed critical bug in documentation.
+    ```
+
+!!! example "Multiple Entry Example"
+
+    This will generate 2 entries in the `fixed` category and one entry in the `changed` category.
+
+    ```plaintext title="changes/1234.fixed"
+    Fixed critical bug in documentation.
+    Fixed release notes generation.
+    ```
+
+    ```plaintext title="changes/1234.changed"
+    Changed release notes generation.
+    ```
 
 ## Branching Policy
 
 The branching policy includes the following tenets:
 
-- The `develop` branch is the branch for bug fixes.
-- The `next` branch is the branch for new features.
-- The `stable-<major>.<minor>` branch is the branch of the latest version within that major/minor version.
-- The `stable-<major>.<minor>` branch will have all of the latest bug fixes and security patches, and may or may not represent the released version.
-- PRs intended to add new features should be branched from and merged to the `next` branch.
-- PRs intended to add new features that break backward compatibility should be discussed before a PR is created.
-- PRs intended to address bug fixes and security patches should be branched from and merged to the `develop` branch.
+- The `develop` branch is the branch of the next major and minor paired version planned.
+- PRs intended to add new features should be sourced from the `develop` branch.
+- PRs intended to fix issues in the Nautobot LTM compatible release should be sourced from the latest `ltm-<major.minor>` branch instead of `develop`.
 
-Nautobot Golden Config will observe semantic versioning, as of 1.0. This may result in an quick turn around in minor versions to keep pace with an ever growing feature set.
+Golden Config will observe semantic versioning, as of 1.0. This may result in a quick turnaround in minor versions to keep pace with an ever growing feature set.
 
 ## Release Policy
 
-Nautobot Golden Config has currently no intended scheduled release schedule, and will release new features in minor versions.
+Golden Config has currently no intended scheduled release schedule, and will release new features in minor versions.
 
-When a new release of any kind (e.g. from `develop` to `main`, or a release of a `stable-<major>.<minor>`) is created the following should happen.
+When a release is ready to be created from either `develop` or `ltm-x.x`, the following should happen.
 
-- A release PR is created:
-    - Add and/or update to the changelog in `docs/admin/release_notes/version_<major>.<minor>.md` file to reflect the changes.
-    - Update the mkdocs.yml file to include updates when adding a new release_notes version file.
-    - Change the version from `<major>.<minor>.<patch>-beta` to `<major>.<minor>.<patch>` in pyproject.toml.
-    - Set the PR to the proper branch, e.g. either `main` or `stable-<major>.<minor>`.
+- Create a release PR by:
+    - Source from `develop` or `ltm-<major>.<minor>` branch and creatch new branch, generally `release/<major>.<minor>.<patch>`.
+    - Update the release notes in `docs/admin/release_notes/version_<major>.<minor>.md` file to reflect the changes.
+        - You can run `invoke generate-release-notes` to generate these notes and delete the legacy towncrier fragments.
+        - Please consider adding changelog's from ltm releases in current release, as applicable.
+    - Update the mkdocs.yml file to include the reference to `docs/admin/release_notes/version_<major>.<minor>.md` as applicable.
+    - Change the version from `<major>.<minor>.<patch>-beta` to `<major>.<minor>.<patch>` in `pyproject.toml`.
+    - Set the PR to the `main` or `ltm-<major>.<minor>` branch respectively.
 - Ensure the tests for the PR pass.
 - Merge the PR.
 - Create a new tag:
     - The tag should be in the form of `v<major>.<minor>.<patch>`.
     - The title should be in the form of `v<major>.<minor>.<patch>`.
     - The description should be the changes that were added to the `version_<major>.<minor>.md` document.
-- If merged into `main`, then push from `main` to `develop`, in order to retain the merge commit created when the PR was merged.
-- If the is a new `<major>.<minor>`, create a `stable-<major>.<minor>` for the **previous** version, so that security updates to old versions may be applied more easily.
-- A post release PR is created:
-    - Change the version from `<major>.<minor>.<patch>` to `<major>.<minor>.<patch + 1>-beta` in pyproject.toml.
-    - Set the PR to the proper branch, e.g. either `develop` or `stable-<major>.<minor>`.
+    - Include full changelog in description `**Full Changelog**: https://github.com/nautobot/<repo-name>/compare/v<prior-verion>...v<current-verion>`.
+    - **Note** Please ensure to uncheck `Set as the latest release` when updating an ltm release.
+- If merged into `main`, then push from `main` to `develop`, in order to retain the merge commit created when the PR was merged
+- A post release PR is created with:
+    - Change the version from `<major>.<minor>.<patch>` to `<major>.<minor>.<patch + 1>-beta` in `pyproject.toml`.
+    - Set the PR to the proper branch, `develop`.
     - Once tests pass, merge.

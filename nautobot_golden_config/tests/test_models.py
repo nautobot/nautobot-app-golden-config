@@ -151,7 +151,7 @@ class GoldenConfigSettingModelTestCase(TestCase):
         self.assertIn(f"/plugins/golden-config/golden-config-setting/{self.global_settings.pk}", url_string)
 
     def test_good_graphql_query_invalid_starts_with(self):
-        """Valid graphql query, however invalid in the usage with golden config plugin."""
+        """Valid graphql query, however invalid in the usage with golden config app."""
         self.global_settings.sot_agg_query = GraphQLQuery.objects.get(name="GC-SoTAgg-Query-3")
         with self.assertRaises(ValidationError) as error:
             self.global_settings.clean()

@@ -118,21 +118,28 @@ def gc_repos(func):
         )
         current_repos = get_refreshed_repos(job_obj=self, repo_types=gitrepo_types, data=self.qs)
         # This is where the specific jobs run method runs via this decorator.
-        func(self, *args, **kwargs)
-        now = make_aware(datetime.now())
-        self.logger.debug(
-            f"Finished the {self.Meta.name} job execution.",
-            extra={"grouping": "GC After Run"},
-        )
-        if current_repos:
-            for _, repo in current_repos.items():
-                if repo["to_commit"]:
-                    self.logger.debug(
-                        f"Pushing {self.Meta.name} results to repo {repo['repo_obj'].base_url}.",
-                        extra={"grouping": "GC Repo Commit and Push"},
-                    )
-                    repo["repo_obj"].commit_with_added(f"{self.Meta.name.upper()} JOB {now}")
-                    repo["repo_obj"].push()
+        try:
+            func(self, *args, **kwargs)
+        except Exception as error:  # pylint disable=broad-exception-caught
+            error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
+            # Raise error only if the job kwarg (checkbox) is selected to do so on the job execution form.
+            if kwargs["fail_job_on_task_failure"]:
+                raise NornirNautobotException(error_msg) from error
+        finally:
+            now = make_aware(datetime.now())
+            self.logger.debug(
+                f"Finished the {self.Meta.name} job execution.",
+                extra={"grouping": "GC After Run"},
+            )
+            if current_repos:
+                for _, repo in current_repos.items():
+                    if repo["to_commit"]:
+                        self.logger.debug(
+                            f"Pushing {self.Meta.name} results to repo {repo['repo_obj'].base_url}.",
+                            extra={"grouping": "GC Repo Commit and Push"},
+                        )
+                        repo["repo_obj"].commit_with_added(f"{self.Meta.name.upper()} JOB {now}")
+                        repo["repo_obj"].push()
 
     return gc_repo_wrapper
 
@@ -161,6 +168,9 @@ class FormEntry:  # pylint disable=too-few-public-method
         label="Device Status",
     )
     debug = BooleanVar(description="Enable for more verbose debug logging")
+    fail_job_on_task_failure = BooleanVar(
+        description="If any device in the tasks list fails, fail the entire job result."
+    )
 
 
 class GoldenConfigJobMixin(Job):  # pylint: disable=abstract-method

@@ -130,9 +130,14 @@ def config_backup(job_result, log_level, qs, device_to_settings_map):
             )
             logger.debug("Completed configuration from devices.")
 
-    except Exception as error:
+    except ValueError as error:
+        # This block means the nornir processor raised ValueError which is "somewhat" expected.
+        # It should not reraise and fail the entire job.
         error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
         logger.error(error_msg)
-        raise NornirNautobotException(error_msg) from error
+    except Exception as error:
+        error_msg = f"`E3001:` Unknown Exception handler, original error message ```{error}```"
+        logger.error(error_msg)
+        raise NornirNautobotException(error_msg) from err
 
     logger.debug("Completed configuration backup job for devices.")

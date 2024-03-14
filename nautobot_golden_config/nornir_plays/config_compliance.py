@@ -177,35 +177,27 @@ def config_compliance(job_result, log_level, qs, device_to_settings_map):
 
     for settings in set(device_to_settings_map.values()):
         verify_settings(logger, settings, ["backup_path_template", "intended_path_template"])
-
-    try:
-        with InitNornir(
-            runner=NORNIR_SETTINGS.get("runner"),
-            logging={"enabled": False},
-            inventory={
-                "plugin": "nautobot-inventory",
-                "options": {
-                    "credentials_class": NORNIR_SETTINGS.get("credentials"),
-                    "params": NORNIR_SETTINGS.get("inventory_params"),
-                    "queryset": qs,
-                    "defaults": {"now": now},
-                },
+    with InitNornir(
+        runner=NORNIR_SETTINGS.get("runner"),
+        logging={"enabled": False},
+        inventory={
+            "plugin": "nautobot-inventory",
+            "options": {
+                "credentials_class": NORNIR_SETTINGS.get("credentials"),
+                "params": NORNIR_SETTINGS.get("inventory_params"),
+                "queryset": qs,
+                "defaults": {"now": now},
             },
-        ) as nornir_obj:
-            nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
+        },
+    ) as nornir_obj:
+        nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
 
-            logger.debug("Run nornir compliance tasks.")
-            nr_with_processors.run(
-                task=run_compliance,
-                name="RENDER COMPLIANCE TASK GROUP",
-                logger=logger,
-                device_to_settings_map=device_to_settings_map,
-                rules=rules,
-            )
-
-    except Exception as error:
-        error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
-        logger.error(error_msg)
-        raise NornirNautobotException(error_msg) from error
-
+        logger.debug("Run nornir compliance tasks.")
+        nr_with_processors.run(
+            task=run_compliance,
+            name="RENDER COMPLIANCE TASK GROUP",
+            logger=logger,
+            device_to_settings_map=device_to_settings_map,
+            rules=rules,
+        )
     logger.debug("Completed compliance job for devices.")

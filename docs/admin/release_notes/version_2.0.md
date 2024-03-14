@@ -11,6 +11,17 @@
 !!! note
     Please see [migrating guide](../migrating_to_v2.md) for details on migration.
 
+
+## v2.0.3 2024-03
+
+### Added
+
+- [#736](https://github.com/nautobot/nautobot-app-golden-config/issues/736) - Add a boolean job parameter `fail_job_on_task_failure` which will determine whether a single task failure anywhere in the job-result should result in job-result status of failed vs successful.
+
+### Fixed
+
+- [#736](https://github.com/nautobot/nautobot-app-golden-config/issues/736) - Fixes repo push and commit not executing if a exception was raised on any task inside a job.
+
 ## v2.0.2 - 2024-03
 
 ### Added

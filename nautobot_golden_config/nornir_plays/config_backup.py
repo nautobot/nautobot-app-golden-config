@@ -10,12 +10,11 @@ from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInv
 from nornir import InitNornir
 from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir.core.task import Result, Task
-from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
 from nautobot_golden_config.models import ConfigRemove, ConfigReplace, GoldenConfig
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
-from nautobot_golden_config.utilities.helper import (  # get_device_to_settings_map,; get_job_filter,
+from nautobot_golden_config.utilities.helper import (
     dispatch_params,
     render_jinja_template,
     verify_settings,
@@ -103,36 +102,29 @@ def config_backup(job_result, log_level, qs, device_to_settings_map):
         if not replace_regex_dict.get(regex.platform.network_driver):
             replace_regex_dict[regex.platform.network_driver] = []
         replace_regex_dict[regex.platform.network_driver].append({"replace": regex.replace, "regex": regex.regex})
-    try:
-        with InitNornir(
-            runner=NORNIR_SETTINGS.get("runner"),
-            logging={"enabled": False},
-            inventory={
-                "plugin": "nautobot-inventory",
-                "options": {
-                    "credentials_class": NORNIR_SETTINGS.get("credentials"),
-                    "params": NORNIR_SETTINGS.get("inventory_params"),
-                    "queryset": qs,
-                    "defaults": {"now": now},
-                },
+    with InitNornir(
+        runner=NORNIR_SETTINGS.get("runner"),
+        logging={"enabled": False},
+        inventory={
+            "plugin": "nautobot-inventory",
+            "options": {
+                "credentials_class": NORNIR_SETTINGS.get("credentials"),
+                "params": NORNIR_SETTINGS.get("inventory_params"),
+                "queryset": qs,
+                "defaults": {"now": now},
             },
-        ) as nornir_obj:
-            nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
+        },
+    ) as nornir_obj:
+        nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
 
-            logger.debug("Run nornir backup tasks.")
-            nr_with_processors.run(
-                task=run_backup,
-                name="BACKUP CONFIG",
-                logger=logger,
-                device_to_settings_map=device_to_settings_map,
-                remove_regex_dict=remove_regex_dict,
-                replace_regex_dict=replace_regex_dict,
-            )
-            logger.debug("Completed configuration from devices.")
-
-    except Exception as error:
-        error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
-        logger.error(error_msg)
-        raise NornirNautobotException(error_msg) from error
-
+        logger.debug("Run nornir backup tasks.")
+        nr_with_processors.run(
+            task=run_backup,
+            name="BACKUP CONFIG",
+            logger=logger,
+            device_to_settings_map=device_to_settings_map,
+            remove_regex_dict=remove_regex_dict,
+            replace_regex_dict=replace_regex_dict,
+        )
+        logger.debug("Completed configuration from devices.")
     logger.debug("Completed configuration backup job for devices.")

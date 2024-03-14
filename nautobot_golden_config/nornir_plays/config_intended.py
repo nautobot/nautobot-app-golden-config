@@ -110,35 +110,28 @@ def config_intended(job_result, log_level, job_class_instance, qs, device_to_set
 
     # Retrieve filters from the Django jinja template engine
     jinja_env = get_django_env()
-
-    try:
-        with InitNornir(
-            runner=NORNIR_SETTINGS.get("runner"),
-            logging={"enabled": False},
-            inventory={
-                "plugin": "nautobot-inventory",
-                "options": {
-                    "credentials_class": NORNIR_SETTINGS.get("credentials"),
-                    "params": NORNIR_SETTINGS.get("inventory_params"),
-                    "queryset": qs,
-                    "defaults": {"now": now},
-                },
+    with InitNornir(
+        runner=NORNIR_SETTINGS.get("runner"),
+        logging={"enabled": False},
+        inventory={
+            "plugin": "nautobot-inventory",
+            "options": {
+                "credentials_class": NORNIR_SETTINGS.get("credentials"),
+                "params": NORNIR_SETTINGS.get("inventory_params"),
+                "queryset": qs,
+                "defaults": {"now": now},
             },
-        ) as nornir_obj:
-            nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
+        },
+    ) as nornir_obj:
+        nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
 
-            logger.debug("Run nornir render config tasks.")
-            # Run the Nornir Tasks
-            nr_with_processors.run(
-                task=run_template,
-                name="RENDER CONFIG",
-                logger=logger,
-                device_to_settings_map=device_to_settings_map,
-                job_class_instance=job_class_instance,
-                jinja_env=jinja_env,
-            )
-
-    except Exception as error:
-        error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
-        logger.error(error_msg)
-        raise NornirNautobotException(error_msg) from error
+        logger.debug("Run nornir render config tasks.")
+        # Run the Nornir Tasks
+        nr_with_processors.run(
+            task=run_template,
+            name="RENDER CONFIG",
+            logger=logger,
+            device_to_settings_map=device_to_settings_map,
+            job_class_instance=job_class_instance,
+            jinja_env=jinja_env,
+        )

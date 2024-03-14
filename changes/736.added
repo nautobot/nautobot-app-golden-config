@@ -1,0 +1,1 @@
+Add a boolean job parameter `fail_job_on_task_failure` which will determine whether a single task failure anywhere in the job-result should result in job-result status of failed vs successful.

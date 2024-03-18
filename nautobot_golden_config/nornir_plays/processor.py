@@ -50,15 +50,13 @@ class ProcessGoldenConfig(BaseLoggingProcessor):
             None
         """
         host.close_connections()
-        exceptions = self._find_result_exceptions(result)
 
-        if result.failed and exceptions:
-            exception_string = ", ".join([str(e[0]) for e in exceptions])
-            # Log only exception summary to users
-            self.logger.error(f"{task.name} failed: {exception_string}", extra={"object": task.host.data["obj"]})
-            for exception in exceptions:
-                # Log full exception and traceback to debug
-                self.logger.warning(
-                    f"""{task.host}, {task.name} failed: {exception[0]} {exception[1]}""",
-                    extra={"object": task.host.data["obj"]},
-                )
+        # Complex logic to see if the task exception is expected, which is depicted by
+        # a sub task raising a NornirNautobotException.
+        if result.failed:
+            for level_1_result in result:
+                if hasattr(level_1_result, "exception") and hasattr(level_1_result.exception, "result"):
+                    for level_2_result in level_1_result.exception.result:
+                        if isinstance(level_2_result.exception, NornirNautobotException):
+                            return
+            self.logger.error(f"{task.name} failed: {result.exception}")

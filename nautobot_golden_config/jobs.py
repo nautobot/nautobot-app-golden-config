@@ -104,15 +104,15 @@ def gc_repos(func):
 
     def gc_repo_wrapper(self, *args, **kwargs):
         """Decorator used for handle repo syncing, commiting, and pushing."""
-        self.logger.debug("Compiling device data for GC job.", extra={"grouping": "Get Job Filter"})
+        self.job.logger.debug("Compiling device data for GC job.", extra={"grouping": "Get Job Filter"})
         self.qs = get_job_filter(kwargs)
-        self.logger.debug(
+        self.job.logger.debug(
             f"In scope device count for this job: {self.qs.count()}", extra={"grouping": "Get Job Filter"}
         )
-        self.logger.debug("Mapping device(s) to GC Settings.", extra={"grouping": "Device to Settings Map"})
+        self.job.logger.debug("Mapping device(s) to GC Settings.", extra={"grouping": "Device to Settings Map"})
         self.device_to_settings_map = get_device_to_settings_map(queryset=self.qs)
         gitrepo_types = list(set(get_repo_types_for_job(self.name)))
-        self.logger.debug(
+        self.job.logger.debug(
             f"Repository types to sync: {', '.join(sorted(gitrepo_types))}",
             extra={"grouping": "GC Repo Syncs"},
         )
@@ -127,14 +127,14 @@ def gc_repos(func):
                 raise NornirNautobotException(error_msg) from error
         finally:
             now = make_aware(datetime.now())
-            self.logger.debug(
+            self.job.logger.debug(
                 f"Finished the {self.Meta.name} job execution.",
                 extra={"grouping": "GC After Run"},
             )
             if current_repos:
                 for _, repo in current_repos.items():
                     if repo["to_commit"]:
-                        self.logger.debug(
+                        self.job.logger.debug(
                             f"Pushing {self.Meta.name} results to repo {repo['repo_obj'].base_url}.",
                             extra={"grouping": "GC Repo Commit and Push"},
                         )

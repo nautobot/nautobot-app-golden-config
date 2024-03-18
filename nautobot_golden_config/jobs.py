@@ -168,13 +168,14 @@ class FormEntry:  # pylint disable=too-few-public-method
         label="Device Status",
     )
     debug = BooleanVar(description="Enable for more verbose debug logging")
-    fail_job_on_task_failure = BooleanVar(
-        description="If any device in the tasks list fails, fail the entire job result."
-    )
 
 
 class GoldenConfigJobMixin(Job):  # pylint: disable=abstract-method
     """Reused mixin to be able to set defaults for instance attributes in all GC jobs."""
+
+    fail_job_on_task_failure = BooleanVar(
+        description="If any device in the tasks list fails, fail the entire job result."
+    )
 
     def __init__(self, *args, **kwargs):
         """Initialize the job."""

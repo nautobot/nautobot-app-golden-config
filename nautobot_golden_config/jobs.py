@@ -272,11 +272,10 @@ class AllGoldenConfig(GoldenConfigJobMixin):
         description = "Process to run all Golden Configuration jobs configured."
         has_sensitive_variables = False
 
-    @gc_repos
     def run(self, *args, **data):  # pylint: disable=unused-argument
         """Run all jobs on a single device."""
         if constant.ENABLE_INTENDED:
-            config_intended(
+            gc_repos(config_intended)(
                 self.job_result,
                 self.logger.getEffectiveLevel(),
                 self,
@@ -284,14 +283,14 @@ class AllGoldenConfig(GoldenConfigJobMixin):
                 self.device_to_settings_map,
             )
         if constant.ENABLE_BACKUP:
-            config_backup(
+            gc_repos(config_backup)(
                 self.job_result,
                 self.logger.getEffectiveLevel(),
                 self.qs,
                 self.device_to_settings_map,
             )
         if constant.ENABLE_COMPLIANCE:
-            config_compliance(
+            gc_repos(config_compliance)(
                 self.job_result,
                 self.logger.getEffectiveLevel(),
                 self.qs,

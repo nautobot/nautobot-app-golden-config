@@ -45,10 +45,10 @@ class ConfigComplianceDeviceCheck(PluginTemplateExtension):  # pylint: disable=a
                         ),
                     }
                 ]
-            else:
-                return []
         except ObjectDoesNotExist:
             return []
+
+        return []
 
 
 class ConfigComplianceLocationCheck(PluginTemplateExtension):  # pylint: disable=abstract-method

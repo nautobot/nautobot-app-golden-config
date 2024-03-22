@@ -273,31 +273,54 @@ class AllGoldenConfig(GoldenConfigJobMixin):
         description = "Process to run all Golden Configuration jobs configured."
         has_sensitive_variables = False
 
-    @gc_repos
     def run(self, *args, **data):  # pylint: disable=unused-argument
         """Run all jobs on a single device."""
-        if constant.ENABLE_INTENDED:
-            config_intended(
-                self.job_result,
-                self.logger.getEffectiveLevel(),
-                self,
-                self.qs,
-                self.device_to_settings_map,
-            )
-        if constant.ENABLE_BACKUP:
-            config_backup(
-                self.job_result,
-                self.logger.getEffectiveLevel(),
-                self.qs,
-                self.device_to_settings_map,
-            )
-        if constant.ENABLE_COMPLIANCE:
-            config_compliance(
-                self.job_result,
-                self.logger.getEffectiveLevel(),
-                self.qs,
-                self.device_to_settings_map,
-            )
+        self.logger.debug("Compiling device data for GC job.", extra={"grouping": "Get Job Filter"})
+        self.qs = get_job_filter(data)
+        self.logger.debug(
+            f"In scope device count for this job: {self.qs.count()}", extra={"grouping": "Get Job Filter"}
+        )
+        self.logger.debug("Mapping device(s) to GC Settings.", extra={"grouping": "Device to Settings Map"})
+        self.device_to_settings_map = get_device_to_settings_map(queryset=self.qs)
+        gitrepo_types = ["backup_repository", "jinja_repository", "intended_repository"]
+        self.logger.debug(
+            f"Repository types to sync: {', '.join(sorted(gitrepo_types))}",
+            extra={"grouping": "GC Repo Syncs"},
+        )
+        current_repos = get_refreshed_repos(job_obj=self, repo_types=gitrepo_types, data=self.qs)
+        for enabled, play in [
+            (constant.ENABLE_INTENDED, config_intended),
+            (constant.ENABLE_BACKUP, config_backup),
+            (constant.ENABLE_COMPLIANCE, config_compliance),
+        ]:
+            try:
+                if enabled:
+                    play(
+                        self.job_result,
+                        self.logger.getEffectiveLevel(),
+                        self,
+                        self.qs,
+                        self.device_to_settings_map,
+                    )
+            except Exception as error:  # pylint: disable=broad-exception-caught
+                error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
+                # Raise error only if the job kwarg (checkbox) is selected to do so on the job execution form.
+                if data["fail_job_on_task_failure"]:
+                    raise NornirNautobotException(error_msg) from error
+        now = make_aware(datetime.now())
+        self.logger.debug(
+            f"Finished the {self.Meta.name} job execution.",
+            extra={"grouping": "GC After Run"},
+        )
+        if current_repos:
+            for _, repo in current_repos.items():
+                if repo["to_commit"]:
+                    self.logger.debug(
+                        f"Pushing {self.Meta.name} results to repo {repo['repo_obj'].base_url}.",
+                        extra={"grouping": "GC Repo Commit and Push"},
+                    )
+                    repo["repo_obj"].commit_with_added(f"{self.Meta.name.upper()} JOB {now}")
+                    repo["repo_obj"].push()
 
 
 class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
@@ -310,31 +333,54 @@ class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
         description = "Process to run all Golden Configuration jobs configured against multiple devices."
         has_sensitive_variables = False
 
-    @gc_repos
     def run(self, *args, **data):  # pylint: disable=unused-argument
         """Run all jobs on multiple devices."""
-        if constant.ENABLE_INTENDED:
-            config_intended(
-                self.job_result,
-                self.logger.getEffectiveLevel(),
-                self,
-                self.qs,
-                self.device_to_settings_map,
-            )
-        if constant.ENABLE_BACKUP:
-            config_backup(
-                self.job_result,
-                self.logger.getEffectiveLevel(),
-                self.qs,
-                self.device_to_settings_map,
-            )
-        if constant.ENABLE_COMPLIANCE:
-            config_compliance(
-                self.job_result,
-                self.logger.getEffectiveLevel(),
-                self.qs,
-                self.device_to_settings_map,
-            )
+        self.logger.debug("Compiling device data for GC job.", extra={"grouping": "Get Job Filter"})
+        self.qs = get_job_filter(data)
+        self.logger.debug(
+            f"In scope device count for this job: {self.qs.count()}", extra={"grouping": "Get Job Filter"}
+        )
+        self.logger.debug("Mapping device(s) to GC Settings.", extra={"grouping": "Device to Settings Map"})
+        self.device_to_settings_map = get_device_to_settings_map(queryset=self.qs)
+        gitrepo_types = ["backup_repository", "jinja_repository", "intended_repository"]
+        self.logger.debug(
+            f"Repository types to sync: {', '.join(sorted(gitrepo_types))}",
+            extra={"grouping": "GC Repo Syncs"},
+        )
+        current_repos = get_refreshed_repos(job_obj=self, repo_types=gitrepo_types, data=self.qs)
+        for enabled, play in [
+            (constant.ENABLE_INTENDED, config_intended),
+            (constant.ENABLE_BACKUP, config_backup),
+            (constant.ENABLE_COMPLIANCE, config_compliance),
+        ]:
+            try:
+                if enabled:
+                    play(
+                        self.job_result,
+                        self.logger.getEffectiveLevel(),
+                        self,
+                        self.qs,
+                        self.device_to_settings_map,
+                    )
+            except Exception as error:  # pylint: disable=broad-exception-caught
+                error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
+                # Raise error only if the job kwarg (checkbox) is selected to do so on the job execution form.
+                if data["fail_job_on_task_failure"]:
+                    raise NornirNautobotException(error_msg) from error
+        now = make_aware(datetime.now())
+        self.logger.debug(
+            f"Finished the {self.Meta.name} job execution.",
+            extra={"grouping": "GC After Run"},
+        )
+        if current_repos:
+            for _, repo in current_repos.items():
+                if repo["to_commit"]:
+                    self.logger.debug(
+                        f"Pushing {self.Meta.name} results to repo {repo['repo_obj'].base_url}.",
+                        extra={"grouping": "GC Repo Commit and Push"},
+                    )
+                    repo["repo_obj"].commit_with_added(f"{self.Meta.name.upper()} JOB {now}")
+                    repo["repo_obj"].push()
 
 
 class GenerateConfigPlans(Job, FormEntry):

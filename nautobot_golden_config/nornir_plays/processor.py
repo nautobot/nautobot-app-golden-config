@@ -12,6 +12,12 @@ class ProcessGoldenConfig(BaseLoggingProcessor):
         """Set logging facility."""
         self.logger = logger
 
+    def task_completed(self, task: Task, result: AggregatedResult) -> None:
+        """Task outside of thread to determine what to do."""
+        if result.failed:
+            self.logger.info("Failed task found!")
+            raise ValueError()
+
     def _find_result_exceptions(self, result):
         """Walk the results and return only valid Exceptions.
 

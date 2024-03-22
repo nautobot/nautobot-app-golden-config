@@ -9,6 +9,7 @@ from datetime import datetime
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from netutils.config.compliance import _open_file_config, parser_map, section_config
+from netutils.lib_mapper import NETUTILSPARSER_LIB_MAPPER_REVERSE
 from nornir import InitNornir
 from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir.core.task import Result, Task
@@ -69,16 +70,18 @@ def get_config_element(rule, config, obj, logger):
             config_element = config_json
 
     elif rule["obj"].config_type == ComplianceRuleConfigTypeChoice.TYPE_CLI:
-        if get_platform(obj.platform.slug) not in parser_map.keys():
+        _platform_slug = get_platform(obj.platform.slug)
+        netutils_os_parser = NETUTILSPARSER_LIB_MAPPER_REVERSE.get(_platform_slug, _platform_slug)
+        if netutils_os_parser not in parser_map.keys():
             logger.log_failure(
                 obj,
-                f"There is currently no CLI-config parser support for platform slug `{get_platform(obj.platform.slug)}`, preemptively failed.",
+                f"There is currently no CLI-config parser support for platform slug `{netutils_os_parser}`, preemptively failed.",
             )
             raise NornirNautobotException(
-                f"There is currently no CLI-config parser support for platform slug `{get_platform(obj.platform.slug)}`, preemptively failed."
+                f"There is currently no CLI-config parser support for platform slug `{netutils_os_parser}`, preemptively failed."
             )
 
-        config_element = section_config(rule, config, get_platform(obj.platform.slug))
+        config_element = section_config(rule, config, netutils_os_parser)
 
     else:
         logger.log_failure(obj, f"There rule type ({rule['obj'].config_type}) is not recognized.")

@@ -25,6 +25,7 @@ from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInv
 from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir_nautobot.exceptions import NornirNautobotException
 from nautobot_golden_config.choices import ConfigPlanTypeChoice
+from nautobot_golden_config.exceptions import BackupFailure, ComplianceFailure, IntendedGenerationFailure
 from nautobot_golden_config.models import ComplianceFeature, ConfigPlan, GoldenConfig
 from nautobot_golden_config.nornir_plays.config_backup import config_backup
 from nautobot_golden_config.nornir_plays.config_compliance import config_compliance
@@ -204,6 +205,7 @@ class ComplianceJob(GoldenConfigJobMixin, FormEntry):
         config_compliance(
             self.job_result,
             self.logger.getEffectiveLevel(),
+            self,
             self.qs,  # pylint: disable=no-member
             self.device_to_settings_map,  # pylint: disable=no-member
         )
@@ -288,6 +290,7 @@ class AllGoldenConfig(GoldenConfigJobMixin):
             extra={"grouping": "GC Repo Syncs"},
         )
         current_repos = get_refreshed_repos(job_obj=self, repo_types=gitrepo_types, data=self.qs)
+        failed_jobs = []
         for enabled, play in [
             (constant.ENABLE_INTENDED, config_intended),
             (constant.ENABLE_BACKUP, config_backup),
@@ -302,11 +305,17 @@ class AllGoldenConfig(GoldenConfigJobMixin):
                         self.qs,
                         self.device_to_settings_map,
                     )
+            except BackupFailure:
+                self.logger.error("Backup failure occurred!")
+                failed_jobs.append("Backup")
+            except IntendedGenerationFailure:
+                self.logger.error("Intended failure occurred!")
+                failed_jobs.append("Intended")
+            except ComplianceFailure:
+                self.logger.error("Compliance failure occurred!")
+                failed_jobs.append("Compliance")
             except Exception as error:  # pylint: disable=broad-exception-caught
                 error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
-                # Raise error only if the job kwarg (checkbox) is selected to do so on the job execution form.
-                if data["fail_job_on_task_failure"]:
-                    raise NornirNautobotException(error_msg) from error
         now = make_aware(datetime.now())
         self.logger.debug(
             f"Finished the {self.Meta.name} job execution.",
@@ -321,6 +330,11 @@ class AllGoldenConfig(GoldenConfigJobMixin):
                     )
                     repo["repo_obj"].commit_with_added(f"{self.Meta.name.upper()} JOB {now}")
                     repo["repo_obj"].push()
+        if len(failed_jobs) > 0:
+            self.logger.error(f"Failure during {', '.join(failed_jobs) if len(failed_jobs) > 1 else failed_jobs} Job.")
+        if data["fail_job_on_task_failure"]:
+            # Raise error only if the job kwarg (checkbox) is selected to do so on the job execution form.
+            raise NornirNautobotException(error_msg)
 
 
 class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
@@ -348,6 +362,7 @@ class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
             extra={"grouping": "GC Repo Syncs"},
         )
         current_repos = get_refreshed_repos(job_obj=self, repo_types=gitrepo_types, data=self.qs)
+        failed_jobs = []
         for enabled, play in [
             (constant.ENABLE_INTENDED, config_intended),
             (constant.ENABLE_BACKUP, config_backup),
@@ -362,11 +377,17 @@ class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
                         self.qs,
                         self.device_to_settings_map,
                     )
+            except BackupFailure:
+                self.logger.error("Backup failure occurred!")
+                failed_jobs.append("Backup")
+            except IntendedGenerationFailure:
+                self.logger.error("Intended failure occurred!")
+                failed_jobs.append("Intended")
+            except ComplianceFailure:
+                self.logger.error("Compliance failure occurred!")
+                failed_jobs.append("Compliance")
             except Exception as error:  # pylint: disable=broad-exception-caught
                 error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
-                # Raise error only if the job kwarg (checkbox) is selected to do so on the job execution form.
-                if data["fail_job_on_task_failure"]:
-                    raise NornirNautobotException(error_msg) from error
         now = make_aware(datetime.now())
         self.logger.debug(
             f"Finished the {self.Meta.name} job execution.",
@@ -381,6 +402,11 @@ class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
                     )
                     repo["repo_obj"].commit_with_added(f"{self.Meta.name.upper()} JOB {now}")
                     repo["repo_obj"].push()
+        if len(failed_jobs) > 0:
+            self.logger.error(f"Failure during {', '.join(failed_jobs) if len(failed_jobs) > 1 else failed_jobs} Job.")
+        if data["fail_job_on_task_failure"]:
+            # Raise error only if the job kwarg (checkbox) is selected to do so on the job execution form.
+            raise NornirNautobotException(error_msg)
 
 
 class GenerateConfigPlans(Job, FormEntry):

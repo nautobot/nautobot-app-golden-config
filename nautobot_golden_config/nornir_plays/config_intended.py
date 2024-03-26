@@ -1,4 +1,5 @@
 """Nornir job for generating the intended config."""
+
 # pylint: disable=relative-beyond-top-level
 import logging
 import os
@@ -12,6 +13,7 @@ from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
+from nautobot_golden_config.exceptions import IntendedGenerationFailure
 from nautobot_golden_config.models import GoldenConfig
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
@@ -127,7 +129,7 @@ def config_intended(job_result, log_level, job_class_instance, qs, device_to_set
 
         logger.debug("Run nornir render config tasks.")
         # Run the Nornir Tasks
-        nr_with_processors.run(
+        results = nr_with_processors.run(
             task=run_template,
             name="RENDER CONFIG",
             logger=logger,
@@ -135,3 +137,6 @@ def config_intended(job_result, log_level, job_class_instance, qs, device_to_set
             job_class_instance=job_class_instance,
             jinja_env=jinja_env,
         )
+
+    if results.failed:
+        raise IntendedGenerationFailure()

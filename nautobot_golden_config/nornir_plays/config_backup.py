@@ -1,4 +1,5 @@
 """Nornir job for backing up actual config."""
+
 # pylint: disable=relative-beyond-top-level
 import logging
 import os
@@ -118,7 +119,7 @@ def config_backup(job_result, log_level, qs, device_to_settings_map):
         nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
 
         logger.debug("Run nornir backup tasks.")
-        nr_with_processors.run(
+        results = nr_with_processors.run(
             task=run_backup,
             name="BACKUP CONFIG",
             logger=logger,
@@ -128,3 +129,4 @@ def config_backup(job_result, log_level, qs, device_to_settings_map):
         )
         logger.debug("Completed configuration from devices.")
     logger.debug("Completed configuration backup job for devices.")
+    return results

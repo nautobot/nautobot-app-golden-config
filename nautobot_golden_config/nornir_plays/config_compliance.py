@@ -14,8 +14,8 @@ from netutils.config.compliance import _open_file_config, parser_map, section_co
 from nornir import InitNornir
 from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir.core.task import Result, Task
-from nornir_nautobot.exceptions import NornirNautobotException
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
+from nautobot_golden_config.exceptions import ComplianceFailure
 from nautobot_golden_config.models import ComplianceRule, ConfigCompliance, GoldenConfig
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
@@ -168,7 +168,9 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     return Result(host=task.host)
 
 
-def config_compliance(job_result, log_level, qs, device_to_settings_map):
+def config_compliance(
+    job_result, log_level, job_class_instance, qs, device_to_settings_map
+):  # pylint: disable=unused-argument
     """Nornir play to generate configurations."""
     now = make_aware(datetime.now())
     logger = NornirLogger(job_result, log_level)
@@ -193,7 +195,7 @@ def config_compliance(job_result, log_level, qs, device_to_settings_map):
         nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
 
         logger.debug("Run nornir compliance tasks.")
-        nr_with_processors.run(
+        results = nr_with_processors.run(
             task=run_compliance,
             name="RENDER COMPLIANCE TASK GROUP",
             logger=logger,
@@ -201,3 +203,5 @@ def config_compliance(job_result, log_level, qs, device_to_settings_map):
             rules=rules,
         )
     logger.debug("Completed compliance job for devices.")
+    if results.failed:
+        raise ComplianceFailure()

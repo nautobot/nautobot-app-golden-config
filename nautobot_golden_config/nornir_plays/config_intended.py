@@ -92,22 +92,23 @@ def run_template(  # pylint: disable=too-many-arguments,too-many-locals
     return Result(host=task.host, result=generated_config)
 
 
-def config_intended(job_result, log_level, job_class_instance, qs, device_to_settings_map):
+def config_intended(job):
     """
     Nornir play to generate configurations.
 
     Args:
-        logger (NornirLogger): The Nautobot Job instance being run.
-        job_class_instance (Job): The Nautobot Job instance being run.
-        data (dict): Form data from Nautobot Job.
+        job (Job): The Nautobot Job instance being run.
 
     Returns:
         None: Intended configuration files are written to filesystem.
+
+    Raises:
+        IntendedGenerationFailure: If failure found in Nornir tasks then Exception will be raised.
     """
     now = make_aware(datetime.now())
-    logger = NornirLogger(job_result, log_level)
+    logger = NornirLogger(job.job_result, job.logger.getEffectiveLevel())
 
-    for settings in set(device_to_settings_map.values()):
+    for settings in set(job.device_to_settings_map.values()):
         verify_settings(logger, settings, ["jinja_path_template", "intended_path_template", "sot_agg_query"])
 
     # Retrieve filters from the Django jinja template engine
@@ -120,7 +121,7 @@ def config_intended(job_result, log_level, job_class_instance, qs, device_to_set
             "options": {
                 "credentials_class": NORNIR_SETTINGS.get("credentials"),
                 "params": NORNIR_SETTINGS.get("inventory_params"),
-                "queryset": qs,
+                "queryset": job.qs,
                 "defaults": {"now": now},
             },
         },
@@ -133,8 +134,8 @@ def config_intended(job_result, log_level, job_class_instance, qs, device_to_set
             task=run_template,
             name="RENDER CONFIG",
             logger=logger,
-            device_to_settings_map=device_to_settings_map,
-            job_class_instance=job_class_instance,
+            device_to_settings_map=job.device_to_settings_map,
+            job_class_instance=job.job_class_instance,
             jinja_env=jinja_env,
         )
 

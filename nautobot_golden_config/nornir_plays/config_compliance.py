@@ -168,16 +168,25 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     return Result(host=task.host)
 
 
-def config_compliance(
-    job_result, log_level, job_class_instance, qs, device_to_settings_map
-):  # pylint: disable=unused-argument
-    """Nornir play to generate configurations."""
+def config_compliance(job):  # pylint: disable=unused-argument
+    """
+    Nornir play to generate configurations.
+
+    Args:
+        job (Job): The Nautobot Job instance being run.
+
+    Returns:
+        None: Compliance results are written to database.
+
+    Raises:
+        ComplianceFailure: If failure found in Nornir tasks then Exception will be raised.
+    """
     now = make_aware(datetime.now())
-    logger = NornirLogger(job_result, log_level)
+    logger = NornirLogger(job.job_result, job.logger.getEffectiveLevel())
 
     rules = get_rules()
 
-    for settings in set(device_to_settings_map.values()):
+    for settings in set(job.device_to_settings_map.values()):
         verify_settings(logger, settings, ["backup_path_template", "intended_path_template"])
     with InitNornir(
         runner=NORNIR_SETTINGS.get("runner"),
@@ -187,7 +196,7 @@ def config_compliance(
             "options": {
                 "credentials_class": NORNIR_SETTINGS.get("credentials"),
                 "params": NORNIR_SETTINGS.get("inventory_params"),
-                "queryset": qs,
+                "queryset": job.qs,
                 "defaults": {"now": now},
             },
         },
@@ -199,7 +208,7 @@ def config_compliance(
             task=run_compliance,
             name="RENDER COMPLIANCE TASK GROUP",
             logger=logger,
-            device_to_settings_map=device_to_settings_map,
+            device_to_settings_map=job.device_to_settings_map,
             rules=rules,
         )
     logger.debug("Completed compliance job for devices.")

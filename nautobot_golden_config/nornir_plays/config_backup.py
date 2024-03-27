@@ -12,6 +12,7 @@ from nornir import InitNornir
 from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir.core.task import Result, Task
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
+from nautobot_golden_config.exceptions import BackupFailure
 from nautobot_golden_config.models import ConfigRemove, ConfigReplace, GoldenConfig
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
@@ -82,12 +83,23 @@ def run_backup(  # pylint: disable=too-many-arguments
     return Result(host=task.host, result=running_config)
 
 
-def config_backup(job_result, log_level, qs, device_to_settings_map):
-    """Nornir play to backup configurations."""
-    now = make_aware(datetime.now())
-    logger = NornirLogger(job_result, log_level)
+def config_backup(job):
+    """
+    Nornir play to backup configurations.
 
-    for settings in set(device_to_settings_map.values()):
+    Args:
+        job (Job): The Nautobot Job instance being run.
+
+    Returns:
+        None: Backup configuration files are written to filesystem.
+
+    Raises:
+        BackupFailure: If failure found in Nornir tasks then Exception will be raised.
+    """
+    now = make_aware(datetime.now())
+    logger = NornirLogger(job.job_result, job.logger.getEffectiveLevel())
+
+    for settings in set(job.device_to_settings_map.values()):
         verify_settings(logger, settings, ["backup_path_template"])
 
     # Build a dictionary, with keys of platform.network_driver, and the regex line in it for the netutils func.
@@ -123,10 +135,11 @@ def config_backup(job_result, log_level, qs, device_to_settings_map):
             task=run_backup,
             name="BACKUP CONFIG",
             logger=logger,
-            device_to_settings_map=device_to_settings_map,
+            device_to_settings_map=job.device_to_settings_map,
             remove_regex_dict=remove_regex_dict,
             replace_regex_dict=replace_regex_dict,
         )
         logger.debug("Completed configuration from devices.")
     logger.debug("Completed configuration backup job for devices.")
-    return results
+    if results.failed:
+        raise BackupFailure()

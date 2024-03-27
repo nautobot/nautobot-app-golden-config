@@ -202,13 +202,7 @@ class ComplianceJob(GoldenConfigJobMixin, FormEntry):
         if not constant.ENABLE_COMPLIANCE:
             self.logger.critical("Compliance is disabled in application settings.")
             raise ValueError("Compliance is disabled in application settings.")
-        config_compliance(
-            self.job_result,
-            self.logger.getEffectiveLevel(),
-            self,
-            self.qs,  # pylint: disable=no-member
-            self.device_to_settings_map,  # pylint: disable=no-member
-        )
+        config_compliance(self)
 
 
 class IntendedJob(GoldenConfigJobMixin, FormEntry):
@@ -228,13 +222,7 @@ class IntendedJob(GoldenConfigJobMixin, FormEntry):
         if not constant.ENABLE_INTENDED:
             self.logger.critical("Intended Generation is disabled in application settings.")
             raise ValueError("Intended Generation is disabled in application settings.")
-        config_intended(
-            self.job_result,
-            self.logger.getEffectiveLevel(),
-            self,
-            self.qs,  # pylint: disable=no-member
-            self.device_to_settings_map,  # pylint: disable=no-member
-        )
+        config_intended(self)
 
 
 class BackupJob(GoldenConfigJobMixin, FormEntry):
@@ -254,12 +242,7 @@ class BackupJob(GoldenConfigJobMixin, FormEntry):
         if not constant.ENABLE_BACKUP:
             self.logger.critical("Backups are disabled in application settings.")
             raise ValueError("Backups are disabled in application settings.")
-        config_backup(
-            self.job_result,
-            self.logger.getEffectiveLevel(),
-            self.qs,
-            self.device_to_settings_map,
-        )
+        config_backup(self)
 
 
 class AllGoldenConfig(GoldenConfigJobMixin):
@@ -298,13 +281,7 @@ class AllGoldenConfig(GoldenConfigJobMixin):
         ]:
             try:
                 if enabled:
-                    play(
-                        self.job_result,
-                        self.logger.getEffectiveLevel(),
-                        self,
-                        self.qs,
-                        self.device_to_settings_map,
-                    )
+                    play(self)
             except BackupFailure:
                 self.logger.error("Backup failure occurred!")
                 failed_jobs.append("Backup")
@@ -370,13 +347,7 @@ class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
         ]:
             try:
                 if enabled:
-                    play(
-                        self.job_result,
-                        self.logger.getEffectiveLevel(),
-                        self,
-                        self.qs,
-                        self.device_to_settings_map,
-                    )
+                    play(self)
             except BackupFailure:
                 self.logger.error("Backup failure occurred!")
                 failed_jobs.append("Backup")
@@ -555,7 +526,7 @@ class DeployConfigPlans(Job):
     def run(self, **data):  # pylint: disable=arguments-differ
         """Run config plan deployment process."""
         self.logger.debug("Starting config plan deployment job.")
-        config_deployment(self.job_result, self.logger.getEffectiveLevel(), data)
+        config_deployment(self)
 
 
 class DeployConfigPlanJobButtonReceiver(JobButtonReceiver):
@@ -571,7 +542,7 @@ class DeployConfigPlanJobButtonReceiver(JobButtonReceiver):
         """Run config plan deployment process."""
         self.logger.debug("Starting config plan deployment job.")
         data = {"debug": False, "config_plan": ConfigPlan.objects.filter(id=obj.id)}
-        config_deployment(self.job_result, self.logger.getEffectiveLevel(), data)
+        config_deployment(self)
 
 
 class SyncGoldenConfigWithDynamicGroups(Job):

@@ -135,7 +135,7 @@ def config_intended(job):
             name="RENDER CONFIG",
             logger=logger,
             device_to_settings_map=job.device_to_settings_map,
-            job_class_instance=job.job_class_instance,
+            job_class_instance=job,
             jinja_env=jinja_env,
         )
 

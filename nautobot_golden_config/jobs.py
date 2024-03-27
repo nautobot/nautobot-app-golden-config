@@ -529,6 +529,11 @@ class DeployConfigPlans(Job):
         description = "Deploy config plans to devices."
         has_sensitive_variables = False
 
+    def __init__(self, *args, **kwargs):
+        """Initialize the job."""
+        super().__init__(*args, **kwargs)
+        self.data = {}
+
     def run(self, **data):  # pylint: disable=arguments-differ
         """Run config plan deployment process."""
         self.logger.debug("Starting config plan deployment job.")
@@ -544,6 +549,11 @@ class DeployConfigPlanJobButtonReceiver(JobButtonReceiver):
 
         name = "Deploy Config Plan (Job Button Receiver)"
         has_sensitive_variables = False
+
+    def __init__(self, *args, **kwargs):
+        """Initialize the job."""
+        super().__init__(*args, **kwargs)
+        self.data = {}
 
     def receive_job_button(self, obj):
         """Run config plan deployment process."""

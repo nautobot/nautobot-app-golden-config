@@ -264,6 +264,9 @@ class AllGoldenConfig(GoldenConfigJobMixin):
 
     device = ObjectVar(model=Device, required=True)
     debug = BooleanVar(description="Enable for more verbose debug logging")
+    fail_job_on_task_failure = BooleanVar(
+        description="If any device in the tasks list fails, fail the entire job result."
+    )
 
     class Meta:
         """Meta object boilerplate for all jobs to run against a device."""

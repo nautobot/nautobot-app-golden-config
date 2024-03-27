@@ -14,6 +14,7 @@ from netutils.config.compliance import _open_file_config, parser_map, section_co
 from nornir import InitNornir
 from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir.core.task import Result, Task
+from nornir_nautobot.exceptions import NornirNautobotException
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
 from nautobot_golden_config.exceptions import ComplianceFailure
 from nautobot_golden_config.models import ComplianceRule, ConfigCompliance, GoldenConfig

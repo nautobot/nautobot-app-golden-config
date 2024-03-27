@@ -374,7 +374,9 @@ class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
                     repo["repo_obj"].commit_with_added(f"{self.Meta.name.upper()} JOB {now}")
                     repo["repo_obj"].push()
         if len(failed_jobs) > 0:
-            self.logger.error(f"Failure during {', '.join(failed_jobs) if len(failed_jobs) > 1 else failed_jobs} Job.")
+            self.logger.error(
+                f"Failure during {', '.join(failed_jobs) if len(failed_jobs) > 1 else failed_jobs[0]} Job."
+            )
         if data["fail_job_on_task_failure"]:
             # Raise error only if the job kwarg (checkbox) is selected to do so on the job execution form.
             raise NornirNautobotException(error_msg)

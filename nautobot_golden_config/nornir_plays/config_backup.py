@@ -123,7 +123,7 @@ def config_backup(job):
             "options": {
                 "credentials_class": NORNIR_SETTINGS.get("credentials"),
                 "params": NORNIR_SETTINGS.get("inventory_params"),
-                "queryset": qs,
+                "queryset": job.qs,
                 "defaults": {"now": now},
             },
         },

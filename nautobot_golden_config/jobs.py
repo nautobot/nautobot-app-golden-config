@@ -528,6 +528,7 @@ class DeployConfigPlans(Job):
     def run(self, **data):  # pylint: disable=arguments-differ
         """Run config plan deployment process."""
         self.logger.debug("Starting config plan deployment job.")
+        self.data = data
         config_deployment(self)
 
 
@@ -543,7 +544,7 @@ class DeployConfigPlanJobButtonReceiver(JobButtonReceiver):
     def receive_job_button(self, obj):
         """Run config plan deployment process."""
         self.logger.debug("Starting config plan deployment job.")
-        data = {"debug": False, "config_plan": ConfigPlan.objects.filter(id=obj.id)}
+        self.data = {"debug": False, "config_plan": ConfigPlan.objects.filter(id=obj.id)}
         config_deployment(self)
 
 

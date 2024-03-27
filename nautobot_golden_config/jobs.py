@@ -169,7 +169,7 @@ class FormEntry:  # pylint disable=too-few-public-method
     )
     debug = BooleanVar(description="Enable for more verbose debug logging")
     fail_job_on_task_failure = BooleanVar(
-        description="If any device in the tasks list fails, fail the entire job result."
+        description="If any task in the tasks list fails, fail the entire job result."
     )
 
 

@@ -108,7 +108,7 @@ def gc_repo_prep(job, data):
         data (dict): Data being passed from Job.
 
     Returns:
-        List[str]: List of strings indicating git repo types involved in Job.
+        List[GitRepo]: List of GitRepos to be used with Job(s).
     """
     job.logger.debug("Compiling device data for GC job.", extra={"grouping": "Get Job Filter"})
     job.qs = get_job_filter(data)
@@ -122,6 +122,29 @@ def gc_repo_prep(job, data):
     )
     current_repos = get_refreshed_repos(job_obj=job, repo_types=gitrepo_types, data=job.qs)
     return current_repos
+
+
+def gc_repo_push(job, current_repos):
+    """Push any work from worker to git repos in Job.
+
+    Args:
+        job (Job): Nautobot Job with logger and other attributes.
+        current_repos (List[GitRepo]): List of GitRepos to be used with Job(s).
+    """
+    now = make_aware(datetime.now())
+    job.logger.debug(
+        f"Finished the {job.Meta.name} job execution.",
+        extra={"grouping": "GC After Run"},
+    )
+    if current_repos:
+        for _, repo in current_repos.items():
+            if repo["to_commit"]:
+                job.logger.debug(
+                    f"Pushing {job.Meta.name} results to repo {repo['repo_obj'].base_url}.",
+                    extra={"grouping": "GC Repo Commit and Push"},
+                )
+                repo["repo_obj"].commit_with_added(f"{job.Meta.name.upper()} JOB {now}")
+                repo["repo_obj"].push()
 
 
 def gc_repos(func):
@@ -139,20 +162,7 @@ def gc_repos(func):
             if kwargs.get("fail_job_on_task_failure"):
                 raise NornirNautobotException(error_msg) from error
         finally:
-            now = make_aware(datetime.now())
-            self.logger.debug(
-                f"Finished the {self.Meta.name} job execution.",
-                extra={"grouping": "GC After Run"},
-            )
-            if current_repos:
-                for _, repo in current_repos.items():
-                    if repo["to_commit"]:
-                        self.logger.debug(
-                            f"Pushing {self.Meta.name} results to repo {repo['repo_obj'].base_url}.",
-                            extra={"grouping": "GC Repo Commit and Push"},
-                        )
-                        repo["repo_obj"].commit_with_added(f"{self.Meta.name.upper()} JOB {now}")
-                        repo["repo_obj"].push()
+            gc_repo_push(job=self, current_repos=current_repos)
 
     return gc_repo_wrapper
 
@@ -292,20 +302,7 @@ class AllGoldenConfig(GoldenConfigJobMixin):
                 failed_jobs.append("Compliance")
             except Exception as error:  # pylint: disable=broad-exception-caught
                 error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
-        now = make_aware(datetime.now())
-        self.logger.debug(
-            f"Finished the {self.Meta.name} job execution.",
-            extra={"grouping": "GC After Run"},
-        )
-        if current_repos:
-            for _, repo in current_repos.items():
-                if repo["to_commit"]:
-                    self.logger.debug(
-                        f"Pushing {self.Meta.name} results to repo {repo['repo_obj'].base_url}.",
-                        extra={"grouping": "GC Repo Commit and Push"},
-                    )
-                    repo["repo_obj"].commit_with_added(f"{self.Meta.name.upper()} JOB {now}")
-                    repo["repo_obj"].push()
+        gc_repo_push(job=self, current_repos=current_repos)
         if len(failed_jobs) > 1:
             jobs_list = ", ".join(failed_jobs)
         elif len(failed_jobs) == 1:
@@ -354,20 +351,7 @@ class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
                 failed_jobs.append("Compliance")
             except Exception as error:  # pylint: disable=broad-exception-caught
                 error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
-        now = make_aware(datetime.now())
-        self.logger.debug(
-            f"Finished the {self.Meta.name} job execution.",
-            extra={"grouping": "GC After Run"},
-        )
-        if current_repos:
-            for _, repo in current_repos.items():
-                if repo["to_commit"]:
-                    self.logger.debug(
-                        f"Pushing {self.Meta.name} results to repo {repo['repo_obj'].base_url}.",
-                        extra={"grouping": "GC Repo Commit and Push"},
-                    )
-                    repo["repo_obj"].commit_with_added(f"{self.Meta.name.upper()} JOB {now}")
-                    repo["repo_obj"].push()
+        gc_repo_push(job=self, current_repos=current_repos)
         if len(failed_jobs) > 1:
             jobs_list = ", ".join(failed_jobs)
         elif len(failed_jobs) == 1:

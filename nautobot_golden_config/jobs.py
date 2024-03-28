@@ -258,7 +258,7 @@ class AllGoldenConfig(GoldenConfigJobMixin):
         description = "Process to run all Golden Configuration jobs configured."
         has_sensitive_variables = False
 
-    def run(self, *args, **data):  # pylint: disable=unused-argument
+    def run(self, *args, **data):  # pylint: disable=unused-argument, too-many-branches
         """Run all jobs on a single device."""
         self.logger.debug("Compiling device data for GC job.", extra={"grouping": "Get Job Filter"})
         self.qs = get_job_filter(data)
@@ -334,7 +334,7 @@ class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
         description = "Process to run all Golden Configuration jobs configured against multiple devices."
         has_sensitive_variables = False
 
-    def run(self, *args, **data):  # pylint: disable=unused-argument
+    def run(self, *args, **data):  # pylint: disable=unused-argument, too-many-branches
         """Run all jobs on multiple devices."""
         self.logger.debug("Compiling device data for GC job.", extra={"grouping": "Get Job Filter"})
         self.qs = get_job_filter(data)

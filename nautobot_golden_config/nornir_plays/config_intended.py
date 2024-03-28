@@ -141,7 +141,7 @@ def config_intended(job):
             )
     except NornirNautobotException as err:
         logger.error(
-            f"`E3029:` NornirNautobotException raised during backup tasks. Original exception message: ```{err}```"
+            f"`E3029:` NornirNautobotException raised during intended tasks. Original exception message: ```{err}```"
         )
         # re-raise Exception if it's raised from nornir-nautobot or nautobot-app-nornir
         if str(err).startswith("`E2") or str(err).startswith("`E1"):

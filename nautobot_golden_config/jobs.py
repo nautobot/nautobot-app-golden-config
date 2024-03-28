@@ -100,24 +100,36 @@ def get_refreshed_repos(job_obj, repo_types, data=None):
     return repositories
 
 
+def gc_repo_prep(job, data):
+    """Prepare Golden Config git repos for work.
+
+    Args:
+        job (Job): Nautobot Job object with logger and other vars.
+        data (dict): Data being passed from Job.
+
+    Returns:
+        List[str]: List of strings indicating git repo types involved in Job.
+    """
+    job.logger.debug("Compiling device data for GC job.", extra={"grouping": "Get Job Filter"})
+    job.qs = get_job_filter(data)
+    job.logger.debug(f"In scope device count for this job: {job.qs.count()}", extra={"grouping": "Get Job Filter"})
+    job.logger.debug("Mapping device(s) to GC Settings.", extra={"grouping": "Device to Settings Map"})
+    job.device_to_settings_map = get_device_to_settings_map(queryset=job.qs)
+    gitrepo_types = list(set(get_repo_types_for_job(job.name)))
+    job.logger.debug(
+        f"Repository types to sync: {', '.join(sorted(gitrepo_types))}",
+        extra={"grouping": "GC Repo Syncs"},
+    )
+    current_repos = get_refreshed_repos(job_obj=job, repo_types=gitrepo_types, data=job.qs)
+    return current_repos
+
+
 def gc_repos(func):
     """Decorator used for handle repo syncing, commiting, and pushing."""
 
     def gc_repo_wrapper(self, *args, **kwargs):
         """Decorator used for handle repo syncing, commiting, and pushing."""
-        self.logger.debug("Compiling device data for GC job.", extra={"grouping": "Get Job Filter"})
-        self.qs = get_job_filter(kwargs)
-        self.logger.debug(
-            f"In scope device count for this job: {self.qs.count()}", extra={"grouping": "Get Job Filter"}
-        )
-        self.logger.debug("Mapping device(s) to GC Settings.", extra={"grouping": "Device to Settings Map"})
-        self.device_to_settings_map = get_device_to_settings_map(queryset=self.qs)
-        gitrepo_types = list(set(get_repo_types_for_job(self.name)))
-        self.logger.debug(
-            f"Repository types to sync: {', '.join(sorted(gitrepo_types))}",
-            extra={"grouping": "GC Repo Syncs"},
-        )
-        current_repos = get_refreshed_repos(job_obj=self, repo_types=gitrepo_types, data=self.qs)
+        current_repos = gc_repo_prep(job=self, data=kwargs)
         # This is where the specific jobs run method runs via this decorator.
         try:
             func(self, *args, **kwargs)
@@ -258,19 +270,7 @@ class AllGoldenConfig(GoldenConfigJobMixin):
 
     def run(self, *args, **data):  # pylint: disable=unused-argument, too-many-branches
         """Run all jobs on a single device."""
-        self.logger.debug("Compiling device data for GC job.", extra={"grouping": "Get Job Filter"})
-        self.qs = get_job_filter(data)
-        self.logger.debug(
-            f"In scope device count for this job: {self.qs.count()}", extra={"grouping": "Get Job Filter"}
-        )
-        self.logger.debug("Mapping device(s) to GC Settings.", extra={"grouping": "Device to Settings Map"})
-        self.device_to_settings_map = get_device_to_settings_map(queryset=self.qs)
-        gitrepo_types = ["backup_repository", "jinja_repository", "intended_repository"]
-        self.logger.debug(
-            f"Repository types to sync: {', '.join(sorted(gitrepo_types))}",
-            extra={"grouping": "GC Repo Syncs"},
-        )
-        current_repos = get_refreshed_repos(job_obj=self, repo_types=gitrepo_types, data=self.qs)
+        current_repos = gc_repo_prep(job=self, data=data)
         failed_jobs = []
         error_msg, jobs_list = "", "All"
         for enabled, play in [
@@ -332,19 +332,7 @@ class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
 
     def run(self, *args, **data):  # pylint: disable=unused-argument, too-many-branches
         """Run all jobs on multiple devices."""
-        self.logger.debug("Compiling device data for GC job.", extra={"grouping": "Get Job Filter"})
-        self.qs = get_job_filter(data)
-        self.logger.debug(
-            f"In scope device count for this job: {self.qs.count()}", extra={"grouping": "Get Job Filter"}
-        )
-        self.logger.debug("Mapping device(s) to GC Settings.", extra={"grouping": "Device to Settings Map"})
-        self.device_to_settings_map = get_device_to_settings_map(queryset=self.qs)
-        gitrepo_types = ["backup_repository", "jinja_repository", "intended_repository"]
-        self.logger.debug(
-            f"Repository types to sync: {', '.join(sorted(gitrepo_types))}",
-            extra={"grouping": "GC Repo Syncs"},
-        )
-        current_repos = get_refreshed_repos(job_obj=self, repo_types=gitrepo_types, data=self.qs)
+        current_repos = gc_repo_prep(job=self, data=data)
         failed_jobs = []
         error_msg, jobs_list = "", "All"
         for enabled, play in [

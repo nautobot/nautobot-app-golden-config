@@ -113,31 +113,38 @@ def config_intended(job):
 
     # Retrieve filters from the Django jinja template engine
     jinja_env = get_django_env()
-    with InitNornir(
-        runner=NORNIR_SETTINGS.get("runner"),
-        logging={"enabled": False},
-        inventory={
-            "plugin": "nautobot-inventory",
-            "options": {
-                "credentials_class": NORNIR_SETTINGS.get("credentials"),
-                "params": NORNIR_SETTINGS.get("inventory_params"),
-                "queryset": job.qs,
-                "defaults": {"now": now},
+    try:
+        with InitNornir(
+            runner=NORNIR_SETTINGS.get("runner"),
+            logging={"enabled": False},
+            inventory={
+                "plugin": "nautobot-inventory",
+                "options": {
+                    "credentials_class": NORNIR_SETTINGS.get("credentials"),
+                    "params": NORNIR_SETTINGS.get("inventory_params"),
+                    "queryset": job.qs,
+                    "defaults": {"now": now},
+                },
             },
-        },
-    ) as nornir_obj:
-        nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
+        ) as nornir_obj:
+            nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
 
-        logger.debug("Run nornir render config tasks.")
-        # Run the Nornir Tasks
-        results = nr_with_processors.run(
-            task=run_template,
-            name="RENDER CONFIG",
-            logger=logger,
-            device_to_settings_map=job.device_to_settings_map,
-            job_class_instance=job,
-            jinja_env=jinja_env,
+            logger.debug("Run nornir render config tasks.")
+            # Run the Nornir Tasks
+            results = nr_with_processors.run(
+                task=run_template,
+                name="RENDER CONFIG",
+                logger=logger,
+                device_to_settings_map=job.device_to_settings_map,
+                job_class_instance=job,
+                jinja_env=jinja_env,
+            )
+    except NornirNautobotException as err:
+        logger.error(
+            f"`E3029:` NornirNautobotException raised during backup tasks. Original exception message: ```{err}```"
         )
-
+        # re-raise Exception if it's raised from nornir-nautobot or nautobot-app-nornir
+        if str(err).startswith("`E2") or str(err).startswith("`E1"):
+            raise NornirNautobotException(err) from err
     if results.failed:
         raise IntendedGenerationFailure()

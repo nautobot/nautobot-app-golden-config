@@ -11,6 +11,7 @@ from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInv
 from nornir import InitNornir
 from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir.core.task import Result, Task
+from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
 from nautobot_golden_config.exceptions import BackupFailure
 from nautobot_golden_config.models import ConfigRemove, ConfigReplace, GoldenConfig
@@ -115,31 +116,39 @@ def config_backup(job):
         if not replace_regex_dict.get(regex.platform.network_driver):
             replace_regex_dict[regex.platform.network_driver] = []
         replace_regex_dict[regex.platform.network_driver].append({"replace": regex.replace, "regex": regex.regex})
-    with InitNornir(
-        runner=NORNIR_SETTINGS.get("runner"),
-        logging={"enabled": False},
-        inventory={
-            "plugin": "nautobot-inventory",
-            "options": {
-                "credentials_class": NORNIR_SETTINGS.get("credentials"),
-                "params": NORNIR_SETTINGS.get("inventory_params"),
-                "queryset": job.qs,
-                "defaults": {"now": now},
+    try:
+        with InitNornir(
+            runner=NORNIR_SETTINGS.get("runner"),
+            logging={"enabled": False},
+            inventory={
+                "plugin": "nautobot-inventory",
+                "options": {
+                    "credentials_class": NORNIR_SETTINGS.get("credentials"),
+                    "params": NORNIR_SETTINGS.get("inventory_params"),
+                    "queryset": job.qs,
+                    "defaults": {"now": now},
+                },
             },
-        },
-    ) as nornir_obj:
-        nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
+        ) as nornir_obj:
+            nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
 
-        logger.debug("Run nornir backup tasks.")
-        results = nr_with_processors.run(
-            task=run_backup,
-            name="BACKUP CONFIG",
-            logger=logger,
-            device_to_settings_map=job.device_to_settings_map,
-            remove_regex_dict=remove_regex_dict,
-            replace_regex_dict=replace_regex_dict,
+            logger.debug("Run nornir backup tasks.")
+            results = nr_with_processors.run(
+                task=run_backup,
+                name="BACKUP CONFIG",
+                logger=logger,
+                device_to_settings_map=job.device_to_settings_map,
+                remove_regex_dict=remove_regex_dict,
+                replace_regex_dict=replace_regex_dict,
+            )
+            logger.debug("Completed configuration from devices.")
+    except NornirNautobotException as err:
+        logger.error(
+            f"`E3027:` NornirNautobotException raised during backup tasks. Original exception message: ```{err}```"
         )
-        logger.debug("Completed configuration from devices.")
+        # re-raise Exception if it's raised from nornir-nautobot or nautobot-app-nornir
+        if str(err).startswith("`E2") or str(err).startswith("`E1"):
+            raise NornirNautobotException(err) from err
     logger.debug("Completed configuration backup job for devices.")
     if results.failed:
         raise BackupFailure()

@@ -274,6 +274,7 @@ class AllGoldenConfig(GoldenConfigJobMixin):
         )
         current_repos = get_refreshed_repos(job_obj=self, repo_types=gitrepo_types, data=self.qs)
         failed_jobs = []
+        error_msg = ""
         for enabled, play in [
             (constant.ENABLE_INTENDED, config_intended),
             (constant.ENABLE_BACKUP, config_backup),
@@ -349,6 +350,7 @@ class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
         )
         current_repos = get_refreshed_repos(job_obj=self, repo_types=gitrepo_types, data=self.qs)
         failed_jobs = []
+        error_msg = ""
         for enabled, play in [
             (constant.ENABLE_INTENDED, config_intended),
             (constant.ENABLE_BACKUP, config_backup),

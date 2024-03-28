@@ -1,0 +1,1 @@
+Corrected issue where consecutive Golden Config Jobs in All Golden Configs Job wouldn't execute if prior Job had an Exception raised.

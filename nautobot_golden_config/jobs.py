@@ -307,7 +307,13 @@ class AllGoldenConfig(GoldenConfigJobMixin):
                     )
                     repo["repo_obj"].commit_with_added(f"{self.Meta.name.upper()} JOB {now}")
                     repo["repo_obj"].push()
-        failure_msg = f"Failure during {', '.join(failed_jobs) if len(failed_jobs) > 1 else failed_jobs[0]} Job."
+        if len(failed_jobs) > 1:
+            failed_jobs = ", ".join(failed_jobs)
+        elif len(failed_jobs) == 1:
+            failed_jobs = failed_jobs[0]
+        elif len(failed_jobs) == 0:
+            failed_jobs = "All"
+        failure_msg = f"Failure during {failed_jobs} Job."
         if len(failed_jobs) > 0:
             self.logger.error(failure_msg)
         if data["fail_job_on_task_failure"]:
@@ -376,7 +382,13 @@ class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
                     )
                     repo["repo_obj"].commit_with_added(f"{self.Meta.name.upper()} JOB {now}")
                     repo["repo_obj"].push()
-        failure_msg = f"Failure during {', '.join(failed_jobs) if len(failed_jobs) > 1 else failed_jobs[0]} Job."
+        if len(failed_jobs) > 1:
+            failed_jobs = ", ".join(failed_jobs)
+        elif len(failed_jobs) == 1:
+            failed_jobs = failed_jobs[0]
+        elif len(failed_jobs) == 0:
+            failed_jobs = "All"
+        failure_msg = f"Failure during {failed_jobs} Job."
         if len(failed_jobs) > 0:
             self.logger.error(failure_msg)
         if data["fail_job_on_task_failure"]:

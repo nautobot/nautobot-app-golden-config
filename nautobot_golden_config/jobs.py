@@ -314,7 +314,7 @@ class AllGoldenConfig(GoldenConfigJobMixin):
             failed_jobs = failed_jobs[0]
         elif len(failed_jobs) == 0:
             failed_jobs = "All"
-        failure_msg = f"Failure during {failed_jobs} Job."
+        failure_msg = f"`E3030:` Failure during {failed_jobs} Job(s)."
         if len(failed_jobs) > 0:
             self.logger.error(failure_msg)
         if data["fail_job_on_task_failure"]:
@@ -390,7 +390,7 @@ class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
             failed_jobs = failed_jobs[0]
         elif len(failed_jobs) == 0:
             failed_jobs = "All"
-        failure_msg = f"Failure during {failed_jobs} Job."
+        failure_msg = f"`E3030:` Failure during {failed_jobs} Job(s)."
         if len(failed_jobs) > 0:
             self.logger.error(failure_msg)
         if data["fail_job_on_task_failure"]:

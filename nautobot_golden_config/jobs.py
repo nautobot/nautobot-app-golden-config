@@ -317,7 +317,7 @@ class AllGoldenConfig(GoldenConfigJobMixin):
         failure_msg = f"`E3030:` Failure during {failed_jobs} Job(s)."
         if len(failed_jobs) > 0:
             self.logger.error(failure_msg)
-        if data["fail_job_on_task_failure"]:
+        if (len(failed_jobs) > 0 or error_msg) and data["fail_job_on_task_failure"]:
             if not error_msg:
                 error_msg = failure_msg
             # Raise error only if the job kwarg (checkbox) is selected to do so on the job execution form.
@@ -393,7 +393,7 @@ class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
         failure_msg = f"`E3030:` Failure during {failed_jobs} Job(s)."
         if len(failed_jobs) > 0:
             self.logger.error(failure_msg)
-        if data["fail_job_on_task_failure"]:
+        if (len(failed_jobs) > 0 or error_msg) and data["fail_job_on_task_failure"]:
             if not error_msg:
                 error_msg = failure_msg
             # Raise error only if the job kwarg (checkbox) is selected to do so on the job execution form.

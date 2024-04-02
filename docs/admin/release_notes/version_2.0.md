@@ -21,8 +21,6 @@
 ### Housekeeping
 
 - [#741](https://github.com/nautobot/nautobot-app-golden-config/issues/741) - Re-baked from the latest template.
-
-
 ## v2.0.3 2024-03
 
 ### Added

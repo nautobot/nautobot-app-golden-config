@@ -1,1 +1,0 @@
-Fixes repo push and commit not executing if a exception was raised on any task inside a job.

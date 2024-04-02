@@ -12,6 +12,17 @@
     Please see [migrating guide](../migrating_to_v2.md) for details on migration.
 
 
+## v2.0.4 2024-04
+
+### Fixed
+
+- [#749](https://github.com/nautobot/nautobot-app-golden-config/issues/749) - Corrected issue where consecutive Golden Config Jobs in All Golden Configs Job wouldn't execute if prior Job had an Exception raised.
+
+### Housekeeping
+
+- [#741](https://github.com/nautobot/nautobot-app-golden-config/issues/741) - Re-baked from the latest template.
+
+
 ## v2.0.3 2024-03
 
 ### Added

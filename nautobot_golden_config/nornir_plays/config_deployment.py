@@ -74,13 +74,21 @@ def run_deployment(task: Task, logger: logging.Logger, config_plan_qs, deploy_jo
     return Result(host=task.host, result=task_result)
 
 
-def config_deployment(job_result, log_level, data):
-    """Nornir play to deploy configurations."""
+def config_deployment(job):
+    """
+    Nornir play to deploy configurations.
+
+    Args:
+        job (Job): The Nautobot Job instance being run.
+
+    Returns:
+        None: Deployment results are written to database.
+    """
     now = make_aware(datetime.now())
-    logger = NornirLogger(job_result, log_level)
+    logger = NornirLogger(job.job_result, job.logger.getEffectiveLevel())
 
     logger.debug("Starting config deployment")
-    config_plan_qs = data["config_plan"]
+    config_plan_qs = job.data["config_plan"]
     if config_plan_qs.filter(status__name=DEFAULT_DEPLOY_STATUS).exists():
         error_msg = "`E3025:` Cannot deploy configuration(s). One or more config plans are not approved."
         logger.error(error_msg)
@@ -112,7 +120,7 @@ def config_deployment(job_result, log_level, data):
                 name="DEPLOY CONFIG",
                 logger=logger,
                 config_plan_qs=config_plan_qs,
-                deploy_job_result=job_result,
+                deploy_job_result=job.job_result,
             )
     except Exception as error:
         error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"

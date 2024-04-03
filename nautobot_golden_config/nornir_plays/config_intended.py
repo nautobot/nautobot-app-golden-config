@@ -1,4 +1,5 @@
 """Nornir job for generating the intended config."""
+
 # pylint: disable=relative-beyond-top-level
 import logging
 import os
@@ -12,6 +13,7 @@ from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
+from nautobot_golden_config.exceptions import IntendedGenerationFailure
 from nautobot_golden_config.models import GoldenConfig
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
@@ -90,48 +92,59 @@ def run_template(  # pylint: disable=too-many-arguments,too-many-locals
     return Result(host=task.host, result=generated_config)
 
 
-def config_intended(job_result, log_level, job_class_instance, qs, device_to_settings_map):
+def config_intended(job):
     """
     Nornir play to generate configurations.
 
     Args:
-        logger (NornirLogger): The Nautobot Job instance being run.
-        job_class_instance (Job): The Nautobot Job instance being run.
-        data (dict): Form data from Nautobot Job.
+        job (Job): The Nautobot Job instance being run.
 
     Returns:
         None: Intended configuration files are written to filesystem.
+
+    Raises:
+        IntendedGenerationFailure: If failure found in Nornir tasks then Exception will be raised.
     """
     now = make_aware(datetime.now())
-    logger = NornirLogger(job_result, log_level)
+    logger = NornirLogger(job.job_result, job.logger.getEffectiveLevel())
 
-    for settings in set(device_to_settings_map.values()):
+    for settings in set(job.device_to_settings_map.values()):
         verify_settings(logger, settings, ["jinja_path_template", "intended_path_template", "sot_agg_query"])
 
     # Retrieve filters from the Django jinja template engine
     jinja_env = get_django_env()
-    with InitNornir(
-        runner=NORNIR_SETTINGS.get("runner"),
-        logging={"enabled": False},
-        inventory={
-            "plugin": "nautobot-inventory",
-            "options": {
-                "credentials_class": NORNIR_SETTINGS.get("credentials"),
-                "params": NORNIR_SETTINGS.get("inventory_params"),
-                "queryset": qs,
-                "defaults": {"now": now},
+    try:
+        with InitNornir(
+            runner=NORNIR_SETTINGS.get("runner"),
+            logging={"enabled": False},
+            inventory={
+                "plugin": "nautobot-inventory",
+                "options": {
+                    "credentials_class": NORNIR_SETTINGS.get("credentials"),
+                    "params": NORNIR_SETTINGS.get("inventory_params"),
+                    "queryset": job.qs,
+                    "defaults": {"now": now},
+                },
             },
-        },
-    ) as nornir_obj:
-        nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
+        ) as nornir_obj:
+            nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
 
-        logger.debug("Run nornir render config tasks.")
-        # Run the Nornir Tasks
-        nr_with_processors.run(
-            task=run_template,
-            name="RENDER CONFIG",
-            logger=logger,
-            device_to_settings_map=device_to_settings_map,
-            job_class_instance=job_class_instance,
-            jinja_env=jinja_env,
+            logger.debug("Run nornir render config tasks.")
+            # Run the Nornir Tasks
+            results = nr_with_processors.run(
+                task=run_template,
+                name="RENDER CONFIG",
+                logger=logger,
+                device_to_settings_map=job.device_to_settings_map,
+                job_class_instance=job,
+                jinja_env=jinja_env,
+            )
+    except NornirNautobotException as err:
+        logger.error(
+            f"`E3029:` NornirNautobotException raised during intended tasks. Original exception message: ```{err}```"
         )
+        # re-raise Exception if it's raised from nornir-nautobot or nautobot-app-nornir
+        if str(err).startswith("`E2") or str(err).startswith("`E1"):
+            raise NornirNautobotException(err) from err
+    if results.failed:
+        raise IntendedGenerationFailure()

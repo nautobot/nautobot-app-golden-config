@@ -1,6 +1,6 @@
 """Processor used by Golden Config to catch unknown errors."""
 from nornir.core.inventory import Host
-from nornir.core.task import AggregatedResult, MultiResult, Result, Task
+from nornir.core.task import MultiResult, Result, Task
 from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.plugins.processors import BaseLoggingProcessor
 
@@ -11,12 +11,6 @@ class ProcessGoldenConfig(BaseLoggingProcessor):
     def __init__(self, logger):
         """Set logging facility."""
         self.logger = logger
-
-    def task_completed(self, task: Task, result: AggregatedResult) -> None:
-        """Task outside of thread to determine what to do."""
-        if result.failed:
-            self.logger.error(f"{task.name} failed: {result}")
-            raise ValueError(result)
 
     def _find_result_exceptions(self, result):
         """Walk the results and return only valid Exceptions.
@@ -56,9 +50,3 @@ class ProcessGoldenConfig(BaseLoggingProcessor):
             exception_string = ", ".join([str(e[0]) for e in exceptions])
             # Log only exception summary to users
             self.logger.error(f"{task.name} failed: {exception_string}", extra={"object": task.host.data["obj"]})
-            for exception in exceptions:
-                # Log full exception and traceback to debug
-                self.logger.warning(
-                    f"""{task.host}, {task.name} failed: {exception[0]} {exception[1]}""",
-                    extra={"object": task.host.data["obj"]},
-                )

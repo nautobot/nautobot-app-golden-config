@@ -17,7 +17,7 @@ from nautobot.extras.models.statuses import StatusField
 from nautobot.extras.utils import extras_features
 from nautobot.utilities.utils import serialize_object, serialize_object_v2
 from netutils.config.compliance import feature_compliance
-from netutils.lib_mapper import HIERCONFIG_LIB_MAPPER_REVERSE
+from netutils.lib_mapper import HIERCONFIG_LIB_MAPPER_REVERSE, NETUTILSPARSER_LIB_MAPPER_REVERSE
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
@@ -67,7 +67,9 @@ def _get_cli_compliance(obj):
         "name": obj.rule,
     }
     feature.update({"section": obj.rule.match_config.splitlines()})
-    value = feature_compliance(feature, obj.actual, obj.intended, get_platform(obj.device.platform.slug))
+    _platform_slug = get_platform(obj.device.platform.slug)
+    netutils_os_parser = NETUTILSPARSER_LIB_MAPPER_REVERSE.get(_platform_slug, _platform_slug)
+    value = feature_compliance(feature, obj.actual, obj.intended, netutils_os_parser)
     compliance = value["compliant"]
     if compliance:
         compliance_int = 1

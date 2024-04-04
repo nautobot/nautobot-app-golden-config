@@ -67,7 +67,7 @@ def _get_cli_compliance(obj):
         "name": obj.rule,
     }
     feature.update({"section": obj.rule.match_config.splitlines()})
-    _platform_slug = get_platform(obj.platform.slug)
+    _platform_slug = get_platform(obj.device.platform.slug)
     netutils_os_parser = NETUTILSPARSER_LIB_MAPPER_REVERSE.get(_platform_slug, _platform_slug)
     value = feature_compliance(feature, obj.actual, obj.intended, netutils_os_parser)
     compliance = value["compliant"]

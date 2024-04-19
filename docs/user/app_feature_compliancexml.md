@@ -49,6 +49,6 @@ Here's a sample 'missing' output:
 /config/system/aaa/radius/server[2]/secret[1], bazpass
 ```
 
-This diff output represents the 'missing' portion when comparing the actual configuration to the intended configuration. Each line represents a node in the XML configuration that is present in the intended configuration but missing in the actual configuration.
+This diff output represents the 'missing' portion when comparing the actual configuration to the intended configuration. Each line represents a node in the XML configuration that is presented in the intended configuration but is missing in the actual configuration.
 
 For example, the line `/config/system/aaa/user[1]/password[1], foo` indicates that the password node of the first user node under `/config/system/aaa` is expected to have a value of `foo` in the actual configuration. If this line appears in the diff output, it means this value is missing in the actual configuration.

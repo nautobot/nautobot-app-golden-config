@@ -155,6 +155,11 @@ nav:
           - E3024: "admin/troubleshooting/E3024.md"
           - E3025: "admin/troubleshooting/E3025.md"
           - E3026: "admin/troubleshooting/E3026.md"
+          - E3027: "admin/troubleshooting/E3027.md"
+          - E3028: "admin/troubleshooting/E3028.md"
+          - E3029: "admin/troubleshooting/E3029.md"
+          - E3030: "admin/troubleshooting/E3030.md"
+          - E3031: "admin/troubleshooting/E3031.md"
       - Migrating To v2: "admin/migrating_to_v2.md"
       - Release Notes:
           - "admin/release_notes/index.md"

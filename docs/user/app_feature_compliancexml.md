@@ -1,6 +1,6 @@
 # Navigating Compliance Using XML
 
-XML based compliance provides a mechanism to understand device configurations stored in XML format and compare between them.
+XML based compliance provides a mechanism to compliance check device configurations stored in XML format.
 
 ## Defining Compliance Rules
 

@@ -82,10 +82,10 @@ def get_config_element(rule, config, obj, logger):
         if rule["obj"].match_config:
             try:
                 config_element = get_xml_subtree_with_full_path(config_xml, rule["obj"].match_config)
-            except etree.XPathError:
+            except etree.XPathError as err:
                 error_msg = f"`E3031:` Invalid XPath expression - `{rule['obj'].match_config}`"
                 logger.error(error_msg, extra={"object": obj})
-                raise NornirNautobotException(error_msg)
+                raise NornirNautobotException(error_msg) from err
         else:
             config_element = etree.tostring(config_xml, encoding="unicode", pretty_print=True)
 

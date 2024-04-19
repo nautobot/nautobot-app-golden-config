@@ -24,6 +24,8 @@ Here is a quick reference for basic XPath syntax:
 
 For more detailed information on XPath syntax, you can refer to the [Supported XPath syntax](https://docs.python.org/3/library/xml.etree.elementtree.html#supported-xpath-syntax).
 
+This NTC [blog](https://blog.networktocode.com/post/parsing-xml-with-python-and-ansible/) also covers XPath in more details.
+
 Here are some examples of XPath queries that can be used in the `config to match` field:
 
 ![Example XML Compliance Rules](../images/compliance-rule-xml.png)

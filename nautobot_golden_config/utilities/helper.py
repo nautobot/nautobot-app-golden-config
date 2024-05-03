@@ -255,7 +255,26 @@ def dispatch_params(method, platform, logger):
 
 
 def get_xml_subtree_with_full_path(config_xml, match_config):
-    """Helper function to get a subtree of an XML config with the full path."""
+    """
+    This function extracts a subtree from an XML configuration based on a provided XPath expression.
+
+    Parameters:
+    config_xml (etree.Element): The root of the XML configuration from which to extract the subtree.
+    match_config (str): An XPath expression that specifies the elements to include in the subtree.
+
+    The function works as follows:
+    1. It uses the XPath expression to find all matching elements in the XML configuration.
+    2. It creates a new root element with the same tag as the original root.
+    3. For each matching element, it:
+        a. Starts at the new root and traverses up the tree of the original element (using iterancestors()).
+        b. Skips the original root element.
+        c. For each ancestor, it creates a copy (excluding children), appends it to the current element in the new tree, and then moves to the copied ancestor.
+        d. Finally, it appends a copy of the original element to the deepest copied ancestor.
+    4. It returns the new tree as a string, with pretty-print formatting.
+
+    Returns:
+    str: The XML subtree as a string, including all elements specified by the XPath expression and their full paths from the root.
+    """
     config_elements = config_xml.xpath(match_config)
     new_root = etree.Element(config_xml.tag)
     for element in config_elements:

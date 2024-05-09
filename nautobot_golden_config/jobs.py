@@ -45,20 +45,6 @@ InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 name = "Golden Configuration"  # pylint: disable=invalid-name
 
 
-def get_repo_types_for_job(job_name):
-    """Logic to determine which repo_types are needed based on job + plugin settings."""
-    repo_types = []
-    if constant.ENABLE_BACKUP and job_name == "nautobot_golden_config.jobs.BackupJob":
-        repo_types.extend(["backup_repository"])
-    if constant.ENABLE_INTENDED and job_name == "nautobot_golden_config.jobs.IntendedJob":
-        repo_types.extend(["jinja_repository", "intended_repository"])
-    if constant.ENABLE_COMPLIANCE and job_name == "nautobot_golden_config.jobs.ComplianceJob":
-        repo_types.extend(["intended_repository", "backup_repository"])
-    if "All" in job_name:
-        repo_types.extend(["backup_repository", "jinja_repository", "intended_repository"])
-    return repo_types
-
-
 def get_refreshed_repos(job_obj, repo_types, data=None):
     """Small wrapper to pull latest branch, and return a GitRepo app specific object."""
     dynamic_groups = DynamicGroup.objects.exclude(golden_config_setting__isnull=True)
@@ -115,7 +101,7 @@ def gc_repo_prep(job, data):
     job.logger.debug(f"In scope device count for this job: {job.qs.count()}", extra={"grouping": "Get Job Filter"})
     job.logger.debug("Mapping device(s) to GC Settings.", extra={"grouping": "Device to Settings Map"})
     job.device_to_settings_map = get_device_to_settings_map(queryset=job.qs)
-    gitrepo_types = list(set(get_repo_types_for_job(job.name)))
+    gitrepo_types = job.repo_types
     job.logger.debug(
         f"Repository types to sync: {', '.join(sorted(gitrepo_types))}",
         extra={"grouping": "GC Repo Syncs"},
@@ -208,6 +194,8 @@ class GoldenConfigJobMixin(Job):  # pylint: disable=abstract-method
 class ComplianceJob(GoldenConfigJobMixin, FormEntry):
     """Job to to run the compliance engine."""
 
+    repo_types = ["intended_repository", "backup_repository"]
+
     class Meta:
         """Meta object boilerplate for compliance."""
 
@@ -227,6 +215,8 @@ class ComplianceJob(GoldenConfigJobMixin, FormEntry):
 
 class IntendedJob(GoldenConfigJobMixin, FormEntry):
     """Job to to run generation of intended configurations."""
+
+    repo_types = ["jinja_repository", "intended_repository"]
 
     class Meta:
         """Meta object boilerplate for intended."""
@@ -248,6 +238,8 @@ class IntendedJob(GoldenConfigJobMixin, FormEntry):
 class BackupJob(GoldenConfigJobMixin, FormEntry):
     """Job to to run the backup job."""
 
+    repo_types = ["backup_repository"]
+
     class Meta:
         """Meta object boilerplate for backup configurations."""
 
@@ -268,6 +260,7 @@ class BackupJob(GoldenConfigJobMixin, FormEntry):
 class AllGoldenConfig(GoldenConfigJobMixin):
     """Job to to run all three jobs against a single device."""
 
+    repo_types = ["backup_repository", "jinja_repository", "intended_repository"]
     device = ObjectVar(model=Device, required=True)
     debug = BooleanVar(description="Enable for more verbose debug logging")
 
@@ -319,6 +312,8 @@ class AllGoldenConfig(GoldenConfigJobMixin):
 
 class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
     """Job to to run all three jobs against multiple devices."""
+
+    repo_types = ["backup_repository", "jinja_repository", "intended_repository"]
 
     class Meta:
         """Meta object boilerplate for all jobs to run against multiple devices."""

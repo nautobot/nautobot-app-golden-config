@@ -79,7 +79,7 @@ class GCReposBackupTestCase(TransactionTestCase):
             module="nautobot_golden_config.jobs", name="BackupJob", device=Device.objects.filter(name=self.device.name)
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
-        self.assertEqual(log_entries.first().message, "Repository types to sync: ")
+        self.assertEqual(log_entries.first().message, "Repository types to sync: backup_repository")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
         self.assertEqual(log_entries.count(), 2)
@@ -97,7 +97,7 @@ class GCReposBackupTestCase(TransactionTestCase):
             module="nautobot_golden_config.jobs", name="BackupJob", device=Device.objects.all()
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
-        self.assertEqual(log_entries.first().message, "Repository types to sync: ")
+        self.assertEqual(log_entries.first().message, "Repository types to sync: backup_repository")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
         self.assertEqual(log_entries.count(), 2)
@@ -173,7 +173,7 @@ class GCReposIntendedTestCase(TransactionTestCase):
             device=Device.objects.filter(name=self.device.name),
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
-        self.assertEqual(log_entries.first().message, "Repository types to sync: ")
+        self.assertEqual(log_entries.first().message, "Repository types to sync: intended_repository, jinja_repository")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
         self.assertEqual(log_entries.count(), 2)
@@ -195,7 +195,7 @@ class GCReposIntendedTestCase(TransactionTestCase):
         self.assertEqual(log_entries.last().message, "In scope device count for this job: 2")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
-        self.assertEqual(log_entries.first().message, "Repository types to sync: ")
+        self.assertEqual(log_entries.first().message, "Repository types to sync: intended_repository, jinja_repository")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="run")
         self.assertEqual(log_entries.last().message, "Intended Generation is disabled in application settings.")
@@ -271,7 +271,9 @@ class GCReposComplianceTestCase(TransactionTestCase):
             device=Device.objects.filter(name=self.device.name),
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
-        self.assertEqual(log_entries.first().message, "Repository types to sync: ")
+        self.assertEqual(
+            log_entries.first().message, "Repository types to sync: backup_repository, intended_repository"
+        )
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
         self.assertEqual(log_entries.count(), 2)
@@ -293,7 +295,9 @@ class GCReposComplianceTestCase(TransactionTestCase):
         self.assertEqual(log_entries.last().message, "In scope device count for this job: 2")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
-        self.assertEqual(log_entries.first().message, "Repository types to sync: ")
+        self.assertEqual(
+            log_entries.first().message, "Repository types to sync: backup_repository, intended_repository"
+        )
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="run")
         self.assertEqual(log_entries.last().message, "Compliance is disabled in application settings.")

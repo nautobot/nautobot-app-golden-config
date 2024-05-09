@@ -1,0 +1,1 @@
+Fixes Repositories not syncing in single jobs due to a change in the Job class API #5692

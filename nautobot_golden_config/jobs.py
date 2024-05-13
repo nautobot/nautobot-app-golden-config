@@ -148,6 +148,10 @@ class IntendedJob(Job, FormEntry):
         self.log_debug("Building device settings mapping and running intended config nornir play.")
         config_intended(self, data)
 
+        # Ensure that a connection to the "job_logs" database is open
+        from django.db import connections
+        connections["job_logs"].connect()
+
         # Commit / Push each repo after job is completed.
         for intended_repo in intended_repos:
             self.log_debug(f"Push new intended configs to repo {intended_repo.url}.")

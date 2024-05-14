@@ -111,7 +111,13 @@
             <tr>
                 <td style="width:250px">Configuration</td>
                 <td class="config_hover">
-                    <span id="{{ item.rule|slugify }}_actual"><pre>{{ item.actual|placeholder|condition_render_json }}</pre></span>
+                    {% if item.rule.config_type == "xml" %}
+                        <span id="{{ item.rule|slugify }}_actual"><pre><code class="language-xml">{{ item.actual|placeholder }}</code></pre></span>
+                    {% elif item.rule.config_type == "json" %}
+                        <span id="{{ item.rule|slugify }}_actual"><pre><code class="language-json">{{ item.actual|placeholder|condition_render_json }}</code></pre></span>
+                    {% else %}
+                        <span id="{{ item.rule|slugify }}_actual"><pre>{{ item.actual|placeholder }}</pre></span>
+                    {% endif %}
                     <span class="config_hover_button">
                         <button class="btn btn-inline btn-default hover_copy_button" data-clipboard-target="#{{ item.rule|slugify }}_actual">
                             <span class="mdi mdi-content-copy"></span>
@@ -123,7 +129,13 @@
             <tr>
                 <td style="width:250px">Intended Configuration</td>
                 <td class="config_hover">
-                    <span id="{{ item.rule|slugify }}_intended"><pre>{{ item.intended|placeholder|condition_render_json }}</pre></span>
+                    {% if item.rule.config_type == "xml" %}
+                        <span id="{{ item.rule|slugify }}_actual"><pre><code class="language-xml">{{ item.actual|placeholder }}</code></pre></span>
+                    {% elif item.rule.config_type == "json" %}
+                        <span id="{{ item.rule|slugify }}_actual"><pre><code class="language-json">{{ item.actual|placeholder|condition_render_json }}</code></pre></span>
+                    {% else %}
+                        <span id="{{ item.rule|slugify }}_actual"><pre>{{ item.actual|placeholder }}</pre></span>
+                    {% endif %}
                     <span class="config_hover_button">
                         <button class="btn btn-inline btn-default hover_copy_button" data-clipboard-target="#{{ item.rule|slugify }}_intended">
                             <span class="mdi mdi-content-copy"></span>
@@ -134,7 +146,13 @@
             <tr>
                 <td style="width:250px">Actual Configuration</td>
                 <td class="config_hover">
-                    <span id="{{ item.rule|slugify }}_actual"><pre>{{ item.actual|placeholder|condition_render_json }}</pre></span>
+                    {% if item.rule.config_type == "xml" %}
+                        <span id="{{ item.rule|slugify }}_actual"><pre><code class="language-xml">{{ item.actual|placeholder }}</code></pre></span>
+                    {% elif item.rule.config_type == "json" %}
+                        <span id="{{ item.rule|slugify }}_actual"><pre><code class="language-json">{{ item.actual|placeholder|condition_render_json }}</code></pre></span>
+                    {% else %}
+                        <span id="{{ item.rule|slugify }}_actual"><pre>{{ item.actual|placeholder }}</pre></span>
+                    {% endif %}
                     <span class="config_hover_button">
                         <button class="btn btn-inline btn-default hover_copy_button" data-clipboard-target="#{{ item.rule|slugify }}_actual">
                             <span class="mdi mdi-content-copy"></span>

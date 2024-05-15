@@ -134,7 +134,7 @@
                     {% elif item.rule.config_type == "json" %}
                         <span id="{{ item.rule|slugify }}_intended"><pre><code class="language-json">{{ item.intended|placeholder|condition_render_json }}</code></pre></span>
                     {% else %}
-                        <span id="{{ item.rule|slugify }}_actual"><pre>{{ item.actual|placeholder }}</pre></span>
+                        <span id="{{ item.rule|slugify }}_intended"><pre>{{ item.intended|placeholder }}</pre></span>
                     {% endif %}
                     <span class="config_hover_button">
                         <button class="btn btn-inline btn-default hover_copy_button" data-clipboard-target="#{{ item.rule|slugify }}_intended">

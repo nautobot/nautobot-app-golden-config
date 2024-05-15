@@ -130,9 +130,9 @@
                 <td style="width:250px">Intended Configuration</td>
                 <td class="config_hover">
                     {% if item.rule.config_type == "xml" %}
-                        <span id="{{ item.rule|slugify }}_actual"><pre><code class="language-xml">{{ item.actual|placeholder }}</code></pre></span>
+                        <span id="{{ item.rule|slugify }}_intended"><pre><code class="language-xml">{{ item.intended|placeholder }}</code></pre></span>
                     {% elif item.rule.config_type == "json" %}
-                        <span id="{{ item.rule|slugify }}_actual"><pre><code class="language-json">{{ item.actual|placeholder|condition_render_json }}</code></pre></span>
+                        <span id="{{ item.rule|slugify }}_intended"><pre><code class="language-json">{{ item.intended|placeholder|condition_render_json }}</code></pre></span>
                     {% else %}
                         <span id="{{ item.rule|slugify }}_actual"><pre>{{ item.actual|placeholder }}</pre></span>
                     {% endif %}

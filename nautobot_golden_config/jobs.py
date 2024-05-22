@@ -202,7 +202,8 @@ class GoldenConfigJobMixin(Job):  # pylint: disable=abstract-method
     # TODO: verify if the "commit_msg_suffix" should be kept here or should be moved to FormEntry
     commit_msg_suffix = StringVar(
         label="Commit message suffix",
-        description="Add this suffic to the Git commit message.",
+        required=False,
+        description="Add this suffix to the Git commit message.",
         min_length=2,
         max_length=32,
         regex="^[A-Za-z0-9][A-Za-z0-9\-\_\ ]*[A-Za-z0-9]$"

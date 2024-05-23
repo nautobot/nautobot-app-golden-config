@@ -1,0 +1,1 @@
+Fix issue with Git Repo not syncing by changing to explicitly use class_path property.

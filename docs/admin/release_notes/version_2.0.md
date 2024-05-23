@@ -11,6 +11,11 @@
 !!! note
     Please see [migrating guide](../migrating_to_v2.md) for details on migration.
 
+## v2.0.5 2024-05
+
+### Fixed
+
+- [#759](https://github.com/nautobot/nautobot-app-golden-config/issues/749) - Fix issue with Git Repo not syncing by changing to explicitly use class_path property.
 
 ## v2.0.4 2024-04
 

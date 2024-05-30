@@ -18,8 +18,6 @@ services:
       - "development_mysql.env"
   db:
     image: "mysql:8"
-    command:
-      - "--max_connections=1000"
     env_file:
       - "development.env"
       - "creds.env"

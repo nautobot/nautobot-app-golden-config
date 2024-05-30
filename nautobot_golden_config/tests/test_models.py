@@ -22,6 +22,7 @@ from .conftest import (
     create_config_compliance,
     create_device,
     create_feature_rule_json,
+    create_feature_rule_xml,
     create_job_result,
     create_saved_queries,
 )
@@ -34,6 +35,7 @@ class ConfigComplianceModelTestCase(TestCase):
         """Set up base objects."""
         self.device = create_device()
         self.compliance_rule_json = create_feature_rule_json(self.device)
+        self.compliance_rule_xml = create_feature_rule_xml(self.device)
 
     def test_create_config_compliance_success_json(self):
         """Successful."""
@@ -48,6 +50,20 @@ class ConfigComplianceModelTestCase(TestCase):
         self.assertEqual(cc_obj.intended, {"foo": {"bar-2": "baz"}})
         self.assertEqual(cc_obj.missing, ["root['foo']['bar-2']"])
         self.assertEqual(cc_obj.extra, ["root['foo']['bar-1']"])
+
+    def test_create_config_compliance_success_xml(self):
+        """Successful."""
+        actual = "<root><foo><bar-1>notbaz</bar-1></foo></root>"
+        intended = "<root><foo><bar-1>baz</bar-1></foo></root>"
+        cc_obj = create_config_compliance(
+            self.device, actual=actual, intended=intended, compliance_rule=self.compliance_rule_xml
+        )
+
+        self.assertFalse(cc_obj.compliance)
+        self.assertEqual(cc_obj.actual, "<root><foo><bar-1>notbaz</bar-1></foo></root>")
+        self.assertEqual(cc_obj.intended, "<root><foo><bar-1>baz</bar-1></foo></root>")
+        self.assertEqual(cc_obj.missing, "/root/foo/bar-1[1], baz")
+        self.assertEqual(cc_obj.extra, "/root/foo/bar-1[1], notbaz")
 
     def test_create_config_compliance_unique_failure(self):
         """Raises error when attempting to create duplicate."""

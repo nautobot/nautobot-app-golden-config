@@ -147,7 +147,6 @@ def gc_repo_push(job, current_repos, commit_msg_suffix):
                 if commit_msg_suffix:
                     commit_msg += f" {commit_msg_suffix}"
                 repo["repo_obj"].commit_with_added(commit_msg)
-                job.logger.warning(repo["repo_obj"].__dict__)
                 repo["repo_obj"].push()
 
 

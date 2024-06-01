@@ -32,8 +32,6 @@ class GitRepo(_GitRepo):  # pylint: disable=too-many-instance-attributes
         self.repo.git.add(self.repo.untracked_files)
         self.repo.git.add(update=True)
         self.repo.index.commit(commit_description)
-        LOGGER.debug(self.repo.__dict__)
-        LOGGER.debug(self.repo.git.__dict__)
         LOGGER.debug("Commit completed")
 
     def push(self):

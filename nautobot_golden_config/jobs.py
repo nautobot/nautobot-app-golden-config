@@ -206,7 +206,7 @@ class GoldenConfigJobMixin(Job):  # pylint: disable=abstract-method
     commit_message = StringVar(
         label="Commit message",
         required=False,
-        description=f"If empty, defaults to `{job.Meta.name.upper()} JOB {now}`.",
+        description=r"If empty, defaults to `{job.Meta.name.upper()} JOB {now}`.",
         min_length=2,
         max_length=72
     )

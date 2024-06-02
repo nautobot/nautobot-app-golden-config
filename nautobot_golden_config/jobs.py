@@ -124,7 +124,7 @@ def gc_repo_prep(job, data):
     return current_repos
 
 
-def gc_repo_push(job, current_repos, commit_msg_suffix):
+def gc_repo_push(job, current_repos, commit_message):
     """Push any work from worker to git repos in Job.
 
     Args:
@@ -143,10 +143,9 @@ def gc_repo_push(job, current_repos, commit_msg_suffix):
                     f"Pushing {job.Meta.name} results to repo {repo['repo_obj'].base_url}.",
                     extra={"grouping": "GC Repo Commit and Push"},
                 )
-                commit_msg = f"{job.Meta.name.upper()} JOB {now}"
-                if commit_msg_suffix:
-                    commit_msg += f" {commit_msg_suffix}"
-                repo["repo_obj"].commit_with_added(commit_msg)
+                if not commit_message:
+                    commit_message = f"{job.Meta.name.upper()} JOB {now}"
+                repo["repo_obj"].commit_with_added(commit_message)
                 repo["repo_obj"].push()
 
 
@@ -165,7 +164,7 @@ def gc_repos(func):
             if kwargs.get("fail_job_on_task_failure"):
                 raise NornirNautobotException(error_msg) from error
         finally:
-            gc_repo_push(job=self, current_repos=current_repos, commit_msg_suffix=kwargs.get("commit_msg_suffix"))
+            gc_repo_push(job=self, current_repos=current_repos, commit_message=kwargs.get("commit_message"))
 
     return gc_repo_wrapper
 
@@ -199,14 +198,13 @@ class FormEntry:  # pylint disable=too-few-public-method
 class GoldenConfigJobMixin(Job):  # pylint: disable=abstract-method
     """Reused mixin to be able to set defaults for instance attributes in all GC jobs."""
 
-    # TODO: verify if the "commit_msg_suffix" should be kept here or should be moved to FormEntry
-    commit_msg_suffix = StringVar(
-        label="Commit message suffix",
+    # TODO: verify if the "commit_message" should be kept here or should be moved to FormEntry
+    commit_message = StringVar(
+        label="Commit message",
         required=False,
-        description="Add this suffix to the Git commit message.",
+        description=f"If empty, defaults to `{job.Meta.name.upper()} JOB {now}`.",
         min_length=2,
-        max_length=32,
-        regex="^[A-Za-z0-9][A-Za-z0-9\-\_\ ]*[A-Za-z0-9]$"
+        max_length=72
     )
     fail_job_on_task_failure = BooleanVar(description="If any tasks for any device fails, fail the entire job result.")
 

@@ -147,6 +147,10 @@ def gc_repo_push(job, current_repos, commit_message):
                     commit_message = f"{job.Meta.name.upper()} JOB {now}"
                 repo["repo_obj"].commit_with_added(commit_message)
                 repo["repo_obj"].push()
+                job.logger.debug(
+                    f"HEAD {repo['repo_obj'].head}",
+                    extra={"grouping": "GC Repo Commit and Push", "object": repo["repo_obj"].nautobot_repo_obj},
+                )
 
 
 def gc_repos(func):

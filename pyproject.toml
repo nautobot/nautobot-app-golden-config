@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nautobot-golden-config"
-version = "2.0.5"
+version = "2.1.0"
 description = "An app for configuration on nautobot"
 authors = ["Network to Code, LLC <opensource@networktocode.com>"]
 license = "Apache-2.0"
@@ -41,6 +41,7 @@ toml = "^0.10.2"
 netutils = "^1.5.0"
 hier-config = "^2.2.2"
 nautobot-capacity-metrics = "^3.0.1"
+xmldiff = "^2.6.3"
 
 [tool.poetry.group.dev.dependencies]
 bandit = "*"
@@ -98,6 +99,7 @@ exclude = '''
 
 [tool.pylint.master]
 # Include the pylint_django plugin to avoid spurious warnings about Django patterns
+extension-pkg-allow-list = ["lxml"]
 load-plugins="pylint_django, pylint_nautobot"
 ignore-patterns=["jinja_filters.py", ".venv"]
 ignore-paths = '^.*/migrations/.*$'

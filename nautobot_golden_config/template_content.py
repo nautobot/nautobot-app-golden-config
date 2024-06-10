@@ -12,18 +12,19 @@ class ConfigComplianceDeviceCheck(PluginTemplateExtension):  # pylint: disable=a
 
     model = "dcim.device"
 
-    def get_device(self):
-        """Get device object."""
+    @property
+    def device(self):
+        """Device presented in detail view."""
         return self.context["object"]
 
     def right_page(self):
         """Content to add to the configuration compliance."""
-        comp_obj = ConfigCompliance.objects.filter(device=self.get_device()).values("rule__feature__name", "compliance")
+        comp_obj = ConfigCompliance.objects.filter(device=self.device).values("rule__feature__name", "compliance")
         if not comp_obj:
             return ""
         extra_context = {
             "compliance": comp_obj,
-            "device": self.get_device(),
+            "device": self.device,
             "template_type": "devicetab",
         }
         return self.render(
@@ -34,17 +35,20 @@ class ConfigComplianceDeviceCheck(PluginTemplateExtension):  # pylint: disable=a
     def detail_tabs(self):
         """Add a Configuration Compliance tab to the Device detail view if the Configuration Compliance associated to it."""
         try:
-            return [
-                {
-                    "title": "Configuration Compliance",
-                    "url": reverse(
-                        "plugins:nautobot_golden_config:configcompliance_devicetab",
-                        kwargs={"pk": self.get_device().pk},
-                    ),
-                }
-            ]
+            if ConfigCompliance.objects.filter(device=self.device):
+                return [
+                    {
+                        "title": "Configuration Compliance",
+                        "url": reverse(
+                            "plugins:nautobot_golden_config:configcompliance_devicetab",
+                            kwargs={"pk": self.device.pk},
+                        ),
+                    }
+                ]
         except ObjectDoesNotExist:
             return []
+
+        return []
 
 
 class ConfigComplianceLocationCheck(PluginTemplateExtension):  # pylint: disable=abstract-method

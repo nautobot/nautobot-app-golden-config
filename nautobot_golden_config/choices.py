@@ -40,3 +40,19 @@ class ConfigPlanTypeChoice(ChoiceSet):
         (TYPE_REMEDIATION, "Remediation"),
         (TYPE_MANUAL, "Manual"),
     )
+
+
+class DynamicRemediationExpressionChoice(ChoiceSet):
+    """Choiceset used for Dynamic Remediation Expression Choices."""
+
+    STARTS_WITH = "startswith"
+    ENDS_WITH = "endswith"
+    EQUALS = "equals"
+    CONTAINS = "contains"
+
+    CHOICES = (
+        (STARTS_WITH, "startswith"),
+        (ENDS_WITH, "endswith"),
+        (EQUALS, "equals"),
+        (CONTAINS, "contains"),
+    )

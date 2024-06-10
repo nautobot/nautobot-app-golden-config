@@ -2,6 +2,8 @@
 
 import json
 import logging
+import pkgutil
+import sys
 
 from deepdiff import DeepDiff
 from django.core.exceptions import ValidationError
@@ -16,7 +18,12 @@ from nautobot.extras.models.statuses import StatusField
 from nautobot.extras.utils import extras_features
 from netutils.config.compliance import feature_compliance
 
-from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
+from nautobot_golden_config.choices import (
+    ComplianceRuleConfigTypeChoice,
+    ConfigPlanTypeChoice,
+    RemediationTypeChoice,
+    DynamicRemediationExpressionChoice,
+)
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
 
 LOGGER = logging.getLogger(__name__)
@@ -161,7 +168,24 @@ def _get_hierconfig_remediation(obj):
 
     host.load_generated_config(obj.intended)
     host.load_running_config(obj.actual)
-    host.remediation_config()
+    rem = host.remediation_config()
+
+    dynamics = DynamicRemediationMapping.objects.filter(platform=obj.device.platform, enabled=True)
+
+    for dynamic in dynamics:
+        function_info = dynamic.remediation_function
+        lineage = rem.get_child(dynamic.expression_choice, dynamic.config_string)
+        for importer, discovered_module_name, _ in pkgutil.iter_modules(
+            [f"{function_info.dynamic_remediation_repository.filesystem_path}/hier_config_dynamic_remediations"]
+        ):
+            if discovered_module_name != function_info.file_name.replace(".py", ""):
+                continue
+            if discovered_module_name in sys.modules:
+                del sys.modules[discovered_module_name]
+            print(discovered_module_name)
+            module = importer.find_module(discovered_module_name).load_module(discovered_module_name)
+            module.remediation(lineage)
+
     remediation_config = host.remediation_config_filtered_text(include_tags={}, exclude_tags={})
 
     return remediation_config
@@ -773,3 +797,83 @@ class ConfigPlan(PrimaryModel):  # pylint: disable=too-many-ancestors
     def __str__(self):
         """Return a simple string if model is called."""
         return f"{self.device.name}-{self.plan_type}-{self.created}"
+
+
+@extras_features(
+    "custom_fields",
+    "custom_links",
+    "custom_validators",
+    "export_templates",
+    "graphql",
+    "relationships",
+    "webhooks",
+    "statuses",
+)
+class DynamicRemediationFunction(PrimaryModel):  # pylint: disable=too-many-ancestors
+    """Function modeling for DynamicRemediation."""
+
+    dynamic_remediation_repository = models.ForeignKey(
+        to="extras.GitRepository",
+        on_delete=models.PROTECT,
+        related_name="dynamic_remediation_repository",
+        limit_choices_to={"provided_contents__contains": "nautobot_golden_config.hierconfigdynamicremedation"},
+    )
+
+    file_name = models.CharField(
+        max_length=200,
+        verbose_name="File Name",
+    )
+
+    def __str__(self):
+        """String representation of DynamicRemediationFunction."""
+        return f"Repo {self.dynamic_remediation_repository.name} -> {self.file_name}"
+
+    class Meta:
+        """Meta class for DynamicRemediationFunction."""
+
+        unique_together = ["file_name", "dynamic_remediation_repository"]
+
+
+@extras_features(
+    "custom_fields",
+    "custom_links",
+    "custom_validators",
+    "export_templates",
+    "graphql",
+    "relationships",
+    "webhooks",
+    "statuses",
+)
+class DynamicRemediationMapping(PrimaryModel):  # pylint: disable=too-many-ancestors
+    """Mapping Functions to expressions for Dynamic Remediation."""
+
+    expression_choice = models.CharField(
+        max_length=50,
+        choices=DynamicRemediationExpressionChoice,
+        verbose_name="Expression Choice",
+        help_text="Hier Config Expression to determine relevant children",
+    )
+    config_string = models.CharField(
+        max_length=256,
+        verbose_name="Config String",
+        help_text="String used in Hier Config Expression to determine relevant children",
+    )
+    remediation_function = models.ForeignKey(
+        to=DynamicRemediationFunction,
+        on_delete=models.PROTECT,
+    )
+    platform = models.ForeignKey(
+        to="dcim.Platform",
+        on_delete=models.CASCADE,
+        related_name="dynamic_remediation_mapping",
+    )
+    enabled = models.BooleanField(default=True)
+
+    def __str__(self):
+        """String representation of DynamicRemediationMapping."""
+        return f'{self.platform.name} Expression "{self.expression_choice} {self.config_string}" -> {self.remediation_function.file_name}'
+
+    class Meta:
+        """Meta class for DynamicRemediationMapping."""
+
+        unique_together = ["expression_choice", "config_string", "remediation_function"]

@@ -17,6 +17,8 @@ router.register("config-replace", views.ConfigReplaceViewSet)
 router.register("remediation-setting", views.RemediationSettingViewSet)
 router.register("config-postprocessing", views.ConfigToPushViewSet)
 router.register("config-plan", views.ConfigPlanViewSet)
+router.register("dynamic-remediation-function", views.DynamicRemediationFunctionViewSet)
+router.register("dynamic-remediation-mapping", views.DynamicRemediationMappingViewSet)
 urlpatterns = router.urls
 urlpatterns.append(
     path(

@@ -8,7 +8,13 @@ from nautobot.extras.choices import LogLevelChoices
 from nautobot.extras.registry import DatasourceContent
 
 from nautobot_golden_config.exceptions import MissingReference
-from nautobot_golden_config.models import ComplianceFeature, ComplianceRule, ConfigRemove, ConfigReplace
+from nautobot_golden_config.models import (
+    ComplianceFeature,
+    ComplianceRule,
+    ConfigRemove,
+    ConfigReplace,
+    DynamicRemediationFunction,
+)
 from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
 
 
@@ -34,6 +40,51 @@ def refresh_git_backup(repository_record, job_result, delete=False):  # pylint: 
         "Successfully Pulled git repo",
         level_choice=LogLevelChoices.LOG_DEBUG,
     )
+
+
+def refresh_git_gc_dynamic_remediations(repository_record, job_result, delete=False):  # pylint: disable=unused-argument
+    """Callback for gitrepository updates on Hier Config Dynamic Remediation repo."""
+    job_result.log(
+        "Successfully Pulled git repo test",
+        level_choice=LogLevelChoices.LOG_DEBUG,
+    )
+
+    dynamic_remediation_path = os.path.join(repository_record.filesystem_path, "hier_config_dynamic_remediations")
+    if not os.path.isdir(dynamic_remediation_path):
+        job_result.log(
+            f"Skipping sync for {dynamic_remediation_path} because directory doesn't exist.",
+            level_choice=LogLevelChoices.LOG_INFO,
+        )
+        return
+
+    file_info = []
+    for root, _, files in os.walk(dynamic_remediation_path):
+        for file_name in files:
+            if not file_name.endswith(".py") or "__init__" in file_name:
+                continue
+            file_info.append({"root": root, "file_name": file_name})
+
+    for details in file_info:
+        dynamic_remediation_function, created = DynamicRemediationFunction.objects.get_or_create(
+            dynamic_remediation_repository=repository_record,
+            file_name=details["file_name"],
+        )
+        job_result.log(
+            f"{'Created' if created else 'Updated'} record {details['file_name']} -- {dynamic_remediation_function}",
+            level_choice=LogLevelChoices.LOG_INFO,
+        )
+
+    active_file_names = [details["file_name"] for details in file_info]
+    for function in DynamicRemediationFunction.objects.filter(dynamic_remediation_repository=repository_record):
+        if function.file_name not in active_file_names:
+            try:
+                job_result.log(f"Deleting {function}...")
+                function.delete()
+            except IntegrityError:
+                job_result.log(
+                    f"File {function.file_name} was not found in this repo {active_file_names} while there are still Remediation Mappings associated to this file.  This may cause an issue while generating remediation.",
+                    level_choice=LogLevelChoices.LOG_WARNING,
+                )
 
 
 def refresh_git_gc_properties(repository_record, job_result, delete=False):  # pylint: disable=unused-argument
@@ -241,6 +292,18 @@ if ENABLE_BACKUP or ENABLE_COMPLIANCE:
                 content_identifier="nautobot_golden_config.backupconfigs",
                 icon="mdi-file-code",
                 callback=refresh_git_backup,
+            ),
+        )
+    )
+if ENABLE_COMPLIANCE:
+    datasource_contents.append(
+        (
+            "extras.gitrepository",
+            DatasourceContent(
+                name="Hier Config Dynamic Remediations",
+                content_identifier="nautobot_golden_config.hierconfigdynamicremediations",
+                icon="mdi-file-code",
+                callback=refresh_git_gc_dynamic_remediations,
             ),
         )
     )

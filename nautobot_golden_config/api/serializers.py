@@ -125,3 +125,23 @@ class ConfigPlanSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
         model = models.ConfigPlan
         fields = "__all__"
         read_only_fields = ["device", "plan_type", "feature", "config_set"]
+
+
+class DynamicRemediationFunctionSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
+    """Serializer for DynamicRemediationFunction object."""
+
+    class Meta:
+        """Set Meta Data for DynamicRemediationFunction, will serialize all fields."""
+
+        model = models.DynamicRemediationFunction
+        fields = "__all__"
+
+
+class DynamicRemediationMappingSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
+    """Serializer for DynamicRemediationMapping object."""
+
+    class Meta:
+        """Set Meta Data for DynamicRemediationMapping, will serialize all fields."""
+
+        model = models.DynamicRemediationMapping
+        fields = "__all__"

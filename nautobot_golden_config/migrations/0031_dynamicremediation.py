@@ -9,12 +9,6 @@ import uuid
 
 
 class Migration(migrations.Migration):
-    replaces = [
-        ("nautobot_golden_config", "0031_dynamicremediationfunction_dynamicremediationmapping"),
-        ("nautobot_golden_config", "0032_alter_dynamicremediationmapping_unique_together"),
-        ("nautobot_golden_config", "0033_alter_dynamicremediationfunction_unique_together"),
-    ]
-
     dependencies = [
         ("extras", "0099_remove_dangling_note_objects"),
         ("nautobot_golden_config", "0030_alter_goldenconfig_device"),

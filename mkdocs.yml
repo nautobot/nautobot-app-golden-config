@@ -110,6 +110,7 @@ nav:
       - Navigate Compliance: "user/app_feature_compliance.md"
       - Navigate Compliance CLI: "user/app_feature_compliancecli.md"
       - Navigate Compliance JSON: "user/app_feature_compliancejson.md"
+      - Navigate Compliance XML: "user/app_feature_compliancexml.md"
       - Navigate Compliance Custom: "user/app_feature_compliancecustom.md"
       - Navigate Intended: "user/app_feature_intended.md"
       - Navigate SoT Agg: "user/app_feature_sotagg.md"
@@ -163,6 +164,7 @@ nav:
       - Migrating To v2: "admin/migrating_to_v2.md"
       - Release Notes:
           - "admin/release_notes/index.md"
+          - v2.1: "admin/release_notes/version_2.1.md"
           - v2.0: "admin/release_notes/version_2.0.md"
           - v1.6: "admin/release_notes/version_1.6.md"
           - v1.5: "admin/release_notes/version_1.5.md"

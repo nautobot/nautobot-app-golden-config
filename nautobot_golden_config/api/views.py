@@ -164,19 +164,3 @@ class ConfigPlanViewSet(
             }
         )
         return context
-
-
-class DynamicRemediationFunctionViewSet(NautobotModelViewSet):  # pylint:disable=too-many-ancestors
-    """API viewset for interacting with ConfigCompliance objects."""
-
-    queryset = models.DynamicRemediationFunction.objects.all()
-    serializer_class = serializers.DynamicRemediationFunctionSerializer
-    filterset_class = filters.DynamicRemediationFunctionFilterSet
-
-
-class DynamicRemediationMappingViewSet(NautobotModelViewSet):  # pylint:disable=too-many-ancestors
-    """API viewset for interacting with ConfigCompliance objects."""
-
-    queryset = models.DynamicRemediationMapping.objects.all()
-    serializer_class = serializers.DynamicRemediationMappingSerializer
-    filterset_class = filters.DynamicRemediationMappingFilterSet

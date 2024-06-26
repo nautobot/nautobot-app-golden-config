@@ -441,32 +441,3 @@ class ConfigPlanFilterSet(NautobotFilterSet):
 
         model = models.ConfigPlan
         fields = ["id", "created", "change_control_id", "plan_type", "tags"]
-
-
-class DynamicRemediationFunctionFilterSet(NautobotFilterSet):
-    """Inherits Base Class NautobotFilterSet."""
-
-    q = SearchFilter(
-        filter_predicates={
-            "file_name": {
-                "lookup_expr": "icontains",
-                "preprocessor": str,
-            },
-        },
-    )
-
-    class Meta:
-        """Boilerplate filter Meta data for Dynamic Remediation Function."""
-
-        model = models.DynamicRemediationFunction
-        fields = ["id", "file_name", "dynamic_remediation_repository"]
-
-
-class DynamicRemediationMappingFilterSet(NautobotFilterSet):
-    """Inherits Base Class NautobotFilterSet."""
-
-    class Meta:
-        """Boilerplate filter Meta data for Dynamic Remediation Mapping."""
-
-        model = models.DynamicRemediationMapping
-        fields = ["id", "expression_choice", "config_string", "remediation_function", "platform", "enabled"]

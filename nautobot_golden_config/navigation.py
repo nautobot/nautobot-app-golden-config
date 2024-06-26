@@ -125,22 +125,6 @@ if ENABLE_COMPLIANCE:
     )
 
 
-if ENABLE_COMPLIANCE:
-    items_setup.append(
-        NavMenuItem(
-            link="plugins:nautobot_golden_config:dynamicremediationmapping_list",
-            name="Dynamic Remediation Mapping",
-            permissions=["nautobot_golden_config.view_dynamicremediationmapping"],
-            buttons=(
-                NavMenuAddButton(
-                    link="plugins:nautobot_golden_config:dynamicremediationmapping_add",
-                    permissions=["nautobot_golden_config.add_dynamicremediationmapping"],
-                ),
-            ),
-        )
-    )
-
-
 items_setup.append(
     NavMenuItem(
         link="plugins:nautobot_golden_config:goldenconfigsetting_list",

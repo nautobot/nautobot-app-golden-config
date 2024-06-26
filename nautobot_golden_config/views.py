@@ -489,19 +489,6 @@ class ConfigRemoveUIViewSet(views.NautobotUIViewSet):
         return {}
 
 
-class DynamicRemediationMappingUIViewSet(views.NautobotUIViewSet):
-    """Views for the ConfigRemove model."""
-
-    bulk_update_form_class = forms.DynamicRemediationMappingBulkEditForm
-    filterset_class = filters.DynamicRemediationMappingFilterSet
-    form_class = forms.DynamicRemediationMappingForm
-    queryset = models.DynamicRemediationMapping.objects.all()
-    serializer_class = serializers.DynamicRemediationMappingSerializer
-    table_class = tables.DynamicRemediationMappingTable
-    lookup_field = "pk"
-    action_buttons = ("add",)
-
-
 class ConfigReplaceUIViewSet(views.NautobotUIViewSet):
     """Views for the ConfigReplace model."""
 

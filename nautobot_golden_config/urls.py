@@ -16,7 +16,6 @@ router.register("remediation-setting", views.RemediationSettingUIViewSet)
 router.register("config-plan", views.ConfigPlanUIViewSet)
 router.register("config-compliance", views.ConfigComplianceUIViewSet)
 router.register("golden-config", views.GoldenConfigUIViewSet)
-router.register("dynamic-remediation-mapping", views.DynamicRemediationMappingUIViewSet)
 
 urlpatterns = [
     path("config-compliance/overview/", views.ConfigComplianceOverview.as_view(), name="configcompliance_overview"),

@@ -529,18 +529,3 @@ class ConfigPlanTable(StatusTableMixin, BaseTable):
             "config_set",
             "status",
         )
-
-
-class DynamicRemediationMappingTable(BaseTable):
-    """Table class for DynamicRemediationMapping."""
-
-    pk = ToggleColumn()
-    name = LinkColumn(
-        "plugins:nautobot_golden_config:dynamicremediationmapping", text=lambda record: str(record), args=[A("pk")]
-    )
-
-    class Meta(BaseTable.Meta):
-        """Meta class for DynamicRemediationMappingTable."""
-
-        model = models.DynamicRemediationMapping
-        fields = ("pk", "name", "expression_choice", "config_string", "remediation_function", "platform", "enabled")

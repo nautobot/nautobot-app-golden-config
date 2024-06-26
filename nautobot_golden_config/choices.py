@@ -20,10 +20,12 @@ class RemediationTypeChoice(ChoiceSet):
     """Choiceset used by RemediationSetting."""
 
     TYPE_HIERCONFIG = "hierconfig"
+    TYPE_DYNAMIC_HIERCONFIG = "dynamic_hierconfig"
     TYPE_CUSTOM = "custom_remediation"
 
     CHOICES = (
         (TYPE_HIERCONFIG, "HIERCONFIG"),
+        (TYPE_DYNAMIC_HIERCONFIG, "DYNAMIC_HIERCONFIG"),
         (TYPE_CUSTOM, "CUSTOM_REMEDIATION"),
     )
 
@@ -41,20 +43,4 @@ class ConfigPlanTypeChoice(ChoiceSet):
         (TYPE_MISSING, "Missing"),
         (TYPE_REMEDIATION, "Remediation"),
         (TYPE_MANUAL, "Manual"),
-    )
-
-
-class DynamicRemediationExpressionChoice(ChoiceSet):
-    """Choiceset used for Dynamic Remediation Expression Choices."""
-
-    STARTS_WITH = "startswith"
-    ENDS_WITH = "endswith"
-    EQUALS = "equals"
-    CONTAINS = "contains"
-
-    CHOICES = (
-        (STARTS_WITH, "startswith"),
-        (ENDS_WITH, "endswith"),
-        (EQUALS, "equals"),
-        (CONTAINS, "contains"),
     )

@@ -12,12 +12,7 @@ from nautobot.extras.models import DynamicGroup, GitRepository, JobResult, Role,
 from nautobot.tenancy.models import Tenant, TenantGroup
 
 from nautobot_golden_config import models
-from nautobot_golden_config.choices import (
-    ComplianceRuleConfigTypeChoice,
-    ConfigPlanTypeChoice,
-    RemediationTypeChoice,
-    DynamicRemediationExpressionChoice,
-)
+from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
 
 # ConfigCompliance
 
@@ -649,54 +644,3 @@ class ConfigPlanBulkEditForm(NautobotBulkEditForm):
             "change_control_url",
             "tags",
         ]
-
-
-class DynamicRemediationMappingForm(NautobotModelForm):
-    """Form for ConfigPlan instances."""
-
-    remediation_function = forms.DynamicModelChoiceField(
-        queryset=models.DynamicRemediationFunction.objects.all(),
-    )
-    platform = forms.DynamicModelChoiceField(queryset=Platform.objects.all())
-
-    class Meta:
-        """Boilerplate form Meta data for ConfigPlan."""
-
-        model = models.DynamicRemediationMapping
-        fields = ("expression_choice", "config_string", "remediation_function", "platform", "enabled")
-
-
-class DynamicRemediationMappingBulkEditForm(NautobotBulkEditForm):
-    """BulkEdit form for DynamicRemediationMapping instances."""
-
-    pk = django_forms.ModelMultipleChoiceField(
-        queryset=models.DynamicRemediationMapping.objects.all(), widget=django_forms.MultipleHiddenInput
-    )
-
-    expression_choice = django_forms.ChoiceField(
-        choices=forms.add_blank_choice(DynamicRemediationExpressionChoice),
-        required=False,
-        widget=django_forms.Select(),
-        label="Plan Type",
-    )
-
-    config_string = django_forms.CharField(required=False)
-
-    remediation_function = forms.DynamicModelChoiceField(
-        queryset=models.DynamicRemediationFunction.objects.all(),
-        required=False,
-    )
-    platform = forms.DynamicModelChoiceField(
-        queryset=Platform.objects.all(),
-        required=False,
-    )
-    enabled = django_forms.BooleanField(required=False)
-
-    field_order = ("expression_choice", "config_string", "remediation_function", "platform", "enabled", "note")
-
-    class Meta:
-        """Boilerplate form Meta data for DynamicRemediationMapping."""
-
-        model = models.DynamicRemediationMapping
-
-        nullable_fields = []

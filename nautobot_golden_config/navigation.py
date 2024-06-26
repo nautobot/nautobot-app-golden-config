@@ -124,7 +124,6 @@ if ENABLE_COMPLIANCE:
         )
     )
 
-
 items_setup.append(
     NavMenuItem(
         link="plugins:nautobot_golden_config:goldenconfigsetting_list",

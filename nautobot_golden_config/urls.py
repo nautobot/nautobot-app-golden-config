@@ -22,9 +22,5 @@ router.register("golden-config", views.GoldenConfigUIViewSet)
 urlpatterns = [
     path("config-compliance/overview/", views.ConfigComplianceOverview.as_view(), name="configcompliance_overview"),
     path("config-plan/bulk_deploy/", views.ConfigPlanBulkDeploy.as_view(), name="configplan_bulk-deploy"),
-    path(
-        "docs/",
-        RedirectView.as_view(url=static("nautobot_golden_config/docs/index.html")),
-        name="docs"
-    )
+    path("docs/", RedirectView.as_view(url=static("nautobot_golden_config/docs/index.html")), name="docs"),
 ] + router.urls

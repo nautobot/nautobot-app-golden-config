@@ -1,5 +1,7 @@
 """Django urlpatterns declaration for config compliance app."""
 from django.urls import path
+from django.templatetags.static import static
+from django.views.generic import RedirectView
 
 from nautobot.core.views.routers import NautobotUIViewSetRouter
 from nautobot_golden_config import views
@@ -20,4 +22,5 @@ router.register("golden-config", views.GoldenConfigUIViewSet)
 urlpatterns = [
     path("config-compliance/overview/", views.ConfigComplianceOverview.as_view(), name="configcompliance_overview"),
     path("config-plan/bulk_deploy/", views.ConfigPlanBulkDeploy.as_view(), name="configplan_bulk-deploy"),
+    path("docs/", RedirectView.as_view(url=static("nautobot_golden_config/docs/index.html")), name="docs"),
 ] + router.urls

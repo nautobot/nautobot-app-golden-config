@@ -381,8 +381,8 @@ class ConfigComplianceUIViewSetTestCase(
                 {"device": dev03, "feature": feature_dev03},
                 {"device": dev04, "feature": feature_dev01},
             ]
-            for i, update in enumerate(updates):
-                compliance_int = i % 2
+            for j, update in enumerate(updates):
+                compliance_int = j % 2
                 models.ConfigCompliance.objects.create(
                     device=update["device"],
                     rule=update["feature"],

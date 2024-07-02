@@ -399,7 +399,9 @@ class ConfigComplianceUIViewSetTestCase(
             models.ComplianceFeature.objects.create(slug="unused-feature-1", name="Unused Feature 1"),
             models.ComplianceFeature.objects.create(slug="unused-feature-2", name="Unused Feature 2"),
         )
-        request = RequestFactory(SERVER_NAME="nautobot.example.com").get("/plugins/golden-config/config-compliance/")
+        request = RequestFactory(SERVER_NAME="nautobot.example.com").get(
+            reverse("plugins:nautobot_golden_config:configcompliance_list")
+        )
         request.user = self.user
         queryset = views.ConfigComplianceUIViewSet(request=request).alter_queryset(request)
         features = (

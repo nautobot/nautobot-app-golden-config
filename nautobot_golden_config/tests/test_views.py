@@ -370,10 +370,10 @@ class ConfigComplianceUIViewSetTestCase(
         dev03 = Device.objects.get(name="Device 3")
         dev04 = Device.objects.get(name="Device 4")
 
-        for i in range(4):
-            feature_dev01 = create_feature_rule_json(dev01, feature=f"TestFeature{i}")
-            feature_dev02 = create_feature_rule_json(dev02, feature=f"TestFeature{i}")
-            feature_dev03 = create_feature_rule_json(dev03, feature=f"TestFeature{i}")
+        for iterator_i in range(4):
+            feature_dev01 = create_feature_rule_json(dev01, feature=f"TestFeature{iterator_i}")
+            feature_dev02 = create_feature_rule_json(dev02, feature=f"TestFeature{iterator_i}")
+            feature_dev03 = create_feature_rule_json(dev03, feature=f"TestFeature{iterator_i}")
 
             updates = [
                 {"device": dev01, "feature": feature_dev01},
@@ -381,8 +381,8 @@ class ConfigComplianceUIViewSetTestCase(
                 {"device": dev03, "feature": feature_dev03},
                 {"device": dev04, "feature": feature_dev01},
             ]
-            for j, update in enumerate(updates):
-                compliance_int = j % 2
+            for iterator_j, update in enumerate(updates):
+                compliance_int = iterator_j % 2
                 models.ConfigCompliance.objects.create(
                     device=update["device"],
                     rule=update["feature"],

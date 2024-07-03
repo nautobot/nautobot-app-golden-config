@@ -1,4 +1,5 @@
 """REST API serializer capabilities for graphql app."""
+
 # pylint: disable=too-many-ancestors
 from rest_framework import serializers
 
@@ -93,7 +94,7 @@ class ConfigToPushSerializer(DeviceSerializer):
 
     config = serializers.SerializerMethodField()
 
-    class Meta(DeviceSerializer):
+    class Meta(DeviceSerializer.Meta):
         """Extend the Device serializer with the configuration after postprocessing."""
 
         fields = "__all__"

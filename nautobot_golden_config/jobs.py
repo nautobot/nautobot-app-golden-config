@@ -453,7 +453,7 @@ class GenerateConfigPlans(Job, FormEntry):
     def _generate_config_plan_from_manual(self):
         """Generate config plans from manual."""
         default_context = {
-            "request": self.request,
+            "request": self.request,  # pylint: disable=no-member
             "user": self.user,
         }
         for device in self._device_qs:

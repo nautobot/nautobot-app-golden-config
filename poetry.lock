@@ -1126,18 +1126,17 @@ tests = ["tox"]
 
 [[package]]
 name = "django-pivot"
-version = "1.8.1"
+version = "1.9.0"
 description = "Create pivot tables and histograms from ORM querysets"
 optional = false
 python-versions = "*"
 files = [
-    {file = "django-pivot-1.8.1.tar.gz", hash = "sha256:7184d3e3f5e96003150428bea106a9963f49f0431fa56f93595316c9b42bcca6"},
-    {file = "django_pivot-1.8.1-py3-none-any.whl", hash = "sha256:9bf83b2b61d4dc95c01e5b7a595ee223c5c1f08a4590733673a306b1513174d4"},
+    {file = "django-pivot-1.9.0.tar.gz", hash = "sha256:5e985d32d9ff2a6b89419dd0292c0fa2822d494ee479b5fd16cdb542abf66a88"},
+    {file = "django_pivot-1.9.0-py3-none-any.whl", hash = "sha256:1c60e18e7d5f7e42856faee0961748082ddd05b01ae7c8a4baed64d2bbacd051"},
 ]
 
 [package.dependencies]
-django = ">=1.10"
-six = "*"
+django = ">=2.2.0"
 
 [[package]]
 name = "django-prometheus"
@@ -4838,4 +4837,4 @@ all = []
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<3.12"
-content-hash = "20172d3408f0d068d72749f472aa20eca0102ac1a872685d11e1e324413f233e"
+content-hash = "3320a0e8fced27e6dac2b0239c9067d73b8e91fe394da3c482543b5beb8ebade"

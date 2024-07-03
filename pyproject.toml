@@ -116,9 +116,6 @@ disable = """,
     line-too-long,
     too-few-public-methods,
     duplicate-code,
-    nb-no-model-found,
-    nb-sub-class-name,
-    nb-use-fields-all,
     """
 
 [tool.pylint.miscellaneous]

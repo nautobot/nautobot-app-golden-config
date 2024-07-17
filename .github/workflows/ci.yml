@@ -191,9 +191,9 @@ jobs:
       - name: "Run Tests"
         run: "poetry run invoke unittest"
   changelog:
-    if: |
+    if: >
       contains(fromJson('["develop","ltm-1.6"]'), github.base_ref) &&
-      (github.head_ref != 'main')
+      (github.head_ref != 'main') && (!startsWith(github.head_ref, 'release'))
     runs-on: "ubuntu-22.04"
     steps:
       - name: "Check out repository code"

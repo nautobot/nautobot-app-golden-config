@@ -7,9 +7,10 @@ from lxml import html
 
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
-from django.test import TestCase
+from django.test import override_settings, RequestFactory, TestCase
 from django.urls import reverse
 
+from nautobot.core.models.querysets import RestrictedQuerySet
 from nautobot.dcim.models import Device
 from nautobot.extras.models import Relationship, RelationshipAssociation, Status
 from nautobot.core.testing import ViewTestCases
@@ -350,3 +351,69 @@ class ConfigPlanTestCase(
     @skip("TODO: 2.0 Figure out how to have pass.")
     def test_list_objects_with_constrained_permission(self):
         pass
+
+
+@override_settings(EXEMPT_VIEW_PERMISSIONS=["*"])
+class ConfigComplianceUIViewSetTestCase(
+    ViewTestCases.BulkDeleteObjectsViewTestCase,
+    # ViewTestCases.ListObjectsViewTestCase,  # generic list view tests won't work for this view since the queryset is pivoted
+):
+    """Test ConfigComplianceUIViewSet views."""
+
+    model = models.ConfigCompliance
+
+    @classmethod
+    def setUpTestData(cls):
+        create_device_data()
+        dev01 = Device.objects.get(name="Device 1")
+        dev02 = Device.objects.get(name="Device 2")
+        dev03 = Device.objects.get(name="Device 3")
+        dev04 = Device.objects.get(name="Device 4")
+
+        for iterator_i in range(4):
+            feature_dev01 = create_feature_rule_json(dev01, feature=f"TestFeature{iterator_i}")
+            feature_dev02 = create_feature_rule_json(dev02, feature=f"TestFeature{iterator_i}")
+            feature_dev03 = create_feature_rule_json(dev03, feature=f"TestFeature{iterator_i}")
+
+            updates = [
+                {"device": dev01, "feature": feature_dev01},
+                {"device": dev02, "feature": feature_dev02},
+                {"device": dev03, "feature": feature_dev03},
+                {"device": dev04, "feature": feature_dev01},
+            ]
+            for iterator_j, update in enumerate(updates):
+                compliance_int = iterator_j % 2
+                models.ConfigCompliance.objects.create(
+                    device=update["device"],
+                    rule=update["feature"],
+                    actual={"foo": {"bar-1": "baz"}},
+                    intended={"foo": {f"bar-{compliance_int}": "baz"}},
+                    compliance=bool(compliance_int),
+                    compliance_int=compliance_int,
+                )
+
+    def test_alter_queryset(self):
+        """Test alter_queryset method returns the expected pivoted queryset."""
+
+        unused_features = (
+            models.ComplianceFeature.objects.create(slug="unused-feature-1", name="Unused Feature 1"),
+            models.ComplianceFeature.objects.create(slug="unused-feature-2", name="Unused Feature 2"),
+        )
+        request = RequestFactory(SERVER_NAME="nautobot.example.com").get(
+            reverse("plugins:nautobot_golden_config:configcompliance_list")
+        )
+        request.user = self.user
+        queryset = views.ConfigComplianceUIViewSet(request=request).alter_queryset(request)
+        features = (
+            models.ComplianceFeature.objects.filter(feature__rule__isnull=False)
+            .values_list("slug", flat=True)
+            .distinct()
+        )
+        self.assertNotIn(unused_features[0].slug, features)
+        self.assertNotIn(unused_features[1].slug, features)
+        self.assertGreater(len(features), 0)
+        self.assertIsInstance(queryset, RestrictedQuerySet)
+        for device in queryset:
+            self.assertSequenceEqual(list(device.keys()), ["device", "device__name", *features])
+            for feature in features:
+                self.assertIn(device[feature], [0, 1])

@@ -112,8 +112,7 @@ def diff_files(backup_file, intended_file):
     with open(intended_file, encoding="utf-8") as file:
         intended = file.readlines()
 
-    for line in difflib.unified_diff(backup, intended, lineterm=""):
-        yield line
+    yield from difflib.unified_diff(backup, intended, lineterm="")
 
 
 @close_threaded_db_connections

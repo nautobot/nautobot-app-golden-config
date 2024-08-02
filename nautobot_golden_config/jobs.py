@@ -5,6 +5,7 @@
 # pylint: disable=arguments-differ
 
 from datetime import datetime
+from django.db import connections
 from django.utils.timezone import make_aware
 from nautobot.core.celery import register_jobs
 from nautobot.dcim.models import Device, DeviceType, Location, Manufacturer, Platform, Rack, RackGroup
@@ -132,6 +133,7 @@ def gc_repo_push(job, current_repos):
         current_repos (List[GitRepo]): List of GitRepos to be used with Job(s).
     """
     now = make_aware(datetime.now())
+    connections["job_logs"].connect()
     job.logger.debug(
         f"Finished the {job.Meta.name} job execution.",
         extra={"grouping": "GC After Run"},

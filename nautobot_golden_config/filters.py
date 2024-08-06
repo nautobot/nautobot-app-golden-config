@@ -300,9 +300,17 @@ class RemediationSettingFilterSet(NautobotFilterSet):
 class ConfigPlanFilterSet(NautobotFilterSet):
     """Inherits Base Class NautobotFilterSet."""
 
-    q = django_filters.CharFilter(
-        method="search",
-        label="Search",
+    q = SearchFilter(
+        filter_predicates={
+            "device__name": {
+                "lookup_expr": "icontains",
+                "preprocessor": str,
+            },
+            "change_control_id": {
+                "lookup_expr": "icontains",
+                "preprocessor": str,
+            },
+        },
     )
     device_id = django_filters.ModelMultipleChoiceFilter(
         queryset=Device.objects.all(),
@@ -420,20 +428,6 @@ class ConfigPlanFilterSet(NautobotFilterSet):
         queryset=Status.objects.all(),
         to_field_name="name",
         label="Status",
-    )
-    # tags = TagFilter()
-
-    q = SearchFilter(
-        filter_predicates={
-            "device__name": {
-                "lookup_expr": "icontains",
-                "preprocessor": str,
-            },
-            "change_control_id": {
-                "lookup_expr": "icontains",
-                "preprocessor": str,
-            },
-        },
     )
 
     class Meta:

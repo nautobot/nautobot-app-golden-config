@@ -1,5 +1,6 @@
 """Unit tests for nautobot_golden_config models."""
 
+from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
 from nautobot.dcim.models import Device, Platform
 from nautobot.extras.models import Status, Tag
@@ -404,6 +405,8 @@ class ConfigPlanFilterTestCase(FilterTestCases.FilterTestCase):
         self.status2 = Status.objects.get(name="Approved")
         self.tag1, _ = Tag.objects.get_or_create(name="Tag 1")
         self.tag2, _ = Tag.objects.get_or_create(name="Tag 2")
+        self.tag1.content_types.set([ContentType.objects.get_for_model(models.ConfigPlan)])
+        self.tag2.content_types.set([ContentType.objects.get_for_model(models.ConfigPlan)])
         self.job_result1 = create_job_result()
         self.job_result2 = create_job_result()
         self.config_plan1 = models.ConfigPlan.objects.create(

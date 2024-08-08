@@ -1,27 +1,11 @@
 """Unit tests for nautobot_golden_config."""
-from copy import deepcopy
 
 from django.contrib.auth import get_user_model
-from django.contrib.contenttypes.models import ContentType
+from django.test import TestCase
 from django.urls import reverse
-
+from nautobot.users.models import Token
 from rest_framework import status
-
-from nautobot.dcim.models import Device, Platform
-from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status
-from nautobot.core.testing import APITestCase, APIViewTestCases
-
-from nautobot_golden_config.choices import RemediationTypeChoice
-from nautobot_golden_config.models import ConfigPlan, GoldenConfigSetting, RemediationSetting
-from nautobot_golden_config.tests.conftest import (
-    create_config_compliance,
-    create_device,
-    create_device_data,
-    create_feature_rule_json,
-    create_git_repos,
-    create_job_result,
-    create_saved_queries,
-)
+from rest_framework.test import APIClient
 
 User = get_user_model()
 

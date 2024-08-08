@@ -70,7 +70,9 @@ def _is_compose_included(context, name):
 
 
 def _await_healthy_service(context, service):
-    container_id = docker_compose(context, f"ps -q -- {service}", pty=False, echo=False, hide=True).stdout.strip()
+    container_id = docker_compose(
+        context, f"ps -q -- {service}", pty=False, echo=False, hide=True
+    ).stdout.strip()
     _await_healthy_container(context, container_id)
 
 
@@ -130,7 +132,9 @@ def docker_compose(context, command, **kwargs):
     ]
 
     for compose_file in context.nautobot_golden_config.compose_files:
-        compose_file_path = os.path.join(context.nautobot_golden_config.compose_dir, compose_file)
+        compose_file_path = os.path.join(
+            context.nautobot_golden_config.compose_dir, compose_file
+        )
         compose_command_tokens.append(f' -f "{compose_file_path}"')
 
     compose_command_tokens.append(command)
@@ -159,17 +163,19 @@ def run_command(context, command, **kwargs):
         # Check if nautobot is running, no need to start another nautobot container to run a command
         docker_compose_status = "ps --services --filter status=running"
         results = docker_compose(context, docker_compose_status, hide="out")
-        if "nautobot" in results.stdout:
-            compose_command = "exec"
-        else:
-            compose_command = "run --rm --entrypoint=''"
 
+        command_env_args = ""
         if "command_env" in kwargs:
             command_env = kwargs.pop("command_env")
             for key, value in command_env.items():
-                compose_command += f' --env="{key}={value}"'
+                command_env_args += f' --env="{key}={value}"'
 
-        compose_command += f" -- nautobot {command}"
+        if "nautobot" in results.stdout:
+            compose_command = f"exec{command_env_args} nautobot {command}"
+        else:
+            compose_command = (
+                f"run{command_env_args} --rm --entrypoint='{command}' nautobot"
+            )
 
         pty = kwargs.pop("pty", True)
 
@@ -194,7 +200,9 @@ def build(context, force_rm=False, cache=True):
     if force_rm:
         command += " --force-rm"
 
-    print(f"Building Nautobot with Python {context.nautobot_golden_config.python_ver}...")
+    print(
+        f"Building Nautobot with Python {context.nautobot_golden_config.python_ver}..."
+    )
     docker_compose(context, command)
 
 
@@ -246,7 +254,9 @@ def restart(context, service=""):
 def stop(context, service=""):
     """Stop specified or all services, if service is not specified, remove all containers."""
     print("Stopping Nautobot...")
-    docker_compose(context, "stop" if service else "down --remove-orphans", service=service)
+    docker_compose(
+        context, "stop" if service else "down --remove-orphans", service=service
+    )
 
 
 @task(
@@ -265,7 +275,9 @@ def destroy(context, volumes=True, import_db_file=""):
         return
 
     if not volumes:
-        raise ValueError("Cannot specify `--no-volumes` and `--import-db-file` arguments at the same time.")
+        raise ValueError(
+            "Cannot specify `--no-volumes` and `--import-db-file` arguments at the same time."
+        )
 
     print(f"Importing database file: {import_db_file}...")
 
@@ -282,12 +294,16 @@ def destroy(context, volumes=True, import_db_file=""):
         "db",
     ]
 
-    container_id = docker_compose(context, " ".join(command), pty=False, echo=False, hide=True).stdout.strip()
+    container_id = docker_compose(
+        context, " ".join(command), pty=False, echo=False, hide=True
+    ).stdout.strip()
     _await_healthy_container(context, container_id)
     print("Stopping database container...")
     context.run(f"docker stop {container_id}", pty=False, echo=False, hide=True)
 
-    print("Database import complete, you can start Nautobot with the following command:")
+    print(
+        "Database import complete, you can start Nautobot with the following command:"
+    )
     print("invoke start")
 
 
@@ -459,7 +475,9 @@ def dbshell(context, db_name="", input_file="", output_file="", query=""):
     if input_file and query:
         raise ValueError("Cannot specify both, `input_file` and `query` arguments")
     if output_file and not (input_file or query):
-        raise ValueError("`output_file` argument requires `input_file` or `query` argument")
+        raise ValueError(
+            "`output_file` argument requires `input_file` or `query` argument"
+        )
 
     env = {}
     if query:
@@ -494,7 +512,12 @@ def dbshell(context, db_name="", input_file="", output_file="", query=""):
         f"> '{output_file}'" if output_file else "",
     ]
 
-    docker_compose(context, " ".join(command), env=env, pty=not (input_file or output_file or query))
+    docker_compose(
+        context,
+        " ".join(command),
+        env=env,
+        pty=not (input_file or output_file or query),
+    )
 
 
 @task(
@@ -519,9 +542,11 @@ def import_db(context, db_name="", input_file="dump.sql"):
             '--execute="',
             f"DROP DATABASE IF EXISTS {db_name};",
             f"CREATE DATABASE {db_name};",
-            ""
-            if db_name == "$MYSQL_DATABASE"
-            else f"GRANT ALL PRIVILEGES ON {db_name}.* TO $MYSQL_USER; FLUSH PRIVILEGES;",
+            (
+                ""
+                if db_name == "$MYSQL_DATABASE"
+                else f"GRANT ALL PRIVILEGES ON {db_name}.* TO $MYSQL_USER; FLUSH PRIVILEGES;"
+            ),
             '"',
             "&&",
             "mysql",
@@ -590,7 +615,9 @@ def backup_db(context, db_name="", output_file="dump.sql", readable=True):
     docker_compose(context, " ".join(command), pty=False)
 
     print(50 * "=")
-    print("The database backup has been successfully completed and saved to the following file:")
+    print(
+        "The database backup has been successfully completed and saved to the following file:"
+    )
     print(output_file)
     print("You can import this database backup with the following command:")
     print(f"invoke import-db --input-file '{output_file}'")
@@ -647,28 +674,6 @@ def generate_release_notes(context, version=""):
 # ------------------------------------------------------------------------------
 # TESTS
 # ------------------------------------------------------------------------------
-@task(
-    help={
-        "autoformat": "Apply formatting recommendations automatically, rather than failing if formatting is incorrect.",
-    }
-)
-def black(context, autoformat=False):
-    """Check Python code style with Black."""
-    if autoformat:
-        black_command = "black"
-    else:
-        black_command = "black --check --diff"
-
-    command = f"{black_command} ."
-
-    run_command(context, command)
-
-
-@task
-def flake8(context):
-    """Check for PEP8 compliance and other style issues."""
-    command = "flake8 . --config .flake8"
-    run_command(context, command)
 
 
 @task
@@ -688,31 +693,39 @@ def pylint(context):
 @task(aliases=("a",))
 def autoformat(context):
     """Run code autoformatting."""
-    black(context, autoformat=True)
-    ruff(context, fix=True)
+    ruff(context, action=["format"], fix=True)
 
 
 @task(
     help={
-        "action": "One of 'lint', 'format', or 'both'",
-        "fix": "Automatically fix selected action. May not be able to fix all.",
-        "output_format": "see https://docs.astral.sh/ruff/settings/#output-format",
+        "action": "Available values are `['lint', 'format']`. Can be used multiple times. (default: `['lint', 'format']`)",
+        "target": "File or directory to inspect, repeatable (default: all files in the project will be inspected)",
+        "fix": "Automatically fix selected actions. May not be able to fix all issues found. (default: False)",
+        "output_format": "See https://docs.astral.sh/ruff/settings/#output-format for details. (default: `concise`)",
     },
+    iterable=["action", "target"],
 )
-def ruff(context, action="lint", fix=False, output_format="text"):
+def ruff(context, action=None, target=None, fix=False, output_format="concise"):
     """Run ruff to perform code formatting and/or linting."""
-    if action != "lint":
-        command = "ruff format"
+    if not action:
+        action = ["lint", "format"]
+    if not target:
+        target = ["."]
+
+    if "format" in action:
+        command = "ruff format "
         if not fix:
-            command += " --check"
-        command += " ."
-        run_command(context, command)
-    if action != "format":
-        command = "ruff check"
+            command += "--check "
+        command += " ".join(target)
+        run_command(context, command, warn=True)
+
+    if "lint" in action:
+        command = "ruff check "
         if fix:
-            command += " --fix"
-        command += f" --output-format {output_format} ."
-        run_command(context, command)
+            command += "--fix "
+        command += f"--output-format {output_format} "
+        command += " ".join(target)
+        run_command(context, command, warn=True)
 
 
 @task
@@ -751,7 +764,7 @@ def check_migrations(context):
         "verbose": "Enable verbose test output.",
     }
 )
-def unittest(
+def unittest(  # noqa: PLR0913
     context,
     keepdb=False,
     label="nautobot_golden_config",
@@ -799,12 +812,8 @@ def tests(context, failfast=False, keepdb=False, lint_only=False):
         print("Starting Docker Containers...")
         start(context)
     # Sorted loosely from fastest to slowest
-    print("Running black...")
-    black(context)
     print("Running ruff...")
     ruff(context)
-    print("Running flake8...")
-    flake8(context)
     print("Running bandit...")
     bandit(context)
     print("Running yamllint...")
@@ -839,11 +848,20 @@ def generate_app_config_schema(context):
     - `NautobotAppConfig.required_settings`
     """
     start(context, service="nautobot")
-    nbshell(context, file="development/app_config_schema.py", env={"APP_CONFIG_SCHEMA_COMMAND": "generate"})
+    nbshell(
+        context,
+        file="development/app_config_schema.py",
+        env={"APP_CONFIG_SCHEMA_COMMAND": "generate"},
+    )
 
 
 @task
 def validate_app_config(context):
     """Validate the app config based on the app config schema."""
     start(context, service="nautobot")
-    nbshell(context, plain=True, file="development/app_config_schema.py", env={"APP_CONFIG_SCHEMA_COMMAND": "validate"})
+    nbshell(
+        context,
+        plain=True,
+        file="development/app_config_schema.py",
+        env={"APP_CONFIG_SCHEMA_COMMAND": "validate"},
+    )

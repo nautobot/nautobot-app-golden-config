@@ -17,7 +17,7 @@ env:
   APP_NAME: "nautobot-app-golden-config"
 
 jobs:
-  black:
+  ruff-format:
     runs-on: "ubuntu-22.04"
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "True"
@@ -26,8 +26,8 @@ jobs:
         uses: "actions/checkout@v4"
       - name: "Setup environment"
         uses: "networktocode/gh-action-setup-poetry-environment@v6"
-      - name: "Linting: black"
-        run: "poetry run invoke black"
+      - name: "Linting: ruff format"
+        run: "poetry run invoke ruff --action format"
   bandit:
     runs-on: "ubuntu-22.04"
     env:
@@ -39,7 +39,7 @@ jobs:
         uses: "networktocode/gh-action-setup-poetry-environment@v6"
       - name: "Linting: bandit"
         run: "poetry run invoke bandit"
-  ruff:
+  ruff-lint:
     runs-on: "ubuntu-22.04"
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "True"
@@ -61,17 +61,6 @@ jobs:
         uses: "networktocode/gh-action-setup-poetry-environment@v6"
       - name: "Check Docs Build"
         run: "poetry run invoke build-and-check-docs"
-  flake8:
-    runs-on: "ubuntu-22.04"
-    env:
-      INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "True"
-    steps:
-      - name: "Check out repository code"
-        uses: "actions/checkout@v4"
-      - name: "Setup environment"
-        uses: "networktocode/gh-action-setup-poetry-environment@v6"
-      - name: "Linting: flake8"
-        run: "poetry run invoke flake8"
   poetry:
     runs-on: "ubuntu-22.04"
     env:
@@ -97,11 +86,10 @@ jobs:
   check-in-docker:
     needs:
       - "bandit"
-      - "ruff"
-      - "flake8"
+      - "ruff-format"
+      - "ruff-lint"
       - "poetry"
       - "yamllint"
-      - "black"
     runs-on: "ubuntu-22.04"
     strategy:
       fail-fast: true

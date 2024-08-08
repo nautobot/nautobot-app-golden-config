@@ -1,5 +1,5 @@
 mkdocs==1.5.2
 mkdocs-material==9.1.15
-mkdocs-version-annotations==1.0.0
+markdown-version-annotations==1.0.1
 mkdocstrings-python==1.5.2
 mkdocstrings==0.22.0

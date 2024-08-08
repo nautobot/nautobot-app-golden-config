@@ -3,7 +3,6 @@
 # any override will need to include these volumes to use them.
 # see:  https://github.com/docker/compose/issues/3729
 ---
-version: "3.8"
 services:
   nautobot:
     command: "nautobot-server runserver 0.0.0.0:8080"

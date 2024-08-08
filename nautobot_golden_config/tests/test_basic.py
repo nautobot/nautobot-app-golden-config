@@ -1,6 +1,8 @@
 """Basic tests that do not require Django."""
-import unittest
+
 import os
+import unittest
+
 import toml
 
 
@@ -15,8 +17,9 @@ class TestDocsPackaging(unittest.TestCase):
         with open(f"{parent_path}/docs/requirements.txt", "r", encoding="utf-8") as file:
             requirements = [line for line in file.read().splitlines() if (len(line) > 0 and not line.startswith("#"))]
         for pkg in requirements:
-            if len(pkg.split("==")) == 2:
-                pkg, version = pkg.split("==")
+            package_name = pkg
+            if len(pkg.split("==")) == 2:  # noqa: PLR2004
+                package_name, version = pkg.split("==")
             else:
                 version = "*"
-            self.assertEqual(poetry_details[pkg], version)
+            self.assertEqual(poetry_details[package_name], version)

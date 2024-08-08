@@ -124,9 +124,7 @@ Each command can be executed with `invoke <command>`. All commands support the a
 
 ```
   bandit           Run bandit to validate basic static code security analysis.
-  black            Run black to check that Python files adhere to its style standards.
-  flake8           Run flake8 to check that Python files adhere to its style standards.
-  ruff             Run ruff to validate docstring formatting adheres to NTC defined standards.
+  ruff             Run ruff to perform code formatting and/or linting.
   pylint           Run pylint code analysis.
   tests            Run all tests for this app.
   unittest         Run Django unit tests for the app.
@@ -454,7 +452,7 @@ This is the same as running:
 
 ### Tests
 
-To run tests against your code, you can run all of the tests that TravisCI runs against any new PR with:
+To run tests against your code, you can run all of the tests that the CI runs against any new PR with:
 
 ```bash
 ➜ invoke tests
@@ -465,8 +463,6 @@ To run an individual test, you can run any or all of the following:
 ```bash
 ➜ invoke unittest
 ➜ invoke bandit
-➜ invoke black
-➜ invoke flake8
 ➜ invoke ruff
 ➜ invoke pylint
 ```

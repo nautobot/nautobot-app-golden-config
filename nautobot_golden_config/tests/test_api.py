@@ -1,11 +1,11 @@
 """Unit tests for nautobot_golden_config."""
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from nautobot.users.models import Token
 from rest_framework import status
 from rest_framework.test import APIClient
-
-from nautobot.users.models import Token
 
 User = get_user_model()
 

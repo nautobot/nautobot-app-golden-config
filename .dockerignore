@@ -19,7 +19,6 @@ FAQ.md
 .git/
 .gitignore
 .github
-tasks.py
 LICENSE
 **/*.log
 **/.vscode/

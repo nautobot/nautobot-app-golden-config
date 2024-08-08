@@ -9,6 +9,11 @@ document.addEventListener("DOMContentLoaded", function() {
         // Toggle the collapsed class
         var isCollapsed = collapsibleDiv.classList.toggle("collapsed")
 
+        // Retrieve glyphicon
+        var icon = document.getElementById("collapse-icon-" + elementId);
+        // Rotate glyphicon
+        icon.classList.toggle("rotated");
+
         // Update the state in localStorage
         var isCollapsed = collapsibleDiv.classList.contains("in");
         localStorage.setItem(elementId, isCollapsed ? "collapsed" : "expanded");
@@ -21,7 +26,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     // Add event listener to each collapsible div
-    var collapseIcons = document.querySelectorAll(".collapse-icon");
+    var collapseIcons = document.querySelectorAll(".collapsable-heading");
     collapseIcons.forEach(function(icon) {
         icon.addEventListener("click", function() {
             var elementId = this.id;

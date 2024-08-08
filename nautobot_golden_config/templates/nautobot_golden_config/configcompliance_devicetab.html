@@ -55,7 +55,20 @@
     #navigation td:hover{
         transform: scale(1.1);
     }
+    .rotated {
+        transform: rotate(180deg);
+    }
+    .collapse-icon {
+        transition: transform 0.3s ease;
+    }
 </style>
+<noscript>
+    <style>
+        .collapse-icon {
+            display: none;
+        }
+    </style>
+</noscript>
 {% block navigation %}
 <div class="panel panel-default" style="width:100%">
         <div class="panel-heading"><strong>Feature Navigation</strong> 
@@ -64,17 +77,17 @@
             <a href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab={{ active_tab }}" class="btn btn-info">Clear</a>  
         </div>
     <div id="navigation">
-        <table>
+        <table border="1" cellspacing="0" cellpadding="0">
             <tr>
             {% for item in compliance_details %}
+                <td style="padding: 3px;">
                 {% if item.compliance %}
-                    <td style="background-color: #5cb85c;">
+                    <div style="background-color: #15a030; border-radius: 10px; padding: 10px; margin: 3px;">
                 {% else %}
-                    <td style="background-color: #d9534f;">
+                    <div style="background-color: #e02020; border-radius: 10px; padding: 10px; margin: 3px;">
                 {% endif %}
-                    <a href="#{{ item.rule }}">
-                        {{ item.rule }}
-                    </a>
+                        <a href="#{{ item.rule }}">{{ item.rule }}</a>
+                    </div>
                 </td>
                 {% if forloop.counter|divisibleby:"5" %}
                     </tr>
@@ -90,12 +103,12 @@
 {% for item in compliance_details %}
     {% with item_rule=item.rule|slugify %}
     <div id="{{ item_rule }}" class="panel panel-default" style="width:100%">
-        <div class="panel-heading">
-            <strong><a href="{% url 'plugins:nautobot_golden_config:configcompliance' pk=item.pk %}">{{ item.rule.feature.name|upper }}</a></strong>
-            <span id="toggle-configcompliance-{{ item_rule }}" class="glyphicon glyphicon-chevron-down collapse-icon" type="button" data-toggle="collapse" data-target="#configcompliance-{{ item_rule }}" aria-expanded="false" aria-controls="configcompliance-{{ item_rule }}"></span>
-        </div>
         {% with cookie_key='configcompliance-'|add:item_rule %}
-        <div class="list-group collapse{% if request.COOKIES|default:''|get_item:cookie_key|default:'False' == 'False' %} in{% endif %} collapsible-div" id="configcompliance-{{ item_rule }}" >
+        <div id="toggle-configcompliance-{{ item_rule }}" class="panel-heading collapsable-heading" type="button" data-toggle="collapse" data-target="#configcompliance-{{ item_rule }}" aria-expanded="false" aria-controls="configcompliance-{{ item_rule }}">
+            <strong><a href="{% url 'plugins:nautobot_golden_config:configcompliance' pk=item.pk %}">{{ item.rule.feature.name|upper }}</a></strong>
+            <i id="collapse-icon-configcompliance-{{ item_rule }}" class="glyphicon glyphicon-chevron-down collapse-icon{% if request.COOKIES|default:''|get_item:cookie_key|default:'False' == 'False' %} rotated{% endif %}"></i>
+        </div>
+        <div class="list-group collapse{% if request.COOKIES|default:''|get_item:cookie_key|default:'False' == 'False' %} in{% endif %} collapsible-div" id="configcompliance-{{ item_rule }}">
         {% endwith %}
             <table id="compliance-content">
             <tr>
@@ -120,14 +133,14 @@
                     <td style="width:250px">Configuration</td>
                     <td class="config_hover">
                         {% if item.rule.config_type == "xml" %}
-                            <span id="{{ item.rule|slugify }}_actual"><pre><code class="language-xml">{{ item.actual|placeholder }}</code></pre></span>
+                            <span id="{{ item_rule }}_actual"><pre><code class="language-xml">{{ item.actual|placeholder }}</code></pre></span>
                         {% elif item.rule.config_type == "json" %}
-                            <span id="{{ item.rule|slugify }}_actual"><pre><code class="language-json">{{ item.actual|placeholder|condition_render_json }}</code></pre></span>
+                            <span id="{{ item_rule }}_actual"><pre><code class="language-json">{{ item.actual|placeholder|condition_render_json }}</code></pre></span>
                         {% else %}
-                            <span id="{{ item.rule|slugify }}_actual"><pre>{{ item.actual|placeholder }}</pre></span>
+                            <span id="{{ item_rule }}_actual"><pre>{{ item.actual|placeholder }}</pre></span>
                         {% endif %}
                         <span class="config_hover_button">
-                            <button class="btn btn-inline btn-default hover_copy_button" data-clipboard-target="#{{ item.rule|slugify }}_actual">
+                            <button class="btn btn-inline btn-default hover_copy_button" data-clipboard-target="#{{ item_rule }}_actual">
                                 <span class="mdi mdi-content-copy"></span>
                             </button>
                         </span>
@@ -138,14 +151,14 @@
                     <td style="width:250px">Intended Configuration</td>
                     <td class="config_hover">
                         {% if item.rule.config_type == "xml" %}
-                            <span id="{{ item.rule|slugify }}_intended"><pre><code class="language-xml">{{ item.intended|placeholder }}</code></pre></span>
+                            <span id="{{ item_rule }}_intended"><pre><code class="language-xml">{{ item.intended|placeholder }}</code></pre></span>
                         {% elif item.rule.config_type == "json" %}
-                            <span id="{{ item.rule|slugify }}_intended"><pre><code class="language-json">{{ item.intended|placeholder|condition_render_json }}</code></pre></span>
+                            <span id="{{ item_rule }}_intended"><pre><code class="language-json">{{ item.intended|placeholder|condition_render_json }}</code></pre></span>
                         {% else %}
-                            <span id="{{ item.rule|slugify }}_intended"><pre>{{ item.intended|placeholder }}</pre></span>
+                            <span id="{{ item_rule }}_intended"><pre>{{ item.intended|placeholder }}</pre></span>
                         {% endif %}
                         <span class="config_hover_button">
-                            <button class="btn btn-inline btn-default hover_copy_button" data-clipboard-target="#{{ item.rule|slugify }}_intended">
+                            <button class="btn btn-inline btn-default hover_copy_button" data-clipboard-target="#{{ item_rule }}_intended">
                                 <span class="mdi mdi-content-copy"></span>
                             </button>
                         </span>
@@ -155,14 +168,14 @@
                     <td style="width:250px">Actual Configuration</td>
                     <td class="config_hover">
                         {% if item.rule.config_type == "xml" %}
-                            <span id="{{ item.rule|slugify }}_actual"><pre><code class="language-xml">{{ item.actual|placeholder }}</code></pre></span>
+                            <span id="{{ item_rule }}_actual"><pre><code class="language-xml">{{ item.actual|placeholder }}</code></pre></span>
                         {% elif item.rule.config_type == "json" %}
-                            <span id="{{ item.rule|slugify }}_actual"><pre><code class="language-json">{{ item.actual|placeholder|condition_render_json }}</code></pre></span>
+                            <span id="{{ item_rule }}_actual"><pre><code class="language-json">{{ item.actual|placeholder|condition_render_json }}</code></pre></span>
                         {% else %}
-                            <span id="{{ item.rule|slugify }}_actual"><pre>{{ item.actual|placeholder }}</pre></span>
+                            <span id="{{ item_rule }}_actual"><pre>{{ item.actual|placeholder }}</pre></span>
                         {% endif %}
                         <span class="config_hover_button">
-                            <button class="btn btn-inline btn-default hover_copy_button" data-clipboard-target="#{{ item.rule|slugify }}_actual">
+                            <button class="btn btn-inline btn-default hover_copy_button" data-clipboard-target="#{{ item_rule }}_actual">
                                 <span class="mdi mdi-content-copy"></span>
                             </button>
                         </span>
@@ -173,9 +186,9 @@
                 <tr>
                     <td style="color:red;width:250px">Missing Configuration</td>
                     <td class="config_hover">
-                        <span id="{{ item.rule|slugify }}_missing"><pre>{{ item.missing|condition_render_json }}</pre></span>
+                        <span id="{{ item_rule }}_missing"><pre>{{ item.missing|condition_render_json }}</pre></span>
                         <span class="config_hover_button">
-                            <button class="btn btn-inline btn-default hover_copy_button" data-clipboard-target="#{{ item.rule|slugify }}_missing">
+                            <button class="btn btn-inline btn-default hover_copy_button" data-clipboard-target="#{{ item_rule }}_missing">
                                 <span class="mdi mdi-content-copy"></span>
                             </button>
                         </span>
@@ -186,9 +199,9 @@
                 <tr>
                     <td style="color:red;width:250px">Extra Configuration</td>
                     <td class="config_hover">
-                        <span id="{{ item.rule|slugify }}_extra"><pre>{{ item.extra|condition_render_json }}</pre></span>
+                        <span id="{{ item_rule }}_extra"><pre>{{ item.extra|condition_render_json }}</pre></span>
                         <span class="config_hover_button">
-                            <button class="btn btn-inline btn-default hover_copy_button" data-clipboard-target="#{{ item.rule|slugify }}_extra">
+                            <button class="btn btn-inline btn-default hover_copy_button" data-clipboard-target="#{{ item_rule }}_extra">
                                 <span class="mdi mdi-content-copy"></span>
                             </button>
                         </span>
@@ -199,9 +212,9 @@
             <tr>
                 <td style="color:red;width:250px">Remediating Configuration</td>
                 <td class="config_hover">
-                    <span id="{{ item.rule|slugify }}_remediation"><pre>{{ item.remediation|condition_render_json }}</pre></span>
+                    <span id="{{ item_rule }}_remediation"><pre>{{ item.remediation|condition_render_json }}</pre></span>
                     <span class="config_hover_button">
-                        <button class="btn btn-inline btn-default hover_copy_button" data-clipboard-target="#{{ item.rule|slugify }}_remediation">
+                        <button class="btn btn-inline btn-default hover_copy_button" data-clipboard-target="#{{ item_rule }}_remediation">
                             <span class="mdi mdi-content-copy"></span>
                         </button>
                     </span>

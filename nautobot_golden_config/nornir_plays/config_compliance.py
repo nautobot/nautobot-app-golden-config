@@ -8,7 +8,7 @@ from collections import defaultdict
 from datetime import datetime
 
 from django.utils.timezone import make_aware
-from lxml import etree  # nosec
+from lxml import etree
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from netutils.config.compliance import _open_file_config, parser_map, section_config
@@ -117,7 +117,7 @@ def diff_files(backup_file, intended_file):
 
 
 @close_threaded_db_connections
-def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals  # noqa: D417
+def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     task: Task,
     logger: logging.Logger,
     device_to_settings_map,

@@ -131,6 +131,9 @@ ignore = [
     "D407",  # Missing dashed underline after section
     "D416",  # Section name ends in colon
     "E501",  # Line too long
+
+    # Package specific ignores for backwards compatibility
+    "D417",  # Missing argument descriptions in Docstrings
 ]
 
 [tool.ruff.lint.pydocstyle]

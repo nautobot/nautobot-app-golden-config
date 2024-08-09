@@ -12,7 +12,7 @@ from django.urls import reverse
 from django.utils.html import format_html
 from jinja2 import exceptions as jinja_errors
 from jinja2.sandbox import SandboxedEnvironment
-from lxml import etree  # nosec
+from lxml import etree
 from nautobot.core.utils.data import render_jinja2
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.dcim.models import Device

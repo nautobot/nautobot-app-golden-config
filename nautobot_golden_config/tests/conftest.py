@@ -1,8 +1,7 @@
 """Params for testing."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.utils.text import slugify
@@ -546,7 +545,7 @@ def create_job_result() -> None:
         user=user,
     )
     result.status = JobResultStatusChoices.STATUS_SUCCESS
-    result.completed = datetime.now(pytz.UTC)
+    result.completed = datetime.now(timezone.utc)
     result.validated_save()
     return result
 

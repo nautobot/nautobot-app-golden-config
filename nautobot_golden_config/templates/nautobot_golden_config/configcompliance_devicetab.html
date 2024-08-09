@@ -61,6 +61,9 @@
     .collapse-icon {
         transition: transform 0.3s ease;
     }
+    .collapsable-heading:hover {
+        cursor: pointer;
+    }
 </style>
 <noscript>
     <style>
@@ -106,7 +109,7 @@
         {% with cookie_key='configcompliance-'|add:item_rule %}
         <div id="toggle-configcompliance-{{ item_rule }}" class="panel-heading collapsable-heading" type="button" data-toggle="collapse" data-target="#configcompliance-{{ item_rule }}" aria-expanded="false" aria-controls="configcompliance-{{ item_rule }}">
             <strong><a href="{% url 'plugins:nautobot_golden_config:configcompliance' pk=item.pk %}">{{ item.rule.feature.name|upper }}</a></strong>
-            <i id="collapse-icon-configcompliance-{{ item_rule }}" class="glyphicon glyphicon-chevron-down collapse-icon{% if request.COOKIES|default:''|get_item:cookie_key|default:'False' == 'False' %} rotated{% endif %}"></i>
+            <span id="collapse-icon-configcompliance-{{ item_rule }}" class="glyphicon glyphicon-chevron-down collapse-icon{% if request.COOKIES|default:''|get_item:cookie_key|default:'False' == 'False' %} rotated{% endif %}"></span>
         </div>
         <div class="list-group collapse{% if request.COOKIES|default:''|get_item:cookie_key|default:'False' == 'False' %} in{% endif %} collapsible-div" id="configcompliance-{{ item_rule }}">
         {% endwith %}

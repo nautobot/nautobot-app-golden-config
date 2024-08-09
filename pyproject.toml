@@ -85,7 +85,9 @@ good-names = ["pk"]
 
 [tool.pylint.messages_control]
 disable = """,
-    line-too-long
+    line-too-long,
+    too-few-public-methods,
+    duplicate-code,
 """
 
 [tool.pylint.miscellaneous]

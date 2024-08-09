@@ -6,21 +6,19 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
 from django.test.client import RequestFactory
-
-from graphql import get_default_backend
 from graphene_django.settings import graphene_settings
-
-from nautobot.dcim.models import Platform, LocationType, Location, Device, Manufacturer, DeviceType
-from nautobot.extras.models import GitRepository, GraphQLQuery, DynamicGroup, Role, Status
+from graphql import get_default_backend
+from nautobot.dcim.models import Device, DeviceType, Location, LocationType, Manufacturer, Platform
+from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Role, Status
 
 from nautobot_golden_config.models import (
     ComplianceFeature,
     ComplianceRule,
     ConfigCompliance,
-    GoldenConfig,
-    GoldenConfigSetting,
     ConfigRemove,
     ConfigReplace,
+    GoldenConfig,
+    GoldenConfigSetting,
 )
 
 from .conftest import create_saved_queries

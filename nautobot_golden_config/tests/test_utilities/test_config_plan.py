@@ -1,13 +1,14 @@
 """Unit tests for the nautobot_golden_config utilities config_plan."""
+
 import unittest
 from unittest.mock import Mock, patch
 
+from nautobot_golden_config.tests.conftest import create_config_compliance, create_device, create_feature_rule_cli
 from nautobot_golden_config.utilities.config_plan import (
+    config_plan_default_status,
     generate_config_set_from_compliance_feature,
     generate_config_set_from_manual,
-    config_plan_default_status,
 )
-from nautobot_golden_config.tests.conftest import create_device, create_feature_rule_cli, create_config_compliance
 
 
 class ConfigPlanTest(unittest.TestCase):

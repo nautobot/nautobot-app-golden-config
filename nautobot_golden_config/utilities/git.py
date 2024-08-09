@@ -1,6 +1,7 @@
 """Git helper methods and class."""
 
 import logging
+
 from nautobot.core.utils.git import GitRepo as _GitRepo
 
 LOGGER = logging.getLogger(__name__)

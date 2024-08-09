@@ -1,4 +1,5 @@
 """Functions related to prepare configuration with postprocessing."""
+
 from functools import partial
 from typing import Optional
 
@@ -12,6 +13,7 @@ from nautobot.extras.choices import SecretsGroupAccessTypeChoices
 from nautobot.extras.models.secrets import SecretsGroup
 from nautobot.users.models import User
 from netutils.utils import jinja2_convenience_function
+
 from nautobot_golden_config import models
 from nautobot_golden_config.exceptions import RenderConfigToPushError
 from nautobot_golden_config.utilities.constant import ENABLE_POSTPROCESSING, PLUGIN_CFG
@@ -19,7 +21,7 @@ from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import get_device_to_settings_map
 
 
-def get_secret_by_secret_group_name(
+def get_secret_by_secret_group_name(  # noqa: D417
     user: User,
     secrets_group_name: str,
     secret_type: str,

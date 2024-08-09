@@ -44,7 +44,6 @@ nautobot-capacity-metrics = "^3.0.1"
 xmldiff = "^2.6.3"
 
 [tool.poetry.group.dev.dependencies]
-bandit = "*"
 coverage = "*"
 django-debug-toolbar = "*"
 invoke = "*"

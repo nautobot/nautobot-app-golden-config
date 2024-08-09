@@ -6,9 +6,9 @@ import logging
 import os
 from collections import defaultdict
 from datetime import datetime
+
 from django.utils.timezone import make_aware
 from lxml import etree  # nosec
-
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from netutils.config.compliance import _open_file_config, parser_map, section_config
@@ -16,19 +16,20 @@ from nornir import InitNornir
 from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir.core.task import Result, Task
 from nornir_nautobot.exceptions import NornirNautobotException
+
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
 from nautobot_golden_config.exceptions import ComplianceFailure
 from nautobot_golden_config.models import ComplianceRule, ConfigCompliance, GoldenConfig
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
-from nautobot_golden_config.utilities.logger import NornirLogger
 from nautobot_golden_config.utilities.helper import (
     get_json_config,
     get_xml_config,
+    get_xml_subtree_with_full_path,
     render_jinja_template,
     verify_settings,
-    get_xml_subtree_with_full_path,
 )
+from nautobot_golden_config.utilities.logger import NornirLogger
 
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 LOGGER = logging.getLogger(__name__)
@@ -116,7 +117,7 @@ def diff_files(backup_file, intended_file):
 
 
 @close_threaded_db_connections
-def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
+def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals  # noqa: D417
     task: Task,
     logger: logging.Logger,
     device_to_settings_map,

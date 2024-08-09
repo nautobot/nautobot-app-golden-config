@@ -2,9 +2,10 @@
 
 from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
+from nautobot.core.testing import FilterTestCases
 from nautobot.dcim.models import Device, Platform
 from nautobot.extras.models import Status, Tag
-from nautobot.core.testing import FilterTestCases
+
 from nautobot_golden_config import filters, models
 
 from .conftest import create_device_data, create_feature_rule_cli, create_feature_rule_json, create_job_result

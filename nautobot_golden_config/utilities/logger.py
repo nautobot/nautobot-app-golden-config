@@ -1,7 +1,7 @@
 """Customer logger to support writing to console and db."""
-from typing import Any
 
 import logging
+from typing import Any
 
 LOGGER = logging.getLogger("NORNIR_LOGGER")
 

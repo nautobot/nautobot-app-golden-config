@@ -1,19 +1,17 @@
 """Unit tests for nautobot_golden_config views."""
 
-from unittest import mock, skip
 import datetime
-
-from lxml import html
+from unittest import mock, skip
 
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
-from django.test import override_settings, RequestFactory, TestCase
+from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
-
+from lxml import html
 from nautobot.core.models.querysets import RestrictedQuerySet
+from nautobot.core.testing import ViewTestCases
 from nautobot.dcim.models import Device
 from nautobot.extras.models import Relationship, RelationshipAssociation, Status
-from nautobot.core.testing import ViewTestCases
 
 from nautobot_golden_config import models, views
 

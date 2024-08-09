@@ -6,13 +6,14 @@ import os
 from datetime import datetime
 
 from django.utils.timezone import make_aware
+from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
+from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from nornir import InitNornir
 from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir.core.task import Result, Task
 from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
-from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
-from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
+
 from nautobot_golden_config.exceptions import IntendedGenerationFailure
 from nautobot_golden_config.models import GoldenConfig
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
@@ -26,13 +27,12 @@ from nautobot_golden_config.utilities.helper import (
 )
 from nautobot_golden_config.utilities.logger import NornirLogger
 
-
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 LOGGER = logging.getLogger(__name__)
 
 
 @close_threaded_db_connections
-def run_template(  # pylint: disable=too-many-arguments,too-many-locals
+def run_template(  # pylint: disable=too-many-arguments,too-many-locals  # noqa: D417
     task: Task, logger: NornirLogger, device_to_settings_map, job_class_instance, jinja_env
 ) -> Result:
     """Render Jinja Template.
@@ -64,7 +64,7 @@ def run_template(  # pylint: disable=too-many-arguments,too-many-locals
     jinja_template = render_jinja_template(obj, logger, settings.jinja_path_template)
     job_class_instance.request.user = job_class_instance.user
     status, device_data = graph_ql_query(job_class_instance.request, obj, settings.sot_agg_query.query)
-    if status != 200:
+    if status != 200:  # noqa: PLR2004
         error_msg = f"`E3012:` The GraphQL query return a status of {str(status)} with error of {str(device_data)}"
         logger.error(error_msg, extra={"object": obj})
         raise NornirNautobotException(error_msg)

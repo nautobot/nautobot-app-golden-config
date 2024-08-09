@@ -13,6 +13,7 @@ from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir.core.task import Result, Task
 from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
+
 from nautobot_golden_config.exceptions import BackupFailure
 from nautobot_golden_config.models import ConfigRemove, ConfigReplace, GoldenConfig
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
@@ -28,7 +29,7 @@ InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 
 
 @close_threaded_db_connections  # TODO: Is this still needed?
-def run_backup(  # pylint: disable=too-many-arguments
+def run_backup(  # pylint: disable=too-many-arguments  # noqa: D417
     task: Task, logger: logging.Logger, device_to_settings_map, remove_regex_dict, replace_regex_dict
 ) -> Result:
     r"""Backup configurations to disk.

@@ -172,6 +172,7 @@ def render_jinja_template(obj, logger, template):
 def get_device_to_settings_map(queryset):
     """Helper function to map settings to devices."""
     device_to_settings_map = {}
+    update_dynamic_groups_cache()
     for device in queryset:
         dynamic_group = device.dynamic_groups.exclude(golden_config_setting__isnull=True).order_by(
             "-golden_config_setting__weight"
@@ -277,3 +278,9 @@ def get_xml_subtree_with_full_path(config_xml, match_config):
             current_element = copied_parent
         current_element.append(deepcopy(element))
     return etree.tostring(new_root, encoding="unicode", pretty_print=True)
+
+
+def update_dynamic_groups_cache():
+    """Update dynamic group cache for all golden config dynamic groups."""
+    for setting in models.GoldenConfigSetting.objects.all():
+        setting.dynamic_group.update_cached_members()

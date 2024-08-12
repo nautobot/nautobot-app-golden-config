@@ -3,13 +3,14 @@
 import datetime
 from unittest import mock, skip
 
+import nautobot
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
-from django.test import RequestFactory, TestCase, override_settings
+from django.test import RequestFactory, override_settings
 from django.urls import reverse
 from lxml import html
 from nautobot.core.models.querysets import RestrictedQuerySet
-from nautobot.core.testing import ViewTestCases
+from nautobot.core.testing import TestCase, ViewTestCases
 from nautobot.dcim.models import Device
 from nautobot.extras.models import Relationship, RelationshipAssociation, Status
 
@@ -20,10 +21,12 @@ from .conftest import create_device_data, create_feature_rule_json, create_job_r
 User = get_user_model()
 
 
+@override_settings(EXEMPT_VIEW_PERMISSIONS=["*"])
 class ConfigComplianceOverviewHelperTestCase(TestCase):
     """Test ConfigComplianceOverviewHelper."""
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         """Set up base objects."""
         create_device_data()
         dev01 = Device.objects.get(name="Device 1")
@@ -50,9 +53,7 @@ class ConfigComplianceOverviewHelperTestCase(TestCase):
             )
 
         # TODO: 2.0 turn this back on.
-        # self.ccoh = views.ConfigComplianceOverviewOverviewHelper
-        User.objects.create_superuser(username="views", password="incredible")
-        self.client.login(username="views", password="incredible")
+        # cls.ccoh = views.ConfigComplianceOverviewOverviewHelper
 
     def test_plot_visual_no_devices(self):
         # TODO: 2.0 turn this back on.
@@ -101,56 +102,44 @@ class ConfigComplianceOverviewHelperTestCase(TestCase):
         mock_graph_ql_query.assert_called()
 
 
+@override_settings(EXEMPT_VIEW_PERMISSIONS=["*"])
 class ConfigReplaceListViewTestCase(TestCase):
     """Test ConfigReplaceListView."""
 
-    def setUp(self):
+    _csv_headers = "name,platform,description,regex,replace"
+    _entry_name = "test name"
+    _entry_description = "test description"
+    _entry_regex = "^startswiththeend$"
+    _entry_replace = "<dontlookatme>"
+
+    @classmethod
+    def setUpTestData(cls):
         """Set up base objects."""
         create_device_data()
-        User.objects.create_superuser(username="views", password="incredible")
-        self.client.login(username="views", password="incredible")
-        self._delete_test_entry()
+        cls._delete_test_entry()
         models.ConfigReplace.objects.create(
-            name=self._entry_name,
+            name=cls._entry_name,
             platform=Device.objects.first().platform,
-            description=self._entry_description,
-            regex=self._entry_regex,
-            replace=self._entry_replace,
+            description=cls._entry_description,
+            regex=cls._entry_regex,
+            replace=cls._entry_replace,
         )
 
     @property
     def _url(self):
         return reverse("plugins:nautobot_golden_config:configreplace_list")
 
-    def _delete_test_entry(self):
+    @classmethod
+    def _delete_test_entry(cls):
         try:
-            entry = models.ConfigReplace.objects.get(name=self._entry_name)
+            entry = models.ConfigReplace.objects.get(name=cls._entry_name)
             entry.delete()
         except models.ConfigReplace.DoesNotExist:
             pass
 
-    @property
-    def _csv_headers(self):
-        return "name,platform,description,regex,replace"
-
-    @property
-    def _entry_name(self):
-        return "test name"
-
-    @property
-    def _entry_description(self):
-        return "test description"
-
-    @property
-    def _entry_regex(self):
-        return "^startswiththeend$"
-
-    @property
-    def _entry_replace(self):
-        return "<dontlookatme>"
-
     def test_configreplace_import(self):
         self._delete_test_entry()
+        self.add_permissions("nautobot_golden_config.add_configreplace")
         platform = Device.objects.first().platform
         import_entry = (
             f"{self._entry_name},{platform.id},{self._entry_description},{self._entry_regex},{self._entry_replace}"
@@ -169,15 +158,16 @@ class ConfigReplaceListViewTestCase(TestCase):
 class GoldenConfigListViewTestCase(TestCase):
     """Test GoldenConfigListView."""
 
-    def setUp(self):
+    user_permissions = ["nautobot_golden_config.view_goldenconfig", "nautobot_golden_config.change_goldenconfig"]
+
+    @classmethod
+    def setUpTestData(cls):
         """Set up base objects."""
         create_device_data()
-        User.objects.create_superuser(username="views", password="incredible")
-        self.client.login(username="views", password="incredible")
-        self.gc_settings = models.GoldenConfigSetting.objects.first()
-        self.gc_dynamic_group = self.gc_settings.dynamic_group
-        self.gc_dynamic_group.filter = {"name": [dev.name for dev in Device.objects.all()]}
-        self.gc_dynamic_group.validated_save()
+        cls.gc_settings = models.GoldenConfigSetting.objects.first()
+        cls.gc_dynamic_group = cls.gc_settings.dynamic_group
+        cls.gc_dynamic_group.filter = {"name": [dev.name for dev in Device.objects.all()]}
+        cls.gc_dynamic_group.validated_save()
         models.GoldenConfig.objects.create(device=Device.objects.first())
 
     def _get_golden_config_table_header(self):
@@ -188,6 +178,8 @@ class GoldenConfigListViewTestCase(TestCase):
 
     @property
     def _text_table_headers(self):
+        if nautobot.__version__ >= "2.3.0":
+            return ["Device", "Backup Status", "Intended Status", "Compliance Status", "Dynamic Groups", "Actions"]
         return ["Device", "Backup Status", "Intended Status", "Compliance Status", "Actions"]
 
     @property

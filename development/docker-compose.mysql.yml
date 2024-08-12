@@ -18,8 +18,6 @@ services:
       - "development_mysql.env"
   db:
     image: "mysql:8"
-    command:
-      - "--default-authentication-plugin=mysql_native_password"
     env_file:
       - "development.env"
       - "creds.env"

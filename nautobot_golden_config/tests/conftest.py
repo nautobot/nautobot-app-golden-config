@@ -6,6 +6,7 @@ try:
 except ModuleNotFoundError:
     # Django 4
     from zoneinfo import ZoneInfo
+    UTC = ZoneInfo("UTC")
 
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
@@ -552,10 +553,7 @@ def create_job_result() -> None:
         user=user,
     )
     result.status = JobResultStatusChoices.STATUS_SUCCESS
-    try:
-        result.completed = datetime.now(UTC)
-    except NameError:
-        result.completed = datetime.now(ZoneInfo("UTC"))
+    result.completed = datetime.now(UTC)
     result.validated_save()
     return result
 

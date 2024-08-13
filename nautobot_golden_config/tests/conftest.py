@@ -9,7 +9,8 @@ from nautobot.extras.choices import JobResultStatusChoices
 from nautobot.extras.datasources.registry import get_datasource_contents
 from nautobot.extras.models import GitRepository, GraphQLQuery, JobResult, Role, Status, Tag, DynamicGroup
 from nautobot.tenancy.models import Tenant, TenantGroup
-import pytz
+
+from zoneinfo import ZoneInfo
 from nautobot_golden_config.models import GoldenConfigSetting
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
 from nautobot_golden_config.models import ComplianceFeature, ComplianceRule, ConfigCompliance
@@ -545,7 +546,7 @@ def create_job_result() -> None:
         user=user,
     )
     result.status = JobResultStatusChoices.STATUS_SUCCESS
-    result.completed = datetime.now(pytz.UTC)
+    result.completed = datetime.now(ZoneInfo("UTC"))
     result.validated_save()
     return result
 

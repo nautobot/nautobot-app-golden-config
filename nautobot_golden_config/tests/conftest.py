@@ -1,11 +1,13 @@
 """Params for testing."""
 from datetime import datetime
+
 try:
     # Django 3
     from pytz import UTC
 except ModuleNotFoundError:
     # Django 4
     from zoneinfo import ZoneInfo
+
     UTC = ZoneInfo("UTC")
 
 from django.contrib.auth import get_user_model

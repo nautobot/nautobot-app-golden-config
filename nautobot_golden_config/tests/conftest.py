@@ -1,6 +1,11 @@
 """Params for testing."""
 from datetime import datetime
-from zoneinfo import ZoneInfo
+try:
+    # Django 3
+    from pytz import UTC
+except ModuleNotFoundError:
+    # Django 4
+    from zoneinfo import ZoneInfo
 
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
@@ -547,7 +552,10 @@ def create_job_result() -> None:
         user=user,
     )
     result.status = JobResultStatusChoices.STATUS_SUCCESS
-    result.completed = datetime.now(ZoneInfo("UTC"))
+    try:
+        result.completed = datetime.now(UTC)
+    except NameError:
+        result.completed = datetime.now(ZoneInfo("UTC"))
     result.validated_save()
     return result
 

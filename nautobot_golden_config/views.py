@@ -1,4 +1,5 @@
 """Django views for Nautobot Golden Configuration."""  # pylint: disable=too-many-lines
+
 import json
 import logging
 from datetime import datetime
@@ -9,14 +10,13 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, ExpressionWrapper, F, FloatField, Max, Q
 from django.shortcuts import redirect, render
 from django.urls import reverse
-
 from django.utils.html import format_html
 from django.utils.timezone import make_aware
 from django.views.generic import View
 from django_pivot.pivot import pivot
 from nautobot.apps import views
 from nautobot.core.views import generic
-from nautobot.core.views.mixins import ObjectPermissionRequiredMixin, PERMISSIONS_ACTION_MAP
+from nautobot.core.views.mixins import PERMISSIONS_ACTION_MAP, ObjectPermissionRequiredMixin
 from nautobot.dcim.models import Device
 from nautobot.extras.models import Job, JobResult
 from rest_framework.decorators import action

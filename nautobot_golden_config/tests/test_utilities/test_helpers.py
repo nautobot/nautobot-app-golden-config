@@ -4,12 +4,13 @@ import logging
 from unittest.mock import MagicMock, patch
 
 from django.contrib.contenttypes.models import ContentType
-from django.test import TestCase
 from django.template import engines
+from django.test import TestCase
 from jinja2 import exceptions as jinja_errors
-from nautobot.dcim.models import Device, Platform, Location, LocationType
+from nautobot.dcim.models import Device, Location, LocationType, Platform
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status, Tag
 from nornir_nautobot.exceptions import NornirNautobotException
+
 from nautobot_golden_config.models import GoldenConfigSetting
 from nautobot_golden_config.tests.conftest import create_device, create_helper_repo, create_orphan_device
 from nautobot_golden_config.utilities.helper import (

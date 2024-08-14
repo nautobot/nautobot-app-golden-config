@@ -1,15 +1,15 @@
 """Utility functions for working with mathplotlib."""
+
 import base64
 import io
 import logging
 import urllib
 
-from django.db.models import Count, Q
-
 import matplotlib.pyplot as plt
 import numpy as np
-
+from django.db.models import Count, Q
 from nautobot.core.choices import ColorChoices
+
 from nautobot_golden_config.utilities import constant
 
 GREEN = "#" + ColorChoices.COLOR_GREEN

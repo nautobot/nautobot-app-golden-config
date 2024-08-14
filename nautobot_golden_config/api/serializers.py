@@ -1,13 +1,11 @@
 """REST API serializer capabilities for graphql app."""
 
 # pylint: disable=too-many-ancestors
-from rest_framework import serializers
-
-from nautobot.extras.api.mixins import TaggedModelSerializerMixin
+from nautobot.core.api.serializers import NautobotModelSerializer
 from nautobot.dcim.api.serializers import DeviceSerializer
 from nautobot.dcim.models import Device
-from nautobot.core.api.serializers import NautobotModelSerializer
-
+from nautobot.extras.api.mixins import TaggedModelSerializerMixin
+from rest_framework import serializers
 
 from nautobot_golden_config import models
 from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing

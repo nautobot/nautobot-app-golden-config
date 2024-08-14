@@ -1,15 +1,18 @@
 """Basic Job Test."""
-from unittest.mock import patch, MagicMock
+
+from unittest.mock import MagicMock, patch
+
 from nautobot.apps.testing import TransactionTestCase, create_job_result_and_run_job
-from nautobot.extras.models import JobLogEntry
 from nautobot.dcim.models import Device
+from nautobot.extras.models import JobLogEntry
+
+from nautobot_golden_config import jobs
 from nautobot_golden_config.tests.conftest import (
     create_device,
     create_orphan_device,
     dgs_gc_settings_and_job_repo_objects,
 )
 from nautobot_golden_config.utilities import constant
-from nautobot_golden_config import jobs
 
 
 @patch("nautobot_golden_config.nornir_plays.config_backup.run_backup", MagicMock(return_value="foo"))

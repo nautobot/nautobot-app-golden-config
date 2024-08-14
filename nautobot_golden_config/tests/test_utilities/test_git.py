@@ -27,7 +27,7 @@ class GitRepoTest(unittest.TestCase):
 
         mock_obj.filesystem_path = "/fake/path"
         mock_obj.remote_url = "https://fake.git/org/repository.git"
-        mock_obj._token = "fake token"  # nosec pylint: disable=protected-access
+        mock_obj._token = "fake token"  # pylint: disable=protected-access
         mock_obj.username = None
         mock_obj.secrets_group = Mock(get_secret_value=mock_get_secret_value)
         self.mock_obj = mock_obj

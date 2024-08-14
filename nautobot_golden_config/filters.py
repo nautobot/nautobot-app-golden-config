@@ -1,8 +1,7 @@
 """Filters for UI and API Views."""
 
 import django_filters
-
-from nautobot.core.filters import MultiValueDateTimeFilter, TreeNodeMultipleChoiceFilter, SearchFilter
+from nautobot.core.filters import MultiValueDateTimeFilter, SearchFilter, TreeNodeMultipleChoiceFilter
 from nautobot.dcim.models import Device, DeviceType, Location, Manufacturer, Platform, Rack, RackGroup
 from nautobot.extras.filters import NaturalKeyOrPKMultipleChoiceFilter, NautobotFilterSet, StatusFilter
 from nautobot.extras.models import JobResult, Role, Status

@@ -5,6 +5,7 @@
 # pylint: disable=arguments-differ
 
 from datetime import datetime
+
 from django.utils.timezone import make_aware
 from nautobot.core.celery import register_jobs
 from nautobot.dcim.models import Device, DeviceType, Location, Manufacturer, Platform, Rack, RackGroup
@@ -24,6 +25,7 @@ from nautobot.tenancy.models import Tenant, TenantGroup
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir_nautobot.exceptions import NornirNautobotException
+
 from nautobot_golden_config.choices import ConfigPlanTypeChoice
 from nautobot_golden_config.exceptions import BackupFailure, ComplianceFailure, IntendedGenerationFailure
 from nautobot_golden_config.models import ComplianceFeature, ConfigPlan, GoldenConfig

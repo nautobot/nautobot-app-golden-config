@@ -4,7 +4,6 @@
 import json
 
 import django.forms as django_forms
-
 from nautobot.apps import forms
 from nautobot.dcim.models import Device, DeviceType, Location, Manufacturer, Platform, Rack, RackGroup
 from nautobot.extras.forms import NautobotBulkEditForm, NautobotFilterForm, NautobotModelForm

@@ -1,11 +1,12 @@
 """Unit tests for nautobot_golden_config datasources."""
+
 from unittest import skip
 from unittest.mock import Mock
 
 from django.test import TestCase
 from nautobot.dcim.models import Platform
 
-from nautobot_golden_config.datasources import get_id_kwargs, MissingReference
+from nautobot_golden_config.datasources import MissingReference, get_id_kwargs
 from nautobot_golden_config.models import ComplianceFeature
 
 

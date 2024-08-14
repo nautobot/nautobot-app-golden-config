@@ -1,11 +1,12 @@
 """Django Tables2 classes for golden_config app."""
+
 import copy
 
 from django.utils.html import format_html
 from django_tables2 import Column, LinkColumn, TemplateColumn
 from django_tables2.utils import A
-from nautobot.extras.tables import StatusTableMixin
 from nautobot.apps.tables import BaseTable, BooleanColumn, TagColumn, ToggleColumn
+from nautobot.extras.tables import StatusTableMixin
 
 from nautobot_golden_config import models
 from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED

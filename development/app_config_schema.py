@@ -1,4 +1,5 @@
 """App Config Schema Generator and Validator."""
+
 import json
 from importlib import import_module
 from os import getenv

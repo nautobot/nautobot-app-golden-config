@@ -147,3 +147,7 @@ These errors have been accurate so far, that is not to say that there is no way 
 ## _Why is the `_isnull` on DateTime filters considered experimental?_
 
 There are various ways we can create a programmatic interface, which may change the behavior or name, for now it should be considered experimental as we may update this strategy.
+
+## _I received an error `AttributeError: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.` what should I do?_
+
+Due to an incompatiblitly between DeepDiff and numPy, you must find a version of those two that are compatible with each other. See [here](https://github.com/seperman/deepdiff/issues/464) for more information. The easiest thing to do is upgrade them both.

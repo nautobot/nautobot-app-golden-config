@@ -5,6 +5,12 @@
 - Add functionality to compliance result to provide a Remediation plan.
 - Supports Nautobot >=1.6.1,<2.0.0.
 
+## v1.6.6 - 2024-08
+
+### Fixed
+
+- [#787](https://github.com/nautobot/nautobot-app-golden-config/pull/787) - Allow version 7 of deepdiff.
+
 ## v1.6.5 - 2024-04
 
 ### Fixed

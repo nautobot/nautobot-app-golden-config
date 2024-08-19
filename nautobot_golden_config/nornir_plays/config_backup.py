@@ -13,6 +13,7 @@ from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir.core.task import Result, Task
 from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
+
 from nautobot_golden_config.exceptions import BackupFailure
 from nautobot_golden_config.models import ConfigRemove, ConfigReplace, GoldenConfig
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig

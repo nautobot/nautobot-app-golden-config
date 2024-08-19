@@ -1,4 +1,5 @@
 """App declaration for nautobot_golden_config."""
+
 # Metadata is inherited from Nautobot. If not including Nautobot in the environment, this should be added
 from importlib import metadata
 
@@ -71,8 +72,8 @@ class GoldenConfig(NautobotAppConfig):
         # pylint: disable=import-outside-toplevel
         from .signals import (
             config_compliance_platform_cleanup,
-            post_migrate_create_statuses,
             post_migrate_create_job_button,
+            post_migrate_create_statuses,
         )
 
         nautobot_database_ready.connect(post_migrate_create_statuses, sender=self)

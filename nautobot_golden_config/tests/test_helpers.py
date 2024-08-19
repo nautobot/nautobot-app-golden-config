@@ -1,26 +1,25 @@
 """Unit tests for nautobot_golden_config helpers."""
+
 import os
 from unittest import mock
+
 import jinja2
-
 from django.contrib.auth import get_user_model
-from django.test import TestCase
 from django.contrib.contenttypes.models import ContentType
-
-from nautobot.extras.models import SecretsGroup, Secret, SecretsGroupAssociation
+from django.test import TestCase
 from nautobot.extras.choices import SecretsGroupAccessTypeChoices, SecretsGroupSecretTypeChoices
+from nautobot.extras.models import Secret, SecretsGroup, SecretsGroupAssociation
 from nautobot.users.models import ObjectPermission
 
+from nautobot_golden_config.models import GoldenConfig
 from nautobot_golden_config.utilities.config_postprocessing import (
+    get_config_postprocessing,
     get_secret_by_secret_group_name,
     render_secrets,
-    get_config_postprocessing,
 )
-from nautobot_golden_config.models import GoldenConfig
 from nautobot_golden_config.utilities.constant import PLUGIN_CFG
 
 from .conftest import create_device
-
 
 # Use the proper swappable User model
 User = get_user_model()

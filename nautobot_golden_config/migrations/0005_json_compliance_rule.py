@@ -1,5 +1,6 @@
-from django.db import migrations, models
 import json
+
+from django.db import migrations, models
 
 
 def jsonify(apps, schedma_editor):

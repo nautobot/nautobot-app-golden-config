@@ -1,29 +1,25 @@
 """Nornir job for deploying configurations."""
 
-from datetime import datetime
 import logging
+from datetime import datetime
 
 from django.utils.timezone import make_aware
-
 from nautobot.dcim.models import Device
 from nautobot.extras.models import Status
-
+from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
+from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from nornir import InitNornir
 from nornir.core.exceptions import NornirSubTaskError
 from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir.core.task import Result, Task
-
 from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
 
-from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
-from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
-
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
+from nautobot_golden_config.utilities.constant import DEFAULT_DEPLOY_STATUS
+from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.utilities.helper import dispatch_params
 from nautobot_golden_config.utilities.logger import NornirLogger
-from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
-from nautobot_golden_config.utilities.constant import DEFAULT_DEPLOY_STATUS
 
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 
@@ -60,10 +56,9 @@ def run_deployment(task: Task, logger: logging.Logger, config_plan_qs, deploy_jo
         if not task_changed and not task_failed:
             plans_to_deploy.update(status=Status.objects.get(name="Completed"))
             logger.info("Nothing was deployed to the device.", extra={"object": obj})
-        else:
-            if not task_failed:
-                logger.info("Successfully deployed configuration to device.", extra={"object": obj})
-                plans_to_deploy.update(status=Status.objects.get(name="Completed"))
+        elif not task_failed:
+            logger.info("Successfully deployed configuration to device.", extra={"object": obj})
+            plans_to_deploy.update(status=Status.objects.get(name="Completed"))
     except NornirSubTaskError as error:
         task_result = None
         plans_to_deploy.update(status=Status.objects.get(name="Failed"))

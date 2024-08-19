@@ -1,10 +1,11 @@
 """Signal helpers."""
+
 from django.apps import apps as global_apps
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from nautobot.core.choices import ColorChoices
 from nautobot.dcim.models import Platform
 
-from nautobot.core.choices import ColorChoices
 from nautobot_golden_config import models
 
 

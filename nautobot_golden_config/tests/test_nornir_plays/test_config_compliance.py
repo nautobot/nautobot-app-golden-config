@@ -1,10 +1,11 @@
 """Unit tests for nautobot_golden_config nornir compliance."""
 
-import unittest
 import json
-from unittest.mock import patch, Mock, MagicMock
+import unittest
+from unittest.mock import MagicMock, Mock, patch
+
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
-from nautobot_golden_config.nornir_plays.config_compliance import get_rules, get_config_element
+from nautobot_golden_config.nornir_plays.config_compliance import get_config_element, get_rules
 
 
 class ConfigComplianceTest(unittest.TestCase):

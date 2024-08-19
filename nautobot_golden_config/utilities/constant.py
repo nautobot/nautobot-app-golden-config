@@ -1,4 +1,5 @@
 """Storage of data that will not change throughout the life cycle of application."""
+
 from django.conf import settings
 from django.utils.module_loading import import_string
 

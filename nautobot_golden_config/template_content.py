@@ -1,8 +1,10 @@
 """Added content to the device model view for config compliance."""
+
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, Q
 from django.urls import reverse
 from nautobot.extras.plugins import PluginTemplateExtension
+
 from nautobot_golden_config.models import ConfigCompliance, GoldenConfig
 from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_COMPLIANCE
 

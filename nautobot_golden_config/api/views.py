@@ -1,29 +1,26 @@
 """View for Golden Config APIs."""
+
 import json
 
 from django.contrib.contenttypes.models import ContentType
-
-from rest_framework.mixins import DestroyModelMixin, ListModelMixin, RetrieveModelMixin, UpdateModelMixin
-from rest_framework.views import APIView
-from rest_framework.viewsets import GenericViewSet
-from rest_framework.response import Response
-from rest_framework.routers import APIRootView
-from rest_framework.permissions import AllowAny, IsAuthenticated, BasePermission
-from rest_framework import mixins, viewsets
-
 from nautobot.core.api.views import (
     BulkDestroyModelMixin,
     BulkUpdateModelMixin,
     ModelViewSetMixin,
     NautobotAPIVersionMixin,
 )
-from nautobot.extras.api.views import NautobotModelViewSet, NotesViewSetMixin
 from nautobot.dcim.models import Device
+from nautobot.extras.api.views import NautobotModelViewSet, NotesViewSetMixin
+from rest_framework import mixins, viewsets
+from rest_framework.mixins import DestroyModelMixin, ListModelMixin, RetrieveModelMixin, UpdateModelMixin
+from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.routers import APIRootView
+from rest_framework.views import APIView
+from rest_framework.viewsets import GenericViewSet
 
-
+from nautobot_golden_config import filters, models
 from nautobot_golden_config.api import serializers
-from nautobot_golden_config import models
-from nautobot_golden_config import filters
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import get_device_to_settings_map
 

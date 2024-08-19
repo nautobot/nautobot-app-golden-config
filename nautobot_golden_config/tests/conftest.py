@@ -1,28 +1,18 @@
 """Params for testing."""
-from datetime import datetime
 
-try:
-    # Django 3
-    from pytz import UTC
-except ModuleNotFoundError:
-    # Django 4
-    from zoneinfo import ZoneInfo
-
-    UTC = ZoneInfo("UTC")
+from datetime import datetime, timezone
 
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.utils.text import slugify
-
 from nautobot.dcim.models import Device, DeviceType, Location, LocationType, Manufacturer, Platform, Rack, RackGroup
 from nautobot.extras.choices import JobResultStatusChoices
 from nautobot.extras.datasources.registry import get_datasource_contents
-from nautobot.extras.models import GitRepository, GraphQLQuery, JobResult, Role, Status, Tag, DynamicGroup
+from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, JobResult, Role, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
 
-from nautobot_golden_config.models import GoldenConfigSetting
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
-from nautobot_golden_config.models import ComplianceFeature, ComplianceRule, ConfigCompliance
+from nautobot_golden_config.models import ComplianceFeature, ComplianceRule, ConfigCompliance, GoldenConfigSetting
 
 User = get_user_model()
 
@@ -555,7 +545,7 @@ def create_job_result() -> None:
         user=user,
     )
     result.status = JobResultStatusChoices.STATUS_SUCCESS
-    result.completed = datetime.now(UTC)
+    result.completed = datetime.now(timezone.utc)
     result.validated_save()
     return result
 

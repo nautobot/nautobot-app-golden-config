@@ -1,9 +1,10 @@
 """Django urlpatterns declaration for config compliance app."""
-from django.urls import path
-from django.templatetags.static import static
-from django.views.generic import RedirectView
 
+from django.templatetags.static import static
+from django.urls import path
+from django.views.generic import RedirectView
 from nautobot.core.views.routers import NautobotUIViewSetRouter
+
 from nautobot_golden_config import views
 
 app_name = "nautobot_golden_config"

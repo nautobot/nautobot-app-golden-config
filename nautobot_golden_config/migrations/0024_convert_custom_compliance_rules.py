@@ -1,4 +1,5 @@
 from django.db import migrations
+
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
 
 

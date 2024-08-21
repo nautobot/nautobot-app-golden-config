@@ -14,7 +14,7 @@ on: # yamllint disable-line rule:truthy rule:comments
   pull_request: ~
 
 env:
-  APP_NAME: "nautobot-app-golden-config"
+  APP_NAME: "nautobot-golden-config"
 
 jobs:
   ruff-format:
@@ -95,8 +95,8 @@ jobs:
       - name: "Constrain Nautobot version"
         run: |
           # Retrieve the version from the Docker image - for cases where the input version is "stable" or "latest"
-          docker run --rm -it --entrypoint "" ghcr.io/nautobot/nautobot-dev:${{ matrix.nautobot-version }}-py${{ matrix.python-version }} pip show nautobot \ |
-          grep "^Version" | sed "s/Version: //" >> /tmp/nautobot_version.txt
+          docker run --rm --entrypoint "" ghcr.io/nautobot/nautobot-dev:${{ matrix.nautobot-version }}-py${{ matrix.python-version }} pip show nautobot | \
+          grep "^Version" | sed "s/Version: //" > /tmp/nautobot_version.txt
           export NAUTOBOT_VER=$(cat /tmp/nautobot_version.txt)
           poetry add nautobot@$NAUTOBOT_VER --python ${{ matrix.python-version }}
       - name: "Set up Docker Buildx"
@@ -153,8 +153,8 @@ jobs:
       - name: "Constrain Nautobot version"
         run: |
           # Retrieve the version from the Docker image - for cases where the input version is "stable" or "latest"
-          docker run --rm -it --entrypoint "" ghcr.io/nautobot/nautobot-dev:${{ matrix.nautobot-version }}-py${{ matrix.python-version }} pip show nautobot \ |
-          grep "^Version" | sed "s/Version: //" >> /tmp/nautobot_version.txt
+          docker run --rm --entrypoint "" ghcr.io/nautobot/nautobot-dev:${{ matrix.nautobot-version }}-py${{ matrix.python-version }} pip show nautobot | \
+          grep "^Version" | sed "s/Version: //" > /tmp/nautobot_version.txt
           export NAUTOBOT_VER=$(cat /tmp/nautobot_version.txt)
           poetry add nautobot@$NAUTOBOT_VER --python ${{ matrix.python-version }}
       - name: "Set up Docker Buildx"

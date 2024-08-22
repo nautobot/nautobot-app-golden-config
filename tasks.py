@@ -210,10 +210,10 @@ def generate_packages(context):
 def _get_docker_nautobot_version(context, nautobot_ver=None, python_ver=None):
     """Extract Nautobot version from base docker image."""
     if nautobot_ver is None:
-        nautobot_ver = context.nautobot_dev_example.nautobot_ver
+        nautobot_ver = context.nautobot_golden_config.nautobot_ver
     if python_ver is None:
-        python_ver = context.nautobot_dev_example.python_ver
-    dockerfile_path = os.path.join(context.nautobot_dev_example.compose_dir, "Dockerfile")
+        python_ver = context.nautobot_golden_config.python_ver
+    dockerfile_path = os.path.join(context.nautobot_golden_config.compose_dir, "Dockerfile")
     base_image = context.run(f"grep --max-count=1 '^FROM ' {dockerfile_path}", hide=True).stdout.strip().split(" ")[1]
     base_image = base_image.replace(r"${NAUTOBOT_VER}", nautobot_ver).replace(r"${PYTHON_VER}", python_ver)
     pip_nautobot_ver = context.run(f"docker run --rm --entrypoint '' {base_image} pip show nautobot", hide=True)
@@ -248,7 +248,7 @@ def lock(context, check=False, constrain_nautobot_ver=False, constrain_python_ve
         docker_nautobot_version = _get_docker_nautobot_version(context)
         command = f"poetry add --lock nautobot@{docker_nautobot_version}"
         if constrain_python_ver:
-            command += f" --python {context.nautobot_dev_example.python_ver}"
+            command += f" --python {context.nautobot_golden_config.python_ver}"
     else:
         command = f"poetry {'check' if check else 'lock --no-update'}"
     run_command(context, command)

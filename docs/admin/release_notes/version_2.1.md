@@ -5,16 +5,7 @@
 - Hide Compliance tab if no compliance result exists.
 
 
-### Added
-
-- [#1501](https://github.com/nautobot/nautobot-app-golden-config/issues/1501) - Add Support for XML Compliance
-
-### Fixed
-
-- [#723](https://github.com/nautobot/nautobot-app-golden-config/issues/723) - Hide compliance tab in device view if no compliance results exist.
-
-
-## v2.1.1
+## v2.1.1 - 2024-07
 
 ### Fixed
 
@@ -33,3 +24,14 @@
 ### Housekeeping
 
 - [#769](https://github.com/nautobot/nautobot-app-golden-config/issues/769) - Added view tests for ConfigComplianceUIViewSet.
+
+
+## v2.1.0 - 2024-05
+
+### Added
+
+- [#708](https://github.com/nautobot/nautobot-app-golden-config/issues/708) - Add Support for XML Compliance
+
+### Fixed
+
+- [#723](https://github.com/nautobot/nautobot-app-golden-config/issues/723) - Hide compliance tab in device view if no compliance results exist.

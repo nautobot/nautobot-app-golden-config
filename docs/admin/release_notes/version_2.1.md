@@ -5,16 +5,18 @@
 - Hide Compliance tab if no compliance result exists.
 
 
-### Added
-
-- [#1501](https://github.com/nautobot/nautobot-app-golden-config/issues/1501) - Add Support for XML Compliance
+## v2.1.2 2024-08
 
 ### Fixed
 
-- [#723](https://github.com/nautobot/nautobot-app-golden-config/issues/723) - Hide compliance tab in device view if no compliance results exist.
+- [#792](https://github.com/nautobot/nautobot-app-golden-config/issues/792) - Fixed issue with dynamic groups not being called in 2.3.0.
 
+### Housekeeping
 
-## v2.1.1
+- [#786](https://github.com/nautobot/nautobot-app-golden-config/issues/786) - Fixed incorrect test data setup for `test_tags_filter()` test for `ConfigPlanFilterTestCase`.
+- [#788](https://github.com/nautobot/nautobot-app-golden-config/issues/788) - Rebaked from the cookie `nautobot-app-v2.3.0`.
+
+## v2.1.1 - 2024-07
 
 ### Fixed
 
@@ -33,3 +35,14 @@
 ### Housekeeping
 
 - [#769](https://github.com/nautobot/nautobot-app-golden-config/issues/769) - Added view tests for ConfigComplianceUIViewSet.
+
+
+## v2.1.0 - 2024-05
+
+### Added
+
+- [#708](https://github.com/nautobot/nautobot-app-golden-config/issues/708) - Add Support for XML Compliance
+
+### Fixed
+
+- [#723](https://github.com/nautobot/nautobot-app-golden-config/issues/723) - Hide compliance tab in device view if no compliance results exist.

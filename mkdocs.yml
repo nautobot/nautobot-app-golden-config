@@ -1,6 +1,6 @@
 ---
 dev_addr: "127.0.0.1:8001"
-edit_uri: "edit/main/nautobot-app-golden-config/docs"
+edit_uri: "edit/main/docs"
 site_dir: "nautobot_golden_config/static/nautobot_golden_config/docs"
 site_name: "Golden Config Documentation"
 site_url: "https://docs.nautobot.com/projects/golden-config/en/latest/"

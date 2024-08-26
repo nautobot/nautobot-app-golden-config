@@ -13,10 +13,12 @@ limitations under the License.
 """
 
 import os
+import re
 from pathlib import Path
 from time import sleep
 
 from invoke.collection import Collection
+from invoke.exceptions import Exit
 from invoke.tasks import task as invoke_task
 
 
@@ -48,7 +50,7 @@ namespace = Collection("nautobot_golden_config")
 namespace.configure(
     {
         "nautobot_golden_config": {
-            "nautobot_ver": "2.0.0",
+            "nautobot_ver": "2.3.1",
             "project_name": "nautobot-golden-config",
             "python_ver": "3.11",
             "local": False,
@@ -205,17 +207,51 @@ def generate_packages(context):
     run_command(context, command)
 
 
+def _get_docker_nautobot_version(context, nautobot_ver=None, python_ver=None):
+    """Extract Nautobot version from base docker image."""
+    if nautobot_ver is None:
+        nautobot_ver = context.nautobot_golden_config.nautobot_ver
+    if python_ver is None:
+        python_ver = context.nautobot_golden_config.python_ver
+    dockerfile_path = os.path.join(context.nautobot_golden_config.compose_dir, "Dockerfile")
+    base_image = context.run(f"grep --max-count=1 '^FROM ' {dockerfile_path}", hide=True).stdout.strip().split(" ")[1]
+    base_image = base_image.replace(r"${NAUTOBOT_VER}", nautobot_ver).replace(r"${PYTHON_VER}", python_ver)
+    pip_nautobot_ver = context.run(f"docker run --rm --entrypoint '' {base_image} pip show nautobot", hide=True)
+    match_version = re.search(r"^Version: (.+)$", pip_nautobot_ver.stdout.strip(), flags=re.MULTILINE)
+    if match_version:
+        return match_version.group(1)
+    else:
+        raise Exit(f"Nautobot version not found in Docker base image {base_image}.")
+
+
 @task(
     help={
         "check": (
             "If enabled, check for outdated dependencies in the poetry.lock file, "
             "instead of generating a new one. (default: disabled)"
-        )
+        ),
+        "constrain_nautobot_ver": (
+            "Run 'poetry add nautobot@[version] --lock' to generate the lockfile, "
+            "where [version] is the version installed in the Dockerfile's base image. "
+            "Generally intended to be used in CI and not for local development. (default: disabled)"
+        ),
+        "constrain_python_ver": (
+            "When using `constrain_nautobot_ver`, further constrain the nautobot version "
+            "to python_ver so that poetry doesn't complain about python version incompatibilities. "
+            "Generally intended to be used in CI and not for local development. (default: disabled)"
+        ),
     }
 )
-def lock(context, check=False):
-    """Generate poetry.lock inside the Nautobot container."""
-    run_command(context, f"poetry {'check' if check else 'lock --no-update'}")
+def lock(context, check=False, constrain_nautobot_ver=False, constrain_python_ver=False):
+    """Generate poetry.lock file."""
+    if constrain_nautobot_ver:
+        docker_nautobot_version = _get_docker_nautobot_version(context)
+        command = f"poetry add --lock nautobot@{docker_nautobot_version}"
+        if constrain_python_ver:
+            command += f" --python {context.nautobot_golden_config.python_ver}"
+    else:
+        command = f"poetry {'check' if check else 'lock --no-update'}"
+    run_command(context, command)
 
 
 # ------------------------------------------------------------------------------

@@ -40,7 +40,9 @@ def _main():
             **SchemaBuilder().to_json_schema(app_config),  # type: ignore
         }
         app_config = import_module(package_name).config
-        _enrich_object_schema(schema, app_config.default_settings, app_config.required_settings)
+        _enrich_object_schema(
+            schema, app_config.default_settings, app_config.required_settings
+        )
         schema_path.write_text(json.dumps(schema, indent=4) + "\n")
         print(f"\n==================\nGenerated schema:\n\n{schema_path}\n")
         print(

@@ -53,29 +53,18 @@ RUN which poetry || curl -sSL https://install.python-poetry.org | python3 - && \
 WORKDIR /source
 COPY . /source
 
-# Get container's installed Nautobot version as a forced constraint
-# NAUTOBOT_VER may be a branch name and not a published release therefor we need to get the installed version
-#  so pip can use it to recognize local constraints.
-RUN pip show nautobot | grep "^Version: " | sed -e 's/Version: /nautobot==/' > constraints.txt
+# Build args must be declared in each stage
+ARG PYTHON_VER
 
-# Use Poetry to grab dev dependencies from the lock file
-# Can be improved in Poetry 1.2 which allows `poetry install --only dev`
-#
-# We can't use the entire freeze as it takes forever to resolve with rigidly fixed non-direct dependencies,
-#   especially those that are only direct to Nautobot but the container included versions slightly mismatch
-RUN poetry export -f requirements.txt --without-hashes --extras all --output poetry_freeze_base.txt
-RUN poetry export -f requirements.txt --without-hashes --extras all --with dev --output poetry_freeze_all.txt
-RUN sort poetry_freeze_base.txt poetry_freeze_all.txt | uniq -u > poetry_freeze_dev.txt
+# Constrain the Nautobot version to NAUTOBOT_VER
+# In CI, this should be done outside of the Dockerfile to prevent cross-compile build failures
+ARG CI
+RUN if [ -z "${CI+x}" ]; then \
+    INSTALLED_NAUTOBOT_VER=$(pip show nautobot | grep "^Version" | sed "s/Version: //"); \
+    poetry add --lock nautobot@${INSTALLED_NAUTOBOT_VER} --python ${PYTHON_VER}; fi
 
-# Install all local project as editable, constrained on Nautobot version, to get any additional
-#   direct dependencies of the app
-RUN --mount=type=cache,target="/root/.cache/pip",sharing=locked \
-    pip install -c constraints.txt -e .[all]
-
-# Install any dev dependencies frozen from Poetry
-# Can be improved in Poetry 1.2 which allows `poetry install --only dev`
-RUN --mount=type=cache,target="/root/.cache/pip",sharing=locked \
-    pip install -c constraints.txt -r poetry_freeze_dev.txt
+# Install the app
+RUN poetry install --extras all --with dev
 
 COPY development/nautobot_config.py ${NAUTOBOT_ROOT}/nautobot_config.py
 # !!! USE CAUTION WHEN MODIFYING LINES ABOVE

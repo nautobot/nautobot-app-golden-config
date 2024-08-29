@@ -105,7 +105,7 @@ jobs:
         uses: "networktocode/gh-action-setup-poetry-environment@v6"
       - name: "Constrain Nautobot version and regenerate lock file"
         env:
-          INVOKE_NAUTOBOT_DEV_EXAMPLE_LOCAL: "true"
+          INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "true"
         run: "poetry run invoke lock --constrain-nautobot-ver --constrain-python-ver"
       - name: "Set up Docker Buildx"
         id: "buildx"

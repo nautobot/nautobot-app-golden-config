@@ -40,7 +40,11 @@ from nautobot_golden_config.utilities.config_plan import (
     generate_config_set_from_manual,
 )
 from nautobot_golden_config.utilities.git import GitRepo
-from nautobot_golden_config.utilities.helper import get_device_to_settings_map, get_job_filter, update_dynamic_groups_cache
+from nautobot_golden_config.utilities.helper import (
+    get_device_to_settings_map,
+    get_job_filter,
+    update_dynamic_groups_cache,
+)
 
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 

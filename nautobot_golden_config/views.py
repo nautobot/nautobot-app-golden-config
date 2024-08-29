@@ -60,7 +60,6 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
     table_class = tables.GoldenConfigTable
     filterset_class = filters.GoldenConfigFilterSet
     filterset_form_class = forms.GoldenConfigFilterForm
-    form_class = forms.GoldenConfigForm
     queryset = models.GoldenConfig.objects.all()
     serializer_class = serializers.GoldenConfigSerializer
     action_buttons = ("export",)

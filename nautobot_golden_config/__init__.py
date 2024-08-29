@@ -41,6 +41,16 @@ class GoldenConfig(NautobotAppConfig):
             "trim_blocks": True,
             "lstrip_blocks": False,
         },
+        "xmldiff": {
+            "diff_options": {
+                "F": 0.1,
+                "fast_match": True,
+            },
+            "formatter": {
+                "name": "XMLFormatter",
+                "pretty_print": True,
+            },
+        },
     }
     constance_config = {
         "DEFAULT_FRAMEWORK": ConstanceConfigItem(

@@ -15,7 +15,7 @@ from nautobot.extras.models import ObjectChange
 from nautobot.extras.models.statuses import StatusField
 from nautobot.extras.utils import extras_features
 from netutils.config.compliance import feature_compliance
-from xmldiff import actions, main
+from xmldiff import actions, formatting, main
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
@@ -129,21 +129,39 @@ def _get_xml_compliance(obj):
             if isinstance(operation, actions.UpdateTextIn):
                 formatted_operation = f"{operation.node}, {operation.text}"
                 formatted_diff.append(formatted_operation)
+            elif isinstance(operation, actions.UpdateAttrib):
+                formatted_operation = f"{operation.node}, {operation.name}={operation.value}"
+                formatted_diff.append(formatted_operation)
         return "\n".join(formatted_diff)
 
-    # Options for the diff operation. These are set to prefer updates over node insertions/deletions.
-    diff_options = {
-        "F": 0.1,
-        "fast_match": True,
-    }
-    missing = main.diff_texts(obj.actual, obj.intended, diff_options=diff_options)
-    extra = main.diff_texts(obj.intended, obj.actual, diff_options=diff_options)
+    def _create_formatter(settings):
+        """Create a formatter based on the provided settings."""
+        if not settings or not settings.get('name'):
+            return None
+
+        normalize = getattr(formatting, settings.get('normalize', 'WS_NONE'))
+        return getattr(formatting, settings['name'])(
+            normalize=normalize,
+            pretty_print=settings.get('pretty_print', False)
+    )
+
+    xmldiff_settings = PLUGIN_CFG.get("xmldiff", {})
+    diff_options = xmldiff_settings.get('diff_options', {})
+    formatter = _create_formatter(xmldiff_settings.get('formatter'))
+
+    missing = main.diff_texts(obj.actual, obj.intended, formatter=formatter, diff_options=diff_options)
+    extra = main.diff_texts(obj.intended, obj.actual, formatter=formatter, diff_options=diff_options)
 
     compliance = not missing and not extra
     compliance_int = int(compliance)
     ordered = obj.ordered
-    missing = _null_to_empty(_normalize_diff(missing))
-    extra = _null_to_empty(_normalize_diff(extra))
+
+    if not formatter:
+        missing = _null_to_empty(_normalize_diff(missing))
+        extra = _null_to_empty(_normalize_diff(extra))
+    else:
+        missing = _null_to_empty(missing)
+        extra = _null_to_empty(extra)
 
     return {
         "compliance": compliance,

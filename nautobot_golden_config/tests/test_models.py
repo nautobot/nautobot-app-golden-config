@@ -125,7 +125,7 @@ class ConfigComplianceModelTestCase(TestCase):
         """We test this to ensure regression against
         https://docs.djangoproject.com/en/5.1/releases/4.2/#setting-update-fields-in-model-save-may-now-be-required."""
 
-        RemediationSetting.objects.create(
+        remediation_setting = RemediationSetting.objects.create(
             platform=self.device.platform,
             remediation_type=RemediationTypeChoice.TYPE_HIERCONFIG,
         )
@@ -144,7 +144,10 @@ class ConfigComplianceModelTestCase(TestCase):
         self.assertEqual(cc_obj.missing, "ntp 3.3.3.3")
         self.assertEqual(cc_obj.extra, "ntp 2.2.2.2")
         self.assertEqual(cc_obj.remediation, "no ntp 2.2.2.2\nntp 3.3.3.3")
+        self.assertFalse(cc_obj.ordered)
 
+        remediation_setting.config_ordered = True
+        remediation_setting.save()
         # We run again to ensure this works, the issue actually only shows on
         # when `update_fields` is set
         cc_obj_2, _ = ConfigCompliance.objects.update_or_create(
@@ -161,16 +164,19 @@ class ConfigComplianceModelTestCase(TestCase):
         self.assertEqual(cc_obj_2.missing, "")
         self.assertEqual(cc_obj_2.extra, "")
         self.assertEqual(cc_obj_2.remediation, "")
+        self.assertTrue(cc_obj_2.ordered)
+
+        # Ensure that the .save() is not effected.
 
         cc_obj_3 = ConfigCompliance.objects.get(device=self.device, rule=self.compliance_rule_cli)
         cc_obj_3.intended = "ntp 1.1.1.1\nntp 3.3.3.3"
         cc_obj_3.save()
 
-        self.assertFalse(cc_obj.compliance)
-        self.assertFalse(cc_obj.compliance_int)
-        self.assertEqual(cc_obj.missing, "ntp 3.3.3.3")
-        self.assertEqual(cc_obj.extra, "ntp 2.2.2.2")
-        self.assertEqual(cc_obj.remediation, "no ntp 2.2.2.2\nntp 3.3.3.3")
+        self.assertFalse(cc_obj_3.compliance)
+        self.assertFalse(cc_obj_3.compliance_int)
+        self.assertEqual(cc_obj_3.missing, "ntp 3.3.3.3")
+        self.assertEqual(cc_obj_3.extra, "ntp 2.2.2.2")
+        self.assertEqual(cc_obj_3.remediation, "no ntp 2.2.2.2\nntp 3.3.3.3")
 
 
 class GoldenConfigTestCase(TestCase):

@@ -10,6 +10,7 @@
 ### Fixed
 
 - [#792](https://github.com/nautobot/nautobot-app-golden-config/issues/792) - Fixed issue with dynamic groups not being called in 2.3.0.
+- [#800](https://github.com/nautobot/nautobot-app-golden-config/issues/800) - Fixed issue where compliance amongst other fields were not being updated when Django 4.2 was installed.
 
 ### Changed
 

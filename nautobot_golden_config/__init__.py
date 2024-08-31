@@ -38,7 +38,7 @@ class GoldenConfig(NautobotAppConfig):
         "get_custom_compliance": None,
         # This is an experimental and undocumented setting that will change in the future!!
         # Use at your own risk!!!!!
-        "_manual_dynamic_group_mgmt": False, 
+        "_manual_dynamic_group_mgmt": False,
         "jinja_env": {
             "undefined": "jinja2.StrictUndefined",
             "trim_blocks": True,

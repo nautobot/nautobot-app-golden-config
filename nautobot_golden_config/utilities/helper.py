@@ -282,5 +282,6 @@ def get_xml_subtree_with_full_path(config_xml, match_config):
 
 def update_dynamic_groups_cache():
     """Update dynamic group cache for all golden config dynamic groups."""
-    for setting in models.GoldenConfigSetting.objects.all():
-        setting.dynamic_group.update_cached_members()
+    if not settings.PLUGINS_CONFIG[app_config.name].get("_manual_dynamic_group_mgmt"):
+        for setting in models.GoldenConfigSetting.objects.all():
+            setting.dynamic_group.update_cached_members()

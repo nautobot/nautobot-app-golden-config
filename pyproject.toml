@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nautobot-golden-config"
-version = "2.1.1"
+version = "2.1.2"
 description = "An app for configuration on nautobot"
 authors = ["Network to Code, LLC <opensource@networktocode.com>"]
 license = "Apache-2.0"
@@ -45,7 +45,7 @@ xmldiff = "^2.6.3"
 
 [tool.poetry.group.dev.dependencies]
 coverage = "*"
-django-debug-toolbar = "*"
+django-debug-toolbar = "<4.4"
 invoke = "*"
 ipython = "*"
 pylint = "*"
@@ -56,13 +56,13 @@ yamllint = "*"
 Markdown = "*"
 # Render custom markdown for version added/changed/remove notes
 markdown-version-annotations = "1.0.1"
-# Rendering docs to HTML
-mkdocs = "1.5.2"
+mkdocs = "1.6.0"
 # Material for MkDocs theme
-mkdocs-material = "9.2.4"
+mkdocs-material = "9.5.32"
 # Automatic documentation from sources, for MkDocs
-mkdocstrings = "0.22.0"
-mkdocstrings-python = "1.5.2"
+mkdocstrings = "0.25.2"
+mkdocstrings-python = "1.10.8"
+griffe = "1.1.1"
 towncrier = "~23.6.0"
 to-json-schema = "*"
 jsonschema = "*"

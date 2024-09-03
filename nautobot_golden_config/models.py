@@ -415,6 +415,13 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
         self.remediation_on_save()
         self.full_clean()
 
+        # This accounts for django 4.2 `Setting update_fields in Model.save() may now be required` change
+        # in behavior
+        if kwargs.get("update_fields"):
+            kwargs["update_fields"].update(
+                {"compliance", "compliance_int", "ordered", "missing", "extra", "remediation"}
+            )
+
         super().save(*args, **kwargs)
 
 

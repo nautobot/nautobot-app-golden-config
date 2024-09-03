@@ -16,7 +16,7 @@ from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, Confi
 # ConfigCompliance
 
 
-class DeviceRelatedFilterForm(NautobotFilterForm):
+class DeviceRelatedFilterForm(NautobotFilterForm):  # pylint: disable=nb-no-model-found
     """Base FilterForm for below FilterForms."""
 
     tenant_group_id = forms.DynamicModelMultipleChoiceField(
@@ -95,18 +95,6 @@ class DeviceRelatedFilterForm(NautobotFilterForm):
     )
 
 
-class GoldenConfigForm(NautobotModelForm):
-    """Filter Form for ComplianceFeature instances."""
-
-    slug = forms.SlugField()  # TODO: 2.1: Change from slugs once django-pivot is figured out
-
-    class Meta:
-        """Boilerplate form Meta data for compliance feature."""
-
-        model = models.ComplianceFeature
-        fields = ("name", "slug", "description", "tags")
-
-
 class GoldenConfigFilterForm(DeviceRelatedFilterForm):
     """Filter Form for GoldenConfig."""
 
@@ -142,16 +130,6 @@ class GoldenConfigBulkEditForm(NautobotBulkEditForm):
         """Boilerplate form Meta data for GoldenConfig."""
 
         nullable_fields = []
-
-
-class ConfigComplianceForm(NautobotModelForm):
-    """Filter Form for ConfigCompliance instances."""
-
-    class Meta:
-        """Boilerplate form Meta data for compliance feature."""
-
-        model = models.ConfigCompliance
-        fields = []
 
 
 class ConfigComplianceFilterForm(DeviceRelatedFilterForm):
@@ -204,17 +182,7 @@ class ComplianceRuleForm(NautobotModelForm):
         """Boilerplate form Meta data for compliance rule."""
 
         model = models.ComplianceRule
-        fields = (
-            "platform",
-            "feature",
-            "description",
-            "config_ordered",
-            "config_type",
-            "match_config",
-            "custom_compliance",
-            "config_remediation",
-            "tags",
-        )
+        fields = "__all__"
 
 
 class ComplianceRuleFilterForm(NautobotFilterForm):
@@ -263,7 +231,7 @@ class ComplianceFeatureForm(NautobotModelForm):
         """Boilerplate form Meta data for compliance feature."""
 
         model = models.ComplianceFeature
-        fields = ("name", "slug", "description", "tags")
+        fields = "__all__"
 
 
 class ComplianceFeatureFilterForm(NautobotFilterForm):
@@ -300,13 +268,7 @@ class ConfigRemoveForm(NautobotModelForm):
         """Boilerplate form Meta data for removal feature."""
 
         model = models.ConfigRemove
-        fields = (
-            "platform",
-            "name",
-            "description",
-            "regex",
-            "tags",
-        )
+        fields = "__all__"
 
 
 class ConfigRemoveFilterForm(NautobotFilterForm):
@@ -347,14 +309,7 @@ class ConfigReplaceForm(NautobotModelForm):
         """Boilerplate form Meta data for removal feature."""
 
         model = models.ConfigReplace
-        fields = (
-            "platform",
-            "name",
-            "description",
-            "regex",
-            "replace",
-            "tags",
-        )
+        fields = "__all__"
 
 
 class ConfigReplaceFilterForm(NautobotFilterForm):
@@ -548,7 +503,7 @@ class ConfigPlanForm(NautobotModelForm):
         fields = "__all__"
 
 
-class ConfigPlanUpdateForm(NautobotModelForm):
+class ConfigPlanUpdateForm(NautobotModelForm):  # pylint: disable=nb-sub-class-name
     """Form for ConfigPlan instances."""
 
     status = forms.DynamicModelChoiceField(
@@ -563,7 +518,7 @@ class ConfigPlanUpdateForm(NautobotModelForm):
         """Boilerplate form Meta data for ConfigPlan."""
 
         model = models.ConfigPlan
-        fields = (
+        fields = (  # pylint: disable=nb-use-fields-all
             "change_control_id",
             "change_control_url",
             "status",

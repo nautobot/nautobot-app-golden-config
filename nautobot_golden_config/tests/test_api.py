@@ -1,15 +1,14 @@
 """Unit tests for nautobot_golden_config."""
+
 from copy import deepcopy
 
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
-
-from rest_framework import status
-
+from nautobot.core.testing import APITestCase, APIViewTestCases
 from nautobot.dcim.models import Device, Platform
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status
-from nautobot.core.testing import APITestCase, APIViewTestCases
+from rest_framework import status
 
 from nautobot_golden_config.choices import RemediationTypeChoice
 from nautobot_golden_config.models import ConfigPlan, GoldenConfigSetting, RemediationSetting

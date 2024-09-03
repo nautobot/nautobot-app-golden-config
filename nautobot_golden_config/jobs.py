@@ -5,6 +5,7 @@
 # pylint: disable=arguments-differ
 
 from datetime import datetime
+
 from django.utils.timezone import make_aware
 from nautobot.core.celery import register_jobs
 from nautobot.dcim.models import Device, DeviceType, Location, Manufacturer, Platform, Rack, RackGroup
@@ -24,6 +25,7 @@ from nautobot.tenancy.models import Tenant, TenantGroup
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir_nautobot.exceptions import NornirNautobotException
+
 from nautobot_golden_config.choices import ConfigPlanTypeChoice
 from nautobot_golden_config.exceptions import BackupFailure, ComplianceFailure, IntendedGenerationFailure
 from nautobot_golden_config.models import ComplianceFeature, ConfigPlan, GoldenConfig
@@ -38,7 +40,11 @@ from nautobot_golden_config.utilities.config_plan import (
     generate_config_set_from_manual,
 )
 from nautobot_golden_config.utilities.git import GitRepo
-from nautobot_golden_config.utilities.helper import get_device_to_settings_map, get_job_filter
+from nautobot_golden_config.utilities.helper import (
+    get_device_to_settings_map,
+    get_job_filter,
+    update_dynamic_groups_cache,
+)
 
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 
@@ -476,6 +482,8 @@ class GenerateConfigPlans(Job, FormEntry):
 
     def run(self, **data):
         """Run config plan generation process."""
+        self.logger.debug("Updating Dynamic Group Cache.")
+        update_dynamic_groups_cache()
         self.logger.debug("Starting config plan generation job.")
         self._validate_inputs(data)
         try:
@@ -516,6 +524,8 @@ class DeployConfigPlans(Job):
 
     def run(self, **data):  # pylint: disable=arguments-differ
         """Run config plan deployment process."""
+        self.logger.debug("Updating Dynamic Group Cache.")
+        update_dynamic_groups_cache()
         self.logger.debug("Starting config plan deployment job.")
         self.data = data
         config_deployment(self)
@@ -537,6 +547,8 @@ class DeployConfigPlanJobButtonReceiver(JobButtonReceiver):
 
     def receive_job_button(self, obj):
         """Run config plan deployment process."""
+        self.logger.debug("Updating Dynamic Group Cache.")
+        update_dynamic_groups_cache()
         self.logger.debug("Starting config plan deployment job.")
         self.data = {"debug": False, "config_plan": ConfigPlan.objects.filter(id=obj.id)}
         config_deployment(self)
@@ -554,6 +566,8 @@ class SyncGoldenConfigWithDynamicGroups(Job):
 
     def run(self):
         """Run GoldenConfig sync."""
+        self.logger.debug("Updating Dynamic Group Cache.")
+        update_dynamic_groups_cache()
         self.logger.debug("Starting sync of GoldenConfig with DynamicGroup membership.")
         gc_dynamic_group_device_pks = GoldenConfig.get_dynamic_group_device_pks()
         gc_device_pks = GoldenConfig.get_golden_config_device_ids()

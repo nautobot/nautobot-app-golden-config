@@ -1,29 +1,28 @@
 """Helper functions."""
+
 # pylint: disable=raise-missing-from
 import json
 from copy import deepcopy
-from lxml import etree  # nosec
 
 from django.conf import settings
 from django.contrib import messages
 from django.db.models import Q
 from django.template import engines
-from django.utils.html import format_html
 from django.urls import reverse
-
+from django.utils.html import format_html
 from jinja2 import exceptions as jinja_errors
 from jinja2.sandbox import SandboxedEnvironment
+from lxml import etree
+from nautobot.core.utils.data import render_jinja2
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.dcim.models import Device
-from nautobot.core.utils.data import render_jinja2
 from nautobot.extras.models import Job
 from nornir_nautobot.exceptions import NornirNautobotException
 
+from nautobot_golden_config import config as app_config
 from nautobot_golden_config import models
 from nautobot_golden_config.utilities import utils
 from nautobot_golden_config.utilities.constant import JINJA_ENV
-from nautobot_golden_config import config as app_config
-
 
 FRAMEWORK_METHODS = {
     "default": utils.default_framework,
@@ -173,6 +172,7 @@ def render_jinja_template(obj, logger, template):
 def get_device_to_settings_map(queryset):
     """Helper function to map settings to devices."""
     device_to_settings_map = {}
+    update_dynamic_groups_cache()
     for device in queryset:
         dynamic_group = device.dynamic_groups.exclude(golden_config_setting__isnull=True).order_by(
             "-golden_config_setting__weight"
@@ -194,7 +194,7 @@ def get_xml_config(config):
     """Helper to parse XML config files."""
     try:
         parser = etree.XMLParser(remove_blank_text=True)
-        return etree.fromstring(config, parser=parser)  # nosec
+        return etree.fromstring(config, parser=parser)  # noqa: S320
     except etree.ParseError:
         return None
 
@@ -203,7 +203,7 @@ def list_to_string(items):
     """Helper function to set the proper list of items sentence."""
     if len(items) == 1:
         return items[0]
-    if len(items) == 2:
+    if len(items) == 2:  # noqa: PLR2004
         return " and ".join(items)
     return ", ".join(items[:-1]) + " and " + items[-1]
 
@@ -278,3 +278,10 @@ def get_xml_subtree_with_full_path(config_xml, match_config):
             current_element = copied_parent
         current_element.append(deepcopy(element))
     return etree.tostring(new_root, encoding="unicode", pretty_print=True)
+
+
+def update_dynamic_groups_cache():
+    """Update dynamic group cache for all golden config dynamic groups."""
+    if not settings.PLUGINS_CONFIG[app_config.name].get("_manual_dynamic_group_mgmt"):
+        for setting in models.GoldenConfigSetting.objects.all():
+            setting.dynamic_group.update_cached_members()

@@ -15,8 +15,7 @@ from nautobot.extras.models import ObjectChange
 from nautobot.extras.models.statuses import StatusField
 from nautobot.extras.utils import extras_features
 from netutils.config.compliance import feature_compliance
-from xmldiff import main, actions
-
+from xmldiff import actions, main
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
@@ -348,9 +347,7 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
     # Used for django-pivot, both compliance and compliance_int should be set.
     compliance_int = models.IntegerField(blank=True)
 
-    def to_objectchange(
-        self, action, *, related_object=None, object_data_extra=None, object_data_exclude=None
-    ):  # pylint: disable=arguments-differ
+    def to_objectchange(self, action, *, related_object=None, object_data_extra=None, object_data_exclude=None):  # pylint: disable=arguments-differ
         """Remove actual and intended configuration from changelog."""
         fields_to_exclude = ["actual", "intended"]
         if not object_data_exclude:
@@ -418,6 +415,13 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
         self.remediation_on_save()
         self.full_clean()
 
+        # This accounts for django 4.2 `Setting update_fields in Model.save() may now be required` change
+        # in behavior
+        if kwargs.get("update_fields"):
+            kwargs["update_fields"].update(
+                {"compliance", "compliance_int", "ordered", "missing", "extra", "remediation"}
+            )
+
         super().save(*args, **kwargs)
 
 
@@ -451,9 +455,7 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
     compliance_last_attempt_date = models.DateTimeField(null=True, blank=True)
     compliance_last_success_date = models.DateTimeField(null=True, blank=True)
 
-    def to_objectchange(
-        self, action, *, related_object=None, object_data_extra=None, object_data_exclude=None
-    ):  # pylint: disable=arguments-differ
+    def to_objectchange(self, action, *, related_object=None, object_data_extra=None, object_data_exclude=None):  # pylint: disable=arguments-differ
         """Remove actual and intended configuration from changelog."""
         fields_to_exclude = ["backup_config", "intended_config", "compliance_config"]
         if not object_data_exclude:

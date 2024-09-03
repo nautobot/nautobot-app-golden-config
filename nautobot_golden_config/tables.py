@@ -1,11 +1,12 @@
 """Django Tables2 classes for golden_config app."""
+
 import copy
 
 from django.utils.html import format_html
 from django_tables2 import Column, LinkColumn, TemplateColumn
 from django_tables2.utils import A
-from nautobot.extras.tables import StatusTableMixin
 from nautobot.apps.tables import BaseTable, BooleanColumn, TagColumn, ToggleColumn
+from nautobot.extras.tables import StatusTableMixin
 
 from nautobot_golden_config import models
 from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
@@ -189,7 +190,7 @@ class ConfigComplianceTable(BaseTable):
         # All other fields (ConfigCompliance names) are constructed dynamically at instantiation time - see views.py
 
 
-class ConfigComplianceGlobalFeatureTable(BaseTable):
+class ConfigComplianceGlobalFeatureTable(BaseTable):  # pylint: disable=nb-sub-class-name
     """Table for feature compliance report."""
 
     name = Column(accessor="rule__feature__slug", verbose_name="Feature")
@@ -212,7 +213,7 @@ class ConfigComplianceGlobalFeatureTable(BaseTable):
         ]
 
 
-class ConfigComplianceDeleteTable(BaseTable):
+class ConfigComplianceDeleteTable(BaseTable):  # pylint: disable=nb-sub-class-name
     """Table for device compliance report."""
 
     feature = Column(accessor="rule__feature__name", verbose_name="Feature")
@@ -225,7 +226,7 @@ class ConfigComplianceDeleteTable(BaseTable):
         fields = ("device", "feature")
 
 
-class DeleteGoldenConfigTable(BaseTable):
+class DeleteGoldenConfigTable(BaseTable):  # pylint: disable=nb-sub-class-name
     """
     Table used in bulk delete confirmation.
 

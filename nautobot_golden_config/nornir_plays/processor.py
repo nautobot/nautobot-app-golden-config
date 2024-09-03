@@ -1,4 +1,5 @@
 """Processor used by Golden Config to catch unknown errors."""
+
 from nornir.core.inventory import Host
 from nornir.core.task import MultiResult, Result, Task
 from nornir_nautobot.exceptions import NornirNautobotException

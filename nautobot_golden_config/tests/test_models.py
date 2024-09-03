@@ -21,6 +21,7 @@ from nautobot_golden_config.tests.conftest import create_git_repos
 from .conftest import (
     create_config_compliance,
     create_device,
+    create_feature_rule_cli_with_remediation,
     create_feature_rule_json,
     create_feature_rule_xml,
     create_job_result,
@@ -36,6 +37,7 @@ class ConfigComplianceModelTestCase(TestCase):
         self.device = create_device()
         self.compliance_rule_json = create_feature_rule_json(self.device)
         self.compliance_rule_xml = create_feature_rule_xml(self.device)
+        self.compliance_rule_cli = create_feature_rule_cli_with_remediation(self.device)
 
     def test_create_config_compliance_success_json(self):
         """Successful."""
@@ -118,6 +120,63 @@ class ConfigComplianceModelTestCase(TestCase):
             intended={"foo": {"bar-1": "baz"}},
         )
         self.assertEqual(ConfigCompliance.objects.filter(device=self.device).count(), 1)
+
+    def test_update_or_create(self):
+        """We test this to ensure regression against
+        https://docs.djangoproject.com/en/5.1/releases/4.2/#setting-update-fields-in-model-save-may-now-be-required."""
+
+        remediation_setting = RemediationSetting.objects.create(
+            platform=self.device.platform,
+            remediation_type=RemediationTypeChoice.TYPE_HIERCONFIG,
+        )
+
+        cc_obj, _ = ConfigCompliance.objects.update_or_create(
+            device=self.device,
+            rule=self.compliance_rule_cli,
+            defaults={
+                "actual": "ntp 1.1.1.1\nntp 2.2.2.2",
+                "intended": "ntp 1.1.1.1\nntp 3.3.3.3",
+            },
+        )
+
+        self.assertFalse(cc_obj.compliance)
+        self.assertFalse(cc_obj.compliance_int)
+        self.assertEqual(cc_obj.missing, "ntp 3.3.3.3")
+        self.assertEqual(cc_obj.extra, "ntp 2.2.2.2")
+        self.assertEqual(cc_obj.remediation, "no ntp 2.2.2.2\nntp 3.3.3.3")
+        self.assertFalse(cc_obj.ordered)
+
+        remediation_setting.config_ordered = True
+        remediation_setting.save()
+        # We run again to ensure this works, the issue actually only shows on
+        # when `update_fields` is set
+        cc_obj_2, _ = ConfigCompliance.objects.update_or_create(
+            device=self.device,
+            rule=self.compliance_rule_cli,
+            defaults={
+                "actual": "ntp 1.1.1.1\nntp 2.2.2.2",
+                "intended": "ntp 1.1.1.1\nntp 2.2.2.2",
+            },
+        )
+
+        self.assertTrue(cc_obj_2.compliance)
+        self.assertTrue(cc_obj_2.compliance_int)
+        self.assertEqual(cc_obj_2.missing, "")
+        self.assertEqual(cc_obj_2.extra, "")
+        self.assertEqual(cc_obj_2.remediation, "")
+        self.assertTrue(cc_obj_2.ordered)
+
+        # Ensure that the .save() is not effected.
+
+        cc_obj_3 = ConfigCompliance.objects.get(device=self.device, rule=self.compliance_rule_cli)
+        cc_obj_3.intended = "ntp 1.1.1.1\nntp 3.3.3.3"
+        cc_obj_3.save()
+
+        self.assertFalse(cc_obj_3.compliance)
+        self.assertFalse(cc_obj_3.compliance_int)
+        self.assertEqual(cc_obj_3.missing, "ntp 3.3.3.3")
+        self.assertEqual(cc_obj_3.extra, "ntp 2.2.2.2")
+        self.assertEqual(cc_obj_3.remediation, "no ntp 2.2.2.2\nntp 3.3.3.3")
 
 
 class GoldenConfigTestCase(TestCase):

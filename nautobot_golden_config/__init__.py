@@ -1,4 +1,5 @@
 """App declaration for nautobot_golden_config."""
+
 # Metadata is inherited from Nautobot. If not including Nautobot in the environment, this should be added
 from importlib import metadata
 
@@ -35,6 +36,9 @@ class GoldenConfig(NautobotAppConfig):
         "per_feature_width": 13,
         "per_feature_height": 4,
         "get_custom_compliance": None,
+        # This is an experimental and undocumented setting that will change in the future!!
+        # Use at your own risk!!!!!
+        "_manual_dynamic_group_mgmt": False,
         "jinja_env": {
             "undefined": "jinja2.StrictUndefined",
             "trim_blocks": True,
@@ -71,8 +75,8 @@ class GoldenConfig(NautobotAppConfig):
         # pylint: disable=import-outside-toplevel
         from .signals import (
             config_compliance_platform_cleanup,
-            post_migrate_create_statuses,
             post_migrate_create_job_button,
+            post_migrate_create_statuses,
         )
 
         nautobot_database_ready.connect(post_migrate_create_statuses, sender=self)

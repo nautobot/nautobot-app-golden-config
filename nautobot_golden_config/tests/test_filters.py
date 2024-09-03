@@ -1,9 +1,11 @@
 """Unit tests for nautobot_golden_config models."""
 
+from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
+from nautobot.core.testing import FilterTestCases
 from nautobot.dcim.models import Device, Platform
 from nautobot.extras.models import Status, Tag
-from nautobot.core.testing import FilterTestCases
+
 from nautobot_golden_config import filters, models
 
 from .conftest import create_device_data, create_feature_rule_cli, create_feature_rule_json, create_job_result
@@ -389,70 +391,73 @@ class ConfigPlanFilterTestCase(FilterTestCases.FilterTestCase):
     queryset = models.ConfigPlan.objects.all()
     filterset = filters.ConfigPlanFilterSet
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         """Setup Object."""
         create_device_data()
-        self.device1 = Device.objects.get(name="Device 1")
-        self.device2 = Device.objects.get(name="Device 2")
-        self.rule1 = create_feature_rule_cli(self.device1, feature="Feature 1")
-        self.feature1 = self.rule1.feature
-        self.rule2 = create_feature_rule_cli(self.device2, feature="Feature 2")
-        self.feature2 = self.rule2.feature
-        self.rule3 = create_feature_rule_cli(self.device1, feature="Feature 3")
-        self.feature3 = self.rule3.feature
-        self.status1 = Status.objects.get(name="Not Approved")
-        self.status2 = Status.objects.get(name="Approved")
-        self.tag1, _ = Tag.objects.get_or_create(name="Tag 1")
-        self.tag2, _ = Tag.objects.get_or_create(name="Tag 2")
-        self.job_result1 = create_job_result()
-        self.job_result2 = create_job_result()
-        self.config_plan1 = models.ConfigPlan.objects.create(
-            device=self.device1,
+        cls.device1 = Device.objects.get(name="Device 1")
+        cls.device2 = Device.objects.get(name="Device 2")
+        cls.rule1 = create_feature_rule_cli(cls.device1, feature="Feature 1")
+        cls.feature1 = cls.rule1.feature
+        cls.rule2 = create_feature_rule_cli(cls.device2, feature="Feature 2")
+        cls.feature2 = cls.rule2.feature
+        cls.rule3 = create_feature_rule_cli(cls.device1, feature="Feature 3")
+        cls.feature3 = cls.rule3.feature
+        cls.status1 = Status.objects.get(name="Not Approved")
+        cls.status2 = Status.objects.get(name="Approved")
+        cls.tag1, _ = Tag.objects.get_or_create(name="Tag 1")
+        cls.tag2, _ = Tag.objects.get_or_create(name="Tag 2")
+        cls.tag1.content_types.set([ContentType.objects.get_for_model(models.ConfigPlan)])
+        cls.tag2.content_types.set([ContentType.objects.get_for_model(models.ConfigPlan)])
+        cls.job_result1 = create_job_result()
+        cls.job_result2 = create_job_result()
+        cls.config_plan1 = models.ConfigPlan.objects.create(
+            device=cls.device1,
             plan_type="intended",
             created="2020-01-01",
             config_set="intended test",
             change_control_id="12345",
-            status=self.status2,
-            plan_result_id=self.job_result1.id,
+            status=cls.status2,
+            plan_result_id=cls.job_result1.id,
         )
-        self.config_plan1.tags.add(self.tag1)
-        self.config_plan1.feature.add(self.feature1)
-        self.config_plan1.validated_save()
-        self.config_plan2 = models.ConfigPlan.objects.create(
-            device=self.device1,
+        cls.config_plan1.tags.add(cls.tag1)
+        cls.config_plan1.feature.add(cls.feature1)
+        cls.config_plan1.validated_save()
+        cls.config_plan2 = models.ConfigPlan.objects.create(
+            device=cls.device1,
             plan_type="missing",
             created="2020-01-02",
             config_set="missing test",
             change_control_id="23456",
-            status=self.status1,
-            plan_result_id=self.job_result1.id,
+            status=cls.status1,
+            plan_result_id=cls.job_result1.id,
         )
-        self.config_plan2.tags.add(self.tag2)
-        self.config_plan2.feature.add(self.feature2)
-        self.config_plan2.validated_save()
-        self.config_plan3 = models.ConfigPlan.objects.create(
-            device=self.device2,
+        cls.config_plan2.tags.add(cls.tag2)
+        cls.config_plan2.feature.add(cls.feature2)
+        cls.config_plan2.validated_save()
+        cls.config_plan3 = models.ConfigPlan.objects.create(
+            device=cls.device2,
             plan_type="remediation",
             created="2020-01-03",
             config_set="remediation test",
             change_control_id="34567",
-            status=self.status2,
-            plan_result_id=self.job_result2.id,
+            status=cls.status2,
+            plan_result_id=cls.job_result2.id,
         )
-        self.config_plan3.tags.add(self.tag2)
-        self.config_plan3.feature.set([self.feature1, self.feature3])
-        self.config_plan3.validated_save()
-        self.config_plan4 = models.ConfigPlan.objects.create(
-            device=self.device2,
+        cls.config_plan3.tags.add(cls.tag2)
+        cls.config_plan3.feature.set([cls.feature1, cls.feature3])
+        cls.config_plan3.validated_save()
+        cls.config_plan4 = models.ConfigPlan.objects.create(
+            device=cls.device2,
             plan_type="manual",
             created="2020-01-04",
             config_set="manual test",
             change_control_id="45678",
-            status=self.status1,
-            plan_result_id=self.job_result1.id,
+            status=cls.status1,
+            plan_result_id=cls.job_result1.id,
         )
-        self.config_plan4.tags.add(self.tag1)
-        self.config_plan4.validated_save()
+        cls.config_plan4.tags.add(cls.tag1)
+        cls.config_plan4.validated_save()
 
     def test_full(self):
         """Test without filtering to ensure all have been added."""

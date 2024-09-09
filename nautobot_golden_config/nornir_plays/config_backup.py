@@ -29,7 +29,7 @@ InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 
 
 @close_threaded_db_connections  # TODO: Is this still needed?
-def run_backup(  # pylint: disable=too-many-arguments  # noqa: D417
+def run_backup(  # pylint: disable=too-many-arguments
     task: Task, logger: logging.Logger, device_to_settings_map, remove_regex_dict, replace_regex_dict
 ) -> Result:
     r"""Backup configurations to disk.

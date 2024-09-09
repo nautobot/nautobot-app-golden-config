@@ -33,6 +33,16 @@ include = [
 
 [tool.poetry.dependencies]
 python = ">=3.8,<3.13"
+deepdiff = ">=5.5.0,!=6.0,!=6.1,<8"
+django-pivot = ">=1.9.0,<1.10.0" # The signature changed to return a non-queryset, do not upgrade without ensuring it returns a queryset
+matplotlib = "^3.3.2"
+nautobot-plugin-nornir = "^2.0.0"
+
+toml = "^0.10.2"
+netutils = "^1.5.0"
+hier-config = "^2.2.2"
+nautobot-capacity-metrics = "^3.0.1"
+xmldiff = "^2.6.3"
 # Used for local development
 nautobot = "^2.0.0"
 
@@ -67,12 +77,15 @@ all = [
 
 [tool.pylint.master]
 # Include the pylint_django plugin to avoid spurious warnings about Django patterns
+extension-pkg-allow-list = ["lxml"]
 load-plugins = "pylint_django, pylint_nautobot"
-ignore = ".venv"
+ignore-patterns = ["jinja_filters.py", ".venv"]
+ignore-paths = '^.*/migrations/.*$'
 
 [tool.pylint.basic]
 # No docstrings required for private methods (Pylint default), or for test_ functions, or for inner Meta classes.
 no-docstring-rgx = "^(_|test_|Meta$)"
+good-names = ["pk"]
 
 [tool.pylint.messages_control]
 disable = """,
@@ -122,6 +135,9 @@ ignore = [
     "D407", # Missing dashed underline after section
     "D416", # Section name ends in colon
     "E501", # Line too long
+
+    # Package specific ignores for backwards compatibility
+    "D417",  # Missing argument descriptions in Docstrings
 ]
 
 [tool.ruff.lint.pydocstyle]

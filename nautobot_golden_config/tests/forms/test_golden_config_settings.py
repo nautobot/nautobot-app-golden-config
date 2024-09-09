@@ -21,7 +21,7 @@ class GoldenConfigSettingFormTest(TestCase):
         GoldenConfigSetting.objects.all().delete()
 
     def test_no_query_no_scope_success(self):
-        """Testing GoldenConfigForm without specifying a unique scope or GraphQL Query."""
+        """Testing GoldenConfigSettingForm without specifying a unique scope or GraphQL Query."""
         with mock.patch("nautobot_golden_config.models.ENABLE_SOTAGG", False):
             form = GoldenConfigSettingForm(
                 data={
@@ -41,7 +41,7 @@ class GoldenConfigSettingFormTest(TestCase):
             self.assertTrue(form.save())
 
     def test_no_query_fail(self):
-        """Testing GoldenConfigForm without specifying a unique scope or GraphQL Query."""
+        """Testing GoldenConfigSettingForm without specifying a unique scope or GraphQL Query."""
         with mock.patch("nautobot_golden_config.models.ENABLE_SOTAGG", True):
             form = GoldenConfigSettingForm(
                 data={

@@ -87,7 +87,7 @@ class ConfigReplaceSerializer(NautobotModelSerializer, TaggedModelSerializerMixi
         fields = "__all__"
 
 
-class ConfigToPushSerializer(DeviceSerializer):
+class ConfigToPushSerializer(DeviceSerializer):  # pylint: disable=nb-sub-class-name
     """Serializer for ConfigToPush view."""
 
     config = serializers.SerializerMethodField()

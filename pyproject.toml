@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nautobot-golden-config"
-version = "2.1.1"
+version = "2.1.2"
 description = "An app for configuration on nautobot"
 authors = ["Network to Code, LLC <opensource@networktocode.com>"]
 license = "Apache-2.0"
@@ -38,7 +38,7 @@ nautobot = "^2.0.0"
 
 [tool.poetry.group.dev.dependencies]
 coverage = "*"
-django-debug-toolbar = "*"
+django-debug-toolbar = "<4.4"
 invoke = "*"
 ipython = "*"
 pylint = "*"

@@ -72,9 +72,7 @@ def _is_compose_included(context, name):
 
 
 def _await_healthy_service(context, service):
-    container_id = docker_compose(
-        context, f"ps -q -- {service}", pty=False, echo=False, hide=True
-    ).stdout.strip()
+    container_id = docker_compose(context, f"ps -q -- {service}", pty=False, echo=False, hide=True).stdout.strip()
     _await_healthy_container(context, container_id)
 
 
@@ -134,9 +132,7 @@ def docker_compose(context, command, **kwargs):
     ]
 
     for compose_file in context.nautobot_golden_config.compose_files:
-        compose_file_path = os.path.join(
-            context.nautobot_golden_config.compose_dir, compose_file
-        )
+        compose_file_path = os.path.join(context.nautobot_golden_config.compose_dir, compose_file)
         compose_command_tokens.append(f' -f "{compose_file_path}"')
 
     compose_command_tokens.append(command)
@@ -175,9 +171,7 @@ def run_command(context, command, **kwargs):
         if "nautobot" in results.stdout:
             compose_command = f"exec{command_env_args} nautobot {command}"
         else:
-            compose_command = (
-                f"run{command_env_args} --rm --entrypoint='{command}' nautobot"
-            )
+            compose_command = f"run{command_env_args} --rm --entrypoint='{command}' nautobot"
 
         pty = kwargs.pop("pty", True)
 
@@ -202,9 +196,7 @@ def build(context, force_rm=False, cache=True):
     if force_rm:
         command += " --force-rm"
 
-    print(
-        f"Building Nautobot with Python {context.nautobot_golden_config.python_ver}..."
-    )
+    print(f"Building Nautobot with Python {context.nautobot_golden_config.python_ver}...")
     docker_compose(context, command)
 
 
@@ -221,23 +213,11 @@ def _get_docker_nautobot_version(context, nautobot_ver=None, python_ver=None):
         nautobot_ver = context.nautobot_golden_config.nautobot_ver
     if python_ver is None:
         python_ver = context.nautobot_golden_config.python_ver
-    dockerfile_path = os.path.join(
-        context.nautobot_golden_config.compose_dir, "Dockerfile"
-    )
-    base_image = (
-        context.run(f"grep --max-count=1 '^FROM ' {dockerfile_path}", hide=True)
-        .stdout.strip()
-        .split(" ")[1]
-    )
-    base_image = base_image.replace(r"${NAUTOBOT_VER}", nautobot_ver).replace(
-        r"${PYTHON_VER}", python_ver
-    )
-    pip_nautobot_ver = context.run(
-        f"docker run --rm --entrypoint '' {base_image} pip show nautobot", hide=True
-    )
-    match_version = re.search(
-        r"^Version: (.+)$", pip_nautobot_ver.stdout.strip(), flags=re.MULTILINE
-    )
+    dockerfile_path = os.path.join(context.nautobot_golden_config.compose_dir, "Dockerfile")
+    base_image = context.run(f"grep --max-count=1 '^FROM ' {dockerfile_path}", hide=True).stdout.strip().split(" ")[1]
+    base_image = base_image.replace(r"${NAUTOBOT_VER}", nautobot_ver).replace(r"${PYTHON_VER}", python_ver)
+    pip_nautobot_ver = context.run(f"docker run --rm --entrypoint '' {base_image} pip show nautobot", hide=True)
+    match_version = re.search(r"^Version: (.+)$", pip_nautobot_ver.stdout.strip(), flags=re.MULTILINE)
     if match_version:
         return match_version.group(1)
     else:
@@ -262,9 +242,7 @@ def _get_docker_nautobot_version(context, nautobot_ver=None, python_ver=None):
         ),
     }
 )
-def lock(
-    context, check=False, constrain_nautobot_ver=False, constrain_python_ver=False
-):
+def lock(context, check=False, constrain_nautobot_ver=False, constrain_python_ver=False):
     """Generate poetry.lock file."""
     if constrain_nautobot_ver:
         docker_nautobot_version = _get_docker_nautobot_version(context)
@@ -304,9 +282,7 @@ def restart(context, service=""):
 def stop(context, service=""):
     """Stop specified or all services, if service is not specified, remove all containers."""
     print("Stopping Nautobot...")
-    docker_compose(
-        context, "stop" if service else "down --remove-orphans", service=service
-    )
+    docker_compose(context, "stop" if service else "down --remove-orphans", service=service)
 
 
 @task(
@@ -325,9 +301,7 @@ def destroy(context, volumes=True, import_db_file=""):
         return
 
     if not volumes:
-        raise ValueError(
-            "Cannot specify `--no-volumes` and `--import-db-file` arguments at the same time."
-        )
+        raise ValueError("Cannot specify `--no-volumes` and `--import-db-file` arguments at the same time.")
 
     print(f"Importing database file: {import_db_file}...")
 
@@ -344,16 +318,12 @@ def destroy(context, volumes=True, import_db_file=""):
         "db",
     ]
 
-    container_id = docker_compose(
-        context, " ".join(command), pty=False, echo=False, hide=True
-    ).stdout.strip()
+    container_id = docker_compose(context, " ".join(command), pty=False, echo=False, hide=True).stdout.strip()
     _await_healthy_container(context, container_id)
     print("Stopping database container...")
     context.run(f"docker stop {container_id}", pty=False, echo=False, hide=True)
 
-    print(
-        "Database import complete, you can start Nautobot with the following command:"
-    )
+    print("Database import complete, you can start Nautobot with the following command:")
     print("invoke start")
 
 
@@ -525,9 +495,7 @@ def dbshell(context, db_name="", input_file="", output_file="", query=""):
     if input_file and query:
         raise ValueError("Cannot specify both, `input_file` and `query` arguments")
     if output_file and not (input_file or query):
-        raise ValueError(
-            "`output_file` argument requires `input_file` or `query` argument"
-        )
+        raise ValueError("`output_file` argument requires `input_file` or `query` argument")
 
     env = {}
     if query:
@@ -665,9 +633,7 @@ def backup_db(context, db_name="", output_file="dump.sql", readable=True):
     docker_compose(context, " ".join(command), pty=False)
 
     print(50 * "=")
-    print(
-        "The database backup has been successfully completed and saved to the following file:"
-    )
+    print("The database backup has been successfully completed and saved to the following file:")
     print(output_file)
     print("You can import this database backup with the following command:")
     print(f"invoke import-db --input-file '{output_file}'")

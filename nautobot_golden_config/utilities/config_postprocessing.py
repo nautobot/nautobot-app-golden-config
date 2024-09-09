@@ -21,7 +21,7 @@ from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import get_device_to_settings_map
 
 
-def get_secret_by_secret_group_name(
+def get_secret_by_secret_group_name(  # noqa: D417
     user: User,
     secrets_group_name: str,
     secret_type: str,

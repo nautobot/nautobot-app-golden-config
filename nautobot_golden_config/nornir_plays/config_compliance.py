@@ -117,7 +117,7 @@ def diff_files(backup_file, intended_file):
 
 
 @close_threaded_db_connections
-def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
+def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals  # noqa: D417
     task: Task,
     logger: logging.Logger,
     device_to_settings_map,

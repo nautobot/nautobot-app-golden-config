@@ -38,7 +38,10 @@ django-pivot = ">=1.9.0,<1.10.0" # The signature changed to return a non-queryse
 matplotlib = "^3.3.2"
 nautobot-plugin-nornir = "^2.0.0"
 # Numpy is not a direct dependency, but we are assisting Poetry version resolution by providing constraints.
-numpy = {version = "^1.26", python = "3.12"}
+numpy = [
+    {version = "^1.26", python = ">=3.9"},
+    {version = "<1.25", python = "==3.8"}
+]
 
 toml = "^0.10.2"
 netutils = "^1.5.0"

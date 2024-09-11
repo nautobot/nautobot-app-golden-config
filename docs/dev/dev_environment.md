@@ -487,7 +487,7 @@ This command can only guess the schema, so it's up to the developer to manually 
 
 To quickly generate test data for developing against this app, you can use the following command:
 
-!!! warning
+!!! danger
     The `--flush` flag will completely empty your database and replace it with test data. This command should never be run in a production environment.
 
 ```bash

@@ -2,7 +2,6 @@
 
 import random
 
-from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db import DEFAULT_DB_ALIAS
 from nautobot.core.factory import get_random_instances
@@ -24,19 +23,14 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):  # noqa: D102
         parser.add_argument(
-            "--flush",
-            action="store_true",
-            help="Flush any existing data from the database before generating new data.",
-        )
-        parser.add_argument(
             "--database",
             default=DEFAULT_DB_ALIAS,
             help='The database to generate the test data in. Defaults to the "default" database.',
         )
 
-    def _generate_static_data(self):
+    def _generate_static_data(self, db):
         platforms = get_random_instances(
-            Platform.objects.filter(devices__isnull=False).distinct(),
+            Platform.objects.using(db).filter(devices__isnull=False).distinct(),
             minimum=2,
             maximum=4,
         )
@@ -55,7 +49,9 @@ class Command(BaseCommand):
         for i in range(1, 9):
             name = f"ComplianceFeature{i}"
             compliance_features.append(
-                ComplianceFeature.objects.create(name=name, slug=name, description=f"Test ComplianceFeature {i}")
+                ComplianceFeature.objects.using(db).create(
+                    name=name, slug=name, description=f"Test ComplianceFeature {i}"
+                )
             )
 
         # Create ComplianceRules
@@ -64,7 +60,7 @@ class Command(BaseCommand):
         self.stdout.write(message)
         for feature in compliance_features:
             for platform in platforms:
-                ComplianceRule.objects.create(
+                ComplianceRule.objects.using(db).create(
                     feature=feature,
                     platform=platform,
                     description=f"Test ComplianceRule for {feature.name} on {platform.name}",
@@ -76,9 +72,9 @@ class Command(BaseCommand):
         message = f"Creating {count} ConfigCompliances..."
         self.stdout.write(message)
         for device in devices:
-            for rule in ComplianceRule.objects.filter(platform=device.platform):
+            for rule in ComplianceRule.objects.using(db).filter(platform=device.platform):
                 is_compliant = random.choice([True, False])  # noqa: S311
-                ConfigCompliance.objects.create(
+                ConfigCompliance.objects.using(db).create(
                     device=device,
                     rule=rule,
                     compliance=is_compliant,
@@ -91,7 +87,7 @@ class Command(BaseCommand):
         message = f"Creating {len(devices)} GoldenConfigs..."
         self.stdout.write(message)
         for device in devices:
-            GoldenConfig.objects.create(
+            GoldenConfig.objects.using(db).create(
                 device=device,
                 backup_config=f"backup config for {device.name}",
                 intended_config=f"intended config for {device.name}",
@@ -105,9 +101,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         """Entry point to the management command."""
-        # Call nautobot core's generate_test_data command to generate data for core models
-        call_command("generate_test_data", flush=options["flush"])
-
-        self._generate_static_data()
+        self._generate_static_data(db=options["database"])
 
         self.stdout.write(self.style.SUCCESS(f"Database {options['database']} populated with app data successfully!"))

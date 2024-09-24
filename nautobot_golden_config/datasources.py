@@ -37,6 +37,32 @@ def refresh_git_backup(repository_record, job_result, delete=False):  # pylint: 
     )
 
 
+def refresh_git_gc_dynamic_remediations(repository_record, job_result, delete=False):  # pylint: disable=unused-argument
+    """Callback for gitrepository updates on Hier Config Dynamic Remediation repo."""
+    job_result.log(
+        "Successfully Pulled git repo test",
+        level_choice=LogLevelChoices.LOG_DEBUG,
+    )
+
+    dynamic_remediation_path = os.path.join(repository_record.filesystem_path, "hier_config_dynamic_remediations")
+    if not os.path.isdir(dynamic_remediation_path):
+        job_result.log(
+            f"Skipping sync for {dynamic_remediation_path} because directory doesn't exist.",
+            level_choice=LogLevelChoices.LOG_INFO,
+        )
+        return
+
+    for root, _, files in os.walk(dynamic_remediation_path):
+        for file_name in files:
+            if not file_name.endswith(".py") or "__init__" in file_name:
+                continue
+            # file_info.append({"root": root, "file_name": file_name})
+            job_result.log(
+                f"File {file_name} found in repository.",
+                level_choice=LogLevelChoices.LOG_INFO
+            )
+
+
 def refresh_git_gc_properties(repository_record, job_result, delete=False):  # pylint: disable=unused-argument
     """Callback for gitrepository updates on Git Configuration repo.
 
@@ -242,6 +268,18 @@ if ENABLE_BACKUP or ENABLE_COMPLIANCE:
                 content_identifier="nautobot_golden_config.backupconfigs",
                 icon="mdi-file-code",
                 callback=refresh_git_backup,
+            ),
+        )
+    )
+if ENABLE_COMPLIANCE:
+    datasource_contents.append(
+        (
+            "extras.gitrepository",
+            DatasourceContent(
+                name="Hier Config Dynamic Remediations",
+                content_identifier="nautobot_golden_config.hierconfigdynamicremediations",
+                icon="mdi-file-code",
+                callback=refresh_git_gc_dynamic_remediations,
             ),
         )
     )

@@ -130,7 +130,7 @@ def gc_repo_prep(job, data):
     return current_repos
 
 
-def gc_repo_push(job, current_repos, commit_message):
+def gc_repo_push(job, current_repos, commit_message=""):
     """Push any work from worker to git repos in Job.
 
     Args:
@@ -154,8 +154,11 @@ def gc_repo_push(job, current_repos, commit_message):
                 repo["repo_obj"].commit_with_added(commit_message)
                 repo["repo_obj"].push()
                 job.logger.info(
-                    f"HEAD {repo['repo_obj'].head}",
-                    extra={"grouping": "GC Repo Commit and Push", "object": repo["repo_obj"].nautobot_repo_obj},
+                    f'The new Git repository hash is "{repo["repo_obj"].head}"',
+                    extra={
+                        "grouping": "GC Repo Commit and Push",
+                        "object": repo["repo_obj"].nautobot_repo_obj,
+                    },
                 )
 
 
@@ -208,14 +211,6 @@ class FormEntry:  # pylint disable=too-few-public-method
 class GoldenConfigJobMixin(Job):  # pylint: disable=abstract-method
     """Reused mixin to be able to set defaults for instance attributes in all GC jobs."""
 
-    # TODO: verify if the "commit_message" should be kept here or should be moved to FormEntry
-    commit_message = StringVar(
-        label="Commit message",
-        required=False,
-        description=r"If empty, defaults to `{job.Meta.name.upper()} JOB {now}`.",
-        min_length=2,
-        max_length=72
-    )
     fail_job_on_task_failure = BooleanVar(description="If any tasks for any device fails, fail the entire job result.")
 
     def __init__(self, *args, **kwargs):
@@ -248,6 +243,14 @@ class ComplianceJob(GoldenConfigJobMixin, FormEntry):
 class IntendedJob(GoldenConfigJobMixin, FormEntry):
     """Job to to run generation of intended configurations."""
 
+    commit_message = StringVar(
+        label="Git commit message",
+        required=False,
+        description=r"If empty, defaults to `{job.Meta.name.upper()} JOB {now}`.",
+        min_length=2,
+        max_length=72,
+    )
+
     class Meta:
         """Meta object boilerplate for intended."""
 
@@ -267,6 +270,14 @@ class IntendedJob(GoldenConfigJobMixin, FormEntry):
 
 class BackupJob(GoldenConfigJobMixin, FormEntry):
     """Job to to run the backup job."""
+
+    commit_message = StringVar(
+        label="Git commit message",
+        required=False,
+        description=r"If empty, defaults to `{job.Meta.name.upper()} JOB {now}`.",
+        min_length=2,
+        max_length=72,
+    )
 
     class Meta:
         """Meta object boilerplate for backup configurations."""
@@ -290,6 +301,14 @@ class AllGoldenConfig(GoldenConfigJobMixin):
 
     device = ObjectVar(model=Device, required=True)
     debug = BooleanVar(description="Enable for more verbose debug logging")
+
+    commit_message = StringVar(
+        label="Git commit message",
+        required=False,
+        description=r"If empty, defaults to `{job.Meta.name.upper()} JOB {now}` - applies to both Backup and Intended.",
+        min_length=2,
+        max_length=72,
+    )
 
     class Meta:
         """Meta object boilerplate for all jobs to run against a device."""
@@ -322,7 +341,7 @@ class AllGoldenConfig(GoldenConfigJobMixin):
                 failed_jobs.append("Compliance")
             except Exception as error:  # pylint: disable=broad-exception-caught
                 error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
-        gc_repo_push(job=self, current_repos=current_repos)
+        gc_repo_push(job=self, current_repos=current_repos, commit_message=data.get("commit_message"))
         if len(failed_jobs) > 1:
             jobs_list = ", ".join(failed_jobs)
         elif len(failed_jobs) == 1:
@@ -339,6 +358,14 @@ class AllGoldenConfig(GoldenConfigJobMixin):
 
 class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
     """Job to to run all three jobs against multiple devices."""
+
+    commit_message = StringVar(
+        label="Git commit message",
+        required=False,
+        description=r"If empty, defaults to `{job.Meta.name.upper()} JOB {now}` - applies to both Backup and Intended.",
+        min_length=2,
+        max_length=72,
+    )
 
     class Meta:
         """Meta object boilerplate for all jobs to run against multiple devices."""
@@ -371,7 +398,7 @@ class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
                 failed_jobs.append("Compliance")
             except Exception as error:  # pylint: disable=broad-exception-caught
                 error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
-        gc_repo_push(job=self, current_repos=current_repos)
+        gc_repo_push(job=self, current_repos=current_repos, commit_message=data.get("commit_message"))
         if len(failed_jobs) > 1:
             jobs_list = ", ".join(failed_jobs)
         elif len(failed_jobs) == 1:

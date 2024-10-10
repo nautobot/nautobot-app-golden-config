@@ -22,6 +22,7 @@ class NautobotGoldenConfigConfig(NautobotAppConfig):
     max_version = "2.9999"
     default_settings = {}
     caching_config = {}
+    docs_view_name = "plugins:nautobot_golden_config:docs"
 
 
 config = NautobotGoldenConfigConfig  # pylint:disable=invalid-name

@@ -154,7 +154,7 @@ def gc_repo_push(job, current_repos, commit_message=""):
                 repo["repo_obj"].commit_with_added(commit_message)
                 repo["repo_obj"].push()
                 job.logger.info(
-                    f'The new Git repository hash is "{repo["repo_obj"].head}"',
+                    f'{repo["repo_obj"].nautobot_repo_obj.name}: the new Git repository hash is "{repo["repo_obj"].head}"',
                     extra={
                         "grouping": "GC Repo Commit and Push",
                         "object": repo["repo_obj"].nautobot_repo_obj,
@@ -212,6 +212,13 @@ class GoldenConfigJobMixin(Job):  # pylint: disable=abstract-method
     """Reused mixin to be able to set defaults for instance attributes in all GC jobs."""
 
     fail_job_on_task_failure = BooleanVar(description="If any tasks for any device fails, fail the entire job result.")
+    commit_message = StringVar(
+        label="Git commit message",
+        required=False,
+        description=r"If empty, defaults to `{job.Meta.name.upper()} JOB {now}`.",
+        min_length=2,
+        max_length=72,
+    )
 
     def __init__(self, *args, **kwargs):
         """Initialize the job."""
@@ -243,14 +250,6 @@ class ComplianceJob(GoldenConfigJobMixin, FormEntry):
 class IntendedJob(GoldenConfigJobMixin, FormEntry):
     """Job to to run generation of intended configurations."""
 
-    commit_message = StringVar(
-        label="Git commit message",
-        required=False,
-        description=r"If empty, defaults to `{job.Meta.name.upper()} JOB {now}`.",
-        min_length=2,
-        max_length=72,
-    )
-
     class Meta:
         """Meta object boilerplate for intended."""
 
@@ -270,14 +269,6 @@ class IntendedJob(GoldenConfigJobMixin, FormEntry):
 
 class BackupJob(GoldenConfigJobMixin, FormEntry):
     """Job to to run the backup job."""
-
-    commit_message = StringVar(
-        label="Git commit message",
-        required=False,
-        description=r"If empty, defaults to `{job.Meta.name.upper()} JOB {now}`.",
-        min_length=2,
-        max_length=72,
-    )
 
     class Meta:
         """Meta object boilerplate for backup configurations."""
@@ -301,14 +292,6 @@ class AllGoldenConfig(GoldenConfigJobMixin):
 
     device = ObjectVar(model=Device, required=True)
     debug = BooleanVar(description="Enable for more verbose debug logging")
-
-    commit_message = StringVar(
-        label="Git commit message",
-        required=False,
-        description=r"If empty, defaults to `{job.Meta.name.upper()} JOB {now}` - applies to both Backup and Intended.",
-        min_length=2,
-        max_length=72,
-    )
 
     class Meta:
         """Meta object boilerplate for all jobs to run against a device."""
@@ -358,14 +341,6 @@ class AllGoldenConfig(GoldenConfigJobMixin):
 
 class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
     """Job to to run all three jobs against multiple devices."""
-
-    commit_message = StringVar(
-        label="Git commit message",
-        required=False,
-        description=r"If empty, defaults to `{job.Meta.name.upper()} JOB {now}` - applies to both Backup and Intended.",
-        min_length=2,
-        max_length=72,
-    )
 
     class Meta:
         """Meta object boilerplate for all jobs to run against multiple devices."""

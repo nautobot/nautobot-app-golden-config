@@ -440,10 +440,15 @@ class GenerateConfigPlans(Job, FormEntry):
                 _features = ", ".join([str(feat) for feat in self._feature])
                 self.logger.debug(f"Device `{device}` does not have `{self._plan_type}` configs for `{_features}`.")
                 continue
+
+            if not all(isinstance(config_set, str) for config_set in config_sets):
+                config_set = config_set[0]
+            else:
+                config_set = "\n".join(config_sets)
             config_plan = ConfigPlan.objects.create(
                 device=device,
                 plan_type=self._plan_type,
-                config_set="\n".join(config_sets),
+                config_set=config_set,
                 change_control_id=self._change_control_id,
                 change_control_url=self._change_control_url,
                 status=self.plan_status,

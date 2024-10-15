@@ -54,14 +54,16 @@ WORKDIR /source
 COPY . /source
 
 # Build args must be declared in each stage
+ARG NAUTOBOT_VER
 ARG PYTHON_VER
 
-# Constrain the Nautobot version to NAUTOBOT_VER
+# Constrain the Nautobot version to NAUTOBOT_VER, fall back to installing from git branch if not available on PyPi
 # In CI, this should be done outside of the Dockerfile to prevent cross-compile build failures
 ARG CI
 RUN if [ -z "${CI+x}" ]; then \
     INSTALLED_NAUTOBOT_VER=$(pip show nautobot | grep "^Version" | sed "s/Version: //"); \
-    poetry add --lock nautobot@${INSTALLED_NAUTOBOT_VER} --python ${PYTHON_VER}; fi
+    poetry add --lock nautobot@${INSTALLED_NAUTOBOT_VER} --python ${PYTHON_VER} || \
+    poetry add --lock git+https://github.com/nautobot/nautobot.git#${NAUTOBOT_VER} --python ${PYTHON_VER}; fi
 
 # Install the app
 RUN poetry install --extras all --with dev

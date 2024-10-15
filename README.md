@@ -4,7 +4,7 @@
   <img src="https://raw.githubusercontent.com/nautobot/nautobot-app-golden-config/develop/docs/images/icon-NautobotGoldenConfig.png" class="logo" height="200px">
   <br>
   <a href="https://github.com/nautobot/nautobot-app-golden-config/actions"><img src="https://github.com/nautobot/nautobot-app-golden-config/actions/workflows/ci.yml/badge.svg?branch=main"></a>
-  <a href="https://docs.nautobot.com/projects/golden-config/en/latest/"><img src="https://readthedocs.org/projects/nautobot-app-golden-config/badge/"></a>
+  <a href="https://docs.nautobot.com/projects/golden-config/en/latest/"><img src="https://readthedocs.org/projects/nautobot-plugin-golden-config/badge/"></a>
   <a href="https://pypi.org/project/nautobot-golden-config/"><img src="https://img.shields.io/pypi/v/nautobot-golden-config"></a>
   <a href="https://pypi.org/project/nautobot-golden-config/"><img src="https://img.shields.io/pypi/dm/nautobot-golden-config"></a>
   <br>

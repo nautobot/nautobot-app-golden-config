@@ -1,8 +1,10 @@
 """View for Golden Config APIs."""
 
 import json
+from pathlib import Path
 
 from django.contrib.contenttypes.models import ContentType
+from nautobot.apps.utils import render_jinja2
 from nautobot.core.api.views import (
     BulkDestroyModelMixin,
     BulkUpdateModelMixin,
@@ -11,7 +13,10 @@ from nautobot.core.api.views import (
 )
 from nautobot.dcim.models import Device
 from nautobot.extras.api.views import NautobotModelViewSet, NotesViewSetMixin
-from rest_framework import mixins, viewsets
+from nautobot.extras.datasources.git import ensure_git_repository
+from rest_framework import mixins, status, viewsets
+from rest_framework.exceptions import APIException
+from rest_framework.generics import RetrieveAPIView
 from rest_framework.mixins import DestroyModelMixin, ListModelMixin, RetrieveModelMixin, UpdateModelMixin
 from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
 from rest_framework.response import Response
@@ -161,3 +166,48 @@ class ConfigPlanViewSet(
             }
         )
         return context
+
+
+class GenerateIntendedConfigException(APIException):
+    """Exception for when the intended config cannot be generated."""
+
+    status_code = 400
+    default_detail = "Unable to generate the intended config for this device."
+    default_code = "error"
+
+
+class GenerateIntendedConfigView(RetrieveAPIView):
+    """API view for generating the intended config for a Device."""
+
+    queryset = Device.objects.all()
+    name = "Generate Intended Config"
+
+    def retrieve(self, request, *args, **kwargs):
+        """Retrieve intended configuration for a Device."""
+        device = self.get_object()
+        settings = models.GoldenConfigSetting.objects.get_for_device(device)
+        if not settings:
+            raise GenerateIntendedConfigException("No Golden Config settings found for this device.")
+        if not settings.jinja_repository:
+            raise GenerateIntendedConfigException("Golden Config jinja template repository not found.")
+        if not settings.sot_agg_query:
+            raise GenerateIntendedConfigException("Golden Config GraphQL query not found.")
+
+        ensure_git_repository(settings.jinja_repository)
+        filesystem_path = settings.get_jinja_template_path_for_device(device)
+        if not Path(filesystem_path).is_file():
+            raise GenerateIntendedConfigException("Jinja template not found for this device.")
+
+        status_code, context = graph_ql_query(request, device, settings.sot_agg_query.query)
+        if status_code == status.HTTP_200_OK:
+            template_contents = Path(filesystem_path).read_text()
+            intended_config = render_jinja2(template_code=template_contents, context=context)
+            return Response(
+                data={
+                    "intended_config": intended_config,
+                    "intended_config_lines": intended_config.split("\n"),
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        raise GenerateIntendedConfigException("Unable to generate the intended config for this device.")

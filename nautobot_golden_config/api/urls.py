@@ -17,11 +17,17 @@ router.register("config-replace", views.ConfigReplaceViewSet)
 router.register("remediation-setting", views.RemediationSettingViewSet)
 router.register("config-postprocessing", views.ConfigToPushViewSet)
 router.register("config-plan", views.ConfigPlanViewSet)
-urlpatterns = router.urls
-urlpatterns.append(
+
+urlpatterns = [
     path(
         "sotagg/<uuid:pk>/",
         views.SOTAggDeviceDetailView.as_view(),
         name="device_detail",
-    )
-)
+    ),
+    path(
+        "generate-intended-config/<uuid:pk>/",
+        views.GenerateIntendedConfigView.as_view(),
+        name="generate_intended_config",
+    ),
+]
+urlpatterns += router.urls

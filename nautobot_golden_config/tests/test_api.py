@@ -1,6 +1,7 @@
 """Unit tests for nautobot_golden_config."""
 
 from copy import deepcopy
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
@@ -406,3 +407,53 @@ class ConfigPlanTest(
             "change_control_url": "https://5.example.com/",
             "status": approved_status.pk,
         }
+
+
+class GenerateIntendedConfigViewAPITestCase(APIViewTestCases.GetObjectViewTestCase):
+    """Test API for GenerateIntendedConfigView."""
+
+    model = Device
+
+    @classmethod
+    def setUpTestData(cls):
+        create_device_data()
+        create_git_repos()
+        create_saved_queries()
+
+        cls.dynamic_group = DynamicGroup.objects.create(
+            name="all devices dg",
+            content_type=ContentType.objects.get_for_model(Device),
+        )
+
+        cls.device = Device.objects.get(name="Device 1")
+
+        cls.golden_config_setting = GoldenConfigSetting.objects.create(
+            name="GoldenConfigSetting test api generate intended config",
+            slug="goldenconfigsetting-test-api-generate-intended-config",
+            sot_agg_query=GraphQLQuery.objects.get(name="GC-SoTAgg-Query-2"),
+            jinja_repository=GitRepository.objects.get(name="test-jinja-repo-1"),
+            dynamic_group=cls.dynamic_group,
+        )
+
+    @patch("nautobot_golden_config.api.views.ensure_git_repository")
+    @patch("nautobot_golden_config.api.views.Path")
+    def test_generate_intended_config(self, MockPath, mock_ensure_git_repository):
+        """Verify that the intended config is generated as expected."""
+
+        self.add_permissions("dcim.view_device")
+
+        MockPathInstance = MockPath.return_value
+        MockPathInstance.is_file.return_value = True
+        MockPathInstance.read_text.return_value = r"Jinja test for device {{ name }}."
+
+        response = self.client.get(
+            reverse("plugins-api:nautobot_golden_config-api:generate_intended_config", kwargs={"pk": self.device.pk}),
+            **self.header,
+        )
+
+        mock_ensure_git_repository.assert_called_once_with(self.golden_config_setting.jinja_repository)
+        self.assertHttpStatus(response, status.HTTP_200_OK)
+        self.assertTrue("intended_config" in response.data)
+        self.assertTrue("intended_config_lines" in response.data)
+        self.assertEqual(response.data["intended_config"], f"Jinja test for device {self.device.name}.")
+        self.assertEqual(response.data["intended_config_lines"], [f"Jinja test for device {self.device.name}."])

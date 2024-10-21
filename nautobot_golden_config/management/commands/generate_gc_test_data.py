@@ -2,10 +2,12 @@
 
 import random
 
+from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
 from django.db import DEFAULT_DB_ALIAS
 from nautobot.core.factory import get_random_instances
 from nautobot.dcim.models import Platform
+from nautobot.extras.models import DynamicGroup, GraphQLQuery
 from netutils.lib_mapper import NETUTILSPARSER_LIB_MAPPER_REVERSE
 
 from nautobot_golden_config.models import (
@@ -13,6 +15,7 @@ from nautobot_golden_config.models import (
     ComplianceRule,
     ConfigCompliance,
     GoldenConfig,
+    GoldenConfigSetting,
 )
 
 
@@ -26,6 +29,11 @@ class Command(BaseCommand):
             "--database",
             default=DEFAULT_DB_ALIAS,
             help='The database to generate the test data in. Defaults to the "default" database.',
+        )
+        parser.add_argument(
+            "--flush",
+            action="store_true",
+            help="Flush any existing golden config data from the database before generating new data.",
         )
 
     def _generate_static_data(self, db):
@@ -94,6 +102,112 @@ class Command(BaseCommand):
                 compliance_config=f"compliance config for {device.name}",
             )
 
+        # Create GraphQL query for GoldenConfigSetting.sot_agg_query
+        message = "Creating test GraphQLQuery for GoldenConfigSetting..."
+        self.stdout.write(message)
+        graphql_query_variables = {"device_id": ""}
+        graphql_sot_agg_query = """
+            query ($device_id: ID!) {
+              device(id: $device_id) {
+                config_context
+                hostname: name
+                position
+                serial
+                primary_ip4 {
+                  id
+                  primary_ip4_for {
+                    id
+                    name
+                  }
+                }
+                tenant {
+                  name
+                }
+                tags {
+                  name
+                }
+                role {
+                  name
+                }
+                platform {
+                  name
+                  manufacturer {
+                    name
+                  }
+                  network_driver
+                  napalm_driver
+                }
+                location {
+                  name
+                  parent {
+                    name
+                  }
+                }
+                interfaces {
+                  description
+                  mac_address
+                  enabled
+                  name
+                  ip_addresses {
+                    address
+                    tags {
+                      id
+                    }
+                  }
+                  connected_circuit_termination {
+                    circuit {
+                      cid
+                      commit_rate
+                      provider {
+                        name
+                      }
+                    }
+                  }
+                  tagged_vlans {
+                    id
+                  }
+                  untagged_vlan {
+                    id
+                  }
+                  cable {
+                    termination_a_type
+                    status {
+                      name
+                    }
+                    color
+                  }
+                  tags {
+                    id
+                  }
+                }
+              }
+            }
+        """
+        gql_query = GraphQLQuery.objects.using(db).create(
+            name="GoldenConfigSetting.sot_agg_query",
+            variables=graphql_query_variables,
+            query=graphql_sot_agg_query,
+        )
+        if not GoldenConfigSetting.objects.using(db).exists():
+            dynamic_group, _ = DynamicGroup.objects.using(db).get_or_create(
+                name="GoldenConfigSetting Dynamic Group",
+                defaults={"content_type": ContentType.objects.using(db).get(app_label="dcim", model="device")},
+            )
+            GoldenConfigSetting.objects.using(db).create(
+                name="Default GoldenConfigSetting",
+                slug="default_goldenconfigsetting",
+                sot_agg_query=gql_query,
+                dynamic_group=dynamic_group,
+            )
+            message = "Creating 1 GoldenConfigSetting..."
+            self.stdout.write(message)
+        else:
+            golden_config_setting = GoldenConfigSetting.objects.first()
+            message = f"Applying GraphQLQuery to GoldenConfigSetting '{golden_config_setting.name}'..."
+            self.stdout.write(message)
+            golden_config_setting.sot_agg_query = gql_query
+            golden_config_setting.save()
+
         # TODO: Create ConfigRemoves
         # TODO: Create ConfigReplaces
         # TODO: Create RemediationSettings
@@ -101,6 +215,15 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         """Entry point to the management command."""
+        if options["flush"]:
+            self.stdout.write(self.style.WARNING("Flushing golden config objects from the database..."))
+            GoldenConfigSetting.objects.using(options["database"]).all().delete()
+            GoldenConfig.objects.using(options["database"]).all().delete()
+            ConfigCompliance.objects.using(options["database"]).all().delete()
+            ComplianceRule.objects.using(options["database"]).all().delete()
+            ComplianceFeature.objects.using(options["database"]).all().delete()
+            GraphQLQuery.objects.using(options["database"]).filter(name="GoldenConfigSetting.sot_agg_query").delete()
+
         self._generate_static_data(db=options["database"])
 
         self.stdout.write(self.style.SUCCESS(f"Database {options['database']} populated with app data successfully!"))

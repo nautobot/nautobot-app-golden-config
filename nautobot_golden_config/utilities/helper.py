@@ -69,10 +69,8 @@ def get_job_filter(data=None):
         query.update({"id": data["device"].values_list("pk", flat=True)})
 
     raw_qs = Q()
-    # If scope is set to {} do not loop as all devices are in scope.
-    if not models.GoldenConfigSetting.objects.filter(dynamic_group__filter__iexact="{}").exists():
-        for obj in models.GoldenConfigSetting.objects.all():
-            raw_qs = raw_qs | obj.dynamic_group.generate_query()
+    for obj in models.GoldenConfigSetting.objects.all():
+        raw_qs = raw_qs | obj.dynamic_group.generate_query()
 
     base_qs = Device.objects.filter(raw_qs)
 

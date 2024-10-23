@@ -2,7 +2,7 @@
 
 from unittest.mock import Mock, patch
 
-from nautobot.core.testing import TestCase
+from nautobot.apps.testing import TestCase
 
 from nautobot_golden_config.tests.conftest import create_config_compliance, create_device, create_feature_rule_cli
 from nautobot_golden_config.utilities.config_plan import (

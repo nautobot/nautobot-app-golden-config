@@ -3,7 +3,7 @@
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db.models.deletion import ProtectedError
-from nautobot.core.testing import TestCase
+from nautobot.apps.testing import TestCase
 from nautobot.dcim.models import Platform
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status
 

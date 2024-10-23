@@ -457,3 +457,86 @@ class GenerateIntendedConfigViewAPITestCase(APIViewTestCases.GetObjectViewTestCa
         self.assertTrue("intended_config_lines" in response.data)
         self.assertEqual(response.data["intended_config"], f"Jinja test for device {self.device.name}.")
         self.assertEqual(response.data["intended_config_lines"], [f"Jinja test for device {self.device.name}."])
+
+    @patch("nautobot_golden_config.api.views.ensure_git_repository")
+    @patch("nautobot_golden_config.api.views.Path")
+    def test_generate_intended_config_failures(self, MockPath, mock_ensure_git_repository):
+        """Verify that errors are handled as expected."""
+
+        self.add_permissions("dcim.view_device")
+        MockPathInstance = MockPath.return_value
+
+        # test git repo not found
+        MockPathInstance.is_file.return_value = False
+
+        response = self.client.get(
+            reverse("plugins-api:nautobot_golden_config-api:generate_intended_config", kwargs={"pk": self.device.pk}),
+            **self.header,
+        )
+
+        mock_ensure_git_repository.assert_called_once_with(self.golden_config_setting.jinja_repository)
+        self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue("detail" in response.data)
+        self.assertEqual(response.data["detail"], "Jinja template not found for this device.")
+
+        # test invalid jinja template
+        MockPathInstance.is_file.return_value = True
+        MockPathInstance.read_text.return_value = r"Jinja test for device {{ name }."
+
+        response = self.client.get(
+            reverse("plugins-api:nautobot_golden_config-api:generate_intended_config", kwargs={"pk": self.device.pk}),
+            **self.header,
+        )
+
+        self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue("detail" in response.data)
+        self.assertIn("Error rendering Jinja template:", response.data["detail"])
+
+        # test ensure_git_repository failure
+        mock_ensure_git_repository.side_effect = Exception("Test exception")
+
+        response = self.client.get(
+            reverse("plugins-api:nautobot_golden_config-api:generate_intended_config", kwargs={"pk": self.device.pk}),
+            **self.header,
+        )
+
+        self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue("detail" in response.data)
+        self.assertIn("Error trying to sync Jinja template repository:", response.data["detail"])
+
+        # test no sot_agg_query on GoldenConfigSetting
+        self.golden_config_setting.sot_agg_query = None
+        self.golden_config_setting.save()
+
+        response = self.client.get(
+            reverse("plugins-api:nautobot_golden_config-api:generate_intended_config", kwargs={"pk": self.device.pk}),
+            **self.header,
+        )
+
+        self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue("detail" in response.data)
+        self.assertIn("Golden Config GraphQL query not found.", response.data["detail"])
+
+        # test no jinja_repository on GoldenConfigSetting
+        self.golden_config_setting.jinja_repository = None
+        self.golden_config_setting.save()
+
+        response = self.client.get(
+            reverse("plugins-api:nautobot_golden_config-api:generate_intended_config", kwargs={"pk": self.device.pk}),
+            **self.header,
+        )
+
+        self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue("detail" in response.data)
+        self.assertIn("Golden Config jinja template repository not found.", response.data["detail"])
+
+        # test no GoldenConfigSetting found for device
+        GoldenConfigSetting.objects.all().delete()
+        response = self.client.get(
+            reverse("plugins-api:nautobot_golden_config-api:generate_intended_config", kwargs={"pk": self.device.pk}),
+            **self.header,
+        )
+
+        self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue("detail" in response.data)
+        self.assertIn("No Golden Config settings found for this device.", response.data["detail"])

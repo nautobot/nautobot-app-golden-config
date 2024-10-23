@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from django.contrib.contenttypes.models import ContentType
+from jinja2.exceptions import TemplateError, TemplateSyntaxError
 from nautobot.apps.utils import render_jinja2
 from nautobot.core.api.views import (
     BulkDestroyModelMixin,
@@ -193,7 +194,10 @@ class GenerateIntendedConfigView(RetrieveAPIView):
         if not settings.sot_agg_query:
             raise GenerateIntendedConfigException("Golden Config GraphQL query not found.")
 
-        ensure_git_repository(settings.jinja_repository)
+        try:
+            ensure_git_repository(settings.jinja_repository)
+        except Exception as exc:
+            raise GenerateIntendedConfigException(f"Error trying to sync Jinja template repository: {exc}")
         filesystem_path = settings.get_jinja_template_path_for_device(device)
         if not Path(filesystem_path).is_file():
             raise GenerateIntendedConfigException("Jinja template not found for this device.")
@@ -201,7 +205,10 @@ class GenerateIntendedConfigView(RetrieveAPIView):
         status_code, context = graph_ql_query(request, device, settings.sot_agg_query.query)
         if status_code == status.HTTP_200_OK:
             template_contents = Path(filesystem_path).read_text()
-            intended_config = render_jinja2(template_code=template_contents, context=context)
+            try:
+                intended_config = render_jinja2(template_code=template_contents, context=context)
+            except (TemplateSyntaxError, TemplateError) as exc:
+                raise GenerateIntendedConfigException(f"Error rendering Jinja template: {exc}")
             return Response(
                 data={
                     "intended_config": intended_config,

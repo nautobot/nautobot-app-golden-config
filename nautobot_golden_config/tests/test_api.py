@@ -435,17 +435,17 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
 
         cls.git_repository = GitRepository.objects.get(name="test-jinja-repo-1")
 
-    def _setup_mock_path(self, MockPath):
-        MockPathInstance = MockPath.return_value
-        MockPathInstance.__str__.return_value = "test.j2"
-        MockPathInstance.read_text.return_value = r"Jinja test for device {{ name }}."
-        MockPathInstance.is_file.return_value = True
-        MockPathInstance.__truediv__.return_value = MockPathInstance  # to handle Path('path') / 'file'
-        return MockPathInstance
+    def _setup_mock_path(self, MockPath):  # pylint: disable=invalid-name
+        mock_path_instance = MockPath.return_value
+        mock_path_instance.__str__.return_value = "test.j2"
+        mock_path_instance.read_text.return_value = r"Jinja test for device {{ name }}."
+        mock_path_instance.is_file.return_value = True
+        mock_path_instance.__truediv__.return_value = mock_path_instance  # to handle Path('path') / 'file'
+        return mock_path_instance
 
     @patch("nautobot_golden_config.api.views.ensure_git_repository")
     @patch("nautobot_golden_config.api.views.Path")
-    def test_generate_intended_config(self, MockPath, mock_ensure_git_repository):
+    def test_generate_intended_config(self, MockPath, mock_ensure_git_repository):  # pylint: disable=invalid-name
         """Verify that the intended config is generated as expected."""
 
         self.add_permissions("dcim.view_device")
@@ -468,13 +468,13 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
 
     @patch("nautobot_golden_config.api.views.ensure_git_repository")
     @patch("nautobot_golden_config.api.views.Path")
-    def test_generate_intended_config_failures(self, MockPath, mock_ensure_git_repository):
+    def test_generate_intended_config_failures(self, MockPath, mock_ensure_git_repository):  # pylint: disable=invalid-name
         """Verify that errors are handled as expected."""
 
         self.add_permissions("dcim.view_device")
         self.add_permissions("extras.view_gitrepository")
 
-        MockPathInstance = self._setup_mock_path(MockPath)
+        mock_path_instance = self._setup_mock_path(MockPath)
 
         # test missing query parameters
         response = self.client.get(
@@ -502,7 +502,7 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
         )
 
         # test git repo not present on filesystem
-        MockPathInstance.is_file.return_value = False
+        mock_path_instance.is_file.return_value = False
 
         response = self.client.get(
             reverse("plugins-api:nautobot_golden_config-api:generate_intended_config"),
@@ -519,8 +519,8 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
         )
 
         # test invalid jinja template
-        MockPathInstance.is_file.return_value = True
-        MockPathInstance.read_text.return_value = r"Jinja test for device {{ name }."
+        mock_path_instance.is_file.return_value = True
+        mock_path_instance.read_text.return_value = r"Jinja test for device {{ name }."
 
         response = self.client.get(
             reverse("plugins-api:nautobot_golden_config-api:generate_intended_config"),

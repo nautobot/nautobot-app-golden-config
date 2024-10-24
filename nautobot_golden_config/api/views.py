@@ -194,15 +194,15 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
             raise GenerateIntendedConfigException(f"Parameter {query_param} is required.")
         try:
             return model.objects.restrict(request.user, "view").get(pk=pk)
-        except model.DoesNotExist:
-            raise GenerateIntendedConfigException(f"{model.__name__} with id '{pk}' not found.")
+        except model.DoesNotExist as exc:
+            raise GenerateIntendedConfigException(f"{model.__name__} with id '{pk}' not found.") from exc
 
     def _get_jinja_template_path(self, settings, device, git_repository):
         """Get the Jinja template path for the device in the provided git repository."""
         try:
             rendered_path = render_jinja2(template_code=settings.jinja_path_template, context={"obj": device})
         except (TemplateSyntaxError, TemplateError) as exc:
-            raise GenerateIntendedConfigException(f"Error rendering Jinja path template: {exc}")
+            raise GenerateIntendedConfigException("Error rendering Jinja path template") from exc
         filesystem_path = Path(git_repository.filesystem_path) / rendered_path
         if not filesystem_path.is_file():
             msg = f"Jinja template {filesystem_path} not found in git repository {git_repository}."
@@ -238,7 +238,7 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
         try:
             ensure_git_repository(git_repository)
         except Exception as exc:
-            raise GenerateIntendedConfigException(f"Error trying to sync git repository: {exc}")
+            raise GenerateIntendedConfigException("Error trying to sync git repository") from exc
 
         filesystem_path = self._get_jinja_template_path(settings, device, git_repository)
 
@@ -248,7 +248,7 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
             try:
                 intended_config = render_jinja2(template_code=template_contents, context=context)
             except (TemplateSyntaxError, TemplateError) as exc:
-                raise GenerateIntendedConfigException(f"Error rendering Jinja template: {exc}")
+                raise GenerateIntendedConfigException("Error rendering Jinja template") from exc
             return Response(
                 data={
                     "intended_config": intended_config,

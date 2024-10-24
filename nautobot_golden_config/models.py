@@ -633,6 +633,7 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         if self.jinja_repository is not None:
             rendered_path = render_jinja2(template_code=self.jinja_path_template, context={"obj": device})
             return f"{self.jinja_repository.filesystem_path}{os.path.sep}{rendered_path}"
+        return None
 
 
 @extras_features(

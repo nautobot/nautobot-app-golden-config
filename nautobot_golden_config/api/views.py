@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 
 from django.contrib.contenttypes.models import ContentType
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from jinja2.exceptions import TemplateError, TemplateSyntaxError
 from nautobot.apps.utils import render_jinja2
 from nautobot.core.api.views import (
@@ -15,9 +17,10 @@ from nautobot.core.api.views import (
 from nautobot.dcim.models import Device
 from nautobot.extras.api.views import NautobotModelViewSet, NotesViewSetMixin
 from nautobot.extras.datasources.git import ensure_git_repository
+from nautobot.extras.models import GitRepository
 from rest_framework import mixins, status, viewsets
 from rest_framework.exceptions import APIException
-from rest_framework.generics import RetrieveAPIView
+from rest_framework.generics import GenericAPIView
 from rest_framework.mixins import DestroyModelMixin, ListModelMixin, RetrieveModelMixin, UpdateModelMixin
 from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
 from rest_framework.response import Response
@@ -177,34 +180,71 @@ class GenerateIntendedConfigException(APIException):
     default_code = "error"
 
 
-class GenerateIntendedConfigView(RetrieveAPIView):
+class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
     """API view for generating the intended config for a Device."""
 
-    queryset = Device.objects.all()
-    name = "Generate Intended Config"
+    name = "Generate Intended Config for Device"
+    permission_classes = [IsAuthenticated]
+    serializer_class = serializers.GenerateIntendedConfigSerializer
 
-    def retrieve(self, request, *args, **kwargs):
-        """Retrieve intended configuration for a Device."""
-        device = self.get_object()
+    def _get_object(self, request, model, query_param):
+        """Get the requested model instance, restricted to requesting user."""
+        pk = request.query_params.get(query_param)
+        if not pk:
+            raise GenerateIntendedConfigException(f"Parameter {query_param} is required.")
+        try:
+            return model.objects.restrict(request.user, "view").get(pk=pk)
+        except model.DoesNotExist:
+            raise GenerateIntendedConfigException(f"{model.__name__} with id '{pk}' not found.")
+
+    def _get_jinja_template_path(self, settings, device, git_repository):
+        """Get the Jinja template path for the device in the provided git repository."""
+        try:
+            rendered_path = render_jinja2(template_code=settings.jinja_path_template, context={"obj": device})
+        except (TemplateSyntaxError, TemplateError) as exc:
+            raise GenerateIntendedConfigException(f"Error rendering Jinja path template: {exc}")
+        filesystem_path = Path(git_repository.filesystem_path) / rendered_path
+        if not filesystem_path.is_file():
+            msg = f"Jinja template {filesystem_path} not found in git repository {git_repository}."
+            raise GenerateIntendedConfigException(msg)
+        return filesystem_path
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="device_id",
+                required=True,
+                type=OpenApiTypes.UUID,
+                location=OpenApiParameter.QUERY,
+            ),
+            OpenApiParameter(
+                name="git_repository_id",
+                required=True,
+                type=OpenApiTypes.UUID,
+                location=OpenApiParameter.QUERY,
+            ),
+        ]
+    )
+    def get(self, request, *args, **kwargs):
+        """Generate intended configuration for a Device with an arbitrary GitRepository."""
+        device = self._get_object(request, Device, "device_id")
+        git_repository = self._get_object(request, GitRepository, "git_repository_id")
         settings = models.GoldenConfigSetting.objects.get_for_device(device)
         if not settings:
             raise GenerateIntendedConfigException("No Golden Config settings found for this device.")
-        if not settings.jinja_repository:
-            raise GenerateIntendedConfigException("Golden Config jinja template repository not found.")
         if not settings.sot_agg_query:
             raise GenerateIntendedConfigException("Golden Config GraphQL query not found.")
 
         try:
-            ensure_git_repository(settings.jinja_repository)
+            ensure_git_repository(git_repository)
         except Exception as exc:
-            raise GenerateIntendedConfigException(f"Error trying to sync Jinja template repository: {exc}")
-        filesystem_path = settings.get_jinja_template_path_for_device(device)
-        if not Path(filesystem_path).is_file():
-            raise GenerateIntendedConfigException("Jinja template not found for this device.")
+            raise GenerateIntendedConfigException(f"Error trying to sync git repository: {exc}")
+
+        filesystem_path = self._get_jinja_template_path(settings, device, git_repository)
 
         status_code, context = graph_ql_query(request, device, settings.sot_agg_query.query)
         if status_code == status.HTTP_200_OK:
-            template_contents = Path(filesystem_path).read_text()
+            template_contents = filesystem_path.read_text()
             try:
                 intended_config = render_jinja2(template_code=template_contents, context=context)
             except (TemplateSyntaxError, TemplateError) as exc:

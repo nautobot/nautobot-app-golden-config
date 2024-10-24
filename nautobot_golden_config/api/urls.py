@@ -25,7 +25,7 @@ urlpatterns = [
         name="device_detail",
     ),
     path(
-        "generate-intended-config/<uuid:pk>/",
+        "generate-intended-config/",
         views.GenerateIntendedConfigView.as_view(),
         name="generate_intended_config",
     ),

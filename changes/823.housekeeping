@@ -1,0 +1,1 @@
+Changed model_class_name in .cookiecutter.json to a valid model to help with drift management.

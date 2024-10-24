@@ -14,7 +14,7 @@
         "max_nautobot_version": "2.9999",
         "camel_name": "NautobotGoldenConfig",
         "project_short_description": "An app for configuration on nautobot",
-        "model_class_name": "None",
+        "model_class_name": "ComplianceFeature",
         "open_source_license": "Apache-2.0",
         "docs_base_url": "https://docs.nautobot.com",
         "docs_app_url": "https://docs.nautobot.com/projects/golden-config/en/latest",

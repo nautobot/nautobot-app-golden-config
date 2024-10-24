@@ -510,7 +510,6 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
             **self.header,
         )
 
-        mock_ensure_git_repository.assert_called_once_with(self.git_repository)
         self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertTrue("detail" in response.data)
         self.assertEqual(
@@ -530,7 +529,7 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
 
         self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertTrue("detail" in response.data)
-        self.assertIn("Error rendering Jinja template:", response.data["detail"])
+        self.assertEqual("Error rendering Jinja template", response.data["detail"])
 
         # test ensure_git_repository failure
         mock_ensure_git_repository.side_effect = Exception("Test exception")
@@ -543,7 +542,7 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
 
         self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertTrue("detail" in response.data)
-        self.assertEqual("Error trying to sync git repository: Test exception", response.data["detail"])
+        self.assertEqual("Error trying to sync git repository", response.data["detail"])
 
         # test no sot_agg_query on GoldenConfigSetting
         self.golden_config_setting.sot_agg_query = None
@@ -557,7 +556,7 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
 
         self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertTrue("detail" in response.data)
-        self.assertIn("Golden Config GraphQL query not found.", response.data["detail"])
+        self.assertEqual("Golden Config GraphQL query not found.", response.data["detail"])
 
         # test git_repository instance not found
         invalid_uuid = uuid.uuid4()
@@ -581,4 +580,4 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
 
         self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertTrue("detail" in response.data)
-        self.assertIn("No Golden Config settings found for this device.", response.data["detail"])
+        self.assertEqual("No Golden Config settings found for this device.", response.data["detail"])

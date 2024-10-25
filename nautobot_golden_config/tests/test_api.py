@@ -415,6 +415,8 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
 
     @classmethod
     def setUpTestData(cls):
+        # Delete the automatically created GoldenConfigSetting object
+        GoldenConfigSetting.objects.all().delete()
         create_device_data()
         create_git_repos()
         create_saved_queries()
@@ -486,7 +488,7 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
         self.assertTrue("detail" in response.data)
         self.assertEqual(
             response.data["detail"],
-            "Parameter device_id is required.",
+            "Parameter device_id is required",
         )
 
         response = self.client.get(
@@ -498,7 +500,7 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
         self.assertTrue("detail" in response.data)
         self.assertEqual(
             response.data["detail"],
-            "Parameter git_repository_id is required.",
+            "Parameter git_repository_id is required",
         )
 
         # test git repo not present on filesystem
@@ -514,7 +516,7 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
         self.assertTrue("detail" in response.data)
         self.assertEqual(
             response.data["detail"],
-            f"Jinja template test.j2 not found in git repository {self.git_repository}.",
+            f"Jinja template test.j2 not found in git repository {self.git_repository}",
         )
 
         # test invalid jinja template
@@ -556,7 +558,7 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
 
         self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertTrue("detail" in response.data)
-        self.assertEqual("Golden Config GraphQL query not found.", response.data["detail"])
+        self.assertEqual("Golden Config settings sot_agg_query not set", response.data["detail"])
 
         # test git_repository instance not found
         invalid_uuid = uuid.uuid4()
@@ -568,7 +570,7 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
 
         self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertTrue("detail" in response.data)
-        self.assertEqual(f"GitRepository with id '{invalid_uuid}' not found.", response.data["detail"])
+        self.assertEqual(f"GitRepository with id '{invalid_uuid}' not found", response.data["detail"])
 
         # test no GoldenConfigSetting found for device
         GoldenConfigSetting.objects.all().delete()
@@ -580,4 +582,4 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
 
         self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertTrue("detail" in response.data)
-        self.assertEqual("No Golden Config settings found for this device.", response.data["detail"])
+        self.assertEqual("No Golden Config settings found for this device", response.data["detail"])

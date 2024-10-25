@@ -266,6 +266,8 @@ class GoldenConfigSettingModelTestCase(TestCase):
         )
 
         self.dynamic_group.update_cached_members()
+        if hasattr(device, "_dynamic_groups"):  # clear Device.dynamic_groups cache in nautobot <2.3
+            delattr(device, "_dynamic_groups")
         self.assertEqual(GoldenConfigSetting.objects.get_for_device(device), self.global_settings)
 
         other_settings.weight = 2000
@@ -279,6 +281,8 @@ class GoldenConfigSettingModelTestCase(TestCase):
         other_dynamic_group.save()
         self.dynamic_group.update_cached_members()
         other_dynamic_group.update_cached_members()
+        if hasattr(device, "_dynamic_groups"):  # clear Device.dynamic_groups cache in nautobot <2.3
+            delattr(device, "_dynamic_groups")
         self.assertIsNone(GoldenConfigSetting.objects.get_for_device(device))
 
     def test_get_jinja_template_path_for_device(self):

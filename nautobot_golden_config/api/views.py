@@ -191,11 +191,11 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
         """Get the requested model instance, restricted to requesting user."""
         pk = request.query_params.get(query_param)
         if not pk:
-            raise GenerateIntendedConfigException(f"Parameter {query_param} is required.")
+            raise GenerateIntendedConfigException(f"Parameter {query_param} is required")
         try:
             return model.objects.restrict(request.user, "view").get(pk=pk)
         except model.DoesNotExist as exc:
-            raise GenerateIntendedConfigException(f"{model.__name__} with id '{pk}' not found.") from exc
+            raise GenerateIntendedConfigException(f"{model.__name__} with id '{pk}' not found") from exc
 
     def _get_jinja_template_path(self, settings, device, git_repository):
         """Get the Jinja template path for the device in the provided git repository."""
@@ -205,7 +205,7 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
             raise GenerateIntendedConfigException("Error rendering Jinja path template") from exc
         filesystem_path = Path(git_repository.filesystem_path) / rendered_path
         if not filesystem_path.is_file():
-            msg = f"Jinja template {filesystem_path} not found in git repository {git_repository}."
+            msg = f"Jinja template {filesystem_path} not found in git repository {git_repository}"
             raise GenerateIntendedConfigException(msg)
         return filesystem_path
 
@@ -231,9 +231,9 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
         git_repository = self._get_object(request, GitRepository, "git_repository_id")
         settings = models.GoldenConfigSetting.objects.get_for_device(device)
         if not settings:
-            raise GenerateIntendedConfigException("No Golden Config settings found for this device.")
+            raise GenerateIntendedConfigException("No Golden Config settings found for this device")
         if not settings.sot_agg_query:
-            raise GenerateIntendedConfigException("Golden Config GraphQL query not found.")
+            raise GenerateIntendedConfigException("Golden Config settings sot_agg_query not set")
 
         try:
             ensure_git_repository(git_repository)
@@ -257,4 +257,4 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
                 status=status.HTTP_200_OK,
             )
 
-        raise GenerateIntendedConfigException("Unable to generate the intended config for this device.")
+        raise GenerateIntendedConfigException("Unable to generate the intended config for this device")

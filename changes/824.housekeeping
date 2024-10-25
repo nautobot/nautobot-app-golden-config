@@ -1,0 +1,1 @@
+Updated multiple tests to use the faster `setUpTestData` instead of `setUp`. Fixed incorrect base class on `ConfigPlanTest`.

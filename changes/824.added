@@ -1,0 +1,1 @@
+Added a REST API endpoint for Jinja template developers to render intended configurations from templates in an arbitrary git repository.

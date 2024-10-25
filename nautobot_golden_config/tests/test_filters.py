@@ -17,26 +17,27 @@ class ConfigComplianceModelTestCase(TestCase):  # pylint: disable=too-many-publi
     queryset = models.ConfigCompliance.objects.all()
     filterset = filters.ConfigComplianceFilterSet
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         """Set up base objects."""
         create_device_data()
-        self.dev01 = Device.objects.get(name="Device 1")
+        cls.dev01 = Device.objects.get(name="Device 1")
         dev02 = Device.objects.get(name="Device 2")
-        self.dev03 = Device.objects.get(name="Device 3")
+        cls.dev03 = Device.objects.get(name="Device 3")
         dev04 = Device.objects.get(name="Device 4")
         dev05 = Device.objects.get(name="Device 5")
         dev06 = Device.objects.get(name="Device 6")
 
-        feature_dev01 = create_feature_rule_json(self.dev01)
+        feature_dev01 = create_feature_rule_json(cls.dev01)
         feature_dev02 = create_feature_rule_json(dev02)
-        feature_dev03 = create_feature_rule_json(self.dev03)
+        feature_dev03 = create_feature_rule_json(cls.dev03)
         feature_dev05 = create_feature_rule_json(dev05, feature="baz")
         feature_dev06 = create_feature_rule_json(dev06, feature="bar")
 
         updates = [
-            {"device": self.dev01, "feature": feature_dev01},
+            {"device": cls.dev01, "feature": feature_dev01},
             {"device": dev02, "feature": feature_dev02},
-            {"device": self.dev03, "feature": feature_dev03},
+            {"device": cls.dev03, "feature": feature_dev03},
             {"device": dev04, "feature": feature_dev01},
             {"device": dev05, "feature": feature_dev05},
             {"device": dev06, "feature": feature_dev06},
@@ -227,17 +228,18 @@ class GoldenConfigModelTestCase(ConfigComplianceModelTestCase):
     queryset = models.GoldenConfig.objects.all()
     filterset = filters.GoldenConfigFilterSet
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         """Set up base objects."""
         create_device_data()
-        self.dev01 = Device.objects.get(name="Device 1")
+        cls.dev01 = Device.objects.get(name="Device 1")
         dev02 = Device.objects.get(name="Device 2")
-        self.dev03 = Device.objects.get(name="Device 3")
+        cls.dev03 = Device.objects.get(name="Device 3")
         dev04 = Device.objects.get(name="Device 4")
         dev05 = Device.objects.get(name="Device 5")
         dev06 = Device.objects.get(name="Device 6")
 
-        updates = [self.dev01, dev02, self.dev03, dev04, dev05, dev06]
+        updates = [cls.dev01, dev02, cls.dev03, dev04, dev05, dev06]
         for update in updates:
             models.GoldenConfig.objects.create(
                 device=update,
@@ -250,15 +252,16 @@ class ConfigRemoveModelTestCase(TestCase):
     queryset = models.ConfigRemove.objects.all()
     filterset = filters.ConfigRemoveFilterSet
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         """Setup Object."""
-        self.platform1 = Platform.objects.create(name="Platform 1")
+        cls.platform1 = Platform.objects.create(name="Platform 1")
         platform2 = Platform.objects.create(name="Platform 2")
-        self.obj1 = models.ConfigRemove.objects.create(
-            name="Remove 1", platform=self.platform1, description="Description 1", regex="^Remove 1"
+        cls.obj1 = models.ConfigRemove.objects.create(
+            name="Remove 1", platform=cls.platform1, description="Description 1", regex="^Remove 1"
         )
         models.ConfigRemove.objects.create(
-            name="Remove 2", platform=self.platform1, description="Description 2", regex="^Remove 2"
+            name="Remove 2", platform=cls.platform1, description="Description 2", regex="^Remove 2"
         )
         models.ConfigRemove.objects.create(
             name="Remove 3", platform=platform2, description="Description 3", regex="^Remove 3"
@@ -297,20 +300,21 @@ class ConfigReplaceModelTestCase(ConfigRemoveModelTestCase):
     queryset = models.ConfigReplace.objects.all()
     filterset = filters.ConfigReplaceFilterSet
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         """Setup Object."""
-        self.platform1 = Platform.objects.create(name="Platform 1")
+        cls.platform1 = Platform.objects.create(name="Platform 1")
         platform2 = Platform.objects.create(name="Platform 2")
-        self.obj1 = models.ConfigReplace.objects.create(
+        cls.obj1 = models.ConfigReplace.objects.create(
             name="Remove 1",
-            platform=self.platform1,
+            platform=cls.platform1,
             description="Description 1",
             regex="^Remove 1",
             replace="Replace 1",
         )
         models.ConfigReplace.objects.create(
             name="Remove 2",
-            platform=self.platform1,
+            platform=cls.platform1,
             description="Description 2",
             regex="^Remove 2",
             replace="Replace 2",
@@ -326,17 +330,18 @@ class ComplianceRuleModelTestCase(ConfigRemoveModelTestCase):
     queryset = models.ComplianceRule.objects.all()
     filterset = filters.ComplianceRuleFilterSet
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         """Setup Object."""
-        self.platform1 = Platform.objects.create(name="Platform 1")
+        cls.platform1 = Platform.objects.create(name="Platform 1")
         platform2 = Platform.objects.create(name="Platform 2")
         feature1 = models.ComplianceFeature.objects.create(name="Feature 1", slug="feature-1")
         feature2 = models.ComplianceFeature.objects.create(name="Feature 2", slug="feature-2")
-        self.obj1 = models.ComplianceRule.objects.create(
-            platform=self.platform1, feature=feature1, config_type="cli", config_ordered=True, match_config="config 1"
+        cls.obj1 = models.ComplianceRule.objects.create(
+            platform=cls.platform1, feature=feature1, config_type="cli", config_ordered=True, match_config="config 1"
         )
         models.ComplianceRule.objects.create(
-            platform=self.platform1, feature=feature2, config_type="cli", config_ordered=True, match_config="config 2"
+            platform=cls.platform1, feature=feature2, config_type="cli", config_ordered=True, match_config="config 2"
         )
         models.ComplianceRule.objects.create(
             platform=platform2, feature=feature1, config_type="cli", config_ordered=True, match_config="config 3"
@@ -357,9 +362,10 @@ class ComplianceFeatureModelTestCase(TestCase):
     queryset = models.ComplianceFeature.objects.all()
     filterset = filters.ComplianceFeatureFilterSet
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         """Setup Object."""
-        self.obj1 = models.ComplianceFeature.objects.create(name="Feature 1", slug="feature-1")
+        cls.obj1 = models.ComplianceFeature.objects.create(name="Feature 1", slug="feature-1")
         models.ComplianceFeature.objects.create(name="Feature 2", slug="feature-2")
         models.ComplianceFeature.objects.create(name="Feature 3", slug="feature-3")
 

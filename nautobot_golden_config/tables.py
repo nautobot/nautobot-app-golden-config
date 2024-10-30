@@ -485,12 +485,12 @@ class ConfigPlanTable(StatusTableMixin, BaseTable):
     pk = ToggleColumn()
     device = LinkColumn("plugins:nautobot_golden_config:configplan", args=[A("pk")])
     plan_result = TemplateColumn(
-        template_code="""<a href="{% url 'extras:jobresult' pk=record.plan_result.pk  %}" <i class="mdi mdi-clipboard-text-play-outline"></i></a> """
+        template_code="""<a href="{% url 'extras:jobresult' pk=record.plan_result.pk %}"><i class="mdi mdi-clipboard-text-play-outline"></i></a>"""
     )
     deploy_result = TemplateColumn(
         template_code="""
         {% if record.deploy_result %}
-            <a href="{% url 'extras:jobresult' pk=record.deploy_result.pk  %}" <i class="mdi mdi-clipboard-text-play-outline"></i></a>
+            <a href="{% url 'extras:jobresult' pk=record.deploy_result.pk %}"><i class="mdi mdi-clipboard-text-play-outline"></i></a>
         {% else %}
             &mdash;
         {% endif %}

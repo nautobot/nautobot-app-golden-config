@@ -442,7 +442,7 @@ class GenerateConfigPlans(Job, FormEntry):
                 continue
 
             if not all(isinstance(config_set, str) for config_set in config_sets):
-                config_set = str(config_sets)
+                config_set = config_sets
             else:
                 config_set = "\n".join(config_sets)
             config_plan = ConfigPlan.objects.create(

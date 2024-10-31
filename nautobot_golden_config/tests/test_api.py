@@ -9,6 +9,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from nautobot.core.testing import APITestCase, APIViewTestCases
 from nautobot.dcim.models import Device, Platform
+from nautobot.extras.management import populate_role_choices, populate_status_choices
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status
 from rest_framework import status
 
@@ -415,6 +416,8 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
 
     @classmethod
     def setUpTestData(cls):
+        populate_role_choices()
+        populate_status_choices()
         # Delete the automatically created GoldenConfigSetting object
         GoldenConfigSetting.objects.all().delete()
         create_device_data()
@@ -427,6 +430,9 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
         )
 
         cls.device = Device.objects.get(name="Device 1")
+        platform = cls.device.platform
+        platform.network_driver = "arista_eos"
+        platform.save()
 
         cls.golden_config_setting = GoldenConfigSetting.objects.create(
             name="GoldenConfigSetting test api generate intended config",
@@ -440,20 +446,34 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
     def _setup_mock_path(self, MockPath):  # pylint: disable=invalid-name
         mock_path_instance = MockPath.return_value
         mock_path_instance.__str__.return_value = "test.j2"
-        mock_path_instance.read_text.return_value = r"Jinja test for device {{ name }}."
         mock_path_instance.is_file.return_value = True
         mock_path_instance.__truediv__.return_value = mock_path_instance  # to handle Path('path') / 'file'
         return mock_path_instance
 
     @patch("nautobot_golden_config.api.views.ensure_git_repository")
     @patch("nautobot_golden_config.api.views.Path")
-    def test_generate_intended_config(self, MockPath, mock_ensure_git_repository):  # pylint: disable=invalid-name
+    @patch("nautobot_golden_config.api.views.dispatcher")
+    def test_generate_intended_config(self, mock_dispatcher, MockPath, mock_ensure_git_repository):  # pylint: disable=invalid-name
         """Verify that the intended config is generated as expected."""
 
         self.add_permissions("dcim.view_device")
         self.add_permissions("extras.view_gitrepository")
 
         self._setup_mock_path(MockPath)
+
+        # Replicate nornir nested task structure
+        def _mock_dispatcher(task, *args, **kwargs):
+            def _template_file(task, *args, **kwargs):
+                return None
+
+            def _generate_config(task, *args, **kwargs):
+                task.run(task=_template_file, name="template_file")
+                return {"config": f"Jinja test for device {self.device.name}."}
+
+            task.run(task=_generate_config, name="generate_config")
+            return ""
+
+        mock_dispatcher.side_effect = _mock_dispatcher
 
         response = self.client.get(
             reverse("plugins-api:nautobot_golden_config-api:generate_intended_config"),
@@ -470,7 +490,8 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
 
     @patch("nautobot_golden_config.api.views.ensure_git_repository")
     @patch("nautobot_golden_config.api.views.Path")
-    def test_generate_intended_config_failures(self, MockPath, mock_ensure_git_repository):  # pylint: disable=invalid-name
+    @patch("nautobot_golden_config.api.views.dispatcher")
+    def test_generate_intended_config_failures(self, mock_dispatcher, MockPath, mock_ensure_git_repository):  # pylint: disable=invalid-name
         """Verify that errors are handled as expected."""
 
         self.add_permissions("dcim.view_device")
@@ -519,9 +540,22 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
             f"Jinja template test.j2 not found in git repository {self.git_repository}",
         )
 
-        # test invalid jinja template
+        # test exception raised in nornir task
+
+        # Replicate nornir nested task structure
+        def _mock_dispatcher(task, *args, **kwargs):
+            def _template_file(task, *args, **kwargs):
+                raise Exception("Test exception")
+
+            def _generate_config(task, *args, **kwargs):
+                task.run(task=_template_file, name="template_file")
+                return {"config": f"Jinja test for device {self.device.name}."}
+
+            task.run(task=_generate_config, name="generate_config")
+            return ""
+
+        mock_dispatcher.side_effect = _mock_dispatcher
         mock_path_instance.is_file.return_value = True
-        mock_path_instance.read_text.return_value = r"Jinja test for device {{ name }."
 
         response = self.client.get(
             reverse("plugins-api:nautobot_golden_config-api:generate_intended_config"),

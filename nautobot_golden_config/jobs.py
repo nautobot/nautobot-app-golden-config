@@ -130,7 +130,7 @@ def gc_repo_prep(job, data):
     return current_repos
 
 
-def gc_repo_push(job, current_repos):
+def gc_repo_push(job, current_repos, commit_message=""):
     """Push any work from worker to git repos in Job.
 
     Args:
@@ -149,8 +149,17 @@ def gc_repo_push(job, current_repos):
                     f"Pushing {job.Meta.name} results to repo {repo['repo_obj'].base_url}.",
                     extra={"grouping": "GC Repo Commit and Push"},
                 )
-                repo["repo_obj"].commit_with_added(f"{job.Meta.name.upper()} JOB {now}")
+                if not commit_message:
+                    commit_message = f"{job.Meta.name.upper()} JOB {now}"
+                repo["repo_obj"].commit_with_added(commit_message)
                 repo["repo_obj"].push()
+                job.logger.info(
+                    f'{repo["repo_obj"].nautobot_repo_obj.name}: the new Git repository hash is "{repo["repo_obj"].head}"',
+                    extra={
+                        "grouping": "GC Repo Commit and Push",
+                        "object": repo["repo_obj"].nautobot_repo_obj,
+                    },
+                )
 
 
 def gc_repos(func):
@@ -168,7 +177,7 @@ def gc_repos(func):
             if kwargs.get("fail_job_on_task_failure"):
                 raise NornirNautobotException(error_msg) from error
         finally:
-            gc_repo_push(job=self, current_repos=current_repos)
+            gc_repo_push(job=self, current_repos=current_repos, commit_message=kwargs.get("commit_message"))
 
     return gc_repo_wrapper
 
@@ -203,6 +212,13 @@ class GoldenConfigJobMixin(Job):  # pylint: disable=abstract-method
     """Reused mixin to be able to set defaults for instance attributes in all GC jobs."""
 
     fail_job_on_task_failure = BooleanVar(description="If any tasks for any device fails, fail the entire job result.")
+    commit_message = StringVar(
+        label="Git commit message",
+        required=False,
+        description=r"If empty, defaults to `{job.Meta.name.upper()} JOB {now}`.",
+        min_length=2,
+        max_length=72,
+    )
 
     def __init__(self, *args, **kwargs):
         """Initialize the job."""
@@ -308,7 +324,7 @@ class AllGoldenConfig(GoldenConfigJobMixin):
                 failed_jobs.append("Compliance")
             except Exception as error:  # pylint: disable=broad-exception-caught
                 error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
-        gc_repo_push(job=self, current_repos=current_repos)
+        gc_repo_push(job=self, current_repos=current_repos, commit_message=data.get("commit_message"))
         if len(failed_jobs) > 1:
             jobs_list = ", ".join(failed_jobs)
         elif len(failed_jobs) == 1:
@@ -357,7 +373,7 @@ class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
                 failed_jobs.append("Compliance")
             except Exception as error:  # pylint: disable=broad-exception-caught
                 error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
-        gc_repo_push(job=self, current_repos=current_repos)
+        gc_repo_push(job=self, current_repos=current_repos, commit_message=data.get("commit_message"))
         if len(failed_jobs) > 1:
             jobs_list = ", ".join(failed_jobs)
         elif len(failed_jobs) == 1:

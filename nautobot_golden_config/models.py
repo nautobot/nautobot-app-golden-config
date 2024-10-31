@@ -2,6 +2,8 @@
 
 import json
 import logging
+import pkgutil
+import sys
 
 from deepdiff import DeepDiff
 from django.core.exceptions import ValidationError
@@ -11,7 +13,7 @@ from hier_config import Host as HierConfigHost
 from nautobot.core.models.generics import PrimaryModel
 from nautobot.core.models.utils import serialize_object, serialize_object_v2
 from nautobot.dcim.models import Device
-from nautobot.extras.models import ObjectChange
+from nautobot.extras.models import ObjectChange, GitRepository
 from nautobot.extras.models.statuses import StatusField
 from nautobot.extras.utils import extras_features
 from netutils.config.compliance import feature_compliance
@@ -197,7 +199,19 @@ def _get_hierconfig_remediation(obj):
 
     host.load_generated_config(obj.intended)
     host.load_running_config(obj.actual)
-    host.remediation_config()
+    rem = host.remediation_config()
+
+    if remediation_setting_obj.remediation_type == RemediationTypeChoice.TYPE_DYNAMIC_HIERCONFIG:
+        repos = GitRepository.objects.filter(provided_contents__contains="nautobot_golden_config.hierconfigdynamicremediations")
+        for repo in repos:
+            for importer, discovered_module_name, _ in pkgutil.iter_modules(
+                [f"{repo.filesystem_path}/hier_config_dynamic_remediations"]
+            ):
+                if "__init__" in discovered_module_name:
+                    continue
+                module = importer.find_module(discovered_module_name).load_module(discovered_module_name)
+                module.remediation(rem)
+
     remediation_config = host.remediation_config_filtered_text(include_tags={}, exclude_tags={})
 
     return remediation_config
@@ -209,6 +223,7 @@ FUNC_MAPPER = {
     ComplianceRuleConfigTypeChoice.TYPE_JSON: _get_json_compliance,
     ComplianceRuleConfigTypeChoice.TYPE_XML: _get_xml_compliance,
     RemediationTypeChoice.TYPE_HIERCONFIG: _get_hierconfig_remediation,
+    RemediationTypeChoice.TYPE_DYNAMIC_HIERCONFIG: _get_hierconfig_remediation,
 }
 # The below conditionally add the custom provided compliance type
 for custom_function, custom_type in CUSTOM_FUNCTIONS.items():

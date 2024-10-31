@@ -187,7 +187,7 @@ class GenerateIntendedConfigException(APIException):
 
 
 def _nornir_task_inject_graphql_data(task, graphql_data, **kwargs):
-    """Inject the GraphQL data into the Nornir task host data and then run dispatcher.
+    """Inject the GraphQL data into the Nornir task host data and then run nornir_nautobot.plugins.tasks.dispatcher.dispatcher subtask.
 
     This is a small stub of the logic in nautobot_golden_config.nornir_plays.config_intended.run_template.
     """
@@ -264,7 +264,7 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
                 intended_config = self._render_config_nornir_serial(
                     device=device,
                     jinja_template=filesystem_path.name,
-                    filesystem_path=filesystem_path.parent,
+                    jinja_root_path=filesystem_path.parent,
                     graphql_data=context,
                 )
             except Exception as exc:
@@ -279,7 +279,11 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
 
         raise GenerateIntendedConfigException("Unable to generate the intended config for this device")
 
-    def _render_config_nornir_serial(self, device, jinja_template, filesystem_path, graphql_data):
+    def _render_config_nornir_serial(self, device, jinja_template, jinja_root_path, graphql_data):
+        """Render the Jinja template for the device using Nornir serial runner.
+
+        This is a small stub of the logic in nornir_plays.config_intended.config_intended.
+        """
         jinja_env = get_django_env()
         with InitNornir(
             runner={"plugin": "serial"},
@@ -303,7 +307,7 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
                     dispatcher.__module__
                 ),  # The nornir tasks are built for logging to a JobResult, pass a standard logger here
                 jinja_template=jinja_template,
-                jinja_root_path=filesystem_path,
+                jinja_root_path=jinja_root_path,
                 output_file_location="/dev/null",  # The nornir task outputs the templated config to a file, but this API doesn't need it
                 jinja_filters=jinja_env.filters,
                 jinja_env=jinja_env,

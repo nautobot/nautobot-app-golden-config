@@ -9,7 +9,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from nautobot.core.testing import APITestCase, APIViewTestCases
 from nautobot.dcim.models import Device, Platform
-from nautobot.extras.management import populate_role_choices, populate_status_choices
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status
 from rest_framework import status
 
@@ -416,8 +415,6 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
 
     @classmethod
     def setUpTestData(cls):
-        populate_role_choices()
-        populate_status_choices()
         # Delete the automatically created GoldenConfigSetting object
         GoldenConfigSetting.objects.all().delete()
         create_device_data()

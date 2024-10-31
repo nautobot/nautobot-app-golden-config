@@ -460,7 +460,7 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
 
         # Replicate nornir nested task structure
         def _mock_dispatcher(task, *args, **kwargs):
-            def _template_file(task, *args, **kwargs):
+            def _template_file(*args, **kwargs):
                 return None
 
             def _generate_config(task, *args, **kwargs):
@@ -541,8 +541,8 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
 
         # Replicate nornir nested task structure
         def _mock_dispatcher(task, *args, **kwargs):
-            def _template_file(task, *args, **kwargs):
-                raise Exception("Test exception")
+            def _template_file(*args, **kwargs):
+                raise Exception("Test exception")  # pylint: disable=broad-exception-raised
 
             def _generate_config(task, *args, **kwargs):
                 task.run(task=_template_file, name="template_file")

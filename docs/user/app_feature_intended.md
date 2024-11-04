@@ -37,7 +37,7 @@ In these examples, `/services.j2`, `/ntp.j2`, etc. could contain the actual Jinj
 
 To help developers create the Jinja2 templates for generating the intended configuration, the app provides a REST API at `/api/plugins/golden-config/generate-intended-config/`. This API accepts two query parameters: `device_id` and `git_repository_id`. It returns the rendered configuration for the specified device using the templates from the given Git repository. This feature allows developers to test their configuration templates using a custom `GitRepository` without running a full intended configuration job.
 
-Here’s an example of how to request the rendered configuration for a device:
+Here's an example of how to request the rendered configuration for a device:
 
 ```no-highlight
 GET /api/plugins/golden-config/generate-intended-config/?device_id=231b8765-054d-4abe-bdbf-cd60e049cd8d&git_repository_id=82c051e0-d0a9-4008-948a-936a409c654a

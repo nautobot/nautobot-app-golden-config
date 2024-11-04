@@ -48,11 +48,13 @@ The returned response will contain the rendered configuration for the specified 
 - Create a new branch in the intended configuration repository.
 - Modify the Jinja2 templates in that new branch.
 - Add a new `GitRepository` in Nautobot that points to the new branch and sync the repository.
+  - NOTE: Do not select the "jinja templates" option under the "Provides" field when creating the `GitRepository`. Nautobot does not allow multiple `GitRepository` instances with an identical URL and "Provided Content". This API ignores the "Provided Content" field for this reason.
+  - Don't forget to associate credentials required to access the repository using the "Secrets Group" field.
 - Use the API to render the configuration for a device, using the new `GitRepository`.
 
-Keep in mind that Nautobot only pulls the latest branch updates when you sync the `GitRepository`. If you make changes to the branch after syncing, you'll need to sync the repository again to apply the latest updates.
+Calling this API endpoint automatically performs a `git pull`, retrieving the latest commit from the branch before rendering the template.
 
-Note that this API is only intended to render Jinja2 templates but does not apply any [configuration post-processing](./app_feature_config_postprocessing.md).
+Note that this API is only intended to render Jinja2 templates and does not apply any [configuration post-processing](./app_feature_config_postprocessing.md).
 
 ## Adding Jinja2 Filters to the Environment.
 

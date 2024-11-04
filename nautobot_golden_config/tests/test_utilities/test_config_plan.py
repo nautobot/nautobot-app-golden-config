@@ -1,7 +1,8 @@
 """Unit tests for the nautobot_golden_config utilities config_plan."""
 
-import unittest
 from unittest.mock import Mock, patch
+
+from nautobot.apps.testing import TestCase
 
 from nautobot_golden_config.tests.conftest import create_config_compliance, create_device, create_feature_rule_cli
 from nautobot_golden_config.utilities.config_plan import (
@@ -11,7 +12,7 @@ from nautobot_golden_config.utilities.config_plan import (
 )
 
 
-class ConfigPlanTest(unittest.TestCase):
+class ConfigPlanTest(TestCase):
     """Test Config Plan Utility."""
 
     def setUp(self):

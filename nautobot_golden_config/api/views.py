@@ -1,8 +1,16 @@
 """View for Golden Config APIs."""
 
+import datetime
 import json
+import logging
+from pathlib import Path
 
 from django.contrib.contenttypes.models import ContentType
+from django.utils.timezone import make_aware
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema
+from jinja2.exceptions import TemplateError, TemplateSyntaxError
+from nautobot.apps.utils import render_jinja2
 from nautobot.core.api.views import (
     BulkDestroyModelMixin,
     BulkUpdateModelMixin,
@@ -11,7 +19,14 @@ from nautobot.core.api.views import (
 )
 from nautobot.dcim.models import Device
 from nautobot.extras.api.views import NautobotModelViewSet, NotesViewSetMixin
-from rest_framework import mixins, viewsets
+from nautobot.extras.datasources.git import ensure_git_repository
+from nautobot.extras.models import GitRepository
+from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
+from nornir import InitNornir
+from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
+from rest_framework import mixins, status, viewsets
+from rest_framework.exceptions import APIException
+from rest_framework.generics import GenericAPIView
 from rest_framework.mixins import DestroyModelMixin, ListModelMixin, RetrieveModelMixin, UpdateModelMixin
 from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
 from rest_framework.response import Response
@@ -22,7 +37,7 @@ from rest_framework.viewsets import GenericViewSet
 from nautobot_golden_config import filters, models
 from nautobot_golden_config.api import serializers
 from nautobot_golden_config.utilities.graphql import graph_ql_query
-from nautobot_golden_config.utilities.helper import get_device_to_settings_map
+from nautobot_golden_config.utilities.helper import dispatch_params, get_device_to_settings_map, get_django_env
 
 
 class GoldenConfigRootView(APIRootView):
@@ -161,3 +176,143 @@ class ConfigPlanViewSet(
             }
         )
         return context
+
+
+class GenerateIntendedConfigException(APIException):
+    """Exception for when the intended config cannot be generated."""
+
+    status_code = 400
+    default_detail = "Unable to generate the intended config for this device."
+    default_code = "error"
+
+
+def _nornir_task_inject_graphql_data(task, graphql_data, **kwargs):
+    """Inject the GraphQL data into the Nornir task host data and then run nornir_nautobot.plugins.tasks.dispatcher.dispatcher subtask.
+
+    This is a small stub of the logic in nautobot_golden_config.nornir_plays.config_intended.run_template.
+    """
+    task.host.data.update(graphql_data)
+    generated_config = task.run(task=dispatcher, name="GENERATE CONFIG", **kwargs)
+    return generated_config
+
+
+class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
+    """API view for generating the intended config for a Device."""
+
+    name = "Generate Intended Config for Device"
+    permission_classes = [IsAuthenticated]
+    serializer_class = serializers.GenerateIntendedConfigSerializer
+
+    def _get_object(self, request, model, query_param):
+        """Get the requested model instance, restricted to requesting user."""
+        pk = request.query_params.get(query_param)
+        if not pk:
+            raise GenerateIntendedConfigException(f"Parameter {query_param} is required")
+        try:
+            return model.objects.restrict(request.user, "view").get(pk=pk)
+        except model.DoesNotExist as exc:
+            raise GenerateIntendedConfigException(f"{model.__name__} with id '{pk}' not found") from exc
+
+    def _get_jinja_template_path(self, settings, device, git_repository):
+        """Get the Jinja template path for the device in the provided git repository."""
+        try:
+            rendered_path = render_jinja2(template_code=settings.jinja_path_template, context={"obj": device})
+        except (TemplateSyntaxError, TemplateError) as exc:
+            raise GenerateIntendedConfigException("Error rendering Jinja path template") from exc
+        filesystem_path = Path(git_repository.filesystem_path) / rendered_path
+        if not filesystem_path.is_file():
+            msg = f"Jinja template {filesystem_path} not found in git repository {git_repository}"
+            raise GenerateIntendedConfigException(msg)
+        return filesystem_path
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="device_id",
+                required=True,
+                type=OpenApiTypes.UUID,
+                location=OpenApiParameter.QUERY,
+            ),
+            OpenApiParameter(
+                name="git_repository_id",
+                required=True,
+                type=OpenApiTypes.UUID,
+                location=OpenApiParameter.QUERY,
+            ),
+        ]
+    )
+    def get(self, request, *args, **kwargs):
+        """Generate intended configuration for a Device with an arbitrary GitRepository."""
+        device = self._get_object(request, Device, "device_id")
+        git_repository = self._get_object(request, GitRepository, "git_repository_id")
+        settings = models.GoldenConfigSetting.objects.get_for_device(device)
+        if not settings:
+            raise GenerateIntendedConfigException("No Golden Config settings found for this device")
+        if not settings.sot_agg_query:
+            raise GenerateIntendedConfigException("Golden Config settings sot_agg_query not set")
+
+        try:
+            ensure_git_repository(git_repository)
+        except Exception as exc:
+            raise GenerateIntendedConfigException("Error trying to sync git repository") from exc
+
+        filesystem_path = self._get_jinja_template_path(settings, device, git_repository)
+
+        status_code, context = graph_ql_query(request, device, settings.sot_agg_query.query)
+        if status_code == status.HTTP_200_OK:
+            try:
+                intended_config = self._render_config_nornir_serial(
+                    device=device,
+                    jinja_template=filesystem_path.name,
+                    jinja_root_path=filesystem_path.parent,
+                    graphql_data=context,
+                )
+            except Exception as exc:
+                raise GenerateIntendedConfigException("Error rendering Jinja template") from exc
+            return Response(
+                data={
+                    "intended_config": intended_config,
+                    "intended_config_lines": intended_config.split("\n"),
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        raise GenerateIntendedConfigException("Unable to generate the intended config for this device")
+
+    def _render_config_nornir_serial(self, device, jinja_template, jinja_root_path, graphql_data):
+        """Render the Jinja template for the device using Nornir serial runner.
+
+        This is a small stub of the logic in nornir_plays.config_intended.config_intended.
+        """
+        jinja_env = get_django_env()
+        with InitNornir(
+            runner={"plugin": "serial"},
+            logging={"enabled": False},
+            inventory={
+                "plugin": "nautobot-inventory",
+                "options": {
+                    "credentials_class": NORNIR_SETTINGS.get("credentials"),
+                    "params": NORNIR_SETTINGS.get("inventory_params"),
+                    "queryset": Device.objects.filter(pk=device.pk),
+                    "defaults": {"now": make_aware(datetime.datetime.now())},
+                },
+            },
+        ) as nornir_obj:
+            results = nornir_obj.run(
+                task=_nornir_task_inject_graphql_data,
+                name="REST API GENERATE CONFIG",
+                graphql_data=graphql_data,
+                obj=device,  # Used by the nornir tasks for logging to the logger below
+                logger=logging.getLogger(
+                    dispatcher.__module__
+                ),  # The nornir tasks are built for logging to a JobResult, pass a standard logger here
+                jinja_template=jinja_template,
+                jinja_root_path=jinja_root_path,
+                output_file_location="/dev/null",  # The nornir task outputs the templated config to a file, but this API doesn't need it
+                jinja_filters=jinja_env.filters,
+                jinja_env=jinja_env,
+                **dispatch_params(
+                    "generate_config", device.platform.network_driver, logging.getLogger(dispatch_params.__module__)
+                ),
+            )
+            return results[device.name][1][1][0].result["config"]

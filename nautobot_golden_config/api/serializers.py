@@ -124,3 +124,10 @@ class ConfigPlanSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
         model = models.ConfigPlan
         fields = "__all__"
         read_only_fields = ["device", "plan_type", "feature", "config_set"]
+
+
+class GenerateIntendedConfigSerializer(serializers.Serializer):  # pylint: disable=abstract-method
+    """Serializer for GenerateIntendedConfigView."""
+
+    intended_config = serializers.CharField()
+    intended_config_lines = serializers.ListField(child=serializers.CharField())

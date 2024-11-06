@@ -48,7 +48,7 @@ The returned response will contain the rendered configuration for the specified 
 ![Intended Configuration Web UI](../images/generate-intended-config-ui.png#only-light)
 ![Intended Configuration Web UI](../images/generate-intended-config-ui-dark.png#only-dark)
 
-This is the intended workflow for developers:
+This is the intended workflow for Jinja Template developers:
 
 - Create a new branch in the intended configuration repository.
 - Modify the Jinja2 templates in that new branch.

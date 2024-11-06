@@ -146,6 +146,17 @@ menu_items = (
         groups=(
             NavMenuGroup(name="Manage", weight=100, items=tuple(items_operate)),
             NavMenuGroup(name="Setup", weight=100, items=tuple(items_setup)),
+            NavMenuGroup(
+                name="Tools",
+                weight=300,
+                items=(
+                    NavMenuItem(
+                        link="plugins:nautobot_golden_config:generate_intended_config",
+                        name="Generate Intended Config",
+                        permissions=["dcim.view_device", "extras.view_gitrepository"],
+                    ),
+                ),
+            ),
         ),
     ),
 )

@@ -35,29 +35,22 @@ In these examples, `/services.j2`, `/ntp.j2`, etc. could contain the actual Jinj
 
 ### Developing Intended Configuration Templates
 
-To help developers create the Jinja2 templates for generating the intended configuration, the app provides a REST API at `/api/plugins/golden-config/generate-intended-config/` and a simple web UI at `/plugins/golden-config/generate-intended-config/`. The REST API accepts two query parameters: `device_id` and `git_repository_id`. It returns the rendered configuration for the specified device using the templates from the given Git repository. This feature allows developers to test their configuration templates using a custom `GitRepository` without running a full intended configuration job.
+To help developers create the Jinja2 templates for generating a device's intended configuration, the app provides a REST API at `/api/plugins/golden-config/generate-intended-config/` and a simple web UI at `/plugins/golden-config/generate-intended-config/`. The REST API accepts a query parameter for `device_id` and returns the rendered configuration for the specified device using the templates from the device's golden config `jinja_repository` Git repository. This feature allows developers to test their configuration templates without running a full "intended configuration" job.
 
 Here's an example of how to request the rendered configuration for a device using the REST API:
 
 ```no-highlight
-GET /api/plugins/golden-config/generate-intended-config/?device_id=231b8765-054d-4abe-bdbf-cd60e049cd8d&git_repository_id=82c051e0-d0a9-4008-948a-936a409c654a
+curl -s -X GET \
+    -H "Accept: application/json" \
+    http://nautobot/api/plugins/golden-config/generate-intended-config/?device_id=231b8765-054d-4abe-bdbf-cd60e049cd8d
 ```
 
-The returned response will contain the rendered configuration for the specified device. The web UI provides a simple form to input the device and Git repository and displays the rendered configuration when submitted.
+The returned response will contain the rendered configuration for the specified device. The web UI provides a simple form to input the device and displays the rendered configuration when submitted.
 
 ![Intended Configuration Web UI](../images/generate-intended-config-ui.png#only-light)
 ![Intended Configuration Web UI](../images/generate-intended-config-ui-dark.png#only-dark)
 
-This is the intended workflow for Jinja Template developers:
-
-- Create a new branch in the intended configuration repository.
-- Modify the Jinja2 templates in that new branch.
-- Add a new `GitRepository` in Nautobot that points to the new branch and sync the repository.
-  - NOTE: Do not select the "jinja templates" option under the "Provides" field when creating the `GitRepository`. Nautobot does not allow multiple `GitRepository` instances with an identical URL and "Provided Content". This API ignores the "Provided Content" field for this reason.
-  - Don't forget to associate credentials required to access the repository using the "Secrets Group" field.
-- Use the API to render the configuration for a device, using the new `GitRepository`.
-
-Calling this API endpoint automatically performs a `git pull`, retrieving the latest commit from the branch before rendering the template.
+Calling this API endpoint automatically performs a `git pull`, retrieving the latest commit from the Jinja2 templates Git repository before rendering the template.
 
 Note that this API is only intended to render Jinja2 templates and does not apply any [configuration post-processing](./app_feature_config_postprocessing.md).
 

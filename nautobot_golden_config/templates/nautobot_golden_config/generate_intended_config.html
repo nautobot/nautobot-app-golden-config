@@ -19,12 +19,20 @@
                 <div class="panel-heading"><strong>{% block title %}Generate Intended Configuration{% endblock title %}</strong></div>
                 <div class="panel-body">
                     <p>
-                    This tool renders the configuration for the specified device using the Jinja templates from the given Git repository.
-                    This feature allows developers to test their configuration templates using a custom <code>GitRepository</code> without running a full
-                    intended configuration job. See the
+                    This tool is <strong>intended for template developers</strong>. Production configuration generation should be initiated from the
+                    <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_list' %}">Config Overview</a> page.
+                    </p>
+                    <p>
+                    This will render the configuration for the selected device using Jinja templates from the golden config <code>jinja_repository</code>
+                    Git repository for that device.
+                    This feature allows developers to test their configuration templates without running a full "intended configuration" job. See the
                     <a href="{% static 'nautobot_golden_config/docs/user/app_feature_intended.html' %}#developing-intended-configuration-templates">
                     developing intended configuration templates
                     </a> documentation for more information.
+                    </p>
+                    <p>
+                    <strong>Note:</strong>
+                    This will perform a <code>git pull</code> on the golden config Jinja template repository to ensure the latest templates are used.
                     </p>
                     {% render_field form.device %}
                     {% render_field form.git_repository %}
@@ -66,12 +74,8 @@
                 const rendered_config = document.getElementById("rendered_config");
                 rendered_config.innerHTML = "Loading...";
                 const device = document.getElementById("id_device").value;
-                const git_repository = document.getElementById("id_git_repository").value;
                 const url = "{% url 'plugins-api:nautobot_golden_config-api:generate_intended_config' %}";
-                const data = {
-                    device_id: device,
-                    git_repository_id: git_repository,
-                };
+                const data = {device_id: device};
                 const query_params = new URLSearchParams(data).toString();
                 const response = await fetch(url + "?" + query_params, {
                     method: "GET",
@@ -80,12 +84,12 @@
                 const responseData = await response.json();
                 if (!response.ok) {
                     const msg = responseData.detail ? responseData.detail : response.statusText;
-                    rendered_config.innerHTML = sanitize(`An error occurred: ${msg}`);
+                    rendered_config.innerHTML = sanitize(`An error occurred:\n\n${msg}`);
                 } else {
                     rendered_config.innerHTML = sanitize(responseData.intended_config);
                 }
             } catch (error) {
-                rendered_config.innerHTML = sanitize(`An error occurred: ${error.message}`);
+                rendered_config.innerHTML = sanitize(`An error occurred:\n\n${error.message}`);
             }
         }
     </script>

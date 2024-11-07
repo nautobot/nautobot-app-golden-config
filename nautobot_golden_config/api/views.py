@@ -20,7 +20,6 @@ from nautobot.core.api.views import (
 from nautobot.dcim.models import Device
 from nautobot.extras.api.views import NautobotModelViewSet, NotesViewSetMixin
 from nautobot.extras.datasources.git import ensure_git_repository
-from nautobot.extras.models import GitRepository
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nornir import InitNornir
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
@@ -233,25 +232,21 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
                 type=OpenApiTypes.UUID,
                 location=OpenApiParameter.QUERY,
             ),
-            OpenApiParameter(
-                name="git_repository_id",
-                required=True,
-                type=OpenApiTypes.UUID,
-                location=OpenApiParameter.QUERY,
-            ),
         ]
     )
     def get(self, request, *args, **kwargs):
-        """Generate intended configuration for a Device with an arbitrary GitRepository."""
+        """Generate intended configuration for a Device."""
         device = self._get_object(request, Device, "device_id")
-        git_repository = self._get_object(request, GitRepository, "git_repository_id")
         settings = models.GoldenConfigSetting.objects.get_for_device(device)
         if not settings:
             raise GenerateIntendedConfigException("No Golden Config settings found for this device")
         if not settings.sot_agg_query:
             raise GenerateIntendedConfigException("Golden Config settings sot_agg_query not set")
+        if not settings.jinja_repository:
+            raise GenerateIntendedConfigException("Golden Config settings jinja_repository not set")
 
         try:
+            git_repository = settings.jinja_repository
             ensure_git_repository(git_repository)
         except Exception as exc:
             raise GenerateIntendedConfigException("Error trying to sync git repository") from exc
@@ -268,7 +263,7 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
                     graphql_data=context,
                 )
             except Exception as exc:
-                raise GenerateIntendedConfigException("Error rendering Jinja template") from exc
+                raise GenerateIntendedConfigException(f"Error rendering Jinja template: {exc}") from exc
             return Response(
                 data={
                     "intended_config": intended_config,
@@ -315,4 +310,12 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
                     "generate_config", device.platform.network_driver, logging.getLogger(dispatch_params.__module__)
                 ),
             )
-            return results[device.name][1][1][0].result["config"]
+            if results[device.name].failed:
+                if results[device.name].exception:
+                    raise results[device.name].exception
+                else:
+                    raise GenerateIntendedConfigException(
+                        f"Error generating intended config for {device.name}: {results[device.name].result}"
+                    )
+            else:
+                return results[device.name][1][1][0].result["config"]

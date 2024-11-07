@@ -608,8 +608,3 @@ class GenerateIntendedConfigForm(django_forms.Form):
         required=True,
         label="Device",
     )
-    git_repository = forms.DynamicModelChoiceField(
-        queryset=GitRepository.objects.all(),
-        required=True,
-        label="Git Repository",
-    )

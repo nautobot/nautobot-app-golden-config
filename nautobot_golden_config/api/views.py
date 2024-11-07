@@ -311,7 +311,7 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
                 ),
             )
             if results[device.name].failed:
-                if results[device.name].exception:
+                if results[device.name].exception:  # pylint: disable=no-else-raise
                     raise results[device.name].exception
                 else:
                     raise GenerateIntendedConfigException(

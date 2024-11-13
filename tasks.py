@@ -13,10 +13,13 @@ limitations under the License.
 """
 
 import os
+import re
+import sys
 from pathlib import Path
 from time import sleep
 
 from invoke.collection import Collection
+from invoke.exceptions import Exit, UnexpectedExit
 from invoke.tasks import task as invoke_task
 
 
@@ -48,7 +51,7 @@ namespace = Collection("nautobot_golden_config")
 namespace.configure(
     {
         "nautobot_golden_config": {
-            "nautobot_ver": "2.0.4",
+            "nautobot_ver": "2.3.1",
             "project_name": "nautobot-golden-config",
             "python_ver": "3.11",
             "local": False,
@@ -154,7 +157,7 @@ def run_command(context, command, **kwargs):
                 **kwargs.get("env", {}),
                 **kwargs.pop("command_env"),
             }
-        context.run(command, **kwargs)
+        return context.run(command, **kwargs)
     else:
         # Check if nautobot is running, no need to start another nautobot container to run a command
         docker_compose_status = "ps --services --filter status=running"
@@ -173,7 +176,7 @@ def run_command(context, command, **kwargs):
 
         pty = kwargs.pop("pty", True)
 
-        docker_compose(context, compose_command, pty=pty, **kwargs)
+        return docker_compose(context, compose_command, pty=pty, **kwargs)
 
 
 # ------------------------------------------------------------------------------
@@ -205,17 +208,61 @@ def generate_packages(context):
     run_command(context, command)
 
 
+def _get_docker_nautobot_version(context, nautobot_ver=None, python_ver=None):
+    """Extract Nautobot version from base docker image."""
+    if nautobot_ver is None:
+        nautobot_ver = context.nautobot_golden_config.nautobot_ver
+    if python_ver is None:
+        python_ver = context.nautobot_golden_config.python_ver
+    dockerfile_path = os.path.join(context.nautobot_golden_config.compose_dir, "Dockerfile")
+    base_image = context.run(f"grep --max-count=1 '^FROM ' {dockerfile_path}", hide=True).stdout.strip().split(" ")[1]
+    base_image = base_image.replace(r"${NAUTOBOT_VER}", nautobot_ver).replace(r"${PYTHON_VER}", python_ver)
+    pip_nautobot_ver = context.run(f"docker run --rm --entrypoint '' {base_image} pip show nautobot", hide=True)
+    match_version = re.search(r"^Version: (.+)$", pip_nautobot_ver.stdout.strip(), flags=re.MULTILINE)
+    if match_version:
+        return match_version.group(1)
+    else:
+        raise Exit(f"Nautobot version not found in Docker base image {base_image}.")
+
+
 @task(
     help={
         "check": (
             "If enabled, check for outdated dependencies in the poetry.lock file, "
             "instead of generating a new one. (default: disabled)"
-        )
+        ),
+        "constrain_nautobot_ver": (
+            "Run 'poetry add nautobot@[version] --lock' to generate the lockfile, "
+            "where [version] is the version installed in the Dockerfile's base image. "
+            "Generally intended to be used in CI and not for local development. (default: disabled)"
+        ),
+        "constrain_python_ver": (
+            "When using `constrain_nautobot_ver`, further constrain the nautobot version "
+            "to python_ver so that poetry doesn't complain about python version incompatibilities. "
+            "Generally intended to be used in CI and not for local development. (default: disabled)"
+        ),
     }
 )
-def lock(context, check=False):
-    """Generate poetry.lock inside the Nautobot container."""
-    run_command(context, f"poetry {'check' if check else 'lock --no-update'}")
+def lock(context, check=False, constrain_nautobot_ver=False, constrain_python_ver=False):
+    """Generate poetry.lock file."""
+    if constrain_nautobot_ver:
+        docker_nautobot_version = _get_docker_nautobot_version(context)
+        command = f"poetry add --lock nautobot@{docker_nautobot_version}"
+        if constrain_python_ver:
+            command += f" --python {context.nautobot_golden_config.python_ver}"
+        try:
+            output = run_command(context, command, hide=True)
+            print(output.stdout, end="")
+            print(output.stderr, file=sys.stderr, end="")
+        except UnexpectedExit:
+            print("Unable to add Nautobot dependency with version constraint, falling back to git branch.")
+            command = f"poetry add --lock git+https://github.com/nautobot/nautobot.git#{context.nautobot_golden_config.nautobot_ver}"
+            if constrain_python_ver:
+                command += f" --python {context.nautobot_golden_config.python_ver}"
+            run_command(context, command)
+    else:
+        command = f"poetry {'check' if check else 'lock --no-update'}"
+        run_command(context, command)
 
 
 # ------------------------------------------------------------------------------
@@ -645,10 +692,13 @@ def help_task(context):
 )
 def generate_release_notes(context, version=""):
     """Generate Release Notes using Towncrier."""
-    command = "env DJANGO_SETTINGS_MODULE=nautobot.core.settings towncrier build"
+    command = "poetry run towncrier build"
     if version:
         command += f" --version {version}"
-    run_command(context, command)
+    else:
+        command += " --version `poetry version -s`"
+    # Due to issues with git repo ownership in the containers, this must always run locally.
+    context.run(command)
 
 
 # ------------------------------------------------------------------------------
@@ -666,8 +716,27 @@ def hadolint(context):
 @task
 def pylint(context):
     """Run pylint code analysis."""
-    command = 'pylint --init-hook "import nautobot; nautobot.setup()" --rcfile pyproject.toml nautobot_golden_config'
-    run_command(context, command)
+    exit_code = 0
+
+    base_pylint_command = 'pylint --verbose --init-hook "import nautobot; nautobot.setup()" --rcfile pyproject.toml'
+    command = f"{base_pylint_command} nautobot_golden_config"
+    if not run_command(context, command, warn=True):
+        exit_code = 1
+
+    # run the pylint_django migrations checkers on the migrations directory, if one exists
+    migrations_dir = Path(__file__).absolute().parent / Path("nautobot_golden_config") / Path("migrations")
+    if migrations_dir.is_dir():
+        migrations_pylint_command = (
+            f"{base_pylint_command} --load-plugins=pylint_django.checkers.migrations"
+            " --disable=all --enable=fatal,new-db-field-with-default,missing-backwards-migration-callable"
+            " nautobot_golden_config.migrations"
+        )
+        if not run_command(context, migrations_pylint_command, warn=True):
+            exit_code = 1
+    else:
+        print("No migrations directory found, skipping migrations checks.")
+
+    raise Exit(code=exit_code)
 
 
 @task(aliases=("a",))
@@ -692,12 +761,15 @@ def ruff(context, action=None, target=None, fix=False, output_format="concise"):
     if not target:
         target = ["."]
 
+    exit_code = 0
+
     if "format" in action:
         command = "ruff format "
         if not fix:
             command += "--check "
         command += " ".join(target)
-        run_command(context, command, warn=True)
+        if not run_command(context, command, warn=True):
+            exit_code = 1
 
     if "lint" in action:
         command = "ruff check "
@@ -705,7 +777,10 @@ def ruff(context, action=None, target=None, fix=False, output_format="concise"):
             command += "--fix "
         command += f"--output-format {output_format} "
         command += " ".join(target)
-        run_command(context, command, warn=True)
+        if not run_command(context, command, warn=True):
+            exit_code = 1
+
+    raise Exit(code=exit_code)
 
 
 @task

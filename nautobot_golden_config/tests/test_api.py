@@ -1,6 +1,8 @@
 """Unit tests for nautobot_golden_config."""
 
+import uuid
 from copy import deepcopy
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
@@ -406,3 +408,209 @@ class ConfigPlanTest(
             "change_control_url": "https://5.example.com/",
             "status": approved_status.pk,
         }
+
+
+class GenerateIntendedConfigViewAPITestCase(APITestCase):
+    """Test API for GenerateIntendedConfigView."""
+
+    @classmethod
+    def setUpTestData(cls):
+        # Delete the automatically created GoldenConfigSetting object
+        GoldenConfigSetting.objects.all().delete()
+        create_device_data()
+        create_git_repos()
+        create_saved_queries()
+
+        cls.dynamic_group = DynamicGroup.objects.create(
+            name="all devices dg",
+            content_type=ContentType.objects.get_for_model(Device),
+        )
+
+        cls.device = Device.objects.get(name="Device 1")
+        platform = cls.device.platform
+        platform.network_driver = "arista_eos"
+        platform.save()
+
+        cls.golden_config_setting = GoldenConfigSetting.objects.create(
+            name="GoldenConfigSetting test api generate intended config",
+            slug="goldenconfigsetting-test-api-generate-intended-config",
+            sot_agg_query=GraphQLQuery.objects.get(name="GC-SoTAgg-Query-2"),
+            dynamic_group=cls.dynamic_group,
+        )
+
+        cls.git_repository = GitRepository.objects.get(name="test-jinja-repo-1")
+
+    def _setup_mock_path(self, MockPath):  # pylint: disable=invalid-name
+        mock_path_instance = MockPath.return_value
+        mock_path_instance.__str__.return_value = "test.j2"
+        mock_path_instance.is_file.return_value = True
+        mock_path_instance.__truediv__.return_value = mock_path_instance  # to handle Path('path') / 'file'
+        return mock_path_instance
+
+    @patch("nautobot_golden_config.api.views.ensure_git_repository")
+    @patch("nautobot_golden_config.api.views.Path")
+    @patch("nautobot_golden_config.api.views.dispatcher")
+    def test_generate_intended_config(self, mock_dispatcher, MockPath, mock_ensure_git_repository):  # pylint: disable=invalid-name
+        """Verify that the intended config is generated as expected."""
+
+        self.add_permissions("dcim.view_device")
+        self.add_permissions("extras.view_gitrepository")
+
+        self._setup_mock_path(MockPath)
+
+        # Replicate nornir nested task structure
+        def _mock_dispatcher(task, *args, **kwargs):
+            def _template_file(*args, **kwargs):
+                return None
+
+            def _generate_config(task, *args, **kwargs):
+                task.run(task=_template_file, name="template_file")
+                return {"config": f"Jinja test for device {self.device.name}."}
+
+            task.run(task=_generate_config, name="generate_config")
+            return ""
+
+        mock_dispatcher.side_effect = _mock_dispatcher
+
+        response = self.client.get(
+            reverse("plugins-api:nautobot_golden_config-api:generate_intended_config"),
+            data={"device_id": self.device.pk, "git_repository_id": self.git_repository.pk},
+            **self.header,
+        )
+
+        mock_ensure_git_repository.assert_called_once_with(self.git_repository)
+        self.assertHttpStatus(response, status.HTTP_200_OK)
+        self.assertTrue("intended_config" in response.data)
+        self.assertTrue("intended_config_lines" in response.data)
+        self.assertEqual(response.data["intended_config"], f"Jinja test for device {self.device.name}.")
+        self.assertEqual(response.data["intended_config_lines"], [f"Jinja test for device {self.device.name}."])
+
+    @patch("nautobot_golden_config.api.views.ensure_git_repository")
+    @patch("nautobot_golden_config.api.views.Path")
+    @patch("nautobot_golden_config.api.views.dispatcher")
+    def test_generate_intended_config_failures(self, mock_dispatcher, MockPath, mock_ensure_git_repository):  # pylint: disable=invalid-name
+        """Verify that errors are handled as expected."""
+
+        self.add_permissions("dcim.view_device")
+        self.add_permissions("extras.view_gitrepository")
+
+        mock_path_instance = self._setup_mock_path(MockPath)
+
+        # test missing query parameters
+        response = self.client.get(
+            reverse("plugins-api:nautobot_golden_config-api:generate_intended_config"),
+            data={"git_repository_id": self.git_repository.pk},
+            **self.header,
+        )
+        self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue("detail" in response.data)
+        self.assertEqual(
+            response.data["detail"],
+            "Parameter device_id is required",
+        )
+
+        response = self.client.get(
+            reverse("plugins-api:nautobot_golden_config-api:generate_intended_config"),
+            data={"device_id": self.device.pk},
+            **self.header,
+        )
+        self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue("detail" in response.data)
+        self.assertEqual(
+            response.data["detail"],
+            "Parameter git_repository_id is required",
+        )
+
+        # test git repo not present on filesystem
+        mock_path_instance.is_file.return_value = False
+
+        response = self.client.get(
+            reverse("plugins-api:nautobot_golden_config-api:generate_intended_config"),
+            data={"device_id": self.device.pk, "git_repository_id": self.git_repository.pk},
+            **self.header,
+        )
+
+        self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue("detail" in response.data)
+        self.assertEqual(
+            response.data["detail"],
+            f"Jinja template test.j2 not found in git repository {self.git_repository}",
+        )
+
+        # test exception raised in nornir task
+
+        # Replicate nornir nested task structure
+        def _mock_dispatcher(task, *args, **kwargs):
+            def _template_file(*args, **kwargs):
+                raise Exception("Test exception")  # pylint: disable=broad-exception-raised
+
+            def _generate_config(task, *args, **kwargs):
+                task.run(task=_template_file, name="template_file")
+                return {"config": f"Jinja test for device {self.device.name}."}
+
+            task.run(task=_generate_config, name="generate_config")
+            return ""
+
+        mock_dispatcher.side_effect = _mock_dispatcher
+        mock_path_instance.is_file.return_value = True
+
+        response = self.client.get(
+            reverse("plugins-api:nautobot_golden_config-api:generate_intended_config"),
+            data={"device_id": self.device.pk, "git_repository_id": self.git_repository.pk},
+            **self.header,
+        )
+
+        self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue("detail" in response.data)
+        self.assertEqual("Error rendering Jinja template", response.data["detail"])
+
+        # test ensure_git_repository failure
+        mock_ensure_git_repository.side_effect = Exception("Test exception")
+
+        response = self.client.get(
+            reverse("plugins-api:nautobot_golden_config-api:generate_intended_config"),
+            data={"device_id": self.device.pk, "git_repository_id": self.git_repository.pk},
+            **self.header,
+        )
+
+        self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue("detail" in response.data)
+        self.assertEqual("Error trying to sync git repository", response.data["detail"])
+
+        # test no sot_agg_query on GoldenConfigSetting
+        self.golden_config_setting.sot_agg_query = None
+        self.golden_config_setting.save()
+
+        response = self.client.get(
+            reverse("plugins-api:nautobot_golden_config-api:generate_intended_config"),
+            data={"device_id": self.device.pk, "git_repository_id": self.git_repository.pk},
+            **self.header,
+        )
+
+        self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue("detail" in response.data)
+        self.assertEqual("Golden Config settings sot_agg_query not set", response.data["detail"])
+
+        # test git_repository instance not found
+        invalid_uuid = uuid.uuid4()
+        response = self.client.get(
+            reverse("plugins-api:nautobot_golden_config-api:generate_intended_config"),
+            data={"device_id": self.device.pk, "git_repository_id": invalid_uuid},
+            **self.header,
+        )
+
+        self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue("detail" in response.data)
+        self.assertEqual(f"GitRepository with id '{invalid_uuid}' not found", response.data["detail"])
+
+        # test no GoldenConfigSetting found for device
+        GoldenConfigSetting.objects.all().delete()
+        response = self.client.get(
+            reverse("plugins-api:nautobot_golden_config-api:generate_intended_config"),
+            data={"device_id": self.device.pk, "git_repository_id": self.git_repository.pk},
+            **self.header,
+        )
+
+        self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue("detail" in response.data)
+        self.assertEqual("No Golden Config settings found for this device", response.data["detail"])

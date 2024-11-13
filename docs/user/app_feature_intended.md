@@ -33,6 +33,29 @@ or
 
 In these examples, `/services.j2`, `/ntp.j2`, etc. could contain the actual Jinja code which renders the configuration for their corresponding features. Alternately, in more complex environments, these files could themselves contain only include statements in order to create a hierarchy of template files so as to keep each individual file neat and simple. Think of the main, top-level, template as an entrypoint into a hierarchy of templates. A well thought out structure to your templates is necessary to avoid the temptation to place all logic into a small number of templates. Like any code, Jinja2 functions become harder to manage, more buggy, and more fragile as you add complexity, so any thing which you can do to keep them simple will help your automation efforts.
 
+### Developing Intended Configuration Templates
+
+To help developers create the Jinja2 templates for generating the intended configuration, the app provides a REST API at `/api/plugins/golden-config/generate-intended-config/`. This API accepts two query parameters: `device_id` and `git_repository_id`. It returns the rendered configuration for the specified device using the templates from the given Git repository. This feature allows developers to test their configuration templates using a custom `GitRepository` without running a full intended configuration job.
+
+Here's an example of how to request the rendered configuration for a device:
+
+```no-highlight
+GET /api/plugins/golden-config/generate-intended-config/?device_id=231b8765-054d-4abe-bdbf-cd60e049cd8d&git_repository_id=82c051e0-d0a9-4008-948a-936a409c654a
+```
+
+The returned response will contain the rendered configuration for the specified device. This is the intended workflow for developers:
+
+- Create a new branch in the intended configuration repository.
+- Modify the Jinja2 templates in that new branch.
+- Add a new `GitRepository` in Nautobot that points to the new branch and sync the repository.
+  - NOTE: Do not select the "jinja templates" option under the "Provides" field when creating the `GitRepository`. Nautobot does not allow multiple `GitRepository` instances with an identical URL and "Provided Content". This API ignores the "Provided Content" field for this reason.
+  - Don't forget to associate credentials required to access the repository using the "Secrets Group" field.
+- Use the API to render the configuration for a device, using the new `GitRepository`.
+
+Calling this API endpoint automatically performs a `git pull`, retrieving the latest commit from the branch before rendering the template.
+
+Note that this API is only intended to render Jinja2 templates and does not apply any [configuration post-processing](./app_feature_config_postprocessing.md).
+
 ## Adding Jinja2 Filters to the Environment.
 
 This app follows [Nautobot](https://docs.nautobot.com/projects/core/en/stable/plugins/development/#including-jinja2-filters) in relying on [django_jinja](https://niwinz.github.io/django-jinja/latest/) for customizing the Jinja2 Environment. Currently, only filters in the `django_jinja` Environment are passed along to the Jinja2 Template Environment used by Nornir to render the config template.

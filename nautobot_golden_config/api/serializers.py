@@ -129,5 +129,5 @@ class ConfigPlanSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
 class GenerateIntendedConfigSerializer(serializers.Serializer):  # pylint: disable=abstract-method
     """Serializer for GenerateIntendedConfigView."""
 
-    intended_config = serializers.CharField()
-    intended_config_lines = serializers.ListField(child=serializers.CharField())
+    intended_config = serializers.CharField(read_only=True)
+    intended_config_lines = serializers.ListField(read_only=True, child=serializers.CharField())

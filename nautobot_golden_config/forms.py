@@ -598,3 +598,13 @@ class ConfigPlanBulkEditForm(NautobotBulkEditForm):
             "change_control_url",
             "tags",
         ]
+
+
+class GenerateIntendedConfigForm(django_forms.Form):
+    """Form for generating intended configuration."""
+
+    device = forms.DynamicModelChoiceField(
+        queryset=Device.objects.all(),
+        required=True,
+        label="Device",
+    )

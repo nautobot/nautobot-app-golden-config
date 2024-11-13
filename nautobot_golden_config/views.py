@@ -6,13 +6,14 @@ from datetime import datetime
 
 import yaml
 from django.contrib import messages
+from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, ExpressionWrapper, F, FloatField, Max, Q
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.timezone import make_aware
-from django.views.generic import View
+from django.views.generic import TemplateView, View
 from django_pivot.pivot import pivot
 from nautobot.apps import views
 from nautobot.core.views import generic
@@ -585,3 +586,16 @@ class ConfigPlanBulkDeploy(ObjectPermissionRequiredMixin, View):
             **job.job_class.serialize_data(request),
         )
         return redirect(job_result.get_absolute_url())
+
+
+class GenerateIntendedConfigView(PermissionRequiredMixin, TemplateView):
+    """View to generate the intended configuration."""
+
+    template_name = "nautobot_golden_config/generate_intended_config.html"
+    permission_required = ["dcim.view_device", "extras.view_gitrepository"]
+
+    def get_context_data(self, **kwargs):
+        """Get the context data for the view."""
+        context = super().get_context_data(**kwargs)
+        context["form"] = forms.GenerateIntendedConfigForm()
+        return context

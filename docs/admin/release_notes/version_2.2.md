@@ -17,7 +17,7 @@ This document describes all new features and changes in the release. The format 
 ### Fixed
 
 - [#831](https://github.com/nautobot/nautobot-app-golden-config/issues/831) - Resolved issue with tests failing in Nautobot 2.3.11.
-- [#835](https://github.com/nautobot/nautobot-app-golden-config/issues/835) - Resolved error when accessing the Golden Config Settings list view.
+- [#835](https://github.com/nautobot/nautobot-app-golden-config/issues/835) - Resolved error when accessing the Golden Config Settings list view in Nautobot v2.3.11 and higher.
 
 ## [v2.2.0 (2024-11-04)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v2.2.0)
 

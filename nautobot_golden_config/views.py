@@ -252,19 +252,20 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
         super().__init__(*args, **kwargs)
         self.pk_list = None
         self.report_context = None
-        self.store_table = None
+        self.store_table = None  # Used to store the table for bulk delete. No longer required in Nautobot 2.3.11
 
     def get_extra_context(self, request, instance=None, **kwargs):
         """A ConfigCompliance helper function to warn if the Job is not enabled to run."""
         context = super().get_extra_context(request, instance)
-        if self.action == "bulk_destroy":
-            context["table"] = self.store_table
         if self.action == "overview":
             context = {**context, **self.report_context}
+        # TODO Remove when dropping support for Nautobot < 2.3.11
+        if self.action == "bulk_destroy":
+            context["table"] = self.store_table
+
         context["compliance"] = constant.ENABLE_COMPLIANCE
         context["backup"] = constant.ENABLE_BACKUP
         context["intended"] = constant.ENABLE_INTENDED
-        # TODO: See reference to store_table below for action item
         add_message([["ComplianceJob", constant.ENABLE_COMPLIANCE]], request)
         return context
 
@@ -315,10 +316,14 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
                 f"No {self.queryset.model._meta.verbose_name_plural} were selected for deletion.",
             )
             return redirect(self.get_return_url(request))
-        # TODO: This does not seem right, it is not clear why data does not just get added to context
+
+        # TODO Remove when dropping support for Nautobot < 2.3.11
         self.store_table = table
 
-        data.update({"table": table})
+        if not request.POST.get("_all"):
+            data.update({"table": table, "total_objs_to_delete": len(table.rows)})
+        else:
+            data.update({"table": None, "delete_all": True, "total_objs_to_delete": len(table.rows)})
         return Response(data)
 
     @action(detail=True, methods=["get"])

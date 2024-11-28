@@ -586,6 +586,7 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         on_delete=models.PROTECT,
         related_name="golden_config_setting",
     )
+    is_dynamic_group_associable_model = False
 
     objects = GoldenConfigSettingManager()
 

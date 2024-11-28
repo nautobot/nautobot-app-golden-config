@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% load form_helpers %}
+{% load helpers %}
+{% load static %}
+
+{% block extra_styles %}
+<style type="text/css">
+    .button-container {
+        margin-bottom: 24px;
+    }
+</style>
+{% endblock extra_styles %}
+
+{% block content %}
+<form class="form form-horizontal" onsubmit="handleFormSubmit(event)">
+    <div class="row">
+        <div class="col-lg-6 col-md-6">
+            <div class="panel panel-default">
+                <div class="panel-heading"><strong>{% block title %}Generate Intended Configuration{% endblock title %}</strong></div>
+                <div class="panel-body">
+                    <p>
+                    This tool is <strong>intended for template developers</strong>. Production configuration generation should be initiated from the
+                    <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_list' %}">Config Overview</a> page.
+                    </p>
+                    <p>
+                    This will render the configuration for the selected device using Jinja templates from the golden config <code>jinja_repository</code>
+                    Git repository for that device.
+                    This feature allows developers to test their configuration templates without running a full "intended configuration" job. See the
+                    <a href="{% static 'nautobot_golden_config/docs/user/app_feature_intended.html' %}#developing-intended-configuration-templates">
+                    developing intended configuration templates
+                    </a> documentation for more information.
+                    </p>
+                    <p>
+                    <strong>Note:</strong>
+                    This will perform a <code>git pull</code> on the golden config Jinja template repository to ensure the latest templates are used.
+                    </p>
+                    {% render_field form.device %}
+                    {% render_field form.git_repository %}
+                </div>
+            </div>
+            <div class="button-container text-right">
+                <button type="submit" class="btn btn-primary">Render</button>
+                <a href="{{ return_url }}" class="btn btn-default">Cancel</a>
+            </div>
+        </div>
+        <div class="col-lg-6 col-md-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <strong>Intended Configuration</strong>
+                    <button type="button" class="btn btn-inline btn-default copy-rendered-config" data-clipboard-target="#rendered_config">
+                        <span class="mdi mdi-content-copy"></span>
+                    </button>
+                </div>
+                <div class="panel-body">
+                    <textarea readonly="readonly" cols="40" rows="10" class="form-control" placeholder="Rendered Config" id="rendered_config"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock content %}
+
+{% block javascript %}
+    {{ block.super }}
+    <script>
+        new ClipboardJS('.copy-rendered-config');
+        const sanitize = function(string) {
+            return string.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        };
+        async function handleFormSubmit(event) {
+            event.preventDefault(); // Prevent default form submission
+
+            try {
+                const rendered_config = document.getElementById("rendered_config");
+                rendered_config.innerHTML = "Loading...";
+                const device = document.getElementById("id_device").value;
+                const url = "{% url 'plugins-api:nautobot_golden_config-api:generate_intended_config' %}";
+                const data = {device_id: device};
+                const query_params = new URLSearchParams(data).toString();
+                const response = await fetch(url + "?" + query_params, {
+                    method: "GET",
+                    headers: {"Content-Type": "application/json"}
+                });
+                const responseData = await response.json();
+                if (!response.ok) {
+                    const msg = responseData.detail ? responseData.detail : response.statusText;
+                    rendered_config.innerHTML = sanitize(`An error occurred:\n\n${msg}`);
+                } else {
+                    rendered_config.innerHTML = sanitize(responseData.intended_config);
+                }
+            } catch (error) {
+                rendered_config.innerHTML = sanitize(`An error occurred:\n\n${error.message}`);
+            }
+        }
+    </script>
+{% endblock javascript %}

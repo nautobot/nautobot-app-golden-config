@@ -253,14 +253,14 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
 
         filesystem_path = self._get_jinja_template_path(settings, device, git_repository)
 
-        status_code, context = graph_ql_query(request, device, settings.sot_agg_query.query)
+        status_code, graphql_data = graph_ql_query(request, device, settings.sot_agg_query.query)
         if status_code == status.HTTP_200_OK:
             try:
                 intended_config = self._render_config_nornir_serial(
                     device=device,
                     jinja_template=filesystem_path.name,
                     jinja_root_path=filesystem_path.parent,
-                    graphql_data=context,
+                    graphql_data=graphql_data,
                 )
             except Exception as exc:
                 raise GenerateIntendedConfigException(f"Error rendering Jinja template: {exc}") from exc
@@ -268,6 +268,7 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
                 data={
                     "intended_config": intended_config,
                     "intended_config_lines": intended_config.split("\n"),
+                    "graphql_data": graphql_data,
                 },
                 status=status.HTTP_200_OK,
             )

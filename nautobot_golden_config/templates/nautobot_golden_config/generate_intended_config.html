@@ -8,6 +8,23 @@
     .button-container {
         margin-bottom: 24px;
     }
+    pre:has(code) {
+        padding: 0;
+    }
+    pre code {
+        display: block;
+        height: 50vh;
+        overflow: auto;
+        resize: vertical;
+        word-wrap: normal;
+        overflow-wrap: normal;
+        word-break: normal;
+        white-space: pre;
+        padding: 11.5px;
+    }
+    .nav-tabs li.disabled a {
+        pointer-events: none;
+    }
 </style>
 {% endblock extra_styles %}
 
@@ -23,7 +40,7 @@
                     <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_list' %}">Config Overview</a> page.
                     </p>
                     <p>
-                    This will render the configuration for the selected device using Jinja templates from the golden config <code>jinja_repository</code>
+                    This will render the configuration for the selected device using Jinja templates from the Golden Config <code>jinja_repository</code>
                     Git repository for that device.
                     This feature allows developers to test their configuration templates without running a full "intended configuration" job. See the
                     <a href="{% static 'nautobot_golden_config/docs/user/app_feature_intended.html' %}#developing-intended-configuration-templates">
@@ -32,7 +49,7 @@
                     </p>
                     <p>
                     <strong>Note:</strong>
-                    This will perform a <code>git pull</code> on the golden config Jinja template repository to ensure the latest templates are used.
+                    This will fetch the latest templates from the Golden Config Jinja template repository.
                     </p>
                     {% render_field form.device %}
                     {% render_field form.git_repository %}
@@ -40,19 +57,29 @@
             </div>
             <div class="button-container text-right">
                 <button type="submit" class="btn btn-primary">Render</button>
-                <a href="{{ return_url }}" class="btn btn-default">Cancel</a>
             </div>
         </div>
         <div class="col-lg-6 col-md-6">
             <div class="panel panel-default">
                 <div class="panel-heading">
                     <strong>Intended Configuration</strong>
-                    <button type="button" class="btn btn-inline btn-default copy-rendered-config" data-clipboard-target="#rendered_config">
+                    <button type="button" class="btn btn-inline btn-default copy-rendered-config" data-clipboard-target="#id_rendered_config_tabs .active pre code">
                         <span class="mdi mdi-content-copy"></span>
                     </button>
                 </div>
                 <div class="panel-body">
-                    <textarea readonly="readonly" cols="40" rows="10" class="form-control" placeholder="Rendered Config" id="rendered_config"></textarea>
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li role="presentation" class="active" id="id_intended_config_tab"><a href="#id_intended_config_tab_content" aria-controls="id_rendered_config_tabs" role="tab" data-toggle="tab">Configuration</a></li>
+                        <li role="presentation" class="disabled" id="id_graphql_data_tab"><a href="#id_graphql_data_tab_content" aria-controls="id_graphql_data_tab_content" role="tab" data-toggle="tab">GraphQL Data</a></li>
+                    </ul>
+                    <div class="tab-content" id="id_rendered_config_tabs">
+                        <div class="tab-pane active" id="id_intended_config_tab_content">
+                            <pre><code id="id_rendered_config_code_block"></code></pre>
+                        </div>
+                        <div class="tab-pane" id="id_graphql_data_tab_content">
+                            <pre><code class="language-json" id="id_graphql_data_code_block"></code></pre>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -71,10 +98,20 @@
             event.preventDefault(); // Prevent default form submission
 
             try {
-                const rendered_config = document.getElementById("rendered_config");
-                rendered_config.innerHTML = "Loading...";
+                const rendered_config_code_block = document.getElementById("id_rendered_config_code_block");
                 const device = document.getElementById("id_device").value;
                 const url = "{% url 'plugins-api:nautobot_golden_config-api:generate_intended_config' %}";
+                const graphql_data_code_block = document.getElementById("id_graphql_data_code_block");
+                const graphql_data_tab = document.getElementById("id_graphql_data_tab");
+
+                rendered_config_code_block.innerHTML = "Loading...";
+
+                // switch to the intended config tab and disable the graphql data tab
+                $("#id_intended_config_tab a").tab("show");
+                graphql_data_tab.classList.add("disabled");
+                graphql_data_tab.classList.remove("active");
+
+                // fetch the intended config
                 const data = {device_id: device};
                 const query_params = new URLSearchParams(data).toString();
                 const response = await fetch(url + "?" + query_params, {
@@ -84,12 +121,21 @@
                 const responseData = await response.json();
                 if (!response.ok) {
                     const msg = responseData.detail ? responseData.detail : response.statusText;
-                    rendered_config.innerHTML = sanitize(`An error occurred:\n\n${msg}`);
+                    rendered_config_code_block.innerHTML = sanitize(`An error occurred:\n\n${msg}`);
                 } else {
-                    rendered_config.innerHTML = sanitize(responseData.intended_config);
+                    // populate the rendered config
+                    rendered_config_code_block.innerHTML = sanitize(responseData.intended_config);
+
+                    // populate and syntax highlight the graphql data
+                    graphql_data_code_block.innerHTML = JSON.stringify(responseData.graphql_data, null, 4);
+                    delete graphql_data_code_block.dataset.highlighted;
+                    hljs.highlightElement(graphql_data_code_block);
+
+                    // enable the graphql data tab
+                    id_graphql_data_tab.classList.remove("disabled");
                 }
             } catch (error) {
-                rendered_config.innerHTML = sanitize(`An error occurred:\n\n${error.message}`);
+                rendered_config_code_block.innerHTML = sanitize(`An error occurred:\n\n${error.message}`);
             }
         }
     </script>

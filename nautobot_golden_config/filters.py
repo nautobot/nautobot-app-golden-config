@@ -253,6 +253,8 @@ class GoldenConfigSettingFilterSet(NautobotFilterSet):
 
     def filter_device_id(self, queryset, name, value):  # pylint: disable=unused-argument
         """Filter by Device ID."""
+        if not value:
+            return queryset
         golden_config_setting_ids = []
         for instance in value:
             if isinstance(instance, Device):

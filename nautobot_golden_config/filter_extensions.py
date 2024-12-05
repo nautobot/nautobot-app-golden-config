@@ -1,6 +1,5 @@
 """FilterSet and FilterForm extensions for the Golden Config app."""
 
-from django import forms
 from django.db.models import Q
 from nautobot.apps.filters import FilterExtension, MultiValueCharFilter
 
@@ -21,16 +20,9 @@ class GraphQLQueryFilterExtension(FilterExtension):
     filterset_fields = {
         "nautobot_golden_config_graphql_query_variables": MultiValueCharFilter(
             field_name="variables",
-            lookup_expr="isnull",
-            exclude=True,
+            lookup_expr="exact",
             method=filter_graphql_query_variables,
             label="Variable key(s) exist",
-        ),
-    }
-
-    filterform_fields = {
-        "nautobot_golden_config_graphql_query_variables": forms.CharField(
-            required=False, label="Variable key(s) exist"
         ),
     }
 

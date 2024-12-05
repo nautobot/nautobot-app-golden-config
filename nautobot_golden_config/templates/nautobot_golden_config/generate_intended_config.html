@@ -52,7 +52,7 @@
                     This will fetch the latest templates from the Golden Config Jinja template repository.
                     </p>
                     {% render_field form.device %}
-                    {% render_field form.git_repository %}
+                    {% render_field form.graphql_query %}
                 </div>
             </div>
             <div class="button-container text-right">
@@ -74,10 +74,14 @@
                     </ul>
                     <div class="tab-content" id="id_rendered_config_tabs">
                         <div class="tab-pane active" id="id_intended_config_tab_content">
-                            <pre><code id="id_rendered_config_code_block"></code></pre>
+                            {% comment %}
+                            The attributes `contenteditable="true"` and `onbeforeinput="return false"` are used
+                            to let the <code> block be selectable but not editable, emulating a textarea but supporting nested html tags.
+                            {% endcomment %}
+                            <pre><code id="id_rendered_config_code_block" contenteditable="true" onbeforeinput="return false"></code></pre>
                         </div>
                         <div class="tab-pane" id="id_graphql_data_tab_content">
-                            <pre><code class="language-json" id="id_graphql_data_code_block"></code></pre>
+                            <pre><code class="language-json" id="id_graphql_data_code_block" contenteditable="true" onbeforeinput="return false"></code></pre>
                         </div>
                     </div>
                 </div>
@@ -90,16 +94,55 @@
 {% block javascript %}
     {{ block.super }}
     <script>
+        // When a device is selected, populate the GraphQL query field with the default query for that device
+        async function handleDeviceFieldSelect(event) {
+            const device_id = event.params.data.id;
+            const goldenconfigsettings_url = "{% url 'plugins-api:nautobot_golden_config-api:goldenconfigsetting-list' %}";
+
+            // fetch the golden config settings for the device
+            const data = {device_id: device_id, depth: 1};
+            const query_params = new URLSearchParams(data).toString();
+            const response = await fetch(goldenconfigsettings_url + "?" + query_params, {
+                method: "GET",
+                headers: {"Content-Type": "application/json"}
+            });
+            const responseData = await response.json();
+
+            // set the graphql query field to the default query for the device
+            if (response.ok && responseData.count > 0) {
+                const graphql_query = responseData.results[0]?.sot_agg_query;
+
+                // Check if the option for the GraphQL query already exists
+                if ($("#id_graphql_query").find("option[value='" + graphql_query.id + "']").length) {
+                    $("#id_graphql_query").val(graphql_query.id).trigger("change");
+
+                // Otherwise create a new Option and select it
+                } else {
+                    var newOption = new Option(graphql_query.display, graphql_query.id, true, true);
+                    $("#id_graphql_query").append(newOption).trigger("change");
+                }
+            }
+        }
+
+        // jQuery used here because it is required for select2 events
+        $("#id_device").on("select2:select", handleDeviceFieldSelect);
+
+        // Initialize the copy to clipboard button
         new ClipboardJS('.copy-rendered-config');
+
+        // Sanitize a string for display in a code block by replacing HTML tags with character references
         const sanitize = function(string) {
             return string.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         };
+
+        // Custom form submission handling
         async function handleFormSubmit(event) {
             event.preventDefault(); // Prevent default form submission
 
             try {
                 const rendered_config_code_block = document.getElementById("id_rendered_config_code_block");
-                const device = document.getElementById("id_device").value;
+                const device_id = document.getElementById("id_device").value;
+                const graphql_query_id = document.getElementById("id_graphql_query").value;
                 const url = "{% url 'plugins-api:nautobot_golden_config-api:generate_intended_config' %}";
                 const graphql_data_code_block = document.getElementById("id_graphql_data_code_block");
                 const graphql_data_tab = document.getElementById("id_graphql_data_tab");
@@ -112,7 +155,7 @@
                 graphql_data_tab.classList.remove("active");
 
                 // fetch the intended config
-                const data = {device_id: device};
+                const data = {device_id: device_id, graphql_query_id: graphql_query_id};
                 const query_params = new URLSearchParams(data).toString();
                 const response = await fetch(url + "?" + query_params, {
                     method: "GET",

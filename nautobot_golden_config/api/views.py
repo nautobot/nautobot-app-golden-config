@@ -20,6 +20,7 @@ from nautobot.core.api.views import (
 from nautobot.dcim.models import Device
 from nautobot.extras.api.views import NautobotModelViewSet, NotesViewSetMixin
 from nautobot.extras.datasources.git import ensure_git_repository
+from nautobot.extras.models import GraphQLQuery
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nornir import InitNornir
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
@@ -232,18 +233,25 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
                 type=OpenApiTypes.UUID,
                 location=OpenApiParameter.QUERY,
             ),
+            OpenApiParameter(
+                name="graphql_query_id",
+                required=True,
+                type=OpenApiTypes.UUID,
+                location=OpenApiParameter.QUERY,
+            ),
         ]
     )
     def get(self, request, *args, **kwargs):
         """Generate intended configuration for a Device."""
         device = self._get_object(request, Device, "device_id")
+        graphql_query = self._get_object(request, GraphQLQuery, "graphql_query_id")
         settings = models.GoldenConfigSetting.objects.get_for_device(device)
         if not settings:
             raise GenerateIntendedConfigException("No Golden Config settings found for this device")
-        if not settings.sot_agg_query:
-            raise GenerateIntendedConfigException("Golden Config settings sot_agg_query not set")
         if not settings.jinja_repository:
             raise GenerateIntendedConfigException("Golden Config settings jinja_repository not set")
+        if "device_id" not in graphql_query.variables:
+            raise GenerateIntendedConfigException("The selected GraphQL query is missing a 'device_id' variable")
 
         try:
             git_repository = settings.jinja_repository
@@ -253,7 +261,7 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
 
         filesystem_path = self._get_jinja_template_path(settings, device, git_repository)
 
-        status_code, graphql_data = graph_ql_query(request, device, settings.sot_agg_query.query)
+        status_code, graphql_data = graph_ql_query(request, device, graphql_query.query)
         if status_code == status.HTTP_200_OK:
             try:
                 intended_config = self._render_config_nornir_serial(

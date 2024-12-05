@@ -235,7 +235,7 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
             ),
             OpenApiParameter(
                 name="graphql_query_id",
-                required=True,
+                required=False,
                 type=OpenApiTypes.UUID,
                 location=OpenApiParameter.QUERY,
             ),
@@ -244,12 +244,27 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
     def get(self, request, *args, **kwargs):
         """Generate intended configuration for a Device."""
         device = self._get_object(request, Device, "device_id")
-        graphql_query = self._get_object(request, GraphQLQuery, "graphql_query_id")
+        graphql_query = None
+        graphql_query_id_param = request.query_params.get("graphql_query_id")
+        if graphql_query_id_param:
+            try:
+                graphql_query = GraphQLQuery.objects.get(pk=request.query_params.get("graphql_query_id"))
+            except GraphQLQuery.DoesNotExist as exc:
+                raise GenerateIntendedConfigException(
+                    f"GraphQLQuery with id '{graphql_query_id_param}' not found"
+                ) from exc
         settings = models.GoldenConfigSetting.objects.get_for_device(device)
         if not settings:
             raise GenerateIntendedConfigException("No Golden Config settings found for this device")
         if not settings.jinja_repository:
             raise GenerateIntendedConfigException("Golden Config settings jinja_repository not set")
+
+        if graphql_query is None:
+            if settings.sot_agg_query is not None:
+                graphql_query = settings.sot_agg_query
+            else:
+                raise GenerateIntendedConfigException("Golden Config settings sot_agg_query not set")
+
         if "device_id" not in graphql_query.variables:
             raise GenerateIntendedConfigException("The selected GraphQL query is missing a 'device_id' variable")
 

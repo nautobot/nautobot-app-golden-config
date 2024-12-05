@@ -7,7 +7,7 @@ import django.forms as django_forms
 from nautobot.apps import forms
 from nautobot.dcim.models import Device, DeviceType, Location, Manufacturer, Platform, Rack, RackGroup
 from nautobot.extras.forms import NautobotBulkEditForm, NautobotFilterForm, NautobotModelForm
-from nautobot.extras.models import DynamicGroup, GitRepository, JobResult, Role, Status, Tag
+from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, JobResult, Role, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
 
 from nautobot_golden_config import models
@@ -607,4 +607,10 @@ class GenerateIntendedConfigForm(django_forms.Form):
         queryset=Device.objects.all(),
         required=True,
         label="Device",
+    )
+    graphql_query = forms.DynamicModelChoiceField(
+        queryset=GraphQLQuery.objects.all(),
+        required=True,
+        label="GraphQL Query",
+        query_params={"nautobot_golden_config_graphql_query_variables": "device_id"},
     )

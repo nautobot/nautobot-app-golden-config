@@ -1,8 +1,8 @@
 {% extends 'generic/object_detail.html' %}
 {% load helpers %}
 
-{% block content_left_page %}
-    <style> 
+{% block extra_styles %}
+    <style>
         .table-wrapper{
         display: block;
         overflow-x: auto;
@@ -10,7 +10,9 @@
         width: 100%;
     }
     </style>
+{% endblock extra_styles %}
 
+{% block content_left_page %}
     <div class="panel panel-default">
         <div class="panel-heading">
             <strong>Config Plan Details</strong>

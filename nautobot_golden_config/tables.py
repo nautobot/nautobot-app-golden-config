@@ -63,7 +63,7 @@ ALL_ACTIONS = """
     {% if record.config_type == 'json' %}
         <i class="mdi mdi-circle-small"></i>
     {% else %}
-        <a href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.AllGoldenConfig' %}?device={{ record.device.pk }}"
+        <a href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.AllGoldenConfig' %}?device={{ record.device.pk }}">
             <span class="text-primary">
                 <i class="mdi mdi-play-circle" title="Execute All Golden Config Jobs"></i>
             </span>

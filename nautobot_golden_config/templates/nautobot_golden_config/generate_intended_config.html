@@ -4,7 +4,14 @@
 {% load static %}
 
 {% block extra_styles %}
+<link rel="stylesheet" type="text/css" href="{% static 'nautobot_golden_config/diff2html-3.4.43/diff2html.min.css' %}"/>
 <style type="text/css">
+    .d2h-tag {
+        display: none;
+    }
+    .d2h-file-collapse {
+        display:none;
+    }
     .button-container {
         margin-bottom: 24px;
     }
@@ -71,6 +78,7 @@
                     <ul class="nav nav-tabs" role="tablist">
                         <li role="presentation" class="active" id="id_intended_config_tab"><a href="#id_intended_config_tab_content" aria-controls="id_rendered_config_tabs" role="tab" data-toggle="tab">Configuration</a></li>
                         <li role="presentation" class="disabled" id="id_graphql_data_tab"><a href="#id_graphql_data_tab_content" aria-controls="id_graphql_data_tab_content" role="tab" data-toggle="tab">GraphQL Data</a></li>
+                        <li role="presentation" class="disabled" id="id_diff_tab"><a href="#id_diff_tab_content" aria-controls="id_diff_tab_content" role="tab" data-toggle="tab">Diff</a></li>
                     </ul>
                     <div class="tab-content" id="id_rendered_config_tabs">
                         <div class="tab-pane active" id="id_intended_config_tab_content">
@@ -83,6 +91,9 @@
                         <div class="tab-pane" id="id_graphql_data_tab_content">
                             <pre><code class="language-json" id="id_graphql_data_code_block" contenteditable="true" onbeforeinput="return false"></code></pre>
                         </div>
+                        <div class="tab-pane" id="id_diff_tab_content">
+                            <div id="id_diff_render"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -93,6 +104,7 @@
 
 {% block javascript %}
     {{ block.super }}
+    <script type="text/javascript" src="{% static 'nautobot_golden_config/diff2html-3.4.43/diff2html.min.js' %}"></script>
     <script>
         // When a device is selected, populate the GraphQL query field with the default query for that device
         async function handleDeviceFieldSelect(event) {
@@ -139,20 +151,24 @@
         async function handleFormSubmit(event) {
             event.preventDefault(); // Prevent default form submission
 
-            try {
-                const rendered_config_code_block = document.getElementById("id_rendered_config_code_block");
-                const device_id = document.getElementById("id_device").value;
-                const graphql_query_id = document.getElementById("id_graphql_query").value;
-                const url = "{% url 'plugins-api:nautobot_golden_config-api:generate_intended_config' %}";
-                const graphql_data_code_block = document.getElementById("id_graphql_data_code_block");
-                const graphql_data_tab = document.getElementById("id_graphql_data_tab");
+            const rendered_config_code_block = document.getElementById("id_rendered_config_code_block");
+            const device_id = document.getElementById("id_device").value;
+            const graphql_query_id = document.getElementById("id_graphql_query").value;
+            const url = "{% url 'plugins-api:nautobot_golden_config-api:generate_intended_config' %}";
+            const graphql_data_tab = document.getElementById("id_graphql_data_tab");
+            const graphql_data_code_block = document.getElementById("id_graphql_data_code_block");
+            const diff_tab = document.getElementById("id_diff_tab");
+            const diff_render_div = document.getElementById("id_diff_render");
 
+            try {
                 rendered_config_code_block.innerHTML = "Loading...";
 
-                // switch to the intended config tab and disable the graphql data tab
+                // switch to the intended config tab and disable the graphql data and diff tabs
                 $("#id_intended_config_tab a").tab("show");
                 graphql_data_tab.classList.add("disabled");
                 graphql_data_tab.classList.remove("active");
+                diff_tab.classList.add("disabled");
+                diff_tab.classList.remove("active");
 
                 // fetch the intended config
                 const data = {device_id: device_id, graphql_query_id: graphql_query_id};
@@ -174,8 +190,20 @@
                     delete graphql_data_code_block.dataset.highlighted;
                     hljs.highlightElement(graphql_data_code_block);
 
-                    // enable the graphql data tab
-                    id_graphql_data_tab.classList.remove("disabled");
+                    // render the diff
+                    if (responseData.diff == null) {
+                        diff_render_div.innerHTML = "<p>No intended configuration available to diff against. You may need to run the intended configuration job first.</p>";
+                    } else {
+                        diff_render_div.innerHTML = Diff2Html.html(responseData.diff, {
+                            drawFileList: true,
+                            matching: "lines",
+                            outputFormat: "line-by-line",
+                        });
+                    }
+
+                    // enable the graphql data and diff tabs
+                    graphql_data_tab.classList.remove("disabled");
+                    diff_tab.classList.remove("disabled");
                 }
             } catch (error) {
                 rendered_config_code_block.innerHTML = sanitize(`An error occurred:\n\n${error.message}`);

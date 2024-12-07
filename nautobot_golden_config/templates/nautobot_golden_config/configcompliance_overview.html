@@ -6,7 +6,7 @@
 {% block title %}Overview Reports{% endblock %}
 
 {% block breadcrumbs %}
-<li><a href="{% url 'plugins:nautobot_golden_config:configcompliance_overview' %}">Overview Reports</a></li>  
+<li><a href="{% url 'plugins:nautobot_golden_config:configcompliance_overview' %}">Overview Reports</a></li>
 {% block extra_breadcrumbs %}{% endblock extra_breadcrumbs %}
 {% endblock breadcrumbs %}
 
@@ -74,5 +74,6 @@
 {% table_config_form table table_name="ObjectTable" %}
 {% endblock %}
 {% block javascript %}
+{{ block.super }}
 <script src="{% static 'js/tableconfig.js' %}"></script>
 {% endblock %}

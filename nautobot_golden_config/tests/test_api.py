@@ -567,19 +567,6 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
         self.assertTrue("detail" in response.data)
         self.assertEqual("Error trying to sync git repository", response.data["detail"])
 
-        # test jinja_repository not set
-        self.golden_config_setting.jinja_repository = None
-        self.golden_config_setting.save()
-        response = self.client.get(
-            reverse("plugins-api:nautobot_golden_config-api:generate_intended_config"),
-            data={"device_id": self.device.pk},
-            **self.header,
-        )
-
-        self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
-        self.assertTrue("detail" in response.data)
-        self.assertEqual(response.data["detail"], "Golden Config settings jinja_repository not set")
-
         # test no sot_agg_query on GoldenConfigSetting
         self.golden_config_setting.sot_agg_query = None
         self.golden_config_setting.save()
@@ -593,6 +580,20 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
         self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertTrue("detail" in response.data)
         self.assertEqual("Golden Config settings sot_agg_query not set", response.data["detail"])
+
+        # test jinja_repository not set
+        self.golden_config_setting.jinja_repository = None
+        self.golden_config_setting.save()
+
+        response = self.client.get(
+            reverse("plugins-api:nautobot_golden_config-api:generate_intended_config"),
+            data={"device_id": self.device.pk},
+            **self.header,
+        )
+
+        self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue("detail" in response.data)
+        self.assertEqual(response.data["detail"], "Golden Config settings jinja_repository not set")
 
         # test no GoldenConfigSetting found for device
         GoldenConfigSetting.objects.all().delete()

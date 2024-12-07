@@ -1,6 +1,7 @@
 """View for Golden Config APIs."""
 
 import datetime
+import difflib
 import json
 import logging
 from pathlib import Path
@@ -287,11 +288,30 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
                 )
             except Exception as exc:
                 raise GenerateIntendedConfigException(f"Error rendering Jinja template: {exc}") from exc
+
+            diff = None
+            try:
+                golden_config = device.goldenconfig
+                if golden_config.intended_last_success_date is not None:
+                    prior_intended_config = golden_config.intended_config
+                    diff = "".join(
+                        difflib.unified_diff(
+                            prior_intended_config.splitlines(keepends=True),
+                            intended_config.splitlines(keepends=True),
+                            fromfile="prior intended config",
+                            tofile="rendered config",
+                        )
+                    )
+            except Device.goldenconfig.RelatedObjectDoesNotExist:
+                pass
+
             return Response(
                 data={
                     "intended_config": intended_config,
                     "intended_config_lines": intended_config.split("\n"),
                     "graphql_data": graphql_data,
+                    "diff": diff,
+                    "diff_lines": diff.split("\n") if diff else [],
                 },
                 status=status.HTTP_200_OK,
             )

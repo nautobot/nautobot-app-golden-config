@@ -5,7 +5,8 @@
 
 {% block title %} {{ object }} - Config Compliance {% endblock %}
 
-{% block content %}
+{% block extra_styles %}
+{{ block.super }}
 <style>
     #compliance-content pre {
         font-size: 10px;
@@ -56,12 +57,15 @@
         transform: scale(1.1);
     }
 </style>
+{% endblock extra_styles %}
+
+{% block content %}
 {% block navigation %}
 <div class="panel panel-default" style="width:100%">
-        <div class="panel-heading"><strong>Feature Navigation</strong> 
-            <a href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab={{ active_tab }}&compliance=compliant" class="btn btn-success">Compliant</a>  
-            <a href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab={{ active_tab }}&compliance=non-compliant" class="btn btn-danger">Non-Compliant</a>  
-            <a href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab={{ active_tab }}" class="btn btn-info">Clear</a>  
+        <div class="panel-heading"><strong>Feature Navigation</strong>
+            <a href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab={{ active_tab }}&compliance=compliant" class="btn btn-success">Compliant</a>
+            <a href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab={{ active_tab }}&compliance=non-compliant" class="btn btn-danger">Non-Compliant</a>
+            <a href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab={{ active_tab }}" class="btn btn-info">Clear</a>
         </div>
     <div id="navigation">
         <table>

@@ -131,3 +131,4 @@ class GenerateIntendedConfigSerializer(serializers.Serializer):  # pylint: disab
 
     intended_config = serializers.CharField(read_only=True)
     intended_config_lines = serializers.ListField(read_only=True, child=serializers.CharField())
+    graphql_data = serializers.JSONField(read_only=True)

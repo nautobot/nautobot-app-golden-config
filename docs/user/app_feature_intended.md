@@ -45,7 +45,7 @@ curl -s -X GET \
     http://nautobot/api/plugins/golden-config/generate-intended-config/?device_id=231b8765-054d-4abe-bdbf-cd60e049cd8d
 ```
 
-The returned response will contain the rendered configuration for the specified device. The web UI provides a simple form to input the device and displays the rendered configuration when submitted.
+The returned response will contain the rendered configuration for the specified device and the GraphQL data that was used. The web UI provides a simple form to input the device and displays the rendered configuration when submitted.
 
 ![Intended Configuration Web UI](../images/generate-intended-config-ui.png#only-light)
 ![Intended Configuration Web UI](../images/generate-intended-config-ui-dark.png#only-dark)

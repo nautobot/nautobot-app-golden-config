@@ -204,6 +204,26 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = serializers.GenerateIntendedConfigSerializer
 
+    def _get_diff(self, device, intended_config):
+        """Generate a unified diff between the provided config and the intended config stored on the Device's GoldenConfig.intended_config."""
+        diff = None
+        try:
+            golden_config = device.goldenconfig
+            if golden_config.intended_last_success_date is not None:
+                prior_intended_config = golden_config.intended_config
+                diff = "".join(
+                    difflib.unified_diff(
+                        prior_intended_config.splitlines(keepends=True),
+                        intended_config.splitlines(keepends=True),
+                        fromfile="prior intended config",
+                        tofile="rendered config",
+                    )
+                )
+        except models.GoldenConfig.DoesNotExist:
+            pass
+
+        return diff
+
     def _get_object(self, request, model, query_param):
         """Get the requested model instance, restricted to requesting user."""
         pk = request.query_params.get(query_param)
@@ -289,21 +309,7 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
             except Exception as exc:
                 raise GenerateIntendedConfigException(f"Error rendering Jinja template: {exc}") from exc
 
-            diff = None
-            try:
-                golden_config = device.goldenconfig
-                if golden_config.intended_last_success_date is not None:
-                    prior_intended_config = golden_config.intended_config
-                    diff = "".join(
-                        difflib.unified_diff(
-                            prior_intended_config.splitlines(keepends=True),
-                            intended_config.splitlines(keepends=True),
-                            fromfile="prior intended config",
-                            tofile="rendered config",
-                        )
-                    )
-            except Device.goldenconfig.RelatedObjectDoesNotExist:
-                pass
+            diff = self._get_diff(device, intended_config)
 
             return Response(
                 data={

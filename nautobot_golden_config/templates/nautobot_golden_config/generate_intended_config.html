@@ -9,8 +9,14 @@
     .d2h-tag {
         display: none;
     }
-    .d2h-file-collapse {
-        display:none;
+    .d2h-file-name {
+        visibility: hidden;
+    }
+    .d2h-moved {
+        visibility: hidden;
+    }
+    .d2h-file-list-title {
+        display: none;
     }
     .button-container {
         margin-bottom: 24px;
@@ -193,6 +199,9 @@
                     // render the diff
                     if (responseData.diff == null) {
                         diff_render_div.innerHTML = "<p>No intended configuration available to diff against. You may need to run the intended configuration job first.</p>";
+                    // output a message if no diff
+                    } else if (responseData.diff === "") {
+                        diff_render_div.innerHTML = "<p>No changes detected.</p>";
                     } else {
                         diff_render_div.innerHTML = Diff2Html.html(responseData.diff, {
                             drawFileList: true,

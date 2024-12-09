@@ -2,13 +2,7 @@
 {% load helpers %}
 {% load static %}
 
-{% block content_left_page %}
-<script src="{% static 'clipboard.js-2.0.9/clipboard.min.js' %}"></script>
-<script>    
-    var clipboard = new ClipboardJS('.btn');
-    clipboard.on('success', function (e) {});
-    clipboard.on('error', function (e) {});
-</script>
+{% block extra_styles %}
 <style>
     #config-output pre {
         white-space: pre-wrap;       /* CSS 2.1 */
@@ -18,6 +12,9 @@
         word-wrap: break-word;       /* IE >= 5.5 */
     }
 </style>
+{% endblock extra_styles %}
+
+{% block content_left_page %}
     <div id="config-output" class="panel panel-default">
         <div class="panel-heading">
             <strong>Details</strong>
@@ -91,3 +88,12 @@
     {% include 'inc/custom_fields_panel.html' %}
     {% include 'inc/relationships_panel.html' %}
 {% endblock %}
+
+{% block javascript %}
+{{ block.super }}
+<script>
+    var clipboard = new ClipboardJS('.btn');
+    clipboard.on('success', function (e) {});
+    clipboard.on('error', function (e) {});
+</script>
+{% endblock javascript %}

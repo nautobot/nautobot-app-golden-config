@@ -6,13 +6,13 @@ from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
-from nautobot.core.testing import APITestCase, APIViewTestCases
+from nautobot.apps.testing import APITestCase, APIViewTestCases
 from nautobot.dcim.models import Device, Platform
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status
 from rest_framework import status
 
 from nautobot_golden_config.choices import RemediationTypeChoice
-from nautobot_golden_config.models import ConfigPlan, GoldenConfigSetting, RemediationSetting
+from nautobot_golden_config.models import ConfigPlan, ConfigReplace, GoldenConfigSetting, RemediationSetting
 from nautobot_golden_config.tests.conftest import (
     create_config_compliance,
     create_device,
@@ -406,6 +406,63 @@ class ConfigPlanTest(
             "change_control_id": "Test Change Control ID 5",
             "change_control_url": "https://5.example.com/",
             "status": approved_status.pk,
+        }
+
+
+class ConfigReplaceAPITestCase(
+    APIViewTestCases.CreateObjectViewTestCase,
+    APIViewTestCases.GetObjectViewTestCase,
+    APIViewTestCases.ListObjectsViewTestCase,
+    APIViewTestCases.UpdateObjectViewTestCase,
+    APIViewTestCases.DeleteObjectViewTestCase,
+    APIViewTestCases.NotesURLViewTestCase,
+):
+    model = ConfigReplace
+
+    @classmethod
+    def setUpTestData(cls):
+        create_device_data()
+        platform = Device.objects.first().platform
+        for i in range(3):
+            ConfigReplace.objects.create(
+                name=f"test configreplace {i}",
+                platform=platform,
+                description="test description",
+                regex="^(.*)$",
+                replace="xyz",
+            )
+        cls.update_data = {
+            "name": "new name",
+            "platform": platform.pk,
+            "description": "new description",
+            "regex": "^NEW (.*)$",
+            "replace": "NEW replaced text",
+        }
+        cls.create_data = [
+            {
+                "name": "test configreplace 4",
+                "platform": platform.pk,
+                "description": "test description",
+                "regex": "^(.*)$",
+                "replace": "xyz",
+            },
+            {
+                "name": "test configreplace 5",
+                "platform": platform.pk,
+                "description": "test description",
+                "regex": "^(.*)$",
+                "replace": "xyz",
+            },
+            {
+                "name": "test configreplace 6",
+                "platform": platform.pk,
+                "description": "test description",
+                "regex": "^(.*)$",
+                "replace": "xyz",
+            },
+        ]
+        cls.bulk_update_data = {
+            "description": "new description",
         }
 
 

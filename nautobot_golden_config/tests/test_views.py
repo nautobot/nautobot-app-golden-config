@@ -9,8 +9,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.test import RequestFactory, override_settings
 from django.urls import reverse
 from lxml import html
-from nautobot.core.models.querysets import RestrictedQuerySet
-from nautobot.core.testing import TestCase, ViewTestCases
+from nautobot.apps.models import RestrictedQuerySet
+from nautobot.apps.testing import TestCase, ViewTestCases
 from nautobot.dcim.models import Device
 from nautobot.extras.models import Relationship, RelationshipAssociation, Status
 
@@ -102,57 +102,35 @@ class ConfigComplianceOverviewHelperTestCase(TestCase):
         mock_graph_ql_query.assert_called()
 
 
-@override_settings(EXEMPT_VIEW_PERMISSIONS=["*"])
-class ConfigReplaceListViewTestCase(TestCase):
+class ConfigReplaceUIViewSetTestCase(ViewTestCases.PrimaryObjectViewTestCase):
     """Test ConfigReplaceListView."""
 
-    _csv_headers = "name,platform,description,regex,replace"
-    _entry_name = "test name"
-    _entry_description = "test description"
-    _entry_regex = "^startswiththeend$"
-    _entry_replace = "<dontlookatme>"
+    model = models.ConfigReplace
+
+    bulk_edit_data = {
+        "description": "new description",
+    }
 
     @classmethod
     def setUpTestData(cls):
         """Set up base objects."""
         create_device_data()
-        cls._delete_test_entry()
-        models.ConfigReplace.objects.create(
-            name=cls._entry_name,
-            platform=Device.objects.first().platform,
-            description=cls._entry_description,
-            regex=cls._entry_regex,
-            replace=cls._entry_replace,
-        )
-
-    @property
-    def _url(self):
-        return reverse("plugins:nautobot_golden_config:configreplace_list")
-
-    @classmethod
-    def _delete_test_entry(cls):
-        try:
-            entry = models.ConfigReplace.objects.get(name=cls._entry_name)
-            entry.delete()
-        except models.ConfigReplace.DoesNotExist:
-            pass
-
-    def test_configreplace_import(self):
-        self._delete_test_entry()
-        self.add_permissions("nautobot_golden_config.add_configreplace")
         platform = Device.objects.first().platform
-        import_entry = (
-            f"{self._entry_name},{platform.id},{self._entry_description},{self._entry_regex},{self._entry_replace}"
-        )
-        form_data = {"csv_data": f"{self._csv_headers}\n{import_entry}"}
-        response = self.client.post(f"{self._url}import/", data=form_data, follow=True)
-        last_entry = models.ConfigReplace.objects.last()
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(last_entry.name, self._entry_name)
-        self.assertEqual(last_entry.platform, platform)
-        self.assertEqual(last_entry.description, self._entry_description)
-        self.assertEqual(last_entry.regex, self._entry_regex)
-        self.assertEqual(last_entry.replace, self._entry_replace)
+        for i in range(3):
+            models.ConfigReplace.objects.create(
+                name=f"test configreplace {i}",
+                platform=platform,
+                description="test description",
+                regex="^(.*)$",
+                replace="xyz",
+            )
+        cls.form_data = {
+            "name": "new name",
+            "platform": platform.pk,
+            "description": "new description",
+            "regex": "^NEW (.*)$",
+            "replace": "NEW replaced text",
+        }
 
 
 class GoldenConfigListViewTestCase(TestCase):

@@ -2,7 +2,6 @@
 
 from nautobot.apps.ui import NavMenuAddButton, NavMenuGroup, NavMenuItem, NavMenuTab
 
-
 menu_items = (
     NavMenuTab(
         name="Golden Config",
@@ -38,7 +37,7 @@ menu_items = (
                             ),
                         ),
                     ),
-                )
+                ),
             ),
             NavMenuGroup(
                 name="Setup",
@@ -110,7 +109,7 @@ menu_items = (
                             ),
                         ),
                     ),
-                )
+                ),
             ),
             NavMenuGroup(
                 name="Tools",

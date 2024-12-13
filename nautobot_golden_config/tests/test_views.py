@@ -102,8 +102,8 @@ class ConfigComplianceOverviewHelperTestCase(TestCase):
         mock_graph_ql_query.assert_called()
 
 
-class ConfigReplaceUIViewSetTestCase(ViewTestCases.PrimaryObjectViewTestCase):
-    """Test ConfigReplaceListView."""
+class ConfigReplaceUIViewSetTestCase(ViewTestCases.PrimaryObjectViewTestCase):  # pylint: disable=too-many-ancestors
+    """Test ConfigReplaceUIViewSet."""
 
     model = models.ConfigReplace
 
@@ -116,9 +116,9 @@ class ConfigReplaceUIViewSetTestCase(ViewTestCases.PrimaryObjectViewTestCase):
         """Set up base objects."""
         create_device_data()
         platform = Device.objects.first().platform
-        for i in range(3):
+        for num in range(3):
             models.ConfigReplace.objects.create(
-                name=f"test configreplace {i}",
+                name=f"test configreplace {num}",
                 platform=platform,
                 description="test description",
                 regex="^(.*)$",

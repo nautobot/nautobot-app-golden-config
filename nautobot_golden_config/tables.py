@@ -262,24 +262,19 @@ class GoldenConfigTable(BaseTable):
         text=lambda record: record.device.name,
         verbose_name="Device",
     )
-
-    if ENABLE_BACKUP:
-        backup_last_success_date = Column(
-            verbose_name="Backup Status", empty_values=(), order_by="backup_last_success_date"
-        )
-    if ENABLE_INTENDED:
-        intended_last_success_date = Column(
-            verbose_name="Intended Status",
-            empty_values=(),
-            order_by="intended_last_success_date",
-        )
-    if ENABLE_COMPLIANCE:
-        compliance_last_success_date = Column(
-            verbose_name="Compliance Status",
-            empty_values=(),
-            order_by="compliance_last_success_date",
-        )
-
+    backup_last_success_date = Column(
+        verbose_name="Backup Status", empty_values=(), order_by="backup_last_success_date"
+    )
+    intended_last_success_date = Column(
+        verbose_name="Intended Status",
+        empty_values=(),
+        order_by="intended_last_success_date",
+    )
+    compliance_last_success_date = Column(
+        verbose_name="Compliance Status",
+        empty_values=(),
+        order_by="compliance_last_success_date",
+    )
     actions = TemplateColumn(
         template_code=ALL_ACTIONS, verbose_name="Actions", extra_context=CONFIG_FEATURES, orderable=False
     )

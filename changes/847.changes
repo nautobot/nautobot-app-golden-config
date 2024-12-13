@@ -1,0 +1,2 @@
+1. Removes the conditional UI views based on config settings.
+2. Adds boolean UI options to Golden Config Settings to enable and disable settings in the UI.

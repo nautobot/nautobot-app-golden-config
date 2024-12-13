@@ -132,6 +132,14 @@ class ConfigReplaceUIViewSetTestCase(ViewTestCases.PrimaryObjectViewTestCase):  
             "replace": "NEW replaced text",
         }
 
+        # For compatibility with Nautobot lower than v2.2.0
+        cls.csv_data = (
+            "name,regex,replace,platform",
+            f"test configreplace 4,^(.*)$,xyz,{platform.pk}",
+            f"test configreplace 5,^(.*)$,xyz,{platform.pk}",
+            f"test configreplace 6,^(.*)$,xyz,{platform.pk}",
+        )
+
 
 class GoldenConfigListViewTestCase(TestCase):
     """Test GoldenConfigListView."""

@@ -1,0 +1,289 @@
+<!-- TODO: Uncaught TypeError: Cannot read properties of null (reading 'id') -->
+{% extends 'generic/object_list.html' %}
+{% load buttons %}
+{% load static %}
+{% load helpers %}
+
+{% block breadcrumbs %}
+<li><a href="{% url 'plugins:nautobot_golden_config:configplan_list' %}">Config Plans</a></li>
+{% endblock %}
+
+{% block content %}
+<h1>{% block title %}Config Plan Confirmation{% endblock %}</h1>
+
+<link rel="stylesheet" type="text/css" href="{% static 'nautobot_golden_config/diff2html-3.4.43/diff2html.min.css' %}"/>
+<style>
+    .diff-render {
+        pointer-events: none;
+    }
+    .panel-heading {
+        align-items: center;
+    }
+    .diff-counts {
+        padding: 1px;
+        font-weight: normal;
+    }
+    .diff-adds {
+        color: green;
+    }
+    .diff-removes {
+        color: red;
+    }
+    .glyphicon-ok {
+        color: green;
+    }
+    .glyphicon-remove {
+        color: red;
+    }
+    .rotated {
+        transform: rotate(180deg);
+    }
+    .icon {
+        transition: transform 0.3s ease;
+        float: right;
+    }
+    .collapsable-heading:hover {
+        cursor: pointer;
+    }
+    .d2h-tag {
+        display: none;
+    }
+    .d2h-file-collapse {
+        display: none;
+    }
+</style>
+<noscript>
+    <style>
+        .icon {
+            display: none;
+        }
+    </style>
+</noscript>
+<div class="card-deck">
+    {% for device in selected_devices %}
+        {% with device_id=device.id %}
+        <div class="panel panel-default" style="width:100%;">
+            <div id="toggle-device-{{ device_id }}" class="panel-heading collapsable-heading card-header" type="button" data-toggle="collapse" data-target="#device-{{ device_id }}" aria-expanded="false" aria-controls="device-{{ device_id }}">
+                <h5 class="card-title">
+                    {{ device.name }} |
+                    <span id="diff-counts" class="diff-counts">
+                        <span id="diff-removes" class="diff-removes">
+                            <i class="glyphicon glyphicon-minus"></i>
+                            <span id="diff-count-removes-{{ device_id }}" class="diff-count-removes">
+                            </span>
+                        </span>
+                        <span id="diff-adds" class="diff-adds">
+                            <i class="glyphicon glyphicon-plus"></i>
+                            <span id="diff-count-adds-{{ device_id }}" class="diff-count-adds">
+                            </span>
+                        </span>
+                    </span>
+                    <span id="config-plan-status" class="config-plan-status">
+                        <!-- Display the config plan with the matching device_id's status -->
+                        {% for config_plan in config_plans %}
+                        {% if config_plan.device_id == device_id %}
+                        |
+                        <b>Status:</b>
+                        {% if config_plan.status|stringformat:"s" == "Approved" %}
+                        <i id="status-icon-device-{{ device_id }}" class="glyphicon glyphicon-ok"></i>{{ config_plan.status }}
+                        {% else %}
+                        <i id="status-icon-device-{{ device_id }}" class="glyphicon glyphicon-remove red"></i>{{ config_plan.status }}
+                        {% endif %}
+                    </span>
+                    |
+                    <b>Last Updated:</b>
+                    {{ config_plan.last_updated }}
+                    |
+                    <b>Type:</b> 
+                    {{ config_plan.plan_type|capfirst }}
+                    {# - Plan ID: {{ config_plan.id }} #}
+                    {% endif %}
+                    {% endfor %}
+                </h5>
+                <div class="collapse collapsible-div" id="device-{{ device_id }}">
+                    <div class="card-text" id="diff-container-{{ device_id }}">
+                        <div id="diffoutput-{{ device_id }}" data-compliance-config="{{ device.goldenconfig.compliance_config|escape }}" last_backup="{{ device.goldenconfig.backup_last_success_date}}" last_intended="{{ device.goldenconfig.intended_last_success_date}}"></div>
+                        <div id="diffrender-{{ device_id }}" class="diffrender"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endwith %}
+    {% endfor %}
+</div>
+<!-- Deploy Button -->
+{% if perms.extras.run_job %}
+{% include "nautobot_golden_config/job_result_modal.html" with modal_title="Deploy Config Plans" %}
+<button id="startJob" type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modalPopup" data-config-plan-ids="{{ config_plan_ids }}">
+<span class="mdi mdi-upload-multiple" aria-hidden="true"></span> Deploy Plans
+</button>
+{% endif %}
+{% endblock %}
+{% block javascript %}
+{{ block.super }}
+<script src="{% static 'run_job.js' %}"></script>
+<script src="{% static 'nautobot_golden_config/diff2html-3.4.43/diff2html.min.js' %}"></script>
+<script>
+// Logic for device cards and diff display
+document.addEventListener("DOMContentLoaded", function() {
+    // Function to count the number of added and removed lines in a diff
+    // Currently only counts lines starting with + or -
+    function countDiffs(diffString) {
+        var diffLines = diffString.split("\n");
+        var addedLines = diffLines.filter(function(line) {
+            return line.startsWith("+");
+        });
+        var removedLines = diffLines.filter(function(line) {
+            return line.startsWith("-");
+        });
+        
+        return {
+            added: addedLines.length,
+            removed: removedLines.length
+        };
+    }
+
+    // Select all elements with the collapsable-heading class
+    var collapsableHeadings = document.querySelectorAll(".collapsable-heading");
+
+    // Loop through each collapsable heading and add an event listener that rotates the icon
+    collapsableHeadings.forEach((heading) => {
+        heading.addEventListener("click", function() {
+            var device_id = heading.id.replace("toggle-device-", "");
+            var collapseIcon = document.getElementById("collapse-icon-device-" + device_id);
+            if (collapseIcon) {
+                collapseIcon.classList.toggle("rotated");
+            }
+        });
+    });
+    
+    // Select all elements that start with diffoutput- in the ID
+    var diffContainers = document.querySelectorAll("[id^='diffoutput-']");
+
+    // Loop through each container ultimately rendering each diff
+    diffContainers.forEach(
+        function(container) {
+
+        // Get the data attributes from the container
+        var complianceConfig = container.getAttribute("data-compliance-config");
+        var lastBackup = container.getAttribute("last_backup");
+        var lastIntended = container.getAttribute("last_intended");
+
+
+        // If complianceConfig is not null, then render the diff
+        if (complianceConfig) {
+            // Split the compliance config into lines
+            var complianceConfigLines = complianceConfig.split("\n");
+
+            // Find the start of the compliance config indicated by @@ and join the lines
+            var complianceConfigStartIndex = complianceConfigLines.findIndex(function(line) {
+                return line.startsWith("@@");
+            });
+            var complianceConfigJoinedLines = complianceConfigLines.slice(complianceConfigStartIndex).join("\n");
+
+            var diffCounts = countDiffs(complianceConfigJoinedLines);
+
+            // Display the diff count
+            var diffCountAdds = document.getElementById("diff-count-adds-" + container.id.replace("diffoutput-", ""));
+            var diffCountRemoves = document.getElementById("diff-count-removes-" + container.id.replace("diffoutput-", ""));
+            diffCountAdds.innerHTML = diffCounts.added;
+            diffCountRemoves.innerHTML = diffCounts.removed;
+
+            // If the sum of added or removed is greater then 1000, then hide the diff and display a message
+            // Tested 30k, 20k, 10k, 5k and 3k lines, 3k kept things functional, but 1k was the best for performance
+            // The browser will hang if the diff is too large
+            if (diffCounts.added > 1000 || diffCounts.removed > 1000) {
+                var diffContainer = document.getElementById("diff-container-" + container.id.replace("diffoutput-", ""));
+                diffContainer.innerHTML = "<p>Diff too large to display. This feature supports only 1000 changed lines.</p>";
+                return;
+            }
+            // Create the input string for the diff2html library
+            var str_input = `--- Backup ${lastBackup}\n+++ Intended ${lastIntended}\n` + complianceConfigJoinedLines + "\n";
+
+            // Configuration for the diff2html library
+            var configuration = {
+                drawFileList: false,
+                matching: "none",
+                outputFormat: "side-by-side",
+                colorScheme: "auto"
+            };
+
+            // Get the target element and render the diff
+            var targetId = container.id.replace("diffoutput-", "diffrender-");
+            var targetElement = document.getElementById(targetId);
+            var diffContent = Diff2Html.html(
+                str_input,
+                configuration,
+            ); 
+            targetElement.innerHTML = diffContent;
+
+            // Stop the click event from propagating when clicking on the diffrender element
+            var diffrenderElements = document.querySelectorAll('.diffrender');
+            diffrenderElements.forEach(function(element) {
+                element.addEventListener('click', function(event) {
+                    event.stopPropagation();
+                });
+            });
+
+            // Add the icon HTML snippet to the card-title
+            var cardTitle = document.querySelector(`#toggle-device-${container.id.replace("diffoutput-", "")} .card-title`);
+            if (cardTitle) {
+                cardTitle.innerHTML += `
+                    <span id="icon" class="icon">
+                        <i id="collapse-icon-device-${container.id.replace("diffoutput-", "")}" class="glyphicon glyphicon-chevron-up" style="cursor"></i>
+                    </span>
+                `;
+            }
+        } else {
+            // If complianceConfig is null, then set diff-counts to 0
+            var diffCountAdds = document.getElementById("diff-count-adds-" + container.id.replace("diffoutput-", ""));
+            var diffCountRemoves = document.getElementById("diff-count-removes-" + container.id.replace("diffoutput-", ""));
+            diffCountAdds.innerHTML = 0;
+            diffCountRemoves.innerHTML = 0;
+
+            // Remove the hover effect on the collapsable heading
+            var collapsableHeading = document.getElementById("toggle-device-" + container.id.replace("diffoutput-", ""));
+            if (collapsableHeading) {
+                collapsableHeading.style.cursor = "default";
+            }
+        }
+    });
+});
+
+
+// CSRF token for AJAX requests
+var nautobot_csrf_token = "{{ csrf_token }}";
+
+// Add event listener Deploy Selected Plans button
+// This will prompt the user to confirm the deployment
+document.addEventListener("DOMContentLoaded", function() {
+    var startJobButton = document.getElementById("startJob");
+    startJobButton.addEventListener("click", function(event) {
+        var userConfirmed = confirm("Warning! This will deploy configurations to the devices you have selected, are you sure you want to deploy?");
+        if (!userConfirmed) {
+            // If user clicked "Cancel", stop the modal from showing
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    });
+});
+
+// Add click event listener to Deploy Plans button to start the job
+// This will start the job to deploy the selected plans
+document.getElementById("startJob").onclick = function() {
+    var configPlanIds = document.getElementById("startJob").getAttribute("data-config-plan-ids");
+
+    // Convert configPlanIds to Data structure needed for startJob function in run_job.js
+    var jobData = {
+        "commit": true,
+        "data": {
+            "config_plan": JSON.parse(configPlanIds),
+            "debug": false,
+        },
+    };
+
+    // Send the jobs to the startJob function in run_job.js
+    startJob("Deploy Config Plans", jobData);
+};
+</script>
+{% endblock %}

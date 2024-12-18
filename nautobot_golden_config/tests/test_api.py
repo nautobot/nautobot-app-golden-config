@@ -6,13 +6,13 @@ from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
-from nautobot.core.testing import APITestCase, APIViewTestCases
+from nautobot.apps.testing import APITestCase, APIViewTestCases
 from nautobot.dcim.models import Device, Platform
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status
 from rest_framework import status
 
 from nautobot_golden_config.choices import RemediationTypeChoice
-from nautobot_golden_config.models import ConfigPlan, GoldenConfigSetting, RemediationSetting
+from nautobot_golden_config.models import ConfigPlan, ConfigReplace, GoldenConfigSetting, RemediationSetting
 from nautobot_golden_config.tests.conftest import (
     create_config_compliance,
     create_device,
@@ -409,6 +409,65 @@ class ConfigPlanTest(
         }
 
 
+class ConfigReplaceAPITestCase(  # pylint: disable=too-many-ancestors
+    APIViewTestCases.CreateObjectViewTestCase,
+    APIViewTestCases.GetObjectViewTestCase,
+    APIViewTestCases.ListObjectsViewTestCase,
+    APIViewTestCases.UpdateObjectViewTestCase,
+    APIViewTestCases.DeleteObjectViewTestCase,
+    APIViewTestCases.NotesURLViewTestCase,
+):
+    """Test API for ConfigReplace."""
+
+    model = ConfigReplace
+
+    @classmethod
+    def setUpTestData(cls):
+        create_device_data()
+        platform = Device.objects.first().platform
+        for num in range(3):
+            ConfigReplace.objects.create(
+                name=f"test configreplace {num}",
+                platform=platform,
+                description="test description",
+                regex="^(.*)$",
+                replace="xyz",
+            )
+        cls.update_data = {
+            "name": "new name",
+            "platform": platform.pk,
+            "description": "new description",
+            "regex": "^NEW (.*)$",
+            "replace": "NEW replaced text",
+        }
+        cls.create_data = [
+            {
+                "name": "test configreplace 4",
+                "platform": platform.pk,
+                "description": "test description",
+                "regex": "^(.*)$",
+                "replace": "xyz",
+            },
+            {
+                "name": "test configreplace 5",
+                "platform": platform.pk,
+                "description": "test description",
+                "regex": "^(.*)$",
+                "replace": "xyz",
+            },
+            {
+                "name": "test configreplace 6",
+                "platform": platform.pk,
+                "description": "test description",
+                "regex": "^(.*)$",
+                "replace": "xyz",
+            },
+        ]
+        cls.bulk_update_data = {
+            "description": "new description",
+        }
+
+
 class GenerateIntendedConfigViewAPITestCase(APITestCase):
     """Test API for GenerateIntendedConfigView."""
 
@@ -567,19 +626,6 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
         self.assertTrue("detail" in response.data)
         self.assertEqual("Error trying to sync git repository", response.data["detail"])
 
-        # test jinja_repository not set
-        self.golden_config_setting.jinja_repository = None
-        self.golden_config_setting.save()
-        response = self.client.get(
-            reverse("plugins-api:nautobot_golden_config-api:generate_intended_config"),
-            data={"device_id": self.device.pk},
-            **self.header,
-        )
-
-        self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
-        self.assertTrue("detail" in response.data)
-        self.assertEqual(response.data["detail"], "Golden Config settings jinja_repository not set")
-
         # test no sot_agg_query on GoldenConfigSetting
         self.golden_config_setting.sot_agg_query = None
         self.golden_config_setting.save()
@@ -593,6 +639,20 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
         self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertTrue("detail" in response.data)
         self.assertEqual("Golden Config settings sot_agg_query not set", response.data["detail"])
+
+        # test jinja_repository not set
+        self.golden_config_setting.jinja_repository = None
+        self.golden_config_setting.save()
+
+        response = self.client.get(
+            reverse("plugins-api:nautobot_golden_config-api:generate_intended_config"),
+            data={"device_id": self.device.pk},
+            **self.header,
+        )
+
+        self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue("detail" in response.data)
+        self.assertEqual(response.data["detail"], "Golden Config settings jinja_repository not set")
 
         # test no GoldenConfigSetting found for device
         GoldenConfigSetting.objects.all().delete()

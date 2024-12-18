@@ -1,6 +1,7 @@
 """View for Golden Config APIs."""
 
 import datetime
+import difflib
 import json
 import logging
 from pathlib import Path
@@ -20,6 +21,7 @@ from nautobot.core.api.views import (
 from nautobot.dcim.models import Device
 from nautobot.extras.api.views import NautobotModelViewSet, NotesViewSetMixin
 from nautobot.extras.datasources.git import ensure_git_repository
+from nautobot.extras.models import GraphQLQuery
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nornir import InitNornir
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
@@ -202,6 +204,26 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = serializers.GenerateIntendedConfigSerializer
 
+    def _get_diff(self, device, intended_config):
+        """Generate a unified diff between the provided config and the intended config stored on the Device's GoldenConfig.intended_config."""
+        diff = None
+        try:
+            golden_config = device.goldenconfig
+            if golden_config.intended_last_success_date is not None:
+                prior_intended_config = golden_config.intended_config
+                diff = "".join(
+                    difflib.unified_diff(
+                        prior_intended_config.splitlines(keepends=True),
+                        intended_config.splitlines(keepends=True),
+                        fromfile="prior intended config",
+                        tofile="rendered config",
+                    )
+                )
+        except models.GoldenConfig.DoesNotExist:
+            pass
+
+        return diff
+
     def _get_object(self, request, model, query_param):
         """Get the requested model instance, restricted to requesting user."""
         pk = request.query_params.get(query_param)
@@ -232,18 +254,40 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
                 type=OpenApiTypes.UUID,
                 location=OpenApiParameter.QUERY,
             ),
+            OpenApiParameter(
+                name="graphql_query_id",
+                required=False,
+                type=OpenApiTypes.UUID,
+                location=OpenApiParameter.QUERY,
+            ),
         ]
     )
     def get(self, request, *args, **kwargs):
         """Generate intended configuration for a Device."""
         device = self._get_object(request, Device, "device_id")
+        graphql_query = None
+        graphql_query_id_param = request.query_params.get("graphql_query_id")
+        if graphql_query_id_param:
+            try:
+                graphql_query = GraphQLQuery.objects.get(pk=request.query_params.get("graphql_query_id"))
+            except GraphQLQuery.DoesNotExist as exc:
+                raise GenerateIntendedConfigException(
+                    f"GraphQLQuery with id '{graphql_query_id_param}' not found"
+                ) from exc
         settings = models.GoldenConfigSetting.objects.get_for_device(device)
         if not settings:
             raise GenerateIntendedConfigException("No Golden Config settings found for this device")
-        if not settings.sot_agg_query:
-            raise GenerateIntendedConfigException("Golden Config settings sot_agg_query not set")
         if not settings.jinja_repository:
             raise GenerateIntendedConfigException("Golden Config settings jinja_repository not set")
+
+        if graphql_query is None:
+            if settings.sot_agg_query is not None:
+                graphql_query = settings.sot_agg_query
+            else:
+                raise GenerateIntendedConfigException("Golden Config settings sot_agg_query not set")
+
+        if "device_id" not in graphql_query.variables:
+            raise GenerateIntendedConfigException("The selected GraphQL query is missing a 'device_id' variable")
 
         try:
             git_repository = settings.jinja_repository
@@ -253,21 +297,27 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
 
         filesystem_path = self._get_jinja_template_path(settings, device, git_repository)
 
-        status_code, context = graph_ql_query(request, device, settings.sot_agg_query.query)
+        status_code, graphql_data = graph_ql_query(request, device, graphql_query.query)
         if status_code == status.HTTP_200_OK:
             try:
                 intended_config = self._render_config_nornir_serial(
                     device=device,
                     jinja_template=filesystem_path.name,
                     jinja_root_path=filesystem_path.parent,
-                    graphql_data=context,
+                    graphql_data=graphql_data,
                 )
             except Exception as exc:
                 raise GenerateIntendedConfigException(f"Error rendering Jinja template: {exc}") from exc
+
+            diff = self._get_diff(device, intended_config)
+
             return Response(
                 data={
                     "intended_config": intended_config,
                     "intended_config_lines": intended_config.split("\n"),
+                    "graphql_data": graphql_data,
+                    "diff": diff,
+                    "diff_lines": diff.split("\n") if diff else [],
                 },
                 status=status.HTTP_200_OK,
             )

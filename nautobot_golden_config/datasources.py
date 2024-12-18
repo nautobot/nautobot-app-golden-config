@@ -48,7 +48,7 @@ def refresh_git_gc_properties(repository_record, job_result, delete=False):  # p
     │   ├── config_replaces
 
     """
-    if not "nautobot_golden_config.pluginproperties" in repository_record.provided_contents:
+    if "nautobot_golden_config.pluginproperties" not in repository_record.provided_contents:
         job_result.log(
             "Skipping sync for Golden Config properties because the Git repository does not provide the content.",
             level_choice=LogLevelChoices.LOG_INFO,

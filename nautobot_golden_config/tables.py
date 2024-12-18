@@ -1,7 +1,5 @@
 """Django Tables2 classes for golden_config app."""
 
-import copy
-
 from django.utils.html import format_html
 from django_tables2 import Column, LinkColumn, TemplateColumn
 from django_tables2.utils import A
@@ -170,13 +168,10 @@ class ConfigComplianceTable(BaseTable):
             .values_list("rule__feature__slug", flat=True)
             .distinct()
         )
-        extra_columns = [(feature, ComplianceColumn(verbose_name=feature)) for feature in features]
-        kwargs["extra_columns"] = extra_columns
         # Nautobot's BaseTable.configurable_columns() only recognizes columns in self.base_columns,
         # so override the class's base_columns to include our additional columns as configurable.
-        self.base_columns = copy.deepcopy(self.base_columns)
-        for feature, column in extra_columns:
-            self.base_columns[feature] = column
+        for feature in features:
+            self.base_columns[feature] = ComplianceColumn(verbose_name=feature)
         super().__init__(*args, **kwargs)
 
     class Meta(BaseTable.Meta):

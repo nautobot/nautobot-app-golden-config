@@ -171,7 +171,7 @@ class ConfigComplianceTable(BaseTable):
         # Nautobot's BaseTable.configurable_columns() only recognizes columns in self.base_columns,
         # so override the class's base_columns to include our additional columns as configurable.
         for feature in features:
-            self.base_columns[feature] = ComplianceColumn(verbose_name=feature)
+            self.base_columns[feature] = ComplianceColumn(verbose_name=feature)  # pylint: disable=no-member
         super().__init__(*args, **kwargs)
 
     class Meta(BaseTable.Meta):

@@ -17,6 +17,7 @@ from nautobot.core.utils.data import render_jinja2
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.dcim.models import Device
 from nautobot.extras.models import Job
+from nautobot.extras.choices import DynamicGroupTypeChoices
 from nornir_nautobot.exceptions import NornirNautobotException
 
 from nautobot_golden_config import config as app_config
@@ -70,7 +71,7 @@ def get_job_filter(data=None):
 
     raw_qs = Q()
     # If scope is set to {} do not loop as all devices are in scope.
-    if not models.GoldenConfigSetting.objects.filter(dynamic_group__filter__iexact="{}").exists():
+    if not models.GoldenConfigSetting.objects.filter(dynamic_group__filter__iexact="{}", dynamic_group__group_type=DynamicGroupTypeChoices.TYPE_DYNAMIC_FILTER).exists():
         for obj in models.GoldenConfigSetting.objects.all():
             raw_qs = raw_qs | obj.dynamic_group.generate_query()
 

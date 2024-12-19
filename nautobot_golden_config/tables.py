@@ -452,8 +452,13 @@ class GoldenConfigSettingTable(BaseTable):
             "weight",
             "description",
             "backup_repository",
+            "backup_enabled",
             "intended_repository",
+            "intended_enabled",
             "jinja_repository",
+            "compliance_enabled",
+            "plan_enabled",
+            "deploy_enabled",
         )
 
 

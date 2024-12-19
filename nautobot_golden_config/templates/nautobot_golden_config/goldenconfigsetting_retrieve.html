@@ -80,6 +80,14 @@
         {{ object.backup_test_connectivity|render_boolean|placeholder }}
       </td>
     </tr>
+    <tr>
+      <td>
+        Backup Enabled
+      </td>
+      <td>
+        {{ object.backup_enabled|render_boolean|placeholder }}
+      </td>
+    </tr>
   </table>
 </div>
 <div class="panel panel-default">
@@ -105,6 +113,14 @@
       </td>
       <td>
         {{ object.intended_path_template|placeholder }}
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Intended Enabled
+      </td>
+      <td>
+        {{ object.intended_enabled|render_boolean|placeholder }}
       </td>
     </tr>
   </table>
@@ -142,6 +158,37 @@
         {% else %}
           <span class="text-muted">None</span>
         {% endif %}
+      </td>
+    </tr>
+  </table>
+</div>
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <strong>Additional Configuration</strong>
+  </div>
+  <table class="table table-hover panel-body attr-table">
+    <tr>
+      <td>
+        Compliance Enabled
+      </td>
+      <td>
+        {{ object.compliance_enabled|render_boolean|placeholder }}
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Plan Enabled
+      </td>
+      <td>
+        {{ object.plan_enabled|render_boolean|placeholder }}
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Deploy Enabled
+      </td>
+      <td>
+        {{ object.deploy_enabled|render_boolean|placeholder }}
       </td>
     </tr>
   </table>

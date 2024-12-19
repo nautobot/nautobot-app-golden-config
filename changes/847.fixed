@@ -1,1 +1,2 @@
 1. Removes the conditional UI navigation and views based on config settings.
+2. Allows users to update configuration parameters in the UI - specifically enabling/disabling backups, intended, plan, deploy, and compliance

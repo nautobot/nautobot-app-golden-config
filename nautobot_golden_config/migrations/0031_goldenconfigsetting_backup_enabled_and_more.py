@@ -2,6 +2,14 @@
 
 from django.db import migrations, models
 
+from nautobot_golden_config.utilities.constant import (
+    ENABLE_BACKUP,
+    ENABLE_COMPLIANCE,
+    ENABLE_DEPLOY,
+    ENABLE_INTENDED,
+    ENABLE_PLAN,
+)
+
 
 class Migration(migrations.Migration):
     dependencies = [
@@ -12,26 +20,26 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="goldenconfigsetting",
             name="backup_enabled",
-            field=models.BooleanField(default=True),
+            field=models.BooleanField(default=ENABLE_BACKUP),
         ),
         migrations.AddField(
             model_name="goldenconfigsetting",
             name="compliance_enabled",
-            field=models.BooleanField(default=True),
+            field=models.BooleanField(default=ENABLE_COMPLIANCE),
         ),
         migrations.AddField(
             model_name="goldenconfigsetting",
             name="deploy_enabled",
-            field=models.BooleanField(default=True),
+            field=models.BooleanField(default=ENABLE_DEPLOY),
         ),
         migrations.AddField(
             model_name="goldenconfigsetting",
             name="intended_enabled",
-            field=models.BooleanField(default=True),
+            field=models.BooleanField(default=ENABLE_INTENDED),
         ),
         migrations.AddField(
             model_name="goldenconfigsetting",
             name="plan_enabled",
-            field=models.BooleanField(default=True),
+            field=models.BooleanField(default=ENABLE_PLAN),
         ),
     ]

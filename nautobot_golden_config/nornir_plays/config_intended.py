@@ -51,6 +51,10 @@ def run_template(  # pylint: disable=too-many-arguments,too-many-locals
     obj = task.host.data["obj"]
     settings = device_to_settings_map[obj.id]
 
+    if not settings.intended_enabled:
+        logger.info(f"Intended is disabled for device {obj}.")
+        return Result(host=task.host, result="Intended disabled")
+
     intended_obj = GoldenConfig.objects.filter(device=obj).first()
     if not intended_obj:
         intended_obj = GoldenConfig.objects.create(device=obj)

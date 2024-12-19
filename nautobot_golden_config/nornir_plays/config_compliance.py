@@ -134,6 +134,10 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     obj = task.host.data["obj"]
     settings = device_to_settings_map[obj.id]
 
+    if not settings.compliance_enabled:
+        logger.info(f"Compliance is disabled for device {obj}.")
+        return Result(host=task.host, result="Compliance disabled")
+
     compliance_obj = GoldenConfig.objects.filter(device=obj).first()
     if not compliance_obj:
         compliance_obj = GoldenConfig.objects.create(device=obj)

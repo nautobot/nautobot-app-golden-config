@@ -4,35 +4,34 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('nautobot_golden_config', '0030_alter_goldenconfig_device'),
+        ("nautobot_golden_config", "0030_alter_goldenconfig_device"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='goldenconfigsetting',
-            name='backup_enabled',
+            model_name="goldenconfigsetting",
+            name="backup_enabled",
             field=models.BooleanField(default=True),
         ),
         migrations.AddField(
-            model_name='goldenconfigsetting',
-            name='compliance_enabled',
+            model_name="goldenconfigsetting",
+            name="compliance_enabled",
             field=models.BooleanField(default=True),
         ),
         migrations.AddField(
-            model_name='goldenconfigsetting',
-            name='deploy_enabled',
+            model_name="goldenconfigsetting",
+            name="deploy_enabled",
             field=models.BooleanField(default=True),
         ),
         migrations.AddField(
-            model_name='goldenconfigsetting',
-            name='intended_enabled',
+            model_name="goldenconfigsetting",
+            name="intended_enabled",
             field=models.BooleanField(default=True),
         ),
         migrations.AddField(
-            model_name='goldenconfigsetting',
-            name='plan_enabled',
+            model_name="goldenconfigsetting",
+            name="plan_enabled",
             field=models.BooleanField(default=True),
         ),
     ]

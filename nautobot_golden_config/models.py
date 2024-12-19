@@ -22,7 +22,15 @@ from netutils.config.compliance import feature_compliance
 from xmldiff import actions, main
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
-from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
+from nautobot_golden_config.utilities.constant import (
+    ENABLE_BACKUP,
+    ENABLE_COMPLIANCE,
+    ENABLE_DEPLOY,
+    ENABLE_INTENDED,
+    ENABLE_PLAN,
+    ENABLE_SOTAGG,
+    PLUGIN_CFG,
+)
 
 LOGGER = logging.getLogger(__name__)
 GRAPHQL_STR_START = "query ($device_id: ID!)"
@@ -541,6 +549,11 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         verbose_name="Backup Path in Jinja Template Form",
         help_text="The Jinja path representation of where the backup file will be found. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.location.name|slugify}}/{{obj.name}}.cfg`",
     )
+    backup_enabled = models.BooleanField(
+        default=ENABLE_BACKUP,
+        verbose_name="Enable Backup",
+        help_text="Whether or not backups are performed by Golden Config. This can be disabled if backups are fetched from another process.",
+    )
     intended_repository = models.ForeignKey(
         to="extras.GitRepository",
         on_delete=models.PROTECT,
@@ -554,6 +567,11 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         blank=True,
         verbose_name="Intended Path in Jinja Template Form",
         help_text="The Jinja path representation of where the generated file will be placed. e.g. `{{obj.location.name|slugify}}/{{obj.name}}.cfg`",
+    )
+    intended_enabled = models.BooleanField(
+        default=ENABLE_INTENDED,
+        verbose_name="Enable Intended",
+        help_text="Whether or not intended config tasks are performed by Golden Config. This can be disabled if intended configs are fetched from another process.",
     )
     jinja_repository = models.ForeignKey(
         to="extras.GitRepository",
@@ -585,6 +603,21 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         to="extras.DynamicGroup",
         on_delete=models.PROTECT,
         related_name="golden_config_setting",
+    )
+    compliance_enabled = models.BooleanField(
+        default=ENABLE_COMPLIANCE,
+        verbose_name="Enable Compliance",
+        help_text="Whether or not compliance tasks are performed by Golden Config.",
+    )
+    plan_enabled = models.BooleanField(
+        default=ENABLE_PLAN,
+        verbose_name="Enable Config Plan",
+        help_text="Whether or not config plan tasks are performed by Golden Config.",
+    )
+    deploy_enabled = models.BooleanField(
+        default=ENABLE_DEPLOY,
+        verbose_name="Enable Deploy",
+        help_text="Whether or not deploy tasks are performed by Golden Config.",
     )
     is_dynamic_group_associable_model = False
 

@@ -262,24 +262,19 @@ class GoldenConfigTable(BaseTable):
         text=lambda record: record.device.name,
         verbose_name="Device",
     )
-
-    if ENABLE_BACKUP:
-        backup_last_success_date = Column(
-            verbose_name="Backup Status", empty_values=(), order_by="backup_last_success_date"
-        )
-    if ENABLE_INTENDED:
-        intended_last_success_date = Column(
-            verbose_name="Intended Status",
-            empty_values=(),
-            order_by="intended_last_success_date",
-        )
-    if ENABLE_COMPLIANCE:
-        compliance_last_success_date = Column(
-            verbose_name="Compliance Status",
-            empty_values=(),
-            order_by="compliance_last_success_date",
-        )
-
+    backup_last_success_date = Column(
+        verbose_name="Backup Status", empty_values=(), order_by="backup_last_success_date"
+    )
+    intended_last_success_date = Column(
+        verbose_name="Intended Status",
+        empty_values=(),
+        order_by="intended_last_success_date",
+    )
+    compliance_last_success_date = Column(
+        verbose_name="Compliance Status",
+        empty_values=(),
+        order_by="compliance_last_success_date",
+    )
     actions = TemplateColumn(
         template_code=ALL_ACTIONS, verbose_name="Actions", extra_context=CONFIG_FEATURES, orderable=False
     )
@@ -435,6 +430,14 @@ class GoldenConfigSettingTable(BaseTable):
             return format_html('<span class="text-success"><i class="mdi mdi-check-bold"></i></span>')
         return format_html('<span class="text-danger"><i class="mdi mdi-close-thick"></i></span>')
 
+    def render_backup_enabled(self, record, column):
+        """Render backup_enabled boolean value."""
+        return self._render_capability(record=record, column=column, record_attribute="backup_enabled")
+
+    def render_intended_enabled(self, record, column):
+        """Render intended_enabled boolean value."""
+        return self._render_capability(record=record, column=column, record_attribute="intended_enabled")
+
     def render_backup_repository(self, record, column):
         """Render backup repository boolean value."""
         return self._render_capability(record=record, column=column, record_attribute="backup_repository")
@@ -457,7 +460,9 @@ class GoldenConfigSettingTable(BaseTable):
             "weight",
             "description",
             "backup_repository",
+            "backup_enabled",
             "intended_repository",
+            "intended_enabled",
             "jinja_repository",
         )
 

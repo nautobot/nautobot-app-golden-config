@@ -102,9 +102,7 @@ class TestGoldenConfigDisabledSettings(unittest.TestCase):
         Test that run_backup returns early when compliance is disabled.
         """
         # Execute the function
-        run_backup(
-            self.task, self.logger, self.device_to_settings_map, self.remove_regex_dict, self.replace_regex_dict
-        )
+        run_backup(self.task, self.logger, self.device_to_settings_map, self.remove_regex_dict, self.replace_regex_dict)
 
         # Assertions to verify early exit
         expected_log_message = f"Backups are disabled for device {self.obj}."
@@ -135,9 +133,7 @@ class TestGoldenConfigDisabledSettings(unittest.TestCase):
         Test that run_template returns early when compliance is disabled.
         """
         # Execute the function
-        run_template(
-            self.task, self.logger, self.device_to_settings_map, self.job_class_instance, self.jinja_env
-        )
+        run_template(self.task, self.logger, self.device_to_settings_map, self.job_class_instance, self.jinja_env)
 
         # Assertions to verify early exit
         expected_log_message = f"Intended is disabled for device {self.obj}."
@@ -168,9 +164,7 @@ class TestGoldenConfigDisabledSettings(unittest.TestCase):
         Test that run_deployment returns early when compliance is disabled.
         """
         # Execute the function
-        run_deployment(
-            self.task, self.logger, self.device_to_settings_map, self.config_plan_qs, self.deploy_job_result
-        )
+        run_deployment(self.task, self.logger, self.device_to_settings_map, self.config_plan_qs, self.deploy_job_result)
 
         # Assertions to verify early exit
         expected_log_message = f"Deploys are disabled for device {self.obj}."

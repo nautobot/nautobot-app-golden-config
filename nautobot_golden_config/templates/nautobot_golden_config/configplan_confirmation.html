@@ -69,8 +69,9 @@
         <div class="panel panel-default" style="width:100%;">
             <div id="toggle-device-{{ device_id }}" class="panel-heading collapsable-heading card-header" type="button" data-toggle="collapse" data-target="#device-{{ device_id }}" aria-expanded="false" aria-controls="device-{{ device_id }}">
                 <h5 class="card-title">
-                    {{ device.name }} |
-                    <span id="diff-counts" class="diff-counts">
+                    {{ device.name }}
+                    <span id="diff-counts-{{ device_id }}" class="diff-counts">
+                        |
                         <span id="diff-removes" class="diff-removes">
                             <i class="glyphicon glyphicon-minus"></i>
                             <span id="diff-count-removes-{{ device_id }}" class="diff-count-removes">
@@ -81,12 +82,14 @@
                             <span id="diff-count-adds-{{ device_id }}" class="diff-count-adds">
                             </span>
                         </span>
+                    </span>
+                    <span id="config-plan-statuses" class="config-plan-statuses">
                         <span id="config-plan-status" class="config-plan-status">
                             | Config Plans:
                             <!-- Display the config plan with the matching device_id's status -->
                             {% for config_plan in config_plans %}
                             {% if config_plan.device_id == device_id %}
-                            <div class="config-plan-tooltip" data-toggle="tooltip" data-html="true" title="
+                            <div class="config-plan-tooltip" data-toggle="tooltip" data-html="true" data-config-plan-type="{{config_plan.plan_type}}" title="
                                 <b>Status:</b> 
                                 {% if config_plan.status|stringformat:'s' == 'Approved' %}
                                     <i id='status-icon-device-{{ device_id }}' class='glyphicon glyphicon-ok'></i>{{ config_plan.status }}
@@ -178,8 +181,6 @@ document.addEventListener("DOMContentLoaded", function() {
         var lastBackup = container.getAttribute("last_backup");
         var lastIntended = container.getAttribute("last_intended");
 
-        
-
         // If complianceConfig is not null, then render the diff
         if (complianceConfig) {
             // Split the compliance config into lines
@@ -236,15 +237,28 @@ document.addEventListener("DOMContentLoaded", function() {
             });
 
         } else {
-            // If complianceConfig is null, then set diff-counts to 0
-            var diffCountAdds = document.getElementById("diff-count-adds-" + container.id.replace("diffoutput-", ""));
-            var diffCountRemoves = document.getElementById("diff-count-removes-" + container.id.replace("diffoutput-", ""));
-            diffCountAdds.innerHTML = 0;
-            diffCountRemoves.innerHTML = 0;
+            // Get config_plan type
+            var configPlanTooltip = document.querySelector(`#toggle-device-${container.id.replace("diffoutput-", "")} .config-plan-tooltip`);
+            var configPlanType = configPlanTooltip ? configPlanTooltip.getAttribute("data-config-plan-type") : null;
 
-            // If complianceConfig is null, then display a message
-            var diffContainer = document.getElementById("diff-container-" + container.id.replace("diffoutput-", ""));
-            diffContainer.innerHTML = "<p>No compliance config found for this device. Run Compliance for this device to see a diff.</p>";
+            if (configPlanType === "manual") {
+                // If config_plan.plan_type is manual, then display a message
+                var diffContainer = document.getElementById("diff-container-" + container.id.replace("diffoutput-", ""));
+                diffContainer.innerHTML = "<p>No diff for manual changes.</p>";
+                // Remove diff-counts-{{ device_id }} element from the DOM
+                var diffCounts = document.getElementById("diff-counts-" + container.id.replace("diffoutput-", ""));
+                diffCounts.remove();
+
+            } else {
+                // If complianceConfig is null, then set diff-counts to 0
+                var diffCountAdds = document.getElementById("diff-count-adds-" + container.id.replace("diffoutput-", ""));
+                var diffCountRemoves = document.getElementById("diff-count-removes-" + container.id.replace("diffoutput-", ""));
+                diffCountAdds.innerHTML = 0;
+                diffCountRemoves.innerHTML = 0;
+                // If config_plan.plan_type is unknown, then display a default message
+                var diffContainer = document.getElementById("diff-container-" + container.id.replace("diffoutput-", ""));
+                diffContainer.innerHTML = "<p>No compliance config found for this device. Run Compliance for this device to see a diff.</p>";
+            }
         }
     });
 });

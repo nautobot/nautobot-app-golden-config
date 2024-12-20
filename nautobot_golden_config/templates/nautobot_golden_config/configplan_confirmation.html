@@ -15,18 +15,22 @@
     .diff-render {
         pointer-events: none;
     }
-    .panel-heading {
-        align-items: center;
-    }
     .diff-counts {
         padding: 1px;
-        font-weight: normal;
     }
     .diff-adds {
         color: green;
     }
     .diff-removes {
         color: red;
+    }
+    .config-plan-tooltip {
+        display: inline-block;
+        margin-left: 5px;
+    }
+    .glyphicon-file {
+        color:#0938e1;
+        font-size: 1.2em;
     }
     .glyphicon-ok {
         color: green;
@@ -76,28 +80,29 @@
                             <span id="diff-count-adds-{{ device_id }}" class="diff-count-adds">
                             </span>
                         </span>
+                        <span id="config-plan-status" class="config-plan-status">
+                            | Config Plans:
+                            <!-- Display the config plan with the matching device_id's status -->
+                            {% for config_plan in config_plans %}
+                            {% if config_plan.device_id == device_id %}
+                            <div class="config-plan-tooltip" data-toggle="tooltip" data-html="true" title="
+                                <b>Status:</b> 
+                                {% if config_plan.status|stringformat:'s' == 'Approved' %}
+                                    <i id='status-icon-device-{{ device_id }}' class='glyphicon glyphicon-ok'></i>{{ config_plan.status }}
+                                {% else %}
+                                    <i id='status-icon-device-{{ device_id }}' class='glyphicon glyphicon-remove red'></i>{{ config_plan.status }}
+                                {% endif %}
+                                <br>
+                                <b>Last Updated:</b> {{ config_plan.last_updated }}
+                                <br>
+                                <b>Type:</b> {{ config_plan.plan_type|capfirst }}
+                            ">
+                                <i class="glyphicon glyphicon-file"></i>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </span>
                     </span>
-                    <span id="config-plan-status" class="config-plan-status">
-                        <!-- Display the config plan with the matching device_id's status -->
-                        {% for config_plan in config_plans %}
-                        {% if config_plan.device_id == device_id %}
-                        |
-                        <b>Status:</b>
-                        {% if config_plan.status|stringformat:"s" == "Approved" %}
-                        <i id="status-icon-device-{{ device_id }}" class="glyphicon glyphicon-ok"></i>{{ config_plan.status }}
-                        {% else %}
-                        <i id="status-icon-device-{{ device_id }}" class="glyphicon glyphicon-remove red"></i>{{ config_plan.status }}
-                        {% endif %}
-                    </span>
-                    |
-                    <b>Last Updated:</b>
-                    {{ config_plan.last_updated }}
-                    |
-                    <b>Type:</b> 
-                    {{ config_plan.plan_type|capfirst }}
-                    {# - Plan ID: {{ config_plan.id }} #}
-                    {% endif %}
-                    {% endfor %}
                 </h5>
                 <div class="collapse collapsible-div" id="device-{{ device_id }}">
                     <div class="card-text" id="diff-container-{{ device_id }}">
@@ -239,12 +244,6 @@ document.addEventListener("DOMContentLoaded", function() {
             var diffCountRemoves = document.getElementById("diff-count-removes-" + container.id.replace("diffoutput-", ""));
             diffCountAdds.innerHTML = 0;
             diffCountRemoves.innerHTML = 0;
-
-            // Remove the hover effect on the collapsable heading
-            var collapsableHeading = document.getElementById("toggle-device-" + container.id.replace("diffoutput-", ""));
-            if (collapsableHeading) {
-                collapsableHeading.style.cursor = "default";
-            }
         }
     });
 });
@@ -284,5 +283,9 @@ document.getElementById("startJob").onclick = function() {
     // Send the jobs to the startJob function in run_job.js
     startJob("Deploy Config Plans", jobData);
 };
+
+$(document).ready(function(){
+    $('[data-toggle="tooltip"]').tooltip(); 
+});
 </script>
 {% endblock %}

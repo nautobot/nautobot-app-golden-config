@@ -430,6 +430,14 @@ class GoldenConfigSettingTable(BaseTable):
             return format_html('<span class="text-success"><i class="mdi mdi-check-bold"></i></span>')
         return format_html('<span class="text-danger"><i class="mdi mdi-close-thick"></i></span>')
 
+    def render_backup_enabled(self, record, column):
+        """Render backup_enabled boolean value."""
+        return self._render_capability(record=record, column=column, record_attribute="backup_enabled")
+
+    def render_intended_enabled(self, record, column):
+        """Render intended_enabled boolean value."""
+        return self._render_capability(record=record, column=column, record_attribute="intended_enabled")
+
     def render_backup_repository(self, record, column):
         """Render backup repository boolean value."""
         return self._render_capability(record=record, column=column, record_attribute="backup_repository")
@@ -456,9 +464,6 @@ class GoldenConfigSettingTable(BaseTable):
             "intended_repository",
             "intended_enabled",
             "jinja_repository",
-            "compliance_enabled",
-            "plan_enabled",
-            "deploy_enabled",
         )
 
 

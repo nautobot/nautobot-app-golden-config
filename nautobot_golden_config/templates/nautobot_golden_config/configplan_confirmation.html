@@ -26,7 +26,8 @@
     }
     .config-plan-tooltip {
         display: inline-block;
-        margin-left: 5px;
+        margin-left: 2px;
+        margin-top: 2px;
     }
     .glyphicon-file {
         color:#0938e1;
@@ -103,6 +104,10 @@
                             {% endfor %}
                         </span>
                     </span>
+                    <span id="icon" class="icon">
+                        <i id="collapse-icon-device-{{ device_id }}" class="glyphicon glyphicon-chevron-up" style="cursor"></i>
+                    </span>
+                </span>
                 </h5>
                 <div class="collapse collapsible-div" id="device-{{ device_id }}">
                     <div class="card-text" id="diff-container-{{ device_id }}">
@@ -173,6 +178,7 @@ document.addEventListener("DOMContentLoaded", function() {
         var lastBackup = container.getAttribute("last_backup");
         var lastIntended = container.getAttribute("last_intended");
 
+        
 
         // If complianceConfig is not null, then render the diff
         if (complianceConfig) {
@@ -207,7 +213,7 @@ document.addEventListener("DOMContentLoaded", function() {
             // Configuration for the diff2html library
             var configuration = {
                 drawFileList: false,
-                matching: "none",
+                matching: "words",
                 outputFormat: "side-by-side",
                 colorScheme: "auto"
             };
@@ -229,21 +235,16 @@ document.addEventListener("DOMContentLoaded", function() {
                 });
             });
 
-            // Add the icon HTML snippet to the card-title
-            var cardTitle = document.querySelector(`#toggle-device-${container.id.replace("diffoutput-", "")} .card-title`);
-            if (cardTitle) {
-                cardTitle.innerHTML += `
-                    <span id="icon" class="icon">
-                        <i id="collapse-icon-device-${container.id.replace("diffoutput-", "")}" class="glyphicon glyphicon-chevron-up" style="cursor"></i>
-                    </span>
-                `;
-            }
         } else {
             // If complianceConfig is null, then set diff-counts to 0
             var diffCountAdds = document.getElementById("diff-count-adds-" + container.id.replace("diffoutput-", ""));
             var diffCountRemoves = document.getElementById("diff-count-removes-" + container.id.replace("diffoutput-", ""));
             diffCountAdds.innerHTML = 0;
             diffCountRemoves.innerHTML = 0;
+
+            // If complianceConfig is null, then display a message
+            var diffContainer = document.getElementById("diff-container-" + container.id.replace("diffoutput-", ""));
+            diffContainer.innerHTML = "<p>No compliance config found for this device. Run Compliance for this device to see a diff.</p>";
         }
     });
 });

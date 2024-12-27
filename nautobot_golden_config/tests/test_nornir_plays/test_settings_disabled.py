@@ -59,7 +59,7 @@ class TestGoldenConfigDisabledSettings(unittest.TestCase):
     @patch("nautobot_golden_config.nornir_plays.config_compliance.get_rules")
     @patch("nautobot_golden_config.nornir_plays.config_compliance.os.path.exists")
     @patch("nautobot_golden_config.nornir_plays.config_compliance._open_file_config")
-    def test_run_compliance_disabled(
+    def test_run_compliance_disabled( # pylint: disable=too-many-arguments
         self,
         mock_open_file_config,
         mock_path_exists,
@@ -90,7 +90,7 @@ class TestGoldenConfigDisabledSettings(unittest.TestCase):
     @patch("nautobot_golden_config.nornir_plays.config_compliance.get_rules")
     @patch("nautobot_golden_config.nornir_plays.config_compliance.os.path.exists")
     @patch("nautobot_golden_config.nornir_plays.config_compliance._open_file_config")
-    def test_run_backup_disabled(
+    def test_run_backup_disabled( # pylint: disable=too-many-arguments
         self,
         mock_open_file_config,
         mock_path_exists,
@@ -121,7 +121,7 @@ class TestGoldenConfigDisabledSettings(unittest.TestCase):
     @patch("nautobot_golden_config.nornir_plays.config_compliance.get_rules")
     @patch("nautobot_golden_config.nornir_plays.config_compliance.os.path.exists")
     @patch("nautobot_golden_config.nornir_plays.config_compliance._open_file_config")
-    def test_run_template_disabled(
+    def test_run_template_disabled( # pylint: disable=too-many-arguments
         self,
         mock_open_file_config,
         mock_path_exists,
@@ -152,7 +152,7 @@ class TestGoldenConfigDisabledSettings(unittest.TestCase):
     @patch("nautobot_golden_config.nornir_plays.config_compliance.get_rules")
     @patch("nautobot_golden_config.nornir_plays.config_compliance.os.path.exists")
     @patch("nautobot_golden_config.nornir_plays.config_compliance._open_file_config")
-    def test_run_deployment_disabled(
+    def test_run_deployment_disabled( # pylint: disable=too-many-arguments
         self,
         mock_open_file_config,
         mock_path_exists,

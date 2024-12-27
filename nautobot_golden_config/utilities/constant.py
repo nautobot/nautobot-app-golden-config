@@ -14,14 +14,6 @@ ENABLE_DEPLOY = PLUGIN_CFG["enable_deploy"]
 ENABLE_POSTPROCESSING = PLUGIN_CFG["enable_postprocessing"]
 DEFAULT_DEPLOY_STATUS = PLUGIN_CFG["default_deploy_status"]
 
-CONFIG_FEATURES = {
-    "intended": ENABLE_INTENDED,
-    "compliance": ENABLE_COMPLIANCE,
-    "backup": ENABLE_BACKUP,
-    "sotagg": ENABLE_SOTAGG,
-    "postprocessing": ENABLE_POSTPROCESSING,
-}
-
 JINJA_ENV = PLUGIN_CFG["jinja_env"]
 if not JINJA_ENV.get("undefined"):
     raise ValueError("The `jinja_env` setting did not include the required key for `undefined`.")

@@ -285,3 +285,11 @@ def update_dynamic_groups_cache():
     if not settings.PLUGINS_CONFIG[app_config.name].get("_manual_dynamic_group_mgmt"):
         for setting in models.GoldenConfigSetting.objects.all():
             setting.dynamic_group.update_cached_members()
+
+
+def get_golden_config_settings():
+    """Retrieve the active GoldenConfigSetting instance."""
+    settings = models.GoldenConfigSetting.objects.first()
+    if not settings:
+        raise ValueError("No GoldenConfigSetting instance found.")
+    return settings

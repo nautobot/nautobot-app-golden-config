@@ -6,7 +6,18 @@ from django.urls import reverse
 from nautobot.extras.plugins import PluginTemplateExtension
 
 from nautobot_golden_config.models import ConfigCompliance, GoldenConfig
-from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_COMPLIANCE
+from nautobot_golden_config.utilities.constant import ENABLE_POSTPROCESSING, ENABLE_SOTAGG
+from nautobot_golden_config.utilities.helper import get_golden_config_settings
+
+settings = get_golden_config_settings()
+
+CONFIG_FEATURES = {
+    "intended": settings.intended_enabled,
+    "compliance": settings.compliance_enabled,
+    "backup": settings.backup_enabled,
+    "sotagg": ENABLE_SOTAGG,
+    "postprocessing": ENABLE_POSTPROCESSING,
+}
 
 
 class ConfigComplianceDeviceCheck(PluginTemplateExtension):  # pylint: disable=abstract-method
@@ -146,7 +157,7 @@ class ConfigComplianceTenantCheck(PluginTemplateExtension):  # pylint: disable=a
 
 
 extensions = [ConfigDeviceDetails]
-if ENABLE_COMPLIANCE:
+if settings.compliance_enabled:
     extensions.append(ConfigComplianceDeviceCheck)
     extensions.append(ConfigComplianceLocationCheck)
     extensions.append(ConfigComplianceTenantCheck)

@@ -10,7 +10,9 @@ from nautobot.extras.registry import DatasourceContent
 
 from nautobot_golden_config.exceptions import MissingReference
 from nautobot_golden_config.models import ComplianceFeature, ComplianceRule, ConfigRemove, ConfigReplace
-from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
+from nautobot_golden_config.utilities.helper import get_golden_config_settings
+
+settings = get_golden_config_settings()
 
 
 def refresh_git_jinja(repository_record, job_result, delete=False):  # pylint: disable=unused-argument
@@ -209,7 +211,7 @@ def update_git_gc_properties(golden_config_path, job_result, gc_config_item):  #
 
 
 datasource_contents = []
-if ENABLE_INTENDED or ENABLE_COMPLIANCE:
+if settings.intended_enabled or settings.compliance_enabled:
     datasource_contents.append(
         (
             "extras.gitrepository",
@@ -221,7 +223,7 @@ if ENABLE_INTENDED or ENABLE_COMPLIANCE:
             ),
         )
     )
-if ENABLE_INTENDED:
+if settings.intended_enabled:
     datasource_contents.append(
         (
             "extras.gitrepository",
@@ -233,7 +235,7 @@ if ENABLE_INTENDED:
             ),
         )
     )
-if ENABLE_BACKUP or ENABLE_COMPLIANCE:
+if settings.backup_enabled or settings.compliance_enabled:
     datasource_contents.append(
         (
             "extras.gitrepository",

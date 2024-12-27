@@ -7,6 +7,7 @@ from copy import deepcopy
 from django.conf import settings
 from django.contrib import messages
 from django.db.models import Q
+from django.db.utils import ProgrammingError
 from django.template import engines
 from django.urls import reverse
 from django.utils.html import format_html
@@ -287,9 +288,36 @@ def update_dynamic_groups_cache():
             setting.dynamic_group.update_cached_members()
 
 
+class GoldenConfigDefaults:
+    """Lightweight stand-in for GoldenConfigSetting rows if none exist or DB is unmigrated."""
+
+    def __init__(self, defaults_dict):
+        """Store each default key as an attribute on self, so that code can use `gc_settings.backup_enabled` as normal."""
+        settings_mapper = {
+            "enable_backup": "backup_enabled",
+            "enable_intended": "intended_enabled",
+            "enable_compliance": "compliance_enabled",
+            "enable_plan": "plan_enabled",
+            "enable_deploy": "deploy_enabled"
+        }
+        for key, value in defaults_dict.items():
+            if settings_mapper.get(key):
+                setattr(self, settings_mapper.get(key), value)
+
+    def __str__(self):
+        """GoldenConfigDefaults string repreentation."""
+        return "<GoldenConfigDefaults fallback>"
+
+
 def get_golden_config_settings():
-    """Retrieve the active GoldenConfigSetting instance."""
-    gc_settings = models.GoldenConfigSetting.objects.first()
-    if not gc_settings:
-        raise ValueError("No GoldenConfigSetting instance found.")
-    return gc_settings
+    """Return the first GoldenConfigSetting in the database if it exists; otherwise return a fallback object that uses GoldenConfig.default_settings."""
+    try:
+        db_instance = models.GoldenConfigSetting.objects.first()
+        if db_instance:
+            return db_instance
+    except ProgrammingError:
+        # Table doesn't exist yet, or other DB issues
+        pass
+
+    # Fall back to default settings if no DB row is available
+    return GoldenConfigDefaults(app_config.default_settings)

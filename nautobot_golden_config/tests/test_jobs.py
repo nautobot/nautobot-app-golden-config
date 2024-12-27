@@ -13,7 +13,6 @@ from nautobot_golden_config.tests.conftest import (
     create_orphan_device,
     dgs_gc_settings_and_job_repo_objects,
 )
-from nautobot_golden_config.utilities.helper import get_golden_config_settings
 
 
 class BaseGoldenConfigTestCase(TransactionTestCase):
@@ -38,7 +37,7 @@ class BaseGoldenConfigTestCase(TransactionTestCase):
         self.settings.save()
         super().tearDown()
 
-    def update_golden_config_settings(
+    def update_golden_config_settings(  # pylint: disable=too-many-arguments
         self,
         backup_enabled=None,
         intended_enabled=None,

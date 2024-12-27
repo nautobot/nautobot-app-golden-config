@@ -9,8 +9,10 @@ from nautobot.apps.tables import BaseTable, BooleanColumn, TagColumn, ToggleColu
 from nautobot.extras.tables import StatusTableMixin
 
 from nautobot_golden_config import models
-from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
+from nautobot_golden_config.utilities.constant import CONFIG_FEATURES
+from nautobot_golden_config.utilities.helper import get_golden_config_settings
 
+settings = get_golden_config_settings()
 ALL_ACTIONS = """
 {% if backup == True %}
     {% if record.config_type == 'json' %}
@@ -110,11 +112,11 @@ MATCH_CONFIG = """{{ record.match_config|linebreaksbr }}"""
 def actual_fields():
     """Convienance function to conditionally toggle columns."""
     active_fields = ["pk", "name"]
-    if ENABLE_BACKUP:
+    if settings.backup_enabled:
         active_fields.append("backup_last_success_date")
-    if ENABLE_INTENDED:
+    if settings.intended_enabled:
         active_fields.append("intended_last_success_date")
-    if ENABLE_COMPLIANCE:
+    if settings.compliance_enabled:
         active_fields.append("compliance_last_success_date")
     active_fields.append("actions")
     return tuple(active_fields)

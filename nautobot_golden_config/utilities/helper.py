@@ -289,7 +289,7 @@ def update_dynamic_groups_cache():
 
 def get_golden_config_settings():
     """Retrieve the active GoldenConfigSetting instance."""
-    settings = models.GoldenConfigSetting.objects.first()
-    if not settings:
+    gc_settings = models.GoldenConfigSetting.objects.first()
+    if not gc_settings:
         raise ValueError("No GoldenConfigSetting instance found.")
-    return settings
+    return gc_settings

@@ -7,17 +7,62 @@ from nautobot.dcim.models import Device
 from nautobot.extras.models import JobLogEntry
 
 from nautobot_golden_config import jobs
+from nautobot_golden_config.models import GoldenConfigSetting
 from nautobot_golden_config.tests.conftest import (
     create_device,
     create_orphan_device,
     dgs_gc_settings_and_job_repo_objects,
 )
-from nautobot_golden_config.utilities import constant
+from nautobot_golden_config.utilities.helper import get_golden_config_settings
+
+
+class BaseGoldenConfigTestCase(TransactionTestCase):
+    """Base test case with helper methods for GoldenConfigSetting."""
+
+    def setUp(self):
+        super().setUp()
+        self.settings = GoldenConfigSetting.objects.first()
+        self.settings.backup_enabled = True
+        self.settings.intended_enabled = True
+        self.settings.compliance_enabled = True
+        self.settings.plan_enabled = True
+        self.settings.deploy_enabled = True
+        self.settings.save()
+
+    def tearDown(self):
+        self.settings.backup_enabled = True
+        self.settings.intended_enabled = True
+        self.settings.compliance_enabled = True
+        self.settings.plan_enabled = True
+        self.settings.deploy_enabled = True
+        self.settings.save()
+        super().tearDown()
+
+    def update_golden_config_settings(
+        self,
+        backup_enabled=None,
+        intended_enabled=None,
+        compliance_enabled=None,
+        plan_enabled=None,
+        deploy_enabled=None,
+    ):
+        """Update fields of the GoldenConfigSetting instance."""
+        if backup_enabled is not None:
+            self.settings.backup_enabled = backup_enabled
+        if intended_enabled is not None:
+            self.settings.intended_enabled = intended_enabled
+        if compliance_enabled is not None:
+            self.settings.compliance_enabled = compliance_enabled
+        if plan_enabled is not None:
+            self.settings.plan_enabled = plan_enabled
+        if deploy_enabled is not None:
+            self.settings.deploy_enabled = deploy_enabled
+        self.settings.save()
 
 
 @patch("nautobot_golden_config.nornir_plays.config_backup.run_backup", MagicMock(return_value="foo"))
 @patch.object(jobs, "ensure_git_repository")
-class GCReposBackupTestCase(TransactionTestCase):
+class GCReposBackupTestCase(BaseGoldenConfigTestCase):
     """Test the repos to sync and commit are working for backup job."""
 
     databases = ("default", "job_logs")
@@ -29,10 +74,10 @@ class GCReposBackupTestCase(TransactionTestCase):
         dgs_gc_settings_and_job_repo_objects()
         super().setUp()
 
-    @patch("nautobot_golden_config.utilities.constant.ENABLE_BACKUP", True)
     def test_backup_job_repos_one_setting(self, mock_ensure_git_repository):
         """Test backup job repo-types are backup only."""
         mock_ensure_git_repository.return_value = True
+        self.update_golden_config_settings(backup_enabled=True)
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="BackupJob", device=Device.objects.filter(name=self.device.name)
         )
@@ -50,10 +95,10 @@ class GCReposBackupTestCase(TransactionTestCase):
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Commit and Push")
         self.assertEqual(log_entries.count(), 1)
 
-    @patch("nautobot_golden_config.utilities.constant.ENABLE_BACKUP", True)
     def test_backup_job_repos_two_setting(self, mock_ensure_git_repository):
         """Test backup job repo-types are backup only."""
         mock_ensure_git_repository.return_value = True
+        self.update_golden_config_settings(backup_enabled=True)
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs",
             name="BackupJob",
@@ -73,11 +118,10 @@ class GCReposBackupTestCase(TransactionTestCase):
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Commit and Push")
         self.assertEqual(log_entries.count(), 1)
 
-    @patch("nautobot_golden_config.utilities.constant.ENABLE_BACKUP", False)
     def test_backup_job_repos_one_setting_backup_disabled(self, mock_ensure_git_repository):
         """Test backup job repo-types are backup only."""
         mock_ensure_git_repository.return_value = True
-        self.assertFalse(constant.ENABLE_BACKUP)
+        self.update_golden_config_settings(backup_enabled=False)
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="BackupJob", device=Device.objects.filter(name=self.device.name)
         )
@@ -91,11 +135,10 @@ class GCReposBackupTestCase(TransactionTestCase):
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="run")
         self.assertEqual(log_entries.last().message, "Backups are disabled in application settings.")
 
-    @patch("nautobot_golden_config.utilities.constant.ENABLE_BACKUP", False)
     def test_backup_job_repos_two_setting_backup_disabled(self, mock_ensure_git_repository):
         """Test backup job repo-types are backup only."""
         mock_ensure_git_repository.return_value = True
-        self.assertFalse(constant.ENABLE_BACKUP)
+        self.update_golden_config_settings(backup_enabled=False)
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="BackupJob", device=Device.objects.all()
         )
@@ -112,7 +155,7 @@ class GCReposBackupTestCase(TransactionTestCase):
 
 @patch("nautobot_golden_config.nornir_plays.config_intended.run_template", MagicMock(return_value="foo"))
 @patch.object(jobs, "ensure_git_repository")
-class GCReposIntendedTestCase(TransactionTestCase):
+class GCReposIntendedTestCase(BaseGoldenConfigTestCase):
     """Test the repos to sync and commit are working for intended job."""
 
     databases = ("default", "job_logs")
@@ -127,6 +170,7 @@ class GCReposIntendedTestCase(TransactionTestCase):
     def test_intended_job_repos_one_setting(self, mock_ensure_git_repository):
         """Test intended job one GC setting enabled_intended enabled"""
         mock_ensure_git_repository.return_value = True
+        self.update_golden_config_settings(intended_enabled=True)
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs",
             name="IntendedJob",
@@ -149,6 +193,7 @@ class GCReposIntendedTestCase(TransactionTestCase):
     def test_intended_job_repos_two_setting(self, mock_ensure_git_repository):
         """Test intended job two GC setting enabled_intended enabled"""
         mock_ensure_git_repository.return_value = True
+        self.update_golden_config_settings(intended_enabled=True)
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="IntendedJob", device=Device.objects.all()
         )
@@ -165,11 +210,10 @@ class GCReposIntendedTestCase(TransactionTestCase):
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Commit and Push")
         self.assertEqual(log_entries.count(), 1)
 
-    @patch("nautobot_golden_config.utilities.constant.ENABLE_INTENDED", False)
     def test_intended_job_repos_one_setting_intended_disabled(self, mock_ensure_git_repository):
         """Test intended job one GC setting enabled_intended disabled"""
         mock_ensure_git_repository.return_value = True
-        self.assertFalse(constant.ENABLE_INTENDED)
+        self.update_golden_config_settings(intended_enabled=False)
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs",
             name="IntendedJob",
@@ -185,11 +229,10 @@ class GCReposIntendedTestCase(TransactionTestCase):
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="run")
         self.assertEqual(log_entries.last().message, "Intended Generation is disabled in application settings.")
 
-    @patch("nautobot_golden_config.utilities.constant.ENABLE_INTENDED", False)
     def test_intended_job_repos_two_setting_intended_disabled(self, mock_ensure_git_repository):
         """Test intended job two GC setting enabled_intended disabled"""
         mock_ensure_git_repository.return_value = True
-        self.assertFalse(constant.ENABLE_INTENDED)
+        self.update_golden_config_settings(intended_enabled=False)
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="IntendedJob", device=Device.objects.all()
         )
@@ -206,7 +249,7 @@ class GCReposIntendedTestCase(TransactionTestCase):
 
 @patch("nautobot_golden_config.nornir_plays.config_compliance.run_compliance", MagicMock(return_value="foo"))
 @patch.object(jobs, "ensure_git_repository")
-class GCReposComplianceTestCase(TransactionTestCase):
+class GCReposComplianceTestCase(BaseGoldenConfigTestCase):
     """Test the repos to sync and commit are working for compliance job."""
 
     databases = ("default", "job_logs")
@@ -221,6 +264,7 @@ class GCReposComplianceTestCase(TransactionTestCase):
     def test_compliance_job_repos_one_setting(self, mock_ensure_git_repository):
         """Test compliance job one GC setting enabled_compliance enabled"""
         mock_ensure_git_repository.return_value = True
+        self.update_golden_config_settings(compliance_enabled=True)
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs",
             name="ComplianceJob",
@@ -245,6 +289,7 @@ class GCReposComplianceTestCase(TransactionTestCase):
     def test_compliance_job_repos_two_setting(self, mock_ensure_git_repository):
         """Test compliance job two GC setting enabled_compliance enabled"""
         mock_ensure_git_repository.return_value = True
+        self.update_golden_config_settings(compliance_enabled=True)
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="ComplianceJob", device=Device.objects.all()
         )
@@ -263,11 +308,10 @@ class GCReposComplianceTestCase(TransactionTestCase):
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Commit and Push")
         self.assertEqual(log_entries.count(), 1)
 
-    @patch("nautobot_golden_config.utilities.constant.ENABLE_COMPLIANCE", False)
     def test_compliance_job_repos_one_setting_compliance_disabled(self, mock_ensure_git_repository):
         """Test compliance job one GC setting enabled_compliance disabled"""
         mock_ensure_git_repository.return_value = True
-        self.assertFalse(constant.ENABLE_COMPLIANCE)
+        self.update_golden_config_settings(compliance_enabled=False)
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs",
             name="ComplianceJob",
@@ -283,11 +327,10 @@ class GCReposComplianceTestCase(TransactionTestCase):
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="run")
         self.assertEqual(log_entries.last().message, "Compliance is disabled in application settings.")
 
-    @patch("nautobot_golden_config.utilities.constant.ENABLE_COMPLIANCE", False)
     def test_compliance_job_repos_two_setting_compliance_disabled(self, mock_ensure_git_repository):
         """Test compliance job two GC setting enabled_compliance disabled"""
         mock_ensure_git_repository.return_value = True
-        self.assertFalse(constant.ENABLE_COMPLIANCE)
+        self.update_golden_config_settings(compliance_enabled=False)
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="ComplianceJob", device=Device.objects.all()
         )
@@ -301,11 +344,10 @@ class GCReposComplianceTestCase(TransactionTestCase):
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="run")
         self.assertEqual(log_entries.last().message, "Compliance is disabled in application settings.")
 
-    @patch("nautobot_golden_config.utilities.constant.ENABLE_BACKUP", False)
     def test_compliance_job_repos_backup_disabled(self, mock_ensure_git_repository):
         """Test compliance job one GC setting enabled_backup disabled"""
         mock_ensure_git_repository.return_value = True
-        self.assertFalse(constant.ENABLE_BACKUP)
+        self.update_golden_config_settings(backup_enabled=False)
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="ComplianceJob", device=Device.objects.all()
         )
@@ -324,11 +366,10 @@ class GCReposComplianceTestCase(TransactionTestCase):
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Commit and Push")
         self.assertEqual(log_entries.count(), 1)
 
-    @patch("nautobot_golden_config.utilities.constant.ENABLE_INTENDED", False)
     def test_compliance_job_repos_intended_disabled(self, mock_ensure_git_repository):
         """Test compliance job one GC setting enabled_intended disabled"""
         mock_ensure_git_repository.return_value = True
-        self.assertFalse(constant.ENABLE_INTENDED)
+        self.update_golden_config_settings(intended_enabled=False)
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="ComplianceJob", device=Device.objects.all()
         )
@@ -346,13 +387,10 @@ class GCReposComplianceTestCase(TransactionTestCase):
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Commit and Push")
         self.assertEqual(log_entries.count(), 1)
 
-    @patch("nautobot_golden_config.utilities.constant.ENABLE_BACKUP", False)
-    @patch("nautobot_golden_config.utilities.constant.ENABLE_INTENDED", False)
     def test_compliance_job_repos_both_disabled(self, mock_ensure_git_repository):
         """Test compliance job one GC setting both disabled"""
         mock_ensure_git_repository.return_value = True
-        self.assertFalse(constant.ENABLE_BACKUP)
-        self.assertFalse(constant.ENABLE_INTENDED)
+        self.update_golden_config_settings(backup_enabled=False, intended_enabled=False)
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="ComplianceJob", device=Device.objects.all()
         )
@@ -375,7 +413,7 @@ class GCReposComplianceTestCase(TransactionTestCase):
 @patch("nautobot_golden_config.nornir_plays.config_intended.run_template", MagicMock(return_value="foo"))
 @patch("nautobot_golden_config.nornir_plays.config_compliance.run_compliance", MagicMock(return_value="foo"))
 @patch.object(jobs, "ensure_git_repository")
-class GCReposRunAllSingleTestCase(TransactionTestCase):
+class GCReposRunAllSingleTestCase(BaseGoldenConfigTestCase):
     """Test the repos to sync and commit are working for run all single job."""
 
     databases = ("default", "job_logs")
@@ -389,10 +427,15 @@ class GCReposRunAllSingleTestCase(TransactionTestCase):
     def test_run_all_job_single_repos(self, mock_ensure_git_repository):
         """Test run all job single on one GC setting enabled"""
         mock_ensure_git_repository.return_value = True
+        self.update_golden_config_settings(
+            backup_enabled=True,
+            intended_enabled=True,
+            compliance_enabled=True,
+            deploy_enabled=True,
+        )
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="AllGoldenConfig", device=self.device.id
         )
-        self.assertTrue(constant.ENABLE_BACKUP)
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
         self.assertEqual(
             log_entries.first().message,
@@ -412,14 +455,13 @@ class GCReposRunAllSingleTestCase(TransactionTestCase):
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Commit and Push")
         self.assertEqual(log_entries.count(), 1)
 
-    @patch("nautobot_golden_config.utilities.constant.ENABLE_BACKUP", False)
     def test_run_all_job_single_repos_backup_disabled(self, mock_ensure_git_repository):
         """Test run all job single on one GC backup_disabled"""
         mock_ensure_git_repository.return_value = True
+        self.update_golden_config_settings(backup_enabled=False)
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="AllGoldenConfig", device=self.device.id
         )
-        self.assertFalse(constant.ENABLE_BACKUP)
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
         self.assertEqual(
             log_entries.first().message,
@@ -439,14 +481,13 @@ class GCReposRunAllSingleTestCase(TransactionTestCase):
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Commit and Push")
         self.assertEqual(log_entries.count(), 1)
 
-    @patch("nautobot_golden_config.utilities.constant.ENABLE_INTENDED", False)
     def test_run_all_job_single_repos_intended_disabled(self, mock_ensure_git_repository):
         """Test run all job single on one GC intended_disabled"""
         mock_ensure_git_repository.return_value = True
+        self.update_golden_config_settings(intended_enabled=False)
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="AllGoldenConfig", device=self.device.id
         )
-        self.assertFalse(constant.ENABLE_INTENDED)
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
         self.assertEqual(
             log_entries.first().message,
@@ -466,16 +507,13 @@ class GCReposRunAllSingleTestCase(TransactionTestCase):
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Commit and Push")
         self.assertEqual(log_entries.count(), 1)
 
-    @patch("nautobot_golden_config.utilities.constant.ENABLE_BACKUP", False)
-    @patch("nautobot_golden_config.utilities.constant.ENABLE_INTENDED", False)
     def test_run_all_job_single_repos_both_disabled(self, mock_ensure_git_repository):
         """Test run all job single on one GC both_disabled"""
         mock_ensure_git_repository.return_value = True
+        self.update_golden_config_settings(backup_enabled=False, intended_enabled=False)
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="AllGoldenConfig", device=self.device.id
         )
-        self.assertFalse(constant.ENABLE_BACKUP)
-        self.assertFalse(constant.ENABLE_INTENDED)
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
         self.assertEqual(
             log_entries.first().message,
@@ -500,7 +538,7 @@ class GCReposRunAllSingleTestCase(TransactionTestCase):
 @patch("nautobot_golden_config.nornir_plays.config_intended.run_template", MagicMock(return_value="foo"))
 @patch("nautobot_golden_config.nornir_plays.config_compliance.run_compliance", MagicMock(return_value="foo"))
 @patch.object(jobs, "ensure_git_repository")
-class GCReposRunAllMultipleTestCase(TransactionTestCase):
+class GCReposRunAllMultipleTestCase(BaseGoldenConfigTestCase):
     """Test the repos to sync and commit are working for run all multiple job."""
 
     databases = ("default", "job_logs")
@@ -515,10 +553,10 @@ class GCReposRunAllMultipleTestCase(TransactionTestCase):
     def test_run_all_job_multiple_repos(self, mock_ensure_git_repository):
         """Test run all job multiple on one GC setting enabled"""
         mock_ensure_git_repository.return_value = True
+        self.update_golden_config_settings(backup_enabled=True)
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="AllDevicesGoldenConfig", device=Device.objects.all()
         )
-        self.assertTrue(constant.ENABLE_BACKUP)
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
         self.assertEqual(
             log_entries.first().message,
@@ -538,14 +576,13 @@ class GCReposRunAllMultipleTestCase(TransactionTestCase):
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Commit and Push")
         self.assertEqual(log_entries.count(), 1)
 
-    @patch("nautobot_golden_config.utilities.constant.ENABLE_BACKUP", False)
     def test_run_all_job_multiple_repos_backup_disabled(self, mock_ensure_git_repository):
         """Test run all job multiple on one GC backup_disabled"""
         mock_ensure_git_repository.return_value = True
+        self.update_golden_config_settings(backup_enabled=False)
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="AllDevicesGoldenConfig", device=Device.objects.all()
         )
-        self.assertFalse(constant.ENABLE_BACKUP)
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
         self.assertEqual(
             log_entries.first().message,
@@ -565,14 +602,13 @@ class GCReposRunAllMultipleTestCase(TransactionTestCase):
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Commit and Push")
         self.assertEqual(log_entries.count(), 1)
 
-    @patch("nautobot_golden_config.utilities.constant.ENABLE_INTENDED", False)
     def test_run_all_job_multiple_repos_intended_disabled(self, mock_ensure_git_repository):
         """Test run all job multiple on one GC intended_disabled"""
         mock_ensure_git_repository.return_value = True
+        self.update_golden_config_settings(intended_enabled=True)
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="AllDevicesGoldenConfig", device=Device.objects.all()
         )
-        self.assertFalse(constant.ENABLE_INTENDED)
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
         self.assertEqual(
             log_entries.first().message,
@@ -592,16 +628,13 @@ class GCReposRunAllMultipleTestCase(TransactionTestCase):
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Commit and Push")
         self.assertEqual(log_entries.count(), 1)
 
-    @patch("nautobot_golden_config.utilities.constant.ENABLE_BACKUP", False)
-    @patch("nautobot_golden_config.utilities.constant.ENABLE_INTENDED", False)
     def test_run_all_job_multiple_repos_both_disabled(self, mock_ensure_git_repository):
         """Test run all job multiple on one GC both_disabled"""
         mock_ensure_git_repository.return_value = True
+        self.update_golden_config_settings(backup_enabled=False, intended_enabled=False)
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="AllDevicesGoldenConfig", device=Device.objects.all()
         )
-        self.assertFalse(constant.ENABLE_BACKUP)
-        self.assertFalse(constant.ENABLE_INTENDED)
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
         self.assertEqual(
             log_entries.first().message,

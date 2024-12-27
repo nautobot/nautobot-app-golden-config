@@ -28,7 +28,7 @@ from nautobot_golden_config.api import serializers
 from nautobot_golden_config.utilities import constant
 from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
 from nautobot_golden_config.utilities.graphql import graph_ql_query
-from nautobot_golden_config.utilities.helper import add_message, get_device_to_settings_map
+from nautobot_golden_config.utilities.helper import add_message, get_device_to_settings_map, get_golden_config_settings
 from nautobot_golden_config.utilities.mat_plot import get_global_aggr, plot_barchart_visual, plot_visual
 
 # TODO: Future #4512
@@ -43,7 +43,7 @@ PERMISSIONS_ACTION_MAP.update(
     }
 )
 LOGGER = logging.getLogger(__name__)
-settings = models.GoldenConfigSetting.objects.first()
+settings = get_golden_config_settings()
 
 #
 # GoldenConfig

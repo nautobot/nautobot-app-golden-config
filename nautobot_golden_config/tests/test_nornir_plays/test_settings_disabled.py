@@ -9,7 +9,7 @@ from nautobot_golden_config.nornir_plays.config_deployment import run_deployment
 from nautobot_golden_config.nornir_plays.config_intended import run_template
 
 
-class TestGoldenConfigDisabledSettings(unittest.TestCase):
+class TestGoldenConfigDisabledSettings(unittest.TestCase):  # pylint: disable=too-many-instance-attributes
     """Unit tests for testing disabled settings."""
 
     def setUp(self):

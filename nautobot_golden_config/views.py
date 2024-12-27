@@ -43,7 +43,6 @@ PERMISSIONS_ACTION_MAP.update(
     }
 )
 LOGGER = logging.getLogger(__name__)
-settings = get_golden_config_settings()
 
 #
 # GoldenConfig
@@ -102,6 +101,7 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
 
     def get_extra_context(self, request, instance=None, **kwargs):
         """Get extra context data."""
+        settings = get_golden_config_settings()
         context = super().get_extra_context(request, instance)
         context["compliance"] = settings.compliance_enabled
         context["backup"] = settings.backup_enabled
@@ -257,6 +257,7 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
 
     def get_extra_context(self, request, instance=None, **kwargs):
         """A ConfigCompliance helper function to warn if the Job is not enabled to run."""
+        settings = get_golden_config_settings()
         context = super().get_extra_context(request, instance)
         if self.action == "overview":
             context = {**context, **self.report_context}
@@ -375,6 +376,7 @@ class ConfigComplianceOverview(generic.ObjectListView):
     def setup(self, request, *args, **kwargs):
         """Using request object to perform filtering based on query params."""
         super().setup(request, *args, **kwargs)
+        settings = get_golden_config_settings()
         filter_params = self.get_filter_params(request)
         main_qs = models.ConfigCompliance.objects
         device_aggr, feature_aggr = get_global_aggr(main_qs, self.filterset, filter_params)
@@ -408,6 +410,7 @@ class ComplianceFeatureUIViewSet(views.NautobotUIViewSet):
 
     def get_extra_context(self, request, instance=None):
         """A ComplianceFeature helper function to warn if the Job is not enabled to run."""
+        settings = get_golden_config_settings()
         add_message([["ComplianceJob", settings.compliance_enabled]], request)
         return {}
 
@@ -426,6 +429,7 @@ class ComplianceRuleUIViewSet(views.NautobotUIViewSet):
 
     def get_extra_context(self, request, instance=None):
         """A ComplianceRule helper function to warn if the Job is not enabled to run."""
+        settings = get_golden_config_settings()
         add_message([["ComplianceJob", settings.compliance_enabled]], request)
         return {}
 
@@ -444,6 +448,7 @@ class GoldenConfigSettingUIViewSet(views.NautobotUIViewSet):
 
     def get_extra_context(self, request, instance=None):
         """A GoldenConfig helper function to warn if the Job is not enabled to run."""
+        settings = get_golden_config_settings()
         jobs = []
         jobs.append(["BackupJob", settings.backup_enabled])
         jobs.append(["IntendedJob", settings.intended_enabled])
@@ -491,6 +496,7 @@ class ConfigRemoveUIViewSet(views.NautobotUIViewSet):
 
     def get_extra_context(self, request, instance=None):
         """A ConfigRemove helper function to warn if the Job is not enabled to run."""
+        settings = get_golden_config_settings()
         add_message([["BackupJob", settings.backup_enabled]], request)
         return {}
 
@@ -509,6 +515,7 @@ class ConfigReplaceUIViewSet(views.NautobotUIViewSet):
 
     def get_extra_context(self, request, instance=None):
         """A ConfigReplace helper function to warn if the Job is not enabled to run."""
+        settings = get_golden_config_settings()
         add_message([["BackupJob", settings.backup_enabled]], request)
         return {}
 
@@ -528,6 +535,7 @@ class RemediationSettingUIViewSet(views.NautobotUIViewSet):
 
     def get_extra_context(self, request, instance=None):
         """A RemediationSetting helper function to warn if the Job is not enabled to run."""
+        settings = get_golden_config_settings()
         add_message([["ComplianceJob", settings.compliance_enabled]], request)
         return {}
 
@@ -554,6 +562,7 @@ class ConfigPlanUIViewSet(views.NautobotUIViewSet):
 
     def get_extra_context(self, request, instance=None):
         """A ConfigPlan helper function to warn if the Job is not enabled to run."""
+        settings = get_golden_config_settings()
         jobs = []
         jobs.append(["GenerateConfigPlans", settings.plan_enabled])
         jobs.append(["DeployConfigPlans", settings.deploy_enabled])

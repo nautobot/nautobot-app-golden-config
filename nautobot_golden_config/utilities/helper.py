@@ -298,7 +298,7 @@ class GoldenConfigDefaults:
             "enable_intended": "intended_enabled",
             "enable_compliance": "compliance_enabled",
             "enable_plan": "plan_enabled",
-            "enable_deploy": "deploy_enabled"
+            "enable_deploy": "deploy_enabled",
         }
         for key, value in defaults_dict.items():
             if settings_mapper.get(key):

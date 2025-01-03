@@ -482,3 +482,18 @@ invoke generate-app-config-schema
 ```
 
 This command can only guess the schema, so it's up to the developer to manually update the schema as needed.
+
+### Test Data Generation
+
+To quickly generate test data for developing against this app, you can use the following commands:
+
+```bash
+nautobot-server generate_test_data --flush
+nautobot-server generate_gc_test_data
+nautobot-server createsuperuser
+```
+
+!!! danger
+    The `--flush` flag will completely empty your database and replace it with test data. This command should never be run in a production environment.
+
+This uses the [`generate_test_data`](https://docs.nautobot.com/projects/core/en/stable/user-guide/administration/tools/nautobot-server/#generate_test_data) management command from Nautobot core to generate the Statuses, Platforms, Device Types, Devices, etc. Nautobot version 2.2.0 is the minimum version required for devices to be generated. If using an older version of Nautobot, you'll need to create devices manually after running `nautobot-server generate_test_data`.

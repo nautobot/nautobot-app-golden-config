@@ -1,0 +1,26 @@
+
+{% extends 'generic/object_retrieve.html' %}
+{% load helpers %}
+
+{% block content_left_page %}
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <strong>ComplianceFeature</strong>
+        </div>
+        <table class="table table-hover panel-body attr-table">
+            <tr>
+                <td>Name</td>
+                <td>
+                    {{ object.name }}
+                </td>
+            </tr>
+            <tr>
+                <td>Description</td>
+                <td>
+                    {{ object.description|placeholder }}
+                </td>
+            </tr>
+        </table>
+    </div>
+{% endblock content_left_page %}
+

@@ -45,10 +45,12 @@ services:
     volumes:
       - "./nautobot_config.py:/opt/nautobot/nautobot_config.py"
       - "../:/source"
-# To expose postgres or redis to the host uncomment the following
-# postgres:
+# To expose postgres (5432), myql (3306) on db service or redis (6379) to the host uncomment the
+# following. Ensure to match the 2 idented spaces which to have the service nested under services.
+# db:
 #   ports:
 #     - "5432:5432"
+#     - "3306:3306"
 # redis:
 #   ports:
 #     - "6379:6379"

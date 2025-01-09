@@ -1,4 +1,4 @@
-"""View for Golden Config APIs."""
+"""API views for nautobot_golden_config."""
 
 import datetime
 import difflib
@@ -11,6 +11,7 @@ from django.utils.timezone import make_aware
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from jinja2.exceptions import TemplateError, TemplateSyntaxError
+from nautobot.apps.api import NautobotModelViewSet, NotesViewSetMixin
 from nautobot.apps.utils import render_jinja2
 from nautobot.core.api.views import (
     BulkDestroyModelMixin,
@@ -19,7 +20,6 @@ from nautobot.core.api.views import (
     NautobotAPIVersionMixin,
 )
 from nautobot.dcim.models import Device
-from nautobot.extras.api.views import NautobotModelViewSet, NotesViewSetMixin
 from nautobot.extras.datasources.git import ensure_git_repository
 from nautobot.extras.models import GraphQLQuery
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
@@ -77,6 +77,9 @@ class ComplianceFeatureViewSet(NautobotModelViewSet):  # pylint:disable=too-many
     queryset = models.ComplianceFeature.objects.all()
     serializer_class = serializers.ComplianceFeatureSerializer
     filterset_class = filters.ComplianceFeatureFilterSet
+
+    # Option for modifying the default HTTP methods:
+    # http_method_names = ["get", "post", "put", "patch", "delete", "head", "options", "trace"]
 
 
 class ConfigComplianceViewSet(NautobotModelViewSet):  # pylint:disable=too-many-ancestors

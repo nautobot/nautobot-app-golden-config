@@ -155,7 +155,7 @@ class ConfigComplianceTable(BaseTable):
 
     pk = ToggleColumn(accessor=A("device"))
     device = TemplateColumn(
-        template_code="""<a href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=record.device %}?tab=nautobot_golden_config:1" <strong>{{ record.device__name }}</strong></a> """
+        template_code="""<a href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=record.device %}?tab=nautobot_golden_config:1"><strong>{{ record.device__name }}</strong></a> """
     )
 
     def __init__(self, *args, **kwargs):
@@ -170,8 +170,17 @@ class ConfigComplianceTable(BaseTable):
         )
         # Nautobot's BaseTable.configurable_columns() only recognizes columns in self.base_columns,
         # so override the class's base_columns to include our additional columns as configurable.
+        # Note: The correct way to modify django_tables2 columns at init is to use the extra_columns kwarg but Nautobot doesn't support that.
         for feature in features:
             self.base_columns[feature] = ComplianceColumn(verbose_name=feature)  # pylint: disable=no-member
+        compliance_columns = [
+            column_name
+            for column_name, column in self.base_columns.items()  # pylint: disable=no-member
+            if isinstance(column, ComplianceColumn)
+        ]
+        removed_features = set(compliance_columns) - set(features)
+        for column_name in removed_features:
+            del self.base_columns[column_name]  # pylint: disable=no-member
         super().__init__(*args, **kwargs)
 
     class Meta(BaseTable.Meta):

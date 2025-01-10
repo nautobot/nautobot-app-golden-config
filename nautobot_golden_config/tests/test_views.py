@@ -1,6 +1,7 @@
 """Unit tests for nautobot_golden_config views."""
 
 import datetime
+import re
 from unittest import mock, skip
 
 import nautobot
@@ -393,3 +394,42 @@ class ConfigComplianceUIViewSetTestCase(
             self.assertSequenceEqual(list(device.keys()), ["device", "device__name", *features])
             for feature in features:
                 self.assertIn(device[feature], [0, 1])
+
+    def test_table_columns(self):
+        """Test the columns of the ConfigCompliance table return the expected pivoted data."""
+        response = self.client.get(reverse("plugins:nautobot_golden_config:configcompliance_list"))
+        expected_table_headers = ["Device", "TestFeature0", "TestFeature1", "TestFeature2", "TestFeature3"]
+        table_headers = re.findall(r'<th class="orderable"><a href=.*>(.+)</a></th>', response.content.decode())
+        self.assertEqual(table_headers, expected_table_headers)
+
+        # Add a new compliance feature and ensure the table headers update correctly
+        device2 = Device.objects.get(name="Device 2")
+        new_compliance_feature = create_feature_rule_json(device2, feature="NewTestFeature")
+        models.ConfigCompliance.objects.create(
+            device=device2,
+            rule=new_compliance_feature,
+            actual={"foo": {"bar-1": "baz"}},
+            intended={"foo": {"bar-1": "baz"}},
+            compliance=True,
+            compliance_int=1,
+        )
+
+        response = self.client.get(reverse("plugins:nautobot_golden_config:configcompliance_list"))
+        expected_table_headers = [
+            "Device",
+            "TestFeature0",
+            "TestFeature1",
+            "TestFeature2",
+            "TestFeature3",
+            "NewTestFeature",
+        ]
+        table_headers = re.findall(r'<th class="orderable"><a href=.*>(.+)</a></th>', response.content.decode())
+        self.assertEqual(table_headers, expected_table_headers)
+
+        # Remove compliance features and ensure the table headers update correctly
+        models.ConfigCompliance.objects.filter(rule__feature__name__in=["TestFeature0", "TestFeature1"]).delete()
+
+        response = self.client.get(reverse("plugins:nautobot_golden_config:configcompliance_list"))
+        expected_table_headers = ["Device", "TestFeature2", "TestFeature3", "NewTestFeature"]
+        table_headers = re.findall(r'<th class="orderable"><a href=.*>(.+)</a></th>', response.content.decode())
+        self.assertEqual(table_headers, expected_table_headers)

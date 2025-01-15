@@ -380,7 +380,7 @@ class ConfigComplianceOverview(generic.ObjectListView):
         # Add .restrict() to the queryset to restrict the view based on user permissions.
         main_qs = models.ConfigCompliance.objects.restrict(request.user, "view")
         device_aggr, feature_aggr = get_global_aggr(main_qs, self.filterset, filter_params)
-        feature_qs = self.filterset(request.GET, self.queryset).qs
+        feature_qs = self.filterset(request.GET, self.queryset.restrict(request.user, "view")).qs
         self.extra_content = {
             "bar_chart": plot_barchart_visual(feature_qs),
             "device_aggr": device_aggr,

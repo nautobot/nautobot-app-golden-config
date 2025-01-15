@@ -271,6 +271,8 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
 
     def alter_queryset(self, request):
         """Build actual runtime queryset as the build time queryset of table `pivoted`."""
+        # Super because alter_queryset() calls get_queryset(), which is what calls queryset.restrict()
+        self.queryset = super().alter_queryset(request)
         return pivot(
             self.queryset,
             ["device", "device__name"],
@@ -375,7 +377,8 @@ class ConfigComplianceOverview(generic.ObjectListView):
         """Using request object to perform filtering based on query params."""
         super().setup(request, *args, **kwargs)
         filter_params = self.get_filter_params(request)
-        main_qs = models.ConfigCompliance.objects
+        # Add .restrict() to the queryset to restrict the view based on user permissions.
+        main_qs = models.ConfigCompliance.objects.restrict(request.user, "view")
         device_aggr, feature_aggr = get_global_aggr(main_qs, self.filterset, filter_params)
         feature_qs = self.filterset(request.GET, self.queryset).qs
         self.extra_content = {

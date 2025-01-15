@@ -376,6 +376,8 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
             related_object=related_object,
         )
 
+    is_dynamic_group_associable_model = False
+
     class Meta:
         """Set unique together fields for model."""
 

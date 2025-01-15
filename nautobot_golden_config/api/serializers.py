@@ -1,10 +1,9 @@
-"""REST API serializer capabilities for graphql app."""
+"""API serializers for nautobot_golden_config."""
 
 # pylint: disable=too-many-ancestors
-from nautobot.core.api.serializers import NautobotModelSerializer
+from nautobot.apps.api import NautobotModelSerializer, TaggedModelSerializerMixin
 from nautobot.dcim.api.serializers import DeviceSerializer
 from nautobot.dcim.models import Device
-from nautobot.extras.api.mixins import TaggedModelSerializerMixin
 from rest_framework import serializers
 
 from nautobot_golden_config import models
@@ -18,13 +17,16 @@ class GraphQLSerializer(serializers.Serializer):  # pylint: disable=abstract-met
 
 
 class ComplianceFeatureSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
-    """Serializer for ComplianceFeature object."""
+    """ComplianceFeature Serializer."""
 
     class Meta:
-        """Set Meta Data for ComplianceFeature, will serialize all fields."""
+        """Meta attributes."""
 
         model = models.ComplianceFeature
         fields = "__all__"
+
+        # Option for disabling write for certain fields:
+        # read_only_fields = []
 
 
 class ComplianceRuleSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):

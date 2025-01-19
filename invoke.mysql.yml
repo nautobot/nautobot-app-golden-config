@@ -1,9 +1,9 @@
 ---
 nautobot_golden_config:
   project_name: "nautobot-golden-config"
-  nautobot_ver: "2.0.0"
+  nautobot_ver: "2.4.0"
   local: false
-  python_ver: "3.11"
+  python_ver: "3.12"
   compose_dir: "development"
   compose_files:
     - "docker-compose.base.yml"

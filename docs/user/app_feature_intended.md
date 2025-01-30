@@ -49,6 +49,8 @@ The returned response will contain the rendered configuration for the specified 
 
 For more advanced use cases, the REST API and web UI also accept a `graphql_query_id` parameter to specify a custom GraphQL query to use when rendering the configuration. If a `graphql_query_id` is not provided, the default query configured in the Device's Golden Config settings will be used.
 
+Starting in Nautobot v2.4.2, this REST API endpoint also accepts a `branch` query parameter to specify the branch of the Jinja2 templates Git repository to use when rendering the configuration.
+
 ![Intended Configuration Web UI](../images/generate-intended-config-ui.png#only-light)
 ![Intended Configuration Web UI](../images/generate-intended-config-ui-dark.png#only-dark)
 

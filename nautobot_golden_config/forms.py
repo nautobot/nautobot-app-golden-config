@@ -4,11 +4,13 @@
 import json
 
 import django.forms as django_forms
+from django.conf import settings
 from nautobot.apps import forms
 from nautobot.dcim.models import Device, DeviceType, Location, Manufacturer, Platform, Rack, RackGroup
 from nautobot.extras.forms import NautobotBulkEditForm, NautobotFilterForm, NautobotModelForm
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, JobResult, Role, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
+from packaging import version
 
 from nautobot_golden_config import models
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
@@ -614,3 +616,10 @@ class GenerateIntendedConfigForm(django_forms.Form):
         label="GraphQL Query",
         query_params={"nautobot_golden_config_graphql_query_variables": "device_id"},
     )
+    git_repository_branch = django_forms.ChoiceField(widget=forms.StaticSelect2)
+
+    def __init__(self, *args, **kwargs):
+        """Conditionally hide the git_repository_branch field based on Nautobot version."""
+        super().__init__(*args, **kwargs)
+        if version.parse(settings.VERSION) < version.parse("2.4.2"):
+            self.fields["git_repository_branch"].widget = django_forms.HiddenInput

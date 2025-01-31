@@ -3,12 +3,14 @@
 from copy import deepcopy
 from unittest.mock import patch
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from nautobot.apps.testing import APITestCase, APIViewTestCases
 from nautobot.dcim.models import Device, Platform
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status
+from packaging import version
 from rest_framework import status
 
 from nautobot_golden_config.choices import RemediationTypeChoice
@@ -360,7 +362,6 @@ class ConfigPlanTest(
 
     model = ConfigPlan
     brief_fields = ["device", "display", "id", "plan_type", "url"]
-    choices_fields = ["plan_type"]
 
     @classmethod
     def setUpTestData(cls):
@@ -407,6 +408,10 @@ class ConfigPlanTest(
             "change_control_url": "https://5.example.com/",
             "status": approved_status.pk,
         }
+
+        # Account for test_options_returns_expected_choices behavior change for read_only choices fields
+        if version.parse(settings.VERSION) < version.parse("2.4.0"):
+            cls.choices_fields = ["plan_type"]
 
 
 class ConfigReplaceAPITestCase(  # pylint: disable=too-many-ancestors

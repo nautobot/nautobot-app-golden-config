@@ -1,10 +1,12 @@
 """Unit tests for nautobot_golden_config utilities git."""
 
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import ANY, Mock, patch
 from urllib.parse import quote
 
+from django.conf import settings
 from nautobot.extras.datasources.git import get_repo_from_url_to_path_and_from_branch
+from packaging import version
 
 from nautobot_golden_config.utilities.git import GitRepo
 
@@ -32,6 +34,11 @@ class GitRepoTest(unittest.TestCase):
         mock_obj.secrets_group = Mock(get_secret_value=mock_get_secret_value)
         self.mock_obj = mock_obj
 
+        # Different behavior of `Repo.clone_from` in different versions of Nautobot. `branch` kwarg added in 2.4.2
+        self.clone_from_kwargs = {"to_path": self.mock_obj.filesystem_path, "env": None}
+        if version.parse(settings.VERSION) >= version.parse("2.4.2"):
+            self.clone_from_kwargs["branch"] = ANY
+
     @patch("nautobot.core.utils.git.GIT_ENVIRONMENT", None)
     @patch("nautobot.core.utils.git.os.path.isdir", Mock(return_value=False))
     @patch("nautobot.core.utils.git.Repo", autospec=True)
@@ -40,7 +47,7 @@ class GitRepoTest(unittest.TestCase):
         git_info = get_repo_from_url_to_path_and_from_branch(self.mock_obj)
         GitRepo(self.mock_obj.filesystem_path, git_info.from_url, base_url=self.mock_obj.remote_url)
         mock_repo.assert_not_called()
-        mock_repo.clone_from.assert_called_with(git_info.from_url, to_path=self.mock_obj.filesystem_path, env=None)
+        mock_repo.clone_from.assert_called_with(git_info.from_url, **self.clone_from_kwargs)
 
     @patch("nautobot.core.utils.git.os.path.isdir", Mock(return_value=True))
     @patch("nautobot.core.utils.git.Repo", autospec=True)
@@ -62,4 +69,4 @@ class GitRepoTest(unittest.TestCase):
         self.assertIn(quote(self.mock_obj._token), git_info.from_url)  # pylint: disable=protected-access
         GitRepo(self.mock_obj.filesystem_path, git_info.from_url, base_url=self.mock_obj.remote_url)
         mock_repo.assert_not_called()
-        mock_repo.clone_from.assert_called_with(git_info.from_url, to_path=self.mock_obj.filesystem_path, env=None)
+        mock_repo.clone_from.assert_called_with(git_info.from_url, **self.clone_from_kwargs)

@@ -438,20 +438,20 @@ class ConfigComplianceUIViewSetTestCase(
         table_headers = re.findall(r'<th class="orderable"><a href=.*>(.+)</a></th>', response.content.decode())
         self.assertEqual(table_headers, expected_table_headers)
 
-    def test_bulk_delete_form_contains_all_objects(self):
+    def test_bulk_delete_form_contains_all_objects(self):  # pylint: disable=inconsistent-return-statements
         if version.parse(settings.VERSION) < version.parse("2.3.11") and hasattr(
             super(), "test_bulk_delete_form_contains_all_objects"
         ):
-            return super().test_bulk_delete_form_contains_all_objects()
+            return super().test_bulk_delete_form_contains_all_objects()  # pylint: disable=no-member
         self.skipTest(
             "Golden config uses an older version of the bulk delete views that does not support tests introduced in 2.3.11"
         )
 
-    def test_bulk_delete_form_contains_all_filtered(self):
+    def test_bulk_delete_form_contains_all_filtered(self):  # pylint: disable=inconsistent-return-statements
         if version.parse(settings.VERSION) < version.parse("2.3.11") and hasattr(
             super(), "test_bulk_delete_form_contains_all_filtered"
         ):
-            return super().test_bulk_delete_form_contains_all_filtered()
+            return super().test_bulk_delete_form_contains_all_filtered()  # pylint: disable=no-member
         self.skipTest(
             "Golden config uses an older version of the bulk delete views that does not support tests introduced in 2.3.11"
         )

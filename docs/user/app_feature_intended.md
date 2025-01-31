@@ -45,9 +45,9 @@ Using this tool to render a configuration will automatically retrieve the latest
 
 The web UI provides a user-friendly form to interact with the rendering process. You can access the web UI by clicking on "Generate Intended Config" in the "Tools" section of the Golden Config navigation menu.
 
-For more advanced use cases, the form accepts an optional `graphql_query_id` parameter to specify a custom GraphQL query to use when rendering the configuration. If a `graphql_query_id` is not provided, the default query configured in the Device's Golden Config settings will be used.
+For more advanced use cases, the form accepts an optional "GraphQL Query" to specify a custom GraphQL query to use when rendering the configuration. If a "GraphQL Query" is not provided, the default query configured in the Device's Golden Config settings will be used.
 
-Starting in Nautobot v2.4.2, this UI also allows you to supply a `branch` parameter to specify the branch of the Jinja2 templates Git repository to use when rendering the configuration. If the branch is not provided, the configured branch of the Golden Config Setting's Jinja template Git repository will be used.
+Starting in Nautobot v2.4.2, this UI also allows you to supply a "Git Repository Branch" to specify the branch of the Jinja2 templates Git repository to use when rendering the configuration. If the branch is not provided, the configured branch of the Golden Config Setting's Jinja template Git repository will be used.
 
 ![Intended Configuration Web UI](../images/generate-intended-config-ui.png#only-light)
 ![Intended Configuration Web UI](../images/generate-intended-config-ui-dark.png#only-dark)

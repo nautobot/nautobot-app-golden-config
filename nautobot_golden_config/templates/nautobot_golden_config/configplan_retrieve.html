@@ -88,6 +88,14 @@
                     </span>
                 </td>
             </tr>
+            <tr>
+                <td>Postprocessed Config Set</td>
+                <td>
+                    <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=object.device.id %}?config_plan_id={{ object.id }}">
+                        <i class="mdi mdi-text-box-check"></i>
+                    </a>
+                </td>
+            </tr>
         </table>
     </div>
 {% endblock %}

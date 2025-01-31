@@ -8,17 +8,17 @@ from django.http import HttpRequest
 from django.utils.module_loading import import_string
 from jinja2 import exceptions as jinja_errors
 from jinja2.sandbox import SandboxedEnvironment
+from nautobot.core.models.querysets import RestrictedQuerySet
 from nautobot.dcim.models import Device
 from nautobot.extras.choices import SecretsGroupAccessTypeChoices
 from nautobot.extras.models.secrets import SecretsGroup
 from nautobot.users.models import User
-from netutils.utils import jinja2_convenience_function
-
 from nautobot_golden_config import models
 from nautobot_golden_config.exceptions import RenderConfigToPushError
 from nautobot_golden_config.utilities.constant import ENABLE_POSTPROCESSING, PLUGIN_CFG
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import get_device_to_settings_map
+from netutils.utils import jinja2_convenience_function
 
 
 def get_secret_by_secret_group_name(
@@ -61,7 +61,7 @@ def _get_device_agg_data(device, request):
     return device_data
 
 
-def render_secrets(config_postprocessing: str, configs: models.GoldenConfig, request: HttpRequest) -> str:
+def render_secrets(config_postprocessing: str, configs: models.GoldenConfig|models.ConfigPlan, request: HttpRequest) -> str:
     """Renders secrets using the get_secrets filter.
 
     This method is defined to render an already rendered intended configuration, but which have used the Jinja
@@ -102,7 +102,14 @@ def render_secrets(config_postprocessing: str, configs: models.GoldenConfig, req
     except jinja_errors.TemplateAssertionError as error:
         return f"Jinja encountered an TemplateAssertionError: '{error}'; check the template for correctness"
 
-    device_data = _get_device_agg_data(configs.device, request)
+    dev = None
+    if isinstance(configs, RestrictedQuerySet):
+        if isinstance(configs.first(), models.ConfigPlan):
+            dev = configs.first().device
+    else:
+        # If its a single config plan or intended config post-processing you can get the device from the object.
+        dev = configs.device
+    device_data = _get_device_agg_data(dev, request)
 
     try:
         return template.render(device_data)
@@ -121,7 +128,7 @@ def render_secrets(config_postprocessing: str, configs: models.GoldenConfig, req
         ) from error
 
 
-def get_config_postprocessing(configs: models.GoldenConfig, request: HttpRequest) -> str:
+def get_config_postprocessing(configs: models.GoldenConfig|models.ConfigPlan, request: HttpRequest) -> str:
     """Renders final configuration  artifact from intended configuration.
 
     It chains multiple callables to transform an intended configuration into a configuration that can be pushed.
@@ -135,12 +142,19 @@ def get_config_postprocessing(configs: models.GoldenConfig, request: HttpRequest
     if not ENABLE_POSTPROCESSING:
         return "Generation of intended configurations postprocessing it is not enabled, check your app configuration."
 
-    config_postprocessing = configs.intended_config
-    if not config_postprocessing:
-        return (
-            "No intended configuration is available. Before rendering the configuration with postprocessing, "
-            "you need to generate the intended configuration."
-        )
+    if isinstance(configs, models.ConfigPlan):
+        config_postprocessing = configs.config_set
+    elif isinstance(configs.first(), models.ConfigPlan):
+        config_postprocessing = "\n".join(configs.values_list("config_set", flat=True))
+
+    # Config plans shouldn't ever be able to have no config-set so no need to check for that.
+    if isinstance(configs, models.GoldenConfig):
+        config_postprocessing = configs.intended_config
+        if not config_postprocessing:
+            return (
+                "No intended configuration is available. Before rendering the configuration with postprocessing, "
+                "you need to generate the intended configuration."
+            )
 
     # Available functions to create the final intended configuration, in string dotted format
     # The order is important because, if not changed by the `postprocessing_subscribed`, is going

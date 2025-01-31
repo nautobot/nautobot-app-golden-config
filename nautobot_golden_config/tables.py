@@ -5,6 +5,7 @@ from django_tables2 import Column, LinkColumn, TemplateColumn
 from django_tables2.utils import A
 from nautobot.apps.tables import BaseTable, BooleanColumn, TagColumn, ToggleColumn
 from nautobot.extras.tables import StatusTableMixin
+
 from nautobot_golden_config import models
 from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
 
@@ -100,8 +101,8 @@ CONFIG_SET_BUTTON = """
                     <tr>
                         <td>Postprocessed Config Set</td>
                         <td>
-                            <a value="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=record.device.pk %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=record.device.pk %}?modal=true">
-                                <i class="mdi mdi-text-box-check" title="Configuration after Postprocessing"></i>
+                            <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=record.device.id %}?config_plan_id={{ record.id }}" target="_blank">
+                                <i class="mdi mdi-text-box-check" title="Config Plan after Postprocessing"></i>
                             </a>
                         </td>
                     </tr>

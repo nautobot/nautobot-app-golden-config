@@ -36,7 +36,7 @@ class GitRepoTest(unittest.TestCase):
 
         # Different behavior of `Repo.clone_from` in different versions of Nautobot. `branch` kwarg added in 2.4.2
         self.clone_from_kwargs = {"to_path": self.mock_obj.filesystem_path, "env": None}
-        if version.parse(settings.VERSION) > version.parse("2.4.2"):
+        if version.parse(settings.VERSION) >= version.parse("2.4.2"):
             self.clone_from_kwargs["branch"] = ANY
 
     @patch("nautobot.core.utils.git.GIT_ENVIRONMENT", None)

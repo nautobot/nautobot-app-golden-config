@@ -91,8 +91,8 @@
             <tr>
                 <td>Postprocessed Config Set</td>
                 <td>
-                    <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=object.device.id %}?config_plan_id={{ object.id }}">
-                        <i class="mdi mdi-text-box-check"></i>
+                    <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=object.device.id %}?config_plan_id={{ object.id }}" target="_blank">
+                        <i class="mdi mdi-text-box-check" title="Config Plan after Postprocessing"></i>
                     </a>
                 </td>
             </tr>

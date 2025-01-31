@@ -20,6 +20,9 @@ from nautobot.core.views import generic
 from nautobot.core.views.mixins import PERMISSIONS_ACTION_MAP, ObjectPermissionRequiredMixin
 from nautobot.dcim.models import Device
 from nautobot.extras.models import Job, JobResult
+from rest_framework.decorators import action
+from rest_framework.response import Response
+
 from nautobot_golden_config import filters, forms, models, tables
 from nautobot_golden_config.api import serializers
 from nautobot_golden_config.utilities import constant
@@ -27,8 +30,6 @@ from nautobot_golden_config.utilities.config_postprocessing import get_config_po
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import add_message, get_device_to_settings_map
 from nautobot_golden_config.utilities.mat_plot import get_global_aggr, plot_barchart_visual, plot_visual
-from rest_framework.decorators import action
-from rest_framework.response import Response
 
 # TODO: Future #4512
 PERMISSIONS_ACTION_MAP.update(

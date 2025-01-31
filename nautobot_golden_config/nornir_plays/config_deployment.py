@@ -7,11 +7,6 @@ from django.contrib.auth import get_user_model
 from django.utils.timezone import make_aware
 from nautobot.dcim.models import Device
 from nautobot.extras.models import Status
-from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
-from nautobot_golden_config.utilities.constant import DEFAULT_DEPLOY_STATUS
-from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
-from nautobot_golden_config.utilities.helper import dispatch_params
-from nautobot_golden_config.utilities.logger import NornirLogger
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from nornir import InitNornir
@@ -21,9 +16,14 @@ from nornir.core.task import Result, Task
 from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
 
-InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
-
+from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
+from nautobot_golden_config.utilities.constant import DEFAULT_DEPLOY_STATUS
+from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
+from nautobot_golden_config.utilities.helper import dispatch_params
+from nautobot_golden_config.utilities.logger import NornirLogger
+
+InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 
 
 @close_threaded_db_connections
@@ -94,7 +94,7 @@ def config_deployment(job):
         logger.error(error_msg)
         raise NornirNautobotException(error_msg)
     device_qs = Device.objects.filter(config_plan__in=config_plan_qs).distinct()
-    User = get_user_model()
+    User = get_user_model()  # pylint: disable=invalid-name
     job.request.user = User.objects.get(id=job.celery_kwargs["nautobot_job_user_id"])
     try:
         with InitNornir(

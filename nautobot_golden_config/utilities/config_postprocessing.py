@@ -13,12 +13,13 @@ from nautobot.dcim.models import Device
 from nautobot.extras.choices import SecretsGroupAccessTypeChoices
 from nautobot.extras.models.secrets import SecretsGroup
 from nautobot.users.models import User
+from netutils.utils import jinja2_convenience_function
+
 from nautobot_golden_config import models
 from nautobot_golden_config.exceptions import RenderConfigToPushError
 from nautobot_golden_config.utilities.constant import ENABLE_POSTPROCESSING, PLUGIN_CFG
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import get_device_to_settings_map
-from netutils.utils import jinja2_convenience_function
 
 
 def get_secret_by_secret_group_name(
@@ -61,7 +62,9 @@ def _get_device_agg_data(device, request):
     return device_data
 
 
-def render_secrets(config_postprocessing: str, configs: models.GoldenConfig|models.ConfigPlan, request: HttpRequest) -> str:
+def render_secrets(
+    config_postprocessing: str, configs: models.GoldenConfig | models.ConfigPlan, request: HttpRequest
+) -> str:
     """Renders secrets using the get_secrets filter.
 
     This method is defined to render an already rendered intended configuration, but which have used the Jinja
@@ -128,7 +131,7 @@ def render_secrets(config_postprocessing: str, configs: models.GoldenConfig|mode
         ) from error
 
 
-def get_config_postprocessing(configs: models.GoldenConfig|models.ConfigPlan, request: HttpRequest) -> str:
+def get_config_postprocessing(configs: models.GoldenConfig | models.ConfigPlan, request: HttpRequest) -> str:
     """Renders final configuration  artifact from intended configuration.
 
     It chains multiple callables to transform an intended configuration into a configuration that can be pushed.

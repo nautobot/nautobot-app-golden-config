@@ -13,13 +13,12 @@ from nautobot.dcim.models import Device
 from nautobot.extras.choices import SecretsGroupAccessTypeChoices
 from nautobot.extras.models.secrets import SecretsGroup
 from nautobot.users.models import User
-from netutils.utils import jinja2_convenience_function
-
 from nautobot_golden_config import models
 from nautobot_golden_config.exceptions import RenderConfigToPushError
 from nautobot_golden_config.utilities.constant import ENABLE_POSTPROCESSING, PLUGIN_CFG
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import get_device_to_settings_map
+from netutils.utils import jinja2_convenience_function
 
 
 def get_secret_by_secret_group_name(
@@ -147,17 +146,16 @@ def get_config_postprocessing(configs: models.GoldenConfig | models.ConfigPlan, 
 
     if isinstance(configs, models.ConfigPlan):
         config_postprocessing = configs.config_set
-    elif isinstance(configs.first(), models.ConfigPlan):
-        config_postprocessing = "\n".join(configs.values_list("config_set", flat=True))
-
-    # Config plans shouldn't ever be able to have no config-set so no need to check for that.
-    if isinstance(configs, models.GoldenConfig):
+    elif isinstance(configs, models.GoldenConfig):
         config_postprocessing = configs.intended_config
         if not config_postprocessing:
             return (
                 "No intended configuration is available. Before rendering the configuration with postprocessing, "
                 "you need to generate the intended configuration."
             )
+    else:
+        if isinstance(configs.first(), models.ConfigPlan):
+            config_postprocessing = "\n".join(configs.values_list("config_set", flat=True))
 
     # Available functions to create the final intended configuration, in string dotted format
     # The order is important because, if not changed by the `postprocessing_subscribed`, is going

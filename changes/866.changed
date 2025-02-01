@@ -1,2 +1,2 @@
 Changed compliance_feature, compliance_rule, config_remove, config_replace, and config_remediation detail views to new component UI.
-Changed the supported Nautobot to 2.4.0.
+Changed the supported Nautobot to 2.4.1.

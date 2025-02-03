@@ -107,7 +107,7 @@ supported_nautobot_versions = [
 
 [tool.ruff]
 line-length = 120
-target-version = "py313"
+target-version = "py312"
 
 [tool.ruff.lint]
 select = [

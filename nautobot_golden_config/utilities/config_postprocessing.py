@@ -1,7 +1,7 @@
 """Functions related to prepare configuration with postprocessing."""
 
 from functools import partial
-from typing import Optional
+from typing import Optional, Union
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpRequest
@@ -13,13 +13,12 @@ from nautobot.dcim.models import Device
 from nautobot.extras.choices import SecretsGroupAccessTypeChoices
 from nautobot.extras.models.secrets import SecretsGroup
 from nautobot.users.models import User
-from netutils.utils import jinja2_convenience_function
-
 from nautobot_golden_config import models
 from nautobot_golden_config.exceptions import RenderConfigToPushError
 from nautobot_golden_config.utilities.constant import ENABLE_POSTPROCESSING, PLUGIN_CFG
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import get_device_to_settings_map
+from netutils.utils import jinja2_convenience_function
 
 
 def get_secret_by_secret_group_name(
@@ -63,7 +62,7 @@ def _get_device_agg_data(device, request):
 
 
 def render_secrets(
-    config_postprocessing: str, configs: models.GoldenConfig | models.ConfigPlan, request: HttpRequest
+    config_postprocessing: str, configs: Union[models.GoldenConfig, models.ConfigPlan], request: HttpRequest
 ) -> str:
     """Renders secrets using the get_secrets filter.
 
@@ -131,7 +130,7 @@ def render_secrets(
         ) from error
 
 
-def get_config_postprocessing(configs: models.GoldenConfig | models.ConfigPlan, request: HttpRequest) -> str:
+def get_config_postprocessing(configs: Union[models.GoldenConfig, models.ConfigPlan], request: HttpRequest) -> str:
     """Renders final configuration  artifact from intended configuration.
 
     It chains multiple callables to transform an intended configuration into a configuration that can be pushed.

@@ -8,6 +8,28 @@ This document describes all new features and changes in the release. The format 
 - Added Python 3.12 support.
 - Added REST API endpoint for Jinja as first part of journey towards a jinja live editor.
 
+## [v2.2.3 (2025-02-03)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v2.2.3)
+
+This release adds a `branch` parameter to the "Generate Intended Config" view and fixes some bugs in the UI for device compliance and config compliance views.
+
+### Added
+
+- [#828](https://github.com/nautobot/nautobot-app-golden-config/issues/828) - Added `branch` parameter to generate intended config view.
+
+### Changed
+
+- [#860](https://github.com/nautobot/nautobot-app-golden-config/issues/860) - Added a scroll bar and maximum height to the "Configuration" text boxes on the device configuration compliance tabs.
+
+### Fixed
+
+- [#812](https://github.com/nautobot/nautobot-app-golden-config/issues/812) - Fixed a bug in the config compliance list view when customizing the table columns.
+
+### Housekeeping
+
+- Rebaked from the cookie `nautobot-app-v2.4.1`.
+- [#873](https://github.com/nautobot/nautobot-app-golden-config/issues/873) - Fixed failing tests in Nautobot v2.3.11 and higher.
+- [#857](https://github.com/nautobot/nautobot-app-golden-config/issues/857) - Fixed installation docs to make clear that configurations are sample configurations.
+
 ## [v2.2.2 (2024-12-17)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v2.2.2)
 
 ### Added

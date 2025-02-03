@@ -1,5 +1,6 @@
 """Unit tests for nautobot_golden_config."""
 
+import tempfile
 from copy import deepcopy
 from unittest.mock import patch
 
@@ -530,7 +531,7 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
         mock_dispatcher.side_effect = _mock_dispatcher
 
     @override_settings(VERSION="2.4.2")
-    @patch("nautobot.extras.models.datasources.GitRepository.clone_to_directory_context")
+    @patch("nautobot.extras.models.datasources.GitRepository.clone_to_directory_context", create=True)
     @patch("nautobot_golden_config.api.views.ensure_git_repository")
     @patch("nautobot_golden_config.api.views.Path")
     @patch("nautobot_golden_config.api.views.dispatcher")
@@ -545,11 +546,13 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
         self._setup_mock_path(MockPath)
         self._setup_mock_dispatcher(mock_dispatcher)
 
-        response = self.client.get(
-            reverse("plugins-api:nautobot_golden_config-api:generate_intended_config"),
-            data={"device_id": self.device.pk, "branch": "main"},
-            **self.header,
-        )
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            mock_clone_to_directory_context.return_value.__enter__.return_value = tmpdirname
+            response = self.client.get(
+                reverse("plugins-api:nautobot_golden_config-api:generate_intended_config"),
+                data={"device_id": self.device.pk, "branch": "main"},
+                **self.header,
+            )
 
         mock_clone_to_directory_context.assert_called_once()
         mock_ensure_git_repository.assert_called_once_with(self.git_repository)

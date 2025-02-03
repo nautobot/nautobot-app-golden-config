@@ -30,5 +30,10 @@ urlpatterns = [
         views.GenerateIntendedConfigView.as_view(),
         name="generate_intended_config",
     ),
+    path(
+        "git-repository-branches/<pk>/",
+        views.GitRepositoryBranchesView.as_view(),
+        name="git_repository_branches",
+    ),
 ]
 urlpatterns += router.urls

@@ -43,7 +43,7 @@ hier-config = "^2.2.2"
 nautobot-capacity-metrics = "^3.0.1"
 xmldiff = "^2.6.3"
 # Used for local development
-nautobot = ">=2.4.1"
+nautobot = ">=2.4.2"
 
 [tool.poetry.group.dev.dependencies]
 coverage = "*"
@@ -107,7 +107,7 @@ supported_nautobot_versions = [
 
 [tool.ruff]
 line-length = 120
-target-version = "py312"
+target-version = "py39"
 
 [tool.ruff.lint]
 select = [

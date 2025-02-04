@@ -2723,13 +2723,13 @@ typing-extensions = ">=4.3.0"
 
 [[package]]
 name = "nautobot"
-version = "2.4.1"
+version = "2.4.2"
 description = "Source of truth and network automation platform."
 optional = false
 python-versions = "<3.13,>=3.9"
 files = [
-    {file = "nautobot-2.4.1-py3-none-any.whl", hash = "sha256:76bec0b336079ae45ddbb327d69f6a23d0db4bdf59a8b8ac266400e90c488ccd"},
-    {file = "nautobot-2.4.1.tar.gz", hash = "sha256:cce55f033525e40cf1c46a5a57ecfb6781cf66229d05a602f164f19522c9c4dc"},
+    {file = "nautobot-2.4.2-py3-none-any.whl", hash = "sha256:f30ec7fb4a5ff0d1c8b6c446f3411911cbe60d35387481980f1c73f13fe66e1d"},
+    {file = "nautobot-2.4.2.tar.gz", hash = "sha256:9724bc1e5d7acf61fdd615f7e45dadb35b2440e50f6532917c876fb4ac264a33"},
 ]
 
 [package.dependencies]
@@ -2747,9 +2747,9 @@ django-health-check = ">=3.18.3,<3.19.0"
 django-jinja = ">=2.11.0,<2.12.0"
 django-prometheus = ">=2.3.1,<2.4.0"
 django-redis = ">=5.4.0,<5.5.0"
-django-silk = ">=5.3.0,<5.4.0"
+django-silk = ">=5.3.2,<5.4.0"
 django-structlog = {version = ">=9.0.0,<10.0.0", extras = ["celery"]}
-django-tables2 = ">=2.7.4,<2.8.0"
+django-tables2 = ">=2.7.5,<2.8.0"
 django-taggit = ">=6.1.0,<6.2.0"
 django-timezone-field = ">=7.0,<7.1"
 django-tree-queries = ">=0.19.0,<0.20.0"
@@ -2757,7 +2757,7 @@ django-webserver = ">=1.2.0,<1.3.0"
 djangorestframework = ">=3.15.2,<3.16.0"
 drf-spectacular = {version = ">=0.27.2,<0.28.0", extras = ["sidecar"]}
 emoji = ">=2.12.1,<2.13.0"
-GitPython = ">=3.1.43,<3.2.0"
+GitPython = ">=3.1.44,<3.2.0"
 graphene-django = ">=2.16.0,<2.17.0"
 graphene-django-optimizer = ">=0.8.0,<0.9.0"
 Jinja2 = ">=3.1.5,<3.2.0"
@@ -2779,9 +2779,9 @@ social-auth-app-django = ">=5.4.2,<5.5.0"
 svgwrite = ">=1.4.2,<1.5.0"
 
 [package.extras]
-all = ["django-auth-ldap (>=5.1.0,<5.2.0)", "django-storages (==1.14.3)", "mysqlclient (>=2.2.6,<2.3.0)", "napalm (>=4.1.0,<6.0.0)", "social-auth-core[saml] (>=4.5.3,<4.6.0)"]
+all = ["django-auth-ldap (>=5.1.0,<5.2.0)", "django-storages (==1.14.3)", "mysqlclient (>=2.2.7,<2.3.0)", "napalm (>=4.1.0,<6.0.0)", "social-auth-core[saml] (>=4.5.3,<4.6.0)"]
 ldap = ["django-auth-ldap (>=5.1.0,<5.2.0)"]
-mysql = ["mysqlclient (>=2.2.6,<2.3.0)"]
+mysql = ["mysqlclient (>=2.2.7,<2.3.0)"]
 napalm = ["napalm (>=4.1.0,<6.0.0)"]
 remote-storage = ["django-storages (==1.14.3)"]
 sso = ["social-auth-core[saml] (>=4.5.3,<4.6.0)"]
@@ -5048,4 +5048,4 @@ all = []
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "dab51e328948b74a5b5cb90a210639f0b0294e3f5fb9a87fd923473c510f66cf"
+content-hash = "04dc538752ed77be90768e5d209e80d00e81ce59f277ae0a32ab8203dad40630"

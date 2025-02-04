@@ -408,7 +408,7 @@ namespace.configure(
     {
         "nautobot_golden_config": {
             ...
-            "nautobot_ver": "2.4.1",
+            "nautobot_ver": "2.4.2",
 	    ...
         }
     }

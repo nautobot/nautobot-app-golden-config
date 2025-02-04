@@ -20,4 +20,4 @@ While that last supported version will not be strictly enforced via the `max_ver
 | 2.0.x                 | 2.0.0                          | 2.3.99 [Official]             |
 | 2.1.x                 | 2.0.0                          | 2.3.99 [Official]             |
 | 2.2.x                 | 2.0.0                          | 2.3.99 [Official]             |
-| 2.3.x                 | 2.4.1                          | 2.4.99                        |
+| 2.3.x                 | 2.4.2                          | 2.4.99                        |

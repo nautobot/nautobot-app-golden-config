@@ -1,5 +1,6 @@
 {% extends 'generic/object_detail.html' %}
 {% load helpers %}
+{% load static %}
 
 {% block extra_styles %}
     <style>
@@ -91,9 +92,13 @@
             <tr>
                 <td>Postprocessed Config Set</td>
                 <td>
-                    <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=object.device.id %}?config_plan_id={{ object.id }}" target="_blank">
-                        <i class="mdi mdi-text-box-check" title="Config Plan after Postprocessing"></i>
+                    <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=object.device.id %}?config_plan_id={{ object.id }}&modal=true" data-toggle="modal" data-target="#ccppModal">
+                        <i class="mdi mdi-text-box-check"></i>
                     </a>
+                    <div class="modal fade" id="ccppModal" tabindex="-1" role="dialog" aria-labelledby="ccppModalLabel">
+                        <div class="modal-dialog modal-lg" role="document">  <div class="modal-content">
+                        </div>
+                    </div>
                 </td>
             </tr>
         </table>

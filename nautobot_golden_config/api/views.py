@@ -6,6 +6,7 @@ import json
 import logging
 from pathlib import Path
 
+from django.conf import settings as nautobot_settings
 from django.contrib.contenttypes.models import ContentType
 from django.utils.timezone import make_aware
 from drf_spectacular.types import OpenApiTypes
@@ -21,13 +22,14 @@ from nautobot.core.api.views import (
 )
 from nautobot.dcim.models import Device
 from nautobot.extras.datasources.git import ensure_git_repository
-from nautobot.extras.models import GraphQLQuery
+from nautobot.extras.models import GitRepository, GraphQLQuery
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nornir import InitNornir
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
+from packaging import version
 from rest_framework import mixins, status, viewsets
 from rest_framework.exceptions import APIException
-from rest_framework.generics import GenericAPIView
+from rest_framework.generics import GenericAPIView, RetrieveAPIView
 from rest_framework.mixins import DestroyModelMixin, ListModelMixin, RetrieveModelMixin, UpdateModelMixin
 from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
 from rest_framework.response import Response
@@ -237,20 +239,29 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
         except model.DoesNotExist as exc:
             raise GenerateIntendedConfigException(f"{model.__name__} with id '{pk}' not found") from exc
 
-    def _get_jinja_template_path(self, settings, device, git_repository):
+    def _get_jinja_template_path(self, settings, device, git_repository, base_path=None):
         """Get the Jinja template path for the device in the provided git repository."""
         try:
             rendered_path = render_jinja2(template_code=settings.jinja_path_template, context={"obj": device})
         except (TemplateSyntaxError, TemplateError) as exc:
             raise GenerateIntendedConfigException("Error rendering Jinja path template") from exc
-        filesystem_path = Path(git_repository.filesystem_path) / rendered_path
+        if base_path is None:
+            filesystem_path = Path(git_repository.filesystem_path) / rendered_path
+        else:
+            filesystem_path = Path(base_path) / rendered_path
         if not filesystem_path.is_file():
-            msg = f"Jinja template {filesystem_path} not found in git repository {git_repository}"
+            msg = f"Jinja template {rendered_path} not found in git repository {git_repository}"
             raise GenerateIntendedConfigException(msg)
         return filesystem_path
 
     @extend_schema(
         parameters=[
+            OpenApiParameter(
+                name="branch",
+                required=False,
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+            ),
             OpenApiParameter(
                 name="device_id",
                 required=True,
@@ -265,9 +276,12 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
             ),
         ]
     )
-    def get(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):  # pylint: disable=too-many-locals, too-many-branches
         """Generate intended configuration for a Device."""
         device = self._get_object(request, Device, "device_id")
+        branch_param = request.query_params.get("branch")
+        if branch_param and version.parse(nautobot_settings.VERSION) < version.parse("2.4.2"):
+            raise GenerateIntendedConfigException("Branch support requires Nautobot v2.4.2 or later")
         graphql_query = None
         graphql_query_id_param = request.query_params.get("graphql_query_id")
         if graphql_query_id_param:
@@ -298,17 +312,28 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
         except Exception as exc:
             raise GenerateIntendedConfigException("Error trying to sync git repository") from exc
 
-        filesystem_path = self._get_jinja_template_path(settings, device, git_repository)
-
         status_code, graphql_data = graph_ql_query(request, device, graphql_query.query)
         if status_code == status.HTTP_200_OK:
             try:
-                intended_config = self._render_config_nornir_serial(
-                    device=device,
-                    jinja_template=filesystem_path.name,
-                    jinja_root_path=filesystem_path.parent,
-                    graphql_data=graphql_data,
-                )
+                if branch_param:
+                    with git_repository.clone_to_directory_context(branch=branch_param) as git_repo_path:
+                        filesystem_path = self._get_jinja_template_path(
+                            settings, device, git_repository, base_path=git_repo_path
+                        )
+                        intended_config = self._render_config_nornir_serial(
+                            device=device,
+                            jinja_template=filesystem_path.name,
+                            jinja_root_path=filesystem_path.parent,
+                            graphql_data=graphql_data,
+                        )
+                else:
+                    filesystem_path = self._get_jinja_template_path(settings, device, git_repository)
+                    intended_config = self._render_config_nornir_serial(
+                        device=device,
+                        jinja_template=filesystem_path.name,
+                        jinja_root_path=filesystem_path.parent,
+                        graphql_data=graphql_data,
+                    )
             except Exception as exc:
                 raise GenerateIntendedConfigException(f"Error rendering Jinja template: {exc}") from exc
 
@@ -372,3 +397,18 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
                     )
             else:
                 return results[device.name][1][1][0].result["config"]
+
+
+@extend_schema(exclude=True)
+class GitRepositoryBranchesView(NautobotAPIVersionMixin, RetrieveAPIView):
+    """API view for extras.GitRepository with branches."""
+
+    name = "Git Repository with Branches"
+    permission_classes = [IsAuthenticated]
+    queryset = GitRepository.objects.all()
+    serializer_class = serializers.GitRepositoryWithBranchesSerializer
+
+    def get_queryset(self):
+        """Override the original get_queryset to apply permissions."""
+        queryset = super().get_queryset()
+        return queryset.restrict(self.request.user, "view")

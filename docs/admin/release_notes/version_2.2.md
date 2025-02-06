@@ -8,6 +8,18 @@ This document describes all new features and changes in the release. The format 
 - Added Python 3.12 support.
 - Added REST API endpoint for Jinja as first part of journey towards a jinja live editor.
 
+## [v2.2.2 (2024-12-17)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v2.2.2)
+
+### Added
+
+- [#840](https://github.com/nautobot/nautobot-app-golden-config/issues/840) - Added GraphQL output to the "Generate Intended Config" view.
+- [#841](https://github.com/nautobot/nautobot-app-golden-config/issues/841) - Added GraphQL query form field to the "Generate Intended Config" view.
+- [#844](https://github.com/nautobot/nautobot-app-golden-config/issues/844) - Added a diff output to the "Generate Intended Config" view and associated REST API.
+
+### Fixed
+
+- [#849](https://github.com/nautobot/nautobot-app-golden-config/issues/849) - Fixed failing tests in Nautobot v2.3.13.
+
 ## [v2.2.1 (2024-11-27)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v2.2.1)
 
 ### Added

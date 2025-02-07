@@ -499,6 +499,8 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
         if not object_data_exclude:
             object_data_exclude = fields_to_exclude
         data_v2 = serialize_object_v2(self)
+        for field in fields_to_exclude:
+            data_v2.pop(field)
         return ObjectChange(
             changed_object=self,
             object_repr=str(self),

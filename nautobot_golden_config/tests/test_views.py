@@ -384,7 +384,7 @@ class ConfigComplianceUIViewSetTestCase(
             reverse("plugins:nautobot_golden_config:configcompliance_list")
         )
         request.user = self.user
-        queryset = views.ConfigComplianceUIViewSet(request=request).alter_queryset(request)
+        queryset = views.ConfigComplianceUIViewSet(request=request, action="list").alter_queryset(request)
         features = (
             models.ComplianceFeature.objects.filter(feature__rule__isnull=False)
             .values_list("slug", flat=True)

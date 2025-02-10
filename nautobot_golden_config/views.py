@@ -23,7 +23,7 @@ from nautobot.extras.models import Job, JobResult
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from nautobot_golden_config import filters, forms, models, tables
+from nautobot_golden_config import details, filters, forms, models, tables
 from nautobot_golden_config.api import serializers
 from nautobot_golden_config.utilities import constant
 from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
@@ -407,6 +407,7 @@ class ComplianceFeatureUIViewSet(views.NautobotUIViewSet):
     serializer_class = serializers.ComplianceFeatureSerializer
     table_class = tables.ComplianceFeatureTable
     lookup_field = "pk"
+    object_detail_content = details.compliance_feature
 
     def get_extra_context(self, request, instance=None):
         """A ComplianceFeature helper function to warn if the Job is not enabled to run."""
@@ -425,6 +426,7 @@ class ComplianceRuleUIViewSet(views.NautobotUIViewSet):
     serializer_class = serializers.ComplianceRuleSerializer
     table_class = tables.ComplianceRuleTable
     lookup_field = "pk"
+    object_detail_content = details.compliance_rule
 
     def get_extra_context(self, request, instance=None):
         """A ComplianceRule helper function to warn if the Job is not enabled to run."""
@@ -490,6 +492,7 @@ class ConfigRemoveUIViewSet(views.NautobotUIViewSet):
     serializer_class = serializers.ConfigRemoveSerializer
     table_class = tables.ConfigRemoveTable
     lookup_field = "pk"
+    object_detail_content = details.config_remove
 
     def get_extra_context(self, request, instance=None):
         """A ConfigRemove helper function to warn if the Job is not enabled to run."""
@@ -508,6 +511,7 @@ class ConfigReplaceUIViewSet(views.NautobotUIViewSet):
     serializer_class = serializers.ConfigReplaceSerializer
     table_class = tables.ConfigReplaceTable
     lookup_field = "pk"
+    object_detail_content = details.config_replace
 
     def get_extra_context(self, request, instance=None):
         """A ConfigReplace helper function to warn if the Job is not enabled to run."""
@@ -527,6 +531,7 @@ class RemediationSettingUIViewSet(views.NautobotUIViewSet):
     serializer_class = serializers.RemediationSettingSerializer
     table_class = tables.RemediationSettingTable
     lookup_field = "pk"
+    object_detail_content = details.config_remediation
 
     def get_extra_context(self, request, instance=None):
         """A RemediationSetting helper function to warn if the Job is not enabled to run."""

@@ -1,9 +1,15 @@
-"""Filters for UI and API Views."""
+"""Filtering for nautobot_golden_config."""
 
 import django_filters
-from nautobot.core.filters import MultiValueDateTimeFilter, SearchFilter, TreeNodeMultipleChoiceFilter
+from nautobot.apps.filters import (
+    MultiValueDateTimeFilter,
+    NaturalKeyOrPKMultipleChoiceFilter,
+    NautobotFilterSet,
+    SearchFilter,
+    StatusFilter,
+    TreeNodeMultipleChoiceFilter,
+)
 from nautobot.dcim.models import Device, DeviceType, Location, Manufacturer, Platform, Rack, RackGroup
-from nautobot.extras.filters import NaturalKeyOrPKMultipleChoiceFilter, NautobotFilterSet, StatusFilter
 from nautobot.extras.models import JobResult, Role, Status
 from nautobot.tenancy.models import Tenant, TenantGroup
 
@@ -244,6 +250,27 @@ class ConfigReplaceFilterSet(NautobotFilterSet):
 
 class GoldenConfigSettingFilterSet(NautobotFilterSet):
     """Inherits Base Class NautobotFilterSet."""
+
+    device_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=Device.objects.all(),
+        label="Device (ID)",
+        method="filter_device_id",
+    )
+
+    def filter_device_id(self, queryset, name, value):  # pylint: disable=unused-argument
+        """Filter by Device ID."""
+        if not value:
+            return queryset
+        golden_config_setting_ids = []
+        for instance in value:
+            if isinstance(instance, Device):
+                device = instance
+            else:
+                device = Device.objects.get(id=instance)
+            golden_config_setting = models.GoldenConfigSetting.objects.get_for_device(device)
+            if golden_config_setting is not None:
+                golden_config_setting_ids.append(golden_config_setting.id)
+        return queryset.filter(id__in=golden_config_setting_ids)
 
     class Meta:
         """Boilerplate filter Meta data for Config Remove."""

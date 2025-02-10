@@ -14,22 +14,23 @@
         "max_nautobot_version": "2.9999",
         "camel_name": "NautobotGoldenConfig",
         "project_short_description": "An app for configuration on nautobot",
-        "model_class_name": "None",
+        "model_class_name": "ComplianceFeature",
         "open_source_license": "Apache-2.0",
         "docs_base_url": "https://docs.nautobot.com",
         "docs_app_url": "https://docs.nautobot.com/projects/golden-config/en/latest",
         "_drift_manager": {
             "template": "https://github.com/nautobot/cookiecutter-nautobot-app.git",
             "template_dir": "nautobot-app",
-            "template_ref": "refs/tags/nautobot-app-v2.3.2",
+            "template_ref": "refs/tags/nautobot-app-v2.4.1",
             "cookie_dir": "",
             "branch_prefix": "drift-manager",
             "pull_request_strategy": "create",
             "post_actions": [
-                "black"
+                "ruff",
+                "poetry"
             ],
-            "draft": true,
-            "baked_commit_ref": "6c7d08bc0d19109d93bb427e1ff052e6754bf62e"
+            "draft": false,
+            "baked_commit_ref": "baf8508b44f904c4c60e5d72dc19abc323508d8c"
         }
     }
 }

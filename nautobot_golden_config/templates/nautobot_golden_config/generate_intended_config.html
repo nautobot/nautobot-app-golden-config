@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+{% load form_helpers %}
+{% load helpers %}
+{% load static %}
+
+{% block extra_styles %}
+<link rel="stylesheet" type="text/css" href="{% static 'nautobot_golden_config/diff2html-3.4.43/diff2html.min.css' %}"/>
+<style type="text/css">
+    .d2h-tag {
+        display: none;
+    }
+    .d2h-file-name {
+        visibility: hidden;
+    }
+    .d2h-moved {
+        visibility: hidden;
+    }
+    .d2h-file-list-title {
+        display: none;
+    }
+    .button-container {
+        margin-bottom: 24px;
+    }
+    pre:has(code) {
+        padding: 0;
+    }
+    pre code {
+        display: block;
+        height: 50vh;
+        overflow: auto;
+        resize: vertical;
+        word-wrap: normal;
+        overflow-wrap: normal;
+        word-break: normal;
+        white-space: pre;
+        padding: 11.5px;
+    }
+    .nav-tabs li.disabled a {
+        pointer-events: none;
+    }
+</style>
+{% endblock extra_styles %}
+
+{% block content %}
+<form class="form form-horizontal" onsubmit="handleFormSubmit(event)">
+    <div class="row">
+        <div class="col-lg-6 col-md-6">
+            <div class="panel panel-default">
+                <div class="panel-heading"><strong>{% block title %}Generate Intended Configuration{% endblock title %}</strong></div>
+                <div class="panel-body">
+                    <p>
+                    This tool is <strong>intended for template developers</strong>. Production configuration generation should be initiated from the
+                    <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_list' %}">Config Overview</a> page.
+                    </p>
+                    <p>
+                    This will render the configuration for the selected device using Jinja templates from the Golden Config <code>jinja_repository</code>
+                    Git repository for that device.
+                    This feature allows developers to test their configuration templates without running a full "intended configuration" job. See the
+                    <a href="{% static 'nautobot_golden_config/docs/user/app_feature_intended.html' %}#developing-intended-configuration-templates">
+                    developing intended configuration templates
+                    </a> documentation for more information.
+                    </p>
+                    <p>
+                    <strong>Note:</strong>
+                    This will fetch the latest templates from the Golden Config Jinja template repository.
+                    </p>
+                    {% for field in form.visible_fields %}
+                        {% render_field field %}
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="button-container text-right">
+                <button type="submit" class="btn btn-primary">Render</button>
+            </div>
+        </div>
+        <div class="col-lg-6 col-md-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <strong>Intended Configuration</strong>
+                    <button type="button" class="btn btn-inline btn-default copy-rendered-config" data-clipboard-target="#id_rendered_config_tabs .active pre code">
+                        <span class="mdi mdi-content-copy"></span>
+                    </button>
+                </div>
+                <div class="panel-body">
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li role="presentation" class="active" id="id_intended_config_tab"><a href="#id_intended_config_tab_content" aria-controls="id_rendered_config_tabs" role="tab" data-toggle="tab">Configuration</a></li>
+                        <li role="presentation" class="disabled" id="id_graphql_data_tab"><a href="#id_graphql_data_tab_content" aria-controls="id_graphql_data_tab_content" role="tab" data-toggle="tab">GraphQL Data</a></li>
+                        <li role="presentation" class="disabled" id="id_diff_tab"><a href="#id_diff_tab_content" aria-controls="id_diff_tab_content" role="tab" data-toggle="tab">Diff</a></li>
+                    </ul>
+                    <div class="tab-content" id="id_rendered_config_tabs">
+                        <div class="tab-pane active" id="id_intended_config_tab_content">
+                            {% comment %}
+                            The attributes `contenteditable="true"` and `onbeforeinput="return false"` are used
+                            to let the <code> block be selectable but not editable, emulating a textarea but supporting nested html tags.
+                            {% endcomment %}
+                            <pre><code id="id_rendered_config_code_block" contenteditable="true" onbeforeinput="return false"></code></pre>
+                        </div>
+                        <div class="tab-pane" id="id_graphql_data_tab_content">
+                            <pre><code class="language-json" id="id_graphql_data_code_block" contenteditable="true" onbeforeinput="return false"></code></pre>
+                        </div>
+                        <div class="tab-pane" id="id_diff_tab_content">
+                            <div id="id_diff_render"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock content %}
+
+{% block javascript %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% static 'nautobot_golden_config/diff2html-3.4.43/diff2html.min.js' %}"></script>
+    <script>
+        // When a device is selected, populate the GraphQL query field with the default query for that device
+        async function handleDeviceFieldSelect(event) {
+            const device_id = event.params.data.id;
+            const goldenconfigsettings_url = "{% url 'plugins-api:nautobot_golden_config-api:goldenconfigsetting-list' %}";
+
+            // Fetch the golden config settings for the device
+            const data = {device_id: device_id, depth: 1};
+            const query_params = new URLSearchParams(data).toString();
+            const response = await fetch(goldenconfigsettings_url + "?" + query_params, {
+                method: "GET",
+                headers: {"Content-Type": "application/json"}
+            });
+            const response_data = await response.json();
+
+            if (!response.ok || response_data.count == 0) {
+                $("#id_graphql_query").val(null).trigger("change").trigger("select2:clear");
+                $("#id_git_repository_branch").val(null).trigger("change").trigger("select2:clear");
+            } else {
+
+                // Set the graphql query field to the default query for the device
+                const graphql_query = response_data.results[0]?.sot_agg_query;
+                if (graphql_query == null){
+                    $("#id_graphql_query").val(null).trigger("change").trigger("select2:clear");
+                } else {
+                    // Check if the option for the GraphQL query already exists
+                    if ($("#id_graphql_query").find("option[value='" + graphql_query.id + "']").length) {
+                        $("#id_graphql_query").val(graphql_query.id).trigger("change");
+
+                    // Otherwise create a new Option and select it
+                    } else {
+                        var newOption = new Option(graphql_query.display, graphql_query.id, true, true);
+                        $("#id_graphql_query").append(newOption).trigger("change");
+                    }
+
+                    // Trigger the select2:select event to populate the GraphQL data tab
+                    $("#id_graphql_query").trigger({
+                        type: "select2:select",
+                        params: {
+                            data: {
+                                "id": graphql_query.id,
+                                "text": graphql_query.display
+                            }
+                        }
+                    });
+                }
+
+                // Set the git repository branch dropdown selections
+                if (document.getElementById("id_git_repository_branch") != null) {
+                    $("#id_git_repository_branch").empty().trigger("change").trigger("select2:clear");
+                    const git_repository = response_data.results[0]?.jinja_repository;
+                    if (git_repository == null){
+                        $("#id_git_repository_branch").val(null).trigger("change").trigger("select2:clear");
+                    } else {
+
+                        const git_repository_url = "{% url 'plugins-api:nautobot_golden_config-api:git_repository_branches' pk='pk_placeholder' %}".replace("pk_placeholder", git_repository.id);
+                        const git_repository_response = await fetch(git_repository_url, {
+                            method: "GET",
+                            headers: {"Content-Type": "application/json"}
+                        });
+                        const git_repository_response_data = await git_repository_response.json();
+                        if (git_repository_response.ok) {
+                            const git_repository_branches = git_repository_response_data.remote_branches;
+                            const default_branch = git_repository_response_data.branch;
+                            git_repository_branches.indexOf(default_branch) === -1 && git_repository_branches.push(default_branch);
+
+                            git_repository_branches.forEach(function(branch) {
+                                // Check if the option for the git repository branch already exists
+                                if (!$("#id_git_repository_branch").find("option[value='" + branch + "']").length) {
+                                    var newOption = new Option(branch, branch, false, false);
+                                    $("#id_git_repository_branch").append(newOption);
+                                }
+                            });
+
+                            // Select the default branch for the repository
+                            $("#id_git_repository_branch").val(default_branch).trigger("change");
+                        }
+                    }
+                }
+            }
+        }
+
+        // When the device field is cleared, also clear the GraphQL query and git repository branch fields
+        async function handleDeviceFieldClear(event) {
+            $("#id_graphql_query").val(null).trigger("change").trigger("select2:clear");
+            if (document.getElementById("id_git_repository_branch") != null) {
+                $("#id_git_repository_branch").empty().trigger("change").trigger("select2:clear");
+            }
+        }
+
+        // When a GraphQL query is selected, populate and syntax highlight the graphql data tab
+        async function handleGraphQLQueryFieldSelect(event) {
+            const graphql_query_id = event.params.data.id;
+            const device_id = document.getElementById("id_device").value;
+            const graphql_data_tab = document.getElementById("id_graphql_data_tab");
+            const graphql_data_code_block = document.getElementById("id_graphql_data_code_block");
+            const rendered_config_code_block = document.getElementById("id_rendered_config_code_block");
+            const graphql_query_url = "{% url 'extras-api:graphqlquery-detail' pk='pk_placeholder' %}";
+            const graphql_url = "{% url 'graphql-api' %}";
+
+            if (!device_id || !graphql_query_id){
+                // switch to the intended config tab and disable the graphql tab
+                if (graphql_data_tab.classList.contains("active")){
+                    $("#id_intended_config_tab a").tab("show");
+                    graphql_data_tab.classList.remove("active");
+                }
+                graphql_data_tab.classList.add("disabled");
+                return;
+            }
+
+            // populate and syntax highlight the graphql data tab
+            // first fetch the query data from the API, then perform the query
+            graphql_data_code_block.innerHTML = "Loading...";
+            delete graphql_data_code_block.dataset.highlighted;
+            graphql_data_tab.classList.remove("disabled");
+            const response = await fetch(graphql_query_url.replace("pk_placeholder", graphql_query_id), {
+                method: "GET",
+                headers: {"Content-Type": "application/json"}
+            });
+            const response_data = await response.json();
+            if (response.ok) {
+
+                // perform the graphql query
+                const graphql_response = await fetch(graphql_url, {
+                    method: "POST",
+                    body: JSON.stringify({query: response_data.query, variables: {device_id: device_id}}),
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": "{{ csrf_token }}"
+                    }
+                });
+                const graphql_response_data = await graphql_response.json();
+                if (graphql_response.ok) {
+                    graphql_data_code_block.innerHTML = JSON.stringify(graphql_response_data, null, 4);
+                    delete graphql_data_code_block.dataset.highlighted;
+                    hljs.highlightElement(graphql_data_code_block);
+                }
+            }
+        }
+
+        // When the GraphQL query field is cleared, switch to the intended config tab and disable the graphql tab
+        async function handleGraphQLQueryFieldClear(event) {
+            const graphql_data_tab = document.getElementById("id_graphql_data_tab");
+            if (graphql_data_tab.classList.contains("active")){
+                $("#id_intended_config_tab a").tab("show");
+                graphql_data_tab.classList.remove("active");
+            }
+            graphql_data_tab.classList.add("disabled");
+            return;
+        }
+
+        // Register the select2 event handlers. jQuery required for select2 events
+        $("#id_device").on("select2:select", handleDeviceFieldSelect);
+        $("#id_device").on("select2:clear", handleDeviceFieldClear);
+        $("#id_graphql_query").on("select2:select", handleGraphQLQueryFieldSelect);
+        $("#id_graphql_query").on("select2:clear", handleGraphQLQueryFieldClear);
+
+        // Initialize the copy to clipboard button
+        new ClipboardJS('.copy-rendered-config');
+
+        // Sanitize a string for display in a code block by replacing HTML tags with character references
+        const sanitize = function(string) {
+            return string.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        };
+
+        // Custom form submission handling
+        async function handleFormSubmit(event) {
+            event.preventDefault(); // Prevent default form submission
+
+            const rendered_config_code_block = document.getElementById("id_rendered_config_code_block");
+            const device_id = document.getElementById("id_device").value;
+            const graphql_query_id = document.getElementById("id_graphql_query").value;
+            const git_repository_branch = document.getElementById("id_git_repository_branch")?.value;
+            const url = "{% url 'plugins-api:nautobot_golden_config-api:generate_intended_config' %}";
+            const diff_tab = document.getElementById("id_diff_tab");
+            const diff_render_div = document.getElementById("id_diff_render");
+
+            try {
+                rendered_config_code_block.innerHTML = "Loading...";
+
+                // switch to the intended config tab and disable the diff tab
+                $("#id_intended_config_tab a").tab("show");
+                diff_tab.classList.add("disabled");
+                diff_tab.classList.remove("active");
+
+                // fetch the intended config
+                const query_param_data = {
+                    device_id: device_id,
+                    graphql_query_id: graphql_query_id
+                };
+                if (git_repository_branch != null){
+                    query_param_data.branch = git_repository_branch;
+                }
+                const query_params = new URLSearchParams(query_param_data).toString();
+                const response = await fetch(url + "?" + query_params, {
+                    method: "GET",
+                    headers: {"Content-Type": "application/json"}
+                });
+                const responseData = await response.json();
+                if (!response.ok) {
+                    const msg = responseData.detail ? responseData.detail : response.statusText;
+                    rendered_config_code_block.innerHTML = sanitize(`An error occurred:\n\n${msg}`);
+                } else {
+                    // populate the rendered config
+                    rendered_config_code_block.innerHTML = sanitize(responseData.intended_config);
+
+                    // render the diff
+                    if (responseData.diff == null) {
+                        diff_render_div.innerHTML = "<p>No intended configuration available to diff against. You may need to run the intended configuration job first.</p>";
+                    // output a message if no diff
+                    } else if (responseData.diff === "") {
+                        diff_render_div.innerHTML = "<p>No changes detected.</p>";
+                    } else {
+                        diff_render_div.innerHTML = Diff2Html.html(responseData.diff, {
+                            drawFileList: true,
+                            matching: "lines",
+                            outputFormat: "line-by-line",
+                        });
+                    }
+
+                    // enable the diff tab
+                    diff_tab.classList.remove("disabled");
+                }
+            } catch (error) {
+                rendered_config_code_block.innerHTML = sanitize(`An error occurred:\n\n${error.message}`);
+            }
+        }
+    </script>
+{% endblock javascript %}

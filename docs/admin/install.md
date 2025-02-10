@@ -32,7 +32,8 @@ echo nautobot-golden-config >> local_requirements.txt
 Once installed, the app needs to be enabled in your Nautobot configuration. The following block of code below shows the additional configuration required to be added to your `nautobot_config.py` file:
 
 - Append `"nautobot_golden_config"` to the `PLUGINS` list, and `"nautobot_plugin_nornir"` if it was not already there (more info [here](https://docs.nautobot.com/projects/plugin-nornir/en/latest/)).
-- Append the `"nautobot_golden_config"` dictionary to the `PLUGINS_CONFIG` dictionary, and `"nautobot_plugin_nornir"` if it was not already there.
+- Append the `"nautobot_golden_config"` dictionary to the `PLUGINS_CONFIG` dictionary as shown the **sample** below with your appropriate configs.
+- Append the `"nautobot_plugin_nornir"` dictionary to the `PLUGINS_CONFIG` dictionary as shown the **sample** below with your appropriate configs (Note: this may already be in your configs).
 
 ```python
 PLUGINS = ["nautobot_plugin_nornir", "nautobot_golden_config"]

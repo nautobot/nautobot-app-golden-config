@@ -5,7 +5,8 @@
 
 {% block title %} {{ object }} - Config Compliance {% endblock %}
 
-{% block content %}
+{% block extra_styles %}
+{{ block.super }}
 <style>
     #compliance-content pre {
         font-size: 10px;
@@ -19,7 +20,13 @@
         min-width: 200px;
         width: 100%;
         padding: 15px;
-        height:max-content;
+        height: max-content;
+    }
+    #compliance-content td.config_hover span[id*="_intended"] pre {
+        max-height: 300px;
+    }
+    #compliance-content td.config_hover span[id*="_actual"] pre {
+        max-height: 300px;
     }
     #navigation span.config_hover_button {
         vertical-align: center;
@@ -56,12 +63,15 @@
         transform: scale(1.1);
     }
 </style>
+{% endblock extra_styles %}
+
+{% block content %}
 {% block navigation %}
 <div class="panel panel-default" style="width:100%">
-        <div class="panel-heading"><strong>Feature Navigation</strong> 
-            <a href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab={{ active_tab }}&compliance=compliant" class="btn btn-success">Compliant</a>  
-            <a href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab={{ active_tab }}&compliance=non-compliant" class="btn btn-danger">Non-Compliant</a>  
-            <a href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab={{ active_tab }}" class="btn btn-info">Clear</a>  
+        <div class="panel-heading"><strong>Feature Navigation</strong>
+            <a href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab={{ active_tab }}&compliance=compliant" class="btn btn-success">Compliant</a>
+            <a href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab={{ active_tab }}&compliance=non-compliant" class="btn btn-danger">Non-Compliant</a>
+            <a href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab={{ active_tab }}" class="btn btn-info">Clear</a>
         </div>
     <div id="navigation">
         <table>

@@ -13,7 +13,8 @@ from nautobot_golden_config.tests.conftest import create_device_data, create_git
 class GoldenConfigSettingFormTest(TestCase):
     """Test Golden Config Setting Feature Form."""
 
-    def setUp(self) -> None:
+    @classmethod
+    def setUpTestData(cls) -> None:
         """Setup test data."""
         create_git_repos()
         create_device_data()

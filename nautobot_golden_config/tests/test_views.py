@@ -1,18 +1,23 @@
 """Unit tests for nautobot_golden_config views."""
 
 import datetime
+import re
+import uuid
 from unittest import mock, skip
 
 import nautobot
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.test import RequestFactory, override_settings
 from django.urls import reverse
 from lxml import html
-from nautobot.core.models.querysets import RestrictedQuerySet
-from nautobot.core.testing import TestCase, ViewTestCases
+from nautobot.apps.models import RestrictedQuerySet
+from nautobot.apps.testing import TestCase, ViewTestCases
 from nautobot.dcim.models import Device
 from nautobot.extras.models import Relationship, RelationshipAssociation, Status
+from nautobot.users import models as users_models
+from packaging import version
 
 from nautobot_golden_config import models, views
 
@@ -102,57 +107,43 @@ class ConfigComplianceOverviewHelperTestCase(TestCase):
         mock_graph_ql_query.assert_called()
 
 
-@override_settings(EXEMPT_VIEW_PERMISSIONS=["*"])
-class ConfigReplaceListViewTestCase(TestCase):
-    """Test ConfigReplaceListView."""
+class ConfigReplaceUIViewSetTestCase(ViewTestCases.PrimaryObjectViewTestCase):  # pylint: disable=too-many-ancestors
+    """Test ConfigReplaceUIViewSet."""
 
-    _csv_headers = "name,platform,description,regex,replace"
-    _entry_name = "test name"
-    _entry_description = "test description"
-    _entry_regex = "^startswiththeend$"
-    _entry_replace = "<dontlookatme>"
+    model = models.ConfigReplace
+
+    bulk_edit_data = {
+        "description": "new description",
+    }
 
     @classmethod
     def setUpTestData(cls):
         """Set up base objects."""
         create_device_data()
-        cls._delete_test_entry()
-        models.ConfigReplace.objects.create(
-            name=cls._entry_name,
-            platform=Device.objects.first().platform,
-            description=cls._entry_description,
-            regex=cls._entry_regex,
-            replace=cls._entry_replace,
-        )
-
-    @property
-    def _url(self):
-        return reverse("plugins:nautobot_golden_config:configreplace_list")
-
-    @classmethod
-    def _delete_test_entry(cls):
-        try:
-            entry = models.ConfigReplace.objects.get(name=cls._entry_name)
-            entry.delete()
-        except models.ConfigReplace.DoesNotExist:
-            pass
-
-    def test_configreplace_import(self):
-        self._delete_test_entry()
-        self.add_permissions("nautobot_golden_config.add_configreplace")
         platform = Device.objects.first().platform
-        import_entry = (
-            f"{self._entry_name},{platform.id},{self._entry_description},{self._entry_regex},{self._entry_replace}"
+        for num in range(3):
+            models.ConfigReplace.objects.create(
+                name=f"test configreplace {num}",
+                platform=platform,
+                description="test description",
+                regex="^(.*)$",
+                replace="xyz",
+            )
+        cls.form_data = {
+            "name": "new name",
+            "platform": platform.pk,
+            "description": "new description",
+            "regex": "^NEW (.*)$",
+            "replace": "NEW replaced text",
+        }
+
+        # For compatibility with Nautobot lower than v2.2.0
+        cls.csv_data = (
+            "name,regex,replace,platform",
+            f"test configreplace 4,^(.*)$,xyz,{platform.pk}",
+            f"test configreplace 5,^(.*)$,xyz,{platform.pk}",
+            f"test configreplace 6,^(.*)$,xyz,{platform.pk}",
         )
-        form_data = {"csv_data": f"{self._csv_headers}\n{import_entry}"}
-        response = self.client.post(f"{self._url}import/", data=form_data, follow=True)
-        last_entry = models.ConfigReplace.objects.last()
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(last_entry.name, self._entry_name)
-        self.assertEqual(last_entry.platform, platform)
-        self.assertEqual(last_entry.description, self._entry_description)
-        self.assertEqual(last_entry.regex, self._entry_regex)
-        self.assertEqual(last_entry.replace, self._entry_replace)
 
 
 class GoldenConfigListViewTestCase(TestCase):
@@ -407,3 +398,113 @@ class ConfigComplianceUIViewSetTestCase(
             self.assertSequenceEqual(list(device.keys()), ["device", "device__name", *features])
             for feature in features:
                 self.assertIn(device[feature], [0, 1])
+
+    def test_table_columns(self):
+        """Test the columns of the ConfigCompliance table return the expected pivoted data."""
+        response = self.client.get(reverse("plugins:nautobot_golden_config:configcompliance_list"))
+        expected_table_headers = ["Device", "TestFeature0", "TestFeature1", "TestFeature2", "TestFeature3"]
+        table_headers = re.findall(r'<th class="orderable"><a href=.*>(.+)</a></th>', response.content.decode())
+        self.assertEqual(table_headers, expected_table_headers)
+
+        # Add a new compliance feature and ensure the table headers update correctly
+        device2 = Device.objects.get(name="Device 2")
+        new_compliance_feature = create_feature_rule_json(device2, feature="NewTestFeature")
+        models.ConfigCompliance.objects.create(
+            device=device2,
+            rule=new_compliance_feature,
+            actual={"foo": {"bar-1": "baz"}},
+            intended={"foo": {"bar-1": "baz"}},
+            compliance=True,
+            compliance_int=1,
+        )
+
+        response = self.client.get(reverse("plugins:nautobot_golden_config:configcompliance_list"))
+        expected_table_headers = [
+            "Device",
+            "TestFeature0",
+            "TestFeature1",
+            "TestFeature2",
+            "TestFeature3",
+            "NewTestFeature",
+        ]
+        table_headers = re.findall(r'<th class="orderable"><a href=.*>(.+)</a></th>', response.content.decode())
+        self.assertEqual(table_headers, expected_table_headers)
+
+        # Remove compliance features and ensure the table headers update correctly
+        models.ConfigCompliance.objects.filter(rule__feature__name__in=["TestFeature0", "TestFeature1"]).delete()
+
+        response = self.client.get(reverse("plugins:nautobot_golden_config:configcompliance_list"))
+        expected_table_headers = ["Device", "TestFeature2", "TestFeature3", "NewTestFeature"]
+        table_headers = re.findall(r'<th class="orderable"><a href=.*>(.+)</a></th>', response.content.decode())
+        self.assertEqual(table_headers, expected_table_headers)
+
+    def test_bulk_delete_form_contains_all_objects(self):  # pylint: disable=inconsistent-return-statements
+        if version.parse(settings.VERSION) < version.parse("2.3.11") and hasattr(
+            super(), "test_bulk_delete_form_contains_all_objects"
+        ):
+            return super().test_bulk_delete_form_contains_all_objects()  # pylint: disable=no-member
+        self.skipTest(
+            "Golden config uses an older version of the bulk delete views that does not support tests introduced in 2.3.11"
+        )
+
+    def test_bulk_delete_form_contains_all_filtered(self):  # pylint: disable=inconsistent-return-statements
+        if version.parse(settings.VERSION) < version.parse("2.3.11") and hasattr(
+            super(), "test_bulk_delete_form_contains_all_filtered"
+        ):
+            return super().test_bulk_delete_form_contains_all_filtered()  # pylint: disable=no-member
+        self.skipTest(
+            "Golden config uses an older version of the bulk delete views that does not support tests introduced in 2.3.11"
+        )
+
+    # Copied from https://github.com/nautobot/nautobot/blob/3dbd4248f9dcbab69767a357a635490a28a24e0b/nautobot/core/testing/views.py
+    # Golden config uses an older version of the bulk delete views that does not support tests introduced in 2.3.11
+    @override_settings(EXEMPT_VIEW_PERMISSIONS=[])
+    def test_bulk_delete_objects_with_constrained_permission(self):
+        pk_list = self.get_deletable_object_pks()
+        initial_count = self._get_queryset().count()
+        data = {
+            "pk": pk_list,
+            "confirm": True,
+            "_confirm": True,  # Form button
+        }
+
+        # Assign constrained permission
+        obj_perm = users_models.ObjectPermission(
+            name="Test permission",
+            constraints={"pk": str(uuid.uuid4())},  # Match a non-existent pk (i.e., deny all)
+            actions=["delete"],
+        )
+        obj_perm.save()
+        obj_perm.users.add(self.user)
+        obj_perm.object_types.add(ContentType.objects.get_for_model(self.model))
+
+        # Attempt to bulk delete non-permitted objects
+        self.assertHttpStatus(self.client.post(self._get_url("bulk_delete"), data), 302)
+        self.assertEqual(self._get_queryset().count(), initial_count)
+
+        # Update permission constraints
+        obj_perm.constraints = {"pk__isnull": False}  # Match a non-existent pk (i.e., allow all)
+        obj_perm.save()
+
+        # Bulk delete permitted objects
+        self.assertHttpStatus(self.client.post(self._get_url("bulk_delete"), data), 302)
+        self.assertEqual(self._get_queryset().count(), initial_count - len(pk_list))
+
+    # Copied from https://github.com/nautobot/nautobot/blob/3dbd4248f9dcbab69767a357a635490a28a24e0b/nautobot/core/testing/views.py
+    # Golden config uses an older version of the bulk delete views that does not support tests introduced in 2.3.11
+    @override_settings(EXEMPT_VIEW_PERMISSIONS=[])
+    def test_bulk_delete_objects_with_permission(self):
+        pk_list = self.get_deletable_object_pks()
+        initial_count = self._get_queryset().count()
+        data = {
+            "pk": pk_list,
+            "confirm": True,
+            "_confirm": True,  # Form button
+        }
+
+        # Assign unconstrained permission
+        self.add_permissions(f"{self.model._meta.app_label}.delete_{self.model._meta.model_name}")
+
+        # Try POST with model-level permission
+        self.assertHttpStatus(self.client.post(self._get_url("bulk_delete"), data), 302)
+        self.assertEqual(self._get_queryset().count(), initial_count - len(pk_list))

@@ -14,11 +14,12 @@ limitations under the License.
 
 import os
 import re
+import sys
 from pathlib import Path
 from time import sleep
 
 from invoke.collection import Collection
-from invoke.exceptions import Exit
+from invoke.exceptions import Exit, UnexpectedExit
 from invoke.tasks import task as invoke_task
 
 
@@ -148,7 +149,7 @@ def docker_compose(context, command, **kwargs):
     return context.run(compose_command, env=build_env, **kwargs)
 
 
-def run_command(context, command, **kwargs):
+def run_command(context, command, service="nautobot", **kwargs):
     """Wrapper to run a command locally or inside the nautobot container."""
     if is_truthy(context.nautobot_golden_config.local):
         if "command_env" in kwargs:
@@ -156,9 +157,9 @@ def run_command(context, command, **kwargs):
                 **kwargs.get("env", {}),
                 **kwargs.pop("command_env"),
             }
-        context.run(command, **kwargs)
+        return context.run(command, **kwargs)
     else:
-        # Check if nautobot is running, no need to start another nautobot container to run a command
+        # Check if service is running, no need to start another container to run a command
         docker_compose_status = "ps --services --filter status=running"
         results = docker_compose(context, docker_compose_status, hide="out")
 
@@ -168,14 +169,14 @@ def run_command(context, command, **kwargs):
             for key, value in command_env.items():
                 command_env_args += f' --env="{key}={value}"'
 
-        if "nautobot" in results.stdout:
-            compose_command = f"exec{command_env_args} nautobot {command}"
+        if service in results.stdout:
+            compose_command = f"exec{command_env_args} {service} {command}"
         else:
-            compose_command = f"run{command_env_args} --rm --entrypoint='{command}' nautobot"
+            compose_command = f"run{command_env_args} --rm --entrypoint='{command}' {service}"
 
         pty = kwargs.pop("pty", True)
 
-        docker_compose(context, compose_command, pty=pty, **kwargs)
+        return docker_compose(context, compose_command, pty=pty, **kwargs)
 
 
 # ------------------------------------------------------------------------------
@@ -249,9 +250,19 @@ def lock(context, check=False, constrain_nautobot_ver=False, constrain_python_ve
         command = f"poetry add --lock nautobot@{docker_nautobot_version}"
         if constrain_python_ver:
             command += f" --python {context.nautobot_golden_config.python_ver}"
+        try:
+            output = run_command(context, command, hide=True)
+            print(output.stdout, end="")
+            print(output.stderr, file=sys.stderr, end="")
+        except UnexpectedExit:
+            print("Unable to add Nautobot dependency with version constraint, falling back to git branch.")
+            command = f"poetry add --lock git+https://github.com/nautobot/nautobot.git#{context.nautobot_golden_config.nautobot_ver}"
+            if constrain_python_ver:
+                command += f" --python {context.nautobot_golden_config.python_ver}"
+            run_command(context, command)
     else:
         command = f"poetry {'check' if check else 'lock --no-update'}"
-    run_command(context, command)
+        run_command(context, command)
 
 
 # ------------------------------------------------------------------------------
@@ -400,10 +411,14 @@ def shell_plus(context):
     run_command(context, command)
 
 
-@task
-def cli(context):
-    """Launch a bash shell inside the Nautobot container."""
-    run_command(context, "bash")
+@task(
+    help={
+        "service": "Docker compose service name to launch cli in (default: nautobot).",
+    }
+)
+def cli(context, service="nautobot"):
+    """Launch a bash shell inside the container."""
+    run_command(context, "bash", service=service)
 
 
 @task(
@@ -681,10 +696,13 @@ def help_task(context):
 )
 def generate_release_notes(context, version=""):
     """Generate Release Notes using Towncrier."""
-    command = "env DJANGO_SETTINGS_MODULE=nautobot.core.settings towncrier build"
+    command = "poetry run towncrier build"
     if version:
         command += f" --version {version}"
-    run_command(context, command)
+    else:
+        command += " --version `poetry version -s`"
+    # Due to issues with git repo ownership in the containers, this must always run locally.
+    context.run(command)
 
 
 # ------------------------------------------------------------------------------
@@ -702,8 +720,28 @@ def hadolint(context):
 @task
 def pylint(context):
     """Run pylint code analysis."""
-    command = 'pylint --init-hook "import nautobot; nautobot.setup()" --rcfile pyproject.toml nautobot_golden_config'
-    run_command(context, command)
+    exit_code = 0
+
+    base_pylint_command = 'pylint --verbose --init-hook "import nautobot; nautobot.setup()" --rcfile pyproject.toml'
+    command = f"{base_pylint_command} nautobot_golden_config"
+    if not run_command(context, command, warn=True):
+        exit_code = 1
+
+    # run the pylint_django migrations checkers on the migrations directory, if one exists
+    migrations_dir = Path(__file__).absolute().parent / Path("nautobot_golden_config") / Path("migrations")
+    if migrations_dir.is_dir():
+        migrations_pylint_command = (
+            f"{base_pylint_command} --load-plugins=pylint_django.checkers.migrations"
+            " --disable=all --enable=fatal,new-db-field-with-default,missing-backwards-migration-callable"
+            " nautobot_golden_config.migrations"
+        )
+        if not run_command(context, migrations_pylint_command, warn=True):
+            exit_code = 1
+    else:
+        print("No migrations directory found, skipping migrations checks.")
+
+    if exit_code != 0:
+        raise Exit(code=exit_code)
 
 
 @task(aliases=("a",))
@@ -728,12 +766,15 @@ def ruff(context, action=None, target=None, fix=False, output_format="concise"):
     if not target:
         target = ["."]
 
+    exit_code = 0
+
     if "format" in action:
         command = "ruff format "
         if not fix:
             command += "--check "
         command += " ".join(target)
-        run_command(context, command, warn=True)
+        if not run_command(context, command, warn=True):
+            exit_code = 1
 
     if "lint" in action:
         command = "ruff check "
@@ -741,7 +782,11 @@ def ruff(context, action=None, target=None, fix=False, output_format="concise"):
             command += "--fix "
         command += f"--output-format {output_format} "
         command += " ".join(target)
-        run_command(context, command, warn=True)
+        if not run_command(context, command, warn=True):
+            exit_code = 1
+
+    if exit_code != 0:
+        raise Exit(code=exit_code)
 
 
 @task

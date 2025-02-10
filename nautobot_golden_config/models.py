@@ -2,12 +2,16 @@
 
 import json
 import logging
+import os
 
 from deepdiff import DeepDiff
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models.manager import BaseManager
 from django.utils.module_loading import import_string
 from hier_config import Host as HierConfigHost
+from nautobot.apps.models import RestrictedQuerySet
+from nautobot.apps.utils import render_jinja2
 from nautobot.core.models.generics import PrimaryModel
 from nautobot.core.models.utils import serialize_object, serialize_object_v2
 from nautobot.dcim.models import Device
@@ -364,6 +368,8 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
             related_object=related_object,
         )
 
+    is_dynamic_group_associable_model = False
+
     class Meta:
         """Set unique together fields for model."""
 
@@ -497,6 +503,19 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
         return f"{self.device}"
 
 
+class GoldenConfigSettingManager(BaseManager.from_queryset(RestrictedQuerySet)):
+    """Manager for GoldenConfigSetting."""
+
+    def get_for_device(self, device):
+        """Return the highest weighted GoldenConfigSetting assigned to a device."""
+        if not isinstance(device, Device):
+            raise ValueError("The device argument must be a Device instance.")
+        dynamic_group = device.dynamic_groups.exclude(golden_config_setting__isnull=True)
+        if dynamic_group.exists():
+            return dynamic_group.order_by("-golden_config_setting__weight").first().golden_config_setting
+        return None
+
+
 @extras_features(
     "graphql",
 )
@@ -569,6 +588,9 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         on_delete=models.PROTECT,
         related_name="golden_config_setting",
     )
+    is_dynamic_group_associable_model = False
+
+    objects = GoldenConfigSettingManager()
 
     def __str__(self):
         """Return a simple string if model is called."""
@@ -608,6 +630,13 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     def get_url_to_filtered_device_list(self):
         """Get url to all devices that are matching the filter."""
         return self.dynamic_group.get_group_members_url()
+
+    def get_jinja_template_path_for_device(self, device):
+        """Get the Jinja template path for a device."""
+        if self.jinja_repository is not None:
+            rendered_path = render_jinja2(template_code=self.jinja_path_template, context={"obj": device})
+            return f"{self.jinja_repository.filesystem_path}{os.path.sep}{rendered_path}"
+        return None
 
 
 @extras_features(

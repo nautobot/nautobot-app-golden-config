@@ -47,6 +47,7 @@
 {% endblock %}
 
 {% block javascript %}
+{{ block.super }}
 <script src="{% static 'toggle_fields.js' %}"></script>
 <script src="{% static 'run_job.js' %}"></script>
 <script>

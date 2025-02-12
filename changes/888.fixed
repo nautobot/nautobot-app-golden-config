@@ -1,0 +1,1 @@
++ Corrected ltm-1.6 development Dockerfile environment variable syntax for NAUTOBOT_ROOT.

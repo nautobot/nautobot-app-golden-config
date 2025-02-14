@@ -1,14 +1,18 @@
 """Unit tests for nautobot_golden_config."""
 
+import tempfile
 from copy import deepcopy
 from unittest.mock import patch
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
+from django.test import override_settings
 from django.urls import reverse
 from nautobot.apps.testing import APITestCase, APIViewTestCases
 from nautobot.dcim.models import Device, Platform
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status
+from packaging import version
 from rest_framework import status
 
 from nautobot_golden_config.choices import RemediationTypeChoice
@@ -360,7 +364,6 @@ class ConfigPlanTest(
 
     model = ConfigPlan
     brief_fields = ["device", "display", "id", "plan_type", "url"]
-    choices_fields = ["plan_type"]
 
     @classmethod
     def setUpTestData(cls):
@@ -407,6 +410,10 @@ class ConfigPlanTest(
             "change_control_url": "https://5.example.com/",
             "status": approved_status.pk,
         }
+
+        # Account for test_options_returns_expected_choices behavior change for read_only choices fields
+        if version.parse(settings.VERSION) < version.parse("2.4.0"):
+            cls.choices_fields = ["plan_type"]
 
 
 class ConfigReplaceAPITestCase(  # pylint: disable=too-many-ancestors
@@ -496,6 +503,7 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
             sot_agg_query=GraphQLQuery.objects.get(name="GC-SoTAgg-Query-2"),
             dynamic_group=cls.dynamic_group,
             jinja_repository=cls.git_repository,
+            jinja_path_template="test.j2",
         )
 
     def _setup_mock_path(self, MockPath):  # pylint: disable=invalid-name
@@ -504,6 +512,81 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
         mock_path_instance.is_file.return_value = True
         mock_path_instance.__truediv__.return_value = mock_path_instance  # to handle Path('path') / 'file'
         return mock_path_instance
+
+    def _setup_mock_dispatcher(self, mock_dispatcher, template_file_callable=None):
+        # Replicate nornir nested task structure
+        def _mock_dispatcher(task, *args, **kwargs):
+            def _template_file(*args, **kwargs):
+                if template_file_callable:
+                    return template_file_callable(*args, **kwargs)
+                return None
+
+            def _generate_config(task, *args, **kwargs):
+                task.run(task=_template_file, name="template_file")
+                return {"config": f"Jinja test for device {self.device.name}."}
+
+            task.run(task=_generate_config, name="generate_config")
+            return ""
+
+        mock_dispatcher.side_effect = _mock_dispatcher
+
+    @override_settings(VERSION="2.4.2")
+    @patch("nautobot.extras.models.datasources.GitRepository.clone_to_directory_context", create=True)
+    @patch("nautobot_golden_config.api.views.ensure_git_repository")
+    @patch("nautobot_golden_config.api.views.Path")
+    @patch("nautobot_golden_config.api.views.dispatcher")
+    def test_generate_intended_config_branch_param_supported(
+        self, mock_dispatcher, MockPath, mock_ensure_git_repository, mock_clone_to_directory_context
+    ):  # pylint: disable=invalid-name
+        """Verify that the intended config API succeeds when the branch parameter is supplied on Nautobot v2.4.2."""
+
+        self.add_permissions("dcim.view_device")
+        self.add_permissions("extras.view_gitrepository")
+
+        self._setup_mock_path(MockPath)
+        self._setup_mock_dispatcher(mock_dispatcher)
+
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            mock_clone_to_directory_context.return_value.__enter__.return_value = tmpdirname
+            response = self.client.get(
+                reverse("plugins-api:nautobot_golden_config-api:generate_intended_config"),
+                data={"device_id": self.device.pk, "branch": "main"},
+                **self.header,
+            )
+
+        mock_clone_to_directory_context.assert_called_once()
+        mock_ensure_git_repository.assert_called_once_with(self.git_repository)
+        self.assertHttpStatus(response, status.HTTP_200_OK)
+        self.assertTrue("intended_config" in response.data)
+        self.assertTrue("intended_config_lines" in response.data)
+        self.assertEqual(response.data["intended_config"], f"Jinja test for device {self.device.name}.")
+        self.assertEqual(response.data["intended_config_lines"], [f"Jinja test for device {self.device.name}."])
+
+    @override_settings(VERSION="2.4.1")
+    @patch("nautobot_golden_config.api.views.ensure_git_repository")
+    @patch("nautobot_golden_config.api.views.Path")
+    @patch("nautobot_golden_config.api.views.dispatcher")
+    def test_generate_intended_config_branch_param_unsupported(self, mock_dispatcher, MockPath, _):  # pylint: disable=invalid-name
+        """Verify that the intended config API fails when the branch parameter is supplied on Nautobot <v2.4.2."""
+
+        self.add_permissions("dcim.view_device")
+        self.add_permissions("extras.view_gitrepository")
+
+        self._setup_mock_path(MockPath)
+        self._setup_mock_dispatcher(mock_dispatcher)
+
+        response = self.client.get(
+            reverse("plugins-api:nautobot_golden_config-api:generate_intended_config"),
+            data={"device_id": self.device.pk, "branch": "main"},
+            **self.header,
+        )
+
+        self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue("detail" in response.data)
+        self.assertEqual(
+            response.data["detail"],
+            "Branch support requires Nautobot v2.4.2 or later",
+        )
 
     @patch("nautobot_golden_config.api.views.ensure_git_repository")
     @patch("nautobot_golden_config.api.views.Path")
@@ -515,20 +598,7 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
         self.add_permissions("extras.view_gitrepository")
 
         self._setup_mock_path(MockPath)
-
-        # Replicate nornir nested task structure
-        def _mock_dispatcher(task, *args, **kwargs):
-            def _template_file(*args, **kwargs):
-                return None
-
-            def _generate_config(task, *args, **kwargs):
-                task.run(task=_template_file, name="template_file")
-                return {"config": f"Jinja test for device {self.device.name}."}
-
-            task.run(task=_generate_config, name="generate_config")
-            return ""
-
-        mock_dispatcher.side_effect = _mock_dispatcher
+        self._setup_mock_dispatcher(mock_dispatcher)
 
         response = self.client.get(
             reverse("plugins-api:nautobot_golden_config-api:generate_intended_config"),
@@ -542,6 +612,48 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
         self.assertTrue("intended_config_lines" in response.data)
         self.assertEqual(response.data["intended_config"], f"Jinja test for device {self.device.name}.")
         self.assertEqual(response.data["intended_config_lines"], [f"Jinja test for device {self.device.name}."])
+
+    @patch("nautobot_golden_config.api.views.graph_ql_query")
+    @patch("nautobot_golden_config.api.views.ensure_git_repository")
+    @patch("nautobot_golden_config.api.views.Path")
+    @patch("nautobot_golden_config.api.views.dispatcher")
+    def test_generate_intended_config_graphql_query_id_param(self, mock_dispatcher, MockPath, _, mock_graph_ql_query):  # pylint: disable=invalid-name
+        """Verify that the intended config is generated as expected."""
+
+        self.add_permissions("dcim.view_device")
+        self.add_permissions("extras.view_gitrepository")
+
+        self._setup_mock_path(MockPath)
+        self._setup_mock_dispatcher(mock_dispatcher)
+
+        self.client.get(
+            reverse("plugins-api:nautobot_golden_config-api:generate_intended_config"),
+            data={
+                "device_id": self.device.pk,
+                "graphql_query_id": GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1").id,
+            },
+            **self.header,
+        )
+
+        self.assertEqual(len(mock_graph_ql_query.call_args.args), 3)
+        self.assertEqual(
+            mock_graph_ql_query.call_args.args[2], GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1").query
+        )
+
+        mock_graph_ql_query.reset_mock()
+        self.client.get(
+            reverse("plugins-api:nautobot_golden_config-api:generate_intended_config"),
+            data={
+                "device_id": self.device.pk,
+                "graphql_query_id": GraphQLQuery.objects.get(name="GC-SoTAgg-Query-2").id,
+            },
+            **self.header,
+        )
+
+        self.assertEqual(len(mock_graph_ql_query.call_args.args), 3)
+        self.assertEqual(
+            mock_graph_ql_query.call_args.args[2], GraphQLQuery.objects.get(name="GC-SoTAgg-Query-2").query
+        )
 
     @patch("nautobot_golden_config.api.views.ensure_git_repository")
     @patch("nautobot_golden_config.api.views.Path")
@@ -580,24 +692,14 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
         self.assertTrue("detail" in response.data)
         self.assertEqual(
             response.data["detail"],
-            f"Jinja template test.j2 not found in git repository {self.git_repository}",
+            f"Error rendering Jinja template: Jinja template test.j2 not found in git repository {self.git_repository}",
         )
 
         # test exception raised in nornir task
+        def _template_file_code(*args, **kwargs):
+            raise Exception("Test exception")  # pylint: disable=broad-exception-raised
 
-        # Replicate nornir nested task structure
-        def _mock_dispatcher(task, *args, **kwargs):
-            def _template_file(*args, **kwargs):
-                raise Exception("Test exception")  # pylint: disable=broad-exception-raised
-
-            def _generate_config(task, *args, **kwargs):
-                task.run(task=_template_file, name="template_file")
-                return {"config": f"Jinja test for device {self.device.name}."}
-
-            task.run(task=_generate_config, name="generate_config")
-            return ""
-
-        mock_dispatcher.side_effect = _mock_dispatcher
+        self._setup_mock_dispatcher(mock_dispatcher, template_file_callable=_template_file_code)
         mock_path_instance.is_file.return_value = True
 
         response = self.client.get(

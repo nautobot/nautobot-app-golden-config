@@ -1,0 +1,1 @@
+Fixed UniqueViolation error when applying migration 0029 with multiple config plans sharing same device, date and plan_type.

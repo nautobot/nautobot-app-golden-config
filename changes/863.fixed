@@ -1,0 +1,2 @@
+Updated the queryset altering to be after permissions restriction for config compliance list view.
+Updated the queryset before rendering the compliance reporting to be after permissions restriction.

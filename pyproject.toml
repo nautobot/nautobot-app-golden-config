@@ -13,7 +13,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -32,15 +31,14 @@ include = [
 "Bug Tracker" = "https://github.com/nautobot/nautobot-app-golden-config/issues"
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.13"
+python = ">=3.9,<3.13"
 deepdiff = ">=5.5.0,!=6.0,!=6.1,<8"
 django-pivot = ">=1.9.0,<1.10.0" # The signature changed to return a non-queryset, do not upgrade without ensuring it returns a queryset
 matplotlib = "^3.3.2"
-nautobot-plugin-nornir = "^2.0.0"
+nautobot-plugin-nornir = "^2.2.1"
 # Numpy is not a direct dependency, but we are assisting Poetry version resolution by providing constraints.
 numpy = [
     {version = "^1.26", python = ">=3.9"},
-    {version = "<1.25", python = "==3.8"}
 ]
 
 toml = "^0.10.2"
@@ -113,7 +111,7 @@ supported_nautobot_versions = [
 
 [tool.ruff]
 line-length = 120
-target-version = "py38"
+target-version = "py39"
 
 [tool.ruff.lint]
 select = [

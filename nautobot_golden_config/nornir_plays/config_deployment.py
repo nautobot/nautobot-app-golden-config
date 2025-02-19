@@ -44,6 +44,7 @@ def run_deployment(task: Task, logger: logging.Logger, config_plan_qs, deploy_jo
             obj=obj,
             logger=logger,
             config=post_config,
+            can_diff=False,
             **dispatch_params("merge_config", obj.platform.network_driver, logger),
         )[1]
         task_changed, task_result, task_failed = result.changed, result.result, result.failed

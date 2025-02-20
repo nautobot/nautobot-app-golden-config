@@ -64,3 +64,13 @@ After a Config Plan is generated you have the ability to edit (or bulk edit) the
     You will not be able to modify the Config Set after generation. If it does not contain the desired commands, you will need to delete the plan and recreate it after ensuring the source of the generated commands has been updated.
 
 ![Config Plan Edit](../images/config_plan-edit.png)
+
+If the Config Plan has post processing functions, you can render the post processed config to validate and approve a Config Plan.
+
+![Config Plan Post Processing Button](../images/config_plan_pp_button.png#only-light)
+![Config Plan Post Processing Button](../images/config_plan_pp_button-dark.png#only-dark)
+
+Post Processing occurs in a modal popup, and allows a user to view the configuration before approving the Config Plan.
+
+![Intended Configuration Web UI](../images/config_plan_pp-rendered.png#only-light)
+![Intended Configuration Web UI](../images/config_plan_pp-rendered-dark.png#only-dark)

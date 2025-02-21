@@ -316,7 +316,7 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
         if status_code == status.HTTP_200_OK:
             try:
                 if branch_param:
-                    with git_repository.clone_to_directory_context(branch=branch_param) as git_repo_path:
+                    with git_repository.clone_to_directory_context(branch=branch_param, depth=1) as git_repo_path:
                         filesystem_path = self._get_jinja_template_path(
                             settings, device, git_repository, base_path=git_repo_path
                         )

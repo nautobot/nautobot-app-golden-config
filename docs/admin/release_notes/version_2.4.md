@@ -7,8 +7,15 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Release Overview
 
-- Major features or milestones
-- Changes to compatibility with Nautobot and/or other apps, libraries etc.
+- Add the first iteration of Config Plans that support post processing functionality.
+    - Provides the ability to view and approve config plans with post processing functions.
+    - Adds a pre deployment method to render the post processed config before deploying to network devices.
+- Fixes multiple permissions in the application views.
+- Drop Python 3.8 support.
+- Changed supported Nautobot to 2.4.2.
+- Updated nautobot-plugin-nornir dependency minimum to 2.2.1.
+- Changed multiple detail views to use new component UI functionality.
+
 
 ## [v2.4.0 (2025-02-20)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v2.4.0)
 
@@ -27,7 +34,7 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 - [#706](https://github.com/nautobot/nautobot-app-golden-config/issues/706) - Fixed filtering when using a dynamic group of groups
 - [#781](https://github.com/nautobot/nautobot-app-golden-config/issues/781) - Fixed UniqueViolation error when applying migration 0029 with multiple config plans sharing same device, date and plan_type.
-- [#846](https://github.com/nautobot/nautobot-app-golden-config/issues/846) - - Fixed missing provides content check for GC settings syncing from Git Repo.
+- [#846](https://github.com/nautobot/nautobot-app-golden-config/issues/846) - Fixed missing provides content check for GC settings syncing from Git Repo.
 - [#863](https://github.com/nautobot/nautobot-app-golden-config/issues/863) - Updated the queryset altering to be after permissions restriction for config compliance list view.
 - [#863](https://github.com/nautobot/nautobot-app-golden-config/issues/863) - Updated the queryset before rendering the compliance reporting to be after permissions restriction.
 

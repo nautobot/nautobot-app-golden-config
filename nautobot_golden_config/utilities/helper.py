@@ -24,7 +24,7 @@ from nornir_nautobot.exceptions import NornirNautobotException
 from nautobot_golden_config import config as app_config
 from nautobot_golden_config import models
 from nautobot_golden_config.utilities import utils
-from nautobot_golden_config.utilities.constant import JINJA_ENV
+from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, JINJA_ENV
 
 FRAMEWORK_METHODS = {
     "default": utils.default_framework,
@@ -324,3 +324,106 @@ def get_golden_config_settings():
 
     # Fall back to default settings if no DB row is available
     return GoldenConfigDefaults(app_config.default_settings)
+
+
+def verify_feature_enabled(logger, feature_name, settings, required_settings=None):
+    """Verify if a feature is enabled and has required settings.
+
+    Args:
+        logger: Logger instance
+        feature_name: Name of the feature to check (backup, intended, compliance, etc)
+        settings: GoldenConfigSetting instance
+        required_settings: List of required setting attributes for this feature
+
+    Raises:
+        NornirNautobotException: If feature is disabled or missing required settings
+    """
+    feature_enabled = getattr(settings, f"{feature_name}_enabled", False)
+    if not feature_enabled:
+        error_msg = f"`E3050:` The {feature_name} feature is disabled in Golden Config settings."
+        logger.error(error_msg)
+        raise NornirNautobotException(error_msg)
+
+    if required_settings:
+        missing_settings = []
+        for setting in required_settings:
+            if not getattr(settings, setting, None):
+                missing_settings.append(setting)
+
+        if missing_settings:
+            if feature_name == 'intended' and 'sot_agg_query' in missing_settings and not ENABLE_SOTAGG:
+                # Skip SOT aggregation query check if the feature is disabled
+                missing_settings.remove('sot_agg_query')
+
+            if missing_settings:  # Check again in case we removed the only missing setting
+                error_msg = f"`E3051:` Missing required settings for {feature_name}: {', '.join(missing_settings)}"
+                logger.error(error_msg)
+                raise NornirNautobotException(error_msg)
+
+
+def cleanup_compliance_data(logger, device):
+    """Clean up compliance data for devices no longer in scope.
+
+    Args:
+        logger: Logger instance
+        device: Device instance
+    """
+    try:
+        gc_obj = models.GoldenConfig.objects.filter(device=device).first()
+        if gc_obj:
+            # Clear compliance related fields but keep the object
+            gc_obj.compliance_config = ""
+            gc_obj.compliance_last_attempt_date = None
+            gc_obj.compliance_last_success_date = None
+            gc_obj.save()
+            logger.info(f"Cleaned up compliance data for device {device.name}")
+    except Exception as e:
+        logger.warning(f"Failed to cleanup compliance data for device {device.name}: {str(e)}")
+
+
+def verify_config_plan_eligibility(logger, device, settings):
+    """Verify if a device is eligible for config plan operations.
+
+    Args:
+        logger: Logger instance
+        device: Device instance
+        settings: GoldenConfigSetting instance
+
+    Raises:
+        NornirNautobotException: If device is not eligible for config plans
+    """
+    if not settings.plan_enabled:
+        error_msg = "`E3052:` Config plan creation is disabled in Golden Config settings."
+        logger.error(error_msg)
+        raise NornirNautobotException(error_msg)
+
+    # Check if device is in scope
+    device_settings = get_device_to_settings_map(device)
+    if not device_settings:
+        error_msg = f"`E3053:` Device {device.name} is not in scope for config plans."
+        logger.error(error_msg)
+        raise NornirNautobotException(error_msg)
+
+
+def verify_deployment_eligibility(logger, config_plan, settings):
+    """Verify if a config plan is eligible for deployment.
+
+    Args:
+        logger: Logger instance
+        config_plan: ConfigPlan instance
+        settings: GoldenConfigSetting instance
+
+    Raises:
+        NornirNautobotException: If deployment is not allowed
+    """
+    if not settings.deploy_enabled:
+        error_msg = "`E3054:` Configuration deployment is disabled in Golden Config settings."
+        logger.error(error_msg)
+        raise NornirNautobotException(error_msg)
+
+    # Check if device is still in scope
+    device_settings = get_device_to_settings_map(config_plan.device)
+    if not device_settings:
+        error_msg = f"`E3055:` Device {config_plan.device.name} is no longer in scope for deployments."
+        logger.error(error_msg)
+        raise NornirNautobotException(error_msg)

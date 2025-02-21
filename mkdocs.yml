@@ -165,6 +165,8 @@ nav:
       - Migrating To v2: "admin/migrating_to_v2.md"
       - Release Notes:
           - "admin/release_notes/index.md"
+          - v2.4: "admin/release_notes/version_2.4.md"
+          - v2.3: "admin/release_notes/version_2.3.md"
           - v2.2: "admin/release_notes/version_2.2.md"
           - v2.1: "admin/release_notes/version_2.1.md"
           - v2.0: "admin/release_notes/version_2.0.md"

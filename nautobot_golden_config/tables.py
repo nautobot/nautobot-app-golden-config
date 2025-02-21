@@ -86,14 +86,28 @@ CONFIG_SET_BUTTON = """
 
             <!-- Modal body -->
             <div class="modal-body">
-                <span id="config_set_{{ record.pk }}"><pre>{{ record.config_set }}</pre></span>
-                <span class="config_hover_button">
-                    <button type="button" class="btn btn-inline btn-default hover_copy_button" data-clipboard-action='copy' data-clipboard-target="#config_set_{{ record.pk }}">
-                        <span class="mdi mdi-content-copy"></span>
-                    </button>
-                </span>
+                <table class="table table-hover panel-body attr-table table-responsive table-wrapper">
+                    <tr>
+                        <td>Config Set</td>
+                        <td>
+                            <span id="config_set_{{ record.pk }}"><pre>{{ record.config_set }}</pre></span>
+                            <span class="config_hover_button">
+                                <button type="button" class="btn btn-inline btn-default hover_copy_button" data-clipboard-action='copy' data-clipboard-target="#config_set_{{ record.pk }}">
+                                    <span class="mdi mdi-content-copy"></span>
+                                </button>
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Postprocessed Config Set</td>
+                        <td>
+                            <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=record.device.id %}?config_plan_id={{ record.id }}" target="_blank">
+                                <i class="mdi mdi-text-box-check" title="Config Plan after Postprocessing"></i>
+                            </a>
+                        </td>
+                    </tr>
+                </table>
             </div>
-
             <!-- Modal footer -->
             <div class="modal-footer">
                 <button id="close" type="button" class="btn btn-default" data-dismiss="modal">Close</button>

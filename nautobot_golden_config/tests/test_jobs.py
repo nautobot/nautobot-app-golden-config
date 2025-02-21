@@ -133,7 +133,9 @@ class GCReposBackupTestCase(BaseGoldenConfigTestCase):
         self.assertEqual(log_entries.last().message, "In scope device count for this job: 1")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="run")
-        self.assertEqual(log_entries.last().message, "`E3050:` The backup feature is disabled in Golden Config settings.")
+        self.assertEqual(
+            log_entries.last().message, "`E3050:` The backup feature is disabled in Golden Config settings."
+        )
 
     def test_backup_job_repos_two_setting_backup_disabled(self, mock_ensure_git_repository):
         """Test backup job repo-types are backup only."""
@@ -150,7 +152,9 @@ class GCReposBackupTestCase(BaseGoldenConfigTestCase):
         self.assertEqual(log_entries.last().message, "In scope device count for this job: 2")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="run")
-        self.assertEqual(log_entries.last().message, "`E3050:` The backup feature is disabled in Golden Config settings.")
+        self.assertEqual(
+            log_entries.last().message, "`E3050:` The backup feature is disabled in Golden Config settings."
+        )
 
 
 @patch("nautobot_golden_config.nornir_plays.config_intended.run_template", MagicMock(return_value="foo"))
@@ -227,7 +231,9 @@ class GCReposIntendedTestCase(BaseGoldenConfigTestCase):
         self.assertEqual(log_entries.last().message, "In scope device count for this job: 1")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="run")
-        self.assertEqual(log_entries.last().message, "`E3050:` The intended feature is disabled in Golden Config settings.")
+        self.assertEqual(
+            log_entries.last().message, "`E3050:` The intended feature is disabled in Golden Config settings."
+        )
 
     def test_intended_job_repos_two_setting_intended_disabled(self, mock_ensure_git_repository):
         """Test intended job two GC setting enabled_intended disabled"""
@@ -244,7 +250,9 @@ class GCReposIntendedTestCase(BaseGoldenConfigTestCase):
         self.assertEqual(log_entries.first().message, "Repository types to sync: ")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="run")
-        self.assertEqual(log_entries.last().message, "`E3050:` The intended feature is disabled in Golden Config settings.")
+        self.assertEqual(
+            log_entries.last().message, "`E3050:` The intended feature is disabled in Golden Config settings."
+        )
 
 
 @patch("nautobot_golden_config.nornir_plays.config_compliance.run_compliance", MagicMock(return_value="foo"))
@@ -325,7 +333,9 @@ class GCReposComplianceTestCase(BaseGoldenConfigTestCase):
         self.assertEqual(log_entries.last().message, "In scope device count for this job: 1")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="run")
-        self.assertEqual(log_entries.last().message, "`E3050:` The compliance feature is disabled in Golden Config settings.")
+        self.assertEqual(
+            log_entries.last().message, "`E3050:` The compliance feature is disabled in Golden Config settings."
+        )
 
     def test_compliance_job_repos_two_setting_compliance_disabled(self, mock_ensure_git_repository):
         """Test compliance job two GC setting enabled_compliance disabled"""
@@ -342,7 +352,9 @@ class GCReposComplianceTestCase(BaseGoldenConfigTestCase):
         self.assertEqual(log_entries.first().message, "Repository types to sync: ")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="run")
-        self.assertEqual(log_entries.last().message, "`E3050:` The compliance feature is disabled in Golden Config settings.")
+        self.assertEqual(
+            log_entries.last().message, "`E3050:` The compliance feature is disabled in Golden Config settings."
+        )
 
     def test_compliance_job_repos_backup_disabled(self, mock_ensure_git_repository):
         """Test compliance job one GC setting enabled_backup disabled"""

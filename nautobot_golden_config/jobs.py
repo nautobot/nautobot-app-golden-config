@@ -256,7 +256,7 @@ class ComplianceJob(GoldenConfigJobMixin, FormEntry):
                 self.logger,
                 "compliance",
                 settings,
-                required_settings=["backup_path_template", "intended_path_template"]
+                required_settings=["backup_path_template", "intended_path_template"],
             )
 
             config_compliance(self)
@@ -288,7 +288,7 @@ class IntendedJob(GoldenConfigJobMixin, FormEntry):
                 self.logger,
                 "intended",
                 settings,
-                required_settings=["jinja_path_template", "intended_path_template", "sot_agg_query"]
+                required_settings=["jinja_path_template", "intended_path_template", "sot_agg_query"],
             )
 
             config_intended(self)
@@ -316,12 +316,7 @@ class BackupJob(GoldenConfigJobMixin, FormEntry):
             settings = get_golden_config_settings()
 
             # Verify backup feature is enabled and has required settings
-            verify_feature_enabled(
-                self.logger,
-                "backup",
-                settings,
-                required_settings=["backup_path_template"]
-            )
+            verify_feature_enabled(self.logger, "backup", settings, required_settings=["backup_path_template"])
 
             config_backup(self)
         except NornirNautobotException as error:

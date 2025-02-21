@@ -351,9 +351,9 @@ def verify_feature_enabled(logger, feature_name, settings, required_settings=Non
                 missing_settings.append(setting)
 
         if missing_settings:
-            if feature_name == 'intended' and 'sot_agg_query' in missing_settings and not ENABLE_SOTAGG:
+            if feature_name == "intended" and "sot_agg_query" in missing_settings and not ENABLE_SOTAGG:
                 # Skip SOT aggregation query check if the feature is disabled
-                missing_settings.remove('sot_agg_query')
+                missing_settings.remove("sot_agg_query")
 
             if missing_settings:  # Check again in case we removed the only missing setting
                 error_msg = f"`E3051:` Missing required settings for {feature_name}: {', '.join(missing_settings)}"

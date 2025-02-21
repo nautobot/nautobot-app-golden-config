@@ -115,7 +115,10 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
 
     def _pre_helper(self, pk, request):
         self.device = Device.objects.get(pk=pk)
-        self.config_details = models.GoldenConfig.objects.filter(device=self.device).first()
+        if request.GET.get("config_plan_id"):
+            self.config_details = models.ConfigPlan.objects.get(id=request.GET.get("config_plan_id"))
+        else:
+            self.config_details = models.GoldenConfig.objects.filter(device=self.device).first()
         self.action_template_name = "nautobot_golden_config/goldenconfig_details.html"
         self.structured_format = "json"
         self.is_modal = False

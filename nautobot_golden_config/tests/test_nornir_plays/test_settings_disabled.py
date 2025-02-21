@@ -50,6 +50,9 @@ class TestGoldenConfigDisabledSettings(unittest.TestCase):  # pylint: disable=to
         self.config_plan_qs = Mock()
         self.deploy_job_result = Mock()
 
+        # Create a mock job request
+        self.job_request = Mock()
+
     @patch(
         "nautobot_golden_config.utilities.db_management.close_threaded_db_connections",
         lambda x: x,  # No-op decorator
@@ -164,7 +167,14 @@ class TestGoldenConfigDisabledSettings(unittest.TestCase):  # pylint: disable=to
         Test that run_deployment returns early when compliance is disabled.
         """
         # Execute the function
-        run_deployment(self.task, self.logger, self.device_to_settings_map, self.config_plan_qs, self.deploy_job_result)
+        run_deployment(
+            self.task,
+            self.logger,
+            self.device_to_settings_map,
+            self.config_plan_qs,
+            self.deploy_job_result,
+            self.job_request,
+        )
 
         # Assertions to verify early exit
         expected_log_message = f"Deploys are disabled for device {self.obj}."

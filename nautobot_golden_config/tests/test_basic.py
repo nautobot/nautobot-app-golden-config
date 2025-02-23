@@ -1,9 +1,13 @@
 """Basic tests that do not require Django."""
 
 import os
+import re
 import unittest
 
 import toml
+import yaml
+
+from nautobot_golden_config import __version__ as project_version
 
 
 class TestDocsPackaging(unittest.TestCase):
@@ -23,3 +27,59 @@ class TestDocsPackaging(unittest.TestCase):
             else:
                 version = "*"
             self.assertEqual(poetry_details[package_name], version)
+
+
+class TestDocsReleaseNotes(unittest.TestCase):
+    """Test that mkdocs has all of the release notes files that have been created."""
+
+    def _get_path_info(self):
+        """Return the parent path of the tests directory."""
+        self.parent_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+        docs_path = os.path.join(self.parent_path, "docs")
+        self.release_notes_files = [
+            file for file in os.listdir(f"{docs_path}/admin/release_notes/") if file.endswith(".md")
+        ]
+
+    def test_version_file_found(self):
+        """Verify that if the current version has no letters, which would see in alpha or beta has an associated release note file."""
+        self._get_path_info()
+        version_pattern = re.compile(r"^(\d+)\.(\d+)\.\d+$")
+        match = version_pattern.match(project_version)
+        # If there is no match, then it is likely an alpha or beta version and we can skip this test.
+        if match:
+            major, minor = match.groups()
+            version_str = f"version_{major}.{minor}.md"
+            if version_str not in self.release_notes_files:
+                self.fail(f"Release note file for version {version_str} not found in release notes folder.")
+
+    def test_mkdocs_files(self):
+        """Verify that in the mkdocs key `nav.[Administrator Guide][Release Notes]` has every file accounted for."""
+
+        def _find_release_notes(data):
+            """Find the release notes in the mkdocs.yml file as everything is a list with key names and not deterministic."""
+            for item in data["nav"]:
+                if "Administrator Guide" in item:
+                    for sub_item in item["Administrator Guide"]:
+                        if "Release Notes" in sub_item:
+                            sub_item["Release Notes"]
+                            found_docs = []
+                            for item in sub_item["Release Notes"]:
+                                if isinstance(item, dict):
+                                    value = list(item.values())[0]
+                                elif isinstance(item, str):
+                                    value = item
+                                else:
+                                    self.fail("Release notes is not a string or a dictionary")
+                                value = value.split("/")[-1]
+                                found_docs.append(value)
+                            return found_docs
+            return None
+
+        self._get_path_info()
+        with open(f"{self.parent_path}/mkdocs.yml", "r", encoding="utf-8") as file:
+            data = yaml.safe_load(file)
+            # We will read the yaml file and get the list of files in the release notes section
+            release_notes_mkdocs = _find_release_notes(data)
+            if not release_notes_mkdocs:
+                self.fail("No release notes found in mkdocs.yml")
+            self.assertEqual(set(release_notes_mkdocs), set(self.release_notes_files))

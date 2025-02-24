@@ -209,8 +209,7 @@
             const graphql_data_tab = document.getElementById("id_graphql_data_tab");
             const graphql_data_code_block = document.getElementById("id_graphql_data_code_block");
             const rendered_config_code_block = document.getElementById("id_rendered_config_code_block");
-            const graphql_query_url = "{% url 'extras-api:graphqlquery-detail' pk='pk_placeholder' %}";
-            const graphql_url = "{% url 'graphql-api' %}";
+            const graphql_url = "{% url 'plugins-api:nautobot_golden_config-api:device_detail' pk='00000000-0000-0000-0000-000000000000' %}";
 
             if (!device_id || !graphql_query_id){
                 // switch to the intended config tab and disable the graphql tab
@@ -223,32 +222,20 @@
             }
 
             // populate and syntax highlight the graphql data tab
-            // first fetch the query data from the API, then perform the query
             graphql_data_code_block.innerHTML = "Loading...";
             delete graphql_data_code_block.dataset.highlighted;
             graphql_data_tab.classList.remove("disabled");
-            const response = await fetch(graphql_query_url.replace("pk_placeholder", graphql_query_id), {
+            const query_params = new URLSearchParams({graphql_query_id: graphql_query_id}).toString();
+            const response = await fetch(graphql_url.replace("00000000-0000-0000-0000-000000000000", device_id) + "?" + query_params, {
                 method: "GET",
                 headers: {"Content-Type": "application/json"}
             });
+
             const response_data = await response.json();
             if (response.ok) {
-
-                // perform the graphql query
-                const graphql_response = await fetch(graphql_url, {
-                    method: "POST",
-                    body: JSON.stringify({query: response_data.query, variables: {device_id: device_id}}),
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRFToken": "{{ csrf_token }}"
-                    }
-                });
-                const graphql_response_data = await graphql_response.json();
-                if (graphql_response.ok) {
-                    graphql_data_code_block.innerHTML = JSON.stringify(graphql_response_data, null, 4);
-                    delete graphql_data_code_block.dataset.highlighted;
-                    hljs.highlightElement(graphql_data_code_block);
-                }
+                graphql_data_code_block.innerHTML = JSON.stringify(response_data, null, 4);
+                delete graphql_data_code_block.dataset.highlighted;
+                hljs.highlightElement(graphql_data_code_block);
             }
         }
 

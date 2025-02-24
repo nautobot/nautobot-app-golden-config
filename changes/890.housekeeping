@@ -1,1 +1,0 @@
-Added upper bound for Nautobot version so that Nautobot does not get upgraded automatically to an unsupported version.

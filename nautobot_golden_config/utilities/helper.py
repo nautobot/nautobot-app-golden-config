@@ -326,19 +326,19 @@ def get_golden_config_settings():
     return GoldenConfigDefaults(app_config.default_settings)
 
 
-def verify_feature_enabled(logger, feature_name, settings, required_settings=None):
+def verify_feature_enabled(logger, feature_name, gc_settings, required_settings=None):
     """Verify if a feature is enabled and has required settings.
 
     Args:
         logger: Logger instance
         feature_name: Name of the feature to check (backup, intended, compliance, etc)
-        settings: GoldenConfigSetting instance
+        gc_settings: GoldenConfigSetting instance
         required_settings: List of required setting attributes for this feature
 
     Raises:
         NornirNautobotException: If feature is disabled or missing required settings
     """
-    feature_enabled = getattr(settings, f"{feature_name}_enabled", False)
+    feature_enabled = getattr(gc_settings, f"{feature_name}_enabled", False)
     if not feature_enabled:
         error_msg = f"`E3050:` The {feature_name} feature is disabled in Golden Config settings."
         logger.error(error_msg)
@@ -347,7 +347,7 @@ def verify_feature_enabled(logger, feature_name, settings, required_settings=Non
     if required_settings:
         missing_settings = []
         for setting in required_settings:
-            if not getattr(settings, setting, None):
+            if not getattr(gc_settings, setting, None):
                 missing_settings.append(setting)
 
         if missing_settings:
@@ -377,22 +377,22 @@ def cleanup_compliance_data(logger, device):
             gc_obj.compliance_last_success_date = None
             gc_obj.save()
             logger.info(f"Cleaned up compliance data for device {device.name}")
-    except Exception as e:
+    except Exception as e:  # pylint disable=broad-except-caught, invalid-name
         logger.warning(f"Failed to cleanup compliance data for device {device.name}: {str(e)}")
 
 
-def verify_config_plan_eligibility(logger, device, settings):
+def verify_config_plan_eligibility(logger, device, gc_settings):
     """Verify if a device is eligible for config plan operations.
 
     Args:
         logger: Logger instance
         device: Device instance
-        settings: GoldenConfigSetting instance
+        gc_settings: GoldenConfigSetting instance
 
     Raises:
         NornirNautobotException: If device is not eligible for config plans
     """
-    if not settings.plan_enabled:
+    if not gc_settings.plan_enabled:
         error_msg = "`E3052:` Config plan creation is disabled in Golden Config settings."
         logger.error(error_msg)
         raise NornirNautobotException(error_msg)
@@ -405,18 +405,18 @@ def verify_config_plan_eligibility(logger, device, settings):
         raise NornirNautobotException(error_msg)
 
 
-def verify_deployment_eligibility(logger, config_plan, settings):
+def verify_deployment_eligibility(logger, config_plan, gc_settings):
     """Verify if a config plan is eligible for deployment.
 
     Args:
         logger: Logger instance
         config_plan: ConfigPlan instance
-        settings: GoldenConfigSetting instance
+        gc_settings: GoldenConfigSetting instance
 
     Raises:
         NornirNautobotException: If deployment is not allowed
     """
-    if not settings.deploy_enabled:
+    if not gc_settings.deploy_enabled:
         error_msg = "`E3054:` Configuration deployment is disabled in Golden Config settings."
         logger.error(error_msg)
         raise NornirNautobotException(error_msg)

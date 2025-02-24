@@ -340,7 +340,7 @@ def verify_feature_enabled(logger, feature_name, gc_settings, required_settings=
     """
     feature_enabled = getattr(gc_settings, f"{feature_name}_enabled", False)
     if not feature_enabled:
-        error_msg = f"`E3050:` The {feature_name} feature is disabled in Golden Config settings."
+        error_msg = f"`E3032:` The {feature_name} feature is disabled in Golden Config settings."
         logger.error(error_msg)
         raise NornirNautobotException(error_msg)
 
@@ -356,7 +356,7 @@ def verify_feature_enabled(logger, feature_name, gc_settings, required_settings=
                 missing_settings.remove("sot_agg_query")
 
             if missing_settings:  # Check again in case we removed the only missing setting
-                error_msg = f"`E3051:` Missing required settings for {feature_name}: {', '.join(missing_settings)}"
+                error_msg = f"`E3033:` Missing required settings for {feature_name}: {', '.join(missing_settings)}"
                 logger.error(error_msg)
                 raise NornirNautobotException(error_msg)
 
@@ -393,14 +393,14 @@ def verify_config_plan_eligibility(logger, device, gc_settings):
         NornirNautobotException: If device is not eligible for config plans
     """
     if not gc_settings.plan_enabled:
-        error_msg = "`E3052:` Config plan creation is disabled in Golden Config settings."
+        error_msg = "`E3034:` Config plan creation is disabled in Golden Config settings."
         logger.error(error_msg)
         raise NornirNautobotException(error_msg)
 
     # Check if device is in scope
     device_settings = get_device_to_settings_map(device)
     if not device_settings:
-        error_msg = f"`E3053:` Device {device.name} is not in scope for config plans."
+        error_msg = f"`E3035:` Device {device.name} is not in scope for config plans."
         logger.error(error_msg)
         raise NornirNautobotException(error_msg)
 
@@ -417,13 +417,13 @@ def verify_deployment_eligibility(logger, config_plan, gc_settings):
         NornirNautobotException: If deployment is not allowed
     """
     if not gc_settings.deploy_enabled:
-        error_msg = "`E3054:` Configuration deployment is disabled in Golden Config settings."
+        error_msg = "`E3036:` Configuration deployment is disabled in Golden Config settings."
         logger.error(error_msg)
         raise NornirNautobotException(error_msg)
 
     # Check if device is still in scope
     device_settings = get_device_to_settings_map(config_plan.device)
     if not device_settings:
-        error_msg = f"`E3055:` Device {config_plan.device.name} is no longer in scope for deployments."
+        error_msg = f"`E3037:` Device {config_plan.device.name} is no longer in scope for deployments."
         logger.error(error_msg)
         raise NornirNautobotException(error_msg)

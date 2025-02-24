@@ -377,7 +377,7 @@ def cleanup_compliance_data(logger, device):
             gc_obj.compliance_last_success_date = None
             gc_obj.save()
             logger.info(f"Cleaned up compliance data for device {device.name}")
-    except Exception as exc:  # pylint: disable=broad-except-caught
+    except Exception as exc:  # pylint: disable=broad-exception-caught
         logger.warning(f"Failed to cleanup compliance data for device {device.name}: {str(exc)}")
 
 

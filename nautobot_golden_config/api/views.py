@@ -2,12 +2,12 @@
 
 import datetime
 import difflib
-import json
 import logging
 from pathlib import Path
 
 from django.conf import settings as nautobot_settings
 from django.contrib.contenttypes.models import ContentType
+from django.shortcuts import get_object_or_404
 from django.utils.timezone import make_aware
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -28,19 +28,18 @@ from nornir import InitNornir
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
 from packaging import version
 from rest_framework import mixins, status, viewsets
-from rest_framework.exceptions import APIException
+from rest_framework.exceptions import APIException, ValidationError
 from rest_framework.generics import GenericAPIView, RetrieveAPIView
 from rest_framework.mixins import DestroyModelMixin, ListModelMixin, RetrieveModelMixin, UpdateModelMixin
-from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
+from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.routers import APIRootView
-from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
 from nautobot_golden_config import filters, models
 from nautobot_golden_config.api import serializers
 from nautobot_golden_config.utilities.graphql import graph_ql_query
-from nautobot_golden_config.utilities.helper import dispatch_params, get_device_to_settings_map, get_django_env
+from nautobot_golden_config.utilities.helper import dispatch_params, get_django_env
 
 
 class GoldenConfigRootView(APIRootView):
@@ -51,18 +50,53 @@ class GoldenConfigRootView(APIRootView):
         return "Golden Config"
 
 
-class SOTAggDeviceDetailView(APIView):
+class SOTAggDeviceDetailView(NautobotAPIVersionMixin, GenericAPIView):
     """Detail REST API view showing graphql, with a potential "transformer" of data on a specific device."""
 
-    permission_classes = [AllowAny]
+    name = "SOTAgg Device View"
+    permission_classes = [IsAuthenticated]
+    serializer_class = serializers.GraphQLSerializer
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="graphql_query_id",
+                required=False,
+                type=OpenApiTypes.UUID,
+                location=OpenApiParameter.QUERY,
+            ),
+        ]
+    )
     def get(self, request, *args, **kwargs):
-        """Get method serialize for a dictionary to json response."""
-        device = Device.objects.get(pk=kwargs["pk"])
-        settings = get_device_to_settings_map(queryset=Device.objects.filter(pk=device.pk))[device.id]
-        status_code, data = graph_ql_query(request, device, settings.sot_agg_query.query)
-        data = json.loads(json.dumps(data))
-        return Response(serializers.GraphQLSerializer(data=data).initial_data, status=status_code)
+        """Get GraphQL data for a Device."""
+        device = get_object_or_404(Device.objects.restrict(request.user, "view"), pk=kwargs["pk"])
+
+        graphql_query = None
+        graphql_query_id_param = request.query_params.get("graphql_query_id")
+        if graphql_query_id_param:
+            try:
+                graphql_query = GraphQLQuery.objects.get(pk=graphql_query_id_param)
+            except GraphQLQuery.DoesNotExist as exc:
+                raise ValidationError(f"GraphQLQuery with id '{graphql_query_id_param}' not found") from exc
+        settings = models.GoldenConfigSetting.objects.get_for_device(device)
+
+        if graphql_query is None:
+            if settings.sot_agg_query is not None:
+                graphql_query = settings.sot_agg_query
+            else:
+                raise ValidationError("Golden Config settings sot_agg_query not set")
+
+        if "device_id" not in graphql_query.variables:
+            raise ValidationError("The selected GraphQL query is missing a 'device_id' variable")
+
+        status_code, graphql_data = graph_ql_query(request, device, graphql_query.query)
+        if status_code == status.HTTP_200_OK:
+            return Response(
+                data=graphql_data,
+                status=status.HTTP_200_OK,
+            )
+
+        raise ValidationError("Unable to generate the GraphQL data for this device")
 
 
 class ComplianceRuleViewSet(NautobotModelViewSet):  # pylint:disable=too-many-ancestors
@@ -286,7 +320,7 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
         graphql_query_id_param = request.query_params.get("graphql_query_id")
         if graphql_query_id_param:
             try:
-                graphql_query = GraphQLQuery.objects.get(pk=request.query_params.get("graphql_query_id"))
+                graphql_query = GraphQLQuery.objects.get(pk=graphql_query_id_param)
             except GraphQLQuery.DoesNotExist as exc:
                 raise GenerateIntendedConfigException(
                     f"GraphQLQuery with id '{graphql_query_id_param}' not found"

@@ -9,6 +9,7 @@ from nautobot_golden_config import views
 
 app_name = "nautobot_golden_config"
 
+app_name = "nautobot_golden_config"
 router = NautobotUIViewSetRouter()
 
 router.register("compliance-feature", views.ComplianceFeatureUIViewSet)

@@ -53,6 +53,7 @@ mkdocs-material = "9.5.32"
 # Automatic documentation from sources, for MkDocs
 mkdocstrings = "0.25.2"
 mkdocstrings-python = "1.10.8"
+mkdocs-autorefs = "1.2.0"
 griffe = "1.1.1"
 towncrier = "~23.6.0"
 to-json-schema = "*"

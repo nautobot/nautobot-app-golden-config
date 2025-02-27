@@ -9,6 +9,7 @@ from nautobot.apps.urls import NautobotUIViewSetRouter
 from nautobot_golden_config import views
 
 
+app_name = "nautobot_golden_config"
 router = NautobotUIViewSetRouter()
 
 router.register("compliancefeature", views.ComplianceFeatureUIViewSet)

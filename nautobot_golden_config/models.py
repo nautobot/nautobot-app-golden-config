@@ -207,7 +207,6 @@ def _get_hierconfig_remediation(obj):
             f"Cannot instantiate HierConfig on {obj.device.name}, check Device, Platform and Hier Options."
         ) from err
 
-    hierconfig_wfr.remediation_config
     remediation_config = hierconfig_wfr.remediation_config_filtered_text(include_tags={}, exclude_tags={})
 
     return remediation_config

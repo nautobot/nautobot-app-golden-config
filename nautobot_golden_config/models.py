@@ -9,8 +9,9 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.manager import BaseManager
 from django.utils.module_loading import import_string
-from hier_config import WorkflowRemediation, get_hconfig
+from hier_config import WorkflowRemediation, get_hconfig, get_hconfig_driver, Platform
 from hier_config.utils import hconfig_v2_os_v3_platform_mapper, load_hconfig_v2_options
+
 from nautobot.apps.models import RestrictedQuerySet
 from nautobot.apps.utils import render_jinja2
 from nautobot.core.models.generics import PrimaryModel
@@ -24,6 +25,7 @@ from xmldiff import actions, main
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
+
 
 LOGGER = logging.getLogger(__name__)
 GRAPHQL_STR_START = "query ($device_id: ID!)"
@@ -195,8 +197,10 @@ def _get_hierconfig_remediation(obj):
     try:
         hierconfig_os = hconfig_v2_os_v3_platform_mapper(hierconfig_os)
 
+        hierconfig_os = hconfig_v2_os_v3_platform_mapper(hierconfig_os)
+
         if remediation_options:
-            hierconfig_os = load_hconfig_v2_options(remediation_options, hierconfig_os)
+            load_hconfig_v2_options(remediation_options, hierconfig_os)
 
         hierconfig_running_config = get_hconfig(hierconfig_os, obj.actual)
         hierconfig_intended_config = get_hconfig(hierconfig_os, obj.intended)
@@ -210,6 +214,7 @@ def _get_hierconfig_remediation(obj):
             f"Cannot instantiate HierConfig on {obj.device.name}, check Device, Platform and Hier Options."
         ) from err
 
+    hierconfig_wfr.remediation_config()
     remediation_config = hierconfig_wfr.remediation_config_filtered_text(include_tags={}, exclude_tags={})
 
     return remediation_config

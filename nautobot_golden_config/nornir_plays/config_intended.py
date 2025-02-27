@@ -22,8 +22,9 @@ from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import (
     dispatch_params,
     get_django_env,
+    get_golden_config_settings,
     render_jinja_template,
-    verify_settings,
+    verify_feature_enabled,
 )
 from nautobot_golden_config.utilities.logger import NornirLogger
 
@@ -107,9 +108,15 @@ def config_intended(job):
     """
     now = make_aware(datetime.now())
     logger = NornirLogger(job.job_result, job.logger.getEffectiveLevel())
+    settings = get_golden_config_settings()
 
-    for settings in set(job.device_to_settings_map.values()):
-        verify_settings(logger, settings, ["jinja_path_template", "intended_path_template", "sot_agg_query"])
+    # Verify intended feature is enabled and has required settings
+    verify_feature_enabled(
+        logger,
+        "intended",
+        settings,
+        required_settings=["jinja_path_template", "intended_path_template", "sot_agg_query"],
+    )
 
     # Retrieve filters from the Django jinja template engine
     jinja_env = get_django_env()

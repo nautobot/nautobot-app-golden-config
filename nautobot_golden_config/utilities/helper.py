@@ -107,15 +107,6 @@ def null_to_empty(val):
     return val
 
 
-def verify_settings(logger, global_settings, attrs):
-    """Helper function to verify required attributes are set before a Nornir play start."""
-    for item in attrs:
-        if not getattr(global_settings, item):
-            error_msg = f"`E3018:` Missing the required global setting: `{item}`."
-            logger.error(error_msg)
-            raise NornirNautobotException(error_msg)
-
-
 def get_django_env():
     """Load Django Jinja filters from the Django jinja template engine, and add them to the jinja_env.
 

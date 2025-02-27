@@ -20,8 +20,9 @@ from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.utilities.helper import (
     dispatch_params,
+    get_golden_config_settings,
     render_jinja_template,
-    verify_settings,
+    verify_feature_enabled,
 )
 from nautobot_golden_config.utilities.logger import NornirLogger
 
@@ -100,9 +101,15 @@ def config_backup(job):
     """
     now = make_aware(datetime.now())
     logger = NornirLogger(job.job_result, job.logger.getEffectiveLevel())
+    settings = get_golden_config_settings()
 
-    for settings in set(job.device_to_settings_map.values()):
-        verify_settings(logger, settings, ["backup_path_template"])
+    # Verify backup feature is enabled and has required settings
+    verify_feature_enabled(
+        logger,
+        "backup",
+        settings,
+        required_settings=["backup_path_template"],
+    )
 
     # Build a dictionary, with keys of platform.network_driver, and the regex line in it for the netutils func.
     remove_regex_dict = {}

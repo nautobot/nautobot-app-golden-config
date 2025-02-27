@@ -46,7 +46,6 @@ from nautobot_golden_config.utilities.helper import (
     update_dynamic_groups_cache,
     verify_config_plan_eligibility,
     verify_deployment_eligibility,
-    verify_feature_enabled,
 )
 
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
@@ -249,16 +248,6 @@ class ComplianceJob(GoldenConfigJobMixin, FormEntry):
         """Run config compliance report script."""
         try:
             self.logger.warning("Starting config compliance nornir play.")
-            settings = get_golden_config_settings()
-
-            # Verify compliance feature is enabled and has required settings
-            verify_feature_enabled(
-                self.logger,
-                "compliance",
-                settings,
-                required_settings=["backup_path_template", "intended_path_template"],
-            )
-
             config_compliance(self)
         except NornirNautobotException as error:
             error_msg = str(error)
@@ -281,16 +270,6 @@ class IntendedJob(GoldenConfigJobMixin, FormEntry):
         """Run config generation script."""
         try:
             self.logger.debug("Building device settings mapping and running intended config nornir play.")
-            settings = get_golden_config_settings()
-
-            # Verify intended feature is enabled and has required settings
-            verify_feature_enabled(
-                self.logger,
-                "intended",
-                settings,
-                required_settings=["jinja_path_template", "intended_path_template", "sot_agg_query"],
-            )
-
             config_intended(self)
         except NornirNautobotException as error:
             error_msg = str(error)
@@ -313,11 +292,6 @@ class BackupJob(GoldenConfigJobMixin, FormEntry):
         """Run config backup process."""
         try:
             self.logger.debug("Starting config backup nornir play.")
-            settings = get_golden_config_settings()
-
-            # Verify backup feature is enabled and has required settings
-            verify_feature_enabled(self.logger, "backup", settings, required_settings=["backup_path_template"])
-
             config_backup(self)
         except NornirNautobotException as error:
             error_msg = str(error)

@@ -27,9 +27,7 @@ InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 
 
 @close_threaded_db_connections
-def run_deployment(  # pylint: disable=too-many-arguments, too-many-locals
-    task: Task, logger: logging.Logger, config_plan_qs, deploy_job_result, job_request
-) -> Result:
+def run_deployment(task: Task, logger: logging.Logger, config_plan_qs, deploy_job_result, job_request) -> Result:
     """Deploy configurations to device."""
     obj = task.host.data["obj"]
     plans_to_deploy = config_plan_qs.filter(device=obj)

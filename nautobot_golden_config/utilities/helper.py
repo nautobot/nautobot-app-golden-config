@@ -361,26 +361,6 @@ def verify_feature_enabled(logger, feature_name, gc_settings, required_settings=
                 raise NornirNautobotException(error_msg)
 
 
-def cleanup_compliance_data(logger, device):
-    """Clean up compliance data for devices no longer in scope.
-
-    Args:
-        logger: Logger instance
-        device: Device instance
-    """
-    try:
-        gc_obj = models.GoldenConfig.objects.filter(device=device).first()
-        if gc_obj:
-            # Clear compliance related fields but keep the object
-            gc_obj.compliance_config = ""
-            gc_obj.compliance_last_attempt_date = None
-            gc_obj.compliance_last_success_date = None
-            gc_obj.save()
-            logger.info(f"Cleaned up compliance data for device {device.name}")
-    except Exception as exc:  # pylint: disable=broad-exception-caught
-        logger.warning(f"Failed to cleanup compliance data for device {device.name}: {str(exc)}")
-
-
 def verify_config_plan_eligibility(logger, device, gc_settings):
     """Verify if a device is eligible for config plan operations.
 

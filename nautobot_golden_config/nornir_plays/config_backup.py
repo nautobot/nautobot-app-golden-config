@@ -45,10 +45,6 @@ def run_backup(  # pylint: disable=too-many-arguments
     obj = task.host.data["obj"]
     settings = device_to_settings_map[obj.id]
 
-    if not settings.backup_enabled:
-        logger.info(f"Backups are disabled for device {obj}.")
-        return Result(host=task.host, result="Backups disabled")
-
     backup_obj = GoldenConfig.objects.filter(device=obj).first()
     if not backup_obj:
         backup_obj = GoldenConfig.objects.create(

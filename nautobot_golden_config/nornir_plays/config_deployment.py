@@ -32,12 +32,6 @@ def run_deployment(  # pylint: disable=too-many-arguments, too-many-locals
 ) -> Result:
     """Deploy configurations to device."""
     obj = task.host.data["obj"]
-    settings = device_to_settings_map[obj.id]
-
-    if not settings.deploy_enabled:
-        logger.info(f"Deploys are disabled for device {obj}.")
-        return Result(host=task.host, result="Deploy disabled")
-
     plans_to_deploy = config_plan_qs.filter(device=obj)
     plans_to_deploy.update(deploy_result=deploy_job_result)
     consolidated_config_set = "\n".join(plans_to_deploy.values_list("config_set", flat=True))
@@ -125,7 +119,6 @@ def config_deployment(job):
                 task=run_deployment,
                 name="DEPLOY CONFIG",
                 logger=logger,
-                device_to_settings_map=job.device_to_settings_map,
                 config_plan_qs=config_plan_qs,
                 deploy_job_result=job.job_result,
                 job_request=job.request,

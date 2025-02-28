@@ -9,7 +9,8 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.manager import BaseManager
 from django.utils.module_loading import import_string
-from hier_config import Host as HierConfigHost
+from hier_config import WorkflowRemediation, get_hconfig
+from hier_config.utils import hconfig_v2_os_v3_platform_mapper, load_hconfig_v2_options
 from nautobot.apps.models import RestrictedQuerySet
 from nautobot.apps.utils import render_jinja2
 from nautobot.core.models.generics import PrimaryModel
@@ -177,32 +178,39 @@ def _verify_get_custom_compliance_data(compliance_details):
 
 def _get_hierconfig_remediation(obj):
     """Returns the remediating config."""
-    hierconfig_os = obj.device.platform.network_driver_mappings["hier_config"]
+    hierconfig_os = obj.device.platform.network_driver_mappings.get("hier_config")
+
     if not hierconfig_os:
-        raise ValidationError(f"platform {obj.network_driver} is not supported by hierconfig.")
+        raise ValidationError(f"platform {obj.device.platform.network_driver} is not supported by hierconfig.")
 
     try:
         remediation_setting_obj = RemediationSetting.objects.get(platform=obj.rule.platform)
     except Exception as err:  # pylint: disable=broad-except:
-        raise ValidationError(f"Platform {obj.network_driver} has no Remediation Settings defined.") from err
+        raise ValidationError(
+            f"Platform {obj.device.platform.network_driver} has no Remediation Settings defined."
+        ) from err
 
     remediation_options = remediation_setting_obj.remediation_options
 
     try:
-        hc_kwargs = {"hostname": obj.device.name, "os": hierconfig_os}
+        hierconfig_os = hconfig_v2_os_v3_platform_mapper(hierconfig_os)
+
         if remediation_options:
-            hc_kwargs.update(hconfig_options=remediation_options)
-        host = HierConfigHost(**hc_kwargs)
+            hierconfig_os = load_hconfig_v2_options(remediation_options, hierconfig_os)
+
+        hierconfig_running_config = get_hconfig(hierconfig_os, obj.actual)
+        hierconfig_intended_config = get_hconfig(hierconfig_os, obj.intended)
+        hierconfig_wfr = WorkflowRemediation(
+            hierconfig_running_config,
+            hierconfig_intended_config,
+        )
 
     except Exception as err:  # pylint: disable=broad-except:
         raise Exception(  # pylint: disable=broad-exception-raised
             f"Cannot instantiate HierConfig on {obj.device.name}, check Device, Platform and Hier Options."
         ) from err
 
-    host.load_generated_config(obj.intended)
-    host.load_running_config(obj.actual)
-    host.remediation_config()
-    remediation_config = host.remediation_config_filtered_text(include_tags={}, exclude_tags={})
+    remediation_config = hierconfig_wfr.remediation_config_filtered_text(include_tags={}, exclude_tags={})
 
     return remediation_config
 

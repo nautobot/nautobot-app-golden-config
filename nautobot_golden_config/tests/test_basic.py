@@ -32,8 +32,9 @@ class TestDocsPackaging(unittest.TestCase):
 class TestDocsReleaseNotes(unittest.TestCase):
     """Test that mkdocs has all of the release notes files that have been created."""
 
-    def _get_path_info(self):
-        """Return the parent path of the tests directory."""
+    def __init__(self, *args, **kwargs):
+        """Set the parent path and release_notes_files attributes."""
+        super().__init__(*args, **kwargs)
         self.parent_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
         docs_path = os.path.join(self.parent_path, "docs")
         self.release_notes_files = [
@@ -42,7 +43,6 @@ class TestDocsReleaseNotes(unittest.TestCase):
 
     def test_version_file_found(self):
         """Verify that if the current version has no letters, which would see in alpha or beta has an associated release note file."""
-        self._get_path_info()
         version_pattern = re.compile(r"^(\d+)\.(\d+)\.\d+$")
         match = version_pattern.match(project_version)
         # If there is no match, then it is likely an alpha or beta version and we can skip this test.
@@ -57,25 +57,20 @@ class TestDocsReleaseNotes(unittest.TestCase):
 
         def _find_release_notes(data):
             """Find the release notes in the mkdocs.yml file as everything is a list with key names and not deterministic."""
+            found_docs = []
             for item in data["nav"]:
-                if "Administrator Guide" in item:
-                    for sub_item in item["Administrator Guide"]:
-                        if "Release Notes" in sub_item:
-                            sub_item["Release Notes"]
-                            found_docs = []
-                            for item in sub_item["Release Notes"]:
-                                if isinstance(item, dict):
-                                    value = list(item.values())[0]
-                                elif isinstance(item, str):
-                                    value = item
-                                else:
-                                    self.fail("Release notes is not a string or a dictionary")
-                                value = value.split("/")[-1]
-                                found_docs.append(value)
-                            return found_docs
+                if "Administrator Guide" not in item:
+                    continue
+                for sub_item in item["Administrator Guide"]:
+                    if "Release Notes" not in sub_item:
+                        continue
+                    for release_note in sub_item["Release Notes"]:
+                        value = list(release_note.values())[0] if isinstance(release_note, dict) else release_note
+                        value = value.split("/")[-1]
+                        found_docs.append(value)
+                    return found_docs
             return None
 
-        self._get_path_info()
         with open(f"{self.parent_path}/mkdocs.yml", "r", encoding="utf-8") as file:
             data = yaml.safe_load(file)
             # We will read the yaml file and get the list of files in the release notes section

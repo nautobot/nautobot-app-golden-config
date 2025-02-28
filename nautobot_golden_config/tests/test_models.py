@@ -647,7 +647,7 @@ class GetHierConfigRemediationTestCase(TestCase):
     @patch("nautobot_golden_config.models.hconfig_v2_os_v3_platform_mapper")
     @patch("nautobot_golden_config.models.get_hconfig")
     @patch("nautobot_golden_config.models.WorkflowRemediation")
-    def test_hierconfig_instantiation_error(self, mock_workflow, mock_get_hconfig, mock_mapper):
+    def test_hierconfig_instantiation_error(self, mock_workflow_remediation, mock_get_hconfig, mock_mapper):
         """Test error when HierConfig instantiation fails."""
         device = create_device()
         compliance_rule_cli = create_feature_rule_cli_with_remediation(device)
@@ -660,6 +660,11 @@ class GetHierConfigRemediationTestCase(TestCase):
         # Set up mocks to raise an exception
         mock_mapper.return_value = "ios"
         mock_get_hconfig.side_effect = Exception("Test exception")
+
+        # We won't reach the WorkflowRemediation instantiation, but configure it anyway
+        # to satisfy pylint
+        mock_instance = mock_workflow_remediation.return_value
+        mock_instance.remediation_config_filtered_text.return_value = "mock remediation"
 
         # Create a mock ConfigCompliance object
         config_compliance = ConfigCompliance(
@@ -674,3 +679,9 @@ class GetHierConfigRemediationTestCase(TestCase):
             _get_hierconfig_remediation(config_compliance)
 
         self.assertIn("Cannot instantiate HierConfig", str(context.exception))
+
+        # Verify mock usage
+        mock_mapper.assert_called_once_with("ios")
+        mock_get_hconfig.assert_called_once()
+        # WorkflowRemediation should never be called since get_hconfig raises exception
+        mock_workflow_remediation.assert_not_called()

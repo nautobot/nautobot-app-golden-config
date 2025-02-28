@@ -4,3 +4,4 @@ markdown-version-annotations==1.0.1
 griffe==1.1.1
 mkdocstrings-python==1.10.8
 mkdocstrings==0.25.2
+mkdocs-autorefs==1.2.0

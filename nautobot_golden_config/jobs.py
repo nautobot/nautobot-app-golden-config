@@ -33,7 +33,6 @@ from nautobot_golden_config.nornir_plays.config_backup import config_backup
 from nautobot_golden_config.nornir_plays.config_compliance import config_compliance
 from nautobot_golden_config.nornir_plays.config_deployment import config_deployment
 from nautobot_golden_config.nornir_plays.config_intended import config_intended
-from nautobot_golden_config.utilities import constant
 from nautobot_golden_config.utilities.config_plan import (
     config_plan_default_status,
     generate_config_set_from_compliance_feature,
@@ -42,8 +41,11 @@ from nautobot_golden_config.utilities.config_plan import (
 from nautobot_golden_config.utilities.git import GitRepo
 from nautobot_golden_config.utilities.helper import (
     get_device_to_settings_map,
+    get_golden_config_settings,
     get_job_filter,
     update_dynamic_groups_cache,
+    verify_config_plan_eligibility,
+    verify_deployment_eligibility,
 )
 
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
@@ -54,11 +56,13 @@ name = "Golden Configuration"  # pylint: disable=invalid-name
 def get_repo_types_for_job(job_name):
     """Logic to determine which repo_types are needed based on job + plugin settings."""
     repo_types = []
-    if constant.ENABLE_BACKUP and job_name == "nautobot_golden_config.jobs.BackupJob":
-        repo_types.extend(["backup_repository"])
-    if constant.ENABLE_INTENDED and job_name == "nautobot_golden_config.jobs.IntendedJob":
+    settings = get_golden_config_settings()
+
+    if settings.backup_enabled and job_name == "nautobot_golden_config.jobs.BackupJob":
+        repo_types.append("backup_repository")
+    if settings.intended_enabled and job_name == "nautobot_golden_config.jobs.IntendedJob":
         repo_types.extend(["jinja_repository", "intended_repository"])
-    if constant.ENABLE_COMPLIANCE and job_name == "nautobot_golden_config.jobs.ComplianceJob":
+    if settings.compliance_enabled and job_name == "nautobot_golden_config.jobs.ComplianceJob":
         repo_types.extend(["intended_repository", "backup_repository"])
     if "All" in job_name:
         repo_types.extend(["backup_repository", "jinja_repository", "intended_repository"])
@@ -67,6 +71,7 @@ def get_repo_types_for_job(job_name):
 
 def get_refreshed_repos(job_obj, repo_types, data=None):
     """Small wrapper to pull latest branch, and return a GitRepo app specific object."""
+    settings = get_golden_config_settings()
     dynamic_groups = DynamicGroup.objects.exclude(golden_config_setting__isnull=True)
     repository_records = set()
     for group in dynamic_groups:
@@ -93,15 +98,16 @@ def get_refreshed_repos(job_obj, repo_types, data=None):
         commit = False
 
         if (
-            constant.ENABLE_INTENDED
+            settings.intended_enabled
             and "nautobot_golden_config.intendedconfigs" in git_repo.nautobot_repo_obj.provided_contents
         ):
             commit = True
         if (
-            constant.ENABLE_BACKUP
+            settings.backup_enabled
             and "nautobot_golden_config.backupconfigs" in git_repo.nautobot_repo_obj.provided_contents
         ):
             commit = True
+
         repositories[str(git_repo.nautobot_repo_obj.id)] = {"repo_obj": git_repo, "to_commit": commit}
     return repositories
 
@@ -228,7 +234,7 @@ class GoldenConfigJobMixin(Job):  # pylint: disable=abstract-method
 
 
 class ComplianceJob(GoldenConfigJobMixin, FormEntry):
-    """Job to to run the compliance engine."""
+    """Job to run the compliance engine."""
 
     class Meta:
         """Meta object boilerplate for compliance."""
@@ -240,11 +246,13 @@ class ComplianceJob(GoldenConfigJobMixin, FormEntry):
     @gc_repos
     def run(self, *args, **data):  # pylint: disable=unused-argument
         """Run config compliance report script."""
-        self.logger.warning("Starting config compliance nornir play.")
-        if not constant.ENABLE_COMPLIANCE:
-            self.logger.critical("Compliance is disabled in application settings.")
-            raise ValueError("Compliance is disabled in application settings.")
-        config_compliance(self)
+        try:
+            self.logger.warning("Starting config compliance nornir play.")
+            config_compliance(self)
+        except NornirNautobotException as error:
+            error_msg = str(error)
+            self.logger.error(error_msg)
+            raise NornirNautobotException(error_msg) from error
 
 
 class IntendedJob(GoldenConfigJobMixin, FormEntry):
@@ -260,11 +268,13 @@ class IntendedJob(GoldenConfigJobMixin, FormEntry):
     @gc_repos
     def run(self, *args, **data):  # pylint: disable=unused-argument
         """Run config generation script."""
-        self.logger.debug("Building device settings mapping and running intended config nornir play.")
-        if not constant.ENABLE_INTENDED:
-            self.logger.critical("Intended Generation is disabled in application settings.")
-            raise ValueError("Intended Generation is disabled in application settings.")
-        config_intended(self)
+        try:
+            self.logger.debug("Building device settings mapping and running intended config nornir play.")
+            config_intended(self)
+        except NornirNautobotException as error:
+            error_msg = str(error)
+            self.logger.error(error_msg)
+            raise NornirNautobotException(error_msg) from error
 
 
 class BackupJob(GoldenConfigJobMixin, FormEntry):
@@ -280,11 +290,13 @@ class BackupJob(GoldenConfigJobMixin, FormEntry):
     @gc_repos
     def run(self, *args, **data):  # pylint: disable=unused-argument
         """Run config backup process."""
-        self.logger.debug("Starting config backup nornir play.")
-        if not constant.ENABLE_BACKUP:
-            self.logger.critical("Backups are disabled in application settings.")
-            raise ValueError("Backups are disabled in application settings.")
-        config_backup(self)
+        try:
+            self.logger.debug("Starting config backup nornir play.")
+            config_backup(self)
+        except NornirNautobotException as error:
+            error_msg = str(error)
+            self.logger.error(error_msg)
+            raise NornirNautobotException(error_msg) from error
 
 
 class AllGoldenConfig(GoldenConfigJobMixin):
@@ -305,10 +317,11 @@ class AllGoldenConfig(GoldenConfigJobMixin):
         current_repos = gc_repo_prep(job=self, data=data)
         failed_jobs = []
         error_msg, jobs_list = "", "All"
+        settings = get_golden_config_settings()
         for enabled, play in [
-            (constant.ENABLE_INTENDED, config_intended),
-            (constant.ENABLE_BACKUP, config_backup),
-            (constant.ENABLE_COMPLIANCE, config_compliance),
+            (settings.intended_enabled, config_intended),
+            (settings.backup_enabled, config_backup),
+            (settings.compliance_enabled, config_compliance),
         ]:
             try:
                 if enabled:
@@ -354,10 +367,11 @@ class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
         current_repos = gc_repo_prep(job=self, data=data)
         failed_jobs = []
         error_msg, jobs_list = "", "All"
+        settings = get_golden_config_settings()
         for enabled, play in [
-            (constant.ENABLE_INTENDED, config_intended),
-            (constant.ENABLE_BACKUP, config_backup),
-            (constant.ENABLE_COMPLIANCE, config_compliance),
+            (settings.intended_enabled, config_intended),
+            (settings.backup_enabled, config_backup),
+            (settings.compliance_enabled, config_compliance),
         ]:
             try:
                 if enabled:
@@ -503,16 +517,22 @@ class GenerateConfigPlans(Job, FormEntry):
 
     def run(self, **data):
         """Run config plan generation process."""
-        self.logger.debug("Updating Dynamic Group Cache.")
-        update_dynamic_groups_cache()
         self.logger.debug("Starting config plan generation job.")
+        settings = get_golden_config_settings()
+
         self._validate_inputs(data)
         try:
             self._device_qs = get_job_filter(data)
+
+            # Verify plan eligibility for each device
+            for device in self._device_qs:
+                verify_config_plan_eligibility(self.logger, device, settings)
+
         except NornirNautobotException as error:
             error_msg = str(error)
             self.logger.error(error_msg)
             raise NornirNautobotException(error_msg) from error
+
         if self._plan_type in ["intended", "missing", "remediation"]:
             self.logger.debug("Starting config plan generation for compliance features.")
             self._generate_config_plan_from_feature()
@@ -549,6 +569,12 @@ class DeployConfigPlans(Job):
         update_dynamic_groups_cache()
         self.logger.debug("Starting config plan deployment job.")
         self.data = data
+        settings = get_golden_config_settings()
+
+        # Verify deployment eligibility for each config plan
+        for config_plan in self.data["config_plan"]:
+            verify_deployment_eligibility(self.logger, config_plan, settings)
+
         config_deployment(self)
 
 

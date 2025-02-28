@@ -7,7 +7,18 @@ from nautobot.apps.tables import BaseTable, BooleanColumn, TagColumn, ToggleColu
 from nautobot.extras.tables import StatusTableMixin
 
 from nautobot_golden_config import models
-from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
+from nautobot_golden_config.utilities.constant import ENABLE_POSTPROCESSING, ENABLE_SOTAGG
+from nautobot_golden_config.utilities.helper import get_golden_config_settings
+
+settings = get_golden_config_settings()
+
+CONFIG_FEATURES = {
+    "intended": settings.intended_enabled,
+    "compliance": settings.compliance_enabled,
+    "backup": settings.backup_enabled,
+    "sotagg": ENABLE_SOTAGG,
+    "postprocessing": ENABLE_POSTPROCESSING,
+}
 
 ALL_ACTIONS = """
 {% if backup == True %}
@@ -122,11 +133,11 @@ MATCH_CONFIG = """{{ record.match_config|linebreaksbr }}"""
 def actual_fields():
     """Convienance function to conditionally toggle columns."""
     active_fields = ["pk", "name"]
-    if ENABLE_BACKUP:
+    if settings.backup_enabled:
         active_fields.append("backup_last_success_date")
-    if ENABLE_INTENDED:
+    if settings.intended_enabled:
         active_fields.append("intended_last_success_date")
-    if ENABLE_COMPLIANCE:
+    if settings.compliance_enabled:
         active_fields.append("compliance_last_success_date")
     active_fields.append("actions")
     return tuple(active_fields)
@@ -280,24 +291,19 @@ class GoldenConfigTable(BaseTable):
         text=lambda record: record.device.name,
         verbose_name="Device",
     )
-
-    if ENABLE_BACKUP:
-        backup_last_success_date = Column(
-            verbose_name="Backup Status", empty_values=(), order_by="backup_last_success_date"
-        )
-    if ENABLE_INTENDED:
-        intended_last_success_date = Column(
-            verbose_name="Intended Status",
-            empty_values=(),
-            order_by="intended_last_success_date",
-        )
-    if ENABLE_COMPLIANCE:
-        compliance_last_success_date = Column(
-            verbose_name="Compliance Status",
-            empty_values=(),
-            order_by="compliance_last_success_date",
-        )
-
+    backup_last_success_date = Column(
+        verbose_name="Backup Status", empty_values=(), order_by="backup_last_success_date"
+    )
+    intended_last_success_date = Column(
+        verbose_name="Intended Status",
+        empty_values=(),
+        order_by="intended_last_success_date",
+    )
+    compliance_last_success_date = Column(
+        verbose_name="Compliance Status",
+        empty_values=(),
+        order_by="compliance_last_success_date",
+    )
     actions = TemplateColumn(
         template_code=ALL_ACTIONS, verbose_name="Actions", extra_context=CONFIG_FEATURES, orderable=False
     )
@@ -453,6 +459,14 @@ class GoldenConfigSettingTable(BaseTable):
             return format_html('<span class="text-success"><i class="mdi mdi-check-bold"></i></span>')
         return format_html('<span class="text-danger"><i class="mdi mdi-close-thick"></i></span>')
 
+    def render_backup_enabled(self, record, column):
+        """Render backup_enabled boolean value."""
+        return self._render_capability(record=record, column=column, record_attribute="backup_enabled")
+
+    def render_intended_enabled(self, record, column):
+        """Render intended_enabled boolean value."""
+        return self._render_capability(record=record, column=column, record_attribute="intended_enabled")
+
     def render_backup_repository(self, record, column):
         """Render backup repository boolean value."""
         return self._render_capability(record=record, column=column, record_attribute="backup_repository")
@@ -475,7 +489,9 @@ class GoldenConfigSettingTable(BaseTable):
             "weight",
             "description",
             "backup_repository",
+            "backup_enabled",
             "intended_repository",
+            "intended_enabled",
             "jinja_repository",
         )
 

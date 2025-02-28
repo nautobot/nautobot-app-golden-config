@@ -93,19 +93,34 @@ sudo systemctl restart nautobot nautobot-worker nautobot-scheduler
 
 ## App Configuration
 
-The app behavior can be controlled with the following list of settings:
+The app behavior can be controlled with the following list of settings. All of these keys have default values in `nautobot_golden_config`, but can be overridden via the Nautobot UI on the **Golden Config Settings** page. If you’d like to update specific toggles—such as whether backups, compliance checks, or config plans are enabled—without editing your local configuration file.
 
-!!! note
-    The `enable_backup`, `enable_compliance`, `enable_intended`, `enable_sotagg`, `enable_plan`, `enable_deploy`, and `enable_postprocessing` will toggle inclusion of the entire component.
+### Managing Feature Toggles in the UI
+
+You can easily manage these feature toggles in the UI:
+
+  1. Navigate to **Golden Config > Golden Config Settings**.
+  2. Select **Default Settings** (or your chosen Setting if multiple exist).
+  3. Click **Edit** and adjust the relevant toggles (e.g., **Enable Backup**, **Enable Compliance**, **Enable Intended**, **Enable Plan**, **Enable Deploy**).
+
+![Golden Config Settings List](../images/golden-config-settings-list.png)
+
+![Golden Config Settings - Backup and Intended](../images/golden-config-settings-01.png)
+
+![Golden Config Settings - Additional Configuration](../images/golden-config-settings-02.png)
+
+As shown, you can toggle any of the features on or off. Once saved, the job logic in Nautobot Golden Config will reflect those changes immediately, allowing you to control which aspects of Golden Config you want to enable.
+
+## List of Settings
 
 | Key                       | Example                       | Default | Description                                                                                                                                                                |
 | ------------------------- | ----------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| enable_backup             | True                          | True    | A boolean to represent whether or not to run backup configurations within the app.                                                                                      |
-| enable_compliance         | True                          | True    | A boolean to represent whether or not to run the compliance process within the app.                                                                                     |
-| enable_intended           | True                          | True    | A boolean to represent whether or not to generate intended configurations within the app.                                                                               |
+| enable_backup             | True                          | True    | A boolean to represent whether or not to run backup configurations within the app. Can be changed in UI under **Enable Backup** in Golden Config Settings.                                                                                      |
+| enable_compliance         | True                          | True    | A boolean to represent whether or not to run the compliance process within the app. Can be changed in UI under **Compliance Enabled** in Golden Config Settings.                                                                                    |
+| enable_intended           | True                          | True    | A boolean to represent whether or not to generate intended configurations within the app. Can be changed in UI under **Intended Enabled** in Golden Config Settings.                                                                              |
 | enable_sotagg             | True                          | True    | A boolean to represent whether or not to provide a GraphQL query per device to allow the intended configuration to provide data variables to the app.                   |
-| enable_plan               | True                          | True    | A boolean to represent whether or not to allow the config plan job to run.                                                                                                 |
-| enable_deploy             | True                          | True    | A boolean to represent whether or not to be able to deploy configs to network devices.                                                                                     |
+| enable_plan               | True                          | True    | A boolean to represent whether or not to allow the config plan job to run. Can be changed in UI under **Plan Enabled** in Golden Config Settings.                                                                                                |
+| enable_deploy             | True                          | True    | A boolean to represent whether or not to be able to deploy configs to network devices. Can be changed in UI under **Deploy Enabled** in Golden Config Settings.                                                                                    |
 | enable_postprocessing     | True                          | False    | A boolean to represent whether or not to generate intended configurations to push, with extra processing such as secrets rendering.                                       |
 | default_deploy_status     | "Not Approved"                | "Not Approved" | A string that will be the name of the status you want as the default when create new config plans, you MUST create the status yourself before starting the app.     |
 | postprocessing_callables  | ['mypackage.myfunction']      | []      | A list of function paths, in dotted format, that are appended to the available methods for post-processing the intended configuration, for instance, the `render_secrets`. |

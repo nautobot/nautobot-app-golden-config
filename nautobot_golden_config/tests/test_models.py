@@ -1,5 +1,7 @@
 """Unit tests for nautobot_golden_config models."""
 
+from unittest.mock import patch
+
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db.models.deletion import ProtectedError
@@ -15,6 +17,7 @@ from nautobot_golden_config.models import (
     ConfigReplace,
     GoldenConfigSetting,
     RemediationSetting,
+    _get_hierconfig_remediation,
 )
 from nautobot_golden_config.tests.conftest import create_git_repos
 
@@ -575,3 +578,99 @@ class RemediationSettingModelTestCase(TestCase):
         self.assertEqual(remediation_setting.platform, self.platform)
         self.assertEqual(remediation_setting.remediation_type, RemediationTypeChoice.TYPE_HIERCONFIG)
         self.assertEqual(remediation_setting.remediation_options, {})
+
+
+class GetHierConfigRemediationTestCase(TestCase):
+    """Test _get_hierconfig_remediation function."""
+
+    def test_successful_remediation(self):
+        """Test successful remediation generation."""
+        device = create_device()
+        compliance_rule_cli = create_feature_rule_cli_with_remediation(device)
+
+        RemediationSetting.objects.create(
+            platform=device.platform,
+            remediation_type=RemediationTypeChoice.TYPE_HIERCONFIG,
+            remediation_options={},
+        )
+        config_compliance = ConfigCompliance(
+            device=device,
+            rule=compliance_rule_cli,
+            actual="interface Ethernet1\n  no shutdown",
+            intended="interface Ethernet1\n  description Test\n  no shutdown\n",
+        )
+        remediation = _get_hierconfig_remediation(config_compliance)
+
+        self.assertIsInstance(remediation, str)
+        self.assertIn("interface Ethernet1\n  description Test", remediation)
+
+    def test_platform_not_supported_by_hierconfig(self):
+        """Test error when platform is not supported by hierconfig."""
+        device = create_device()
+        device.platform.network_driver = "unsupported_driver"
+        device.platform.save()
+
+        compliance_rule_cli = create_feature_rule_cli_with_remediation(device)
+
+        config_compliance = ConfigCompliance(
+            device=device,
+            rule=compliance_rule_cli,
+            actual="interface Ethernet1\n  no shutdown",
+            intended="interface Ethernet1\n  description Test\n  no shutdown\n",
+        )
+
+        # Validate that calling the function raises a ValidationError
+        with self.assertRaises(ValidationError) as context:
+            _get_hierconfig_remediation(config_compliance)
+
+        self.assertIn("not supported by hierconfig", str(context.exception))
+
+    def test_no_remediation_settings_defined(self):
+        """Test error when no remediation settings are defined for the platform."""
+        device = create_device()
+        compliance_rule_cli = create_feature_rule_cli_with_remediation(device)
+
+        config_compliance = ConfigCompliance(
+            device=device,
+            rule=compliance_rule_cli,
+            actual="interface Ethernet1\n  no shutdown",
+            intended="interface Ethernet1\n  description Test\n  no shutdown\n",
+        )
+        # Make sure no remediation settings exist for this platform
+        RemediationSetting.objects.filter(platform=device.platform).delete()
+
+        with self.assertRaises(ValidationError) as context:
+            _get_hierconfig_remediation(config_compliance)
+
+        self.assertIn("has no Remediation Settings defined", str(context.exception))
+
+    @patch("nautobot_golden_config.models.hconfig_v2_os_v3_platform_mapper")
+    @patch("nautobot_golden_config.models.get_hconfig")
+    @patch("nautobot_golden_config.models.WorkflowRemediation")
+    def test_hierconfig_instantiation_error(self, mock_workflow, mock_get_hconfig, mock_mapper):
+        """Test error when HierConfig instantiation fails."""
+        device = create_device()
+        compliance_rule_cli = create_feature_rule_cli_with_remediation(device)
+
+        RemediationSetting.objects.create(
+            platform=device.platform,
+            remediation_type=RemediationTypeChoice.TYPE_HIERCONFIG,
+        )
+
+        # Set up mocks to raise an exception
+        mock_mapper.return_value = "ios"
+        mock_get_hconfig.side_effect = Exception("Test exception")
+
+        # Create a mock ConfigCompliance object
+        config_compliance = ConfigCompliance(
+            device=device,
+            rule=compliance_rule_cli,
+            actual="interface Ethernet1\n  no shutdown",
+            intended="interface Ethernet1\n  description Test\n  no shutdown\n",
+        )
+
+        # Validate that calling the function raises an Exception
+        with self.assertRaises(Exception) as context:
+            _get_hierconfig_remediation(config_compliance)
+
+        self.assertIn("Cannot instantiate HierConfig", str(context.exception))

@@ -178,14 +178,17 @@ def _verify_get_custom_compliance_data(compliance_details):
 
 def _get_hierconfig_remediation(obj):
     """Returns the remediating config."""
-    hierconfig_os = obj.device.platform.network_driver_mappings["hier_config"]
+    hierconfig_os = obj.device.platform.network_driver_mappings.get("hier_config")
+
     if not hierconfig_os:
-        raise ValidationError(f"platform {obj.network_driver} is not supported by hierconfig.")
+        raise ValidationError(f"platform {obj.device.platform.network_driver} is not supported by hierconfig.")
 
     try:
         remediation_setting_obj = RemediationSetting.objects.get(platform=obj.rule.platform)
     except Exception as err:  # pylint: disable=broad-except:
-        raise ValidationError(f"Platform {obj.network_driver} has no Remediation Settings defined.") from err
+        raise ValidationError(
+            f"Platform {obj.device.platform.network_driver} has no Remediation Settings defined."
+        ) from err
 
     remediation_options = remediation_setting_obj.remediation_options
 

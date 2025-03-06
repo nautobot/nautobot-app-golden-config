@@ -398,3 +398,66 @@ def verify_deployment_eligibility(logger, config_plan, gc_settings):
         error_msg = f"`E3037:` Device {config_plan.device.name} is no longer in scope for deployments."
         logger.error(error_msg)
         raise NornirNautobotException(error_msg)
+
+
+class CustomFilterSettings:
+    """
+    Helper class to filter and group devices based on their Golden Config settings.
+    Provides compatibility with existing code while adding enhanced device filtering.
+    """
+
+    def __init__(self, queryset):
+        """
+        Initialize with a device queryset.
+
+        Args:
+            queryset: Django queryset of Device objects
+        """
+        self.queryset = queryset
+        self._filtered_queryset = deepcopy(queryset)
+        self._device_to_settings_maps = set()
+        self._excluded_devices = []
+
+    @property
+    def device_to_settings_maps(self):
+        """Get mapping of devices to their settings, lazy loaded."""
+        if len(self._device_to_settings_maps) == 0:
+            self._device_to_settings_maps = set(get_device_to_settings_map(self.queryset).values())
+        return self._device_to_settings_maps
+
+    def exclude_devices(self, devices):
+        """
+        Exclude devices from the queryset.
+
+        Args:
+            devices: List of Device objects to exclude
+        """
+        return self._excluded_devices.extend(devices)
+
+    @property
+    def filtered_queryset(self):
+        """Get the filtered queryset."""
+        return self._filtered_queryset.exclude(pk__in=self._excluded_devices)
+
+    def verify_feature_enabled(self, logger, feature_name, required_settings=None):
+        """
+        Drop-in replacement for the original verify_feature_enabled function.
+        This maintains compatibility with existing tests by using a representative
+        setting to generate the exact same error messages.
+
+        Args:
+            logger: Logger instance
+            feature_name: Feature name to check (backup, intended, compliance)
+            required_settings: List of setting attributes that should be populated
+
+        Raises:
+            NornirNautobotException: If feature is disabled or required settings are missing
+        """
+        for setting in self.device_to_settings_maps:
+            try:
+                verify_feature_enabled(logger, feature_name, setting, required_settings)
+            except NornirNautobotException as error:
+                if any(code in str(error) for code in ["E3032", "E3033"]):
+                    if hasattr(setting, "dynamic_group") and len(setting.dynamic_group.members) > 0:
+                        self.exclude_devices([device.pk for device in setting.dynamic_group.members])
+                raise error

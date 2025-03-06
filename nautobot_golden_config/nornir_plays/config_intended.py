@@ -20,10 +20,10 @@ from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import (
+    CustomFilterSettings,
     dispatch_params,
     get_django_env,
     render_jinja_template,
-    verify_settings,
 )
 from nautobot_golden_config.utilities.logger import NornirLogger
 
@@ -107,9 +107,14 @@ def config_intended(job):
     """
     now = make_aware(datetime.now())
     logger = NornirLogger(job.job_result, job.logger.getEffectiveLevel())
+    device_filter = CustomFilterSettings(job.qs)
 
-    for settings in set(job.device_to_settings_map.values()):
-        verify_settings(logger, settings, ["jinja_path_template", "intended_path_template", "sot_agg_query"])
+    # Verify intended feature is enabled and has required settings
+    device_filter.verify_feature_enabled(
+        logger,
+        "intended",
+        required_settings=["jinja_path_template", "intended_path_template", "sot_agg_query"],
+    )
 
     # Retrieve filters from the Django jinja template engine
     jinja_env = get_django_env()
@@ -122,7 +127,7 @@ def config_intended(job):
                 "options": {
                     "credentials_class": NORNIR_SETTINGS.get("credentials"),
                     "params": NORNIR_SETTINGS.get("inventory_params"),
-                    "queryset": job.qs,
+                    "queryset": device_filter.filtered_queryset,
                     "defaults": {"now": now},
                 },
             },

@@ -326,5 +326,15 @@
                 rendered_config_code_block.innerHTML = sanitize(`An error occurred:\n\n${error.message}`);
             }
         }
+
+        // Hide the copy button when the diff tab is active
+        const copyButton = document.querySelector(".copy-rendered-config");
+        $('[href="#id_diff_tab_content"]').on('shown.bs.tab', function (e) {
+            copyButton.style.display = "none";
+        });
+        $('[href="#id_diff_tab_content"]').on('hidden.bs.tab', function (e) {
+            copyButton.style.display = "inline-block";
+        });
+
     </script>
 {% endblock javascript %}

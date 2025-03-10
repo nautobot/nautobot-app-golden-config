@@ -14,10 +14,12 @@ from nornir_nautobot.exceptions import NornirNautobotException
 from nautobot_golden_config.models import GoldenConfigSetting
 from nautobot_golden_config.tests.conftest import create_device, create_helper_repo, create_orphan_device
 from nautobot_golden_config.utilities.helper import (
+    CustomFilterSettings,
     get_device_to_settings_map,
     get_job_filter,
     null_to_empty,
     render_jinja_template,
+    verify_feature_enabled,
 )
 
 
@@ -115,6 +117,8 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         self.data = MagicMock()
         self.logger = logging.getLogger(__name__)
         self.device_to_settings_map = get_device_to_settings_map(queryset=Device.objects.all())
+        self.queryset = Device.objects.all()
+        self.custom_filter_settings = CustomFilterSettings(self.queryset)
 
     def test_null_to_empty_null(self):
         """Ensure None returns with empty string."""
@@ -296,3 +300,49 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         self.assertEqual(self.device_to_settings_map[test_device.id], self.test_settings_c)
         self.assertEqual(self.device_to_settings_map[orphan_device.id], self.test_settings_b)
         self.assertEqual(get_device_to_settings_map(queryset=Device.objects.none()), {})
+
+    def test_verify_feature_enabled__enabled_e3033_error(self):
+        """Verify that we do not raise an exception when the backup feature is enabled."""
+        feature_name = "backup"
+        required_settings = ["backup_path_template"]
+        self.assertEqual(self.test_settings_a.backup_enabled, True)
+
+        with self.assertRaises(NornirNautobotException) as error:
+            verify_feature_enabled(self.logger, feature_name, self.test_settings_a, required_settings)
+            self.assertContains(str(error), "E3033")
+
+    def test_verify_feature_enabled__disabled_e3032_error(self):
+        """Verify that we raise an exception when the backup feature is disabled."""
+        feature_name = "backup"
+        required_settings = ["backup_path_template"]
+        self.test_settings_a.backup_enabled = False
+        self.test_settings_a.save()
+
+        self.assertEqual(self.test_settings_a.backup_enabled, False)
+
+        with self.assertRaises(NornirNautobotException) as error:
+            verify_feature_enabled(self.logger, feature_name, self.test_settings_a, required_settings)
+            self.assertContains(str(error), "E3032")
+
+    def test_verify_feature_enabled__enabled(self):
+        """Verify that we do not raise an exception when the backup feature is enabled."""
+        feature_name = "backup"
+        required_settings = ["backup_path_template"]
+        self.test_settings_a.backup_enabled = True
+        self.test_settings_a.backup_path_template = "backup.conf"
+        self.test_settings_a.save()
+
+        self.assertEqual(self.test_settings_a.backup_enabled, True)
+        self.assertEqual(self.test_settings_a.backup_path_template, "backup.conf")
+
+        v = verify_feature_enabled(self.logger, feature_name, self.test_settings_a, required_settings)
+
+        self.assertEqual(v, None)
+
+    def test_custom_filter_settings__filtered_queryset(self):
+        """Verify that the filtered_queryset attribute is set to the queryset."""
+        self.assertEqual(len(self.custom_filter_settings.filtered_queryset), len(self.queryset))
+
+    def test_custom_filter_settings__device_to_settings_maps(self):
+        """Verify that the device_to_settings_maps attribute is set to a non-empty list."""
+        self.assertGreater(len(self.custom_filter_settings.device_to_settings_maps), 0)

@@ -403,6 +403,7 @@ def verify_deployment_eligibility(logger, config_plan, gc_settings):
 class CustomFilterSettings:
     """
     Helper class to filter and group devices based on their Golden Config settings.
+
     Provides compatibility with existing code while adding enhanced device filtering.
     """
 
@@ -442,6 +443,7 @@ class CustomFilterSettings:
     def verify_feature_enabled(self, logger, feature_name, required_settings=None):
         """
         Drop-in replacement for the original verify_feature_enabled function.
+
         This maintains compatibility with existing tests by using a representative
         setting to generate the exact same error messages.
 

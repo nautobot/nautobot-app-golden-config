@@ -334,10 +334,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
 
         self.assertEqual(self.test_settings_a.backup_enabled, True)
         self.assertEqual(self.test_settings_a.backup_path_template, "backup.conf")
-
-        v = verify_feature_enabled(self.logger, feature_name, self.test_settings_a, required_settings)
-
-        self.assertEqual(v, None)
+        self.assertIsNone(verify_feature_enabled(self.logger, feature_name, self.test_settings_a, required_settings))
 
     def test_custom_filter_settings__filtered_queryset(self):
         """Verify that the filtered_queryset attribute is set to the queryset."""

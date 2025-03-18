@@ -2,6 +2,7 @@
 # pylint: disable=too-many-function-args
 
 from datetime import datetime
+from urllib.parse import urlparse
 
 from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Platform, Rack, RackGroup, Region, Site
 from nautobot.extras.datasources.git import ensure_git_repository
@@ -150,7 +151,17 @@ class IntendedJob(Job, FormEntry):
 
         # Commit / Push each repo after job is completed.
         for intended_repo in intended_repos:
-            self.log_debug(f"Push new intended configs to repo {intended_repo.url}.")
+            # Remove user and token from url (https://user:password@service.example/repo.git)
+            if intended_repo.url is None:
+                sanitized_repo_url = "None"
+            else:
+                parsed_repo_url = urlparse(intended_repo.url)
+                if parsed_repo_url.scheme == "":
+                    sanitized_repo_url = intended_repo.url
+                else:
+                    sanitized_repo_url = f"{parsed_repo_url.scheme}//{parsed_repo_url.netloc}{parsed_repo_url.path}"
+
+            self.log_debug(f"Push new intended configs to repo {sanitized_repo_url}.")
             intended_repo.commit_with_added(f"INTENDED CONFIG CREATION JOB - {now}")
             intended_repo.push()
 

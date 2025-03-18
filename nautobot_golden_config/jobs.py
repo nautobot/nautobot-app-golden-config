@@ -154,7 +154,7 @@ class IntendedJob(Job, FormEntry):
             # Remove user and token from url (https://user:password@service.example/repo.git)
             parsed_repo_url = urlparse(intended_repo.url)
             self.log_debug(
-                f"Push new intended configs to repo {parsed_repo_url.scheme}//{parsed_repo_url.hostname}{parsed_repo_url.path}."
+                f"Push new intended configs to repo {parsed_repo_url.scheme}//{parsed_repo_url.netloc}{parsed_repo_url.path}."
             )
             intended_repo.commit_with_added(f"INTENDED CONFIG CREATION JOB - {now}")
             intended_repo.push()

@@ -151,15 +151,13 @@ class IntendedJob(Job, FormEntry):
 
         # Commit / Push each repo after job is completed.
         for intended_repo in intended_repos:
-            # Remove user and token from url (https://user:password@service.example/repo.git)
-            if intended_repo.url is None:
-                sanitized_repo_url = "None"
-            else:
-                parsed_repo_url = urlparse(intended_repo.url)
-                if parsed_repo_url.scheme == "":
-                    sanitized_repo_url = intended_repo.url
-                else:
-                    sanitized_repo_url = f"{parsed_repo_url.scheme}//{parsed_repo_url.netloc}{parsed_repo_url.path}"
+            self.logger.info(
+                f'{repo["repo_obj"].nautobot_repo_obj.name}: the new Git repository hash is "{repo["repo_obj"].head}"',
+                extra={
+                    "grouping": "GC Repo Commit and Push",
+                    "object": repo["repo_obj"].nautobot_repo_obj.name,
+                },
+            )
 
             self.log_debug(f"Push new intended configs to repo {sanitized_repo_url}.")
             intended_repo.commit_with_added(f"INTENDED CONFIG CREATION JOB - {now}")

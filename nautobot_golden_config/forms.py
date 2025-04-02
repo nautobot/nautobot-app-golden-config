@@ -345,13 +345,23 @@ class ConfigReplaceBulkEditForm(NautobotBulkEditForm):
 
 
 class GoldenConfigSettingForm(NautobotModelForm):
-    """Filter Form for GoldenConfigSettingForm instances."""
+    """Form for GoldenConfigSetting instances."""
 
     slug = forms.SlugField()
-    dynamic_group = django_forms.ModelChoiceField(queryset=DynamicGroup.objects.all())
+    dynamic_group = forms.DynamicModelChoiceField(queryset=DynamicGroup.objects.all())
+    backup_repository = forms.DynamicModelChoiceField(
+        queryset=GitRepository.objects.filter(provided_contents__contains="nautobot_golden_config.backupconfigs")
+    )
+    intended_repository = forms.DynamicModelChoiceField(
+        queryset=GitRepository.objects.filter(provided_contents__contains="nautobot_golden_config.intendedconfigs")
+    )
+    jinja_repository = forms.DynamicModelChoiceField(
+        queryset=GitRepository.objects.filter(provided_contents__contains="nautobot_golden_config.jinjatemplate")
+    )
+    sot_agg_query = forms.DynamicModelChoiceField(queryset=GraphQLQuery.objects.all())
 
     class Meta:
-        """Filter Form Meta Data for GoldenConfigSettingForm instances."""
+        """Form Meta Data for GoldenConfigSetting instances."""
 
         model = models.GoldenConfigSetting
         fields = "__all__"

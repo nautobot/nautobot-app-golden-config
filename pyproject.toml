@@ -52,7 +52,7 @@ invoke = "*"
 ipython = "*"
 pylint = "*"
 pylint-django = "*"
-pylint-nautobot = "*"
+pylint-nautobot = { git = "https://github.com/nautobot/pylint-nautobot.git", branch = "pylint-3" }
 ruff = "0.5.5"
 yamllint = "*"
 Markdown = "*"

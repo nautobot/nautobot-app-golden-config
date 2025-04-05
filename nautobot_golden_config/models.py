@@ -220,7 +220,7 @@ for custom_function, custom_type in CUSTOM_FUNCTIONS.items():
         try:
             FUNC_MAPPER[custom_type] = import_string(PLUGIN_CFG[custom_function])
         except Exception as error:  # pylint: disable=broad-except
-            msg = (
+            msg = (  # pylint: disable=invalid-name
                 "There was an issue attempting to import the custom function of"
                 f"{PLUGIN_CFG[custom_function]}, this is expected with a local configuration issue "
                 "and not related to the Golden Configuration App, please contact your system admin for further details"

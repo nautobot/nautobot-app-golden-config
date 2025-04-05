@@ -101,6 +101,10 @@ plugins:
 watch:
   - "README.md"
 
+validation:
+  nav:
+    omitted_files: "warn"
+
 nav:
   - Overview: "index.md"
   - User Guide:

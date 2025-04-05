@@ -55,6 +55,8 @@ pylint-django = "*"
 pylint-nautobot = "*"
 ruff = "0.5.5"
 yamllint = "*"
+# Python implementation of markdownlint
+pymarkdownlnt = "~0.9.29"
 Markdown = "*"
 # Render custom markdown for version added/changed/remove notes
 markdown-version-annotations = "1.0.1"
@@ -150,6 +152,63 @@ convention = "google"
     "D",
     "S"
 ]
+
+[tool.pymarkdown]
+# Seems to be not support for whitelisting rules: https://github.com/jackdewinter/pymarkdown/issues/1396
+plugins.md001.enabled = false
+plugins.md002.enabled = false
+plugins.md003.enabled = false
+plugins.md004.enabled = false
+plugins.md005.enabled = false
+plugins.md006.enabled = false
+plugins.md007.enabled = false
+plugins.md008.enabled = false
+plugins.md009.enabled = false
+plugins.md010.enabled = false
+plugins.md011.enabled = false
+plugins.md012.enabled = false
+plugins.md013.enabled = false
+plugins.md014.enabled = false
+plugins.md015.enabled = false
+plugins.md016.enabled = false
+plugins.md017.enabled = false
+plugins.md018.enabled = false
+plugins.md019.enabled = false
+plugins.md020.enabled = false
+plugins.md021.enabled = false
+plugins.md022.enabled = false
+plugins.md023.enabled = false
+plugins.md024.enabled = false
+plugins.md025.enabled = false
+plugins.md026.enabled = false
+plugins.md027.enabled = false
+plugins.md028.enabled = false
+plugins.md029.enabled = false
+plugins.md030.enabled = false
+plugins.md031.enabled = false
+plugins.md032.enabled = true # blanks-around-lists
+plugins.md033.enabled = false
+plugins.md034.enabled = false
+plugins.md035.enabled = false
+plugins.md036.enabled = false
+plugins.md037.enabled = false
+plugins.md038.enabled = false
+plugins.md039.enabled = false
+plugins.md040.enabled = false
+plugins.md041.enabled = false
+plugins.md042.enabled = false
+plugins.md043.enabled = false
+plugins.md044.enabled = false
+plugins.md045.enabled = false
+plugins.md046.enabled = false
+plugins.md047.enabled = false
+plugins.md048.enabled = false
+plugins.md049.enabled = false
+plugins.md050.enabled = false
+plugins.pml100.enabled = false
+plugins.pml101.enabled = true # list-anchored-indent
+plugins.pml102.enabled = false 
+plugins.pml103.enabled = false
 
 [build-system]
 requires = ["poetry_core>=1.0.0"]

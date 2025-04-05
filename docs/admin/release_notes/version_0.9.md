@@ -90,9 +90,9 @@
 
 ### Added
 
- - [#81](https://github.com/nautobot/nautobot-app-golden-config/issues/85) Added changelog
- - [#74](https://github.com/nautobot/nautobot-app-golden-config/issues/74) Added hover text to icon on app home screen
- - [#84](https://github.com/nautobot/nautobot-app-golden-config/issues/84) Added auto-deploy to PyPI
+- [#81](https://github.com/nautobot/nautobot-app-golden-config/issues/85) Added changelog
+- [#74](https://github.com/nautobot/nautobot-app-golden-config/issues/74) Added hover text to icon on app home screen
+- [#84](https://github.com/nautobot/nautobot-app-golden-config/issues/84) Added auto-deploy to PyPI
 
 ### Fixed
 

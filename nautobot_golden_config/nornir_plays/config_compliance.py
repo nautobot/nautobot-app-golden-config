@@ -59,7 +59,10 @@ def get_config_element(rule, config, obj, logger):
        - a configuration section for `CLI` based config types
        - top level JSON key for `JSON` based config types
     """
-    if rule["obj"].config_type == ComplianceRuleConfigTypeChoice.TYPE_JSON:
+    if rule["obj"].config_type in [
+        ComplianceRuleConfigTypeChoice.TYPE_JSON,
+        ComplianceRuleConfigTypeChoice.TYPE_JSONV2,
+    ]:
         config_json = get_json_config(config)
 
         if not config_json:

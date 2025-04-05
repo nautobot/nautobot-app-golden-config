@@ -256,6 +256,20 @@ def create_feature_rule_json(device, feature="foo1", rule="json"):
     return rule
 
 
+def create_feature_rule_jsonv2(device, feature="foo1v2", rule="jsonv2"):
+    """Creates a Feature/Rule Mapping and Returns the rule."""
+    feature_obj, _ = ComplianceFeature.objects.get_or_create(slug=feature, name=feature)
+    rule = ComplianceRule(
+        feature=feature_obj,
+        platform=device.platform,
+        match_config="foo",
+        config_type=ComplianceRuleConfigTypeChoice.TYPE_JSONV2,
+        config_ordered=False,
+    )
+    rule.save()
+    return rule
+
+
 def create_feature_rule_json_with_remediation(device, feature="foo2", rule="json"):
     """Creates a Feature/Rule Mapping with remediation enabled and Returns the rule."""
     feature_obj, _ = ComplianceFeature.objects.get_or_create(slug=feature, name=feature)

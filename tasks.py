@@ -811,6 +811,7 @@ def markdownlint(context, fix=False):
     command = "pymarkdown scan --recurse docs *.md"
     run_command(context, command)
 
+
 @task
 def check_migrations(context):
     """Check for missing migrations."""
@@ -881,6 +882,8 @@ def tests(context, failfast=False, keepdb=False, lint_only=False):
     ruff(context)
     print("Running yamllint...")
     yamllint(context)
+    print("Running markdownlint...")
+    markdownlint(context)
     print("Running poetry check...")
     lock(context, check=True)
     print("Running migrations check...")

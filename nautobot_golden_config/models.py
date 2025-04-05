@@ -3,6 +3,7 @@
 import json
 import logging
 import os
+import re
 
 from deepdiff import DeepDiff
 from django.core.exceptions import ValidationError
@@ -10,6 +11,7 @@ from django.db import models
 from django.db.models.manager import BaseManager
 from django.utils.module_loading import import_string
 from hier_config import Host as HierConfigHost
+from jdiff import CheckType
 from nautobot.apps.models import RestrictedQuerySet
 from nautobot.apps.utils import render_jinja2
 from nautobot.core.models.generics import PrimaryModel
@@ -123,6 +125,78 @@ def _get_json_compliance(obj):
     }
 
 
+def _get_json_jdiff_compliance(obj):
+    """This function performs the actual compliance for json serializable data."""
+
+    def parse_index_element_string(index_element_string, match_config):
+        """Build out dictionary from the index element string."""
+        pattern = r"index_element\[(?:'|\")(.*?)(?:'|\")\]\[(?:'|\")(.*?)(?:'|\")\]"
+        match = re.match(pattern, index_element_string)
+        if match:
+            config_key, inner_key = match.groups()
+            if config_key == match_config:
+                return (inner_key, {inner_key: ""})
+            return (None, {})
+        return (index_element_string, {})
+
+    def parse_diff(diff, actual, intended, match_config):
+        """Parse jdiff evaluate result into missing and extra dictionaries."""
+        extra = {}
+        missing = {}
+
+        def process_diff(_map, extra_map, missing_map):
+            for key, value in _map.items():
+                if isinstance(value, dict) and "new_value" in value and "old_value" in value:
+                    extra_map[key] = value["old_value"]
+                    missing_map[key] = value["new_value"]
+                elif isinstance(value, str):
+                    if "missing" in value:
+                        extra_map[key] = actual.get(match_config, {}).get(key)
+                    if "new" in value:
+                        orig_key, new_key = parse_index_element_string(key, match_config)
+                        new_key[orig_key] = intended.get(match_config, {}).get(orig_key)
+                        missing_map.update(new_key)
+                elif isinstance(value, dict):
+                    extra_map[key] = {}
+                    missing_map[key] = {}
+                    process_diff(value, extra_map[key], missing_map[key])
+
+        process_diff(diff, extra, missing)
+        return extra, missing
+
+    jdiff_param_match = CheckType.create("exact_match")
+    actual_json = obj.actual.get(obj.rule.match_config, {})
+    intended_json = obj.intended.get(obj.rule.match_config, {})
+
+    result, compliant = jdiff_param_match.evaluate(actual_json, intended_json)
+    if compliant:
+        compliance_int = 1
+        compliance = True
+        ordered = True
+        missing = ""
+        extra = ""
+    else:
+        extra_json, missing_json = parse_diff(
+            result,
+            obj.actual,
+            obj.intended,
+            obj.rule.match_config,
+        )
+        compliance_int = 0
+        compliance = False
+        ordered = False
+        missing = missing_json
+        extra = extra_json
+
+    return {
+        "compliance": compliance,
+        "compliance_int": compliance_int,
+        "ordered": ordered,
+        "missing": missing,
+        "extra": extra,
+    }
+
+
 def _get_xml_compliance(obj):
     """This function performs the actual compliance for xml serializable data."""
 
@@ -211,6 +285,7 @@ def _get_hierconfig_remediation(obj):
 FUNC_MAPPER = {
     ComplianceRuleConfigTypeChoice.TYPE_CLI: _get_cli_compliance,
     ComplianceRuleConfigTypeChoice.TYPE_JSON: _get_json_compliance,
+    ComplianceRuleConfigTypeChoice.TYPE_JSONV2: _get_json_jdiff_compliance,
     ComplianceRuleConfigTypeChoice.TYPE_XML: _get_xml_compliance,
     RemediationTypeChoice.TYPE_HIERCONFIG: _get_hierconfig_remediation,
 }

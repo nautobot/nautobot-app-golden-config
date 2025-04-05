@@ -123,7 +123,7 @@
                 <td class="config_hover">
                     {% if item.rule.config_type == "xml" %}
                         <span id="{{ item.rule|slugify }}_actual"><pre><code class="language-xml">{{ item.actual|placeholder }}</code></pre></span>
-                    {% elif item.rule.config_type == "json" %}
+                    {% elif "json" in item.rule.config_type %}
                         <span id="{{ item.rule|slugify }}_actual"><pre><code class="language-json">{{ item.actual|placeholder|condition_render_json }}</code></pre></span>
                     {% else %}
                         <span id="{{ item.rule|slugify }}_actual"><pre>{{ item.actual|placeholder }}</pre></span>
@@ -141,7 +141,7 @@
                 <td class="config_hover">
                     {% if item.rule.config_type == "xml" %}
                         <span id="{{ item.rule|slugify }}_intended"><pre><code class="language-xml">{{ item.intended|placeholder }}</code></pre></span>
-                    {% elif item.rule.config_type == "json" %}
+                    {% elif "json" in item.rule.config_type %}
                         <span id="{{ item.rule|slugify }}_intended"><pre><code class="language-json">{{ item.intended|placeholder|condition_render_json }}</code></pre></span>
                     {% else %}
                         <span id="{{ item.rule|slugify }}_intended"><pre>{{ item.intended|placeholder }}</pre></span>
@@ -158,7 +158,7 @@
                 <td class="config_hover">
                     {% if item.rule.config_type == "xml" %}
                         <span id="{{ item.rule|slugify }}_actual"><pre><code class="language-xml">{{ item.actual|placeholder }}</code></pre></span>
-                    {% elif item.rule.config_type == "json" %}
+                    {% elif "json" in item.rule.config_type %}
                         <span id="{{ item.rule|slugify }}_actual"><pre><code class="language-json">{{ item.actual|placeholder|condition_render_json }}</code></pre></span>
                     {% else %}
                         <span id="{{ item.rule|slugify }}_actual"><pre>{{ item.actual|placeholder }}</pre></span>
@@ -175,7 +175,13 @@
             <tr>
                 <td style="color:red;width:250px">Missing Configuration</td>
                 <td class="config_hover">
-                    <span id="{{ item.rule|slugify }}_missing"><pre>{{ item.missing|condition_render_json }}</pre></span>
+                    {% if item.rule.config_type == "xml" %}
+                        <span id="{{ item.rule|slugify }}_missing"><pre><code class="language-xml">{{ item.missing|placeholder }}</code></pre></span>
+                    {% elif "json" in item.rule.config_type %}
+                        <span id="{{ item.rule|slugify }}_missing"><pre><code class="language-json">{{ item.missing|placeholder|condition_render_json }}</code></pre></span>
+                    {% else %}
+                        <span id="{{ item.rule|slugify }}_missing"><pre>{{ item.missing|placeholder }}</pre></span>
+                    {% endif %}
                     <span class="config_hover_button">
                         <button class="btn btn-inline btn-default hover_copy_button" data-clipboard-target="#{{ item.rule|slugify }}_missing">
                             <span class="mdi mdi-content-copy"></span>
@@ -188,7 +194,13 @@
             <tr>
                 <td style="color:red;width:250px">Extra Configuration</td>
                 <td class="config_hover">
-                    <span id="{{ item.rule|slugify }}_extra"><pre>{{ item.extra|condition_render_json }}</pre></span>
+                    {% if item.rule.config_type == "xml" %}
+                        <span id="{{ item.rule|slugify }}_extra"><pre><code class="language-xml">{{ item.extra|placeholder }}</code></pre></span>
+                    {% elif "json" in item.rule.config_type %}
+                        <span id="{{ item.rule|slugify }}_extra"><pre><code class="language-json">{{ item.extra|placeholder|condition_render_json }}</code></pre></span>
+                    {% else %}
+                        <span id="{{ item.rule|slugify }}_extra"><pre>{{ item.extra|placeholder }}</pre></span>
+                    {% endif %}
                     <span class="config_hover_button">
                         <button class="btn btn-inline btn-default hover_copy_button" data-clipboard-target="#{{ item.rule|slugify }}_extra">
                             <span class="mdi mdi-content-copy"></span>

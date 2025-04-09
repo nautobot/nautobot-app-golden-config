@@ -6,6 +6,7 @@ import logging
 import os
 from collections import defaultdict
 from datetime import datetime
+import typing as t
 
 from django.utils.timezone import make_aware
 from lxml import etree
@@ -171,8 +172,16 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     intended_cfg = _open_file_config(intended_file)
 
     for rule in rules[obj.platform.network_driver]:
-        _actual = get_config_element(rule, backup_cfg, obj, logger)
-        _intended = get_config_element(rule, intended_cfg, obj, logger)
+        rule_contains_nested_config = False
+        for section in rule["section"]:
+            if "__" in section:
+                rule_contains_nested_config = True
+                break
+        if rule_contains_nested_config:
+            _actual, _intended = process_nested_compliance_rule(rule, backup_cfg, intended_cfg, obj, logger)
+        else:
+            _actual = get_config_element(rule, backup_cfg, obj, logger)
+            _intended = get_config_element(rule, intended_cfg, obj, logger)
 
         # using update_or_create() method to conveniently update actual obj or create new one.
         ConfigCompliance.objects.update_or_create(
@@ -192,6 +201,146 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     logger.info("Successfully tested compliance job.", extra={"object": obj})
 
     return Result(host=task.host)
+
+def get_line_matches(
+    feature: t.Dict[str, t.Union[str, bool, t.List[str]]],
+    device_cfg: str,
+    network_os: str,
+):
+    """
+    Extracts configuration lines that match a specified section from device configuration.
+    Args:
+        feature (Dict[str, Union[str, bool, List[str]]]): Dictionary containing feature configuration parameters.
+            Expected to have a 'section' key specifying the section to match.
+        device_cfg (str): The complete device configuration text.
+        network_os (str): The network operating system identifier used to determine the parser.
+    Returns:
+        str: List of configuration lines that match the specified section prefix.
+            If no section is specified in the feature dictionary, returns the original device configuration.
+    Raises:
+        KeyError: If the network_os is not found in parser_map.
+    Example:
+        config input:
+
+        interface GigabitEthernet1/0/2
+        device-tracking attach-policy IPDT_MAX_10
+        service-policy input INPUTVALUE
+        service-policy output OUTPUTVALUE
+        !
+        interface GigabitEthernet1/0/3
+        device-tracking attach-policy IPDT_MAX_10
+        service-policy input INPUTVALUE
+        service-policy output OUTPUTVALUE
+
+        return:
+
+        ["interface GigabitEthernet1/0/2", "interface GigabitEthernet1/0/3"]
+    """
+    section_starts_with = feature.get("section")
+    if not section_starts_with:
+        print(f"No lines match {feature.get('section')}")
+        return device_cfg
+    line_matches = []
+    os_parser = parser_map[network_os]
+    config_parsed = os_parser(device_cfg)
+
+    for line in config_parsed.config_lines:
+        if line.config_line.startswith(section_starts_with[0]):
+            line_matches.append(line.config_line)
+    return line_matches
+
+def section_config_exact_match(
+    feature: t.Dict[str, t.Union[str, bool, t.List[str]]],
+    nested_section_to_match: str,
+    device_cfg: str,
+    network_os: str,
+) -> str:
+    section_starts_with = feature.get("section")
+    if not section_starts_with:
+        return device_cfg
+
+    match = False
+    section_config_list = []
+    os_parser = parser_map[network_os]
+    config_parsed = os_parser(device_cfg)
+    for line in config_parsed.config_lines:
+        # PROBABLY NOT NEEDED HERE
+        # If multiple banners, line after first banner will be None.
+        # This conditional allows multiple banners in config.
+        # if not line.config_line:
+        #     continue
+        if match:
+            if line.parents:
+                if nested_section_to_match in line.config_line:
+                    section_config_list.append(line.config_line)
+                continue
+            else:
+                match = False
+        for line_start in section_starts_with:  # type: ignore
+            if not match and line.config_line == line_start:
+                section_config_list.append(line.config_line)
+                match = True
+    return "\n".join(section_config_list).strip()
+
+def process_nested_compliance_rule(rule, backup_cfg, intended_cfg, obj, logger):
+    """
+    Process nested compliance rule.
+
+    Args:
+        rule (dict): A dictionary containing the compliance rule.
+
+    Returns:
+        dict: The processed compliance rule.
+    """
+    _actual = ""
+    _intended = ""
+    if rule["obj"].config_type != ComplianceRuleConfigTypeChoice.TYPE_CLI:
+        error_msg = "`E3008:` Nested compliance rules are only supported for CLI config types."
+        logger.error(error_msg, extra={"object": obj})
+        raise NornirNautobotException(error_msg)
+    for section in rule["section"]:
+            if "__" in section:
+                section_list = section.split("__")
+                rule["section"] = [section_list[0]]
+                actual_top_level_lines_to_match = get_line_matches(rule, backup_cfg, obj.platform.network_driver_mappings["netutils_parser"])
+                intended_top_level_lines_to_match = get_line_matches(rule, intended_cfg, obj.platform.network_driver_mappings["netutils_parser"])
+                
+                for line in actual_top_level_lines_to_match:
+                    rule["section"] = [line]
+                    # WARNING THIS BYPASSES THE CHECKS IN GET_CONFIG_ELEMENT -- fix it
+                    nested_section_to_match = section_list[-1]
+                    config_element = section_config_exact_match(rule, nested_section_to_match, backup_cfg, obj.platform.network_driver_mappings["netutils_parser"])
+                    if _actual:
+                        _actual = _actual  + "\n" +  config_element
+                    else:
+                        _actual = config_element
+
+                for line in intended_top_level_lines_to_match:
+                    rule["section"] = [line]
+                    # WARNING THIS BYPASSES THE CHECKS IN GET_CONFIG_ELEMENT -- fix it
+                    nested_section_to_match = section_list[-1]
+                    config_element = section_config_exact_match(rule, nested_section_to_match, backup_cfg, obj.platform.network_driver_mappings["netutils_parser"])
+                    if _intended:
+                        _intended = _intended + "\n" +  config_element
+                    else:
+                        _intended = config_element
+            else:
+                # WARNING! This is intended to allow for mixing nested and non-nested sections in the same rule, but probably doesn't work.
+                # May not even be necessasry. Maybe a compliance rule should only have one type of section (nested or non-nested).
+                rule["section"] = [section]
+                actual_config_element = get_config_element(rule, backup_cfg, obj, logger)
+                if _actual:
+                    _actual = _actual  + "\n" +  actual_config_element
+                else:
+                    _actual = config_element
+                intended_config_element = get_config_element(rule, backup_cfg, obj, logger)
+                if _intended:
+                    _intended = _intended + "\n" +  intended_config_element
+                else:
+                    _intended = intended_config_element
+
+
+    return _actual, _actual
 
 
 def config_compliance(job):  # pylint: disable=unused-argument

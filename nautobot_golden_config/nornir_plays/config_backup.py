@@ -19,9 +19,9 @@ from nautobot_golden_config.models import ConfigRemove, ConfigReplace, GoldenCon
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.utilities.helper import (
+    CustomFilterSettings,
     dispatch_params,
     render_jinja_template,
-    verify_settings,
 )
 from nautobot_golden_config.utilities.logger import NornirLogger
 
@@ -100,9 +100,10 @@ def config_backup(job):
     """
     now = make_aware(datetime.now())
     logger = NornirLogger(job.job_result, job.logger.getEffectiveLevel())
+    device_filter = CustomFilterSettings(job.qs)
 
-    for settings in set(job.device_to_settings_map.values()):
-        verify_settings(logger, settings, ["backup_path_template"])
+    # Verify backup feature is enabled and has required settings
+    device_filter.verify_feature_enabled(logger, "backup", required_settings=["backup_path_template"])
 
     # Build a dictionary, with keys of platform.network_driver, and the regex line in it for the netutils func.
     remove_regex_dict = {}
@@ -126,7 +127,7 @@ def config_backup(job):
                 "options": {
                     "credentials_class": NORNIR_SETTINGS.get("credentials"),
                     "params": NORNIR_SETTINGS.get("inventory_params"),
-                    "queryset": job.qs,
+                    "queryset": device_filter.filtered_queryset,
                     "defaults": {"now": now},
                 },
             },

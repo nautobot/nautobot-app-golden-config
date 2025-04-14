@@ -7,6 +7,7 @@ from copy import deepcopy
 from django.conf import settings
 from django.contrib import messages
 from django.db.models import Q
+from django.db.utils import ProgrammingError
 from django.template import engines
 from django.urls import reverse
 from django.utils.html import format_html
@@ -23,7 +24,7 @@ from nornir_nautobot.exceptions import NornirNautobotException
 from nautobot_golden_config import config as app_config
 from nautobot_golden_config import models
 from nautobot_golden_config.utilities import utils
-from nautobot_golden_config.utilities.constant import JINJA_ENV
+from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, JINJA_ENV
 
 FRAMEWORK_METHODS = {
     "default": utils.default_framework,
@@ -104,15 +105,6 @@ def null_to_empty(val):
     if not val:
         return ""
     return val
-
-
-def verify_settings(logger, global_settings, attrs):
-    """Helper function to verify required attributes are set before a Nornir play start."""
-    for item in attrs:
-        if not getattr(global_settings, item):
-            error_msg = f"`E3018:` Missing the required global setting: `{item}`."
-            logger.error(error_msg)
-            raise NornirNautobotException(error_msg)
 
 
 def get_django_env():
@@ -288,3 +280,186 @@ def update_dynamic_groups_cache():
     if not settings.PLUGINS_CONFIG[app_config.name].get("_manual_dynamic_group_mgmt"):
         for setting in models.GoldenConfigSetting.objects.all():
             setting.dynamic_group.update_cached_members()
+
+
+class GoldenConfigDefaults:
+    """Lightweight stand-in for GoldenConfigSetting rows if none exist or DB is unmigrated."""
+
+    def __init__(self, defaults_dict):
+        """Store each default key as an attribute on self, so that code can use `gc_settings.backup_enabled` as normal."""
+        settings_mapper = {
+            "enable_backup": "backup_enabled",
+            "enable_intended": "intended_enabled",
+            "enable_compliance": "compliance_enabled",
+            "enable_plan": "plan_enabled",
+            "enable_deploy": "deploy_enabled",
+        }
+        for key, value in defaults_dict.items():
+            if settings_mapper.get(key):
+                setattr(self, settings_mapper.get(key), value)
+
+    def __str__(self):
+        """GoldenConfigDefaults string repreentation."""
+        return "<GoldenConfigDefaults fallback>"
+
+
+def get_golden_config_settings():
+    """Return the first GoldenConfigSetting in the database if it exists; otherwise return a fallback object that uses GoldenConfig.default_settings."""
+    try:
+        db_instance = models.GoldenConfigSetting.objects.first()
+        if db_instance:
+            return db_instance
+    except ProgrammingError:
+        # Table doesn't exist yet, or other DB issues
+        pass
+
+    # Fall back to default settings if no DB row is available
+    return GoldenConfigDefaults(app_config.default_settings)
+
+
+def verify_feature_enabled(logger, feature_name, gc_settings, required_settings=None):
+    """Verify if a feature is enabled and has required settings.
+
+    Args:
+        logger: Logger instance
+        feature_name: Name of the feature to check (backup, intended, compliance, etc)
+        gc_settings: GoldenConfigSetting instance
+        required_settings: List of required setting attributes for this feature
+
+    Raises:
+        NornirNautobotException: If feature is disabled or missing required settings
+    """
+    feature_enabled = getattr(gc_settings, f"{feature_name}_enabled", False)
+    if not feature_enabled:
+        error_msg = f"`E3032:` The {feature_name} feature is disabled in Golden Config settings."
+        logger.error(error_msg)
+        raise NornirNautobotException(error_msg)
+
+    if required_settings:
+        missing_settings = []
+        for setting in required_settings:
+            if not getattr(gc_settings, setting, None):
+                missing_settings.append(setting)
+
+        if missing_settings:
+            if feature_name == "intended" and "sot_agg_query" in missing_settings and not ENABLE_SOTAGG:
+                # Skip SOT aggregation query check if the feature is disabled
+                missing_settings.remove("sot_agg_query")
+
+            if missing_settings:  # Check again in case we removed the only missing setting
+                error_msg = f"`E3033:` Missing required settings for {feature_name}: {', '.join(missing_settings)}"
+                logger.error(error_msg)
+                raise NornirNautobotException(error_msg)
+
+
+def verify_config_plan_eligibility(logger, device, gc_settings):
+    """Verify if a device is eligible for config plan operations.
+
+    Args:
+        logger: Logger instance
+        device: Device instance
+        gc_settings: GoldenConfigSetting instance
+
+    Raises:
+        NornirNautobotException: If device is not eligible for config plans
+    """
+    if not gc_settings.plan_enabled:
+        error_msg = "`E3034:` Config plan creation is disabled in Golden Config settings."
+        logger.error(error_msg)
+        raise NornirNautobotException(error_msg)
+
+    # Check if device is in scope
+    device_settings = get_device_to_settings_map(device)
+    if not device_settings:
+        error_msg = f"`E3035:` Device {device.name} is not in scope for config plans."
+        logger.error(error_msg)
+        raise NornirNautobotException(error_msg)
+
+
+def verify_deployment_eligibility(logger, config_plan, gc_settings):
+    """Verify if a config plan is eligible for deployment.
+
+    Args:
+        logger: Logger instance
+        config_plan: ConfigPlan instance
+        gc_settings: GoldenConfigSetting instance
+
+    Raises:
+        NornirNautobotException: If deployment is not allowed
+    """
+    if not gc_settings.deploy_enabled:
+        error_msg = "`E3036:` Configuration deployment is disabled in Golden Config settings."
+        logger.error(error_msg)
+        raise NornirNautobotException(error_msg)
+
+    # Check if device is still in scope
+    device_settings = get_device_to_settings_map(config_plan.device)
+    if not device_settings:
+        error_msg = f"`E3037:` Device {config_plan.device.name} is no longer in scope for deployments."
+        logger.error(error_msg)
+        raise NornirNautobotException(error_msg)
+
+
+class CustomFilterSettings:
+    """
+    Helper class to filter and group devices based on their Golden Config settings.
+
+    Provides compatibility with existing code while adding enhanced device filtering.
+    """
+
+    def __init__(self, queryset):
+        """
+        Initialize with a device queryset.
+
+        Args:
+            queryset: Django queryset of Device objects
+        """
+        self.queryset = queryset
+        self._filtered_queryset = deepcopy(queryset)
+        self._device_to_settings_maps = set()
+        self._excluded_devices = []
+
+    @property
+    def device_to_settings_maps(self):
+        """Get mapping of devices to their settings, lazy loaded."""
+        if len(self._device_to_settings_maps) == 0:
+            self._device_to_settings_maps = set(get_device_to_settings_map(self.queryset).values())
+        return self._device_to_settings_maps
+
+    def exclude_devices(self, devices):
+        """
+        Exclude devices from the queryset.
+
+        Args:
+            devices: List of Device objects to exclude
+        """
+        return self._excluded_devices.extend(devices)
+
+    @property
+    def filtered_queryset(self):
+        """Get the filtered queryset."""
+        return self._filtered_queryset.exclude(pk__in=self._excluded_devices)
+
+    def verify_feature_enabled(self, logger, feature_name, required_settings=None):
+        """
+        Drop-in replacement for the original verify_feature_enabled function.
+
+        This maintains compatibility with existing tests by using a representative
+        setting to generate the exact same error messages.
+
+        Args:
+            logger: Logger instance
+            feature_name: Feature name to check (backup, intended, compliance)
+            required_settings: List of setting attributes that should be populated
+
+        Raises:
+            NornirNautobotException: If feature is disabled or required settings are missing
+        """
+        for setting in self.device_to_settings_maps:
+            try:
+                verify_feature_enabled(logger, feature_name, setting, required_settings)
+            except NornirNautobotException as error:
+                if any(code in str(error) for code in ["E3032", "E3033"]):
+                    if hasattr(setting, "dynamic_group") and len(setting.dynamic_group.members) > 0:
+                        self.exclude_devices([device.pk for device in setting.dynamic_group.members])
+                raise error

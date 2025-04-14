@@ -108,6 +108,42 @@ class ConfigComplianceModelTestCase(TestCase):
         self.assertEqual(cc_obj.missing, {"bar-1": "baz2", "bar-3": "baz3"})
         self.assertEqual(cc_obj.extra, {"bar-1": "baz", "bar-2": "baz2"})
 
+    def test_create_config_compliance_success_jsonv2_nested_1(self):
+        """Successful."""
+        actual = {
+            "foo": {
+                "servers": {
+                    "server": [
+                        {
+                            "address": "1.us.pool.ntp.org",
+                            "config": {"address": "1.us.pool.ntp.org"},
+                            "state": {"address": "1.us.pool.ntp.org"},
+                        }
+                    ]
+                }
+            }
+        }
+        intended = {"foo": {"servers": {"server": []}}}
+        cc_obj = create_config_compliance(
+            self.device, actual=actual, intended=intended, compliance_rule=self.compliance_rule_jsonv2
+        )
+        # self.assertFalse(cc_obj.compliance)
+        # self.assertEqual(cc_obj.actual, {"foo": {"bar-1": "baz", "bar-2": "baz2"}})
+        # self.assertEqual(cc_obj.intended, {"foo": {"bar-1": "baz2", "bar-3": "baz3"}})
+        # self.assertEqual(cc_obj.missing, {"servers": {"server": {}}})
+        self.assertEqual(
+            cc_obj.extra,
+            {
+                "servers": {
+                    "server": {
+                        "address": "1.us.pool.ntp.org",
+                        "config": {"address": "1.us.pool.ntp.org"},
+                        "state": {"address": "1.us.pool.ntp.org"},
+                    }
+                }
+            },
+        )
+
     def test_create_config_compliance_success_noroot_jsonv2(self):
         """Successful."""
         actual = {"foo1": {"bar-1": "baz"}}

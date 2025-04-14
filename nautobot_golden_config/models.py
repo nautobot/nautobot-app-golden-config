@@ -132,6 +132,7 @@ def _get_json_jdiff_compliance(obj):
         """Build out dictionary from the index element string."""
         pattern = r"index_element\[(?:'|\")(.*?)(?:'|\")\]\[(?:'|\")(.*?)(?:'|\")\]"
         match = re.match(pattern, index_element_string)
+        print(match)
         if match:
             config_key, inner_key = match.groups()
             if config_key == match_config:

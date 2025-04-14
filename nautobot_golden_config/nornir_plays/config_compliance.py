@@ -330,7 +330,7 @@ def process_nested_compliance_rule(rule, backup_cfg, intended_cfg, obj, logger):
                 for line in intended_top_level_lines_to_match:
                     rule["section"] = [line]
                     nested_section_to_match = section_list[-1]
-                    config_element = section_config_exact_match(rule, nested_section_to_match, backup_cfg, obj.platform.network_driver_mappings["netutils_parser"])
+                    config_element = section_config_exact_match(rule, nested_section_to_match, intended_cfg, obj.platform.network_driver_mappings["netutils_parser"])
                     if _intended:
                         _intended = _intended + "\n" +  config_element
                     else:

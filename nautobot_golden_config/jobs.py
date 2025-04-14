@@ -2,7 +2,6 @@
 # pylint: disable=too-many-function-args
 
 from datetime import datetime
-from urllib.parse import urlparse
 
 from nautobot.dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Platform, Rack, RackGroup, Region, Site
 from nautobot.extras.datasources.git import ensure_git_repository

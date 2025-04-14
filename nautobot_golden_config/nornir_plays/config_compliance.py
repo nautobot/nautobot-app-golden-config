@@ -172,6 +172,7 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     intended_cfg = _open_file_config(intended_file)
 
     for rule in rules[obj.platform.network_driver]:
+        # Check for the existence of a nested config to match e.g. 'interface__service-policy'
         rule_contains_nested_config = False
         for section in rule["section"]:
             if "__" in section:
@@ -223,14 +224,14 @@ def get_line_matches(
         config input:
 
         interface GigabitEthernet1/0/2
-        device-tracking attach-policy IPDT_MAX_10
-        service-policy input INPUTVALUE
-        service-policy output OUTPUTVALUE
+         device-tracking attach-policy IPDT_MAX_10
+         service-policy input INPUTVALUE
+         service-policy output OUTPUTVALUE
         !
         interface GigabitEthernet1/0/3
-        device-tracking attach-policy IPDT_MAX_10
-        service-policy input INPUTVALUE
-        service-policy output OUTPUTVALUE
+         device-tracking attach-policy IPDT_MAX_10
+         service-policy input INPUTVALUE
+         service-policy output OUTPUTVALUE
 
         return:
 
@@ -294,20 +295,31 @@ def process_nested_compliance_rule(rule, backup_cfg, intended_cfg, obj, logger):
     """
     _actual = ""
     _intended = ""
+
+    # Check if the compliance rule is of type CLI
     if rule["obj"].config_type != ComplianceRuleConfigTypeChoice.TYPE_CLI:
         error_msg = "`E3008:` Nested compliance rules are only supported for CLI config types."
         logger.error(error_msg, extra={"object": obj})
         raise NornirNautobotException(error_msg)
     for section in rule["section"]:
             if "__" in section:
+                # The first part of a nested section is the top level secton to match and will be 
+                # used to find whole lines that need to match exactly.
+                # For example, interface__service-policy will find all lines starting with 'interface' 
+                # that do not have a parent and return each full line, e.g. 'interface GigabitEthernet1/0/2'
                 section_list = section.split("__")
                 rule["section"] = [section_list[0]]
                 actual_top_level_lines_to_match = get_line_matches(rule, backup_cfg, obj.platform.network_driver_mappings["netutils_parser"])
                 intended_top_level_lines_to_match = get_line_matches(rule, intended_cfg, obj.platform.network_driver_mappings["netutils_parser"])
                 
+                # Each full line is used to match the config element for the nested section. 
+                # These config elements are then filtered to exclude any lines that do not include the second
+                # part of the nested section. For example, 'inteface__service-policy' will filter out any lines 
+                # from the small section of matched config that do not contain 'service-policy' with the assumption 
+                # they should not be considered for compliance.
+                # These filtered config elements are concatonated to create a single block for compliance checking.
                 for line in actual_top_level_lines_to_match:
                     rule["section"] = [line]
-                    # WARNING THIS BYPASSES THE CHECKS IN GET_CONFIG_ELEMENT -- fix it
                     nested_section_to_match = section_list[-1]
                     config_element = section_config_exact_match(rule, nested_section_to_match, backup_cfg, obj.platform.network_driver_mappings["netutils_parser"])
                     if _actual:
@@ -317,7 +329,6 @@ def process_nested_compliance_rule(rule, backup_cfg, intended_cfg, obj, logger):
 
                 for line in intended_top_level_lines_to_match:
                     rule["section"] = [line]
-                    # WARNING THIS BYPASSES THE CHECKS IN GET_CONFIG_ELEMENT -- fix it
                     nested_section_to_match = section_list[-1]
                     config_element = section_config_exact_match(rule, nested_section_to_match, backup_cfg, obj.platform.network_driver_mappings["netutils_parser"])
                     if _intended:

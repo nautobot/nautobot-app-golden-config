@@ -126,7 +126,9 @@ def get_id_kwargs(gc_config_item_dict, id_keys, job_result):
                 field_name = "name"
             else:
                 _, field_name = yaml_attr_name.split("_")
-            kwargs = {field_name: gc_config_item_dict[yaml_attr_name]}
+            if not gc_config_item_dict.get(yaml_attr_name):
+                continue
+            kwargs = {field_name: gc_config_item_dict.get(yaml_attr_name, "")}
             try:
                 id_kwargs[actual_attr_name] = fk_class_mapping[actual_attr_name].objects.get(**kwargs)
             except fk_class_mapping[actual_attr_name].MultipleObjectsReturned:

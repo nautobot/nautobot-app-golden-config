@@ -3,9 +3,10 @@
 from unittest.mock import Mock
 
 from django.test import TestCase
-from nautobot.dcim.models.devices import Platform
+from nautobot.dcim.models import Platform
 
 from nautobot_golden_config.datasources import MissingReference, get_id_kwargs
+from nautobot_golden_config.exceptions import MultipleReferences
 from nautobot_golden_config.models import ComplianceFeature
 
 
@@ -96,17 +97,40 @@ class GitPropertiesDatasourceTestCase(TestCase):
         self.assertEqual(id_kwargs, {"feature": self.compliance_feature})
         self.assertEqual(gc_config_item_dict, {})
 
-    def test_two_platforms_same_network_driver(self):
-        """Test multiple platforms using same network driver."""
+    def test_two_platforms_same_network_driver_exc(self):
+        """Test multiple platforms using same network driver raises exception."""
         platform2 = Platform.objects.create(name="example_platform2")
         platform2.network_driver = "example_platform"
         platform2.save()
         gc_config_item_dict = {"platform_network_driver": "example_platform"}
-        try:
+        with self.assertRaises(MultipleReferences):
             get_id_kwargs(
                 gc_config_item_dict,
                 (("platform", "platform_network_driver"),),
                 self.job_result,
             )
-        except Exception as err:  # pylint: disable=broad-except
-            self.assertNotEquals(Platform.MultipleObjectsReturned, type(err))
+
+    def test_two_platforms_same_network_driver_two_keys(self):
+        """Test platform name takes precedence over platform network driver 1."""
+        gc_config_item_dict = {"platform_name": "example_platform", "platform_network_driver": "example_platform"}
+        id_kwargs = get_id_kwargs(
+            gc_config_item_dict,
+            (("platform", "platform_name"),),
+            self.job_result,
+        )
+        self.assertEqual(id_kwargs, {"platform": self.platform})
+        self.assertEqual(gc_config_item_dict, {})
+
+    def test_two_platforms_same_network_driver_two_keys_2(self):
+        """Test platform name takes precedence over platform network driver 2."""
+        platform2 = Platform.objects.create(name="example_platform2")
+        platform2.network_driver = "example_platform"
+        platform2.save()
+        gc_config_item_dict = {"platform_name": "example_platform2", "platform_network_driver": "example_platform"}
+        id_kwargs = get_id_kwargs(
+            gc_config_item_dict,
+            (("platform", "platform_name"),),
+            self.job_result,
+        )
+        self.assertEqual(id_kwargs, {"platform": platform2})
+        self.assertEqual(gc_config_item_dict, {})

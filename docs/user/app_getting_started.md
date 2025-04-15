@@ -202,7 +202,7 @@ The files within these folders can follow any naming pattern or nested folder st
 │   │   └── juniper_junos.yml
 ```
 
-The `YAML` files will contain all the attributes necessary to identify an object (for instance, a `ComplianceRule` is identified by the `feature_slug` and the `platform_network_driver` together) and the other attributes (the ones that are not used to identify the object). For example:
+The `YAML` files will contain all the attributes necessary to identify an object (for instance, a `ComplianceRule` is identified by the `feature_slug` and the `platform_network_driver` together) and the other attributes (the ones that are not used to identify the object). Alternatively, `platform_name` can be used which takes precendece over `platform_network_driver` this is commonly needed when you have more than one platform using the same `network_driver`. For example:
 
 `compliance_features` example:
 
@@ -218,7 +218,7 @@ The `YAML` files will contain all the attributes necessary to identify an object
 ```yaml
 ---
 - feature_slug: "aaa"
-  platform_network_driver: "Cisco IOS"
+  platform_network_driver: "cisco_ios"
   config_ordered: true
   match_config: |
     aaa
@@ -233,7 +233,7 @@ The `YAML` files will contain all the attributes necessary to identify an object
 
 ```yaml
 ---
-- platform_network_driver: "Cisco IOS"
+- platform_network_driver: "cisco_ios"
   name: "Build config"
   regex: '^Building\s+configuration.*\n'
 ```
@@ -243,7 +243,18 @@ The `YAML` files will contain all the attributes necessary to identify an object
 ```yaml
 ---
 - name: "username"
-  platform_network_driver: "Cisco IOS"
+  platform_network_driver: "cisco_ios"
+  description: "username"
+  regex: '(username\s+\S+\spassword\s+5\s+)\S+(\s+role\s+\S+)'
+  replace: '\1<redacted_config>\2'
+```
+
+Alternatively, an example using the Platform name:
+
+```yaml
+---
+- name: "username"
+  platform_name: "Cisco IOS"
   description: "username"
   regex: '(username\s+\S+\spassword\s+5\s+)\S+(\s+role\s+\S+)'
   replace: '\1<redacted_config>\2'
@@ -262,7 +273,7 @@ CustomField data can be added using the `_custom_field_data` attribute, that tak
 ```
 
 !!! note
-    For Foreign Key references to `ComplianceFeature` and `Platform` we use the keywords `feature_slug` and `platform_network_driver` respectively.
+    For Foreign Key references to `ComplianceFeature` and `Platform` we use the keywords `feature_slug` and (`platform_name` or `platform_network_driver`) respectively.
 
 1. Add the Git repository that will be used to sync Git properties.
 

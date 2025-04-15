@@ -8,7 +8,7 @@ from nautobot.dcim.models.devices import Platform
 from nautobot.extras.choices import LogLevelChoices
 from nautobot.extras.registry import DatasourceContent
 
-from nautobot_golden_config.exceptions import MissingReference
+from nautobot_golden_config.exceptions import MissingReference, MultipleReferences
 from nautobot_golden_config.models import ComplianceFeature, ComplianceRule, ConfigRemove, ConfigReplace
 from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
 
@@ -79,23 +79,18 @@ def refresh_git_gc_properties(repository_record, job_result, delete=False):  # p
             "id_keys": (
                 ("feature", "feature_slug"),
                 ("platform", "platform_network_driver"),
+                ("platform", "platform_name"),
             ),
         },
         {
             "directory_name": "config_removes",
             "class": ConfigRemove,
-            "id_keys": (
-                ("name", "name"),
-                ("platform", "platform_network_driver"),
-            ),
+            "id_keys": (("name", "name"), ("platform", "platform_network_driver"), ("platform", "platform_name")),
         },
         {
             "directory_name": "config_replaces",
             "class": ConfigReplace,
-            "id_keys": (
-                ("name", "name"),
-                ("platform", "platform_network_driver"),
-            ),
+            "id_keys": (("name", "name"), ("platform", "platform_network_driver"), ("platform", "platform_name")),
         },
     )
 
@@ -115,6 +110,8 @@ def get_id_kwargs(gc_config_item_dict, id_keys, job_result):
 
     if "platform_slug" in gc_config_item_dict.keys():
         gc_config_item_dict["platform_network_driver"] = gc_config_item_dict.pop("platform_slug")
+    if "platform_name" in gc_config_item_dict.keys() and "platform_network_driver" in gc_config_item_dict.keys():
+        gc_config_item_dict.pop("platform_network_driver")
 
     id_kwargs = {}
     for id_key in id_keys:
@@ -125,11 +122,22 @@ def get_id_kwargs(gc_config_item_dict, id_keys, job_result):
         if actual_attr_name in fk_class_mapping:
             if "network_driver" in yaml_attr_name:
                 field_name = "network_driver"
+            elif "platform_name" in yaml_attr_name:
+                field_name = "name"
             else:
                 _, field_name = yaml_attr_name.split("_")
             kwargs = {field_name: gc_config_item_dict[yaml_attr_name]}
             try:
                 id_kwargs[actual_attr_name] = fk_class_mapping[actual_attr_name].objects.get(**kwargs)
+            except fk_class_mapping[actual_attr_name].MultipleObjectsReturned:
+                job_result.log(
+                    (
+                        f"Reference to {yaml_attr_name}: {gc_config_item_dict[yaml_attr_name]}",
+                        "is not unique. Please use platform_name key instead.",
+                    ),
+                    level_choice=LogLevelChoices.LOG_WARNING,
+                )
+                raise MultipleReferences from fk_class_mapping[actual_attr_name].MultipleObjectsReturned
             except fk_class_mapping[actual_attr_name].DoesNotExist:
                 job_result.log(
                     (

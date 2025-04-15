@@ -34,11 +34,10 @@ def run_deployment(task: Task, logger: logging.Logger, config_plan_qs, deploy_jo
     plans_to_deploy.update(deploy_result=deploy_job_result)
     consolidated_config_set = "\n".join(plans_to_deploy.values_list("config_set", flat=True))
     logger.debug(f"Consolidated config set: {consolidated_config_set}")
+    post_config = consolidated_config_set
     if ENABLE_POSTPROCESSING:
         logger.debug("Executing post-processing on the config set")
         post_config = get_config_postprocessing(plans_to_deploy, job_request)
-    else:
-        post_config = consolidated_config_set
     plans_to_deploy.update(status=Status.objects.get(name="In Progress"))
     try:
         result = task.run(

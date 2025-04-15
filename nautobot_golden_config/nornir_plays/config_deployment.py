@@ -18,7 +18,7 @@ from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
 
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
-from nautobot_golden_config.utilities.constant import DEFAULT_DEPLOY_STATUS
+from nautobot_golden_config.utilities.constant import DEFAULT_DEPLOY_STATUS, ENABLE_POSTPROCESSING
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.utilities.helper import dispatch_params
 from nautobot_golden_config.utilities.logger import NornirLogger
@@ -34,8 +34,11 @@ def run_deployment(task: Task, logger: logging.Logger, config_plan_qs, deploy_jo
     plans_to_deploy.update(deploy_result=deploy_job_result)
     consolidated_config_set = "\n".join(plans_to_deploy.values_list("config_set", flat=True))
     logger.debug(f"Consolidated config set: {consolidated_config_set}")
-    logger.debug("Executing post-processing on the config set")
-    post_config = get_config_postprocessing(plans_to_deploy, job_request)
+    if ENABLE_POSTPROCESSING:
+        logger.debug("Executing post-processing on the config set")
+        post_config = get_config_postprocessing(plans_to_deploy, job_request)
+    else:
+        post_config = consolidated_config_set
     plans_to_deploy.update(status=Status.objects.get(name="In Progress"))
     try:
         result = task.run(

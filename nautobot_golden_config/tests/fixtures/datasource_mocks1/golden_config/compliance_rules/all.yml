@@ -1,0 +1,16 @@
+---
+- feature_slug: "hostname"
+  platform_network_driver: "example_platform"
+  config_ordered: false
+  match_config: "hostname"
+  config_type: "cli"
+- feature_slug: "ntp"
+  platform_network_driver: "example_platform"
+  config_ordered: false
+  match_config: "ntp server"
+  config_type: "cli"
+- feature_slug: "snmp"
+  platform_slug: "example_platform"
+  config_ordered: false
+  match_config: "snmp"
+  config_type: "cli"

@@ -1,13 +1,15 @@
 """Unit tests for nautobot_golden_config datasources."""
 
-from unittest.mock import Mock
+from unittest.mock import MagicMock, Mock
 
 from django.test import TestCase
+from nautobot.apps.testing import TransactionTestCase
 from nautobot.dcim.models import Platform
+from nautobot.extras.models import JobResult
 
-from nautobot_golden_config.datasources import get_id_kwargs
+from nautobot_golden_config.datasources import get_id_kwargs, refresh_git_gc_properties
 from nautobot_golden_config.exceptions import MissingReference, MultipleReferences
-from nautobot_golden_config.models import ComplianceFeature
+from nautobot_golden_config.models import ComplianceFeature, ComplianceRule
 
 
 class GitPropertiesDatasourceTestCase(TestCase):
@@ -134,3 +136,52 @@ class GitPropertiesDatasourceTestCase(TestCase):
         )
         self.assertEqual(id_kwargs, {"platform": platform2})
         self.assertEqual(gc_config_item_dict, {})
+
+
+class TestDatasources(TransactionTestCase):
+    """Test Datasources."""
+
+    def setUp(self):
+        """Setup Object."""
+        self.platform = Platform.objects.create(name="example_platform")
+        self.platform.network_driver = "example_platform"
+        self.platform.save()
+        self.job_result = Mock()
+
+    def test_refresh_git_gc_properties_1(self):
+        """Test refresh_git_gc_properties with one platform."""
+        repository_record = MagicMock()
+        repository_record.filesystem_path = "nautobot_golden_config/tests/fixtures/datasource_mocks1"
+        repository_record.provided_contents = "nautobot_golden_config.pluginproperties"
+        job_result = JobResult()
+        job_result.log = MagicMock(return_value=None)
+        refresh_git_gc_properties(repository_record=repository_record, job_result=job_result)
+        self.assertEqual(ComplianceFeature.objects.count(), 3)
+        self.assertEqual(ComplianceRule.objects.count(), 3)
+
+    def test_refresh_git_gc_properties_2(self):
+        """Test refresh_git_gc_properties with two platforms using same network driver."""
+        platform2 = Platform.objects.create(name="example_platform2")
+        platform2.network_driver = "example_platform"
+        platform2.save()
+        repository_record = MagicMock()
+        repository_record.filesystem_path = "nautobot_golden_config/tests/fixtures/datasource_mocks1"
+        repository_record.provided_contents = "nautobot_golden_config.pluginproperties"
+        job_result = JobResult()
+        job_result.log = MagicMock(return_value=None)
+        with self.assertRaises(MultipleReferences):
+            refresh_git_gc_properties(repository_record=repository_record, job_result=job_result)
+
+    def test_refresh_git_gc_properties_3(self):
+        """Test refresh_git_gc_properties with two platforms using same network driver."""
+        platform2 = Platform.objects.create(name="example_platform2")
+        platform2.network_driver = "example_platform"
+        platform2.save()
+        repository_record = MagicMock()
+        repository_record.filesystem_path = "nautobot_golden_config/tests/fixtures/datasource_mocks2"
+        repository_record.provided_contents = "nautobot_golden_config.pluginproperties"
+        job_result = JobResult()
+        job_result.log = MagicMock(return_value=None)
+        refresh_git_gc_properties(repository_record=repository_record, job_result=job_result)
+        self.assertEqual(ComplianceFeature.objects.count(), 3)
+        self.assertEqual(ComplianceRule.objects.count(), 3)

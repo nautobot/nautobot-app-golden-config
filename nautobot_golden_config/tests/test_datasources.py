@@ -1,10 +1,9 @@
 """Unit tests for nautobot_golden_config datasources."""
 
-from unittest import skip
 from unittest.mock import Mock
 
 from django.test import TestCase
-from nautobot.dcim.models import Platform
+from nautobot.dcim.models.devices import Platform
 
 from nautobot_golden_config.datasources import MissingReference, get_id_kwargs
 from nautobot_golden_config.models import ComplianceFeature
@@ -16,6 +15,8 @@ class GitPropertiesDatasourceTestCase(TestCase):
     def setUp(self):
         """Setup Object."""
         self.platform = Platform.objects.create(name="example_platform")
+        self.platform.network_driver = "example_platform"
+        self.platform.save()
         self.compliance_feature = ComplianceFeature.objects.create(slug="example_feature")
         self.job_result = Mock()
 
@@ -63,7 +64,6 @@ class GitPropertiesDatasourceTestCase(TestCase):
                 self.job_result,
             )
 
-    @skip("TODO: 2.0 Figure out why this is failing.")
     def test_get_id_kwargs_5(self):
         """Test simple get_id_kwargs 5."""
         gc_config_item_dict = {"platform_network_driver": "example_platform"}
@@ -95,3 +95,18 @@ class GitPropertiesDatasourceTestCase(TestCase):
         )
         self.assertEqual(id_kwargs, {"feature": self.compliance_feature})
         self.assertEqual(gc_config_item_dict, {})
+
+    def test_two_platforms_same_network_driver(self):
+        """Test multiple platforms using same network driver."""
+        platform2 = Platform.objects.create(name="example_platform2")
+        platform2.network_driver = "example_platform"
+        platform2.save()
+        gc_config_item_dict = {"platform_network_driver": "example_platform"}
+        try:
+            get_id_kwargs(
+                gc_config_item_dict,
+                (("platform", "platform_network_driver"),),
+                self.job_result,
+            )
+        except Exception as err:  # pylint: disable=broad-except
+            self.assertNotEquals(Platform.MultipleObjectsReturned, type(err))

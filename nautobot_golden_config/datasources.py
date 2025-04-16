@@ -11,6 +11,7 @@ from nautobot.extras.registry import DatasourceContent
 from nautobot_golden_config.exceptions import MissingReference, MultipleReferences
 from nautobot_golden_config.models import ComplianceFeature, ComplianceRule, ConfigRemove, ConfigReplace
 from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
+from nautobot_golden_config.utilities.helper import get_error_message
 
 
 def refresh_git_jinja(repository_record, job_result, delete=False):  # pylint: disable=unused-argument
@@ -132,22 +133,16 @@ def get_id_kwargs(gc_config_item_dict, id_keys, job_result):
             try:
                 id_kwargs[actual_attr_name] = fk_class_mapping[actual_attr_name].objects.get(**kwargs)
             except fk_class_mapping[actual_attr_name].MultipleObjectsReturned:
-                job_result.log(
-                    (
-                        f"Reference to {yaml_attr_name}: {gc_config_item_dict[yaml_attr_name]}",
-                        "is not unique. Please use platform_name key instead.",
-                    ),
-                    level_choice=LogLevelChoices.LOG_WARNING,
+                error_msg = get_error_message(
+                    "E3031", yaml_attr_name=yaml_attr_name, yaml_attr_value=gc_config_item_dict[yaml_attr_name]
                 )
+                job_result.log(error_msg, level_choice=LogLevelChoices.LOG_WARNING)
                 raise MultipleReferences from fk_class_mapping[actual_attr_name].MultipleObjectsReturned
             except fk_class_mapping[actual_attr_name].DoesNotExist:
-                job_result.log(
-                    (
-                        f"Reference to {yaml_attr_name}: {gc_config_item_dict[yaml_attr_name]}",
-                        "is not available.",
-                    ),
-                    level_choice=LogLevelChoices.LOG_WARNING,
+                error_msg = get_error_message(
+                    "E3032", yaml_attr_name=yaml_attr_name, yaml_attr_value=gc_config_item_dict[yaml_attr_name]
                 )
+                job_result.log(error_msg, level_choice=LogLevelChoices.LOG_WARNING)
                 raise MissingReference from fk_class_mapping[actual_attr_name].DoesNotExist
         else:
             id_kwargs[actual_attr_name] = gc_config_item_dict[yaml_attr_name]

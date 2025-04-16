@@ -151,14 +151,14 @@ class IntendedJob(Job, FormEntry):
         # Commit / Push each repo after job is completed.
         for intended_repo in intended_repos:
             self.logger.info(
-                f'{repo["repo_obj"].nautobot_repo_obj.name}: the new Git repository hash is "{repo["repo_obj"].head}"',
+                f'{intended_repo["repo_obj"].nautobot_repo_obj.name}: the new Git repository hash is "{intended_repo["repo_obj"].head}"',
                 extra={
                     "grouping": "GC Repo Commit and Push",
-                    "object": repo["repo_obj"].nautobot_repo_obj.name,
+                    "object": intended_repo["repo_obj"].nautobot_repo_obj.name,
                 },
             )
 
-            self.log_debug(f"Push new intended configs to repo {sanitized_repo_url}.")
+            self.log_debug(f"Push new intended configs to repo {intended_repo['repo_obj'].nautobot_repo_obj.name}.")
             intended_repo.commit_with_added(f"INTENDED CONFIG CREATION JOB - {now}")
             intended_repo.push()
 

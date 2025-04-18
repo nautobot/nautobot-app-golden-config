@@ -1,7 +1,7 @@
 ---
 nautobot_golden_config:
   project_name: "nautobot-golden-config"
-  nautobot_ver: "2.4.2"
+  nautobot_ver: "next"  # TODO: Change to 3.0.0 after v3.0.0 is released
   local: false
   python_ver: "3.11"
   compose_dir: "development"

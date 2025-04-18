@@ -51,7 +51,7 @@ namespace = Collection("nautobot_golden_config")
 namespace.configure(
     {
         "nautobot_golden_config": {
-            "nautobot_ver": "2.4.2",
+            "nautobot_ver": "next",  # TODO: Change to 3.0.0 after v3.0.0 is released
             "project_name": "nautobot-golden-config",
             "python_ver": "3.11",
             "local": False,

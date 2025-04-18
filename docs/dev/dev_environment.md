@@ -13,7 +13,7 @@ This is a quick reference guide if you're already familiar with the development 
 
 The [Invoke](http://www.pyinvoke.org/) library is used to provide some helper commands based on the environment. There are a few configuration parameters which can be passed to Invoke to override the default configuration:
 
-- `nautobot_ver`: the version of Nautobot to use as a base for any built docker containers (default: 2.0.0)
+- `nautobot_ver`: the version of Nautobot to use as a base for any built docker containers (default: 3.0.0)
 - `project_name`: the default docker compose project name (default: `nautobot-golden-config`)
 - `python_ver`: the version of Python to use as a base for any built docker containers (default: 3.11)
 - `local`: a boolean flag indicating if invoke tasks should be run on the host or inside the docker containers (default: False, commands will be run in docker containers)
@@ -408,7 +408,7 @@ namespace.configure(
     {
         "nautobot_golden_config": {
             ...
-            "nautobot_ver": "2.4.2",
+            "nautobot_ver": "3.0.0",
 	    ...
         }
     }

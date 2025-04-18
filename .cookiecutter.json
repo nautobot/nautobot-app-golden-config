@@ -10,8 +10,8 @@
         "project_slug": "nautobot-app-golden-config",
         "repo_url": "https://github.com/nautobot/nautobot-app-golden-config",
         "base_url": "golden-config",
-        "min_nautobot_version": "2.0.0",
-        "max_nautobot_version": "2.9999",
+        "min_nautobot_version": "3.0.0",
+        "max_nautobot_version": "3.9999",
         "camel_name": "NautobotGoldenConfig",
         "project_short_description": "An app for configuration on nautobot",
         "model_class_name": "ComplianceFeature",
@@ -34,4 +34,3 @@
         }
     }
 }
-

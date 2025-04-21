@@ -1,6 +1,8 @@
 """Nornir job for generating the compliance data."""
 
 # pylint: disable=relative-beyond-top-level
+import hier_config
+
 import difflib
 import logging
 import os
@@ -172,14 +174,25 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     intended_cfg = _open_file_config(intended_file)
 
     for rule in rules[obj.platform.network_driver]:
-        # Check for the existence of a nested config to match e.g. 'interface__service-policy'
-        rule_contains_nested_config = False
-        for section in rule["section"]:
-            if "__" in section:
-                rule_contains_nested_config = True
-                break
-        if rule_contains_nested_config:
-            _actual, _intended = process_nested_compliance_rule(rule, backup_cfg, intended_cfg, obj, logger)
+        hier_config_rule = False
+        dunder_config_rule = False
+
+        # Check for hier config compliance rule
+        section_type = rule["section"][0]
+        if "# hier_config" in section_type:
+            hier_config_rule = True
+            
+        # Check for nested config to match defined with a double underscore, e.g. 'interface__service-policy'
+        if not hier_config_rule:
+            for section in rule["section"]:
+                if "__" in section:
+                    dunder_config_rule = True
+                    break
+
+        if hier_config_rule:
+            _actual, _intended = process_nested_compliance_rule_hier_config(rule, backup_cfg, intended_cfg, obj, logger)
+        elif dunder_config_rule:
+            _actual, _intended = process_nested_compliance_rule_dunder(rule, backup_cfg, intended_cfg, obj, logger)
         else:
             _actual = get_config_element(rule, backup_cfg, obj, logger)
             _intended = get_config_element(rule, intended_cfg, obj, logger)
@@ -202,6 +215,107 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     logger.info("Successfully tested compliance job.", extra={"object": obj})
 
     return Result(host=task.host)
+
+def process_nested_compliance_rule_hier_config(rule, backup_cfg, intended_cfg, obj, logger):
+    """Process nested compliance rules using hier_config.
+
+    This function processes nested compliance rules by comparing backup (running) and intended configurations
+    using the hier_config library. It supports hierarchical configuration analysis with tag-based filtering.
+
+    Args:
+        rule (dict): Dictionary containing compliance rule sections with hierarchical configuration patterns
+        backup_cfg (str): Current running configuration of the device
+        intended_cfg (str): Intended/generated configuration to compare against
+        obj (object): Device object containing platform and name information
+        logger: Logger object for recording function activity
+
+    Returns:
+        tuple: A tuple containing:
+            - running_text (str): Filtered running configuration matching the compliance rules
+            - intended_text (str): Filtered intended configuration matching the compliance rules
+
+    Example rule format:
+        {
+            "section": [
+                "# hier_config",
+                "startswith: interface",
+                "startswith: service-policy"
+            ]
+        }
+
+    Notes:
+        - The first section in the rule is treated as the parent section
+        - Subsequent sections are treated as child configurations under the parent
+        - Each section creates tags that are used to filter configurations
+        - Uses hier_config library for hierarchical configuration comparison
+    """
+
+    #TODO: REMOVE THESE TESITNG ELEMENTS
+    # interfaces = ["interface GigabitEthernet0/0", "interface GigabitEthernet2/0/1", "interface GigabitEthernet2/0/2", "interface GigabitEthernet2/0/3", "interface GigabitEthernet2/0/4", "interface GigabitEthernet2/0/5", "interface GigabitEthernet2/0/6", "interface GigabitEthernet2/0/7", "interface GigabitEthernet2/0/8", "interface GigabitEthernet2/0/9", "interface GigabitEthernet2/0/10", "interface GigabitEthernet2/0/11", "interface GigabitEthernet2/0/12", "interface GigabitEthernet2/0/13", "interface GigabitEthernet2/0/14", "interface GigabitEthernet2/0/15", "interface GigabitEthernet2/0/16", "interface GigabitEthernet2/0/17", "interface GigabitEthernet2/0/18", "interface GigabitEthernet2/0/19", "interface GigabitEthernet2/0/20", "interface GigabitEthernet2/0/21", "interface GigabitEthernet2/0/22", "interface GigabitEthernet2/0/23", "interface GigabitEthernet2/0/24", "interface GigabitEthernet2/1/1", "interface GigabitEthernet2/1/2", "interface GigabitEthernet2/1/3", "interface GigabitEthernet2/1/4", "interface TenGigabitEthernet2/1/1", "interface TenGigabitEthernet2/1/2", "interface TenGigabitEthernet2/1/3", "interface TenGigabitEthernet2/1/4", "interface Loopback103", "interface Port-channel1", "interface Vlan1", "interface Vlan100", "interface Vlan999", "interface Vlan3301", "interface Vlan4060", "interface Vlan4070", "interface Vlan4080", "interface Vlan4090"]
+    # intended_cfg = ""
+    # for interface in interfaces:
+    #     intended_cfg = intended_cfg + interface + "\n service-policy input ACCESS_IN\n service-policy output ACCESS_OUT\n no lldp transmit\n"
+    # backup_cfg = ""
+    # for interface in interfaces:
+    #     backup_cfg = backup_cfg + interface + "\n service-policy input ACCESS_IN\n service-policy output ACCESS_OUT\n lldp transmit\n"
+
+    os = obj.platform.network_driver_mappings["hier_config"]
+
+    # Create host object and load configs
+    host = hier_config.Host(hostname=obj.name, os=os)
+    host.load_running_config(backup_cfg)
+    host.load_generated_config(intended_cfg)
+
+    # Create and load tags
+    tags = []
+    tag_names = set()
+    parent = None
+    for index, section in enumerate(rule["section"], start=0):
+        if index == 0: # skip the first line, it only indicates the config type
+            continue
+
+        # Create an empty option dictionary
+        option = {"lineage": [], "add_tags": ""}
+
+        # Split the section into key-value pairs (e.g., "startswith: interface" becomes ['startswith', 'interface'])
+        section = section.split(":")
+        lineage_value = {section[0].strip(): section[1].strip()}
+
+        # TODO: This implementation assumes the order of the nested sections is not important. Is this corrrect?
+        # TODO: Could create an ordered option by putting all lineage objects into a single tag
+
+        # Each section of relevant config will need to have its own tag which contains a parent
+        # The first section is assumed to be the 'top level' and will be a parent to all
+        # subsequent sections.
+        if index == 1:
+            parent = lineage_value
+        else:
+            # Update the lineage to include the parent and the current section
+            option["lineage"].append(parent)
+            option["lineage"].append(lineage_value)
+            # Add the tag name to the option dictionary
+            tag_name = section[1].strip()
+            option["add_tags"] = tag_name
+            # Add the new option to the list of tags to be processed
+            tags.append(option)
+            # Add the tag name to the set of tag names to be included in filtering
+            tag_names.add(tag_name)
+
+    host.load_tags(tags)
+    host.running_config.add_tags(host._hconfig_tags)
+    host.generated_config.add_tags(host._hconfig_tags)
+
+    #TODO: We can't assume 'cisco_style_text' is the correct format for all devices
+    # However, this is how its done in heir_config source
+
+    # Concatonate actual config, filtered by tags
+    running_config_generator = host.running_config.all_children_sorted_by_tags(tag_names, set())
+    running_text = "\n".join(c.cisco_style_text() for c in running_config_generator)
+    # Concatonate intended config, filtered by tags
+    intended_config_generator = host.generated_config.all_children_sorted_by_tags(tag_names, set())
+    intended_text = "\n".join(c.cisco_style_text() for c in intended_config_generator)
+
+    return running_text, intended_text
 
 def get_full_lines(
     feature: t.Dict[str, t.Union[str, bool, t.List[str]]],
@@ -300,7 +414,7 @@ def section_config_exact_match(
                 match = True
     return "\n".join(section_config_list).strip()
 
-def process_nested_compliance_rule(rule, backup_cfg, intended_cfg, obj, logger):
+def process_nested_compliance_rule_dunder(rule, backup_cfg, intended_cfg, obj, logger):
     """Process nested compliance rules for network device configurations.
 
     This function handles the processing of nested compliance rules, specifically for CLI config types.
@@ -336,6 +450,9 @@ def process_nested_compliance_rule(rule, backup_cfg, intended_cfg, obj, logger):
     # intended_cfg = ""
     # for interface in interfaces:
     #     intended_cfg = intended_cfg + interface + "\n service-policy input ACCESS_IN\n service-policy output ACCESS_OUT\n no lldp transmit\n"
+    # backup_cfg = ""
+    # for interface in interfaces:
+    #     backup_cfg = backup_cfg + interface + "\n service-policy input ACCESS_IN\n service-policy output ACCESS_OUT\n lldp transmit\n"
 
     _actual = ""
     _intended = ""
@@ -351,6 +468,13 @@ def process_nested_compliance_rule(rule, backup_cfg, intended_cfg, obj, logger):
     top_level_section_list = []
     nested_sections_to_match = []
     for section in rule["section"]:
+        if "__" not in section:
+            error_msg = (
+                f"`E3010:` Nested compliance rules must contain a nested section to match. "
+                f"Config to match '{section}' is invalid."
+            )
+            logger.error(error_msg, extra={"object": obj})
+            raise NornirNautobotException(error_msg)
         top_level_section = section.split("__")[0]
         if top_level_section not in top_level_section_list:
             top_level_section_list.append(top_level_section)

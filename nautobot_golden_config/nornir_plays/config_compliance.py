@@ -250,10 +250,16 @@ def process_nested_compliance_rule_hier_config(rule, backup_cfg, intended_cfg, o
     https://hier-config.readthedocs.io/en/2.3-lts/advanced-topics/#working-with-tags
 
     """
-    os = obj.platform.network_driver_mappings["hier_config"]
+    # Check if the compliance rule is of type CLI
+    if rule["obj"].config_type != ComplianceRuleConfigTypeChoice.TYPE_CLI:
+        error_msg = "`E3008:` Hier config compliance rules are only supported for CLI config types."
+        logger.error(error_msg, extra={"object": obj})
+        raise NornirNautobotException(error_msg)
+    
+    platform_network_driver = obj.platform.network_driver_mappings["hier_config"]
 
     # Create host object and load configs
-    host = hier_config.Host(hostname=obj.name, os=os)
+    host = hier_config.Host(hostname=obj.name, os=platform_network_driver)
     host.load_running_config(backup_cfg)
     host.load_generated_config(intended_cfg)
 

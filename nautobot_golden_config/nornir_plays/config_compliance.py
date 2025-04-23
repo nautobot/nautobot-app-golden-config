@@ -258,7 +258,6 @@ def process_nested_compliance_rule_hier_config(rule, backup_cfg, intended_cfg, o
     host.load_generated_config(intended_cfg)
 
     match_config = yaml.safe_load(rule["obj"].match_config)
-    host.load_tags(match_config)
     tag_names = set()
     for lineage in match_config:
         # Create a unique tag name for each lineage
@@ -266,6 +265,7 @@ def process_nested_compliance_rule_hier_config(rule, backup_cfg, intended_cfg, o
         lineage["add_tags"] = tag_name
         tag_names.add(tag_name)
 
+    host.load_tags(match_config)
     host.running_config.add_tags(host._hconfig_tags)
     host.generated_config.add_tags(host._hconfig_tags)
 

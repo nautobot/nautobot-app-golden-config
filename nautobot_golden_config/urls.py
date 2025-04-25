@@ -12,7 +12,9 @@ from nautobot_golden_config import views
 app_name = "nautobot_golden_config"
 router = NautobotUIViewSetRouter()
 
-router.register("compliancefeature", views.ComplianceFeatureUIViewSet)
+# The standard is for the route to be the hyphenated version of the model class name plural.
+# for example, ExampleModel would be example-models.
+router.register("compliance-features", views.ComplianceFeatureUIViewSet)
 
 
 urlpatterns = [

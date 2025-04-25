@@ -1,16 +1,22 @@
 """Test ComplianceFeature Filter."""
 
-from django.test import TestCase
+from nautobot.apps.testing import FilterTestCases
 
 from nautobot_golden_config import filters, models
 from nautobot_golden_config.tests import fixtures
 
 
-class ComplianceFeatureFilterTestCase(TestCase):
+class ComplianceFeatureFilterTestCase(FilterTestCases.FilterTestCase):
     """ComplianceFeature Filter Test Case."""
 
     queryset = models.ComplianceFeature.objects.all()
     filterset = filters.ComplianceFeatureFilterSet
+    generic_filter_tests = (
+        ("id",),
+        ("created",),
+        ("last_updated",),
+        ("name",),
+    )
 
     @classmethod
     def setUpTestData(cls):

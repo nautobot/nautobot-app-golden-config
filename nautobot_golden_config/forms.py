@@ -13,10 +13,7 @@ class ComplianceFeatureForm(NautobotModelForm):  # pylint: disable=too-many-ance
         """Meta attributes."""
 
         model = models.ComplianceFeature
-        fields = [
-            "name",
-            "description",
-        ]
+        fields = "__all__"
 
 
 class ComplianceFeatureBulkEditForm(TagsBulkEditFormMixin, NautobotBulkEditForm):  # pylint: disable=too-many-ancestors
@@ -42,6 +39,6 @@ class ComplianceFeatureFilterForm(NautobotFilterForm):
     q = forms.CharField(
         required=False,
         label="Search",
-        help_text="Search within Name or Slug.",
+        help_text="Search within Name.",
     )
     name = forms.CharField(required=False, label="Name")

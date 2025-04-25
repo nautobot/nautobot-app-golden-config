@@ -81,12 +81,26 @@ jobs:
           poetry-version: "1.8.5"
       - name: "Linting: yamllint"
         run: "poetry run invoke yamllint"
+  markdownlint:
+    runs-on: "ubuntu-22.04"
+    env:
+      INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "True"
+    steps:
+      - name: "Check out repository code"
+        uses: "actions/checkout@v4"
+      - name: "Setup environment"
+        uses: "networktocode/gh-action-setup-poetry-environment@v6"
+        with:
+          poetry-version: "1.8.5"
+      - name: "Linting: markdownlint"
+        run: "poetry run invoke markdownlint"
   check-in-docker:
     needs:
       - "ruff-format"
       - "ruff-lint"
       - "poetry"
       - "yamllint"
+      - "markdownlint"
     runs-on: "ubuntu-22.04"
     strategy:
       fail-fast: true
@@ -109,9 +123,9 @@ jobs:
         run: "poetry run invoke lock --constrain-nautobot-ver --constrain-python-ver"
       - name: "Set up Docker Buildx"
         id: "buildx"
-        uses: "docker/setup-buildx-action@v3"
+        uses: "docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2"  # v3.10.0
       - name: "Build"
-        uses: "docker/build-push-action@v5"
+        uses: "docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25"  # v5.4.0
         with:
           builder: "${{ steps.buildx.outputs.name }}"
           context: "./"
@@ -125,8 +139,6 @@ jobs:
             NAUTOBOT_VER=${{ matrix.nautobot-version }}
             PYTHON_VER=${{ matrix.python-version }}
             CI=true
-      - name: "Copy credentials"
-        run: "cp development/creds.example.env development/creds.env"
       - name: "Linting: pylint"
         run: "poetry run invoke pylint"
       - name: "Checking: App Config"
@@ -139,7 +151,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        python-version: ["3.8", "3.12"]
+        python-version: ["3.8"]  # 3.12 stable is tested in unittest_report stage.
         db-backend: ["postgresql"]
         nautobot-version: ["stable"]
         include:
@@ -166,9 +178,60 @@ jobs:
         run: "poetry run invoke lock --constrain-nautobot-ver --constrain-python-ver"
       - name: "Set up Docker Buildx"
         id: "buildx"
-        uses: "docker/setup-buildx-action@v3"
+        uses: "docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2"  # v3.10.0
       - name: "Build"
-        uses: "docker/build-push-action@v5"
+        uses: "docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25"  # v5.4.0
+        with:
+          builder: "${{ steps.buildx.outputs.name }}"
+          context: "./"
+          push: false
+          load: true
+          tags: "${{ env.APP_NAME }}/nautobot:${{ matrix.nautobot-version }}-py${{ matrix.python-version }}"
+          file: "./development/Dockerfile"
+          cache-from: "type=gha,scope=${{ matrix.nautobot-version }}-py${{ matrix.python-version }}"
+          cache-to: "type=gha,scope=${{ matrix.nautobot-version }}-py${{ matrix.python-version }}"
+          build-args: |
+            NAUTOBOT_VER=${{ matrix.nautobot-version }}
+            PYTHON_VER=${{ matrix.python-version }}
+            CI=true
+      - name: "Use Mysql invoke settings when needed"
+        run: "cp invoke.mysql.yml invoke.yml"
+        if: "matrix.db-backend == 'mysql'"
+      - name: "Run Tests"
+        run: "poetry run invoke unittest"
+
+  unittest_report:
+    needs:
+      - "check-in-docker"
+    strategy:
+      fail-fast: true
+      matrix:
+        python-version: ["3.12"]
+        db-backend: ["postgresql"]
+        nautobot-version: ["stable"]
+    runs-on: "ubuntu-22.04"
+    permissions:
+      pull-requests: "write"
+      contents: "write"
+    env:
+      INVOKE_NAUTOBOT_GOLDEN_CONFIG_PYTHON_VER: "${{ matrix.python-version }}"
+      INVOKE_NAUTOBOT_GOLDEN_CONFIG_NAUTOBOT_VER: "${{ matrix.nautobot-version }}"
+    steps:
+      - name: "Check out repository code"
+        uses: "actions/checkout@v4"
+      - name: "Setup environment"
+        uses: "networktocode/gh-action-setup-poetry-environment@v6"
+        with:
+          poetry-version: "1.8.5"
+      - name: "Constrain Nautobot version and regenerate lock file"
+        env:
+          INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "true"
+        run: "poetry run invoke lock --constrain-nautobot-ver --constrain-python-ver"
+      - name: "Set up Docker Buildx"
+        id: "buildx"
+        uses: "docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2"  # v3.10.0
+      - name: "Build"
+        uses: "docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25"  # v5.4.0
         with:
           builder: "${{ steps.buildx.outputs.name }}"
           context: "./"
@@ -188,7 +251,28 @@ jobs:
         run: "cp invoke.mysql.yml invoke.yml"
         if: "matrix.db-backend == 'mysql'"
       - name: "Run Tests"
-        run: "poetry run invoke unittest"
+        run: "poetry run invoke unittest --coverage"
+      - name: "Generate Coverage Comment"
+        if: >
+          contains(fromJson('["develop","ltm-1.6"]'), github.base_ref) &&
+          (github.head_ref != 'main') && (!startsWith(github.head_ref, 'release'))
+        id: "coverage_comment"
+        uses: "py-cov-action/python-coverage-comment-action@d1ff8fbb5ff80feedb3faa0f6d7b424f417ad0e1"  # v3.30
+        with:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          MINIMUM_GREEN: 90
+          MINIMUM_ORANGE: 80
+          ANNOTATE_MISSING_LINES: true
+          ANNOTATION_TYPE: "warning"
+      - name: "Store Pull Request comment to be posted"
+        if: >
+          contains(fromJson('["develop","ltm-1.6"]'), github.base_ref) &&
+          (github.head_ref != 'main') && (!startsWith(github.head_ref, 'release'))
+        uses: "actions/upload-artifact@v4"
+        with:
+          name: "python-coverage-comment-action"
+          path: "python-coverage-comment-action.txt"
+
   changelog:
     if: >
       contains(fromJson('["develop","ltm-1.6"]'), github.base_ref) &&
@@ -210,41 +294,39 @@ jobs:
   publish_gh:
     needs:
       - "unittest"
+      - "unittest_report"
     name: "Publish to GitHub"
     runs-on: "ubuntu-22.04"
     if: "startsWith(github.ref, 'refs/tags/v')"
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "True"
+    permissions:
+      contents: "write"
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v4"
-      - name: "Set up Python"
-        uses: "actions/setup-python@v5"
+      - name: "Setup environment"
+        uses: "networktocode/gh-action-setup-poetry-environment@v6"
         with:
+          poetry-version: "1.8.5"
           python-version: "3.12"
-      - name: "Install Python Packages"
-        run: "pip install poetry"
+          poetry-install-options: "--no-root"
       - name: "Set env"
         run: "echo RELEASE_VERSION=${GITHUB_REF:10} >> $GITHUB_ENV"
       - name: "Run Poetry Version"
         run: "poetry version $RELEASE_VERSION"
-      - name: "Install Dependencies (needed for mkdocs)"
-        run: "poetry install --no-root"
       - name: "Build Documentation"
         run: "poetry run invoke build-and-check-docs"
       - name: "Run Poetry Build"
         run: "poetry build"
       - name: "Upload binaries to release"
-        uses: "svenstaro/upload-release-action@v2"
-        with:
-          repo_token: "${{ secrets.NTC_GITHUB_TOKEN }}"  # use GH_NAUTOBOT_BOT_TOKEN for Nautobot Org repos.
-          file: "dist/*"
-          tag: "${{ github.ref }}"
-          overwrite: true
-          file_glob: true
+        run: "gh release upload ${{ github.ref_name }} dist/*.{tar.gz,whl}"
+        env:
+          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
   publish_pypi:
     needs:
       - "unittest"
+      - "unittest_report"
     name: "Push Package to PyPI"
     runs-on: "ubuntu-22.04"
     if: "startsWith(github.ref, 'refs/tags/v')"
@@ -253,24 +335,22 @@ jobs:
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v4"
-      - name: "Set up Python"
-        uses: "actions/setup-python@v5"
+      - name: "Setup environment"
+        uses: "networktocode/gh-action-setup-poetry-environment@v6"
         with:
+          poetry-version: "1.8.5"
           python-version: "3.12"
-      - name: "Install Python Packages"
-        run: "pip install poetry"
+          poetry-install-options: "--no-root"
       - name: "Set env"
         run: "echo RELEASE_VERSION=${GITHUB_REF:10} >> $GITHUB_ENV"
       - name: "Run Poetry Version"
         run: "poetry version $RELEASE_VERSION"
-      - name: "Install Dependencies (needed for mkdocs)"
-        run: "poetry install --no-root"
       - name: "Build Documentation"
         run: "poetry run invoke build-and-check-docs"
       - name: "Run Poetry Build"
         run: "poetry build"
       - name: "Push to PyPI"
-        uses: "pypa/gh-action-pypi-publish@release/v1"
+        uses: "pypa/gh-action-pypi-publish@76f52bc884231f62b9a034ebfe128415bbaabdfc"  # v1.12.4
         with:
           user: "__token__"
           password: "${{ secrets.PYPI_API_TOKEN }}"
@@ -291,7 +371,7 @@ jobs:
         # ENVs cannot be used directly in job.if. This is a workaround to check
         # if SLACK_WEBHOOK_URL is present.
         if: "env.SLACK_WEBHOOK_URL != ''"
-        uses: "slackapi/slack-github-action@v1"
+        uses: "slackapi/slack-github-action@fcfb566f8b0aab22203f066d80ca1d7e4b5d05b3"  # v1.27.1
         with:
           payload: |
             {

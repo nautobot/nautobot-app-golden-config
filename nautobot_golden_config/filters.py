@@ -5,7 +5,7 @@ from nautobot.apps.filters import NameSearchFilterSet, NautobotFilterSet
 from nautobot_golden_config import models
 
 
-class ComplianceFeatureFilterSet(NautobotFilterSet, NameSearchFilterSet):  # pylint: disable=too-many-ancestors
+class ComplianceFeatureFilterSet(NameSearchFilterSet, NautobotFilterSet):  # pylint: disable=too-many-ancestors
     """Filter for ComplianceFeature."""
 
     class Meta:
@@ -14,4 +14,4 @@ class ComplianceFeatureFilterSet(NautobotFilterSet, NameSearchFilterSet):  # pyl
         model = models.ComplianceFeature
 
         # add any fields from the model that you would like to filter your searches by using those
-        fields = ["id", "name", "description"]
+        fields = "__all__"

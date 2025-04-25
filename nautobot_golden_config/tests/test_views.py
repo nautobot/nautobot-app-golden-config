@@ -16,12 +16,11 @@ class ComplianceFeatureViewTest(ViewTestCases.PrimaryObjectViewTestCase):
         "name": "Test 1",
         "description": "Initial model",
     }
-    csv_data = (
-        "name",
-        "Test csv1",
-        "Test csv2",
-        "Test csv3",
-    )
+
+    update_data = {
+        "name": "Test 2",
+        "description": "Updated model",
+    }
 
     @classmethod
     def setUpTestData(cls):

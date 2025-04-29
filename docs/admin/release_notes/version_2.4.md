@@ -16,6 +16,28 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 - Updated nautobot-plugin-nornir dependency minimum to 2.2.1.
 - Changed multiple detail views to use new component UI functionality.
 
+## [v2.4.1a1 (2025-04-29)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v2.4.1a1)
+
+### Added
+
+- [#898](https://github.com/nautobot/nautobot-app-golden-config/issues/898) - Added tests to ensure that mkdocs release notes are properly set.
+- [#921](https://github.com/nautobot/nautobot-app-golden-config/issues/921) - Add testing for the two issues with mkdocs versus markdown rendering and associated fixes.
+
+### Changed
+
+- [#886](https://github.com/nautobot/nautobot-app-golden-config/issues/886) - Updated the generate intended config api to perform a shallow git clone.
+
+### Fixed
+
+- [#794](https://github.com/nautobot/nautobot-app-golden-config/issues/794) - Fixed Git Repo Sync issue when multiple platforms use the same network_driver.
+- [#881](https://github.com/nautobot/nautobot-app-golden-config/issues/881) - Fixed generate intended config view to use Golden Config `sot_agg_transposer`.
+- [#887](https://github.com/nautobot/nautobot-app-golden-config/issues/887) - Fixed copy button not hidden on diff tab in generate intended config tool.
+- [#924](https://github.com/nautobot/nautobot-app-golden-config/issues/924) - Fixed copy button not working on detail views.
+
+### Housekeeping
+
+- Rebaked from the cookie `nautobot-app-v2.4.2`.
+
 
 ## [v2.4.0 (2025-02-20)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v2.4.0)
 

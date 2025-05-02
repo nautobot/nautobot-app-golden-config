@@ -26,21 +26,9 @@ from .conftest import create_device_data, create_feature_rule_json, create_job_r
 User = get_user_model()
 
 
-class ComplianceFeatureViewTest(ViewTestCases.PrimaryObjectViewTestCase):
-    # pylint: disable=too-many-ancestors
-    """Test the ComplianceFeature views."""
-
-    model = models.ComplianceFeature
-    bulk_edit_data = {"description": "Bulk edit views"}
-    form_data = {
-        "name": "Test 1",
-        "description": "Initial model",
-    }
-
-    update_data = {
-        "name": "Test 2",
-        "description": "Updated model",
-    }
+@override_settings(EXEMPT_VIEW_PERMISSIONS=["*"])
+class ConfigComplianceOverviewHelperTestCase(TestCase):
+    """Test ConfigComplianceOverviewHelper."""
 
     @classmethod
     def setUpTestData(cls):

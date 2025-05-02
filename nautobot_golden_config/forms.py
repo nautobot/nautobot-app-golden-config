@@ -236,20 +236,6 @@ class ComplianceFeatureForm(NautobotModelForm):
         fields = "__all__"
 
 
-class ComplianceFeatureBulkEditForm(TagsBulkEditFormMixin, NautobotBulkEditForm):  # pylint: disable=too-many-ancestors
-    """ComplianceFeature bulk edit form."""
-
-    pk = forms.ModelMultipleChoiceField(queryset=models.ComplianceFeature.objects.all(), widget=forms.MultipleHiddenInput)
-    description = forms.CharField(required=False)
-
-    class Meta:
-        """Meta attributes."""
-
-        nullable_fields = [
-            "description",
-        ]
-
-
 class ComplianceFeatureFilterForm(NautobotFilterForm):
     """Form for ComplianceFeature instances."""
 
@@ -257,10 +243,12 @@ class ComplianceFeatureFilterForm(NautobotFilterForm):
     q = django_forms.CharField(required=False, label="Search")
     name = forms.DynamicModelChoiceField(queryset=models.ComplianceFeature.objects.all(), required=False)
 
-    q = forms.CharField(
-        required=False,
-        label="Search",
-        help_text="Search within Name.",
+
+class ComplianceFeatureBulkEditForm(NautobotBulkEditForm):
+    """BulkEdit form for ComplianceFeature instances."""
+
+    pk = django_forms.ModelMultipleChoiceField(
+        queryset=models.ComplianceFeature.objects.all(), widget=django_forms.MultipleHiddenInput
     )
     description = django_forms.CharField(max_length=200, required=False)
 

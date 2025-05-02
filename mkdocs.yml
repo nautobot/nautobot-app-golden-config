@@ -120,8 +120,10 @@ nav:
       - Navigate Remediation: "user/app_feature_remediation.md"
       - Frequently Asked Questions: "user/faq.md"
       - External Interactions: "user/external_interactions.md"
-      - Data Models:
-          - Compliance Feature: "models/compliancefeature.md"
+      - Troubleshooting:
+          - General: "user/troubleshooting/troubleshoot_general.md"
+          - Credentials: "user/troubleshooting/troubleshoot_credentials.md"
+          - Dispatchers: "user/troubleshooting/troubleshoot_dispatchers.md"
   - Administrator Guide:
       - Install and Configure: "admin/install.md"
       - Upgrade: "admin/upgrade.md"

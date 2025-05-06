@@ -15,7 +15,7 @@ env:
 
 jobs:
   black:
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-latest"
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "True"
     steps:
@@ -26,7 +26,7 @@ jobs:
       - name: "Linting: black"
         run: "poetry run invoke black"
   bandit:
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-latest"
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "True"
     steps:
@@ -37,7 +37,7 @@ jobs:
       - name: "Linting: bandit"
         run: "poetry run invoke bandit"
   pydocstyle:
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-latest"
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "True"
     steps:
@@ -48,7 +48,7 @@ jobs:
       - name: "Linting: pydocstyle"
         run: "poetry run invoke pydocstyle"
   flake8:
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-latest"
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "True"
     steps:
@@ -59,7 +59,7 @@ jobs:
       - name: "Linting: flake8"
         run: "poetry run invoke flake8"
   yamllint:
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-latest"
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "True"
     steps:
@@ -76,7 +76,7 @@ jobs:
       - "flake8"
       - "yamllint"
       - "black"
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-latest"
     strategy:
       fail-fast: true
       matrix:
@@ -133,7 +133,7 @@ jobs:
           - python-version: "3.11"
             db-backend: "mysql"
             nautobot-version: "ltm-1.6"
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-latest"
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_PYTHON_VER: "${{ matrix.python-version }}"
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_NAUTOBOT_VER: "${{ matrix.nautobot-version }}"
@@ -170,7 +170,7 @@ jobs:
     needs:
       - "unittest"
     name: "Publish to GitHub"
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-latest"
     if: "startsWith(github.ref, 'refs/tags/v')"
     steps:
       - name: "Check out repository code"
@@ -199,7 +199,7 @@ jobs:
     needs:
       - "unittest"
     name: "Push Package to PyPI"
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-latest"
     if: "startsWith(github.ref, 'refs/tags/v')"
     steps:
       - name: "Check out repository code"
@@ -225,7 +225,7 @@ jobs:
     needs:
       - "publish_gh"
       - "publish_pypi"
-    runs-on: "ubuntu-20.04"
+    runs-on: "ubuntu-latest"
     env:
       SLACK_WEBHOOK_URL: "${{ '{{ secrets.SLACK_WEBHOOK_URL }}' }}"
       SLACK_MESSAGE: >-

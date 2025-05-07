@@ -151,7 +151,7 @@ class IntendedJob(Job, FormEntry):
         # Commit / Push each repo after job is completed.
         for intended_repo in intended_repos:
             self.logger.info(
-                '%s: repo updated',
+                "%s: repo updated",
                 intended_repo.obj.name,
                 extra={
                     "grouping": "GC Repo Commit and Push",

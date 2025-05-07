@@ -151,9 +151,8 @@ class IntendedJob(Job, FormEntry):
         # Commit / Push each repo after job is completed.
         for intended_repo in intended_repos:
             self.logger.info(
-                '%s: the new Git repository hash is "%s"',
+                '%s: repo updated',
                 intended_repo.obj.name,
-                intended_repo.obj.head,
                 extra={
                     "grouping": "GC Repo Commit and Push",
                     "object": intended_repo.obj,

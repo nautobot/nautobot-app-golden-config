@@ -152,11 +152,11 @@ class IntendedJob(Job, FormEntry):
         for intended_repo in intended_repos:
             self.logger.info(
                 '%s: the new Git repository hash is "%s"',
-                intended_repo["repo_obj"].nautobot_repo_obj.name,
-                intended_repo["repo_obj"].head,
+                intended_repo.obj.name,
+                intended_repo.obj.head,
                 extra={
                     "grouping": "GC Repo Commit and Push",
-                    "object": intended_repo["repo_obj"].nautobot_repo_obj.name,
+                    "object": intended_repo.obj,
                 },
             )
 
@@ -192,7 +192,7 @@ class BackupJob(Job, FormEntry):
 
         # Commit / Push each repo after job is completed.
         for backup_repo in backup_repos:
-            self.log_debug(f"Pushing Backup config repo {backup_repo.url}.")
+            self.log_debug(f"Pushing Backup config to repo {backup_repo.obj.name}")
             backup_repo.commit_with_added(f"BACKUP JOB {now}")
             backup_repo.push()
 

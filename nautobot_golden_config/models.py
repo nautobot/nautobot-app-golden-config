@@ -3,7 +3,6 @@
 import json
 import logging
 import os
-import re
 
 from deepdiff import DeepDiff
 from django.core.exceptions import ValidationError
@@ -25,6 +24,7 @@ from xmldiff import actions, main
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
+from nautobot_golden_config.utilities.helper import parse_diff
 
 LOGGER = logging.getLogger(__name__)
 GRAPHQL_STR_START = "query ($device_id: ID!)"
@@ -127,44 +127,6 @@ def _get_json_compliance(obj):
 
 def _get_json_jdiff_compliance(obj):
     """This function performs the actual compliance for json serializable data."""
-
-    def parse_index_element_string(index_element_string, match_config):
-        """Build out dictionary from the index element string."""
-        pattern = r"index_element\[(?:'|\")(.*?)(?:'|\")\]\[(?:'|\")(.*?)(?:'|\")\]"
-        match = re.match(pattern, index_element_string)
-        print(match)
-        if match:
-            config_key, inner_key = match.groups()
-            if config_key == match_config:
-                return (inner_key, {inner_key: ""})
-            return (None, {})
-        return (index_element_string, {})
-
-    def parse_diff(diff, actual, intended, match_config):
-        """Parse jdiff evaluate result into missing and extra dictionaries."""
-        extra = {}
-        missing = {}
-
-        def process_diff(_map, extra_map, missing_map):
-            for key, value in _map.items():
-                if isinstance(value, dict) and "new_value" in value and "old_value" in value:
-                    extra_map[key] = value["old_value"]
-                    missing_map[key] = value["new_value"]
-                elif isinstance(value, str):
-                    if "missing" in value:
-                        extra_map[key] = actual.get(match_config, {}).get(key)
-                    if "new" in value:
-                        orig_key, new_key = parse_index_element_string(key, match_config)
-                        new_key[orig_key] = intended.get(match_config, {}).get(orig_key)
-                        missing_map.update(new_key)
-                elif isinstance(value, dict):
-                    extra_map[key] = {}
-                    missing_map[key] = {}
-                    process_diff(value, extra_map[key], missing_map[key])
-
-        process_diff(diff, extra, missing)
-        return extra, missing
-
     jdiff_param_match = CheckType.create("exact_match")
     actual_json = obj.actual.get(obj.rule.match_config, {})
     intended_json = obj.intended.get(obj.rule.match_config, {})

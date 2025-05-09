@@ -17,7 +17,7 @@ from nautobot_golden_config.utilities.config_postprocessing import get_config_po
 class GraphQLSerializer(serializers.Serializer):  # pylint: disable=abstract-method
     """Serializer for a GraphQL object."""
 
-    data = serializers.JSONField()
+    data = serializers.JSONField(read_only=True)
 
 
 class ComplianceFeatureSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):

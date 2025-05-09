@@ -36,4 +36,5 @@ urlpatterns = [
         name="git_repository_branches",
     ),
 ]
+app_name = "nautobot_golden_config-api"
 urlpatterns += router.urls

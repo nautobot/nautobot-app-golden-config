@@ -150,7 +150,9 @@ class IntendedJob(Job, FormEntry):
 
         # Commit / Push each repo after job is completed.
         for intended_repo in intended_repos:
-            self.log_debug(f"Push new intended configs to repo {intended_repo.url}.")
+            self.log_debug(f"{intended_repo.obj.name}: repo updated")
+
+            self.log_debug(f"Push new intended config to repo {intended_repo.obj.name}.")
             intended_repo.commit_with_added(f"INTENDED CONFIG CREATION JOB - {now}")
             intended_repo.push()
 
@@ -182,7 +184,7 @@ class BackupJob(Job, FormEntry):
 
         # Commit / Push each repo after job is completed.
         for backup_repo in backup_repos:
-            self.log_debug(f"Pushing Backup config repo {backup_repo.url}.")
+            self.log_debug(f"Pushing Backup config to repo {backup_repo.obj.name}")
             backup_repo.commit_with_added(f"BACKUP JOB {now}")
             backup_repo.push()
 

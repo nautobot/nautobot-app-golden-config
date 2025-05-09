@@ -150,7 +150,7 @@ class IntendedJob(Job, FormEntry):
 
         # Commit / Push each repo after job is completed.
         for intended_repo in intended_repos:
-            self.logger.info(
+            self.log_debug(
                 "%s: repo updated",
                 intended_repo.obj.name,
                 extra={
@@ -159,7 +159,7 @@ class IntendedJob(Job, FormEntry):
                 },
             )
 
-            self.log_debug(f"Push new intended configs to repo {intended_repo['repo_obj'].nautobot_repo_obj.name}.")
+            self.log_debug("Push new intended configs to repo %s.", intended_repo.obj.name)
             intended_repo.commit_with_added(f"INTENDED CONFIG CREATION JOB - {now}")
             intended_repo.push()
 

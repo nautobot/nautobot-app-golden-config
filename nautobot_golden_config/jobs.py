@@ -150,16 +150,9 @@ class IntendedJob(Job, FormEntry):
 
         # Commit / Push each repo after job is completed.
         for intended_repo in intended_repos:
-            self.log_debug(
-                "%s: repo updated",
-                intended_repo.obj.name,
-                extra={
-                    "grouping": "GC Repo Commit and Push",
-                    "object": intended_repo.obj,
-                },
-            )
+            self.log_debug(f"{intended_repo.obj.name}: repo updated")
 
-            self.log_debug("Push new intended configs to repo %s.", intended_repo.obj.name)
+            self.log_debug(f"Push new intended config to repo {intended_repo.obj.name}.")
             intended_repo.commit_with_added(f"INTENDED CONFIG CREATION JOB - {now}")
             intended_repo.push()
 

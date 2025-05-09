@@ -16,7 +16,7 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 - Updated nautobot-plugin-nornir dependency minimum to 2.2.1.
 - Changed multiple detail views to use new component UI functionality.
 
-## [v2.4.1a1 (2025-04-29)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v2.4.1a1)
+## [v2.4.1 (2025-05-09)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v2.4.1)
 
 ### Added
 
@@ -33,6 +33,7 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 - [#881](https://github.com/nautobot/nautobot-app-golden-config/issues/881) - Fixed generate intended config view to use Golden Config `sot_agg_transposer`.
 - [#887](https://github.com/nautobot/nautobot-app-golden-config/issues/887) - Fixed copy button not hidden on diff tab in generate intended config tool.
 - [#924](https://github.com/nautobot/nautobot-app-golden-config/issues/924) - Fixed copy button not working on detail views.
+- [#906](https://github.com/nautobot/nautobot-app-golden-config/issues/906) - Fix missing post processing enable check in deploy task.
 
 ### Housekeeping
 

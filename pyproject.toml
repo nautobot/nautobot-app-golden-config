@@ -153,6 +153,17 @@ convention = "google"
     "S"
 ]
 
+[tool.coverage.run]
+disable_warnings = ["already-imported"]
+relative_files = true
+omit = [
+    # Skip Tests
+    "*/tests/*",
+]
+include = [
+    "nautobot_golden_config/*",
+]
+
 [tool.pymarkdown]
 # Seems to be not support for whitelisting rules: https://github.com/jackdewinter/pymarkdown/issues/1396
 plugins.md001.enabled = false
@@ -207,7 +218,7 @@ plugins.md049.enabled = false
 plugins.md050.enabled = false
 plugins.pml100.enabled = false
 plugins.pml101.enabled = true # list-anchored-indent
-plugins.pml102.enabled = false 
+plugins.pml102.enabled = false
 plugins.pml103.enabled = false
 
 [build-system]

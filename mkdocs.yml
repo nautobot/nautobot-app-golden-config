@@ -96,8 +96,10 @@ watch:
   - "README.md"
 
 validation:
-  nav:
-    omitted_files: "warn"
+  omitted_files: "warn"
+  absolute_links: "warn"
+  unrecognized_links: "warn"
+  anchors: "warn"
 
 nav:
   - Overview: "index.md"

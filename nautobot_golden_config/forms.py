@@ -350,15 +350,18 @@ class GoldenConfigSettingForm(NautobotModelForm):
     slug = forms.SlugField()
     dynamic_group = forms.DynamicModelChoiceField(queryset=DynamicGroup.objects.all())
     backup_repository = forms.DynamicModelChoiceField(
-        queryset=GitRepository.objects.filter(provided_contents__contains="nautobot_golden_config.backupconfigs")
+        queryset=GitRepository.objects.filter(provided_contents__contains="nautobot_golden_config.backupconfigs"),
+        required=False,
     )
     intended_repository = forms.DynamicModelChoiceField(
-        queryset=GitRepository.objects.filter(provided_contents__contains="nautobot_golden_config.intendedconfigs")
+        queryset=GitRepository.objects.filter(provided_contents__contains="nautobot_golden_config.intendedconfigs"),
+        required=False,
     )
     jinja_repository = forms.DynamicModelChoiceField(
-        queryset=GitRepository.objects.filter(provided_contents__contains="nautobot_golden_config.jinjatemplate")
+        queryset=GitRepository.objects.filter(provided_contents__contains="nautobot_golden_config.jinjatemplate"),
+        required=False,
     )
-    sot_agg_query = forms.DynamicModelChoiceField(queryset=GraphQLQuery.objects.all())
+    sot_agg_query = forms.DynamicModelChoiceField(queryset=GraphQLQuery.objects.all(), required=False)
 
     class Meta:
         """Form Meta Data for GoldenConfigSetting instances."""

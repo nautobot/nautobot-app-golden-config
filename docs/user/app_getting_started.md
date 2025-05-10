@@ -59,14 +59,14 @@ Follow the steps below to get up and running for the intended configuration elem
 2. Add any git repositories that will be used to house the intended configurations.
 
     1. In the UI `Extensibility -> Git Repositories`. Click Add.
-    2. Populate the Git Repository data for the intended. [Git Settings](./app_feature_backup.md#git-settings)
+    2. Populate the Git Repository data for the intended. [Git Settings](./app_use_cases.md#git-settings)
     3. Make sure to select the **Provides** called `intended configs`.
     4. Click Create.
 
 3. Add the git repository that will be used to house the Jinja2 templates.
 
     1. In the UI `Extensibility -> Git Repositories`. Click Add.
-    2. Populate the Git Repository data for the jinja2 templates. [Git Settings](./app_feature_backup.md#git-settings)
+    2. Populate the Git Repository data for the jinja2 templates. [Git Settings](./app_use_cases.md#git-settings)
     3. Make sure to select the **Provides** called `jinja templates`.
     4. Click Create.
 
@@ -75,7 +75,7 @@ Follow the steps below to get up and running for the intended configuration elem
     1. Navigate to `Golden Config -> Settings` under the Golden Configuration Section.
     2. Create new or select one of the existing `Settings` objects
     3. Fill out the Intended Repository. (The dropdown will show the repository that was just created.)
-    4. Fill out Intended Path Template. Typically `{{obj.location.name|slugify}}/{{obj.name}}.cfg`, see [Setting Details](./app_feature_backup.md#application-settings)
+    4. Fill out Intended Path Template. Typically `{{obj.location.name|slugify}}/{{obj.name}}.cfg`, see [Setting Details](./app_use_cases.md#application-settings)
     5. Fill out Jinja Repository. (The dropdown will show the repository that was just created.)
     6. Fill out Jinja Path Template.  Typically `{{obj.platform.network_driver}}.j2`.
 

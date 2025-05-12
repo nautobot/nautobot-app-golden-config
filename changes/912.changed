@@ -1,1 +1,1 @@
-Sanitized repo url to not expose username and password.
+Changed logging from git repo url to name to avoid exposing credentials in job logs.

@@ -364,7 +364,7 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
                     filesystem_path = self._get_jinja_template_path(settings, device, git_repository)
                     intended_config = self._render_config_nornir_serial(
                         device=device,
-                        jinja_template=str(filesystem_path.relative_to(settings.jinja_repository.filesystem_path)),
+                        jinja_template=str(filesystem_path.relative_to(git_repository.filesystem_path)),
                         jinja_root_path=git_repository.filesystem_path,
                         graphql_data=graphql_data,
                     )

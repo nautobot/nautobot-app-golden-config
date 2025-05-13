@@ -309,7 +309,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
 
         with self.assertRaises(NornirNautobotException) as error:
             verify_feature_enabled(self.logger, feature_name, self.test_settings_a, required_settings)
-            self.assertContains(str(error), "E3033")
+            self.assertContains(str(error), "E3039")
 
     def test_verify_feature_enabled__disabled_e3032_error(self):
         """Verify that we raise an exception when the backup feature is disabled."""
@@ -322,7 +322,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
 
         with self.assertRaises(NornirNautobotException) as error:
             verify_feature_enabled(self.logger, feature_name, self.test_settings_a, required_settings)
-            self.assertContains(str(error), "E3032")
+            self.assertContains(str(error), "E3038")
 
     def test_verify_feature_enabled__enabled(self):
         """Verify that we do not raise an exception when the backup feature is enabled."""

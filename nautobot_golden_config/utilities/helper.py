@@ -332,7 +332,7 @@ def verify_feature_enabled(logger, feature_name, gc_settings, required_settings=
     """
     feature_enabled = getattr(gc_settings, f"{feature_name}_enabled", False)
     if not feature_enabled:
-        error_msg = f"`E3032:` The {feature_name} feature is disabled in Golden Config settings."
+        error_msg = f"`E3038:` The {feature_name} feature is disabled in Golden Config settings."
         logger.error(error_msg)
         raise NornirNautobotException(error_msg)
 
@@ -348,7 +348,7 @@ def verify_feature_enabled(logger, feature_name, gc_settings, required_settings=
                 missing_settings.remove("sot_agg_query")
 
             if missing_settings:  # Check again in case we removed the only missing setting
-                error_msg = f"`E3033:` Missing required settings for {feature_name}: {', '.join(missing_settings)}"
+                error_msg = f"`E3039:` Missing required settings for {feature_name}: {', '.join(missing_settings)}"
                 logger.error(error_msg)
                 raise NornirNautobotException(error_msg)
 
@@ -460,7 +460,7 @@ class CustomFilterSettings:
             try:
                 verify_feature_enabled(logger, feature_name, setting, required_settings)
             except NornirNautobotException as error:
-                if any(code in str(error) for code in ["E3032", "E3033"]):
+                if any(code in str(error) for code in ["E3038", "E3039"]):
                     if hasattr(setting, "dynamic_group") and len(setting.dynamic_group.members) > 0:
                         self.exclude_devices([device.pk for device in setting.dynamic_group.members])
                 raise error

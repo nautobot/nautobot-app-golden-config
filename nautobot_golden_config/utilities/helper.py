@@ -23,6 +23,7 @@ from nornir_nautobot.exceptions import NornirNautobotException
 
 from nautobot_golden_config import config as app_config
 from nautobot_golden_config import models
+from nautobot_golden_config.error_codes import ERROR_CODES
 from nautobot_golden_config.utilities import utils
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, JINJA_ENV
 
@@ -463,3 +464,22 @@ class CustomFilterSettings:
                     if hasattr(setting, "dynamic_group") and len(setting.dynamic_group.members) > 0:
                         self.exclude_devices([device.pk for device in setting.dynamic_group.members])
                 raise error
+
+
+def get_error_message(error_code, **kwargs):
+    """Get the error message for a given error code.
+
+    Args:
+        error_code (str): The error code.
+        **kwargs: Any additional context data to be interpolated in the error message.
+
+    Returns:
+        str: The constructed error message.
+    """
+    try:
+        error_message = ERROR_CODES.get(error_code, ERROR_CODES["E3XXX"]).error_message.format(**kwargs)
+    except KeyError as missing_kwarg:
+        error_message = f"Error Code was found, but failed to format, message expected kwarg `{missing_kwarg}`."
+    except Exception:  # pylint: disable=broad-except
+        error_message = "Error Code was found, but failed to format message, unknown cause."
+    return f"{error_code}: {error_message}"

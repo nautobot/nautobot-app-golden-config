@@ -46,12 +46,6 @@ theme:
 extra_css:
   - "assets/extra.css"
 
-# needed for RTD version flyout menu
-# jquery is not (yet) injected by RTD automatically and it might be dropped
-# as a dependency in the future
-extra_javascript:
-  - "https://code.jquery.com/jquery-3.6.0.min.js"
-
 extra:
   generator: false
   ntc_sponsor: true
@@ -87,7 +81,7 @@ markdown_extensions:
       custom_fences:
         - name: "mermaid"
           class: "mermaid"
-          format: !!python/name:pymdownx.superfences.fence_code_format
+          format: "!!python/name:pymdownx.superfences.fence_code_format"
   - "footnotes"
 plugins:
   - "search"
@@ -100,6 +94,12 @@ plugins:
             show_root_heading: true
 watch:
   - "README.md"
+
+validation:
+  omitted_files: "warn"
+  absolute_links: "warn"
+  unrecognized_links: "warn"
+  anchors: "warn"
 
 nav:
   - Overview: "index.md"
@@ -131,6 +131,7 @@ nav:
       - Compatibility Matrix: "admin/compatibility_matrix.md"
       - Troubleshooting:
           - "admin/troubleshooting/index.md"
+          - E3XXX: "admin/troubleshooting/E3XXX.md"
           - E3001: "admin/troubleshooting/E3001.md"
           - E3002: "admin/troubleshooting/E3002.md"
           - E3003: "admin/troubleshooting/E3003.md"

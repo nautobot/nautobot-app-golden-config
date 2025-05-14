@@ -11,16 +11,13 @@
 
 - [#912](https://github.com/nautobot/nautobot-app-golden-config/issues/912) - Changed logging from git repo url to name to avoid exposing credentials in job logs.
 
-### Fixed
-
-- [#773](https://github.com/nautobot/nautobot-app-golden-config/issues/773) - Fixed deepdiff dependency range.
-
 ### Documentation
 
 - [#775](https://github.com/nautobot/nautobot-app-golden-config/issues/775) - Added FAQ for deepdiff and numpy dependency issue.
 
 ### Dependencies
 
+- [#773](https://github.com/nautobot/nautobot-app-golden-config/issues/773) - Fixed deepdiff dependency range.
 - [#913](https://github.com/nautobot/nautobot-app-golden-config/issues/913) - Updated docs dependencies.
 
 ## v1.6.6 - 2024-08

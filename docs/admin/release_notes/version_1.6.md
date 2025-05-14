@@ -5,6 +5,25 @@
 - Add functionality to compliance result to provide a Remediation plan.
 - Supports Nautobot >=1.6.1,<2.0.0.
 
+## v1.6.7 2025-05
+
+### Changed
+
+- [#912](https://github.com/nautobot/nautobot-app-golden-config/issues/912) - Changed logging from git repo url to name to avoid exposing credentials in job logs.
+
+### Fixed
+
+- [#773](https://github.com/nautobot/nautobot-app-golden-config/issues/773) - Fixed deepdiff dependency range
+
+### Documentation
+
+- [#775](https://github.com/nautobot/nautobot-app-golden-config/issues/775) - Add FAQ for deepdiff and numpy dependency issue.
+
+### Housekeeping
+
+- [#913](https://github.com/nautobot/nautobot-app-golden-config/issues/913) - Updated docs dependencies.
+
+
 ## v1.6.6 - 2024-08
 
 ### Fixed

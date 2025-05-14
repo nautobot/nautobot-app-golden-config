@@ -19,7 +19,7 @@
 
 - [#775](https://github.com/nautobot/nautobot-app-golden-config/issues/775) - Added FAQ for deepdiff and numpy dependency issue.
 
-### Housekeeping
+### Dependencies
 
 - [#913](https://github.com/nautobot/nautobot-app-golden-config/issues/913) - Updated docs dependencies.
 

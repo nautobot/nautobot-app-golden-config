@@ -13,16 +13,15 @@
 
 ### Fixed
 
-- [#773](https://github.com/nautobot/nautobot-app-golden-config/issues/773) - Fixed deepdiff dependency range
+- [#773](https://github.com/nautobot/nautobot-app-golden-config/issues/773) - Fixed deepdiff dependency range.
 
 ### Documentation
 
-- [#775](https://github.com/nautobot/nautobot-app-golden-config/issues/775) - Add FAQ for deepdiff and numpy dependency issue.
+- [#775](https://github.com/nautobot/nautobot-app-golden-config/issues/775) - Added FAQ for deepdiff and numpy dependency issue.
 
 ### Housekeeping
 
 - [#913](https://github.com/nautobot/nautobot-app-golden-config/issues/913) - Updated docs dependencies.
-
 
 ## v1.6.6 - 2024-08
 

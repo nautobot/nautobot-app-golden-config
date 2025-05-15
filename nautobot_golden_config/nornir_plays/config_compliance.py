@@ -23,7 +23,7 @@ from nautobot_golden_config.models import ComplianceRule, ConfigCompliance, Gold
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.utilities.helper import (
-    CustomFilterSettings,
+    GCSettingsDeviceFilterSet,
     get_json_config,
     get_xml_config,
     get_xml_subtree_with_full_path,
@@ -210,7 +210,7 @@ def config_compliance(job):  # pylint: disable=unused-argument
     now = make_aware(datetime.now())
     logger = NornirLogger(job.job_result, job.logger.getEffectiveLevel())
     rules = get_rules()
-    device_filter = CustomFilterSettings(job.qs)
+    device_filter = GCSettingsDeviceFilterSet(job.qs)
 
     # Verify compliance feature is enabled and has required settings
     device_filter.verify_feature_enabled(

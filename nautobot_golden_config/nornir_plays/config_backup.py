@@ -19,7 +19,7 @@ from nautobot_golden_config.models import ConfigRemove, ConfigReplace, GoldenCon
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.utilities.helper import (
-    CustomFilterSettings,
+    GCSettingsDeviceFilterSet,
     dispatch_params,
     render_jinja_template,
 )
@@ -100,10 +100,15 @@ def config_backup(job):
     """
     now = make_aware(datetime.now())
     logger = NornirLogger(job.job_result, job.logger.getEffectiveLevel())
-    device_filter = CustomFilterSettings(job.qs)
-
+    device_filter = GCSettingsDeviceFilterSet(job.qs)
+    enabled_qs, disabled_qs = device_filter.get_filtered_querysets("backup")
     # Verify backup feature is enabled and has required settings
-    device_filter.verify_feature_enabled(logger, "backup", required_settings=["backup_path_template"])
+    # device_filter.verify_feature_enabled(logger, "backup", required_settings=["backup_path_template"])
+    for device in disabled_qs:
+        logger.info(
+            f"E3038: Device {device.name} does not have the required settings to run the backup job. Skipping device.",
+            extra={"object": device},
+        )
 
     # Build a dictionary, with keys of platform.network_driver, and the regex line in it for the netutils func.
     remove_regex_dict = {}
@@ -127,7 +132,7 @@ def config_backup(job):
                 "options": {
                     "credentials_class": NORNIR_SETTINGS.get("credentials"),
                     "params": NORNIR_SETTINGS.get("inventory_params"),
-                    "queryset": device_filter.filtered_queryset,
+                    "queryset": enabled_qs,
                     "defaults": {"now": now},
                 },
             },
@@ -139,7 +144,7 @@ def config_backup(job):
                 task=run_backup,
                 name="BACKUP CONFIG",
                 logger=logger,
-                device_to_settings_map=job.device_to_settings_map,
+                device_to_settings_map=device_filter.backup_enabled[True],
                 remove_regex_dict=remove_regex_dict,
                 replace_regex_dict=replace_regex_dict,
             )

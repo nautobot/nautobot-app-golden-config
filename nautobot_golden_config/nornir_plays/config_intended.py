@@ -20,7 +20,7 @@ from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import (
-    CustomFilterSettings,
+    GCSettingsDeviceFilterSet,
     dispatch_params,
     get_django_env,
     render_jinja_template,
@@ -107,7 +107,7 @@ def config_intended(job):
     """
     now = make_aware(datetime.now())
     logger = NornirLogger(job.job_result, job.logger.getEffectiveLevel())
-    device_filter = CustomFilterSettings(job.qs)
+    device_filter = GCSettingsDeviceFilterSet(job.qs)
 
     # Verify intended feature is enabled and has required settings
     device_filter.verify_feature_enabled(

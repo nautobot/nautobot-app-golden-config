@@ -22,6 +22,7 @@ from nornir_nautobot.exceptions import NornirNautobotException
 
 from nautobot_golden_config import config as app_config
 from nautobot_golden_config import models
+from nautobot_golden_config.error_codes import ERROR_CODES
 from nautobot_golden_config.utilities import utils
 from nautobot_golden_config.utilities.constant import JINJA_ENV
 
@@ -288,3 +289,22 @@ def update_dynamic_groups_cache():
     if not settings.PLUGINS_CONFIG[app_config.name].get("_manual_dynamic_group_mgmt"):
         for setting in models.GoldenConfigSetting.objects.all():
             setting.dynamic_group.update_cached_members()
+
+
+def get_error_message(error_code, **kwargs):
+    """Get the error message for a given error code.
+
+    Args:
+        error_code (str): The error code.
+        **kwargs: Any additional context data to be interpolated in the error message.
+
+    Returns:
+        str: The constructed error message.
+    """
+    try:
+        error_message = ERROR_CODES.get(error_code, ERROR_CODES["E3XXX"]).error_message.format(**kwargs)
+    except KeyError as missing_kwarg:
+        error_message = f"Error Code was found, but failed to format, message expected kwarg `{missing_kwarg}`."
+    except Exception:  # pylint: disable=broad-except
+        error_message = "Error Code was found, but failed to format message, unknown cause."
+    return f"{error_code}: {error_message}"

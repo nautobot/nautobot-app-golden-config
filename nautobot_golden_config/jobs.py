@@ -120,7 +120,11 @@ def gc_repo_prep(job, data):
     job.qs = get_job_filter(data)
     job.logger.debug(f"In scope device count for this job: {job.qs.count()}", extra={"grouping": "Get Job Filter"})
     job.logger.debug("Mapping device(s) to GC Settings.", extra={"grouping": "Device to Settings Map"})
+    now = datetime.now()
     job.device_to_settings_map = get_device_to_settings_map(queryset=job.qs)
+    job.logger.debug(
+        f"Device to settings map took seconds: {datetime.now() - now}", extra={"grouping": "Device to Settings Map"}
+    )
     gitrepo_types = list(set(get_repo_types_for_job(job.class_path)))
     job.logger.debug(
         f"Repository types to sync: {', '.join(sorted(gitrepo_types))}",

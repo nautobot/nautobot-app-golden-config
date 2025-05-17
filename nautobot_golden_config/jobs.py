@@ -40,7 +40,7 @@ from nautobot_golden_config.utilities.config_plan import (
 )
 from nautobot_golden_config.utilities.git import GitRepo
 from nautobot_golden_config.utilities.helper import (
-    get_device_to_settings_map,
+    GCSettingsDeviceFilterSet,
     get_golden_config_settings,
     get_job_filter,
     update_dynamic_groups_cache,
@@ -56,13 +56,20 @@ name = "Golden Configuration"  # pylint: disable=invalid-name
 def get_repo_types_for_job(job_name):
     """Logic to determine which repo_types are needed based on job + plugin settings."""
     repo_types = []
-    settings = get_golden_config_settings()
-
-    if settings.backup_enabled and job_name == "nautobot_golden_config.jobs.BackupJob":
+    # settings = get_golden_config_settings()
+    # if settings.backup_enabled and job_name == "nautobot_golden_config.jobs.BackupJob":
+    #     repo_types.append("backup_repository")
+    # if settings.intended_enabled and job_name == "nautobot_golden_config.jobs.IntendedJob":
+    #     repo_types.extend(["jinja_repository", "intended_repository"])
+    # if settings.compliance_enabled and job_name == "nautobot_golden_config.jobs.ComplianceJob":
+    #     repo_types.extend(["intended_repository", "backup_repository"])
+    # if "All" in job_name:
+    #     repo_types.extend(["backup_repository", "jinja_repository", "intended_repository"])
+    if job_name == "nautobot_golden_config.jobs.BackupJob":
         repo_types.append("backup_repository")
-    if settings.intended_enabled and job_name == "nautobot_golden_config.jobs.IntendedJob":
+    if job_name == "nautobot_golden_config.jobs.IntendedJob":
         repo_types.extend(["jinja_repository", "intended_repository"])
-    if settings.compliance_enabled and job_name == "nautobot_golden_config.jobs.ComplianceJob":
+    if job_name == "nautobot_golden_config.jobs.ComplianceJob":
         repo_types.extend(["intended_repository", "backup_repository"])
     if "All" in job_name:
         repo_types.extend(["backup_repository", "jinja_repository", "intended_repository"])
@@ -122,17 +129,21 @@ def gc_repo_prep(job, data):
     Returns:
         List[GitRepo]: List of GitRepos to be used with Job(s).
     """
-    job.logger.debug("Compiling device data for GC job.", extra={"grouping": "Get Job Filter"})
-    job.qs = get_job_filter(data)
-    job.logger.debug(f"In scope device count for this job: {job.qs.count()}", extra={"grouping": "Get Job Filter"})
-    job.logger.debug("Mapping device(s) to GC Settings.", extra={"grouping": "Device to Settings Map"})
-    job.device_to_settings_map = get_device_to_settings_map(queryset=job.qs)
+    # job.logger.debug("Compiling device data for GC job.", extra={"grouping": "Get Job Filter"})
+    # job.qs = get_job_filter(data)
+    # job.logger.debug(f"In scope device count for this job: {job.qs.count()}", extra={"grouping": "Get Job Filter"})
+    # job.logger.debug("Mapping device(s) to GC Settings.", extra={"grouping": "Device to Settings Map"})
+    # device_filter = GCSettingsDeviceFilterSet(job.qs)
+    # enabled_qs, disabled_qs = device_filter.get_filtered_querysets("backup")
+    # job.device_to_settings_map = device_filter.device_to_settings_map
     gitrepo_types = list(set(get_repo_types_for_job(job.class_path)))
     job.logger.debug(
         f"Repository types to sync: {', '.join(sorted(gitrepo_types))}",
         extra={"grouping": "GC Repo Syncs"},
     )
-    current_repos = get_refreshed_repos(job_obj=job, repo_types=gitrepo_types, data=job.qs)
+    current_repos = get_refreshed_repos(
+        job_obj=job, repo_types=gitrepo_types, data=job.gc_advanced_filter.get_filtered_querysets("backup")[0]
+    )
     return current_repos
 
 
@@ -229,8 +240,35 @@ class GoldenConfigJobMixin(Job):  # pylint: disable=abstract-method
     def __init__(self, *args, **kwargs):
         """Initialize the job."""
         super().__init__(*args, **kwargs)
-        self.qs = None
-        self.device_to_settings_map = {}
+        self.qs = get_job_filter(kwargs)
+        # self.device_to_settings_map = {}
+        self.gc_advanced_filter = GCSettingsDeviceFilterSet(self.qs)
+        # self._gc_validation(data=kwargs)
+
+    # def _gc_validation(self, data):
+    #     """Validate the Golden Config settings."""
+    #     self.logger.debug("_gc_validation Compiling device data for GC job.", extra={"grouping": "Get Job Filter"})
+    #     # self.qs = get_job_filter(data)
+    #     self.logger.debug(
+    #         f"_gc_validation In scope device count for this job: {self.qs.count()}",
+    #         extra={"grouping": "Get Job Filter"},
+    #     )
+    #     self.logger.debug(
+    #         "_gc_validation Mapping device(s) to GC Settings.", extra={"grouping": "Device to Settings Map"}
+    #     )
+
+    #     enabled_qs, disabled_qs = self.gc_advanced_filter.get_filtered_querysets("backup")
+    #     self.logger.debug(
+    #         f"_gc_validation Device(s) with settings enabled: {enabled_qs.count()}",
+    #         extra={"grouping": "Device to Settings Map"},
+    #     )
+    #     self.logger.debug(
+    #         f"_gc_validation Device(s) with settings disabled: {disabled_qs.count()}",
+    #         extra={"grouping": "Device to Settings Map"},
+    #     )
+
+    # job.device_to_settings_map = device_filter.device_to_settings_map
+    #
 
 
 class ComplianceJob(GoldenConfigJobMixin, FormEntry):

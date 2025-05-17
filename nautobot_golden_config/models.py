@@ -523,6 +523,15 @@ class GoldenConfigSettingManager(BaseManager.from_queryset(RestrictedQuerySet)):
             return dynamic_group.order_by("-golden_config_setting__weight").first().golden_config_setting
         return None
 
+    def get_repos_for_setting(self, setting, repo_types):
+        """Return t."""
+        repos = []
+        for enabled_setting in repo_types:
+            if getattr(setting, enabled_setting):
+                if getattr(setting, f"{enabled_setting.split('_')[0]}_repository"):
+                    repos.append(getattr(setting, f"{enabled_setting.split('_')[0]}_repository"))
+        return repos
+
 
 @extras_features(
     "graphql",

@@ -3,6 +3,7 @@
 # pylint: disable=relative-beyond-top-level
 import logging
 import os
+import traceback
 from datetime import datetime
 
 from django.utils.timezone import make_aware
@@ -104,11 +105,12 @@ def config_backup(job):
     enabled_qs, disabled_qs = device_filter.get_filtered_querysets("backup")
     # Verify backup feature is enabled and has required settings
     # device_filter.verify_feature_enabled(logger, "backup", required_settings=["backup_path_template"])
-    for device in disabled_qs:
-        logger.info(
-            f"E3038: Device {device.name} does not have the required settings to run the backup job. Skipping device.",
-            extra={"object": device},
-        )
+    if job.job_result.task_kwargs["debug"]:
+        for device in disabled_qs:
+            logger.warning(
+                f"E3038: Device {device.name} does not have the required settings to run the backup job. Skipping device.",
+                extra={"object": device},
+            )
 
     # Build a dictionary, with keys of platform.network_driver, and the regex line in it for the netutils func.
     remove_regex_dict = {}
@@ -144,14 +146,14 @@ def config_backup(job):
                 task=run_backup,
                 name="BACKUP CONFIG",
                 logger=logger,
-                device_to_settings_map=device_filter.backup_enabled[True],
+                device_to_settings_map=device_filter.settings_filters["backup"][True],
                 remove_regex_dict=remove_regex_dict,
                 replace_regex_dict=replace_regex_dict,
             )
             logger.debug("Completed configuration from devices.")
     except NornirNautobotException as err:
         logger.error(
-            f"`E3027:` NornirNautobotException raised during backup tasks. Original exception message: ```{err}```"
+            f"`E3027:` NornirNautobotException raised during backup tasks. Original exception message: ```{traceback.format_exc()}```"
         )
         # re-raise Exception if it's raised from nornir-nautobot or nautobot-app-nornir
         if str(err).startswith("`E2") or str(err).startswith("`E1"):

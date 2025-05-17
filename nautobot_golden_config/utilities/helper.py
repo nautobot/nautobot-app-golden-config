@@ -402,11 +402,7 @@ def verify_deployment_eligibility(logger, config_plan, gc_settings):
 
 
 class GCSettingsDeviceFilterSet:
-    """
-    Helper class to filter and group devices based on their Golden Config settings.
-
-    Provides compatibility with existing code while adding enhanced device filtering.
-    """
+    """Helper class to filter and group devices based on their Golden Config settings."""
 
     def __init__(self, queryset):
         """Initialize with a job device queryset.
@@ -415,44 +411,36 @@ class GCSettingsDeviceFilterSet:
             queryset: Django queryset of Device objects
         """
         self.queryset = queryset
-        self.device_to_settings_map = self.get_device_to_settings_map()
-        self.backup_enabled = {True: {}, False: {}}
-        self.intended_enabled = {True: {}, False: {}}
-        self.compliance_enabled = {True: {}, False: {}}
-        self.plan_enabled = {True: {}, False: {}}
-        self.deploy_enabled = {True: {}, False: {}}
-        self._set_filters()
+        self.device_to_settings_map = get_device_to_settings_map(self.queryset)
+        self.settings_filters = {
+            setting: {True: {}, False: {}} for setting in ["backup", "intended", "compliance", "plan", "deploy"]
+        }
+        self._populate_filters()
 
-    def _set_filters(self):
-        """Set filters for each setting."""
-        for device, gcs in self.device_to_settings_map.items():
-            for setting_type in ["backup", "intended", "compliance", "plan", "deploy"]:
-                self._get_setting_enabled(setting_type, device, gcs)
+    def _populate_filters(self):
+        """Populate filters for each setting."""
+        for device, gc_settings in self.device_to_settings_map.items():
+            for setting in self.settings_filters:
+                is_enabled = getattr(gc_settings, f"{setting}_enabled", False)
+                self.settings_filters[setting][is_enabled][device] = gc_settings
 
-    def _get_setting_enabled(self, setting, device, gc_settings):
-        """Check if setting is enabled for the device."""
-        if getattr(gc_settings, f"{setting}_enabled"):
-            getattr(self, f"{setting}_enabled")[True].update({device: gc_settings})
-        else:
-            getattr(self, f"{setting}_enabled")[False].update({device: gc_settings})
-
-    def get_device_to_settings_map(self):
-        """Helper function to map settings to devices."""
-        device_to_settings_map = {}
-        update_dynamic_groups_cache()
-        for device in self.queryset:
-            dynamic_group = device.dynamic_groups.exclude(golden_config_setting__isnull=True).order_by(
-                "-golden_config_setting__weight"
-            )
-            if dynamic_group.exists():
-                device_to_settings_map[device.id] = dynamic_group.first().golden_config_setting
-        return device_to_settings_map
+    # def _map_devices_to_settings(self):
+    #     """Map devices to their Golden Config settings."""
+    #     update_dynamic_groups_cache()
+    #     return {
+    #         device.id: device.dynamic_groups.exclude(golden_config_setting__isnull=True)
+    #         .order_by("-golden_config_setting__weight")
+    #         .first()
+    #         .golden_config_setting
+    #         for device in self.queryset
+    #         if device.dynamic_groups.exists()
+    #     }
 
     def get_filtered_querysets(self, setting_type):
-        """Return the queryset of devices."""
-        return self.queryset.exclude(
-            pk__in=list(getattr(self, f"{setting_type}_enabled")[False].keys())
-        ), self.queryset.exclude(pk__in=list(getattr(self, f"{setting_type}_enabled")[True].keys()))
+        """Return the filtered querysets for a given setting type."""
+        enabled_devices = self.settings_filters[setting_type][True].keys()
+        disabled_devices = self.settings_filters[setting_type][False].keys()
+        return self.queryset.filter(pk__in=enabled_devices), self.queryset.filter(pk__in=disabled_devices)
 
 
 # class CustomFilterSettings:

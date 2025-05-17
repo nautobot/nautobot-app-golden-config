@@ -5,6 +5,33 @@
 - Add functionality to compliance result to provide a Remediation plan.
 - Supports Nautobot >=1.6.1,<2.0.0.
 
+## v1.6.6 - 2024-08
+
+### Fixed
+
+- [#787](https://github.com/nautobot/nautobot-app-golden-config/pull/787) - Allow version 7 of deepdiff.
+
+## v1.6.5 - 2024-04
+
+### Fixed
+
+- [#714](https://github.com/nautobot/nautobot-app-golden-config/pull/714) - Fixed close threaded db connections during config deployment.
+- [#744](https://github.com/nautobot/nautobot-app-golden-config/pull/744) - Fixed issue where parser is not mapped when not matching netutils normalized names.
+
+### Changed
+
+- [#744](https://github.com/nautobot/nautobot-app-golden-config/pull/744) - Changed netutils to support 1.8.0 and up.
+
+## v1.6.4 - 2024-01
+
+### Fixed
+
+- [#695](https://github.com/nautobot/nautobot-app-golden-config/pull/695) - Removed optional job_result parameter from ensure_git_repository.
+
+### Changed
+
+- [#670](https://github.com/nautobot/nautobot-app-golden-config/pull/670) - Update Nautobot Nornir Dependency.
+
 ## v1.6.3 - 2023-10
 
 ### Fixed

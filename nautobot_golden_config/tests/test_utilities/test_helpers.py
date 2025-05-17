@@ -343,3 +343,23 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
     def test_custom_filter_settings__device_to_settings_maps(self):
         """Verify that the device_to_settings_maps attribute is set to a non-empty list."""
         self.assertGreater(len(self.custom_filter_settings.device_to_settings_maps), 0)
+
+    def test_device_to_settings_map_multi_match_settings(self):
+        """Verify Golden Config Settings are properly mapped to devices."""
+        test_device = Device.objects.get(name="test_device")
+        test_device.location = Location.objects.get(name="Site 4")
+        test_device.save()
+        # Regenerate the device to settings map to ensure it is up to date.
+        temp_device_to_settings_map = get_device_to_settings_map(queryset=Device.objects.all())
+        self.assertEqual(temp_device_to_settings_map[test_device.id], self.test_settings_b)
+
+    def test_device_to_settings_map_gc_weight_change(self):
+        """Verify Golden Config Settings weight changes work properly."""
+        self.test_settings_a.weight = 3000
+        self.test_settings_a.save()
+        test_device = Device.objects.get(name="test_device")
+        test_device.location = Location.objects.get(name="Site 4")
+        test_device.save()
+        # Regenerate the device to settings map to ensure it is up to date.
+        temp_device_to_settings_map = get_device_to_settings_map(queryset=Device.objects.all())
+        self.assertEqual(temp_device_to_settings_map[test_device.id], self.test_settings_a)

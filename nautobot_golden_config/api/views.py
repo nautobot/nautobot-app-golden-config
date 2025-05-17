@@ -356,16 +356,16 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
                         )
                         intended_config = self._render_config_nornir_serial(
                             device=device,
-                            jinja_template=filesystem_path.name,
-                            jinja_root_path=filesystem_path.parent,
+                            jinja_template=str(filesystem_path.relative_to(git_repo_path)),
+                            jinja_root_path=git_repo_path,
                             graphql_data=graphql_data,
                         )
                 else:
                     filesystem_path = self._get_jinja_template_path(settings, device, git_repository)
                     intended_config = self._render_config_nornir_serial(
                         device=device,
-                        jinja_template=filesystem_path.name,
-                        jinja_root_path=filesystem_path.parent,
+                        jinja_template=str(filesystem_path.relative_to(git_repository.filesystem_path)),
+                        jinja_root_path=git_repository.filesystem_path,
                         graphql_data=graphql_data,
                     )
             except Exception as exc:

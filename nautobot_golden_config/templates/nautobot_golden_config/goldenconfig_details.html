@@ -4,3 +4,12 @@
 
 {% include "nautobot_golden_config/goldenconfig_detailsmodal.html" %}
 {% endblock %}
+
+{% block javascript %}
+{{ block.super }}
+<script>
+    var clipboard = new ClipboardJS('.btn');
+    clipboard.on('success', function (e) {});
+    clipboard.on('error', function (e) {});
+</script>
+{% endblock javascript %}

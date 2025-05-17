@@ -3,6 +3,7 @@
 # pylint: disable=relative-beyond-top-level
 import logging
 import os
+import traceback
 from datetime import datetime
 
 from django.utils.timezone import make_aware
@@ -19,7 +20,6 @@ from nautobot_golden_config.models import ConfigRemove, ConfigReplace, GoldenCon
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.utilities.helper import (
-    CustomFilterSettings,
     dispatch_params,
     render_jinja_template,
 )
@@ -100,10 +100,16 @@ def config_backup(job):
     """
     now = make_aware(datetime.now())
     logger = NornirLogger(job.job_result, job.logger.getEffectiveLevel())
-    device_filter = CustomFilterSettings(job.qs)
-
+    # device_filter = GCSettingsDeviceFilterSet(job.qs)
+    enabled_qs, disabled_qs = job.gc_advanced_filter.get_filtered_querysets("backup")
     # Verify backup feature is enabled and has required settings
-    device_filter.verify_feature_enabled(logger, "backup", required_settings=["backup_path_template"])
+    # device_filter.verify_feature_enabled(logger, "backup", required_settings=["backup_path_template"])
+    if job.job_result.task_kwargs["debug"]:
+        for device in disabled_qs:
+            logger.warning(
+                f"E3038: Device {device.name} does not have the required settings to run the backup job. Skipping device.",
+                extra={"object": device},
+            )
 
     # Build a dictionary, with keys of platform.network_driver, and the regex line in it for the netutils func.
     remove_regex_dict = {}
@@ -127,7 +133,7 @@ def config_backup(job):
                 "options": {
                     "credentials_class": NORNIR_SETTINGS.get("credentials"),
                     "params": NORNIR_SETTINGS.get("inventory_params"),
-                    "queryset": device_filter.filtered_queryset,
+                    "queryset": enabled_qs,
                     "defaults": {"now": now},
                 },
             },
@@ -139,14 +145,14 @@ def config_backup(job):
                 task=run_backup,
                 name="BACKUP CONFIG",
                 logger=logger,
-                device_to_settings_map=job.device_to_settings_map,
+                device_to_settings_map=job.gc_advanced_filter.settings_filters["backup"][True],
                 remove_regex_dict=remove_regex_dict,
                 replace_regex_dict=replace_regex_dict,
             )
             logger.debug("Completed configuration from devices.")
     except NornirNautobotException as err:
         logger.error(
-            f"`E3027:` NornirNautobotException raised during backup tasks. Original exception message: ```{err}```"
+            f"`E3027:` NornirNautobotException raised during backup tasks. Original exception message: ```{traceback.format_exc()}```"
         )
         # re-raise Exception if it's raised from nornir-nautobot or nautobot-app-nornir
         if str(err).startswith("`E2") or str(err).startswith("`E1"):

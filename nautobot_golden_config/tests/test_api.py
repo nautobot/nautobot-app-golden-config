@@ -69,6 +69,8 @@ class GoldenConfigAPITest(APITestCase):  # pylint: disable=too-many-ancestors
     def test_config_compliance_post_new_json_compliant(self):
         """Verify that config compliance detail view."""
         self.add_permissions("nautobot_golden_config.add_configcompliance")
+        self.add_permissions("nautobot_golden_config.view_compliancerule")
+        self.add_permissions("dcim.view_device")
         response = self.client.post(
             self.base_view,
             data={
@@ -86,6 +88,8 @@ class GoldenConfigAPITest(APITestCase):  # pylint: disable=too-many-ancestors
     def test_config_compliance_post_new_json_not_compliant(self):
         """Verify that config compliance detail view."""
         self.add_permissions("nautobot_golden_config.add_configcompliance")
+        self.add_permissions("nautobot_golden_config.view_compliancerule")
+        self.add_permissions("dcim.view_device")
         response = self.client.post(
             self.base_view,
             data={
@@ -112,6 +116,8 @@ class GoldenConfigSettingsAPITest(APITestCase):  # pylint: disable=too-many-ance
         self.add_permissions("nautobot_golden_config.add_goldenconfigsetting")
         self.add_permissions("nautobot_golden_config.change_goldenconfigsetting")
         self.add_permissions("extras.view_dynamicgroup")
+        self.add_permissions("extras.view_gitrepository")
+        self.add_permissions("extras.view_graphqlquery")
         self.base_view = reverse("plugins-api:nautobot_golden_config-api:goldenconfigsetting-list")
         self.content_type = ContentType.objects.get(app_label="dcim", model="device")
         self.dynamic_group = DynamicGroup.objects.create(

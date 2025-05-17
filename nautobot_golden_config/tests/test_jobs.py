@@ -134,7 +134,7 @@ class GCReposBackupTestCase(BaseGoldenConfigTestCase):
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="run")
         self.assertEqual(
-            log_entries.last().message, "`E3032:` The backup feature is disabled in Golden Config settings."
+            log_entries.last().message, "`E3038:` The backup feature is disabled in Golden Config settings."
         )
 
     def test_backup_job_repos_two_setting_backup_disabled(self, mock_ensure_git_repository):
@@ -153,7 +153,7 @@ class GCReposBackupTestCase(BaseGoldenConfigTestCase):
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="run")
         self.assertEqual(
-            log_entries.last().message, "`E3032:` The backup feature is disabled in Golden Config settings."
+            log_entries.last().message, "`E3038:` The backup feature is disabled in Golden Config settings."
         )
 
 
@@ -232,7 +232,7 @@ class GCReposIntendedTestCase(BaseGoldenConfigTestCase):
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="run")
         self.assertEqual(
-            log_entries.last().message, "`E3032:` The intended feature is disabled in Golden Config settings."
+            log_entries.last().message, "`E3038:` The intended feature is disabled in Golden Config settings."
         )
 
     def test_intended_job_repos_two_setting_intended_disabled(self, mock_ensure_git_repository):
@@ -251,7 +251,7 @@ class GCReposIntendedTestCase(BaseGoldenConfigTestCase):
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="run")
         self.assertEqual(
-            log_entries.last().message, "`E3032:` The intended feature is disabled in Golden Config settings."
+            log_entries.last().message, "`E3038:` The intended feature is disabled in Golden Config settings."
         )
 
 
@@ -334,7 +334,7 @@ class GCReposComplianceTestCase(BaseGoldenConfigTestCase):
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="run")
         self.assertEqual(
-            log_entries.last().message, "`E3032:` The compliance feature is disabled in Golden Config settings."
+            log_entries.last().message, "`E3038:` The compliance feature is disabled in Golden Config settings."
         )
 
     def test_compliance_job_repos_two_setting_compliance_disabled(self, mock_ensure_git_repository):
@@ -353,7 +353,7 @@ class GCReposComplianceTestCase(BaseGoldenConfigTestCase):
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="run")
         self.assertEqual(
-            log_entries.last().message, "`E3032:` The compliance feature is disabled in Golden Config settings."
+            log_entries.last().message, "`E3038:` The compliance feature is disabled in Golden Config settings."
         )
 
     def test_compliance_job_repos_backup_disabled(self, mock_ensure_git_repository):

@@ -3,6 +3,7 @@
 import json
 import logging
 import os
+from uuid import UUID
 
 from deepdiff import DeepDiff
 from django.core.exceptions import ValidationError
@@ -522,6 +523,17 @@ class GoldenConfigSettingManager(BaseManager.from_queryset(RestrictedQuerySet)):
         if dynamic_group.exists():
             return dynamic_group.order_by("-golden_config_setting__weight").first().golden_config_setting
         return None
+
+    def get_repos_for_setting(self, setting, repo_types):
+        """Return t."""
+        if isinstance(setting, UUID):
+            setting = GoldenConfigSetting.objects.get(pk=str(setting))
+        repos = []
+        for repo_type in repo_types:
+            if getattr(setting, repo_type):
+                if getattr(setting, repo_type):
+                    repos.append(getattr(setting, repo_type))
+        return repos
 
 
 @extras_features(

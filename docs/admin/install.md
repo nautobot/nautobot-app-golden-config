@@ -99,9 +99,9 @@ The app behavior can be controlled with the following list of settings. All of t
 
 You can easily manage these feature toggles in the UI:
 
-  1. Navigate to **Golden Config > Golden Config Settings**.
-  2. Select **Default Settings** (or your chosen Setting if multiple exist).
-  3. Click **Edit** and adjust the relevant toggles (e.g., **Enable Backup**, **Enable Compliance**, **Enable Intended**, **Enable Plan**, **Enable Deploy**).
+1. Navigate to **Golden Config > Golden Config Settings**.
+2. Select **Default Settings** (or your chosen Setting if multiple exist).
+3. Click **Edit** and adjust the relevant toggles (e.g., **Enable Backup**, **Enable Compliance**, **Enable Intended**, **Enable Plan**, **Enable Deploy**).
 
 ![Golden Config Settings List](../images/golden-config-settings-list.png)
 

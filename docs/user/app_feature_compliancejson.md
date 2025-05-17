@@ -3,6 +3,7 @@
 JSON based compliance provides a mechanism to understand device configurations stored in JSON format and compare between them.
 
 ## Caveats
+
 - The `Compliance Rule` need to be defined as JSON `config-type`.
 - When creating `Compliance Rules` with the config type of JSON, the `config to match` field is used to specify individual top-level JSON keys, or it can be left blank to compare all keys.
 - Uses Git repositories for backup and intended configurations.
@@ -11,15 +12,15 @@ JSON based compliance provides a mechanism to understand device configurations s
 
 1. First, the compliance feature needs to be created, the feature name needs to be unique for a Platform and can not be shared between CLI and JSON types.
 
-![Example Feature Creation](../images/01-navigating-compliance-json.png)
+    ![Example Feature Creation](../images/01-navigating-compliance-json.png)
 
-3. Link the feature that was just created to a rule definition.
+1. Link the feature that was just created to a rule definition.
 
-![Example Rule Creation](../images/02-navigating-compliance-json.png)
+    ![Example Rule Creation](../images/02-navigating-compliance-json.png)
 
-4. Now that the definitions are created and the rule is created and mapped to a Platform, execute compliance job under Jobs.
+1. Now that the definitions are created and the rule is created and mapped to a Platform, execute compliance job under Jobs.
 
-5. Verify the compliance results
+1. Verify the compliance results
 
 In the navigation menu: `Golden Config -> Configuration Compliance`.
 

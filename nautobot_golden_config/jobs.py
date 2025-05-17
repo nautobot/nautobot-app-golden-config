@@ -20,7 +20,7 @@ from nautobot.extras.jobs import (
     StringVar,
     TextVar,
 )
-from nautobot.extras.models import DynamicGroup, Role, Status, Tag
+from nautobot.extras.models import Role, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from nornir.core.plugins.inventory import InventoryPluginRegister
@@ -28,7 +28,7 @@ from nornir_nautobot.exceptions import NornirNautobotException
 
 from nautobot_golden_config.choices import ConfigPlanTypeChoice
 from nautobot_golden_config.exceptions import BackupFailure, ComplianceFailure, IntendedGenerationFailure
-from nautobot_golden_config.models import ComplianceFeature, ConfigPlan, GoldenConfig
+from nautobot_golden_config.models import ComplianceFeature, ConfigPlan, GoldenConfig, GoldenConfigSetting
 from nautobot_golden_config.nornir_plays.config_backup import config_backup
 from nautobot_golden_config.nornir_plays.config_compliance import config_compliance
 from nautobot_golden_config.nornir_plays.config_deployment import config_deployment
@@ -56,15 +56,6 @@ name = "Golden Configuration"  # pylint: disable=invalid-name
 def get_repo_types_for_job(job_name):
     """Logic to determine which repo_types are needed based on job + plugin settings."""
     repo_types = []
-    # settings = get_golden_config_settings()
-    # if settings.backup_enabled and job_name == "nautobot_golden_config.jobs.BackupJob":
-    #     repo_types.append("backup_repository")
-    # if settings.intended_enabled and job_name == "nautobot_golden_config.jobs.IntendedJob":
-    #     repo_types.extend(["jinja_repository", "intended_repository"])
-    # if settings.compliance_enabled and job_name == "nautobot_golden_config.jobs.ComplianceJob":
-    #     repo_types.extend(["intended_repository", "backup_repository"])
-    # if "All" in job_name:
-    #     repo_types.extend(["backup_repository", "jinja_repository", "intended_repository"])
     if job_name == "nautobot_golden_config.jobs.BackupJob":
         repo_types.append("backup_repository")
     if job_name == "nautobot_golden_config.jobs.IntendedJob":
@@ -76,19 +67,8 @@ def get_repo_types_for_job(job_name):
     return repo_types
 
 
-def get_refreshed_repos(job_obj, repo_types, data=None):
+def get_refreshed_repos(job_obj, repository_records, gc_setting):
     """Small wrapper to pull latest branch, and return a GitRepo app specific object."""
-    settings = get_golden_config_settings()
-    dynamic_groups = DynamicGroup.objects.exclude(golden_config_setting__isnull=True)
-    repository_records = set()
-    for group in dynamic_groups:
-        # Make sure the data(device qs) device exist in the dg first.
-        if data.filter(group.generate_query()).exists():
-            for repo_type in repo_types:
-                repo = getattr(group.golden_config_setting, repo_type, None)
-                if repo:
-                    repository_records.add(repo)
-
     repositories = {}
     for repository_record in repository_records:
         ensure_git_repository(repository_record, job_obj.logger)
@@ -105,12 +85,12 @@ def get_refreshed_repos(job_obj, repo_types, data=None):
         commit = False
 
         if (
-            settings.intended_enabled
+            gc_setting.intended_enabled
             and "nautobot_golden_config.intendedconfigs" in git_repo.nautobot_repo_obj.provided_contents
         ):
             commit = True
         if (
-            settings.backup_enabled
+            gc_setting.backup_enabled
             and "nautobot_golden_config.backupconfigs" in git_repo.nautobot_repo_obj.provided_contents
         ):
             commit = True
@@ -119,7 +99,7 @@ def get_refreshed_repos(job_obj, repo_types, data=None):
     return repositories
 
 
-def gc_repo_prep(job, data):
+def gc_repo_prep(job):
     """Prepare Golden Config git repos for work.
 
     Args:
@@ -129,21 +109,15 @@ def gc_repo_prep(job, data):
     Returns:
         List[GitRepo]: List of GitRepos to be used with Job(s).
     """
-    # job.logger.debug("Compiling device data for GC job.", extra={"grouping": "Get Job Filter"})
-    # job.qs = get_job_filter(data)
-    # job.logger.debug(f"In scope device count for this job: {job.qs.count()}", extra={"grouping": "Get Job Filter"})
-    # job.logger.debug("Mapping device(s) to GC Settings.", extra={"grouping": "Device to Settings Map"})
-    # device_filter = GCSettingsDeviceFilterSet(job.qs)
-    # enabled_qs, disabled_qs = device_filter.get_filtered_querysets("backup")
-    # job.device_to_settings_map = device_filter.device_to_settings_map
     gitrepo_types = list(set(get_repo_types_for_job(job.class_path)))
     job.logger.debug(
         f"Repository types to sync: {', '.join(sorted(gitrepo_types))}",
         extra={"grouping": "GC Repo Syncs"},
     )
-    current_repos = get_refreshed_repos(
-        job_obj=job, repo_types=gitrepo_types, data=job.gc_advanced_filter.get_filtered_querysets("backup")[0]
-    )
+    inscope_gc_settings = set(list(job.gc_advanced_filter.device_to_settings_map.values()))
+    for gcs in inscope_gc_settings:
+        repos = GoldenConfigSetting.objects.get_repos_for_setting(setting=gcs, repo_types=gitrepo_types)
+        current_repos = get_refreshed_repos(job_obj=job, repository_records=repos, gc_setting=gcs)
     return current_repos
 
 
@@ -184,7 +158,7 @@ def gc_repos(func):
 
     def gc_repo_wrapper(self, *args, **kwargs):
         """Decorator used for handle repo syncing, commiting, and pushing."""
-        current_repos = gc_repo_prep(job=self, data=kwargs)
+        current_repos = gc_repo_prep(job=self)
         # This is where the specific jobs run method runs via this decorator.
         try:
             func(self, *args, **kwargs)
@@ -285,7 +259,7 @@ class ComplianceJob(GoldenConfigJobMixin, FormEntry):
     def run(self, *args, **data):  # pylint: disable=unused-argument
         """Run config compliance report script."""
         try:
-            self.logger.warning("Starting config compliance nornir play.")
+            self.logger.debug("Starting config compliance nornir play.")
             config_compliance(self)
         except NornirNautobotException as error:
             error_msg = str(error)
@@ -352,7 +326,7 @@ class AllGoldenConfig(GoldenConfigJobMixin):
 
     def run(self, *args, **data):  # pylint: disable=unused-argument, too-many-branches
         """Run all jobs on a single device."""
-        current_repos = gc_repo_prep(job=self, data=data)
+        current_repos = gc_repo_prep(job=self)
         failed_jobs = []
         error_msg, jobs_list = "", "All"
         settings = get_golden_config_settings()
@@ -402,7 +376,7 @@ class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
 
     def run(self, *args, **data):  # pylint: disable=unused-argument, too-many-branches
         """Run all jobs on multiple devices."""
-        current_repos = gc_repo_prep(job=self, data=data)
+        current_repos = gc_repo_prep(job=self)
         failed_jobs = []
         error_msg, jobs_list = "", "All"
         settings = get_golden_config_settings()

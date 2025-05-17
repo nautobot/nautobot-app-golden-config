@@ -25,7 +25,7 @@ from nautobot_golden_config import config as app_config
 from nautobot_golden_config import models
 from nautobot_golden_config.error_codes import ERROR_CODES
 from nautobot_golden_config.utilities import utils
-from nautobot_golden_config.utilities.constant import JINJA_ENV
+from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, JINJA_ENV
 
 FRAMEWORK_METHODS = {
     "default": utils.default_framework,
@@ -324,39 +324,39 @@ def get_golden_config_settings():
     return GoldenConfigDefaults(app_config.default_settings)
 
 
-# def verify_feature_enabled(logger, feature_name, gc_settings, required_settings=None):
-#     """Verify if a feature is enabled and has required settings.
+def verify_feature_enabled(logger, feature_name, gc_settings, required_settings=None):
+    """Verify if a feature is enabled and has required settings.
 
-#     Args:
-#         logger: Logger instance
-#         feature_name: Name of the feature to check (backup, intended, compliance, etc)
-#         gc_settings: GoldenConfigSetting instance
-#         required_settings: List of required setting attributes for this feature
+    Args:
+        logger: Logger instance
+        feature_name: Name of the feature to check (backup, intended, compliance, etc)
+        gc_settings: GoldenConfigSetting instance
+        required_settings: List of required setting attributes for this feature
 
-#     Raises:
-#         NornirNautobotException: If feature is disabled or missing required settings
-#     """
-#     feature_enabled = getattr(gc_settings, f"{feature_name}_enabled", False)
-#     if not feature_enabled:
-#         error_msg = f"`E3038:` The {feature_name} feature is disabled in Golden Config settings."
-#         logger.error(error_msg)
-#         raise NornirNautobotException(error_msg)
+    Raises:
+        NornirNautobotException: If feature is disabled or missing required settings
+    """
+    feature_enabled = getattr(gc_settings, f"{feature_name}_enabled", False)
+    if not feature_enabled:
+        error_msg = f"`E3038:` The {feature_name} feature is disabled in Golden Config settings."
+        logger.error(error_msg)
+        raise NornirNautobotException(error_msg)
 
-#     if required_settings:
-#         missing_settings = []
-#         for setting in required_settings:
-#             if not getattr(gc_settings, setting, None):
-#                 missing_settings.append(setting)
+    if required_settings:
+        missing_settings = []
+        for setting in required_settings:
+            if not getattr(gc_settings, setting, None):
+                missing_settings.append(setting)
 
-#         if missing_settings:
-#             if feature_name == "intended" and "sot_agg_query" in missing_settings and not ENABLE_SOTAGG:
-#                 # Skip SOT aggregation query check if the feature is disabled
-#                 missing_settings.remove("sot_agg_query")
+        if missing_settings:
+            if feature_name == "intended" and "sot_agg_query" in missing_settings and not ENABLE_SOTAGG:
+                # Skip SOT aggregation query check if the feature is disabled
+                missing_settings.remove("sot_agg_query")
 
-#             if missing_settings:  # Check again in case we removed the only missing setting
-#                 error_msg = f"`E3039:` Missing required settings for {feature_name}: {', '.join(missing_settings)}"
-#                 logger.error(error_msg)
-#                 raise NornirNautobotException(error_msg)
+            if missing_settings:  # Check again in case we removed the only missing setting
+                error_msg = f"`E3039:` Missing required settings for {feature_name}: {', '.join(missing_settings)}"
+                logger.error(error_msg)
+                raise NornirNautobotException(error_msg)
 
 
 def verify_config_plan_eligibility(logger, device, gc_settings):
@@ -430,88 +430,11 @@ class GCSettingsDeviceFilterSet:
                 is_enabled = getattr(gc_settings, f"{setting}_enabled", False)
                 self.settings_filters[setting][is_enabled][device] = gc_settings
 
-    # def _map_devices_to_settings(self):
-    #     """Map devices to their Golden Config settings."""
-    #     update_dynamic_groups_cache()
-    #     return {
-    #         device.id: device.dynamic_groups.exclude(golden_config_setting__isnull=True)
-    #         .order_by("-golden_config_setting__weight")
-    #         .first()
-    #         .golden_config_setting
-    #         for device in self.queryset
-    #         if device.dynamic_groups.exists()
-    #     }
-
     def get_filtered_querysets(self, setting_type):
         """Return the filtered querysets for a given setting type."""
         enabled_devices = self.settings_filters[setting_type][True].keys()
         disabled_devices = self.settings_filters[setting_type][False].keys()
         return self.queryset.filter(pk__in=enabled_devices), self.queryset.filter(pk__in=disabled_devices)
-
-
-# class CustomFilterSettings:
-#     """
-#     Helper class to filter and group devices based on their Golden Config settings.
-
-#     Provides compatibility with existing code while adding enhanced device filtering.
-#     """
-
-#     def __init__(self, queryset):
-#         """
-#         Initialize with a device queryset.
-
-#         Args:
-#             queryset: Django queryset of Device objects
-#         """
-#         self.queryset = queryset
-#         self._filtered_queryset = deepcopy(queryset)
-#         self._device_to_settings_maps = set()
-#         self._excluded_devices = []
-
-#     @property
-#     def device_to_settings_maps(self):
-#         """Get mapping of devices to their settings, lazy loaded."""
-#         if len(self._device_to_settings_maps) == 0:
-#             self._device_to_settings_maps = set(get_device_to_settings_map(self.queryset).values())
-#         return self._device_to_settings_maps
-
-#     def exclude_devices(self, devices):
-#         """
-#         Exclude devices from the queryset.
-
-#         Args:
-#             devices: List of Device objects to exclude
-#         """
-#         return self._excluded_devices.extend(devices)
-
-#     @property
-#     def filtered_queryset(self):
-#         """Get the filtered queryset."""
-#         return self._filtered_queryset.exclude(pk__in=self._excluded_devices)
-
-#     def verify_feature_enabled(self, logger, feature_name, required_settings=None):
-#         """
-#         Drop-in replacement for the original verify_feature_enabled function.
-
-#         This maintains compatibility with existing tests by using a representative
-#         setting to generate the exact same error messages.
-
-#         Args:
-#             logger: Logger instance
-#             feature_name: Feature name to check (backup, intended, compliance)
-#             required_settings: List of setting attributes that should be populated
-
-#         Raises:
-#             NornirNautobotException: If feature is disabled or required settings are missing
-#         """
-#         for setting in self.device_to_settings_maps:
-#             try:
-#                 verify_feature_enabled(logger, feature_name, setting, required_settings)
-#             except NornirNautobotException as error:
-#                 if any(code in str(error) for code in ["E3038", "E3039"]):
-#                     if hasattr(setting, "dynamic_group") and len(setting.dynamic_group.members) > 0:
-#                         self.exclude_devices([device.pk for device in setting.dynamic_group.members])
-#                 raise error
 
 
 def get_error_message(error_code, **kwargs):

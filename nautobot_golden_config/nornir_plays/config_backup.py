@@ -20,7 +20,6 @@ from nautobot_golden_config.models import ConfigRemove, ConfigReplace, GoldenCon
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.utilities.helper import (
-    GCSettingsDeviceFilterSet,
     dispatch_params,
     render_jinja_template,
 )
@@ -101,8 +100,8 @@ def config_backup(job):
     """
     now = make_aware(datetime.now())
     logger = NornirLogger(job.job_result, job.logger.getEffectiveLevel())
-    device_filter = GCSettingsDeviceFilterSet(job.qs)
-    enabled_qs, disabled_qs = device_filter.get_filtered_querysets("backup")
+    # device_filter = GCSettingsDeviceFilterSet(job.qs)
+    enabled_qs, disabled_qs = job.gc_advanced_filter.get_filtered_querysets("backup")
     # Verify backup feature is enabled and has required settings
     # device_filter.verify_feature_enabled(logger, "backup", required_settings=["backup_path_template"])
     if job.job_result.task_kwargs["debug"]:
@@ -146,7 +145,7 @@ def config_backup(job):
                 task=run_backup,
                 name="BACKUP CONFIG",
                 logger=logger,
-                device_to_settings_map=device_filter.settings_filters["backup"][True],
+                device_to_settings_map=job.gc_advanced_filter.settings_filters["backup"][True],
                 remove_regex_dict=remove_regex_dict,
                 replace_regex_dict=replace_regex_dict,
             )

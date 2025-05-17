@@ -169,6 +169,8 @@ nav:
           - E3035: "admin/troubleshooting/E3035.md"
           - E3036: "admin/troubleshooting/E3036.md"
           - E3037: "admin/troubleshooting/E3037.md"
+          - E3038: "admin/troubleshooting/E3038.md"
+          - E3039: "admin/troubleshooting/E3039.md"
       - Migrating To v2: "admin/migrating_to_v2.md"
       - Release Notes:
           - "admin/release_notes/index.md"

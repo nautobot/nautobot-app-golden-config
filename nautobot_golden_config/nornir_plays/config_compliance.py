@@ -23,7 +23,6 @@ from nautobot_golden_config.models import ComplianceRule, ConfigCompliance, Gold
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.utilities.helper import (
-    GCSettingsDeviceFilterSet,
     get_json_config,
     get_xml_config,
     get_xml_subtree_with_full_path,
@@ -210,14 +209,21 @@ def config_compliance(job):  # pylint: disable=unused-argument
     now = make_aware(datetime.now())
     logger = NornirLogger(job.job_result, job.logger.getEffectiveLevel())
     rules = get_rules()
-    device_filter = GCSettingsDeviceFilterSet(job.qs)
+    enabled_qs, disabled_qs = job.gc_advanced_filter.get_filtered_querysets("compliance")
+    # device_filter = GCSettingsDeviceFilterSet(job.qs)
 
     # Verify compliance feature is enabled and has required settings
-    device_filter.verify_feature_enabled(
-        logger,
-        "compliance",
-        required_settings=["backup_path_template", "intended_path_template"],
-    )
+    # device_filter.verify_feature_enabled(
+    #     logger,
+    #     "compliance",
+    #     required_settings=["backup_path_template", "intended_path_template"],
+    # )
+    if job.job_result.task_kwargs["debug"]:
+        for device in disabled_qs:
+            logger.warning(
+                f"E3038: Device {device.name} does not have the required settings to run the compliance job. Skipping device.",
+                extra={"object": device},
+            )
 
     try:
         with InitNornir(
@@ -228,7 +234,7 @@ def config_compliance(job):  # pylint: disable=unused-argument
                 "options": {
                     "credentials_class": NORNIR_SETTINGS.get("credentials"),
                     "params": NORNIR_SETTINGS.get("inventory_params"),
-                    "queryset": device_filter.filtered_queryset,
+                    "queryset": enabled_qs,
                     "defaults": {"now": now},
                 },
             },
@@ -240,7 +246,7 @@ def config_compliance(job):  # pylint: disable=unused-argument
                 task=run_compliance,
                 name="RENDER COMPLIANCE TASK GROUP",
                 logger=logger,
-                device_to_settings_map=job.device_to_settings_map,
+                device_to_settings_map=job.gc_advanced_filter.settings_filters["compliance"][True],
                 rules=rules,
             )
     except NornirNautobotException as err:

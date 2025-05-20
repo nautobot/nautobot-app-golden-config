@@ -1,18 +1,16 @@
 """Nornir job for generating the compliance data."""
 
 # pylint: disable=relative-beyond-top-level
-import hier_config
-
 import difflib
-import logging
-import os
-import yaml
 import hashlib
 import json
+import logging
+import os
 from collections import defaultdict
 from datetime import datetime
-import typing as t
 
+import hier_config
+import yaml
 from django.utils.timezone import make_aware
 from lxml import etree
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
@@ -252,17 +250,27 @@ def process_nested_compliance_rule_hier_config(rule, backup_cfg, intended_cfg, o
     host.load_running_config(backup_cfg)
     host.load_generated_config(intended_cfg)
 
-    match_config = yaml.safe_load(rule["obj"].match_config)
-    tag_names = set()
-    for lineage in match_config:
-        # Create a unique tag name for each lineage
-        tag_name = hashlib.sha1(json.dumps(lineage, sort_keys=True).encode()).hexdigest() # noqa: S324
-        lineage["add_tags"] = tag_name
-        tag_names.add(tag_name)
+    try:
+        match_config = yaml.safe_load(rule["obj"].match_config)
+        tag_names = set()
+        for lineage in match_config:
+            # Create a unique tag name for each lineage
+            tag_name = hashlib.sha1(json.dumps(lineage, sort_keys=True).encode()).hexdigest() # noqa: S324
+            lineage["add_tags"] = tag_name
+            tag_names.add(tag_name)
+    except yaml.YAMLError as e:
+        error_msg = f"`E3011:` Invalid YAML in match_config: {str(e)}"
+        logger.error(error_msg, extra={"object": obj})
+        raise NornirNautobotException(error_msg)
 
-    host.load_tags(match_config)
-    host.running_config.add_tags(host._hconfig_tags)
-    host.generated_config.add_tags(host._hconfig_tags)
+    try: 
+        host.load_tags(match_config)
+        host.running_config.add_tags(host._hconfig_tags)
+        host.generated_config.add_tags(host._hconfig_tags)
+    except TypeError as e:
+        error_msg = f"Possible error with hier config rule definition {rule}, {str(e)}"
+        logger.error(error_msg, extra={"object": obj})
+        raise NornirNautobotException(error_msg)
 
     # Concatonate actual config, filtered by tags
     running_config_generator = host.running_config.all_children_sorted_by_tags(tag_names, set())

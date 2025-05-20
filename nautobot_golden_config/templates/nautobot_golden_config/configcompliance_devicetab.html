@@ -5,6 +5,11 @@
 
 {% block title %} {{ object }} - Config Compliance {% endblock %}
 
+{% block javascript %}
+{{ block.super }}
+<script src="{% static 'anchor_scroll.js' %}"></script>
+{% endblock %}
+
 {% block extra_styles %}
 {{ block.super }}
 <style>

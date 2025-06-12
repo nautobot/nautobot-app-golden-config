@@ -568,7 +568,7 @@ def dgs_gc_settings_and_job_repo_objects():
         filter={"platform": ["Platform 4"]},
     )
 
-    GoldenConfigSetting.objects.create(
+    gc_setting_1 = GoldenConfigSetting.objects.create(
         name="test_name",
         slug="test_slug",
         weight=1000,
@@ -583,7 +583,7 @@ def dgs_gc_settings_and_job_repo_objects():
         intended_repository=GitRepository.objects.get(name="test-intended-repo-1"),
         jinja_repository=GitRepository.objects.get(name="test-jinja-repo-1"),
     )
-    GoldenConfigSetting.objects.create(
+    gc_setting_2 = GoldenConfigSetting.objects.create(
         name="test_name2",
         slug="test_slug2",
         weight=1000,
@@ -598,3 +598,4 @@ def dgs_gc_settings_and_job_repo_objects():
         intended_repository=GitRepository.objects.get(name="test-intended-repo-2"),
         jinja_repository=GitRepository.objects.get(name="test-jinja-repo-1"),
     )
+    return gc_setting_1, gc_setting_2

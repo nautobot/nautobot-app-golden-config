@@ -25,7 +25,7 @@ from nautobot_golden_config import config as app_config
 from nautobot_golden_config import models
 from nautobot_golden_config.error_codes import ERROR_CODES
 from nautobot_golden_config.utilities import utils
-from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, JINJA_ENV
+from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, JINJA_ENV, JOB_FUNCTION_MAP
 
 FRAMEWORK_METHODS = {
     "default": utils.default_framework,
@@ -165,7 +165,7 @@ def render_jinja_template(obj, logger, template):
         raise NornirNautobotException(error_msg)
 
 
-def get_device_to_settings_map(queryset):
+def get_device_to_settings_map(queryset, job_name):
     """Helper function to map heightest weighted GC settings to devices."""
     update_dynamic_groups_cache()
     annotated_queryset = queryset.all().annotate(
@@ -181,7 +181,31 @@ def get_device_to_settings_map(queryset):
         )
     )
     gcs = {gc.id: gc for gc in models.GoldenConfigSetting.objects.all()}
-    return {device.id: gcs[device.gc_settings] for device in annotated_queryset}
+    # settings_filters = {
+    #     setting: {True: {}, False: {}} for setting in ["backup", "intended", "compliance", "plan", "deploy"]
+    # }
+    to_build = JOB_FUNCTION_MAP[job_name]
+    # settings_filters2 = {
+    #     setting: {True: {}, False: {}} for setting in ["backup", "intended", "compliance", "plan", "deploy"]
+    # }
+    settings_filters2 = {setting: {True: {}, False: {}} for setting in [to_build]}
+    # Annotated queryset: <ConfigContextModelQuerySet [<Device: demo-cisco-xe>, <Device: demo-cisco-xe-2>, <Device: veos-01>]>
+
+    # def _populate_filters(self):
+    #     """Populate filters for each setting."""
+    # for device, gc_settings in {device.id: gcs[device.gc_settings] for device in annotated_queryset}.items():
+    #     for setting in settings_filters:
+    #         is_enabled = getattr(gc_settings, f"{setting}_enabled", False)
+    #         settings_filters[setting][is_enabled][device] = gc_settings
+    # print(settings_filters)
+    for device in annotated_queryset:
+        for setting in settings_filters2:
+            is_enabled = getattr(gcs[device.gc_settings], f"{setting}_enabled", False)
+            settings_filters2[setting][is_enabled][device.id] = gcs[device.gc_settings]
+    # print(settings_filters2)
+    # print(f"settings are equal: {settings_filters == settings_filters2}")
+    # return {device.id: gcs[device.gc_settings] for device in annotated_queryset}
+    return settings_filters2
 
 
 def get_json_config(config):
@@ -407,34 +431,34 @@ def verify_deployment_eligibility(logger, config_plan, gc_settings):
         raise NornirNautobotException(error_msg)
 
 
-class GCSettingsDeviceFilterSet:
-    """Helper class to filter and group devices based on their Golden Config settings."""
+# class GCSettingsDeviceFilterSet:
+#     """Helper class to filter and group devices based on their Golden Config settings."""
 
-    def __init__(self, queryset):
-        """Initialize with a job device queryset.
+#     def __init__(self, queryset):
+#         """Initialize with a job device queryset.
 
-        Args:
-            queryset: Django queryset of Device objects
-        """
-        self.queryset = queryset
-        self.device_to_settings_map = get_device_to_settings_map(self.queryset)
-        self.settings_filters = {
-            setting: {True: {}, False: {}} for setting in ["backup", "intended", "compliance", "plan", "deploy"]
-        }
-        self._populate_filters()
+#         Args:
+#             queryset: Django queryset of Device objects
+#         """
+#         self.queryset = queryset
+#         # self.device_to_settings_map = get_device_to_settings_map(self.queryset)
+#         self.settings_filters = {
+#             setting: {True: {}, False: {}} for setting in ["backup", "intended", "compliance", "plan", "deploy"]
+#         }
+#         self._populate_filters()
 
-    def _populate_filters(self):
-        """Populate filters for each setting."""
-        for device, gc_settings in self.device_to_settings_map.items():
-            for setting in self.settings_filters:
-                is_enabled = getattr(gc_settings, f"{setting}_enabled", False)
-                self.settings_filters[setting][is_enabled][device] = gc_settings
+#     def _populate_filters(self):
+#         """Populate filters for each setting."""
+#         for device, gc_settings in get_device_to_settings_map(self.queryset).items():
+#             for setting in self.settings_filters:
+#                 is_enabled = getattr(gc_settings, f"{setting}_enabled", False)
+#                 self.settings_filters[setting][is_enabled][device] = gc_settings
 
-    def get_filtered_querysets(self, setting_type):
-        """Return the filtered querysets for a given setting type."""
-        enabled_devices = self.settings_filters[setting_type][True].keys()
-        disabled_devices = self.settings_filters[setting_type][False].keys()
-        return self.queryset.filter(pk__in=enabled_devices), self.queryset.filter(pk__in=disabled_devices)
+#     def get_filtered_querysets(self, setting_type):
+#         """Return the filtered querysets for a given setting type."""
+#         enabled_devices = self.settings_filters[setting_type][True].keys()
+#         disabled_devices = self.settings_filters[setting_type][False].keys()
+#         return self.queryset.filter(pk__in=enabled_devices), self.queryset.filter(pk__in=disabled_devices)
 
 
 def get_error_message(error_code, **kwargs):

@@ -530,9 +530,10 @@ class GoldenConfigSettingManager(BaseManager.from_queryset(RestrictedQuerySet)):
             setting = GoldenConfigSetting.objects.get(pk=str(setting))
         repos = []
         for repo_type in repo_types:
-            if getattr(setting, repo_type):
-                if getattr(setting, repo_type):
-                    repos.append(getattr(setting, repo_type))
+            if hasattr(setting, f"{repo_type.split('_')[0]}_enabled"):
+                if getattr(setting, f"{repo_type.split('_')[0]}_enabled"):
+                    if getattr(setting, repo_type):
+                        repos.append(getattr(setting, repo_type))
         return repos
 
 

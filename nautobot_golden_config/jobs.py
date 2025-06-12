@@ -38,9 +38,10 @@ from nautobot_golden_config.utilities.config_plan import (
     generate_config_set_from_compliance_feature,
     generate_config_set_from_manual,
 )
+from nautobot_golden_config.utilities.constant import JOB_FUNCTION_MAP
 from nautobot_golden_config.utilities.git import GitRepo
 from nautobot_golden_config.utilities.helper import (
-    GCSettingsDeviceFilterSet,
+    get_device_to_settings_map,
     get_golden_config_settings,
     get_job_filter,
     update_dynamic_groups_cache,
@@ -99,7 +100,7 @@ def get_refreshed_repos(job_obj, repository_records, gc_setting):
     return repositories
 
 
-def gc_repo_prep(job):
+def gc_repo_prep(job, inscope_gc_settings):
     """Prepare Golden Config git repos for work.
 
     Args:
@@ -110,15 +111,16 @@ def gc_repo_prep(job):
         List[GitRepo]: List of GitRepos to be used with Job(s).
     """
     gitrepo_types = list(set(get_repo_types_for_job(job.class_path)))
-    job.logger.debug(
-        f"Repository types to sync: {', '.join(sorted(gitrepo_types))}",
-        extra={"grouping": "GC Repo Syncs"},
-    )
-    inscope_gc_settings = set(list(job.gc_advanced_filter.device_to_settings_map.values()))
-    for gcs in inscope_gc_settings:
-        repos = GoldenConfigSetting.objects.get_repos_for_setting(setting=gcs, repo_types=gitrepo_types)
-        current_repos = get_refreshed_repos(job_obj=job, repository_records=repos, gc_setting=gcs)
-    return current_repos
+    if inscope_gc_settings:
+        for gcs in inscope_gc_settings:
+            repos = GoldenConfigSetting.objects.get_repos_for_setting(setting=gcs, repo_types=gitrepo_types)
+            job.logger.debug(
+                f"Repositories to sync for GC Setting {gcs.name}: {', '.join(sorted([repo.name for repo in repos]))}",
+                extra={"grouping": "GC Repo Syncs"},
+            )
+            current_repos = get_refreshed_repos(job_obj=job, repository_records=repos, gc_setting=gcs)
+        return current_repos
+    return []
 
 
 def gc_repo_push(job, current_repos, commit_message=""):
@@ -158,7 +160,11 @@ def gc_repos(func):
 
     def gc_repo_wrapper(self, *args, **kwargs):
         """Decorator used for handle repo syncing, commiting, and pushing."""
-        current_repos = gc_repo_prep(job=self)
+        self.qs = get_job_filter(data=kwargs)
+        # self.gc_advanced_filter = GCSettingsDeviceFilterSet(self.qs)
+        self.gc_advanced_filter = get_device_to_settings_map(self.qs, self.name)
+        active_settings = set(list(self.gc_advanced_filter[JOB_FUNCTION_MAP[self.name]][True].values()))
+        current_repos = gc_repo_prep(job=self, inscope_gc_settings=active_settings)
         # This is where the specific jobs run method runs via this decorator.
         try:
             func(self, *args, **kwargs)
@@ -214,35 +220,32 @@ class GoldenConfigJobMixin(Job):  # pylint: disable=abstract-method
     def __init__(self, *args, **kwargs):
         """Initialize the job."""
         super().__init__(*args, **kwargs)
-        self.qs = get_job_filter(kwargs)
-        # self.device_to_settings_map = {}
-        self.gc_advanced_filter = GCSettingsDeviceFilterSet(self.qs)
-        # self._gc_validation(data=kwargs)
+        self.qs = None
+        self.gc_advanced_filter = None
 
-    # def _gc_validation(self, data):
-    #     """Validate the Golden Config settings."""
-    #     self.logger.debug("_gc_validation Compiling device data for GC job.", extra={"grouping": "Get Job Filter"})
-    #     # self.qs = get_job_filter(data)
-    #     self.logger.debug(
-    #         f"_gc_validation In scope device count for this job: {self.qs.count()}",
-    #         extra={"grouping": "Get Job Filter"},
-    #     )
-    #     self.logger.debug(
-    #         "_gc_validation Mapping device(s) to GC Settings.", extra={"grouping": "Device to Settings Map"}
-    #     )
+    def _set_filtered_queryset(self):
+        """Validate the Golden Config settings."""
+        # enabled_qs, disabled_qs = self.gc_advanced_filter.get_filtered_querysets(JOB_FUNCTION_MAP[self.name])
+        enabled_devs = list(self.gc_advanced_filter[JOB_FUNCTION_MAP[self.name]][True].keys())
+        disabled_devs = list(self.gc_advanced_filter[JOB_FUNCTION_MAP[self.name]][False].keys())
+        enabled_qs = self.qs.filter(pk__in=enabled_devs)
+        disabled_qs = self.qs.filter(pk__in=disabled_devs)
 
-    #     enabled_qs, disabled_qs = self.gc_advanced_filter.get_filtered_querysets("backup")
-    #     self.logger.debug(
-    #         f"_gc_validation Device(s) with settings enabled: {enabled_qs.count()}",
-    #         extra={"grouping": "Device to Settings Map"},
-    #     )
-    #     self.logger.debug(
-    #         f"_gc_validation Device(s) with settings disabled: {disabled_qs.count()}",
-    #         extra={"grouping": "Device to Settings Map"},
-    #     )
-
-    # job.device_to_settings_map = device_filter.device_to_settings_map
-    #
+        self.logger.debug(
+            f"Device(s) with settings enabled: {enabled_qs.count()}",
+            extra={"grouping": "Get Filtered Queryset"},
+        )
+        self.logger.debug(
+            f"Device(s) with settings disabled: {disabled_qs.count()}",
+            extra={"grouping": "Get Filtered Queryset"},
+        )
+        # if self.job_result.task_kwargs["debug"]:
+        for device in disabled_qs:
+            self.logger.warning(
+                f"E3038: Device {device.name} does not have the required settings to run the backup job. Skipping device.",
+                extra={"object": device},
+            )
+        self.qs = enabled_qs
 
 
 class ComplianceJob(GoldenConfigJobMixin, FormEntry):
@@ -280,6 +283,7 @@ class IntendedJob(GoldenConfigJobMixin, FormEntry):
     @gc_repos
     def run(self, *args, **data):  # pylint: disable=unused-argument
         """Run config generation script."""
+        self._set_filtered_queryset()
         try:
             self.logger.debug("Building device settings mapping and running intended config nornir play.")
             config_intended(self)
@@ -302,6 +306,7 @@ class BackupJob(GoldenConfigJobMixin, FormEntry):
     @gc_repos
     def run(self, *args, **data):  # pylint: disable=unused-argument
         """Run config backup process."""
+        self._set_filtered_queryset()
         try:
             self.logger.debug("Starting config backup nornir play.")
             config_backup(self)

@@ -209,7 +209,7 @@ def config_compliance(job):  # pylint: disable=unused-argument
     now = make_aware(datetime.now())
     logger = NornirLogger(job.job_result, job.logger.getEffectiveLevel())
     rules = get_rules()
-    enabled_qs, disabled_qs = job.gc_advanced_filter.get_filtered_querysets("compliance")
+    # enabled_qs, disabled_qs = job.gc_advanced_filter.get_filtered_querysets("compliance")
     # device_filter = GCSettingsDeviceFilterSet(job.qs)
 
     # Verify compliance feature is enabled and has required settings
@@ -218,12 +218,12 @@ def config_compliance(job):  # pylint: disable=unused-argument
     #     "compliance",
     #     required_settings=["backup_path_template", "intended_path_template"],
     # )
-    if job.job_result.task_kwargs["debug"]:
-        for device in disabled_qs:
-            logger.warning(
-                f"E3038: Device {device.name} does not have the required settings to run the compliance job. Skipping device.",
-                extra={"object": device},
-            )
+    # if job.job_result.task_kwargs["debug"]:
+    #     for device in disabled_qs:
+    #         logger.warning(
+    #             f"E3038: Device {device.name} does not have the required settings to run the compliance job. Skipping device.",
+    #             extra={"object": device},
+    #         )
 
     try:
         with InitNornir(
@@ -234,7 +234,7 @@ def config_compliance(job):  # pylint: disable=unused-argument
                 "options": {
                     "credentials_class": NORNIR_SETTINGS.get("credentials"),
                     "params": NORNIR_SETTINGS.get("inventory_params"),
-                    "queryset": enabled_qs,
+                    "queryset": job.qs,
                     "defaults": {"now": now},
                 },
             },

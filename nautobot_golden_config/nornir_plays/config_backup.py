@@ -100,16 +100,6 @@ def config_backup(job):
     """
     now = make_aware(datetime.now())
     logger = NornirLogger(job.job_result, job.logger.getEffectiveLevel())
-    # device_filter = GCSettingsDeviceFilterSet(job.qs)
-    enabled_qs, disabled_qs = job.gc_advanced_filter.get_filtered_querysets("backup")
-    # Verify backup feature is enabled and has required settings
-    # device_filter.verify_feature_enabled(logger, "backup", required_settings=["backup_path_template"])
-    if job.job_result.task_kwargs["debug"]:
-        for device in disabled_qs:
-            logger.warning(
-                f"E3038: Device {device.name} does not have the required settings to run the backup job. Skipping device.",
-                extra={"object": device},
-            )
 
     # Build a dictionary, with keys of platform.network_driver, and the regex line in it for the netutils func.
     remove_regex_dict = {}
@@ -133,7 +123,8 @@ def config_backup(job):
                 "options": {
                     "credentials_class": NORNIR_SETTINGS.get("credentials"),
                     "params": NORNIR_SETTINGS.get("inventory_params"),
-                    "queryset": enabled_qs,
+                    "queryset": job.qs,
+                    # "queryset": job.settings_filters["backup"][True].keys(),
                     "defaults": {"now": now},
                 },
             },
@@ -151,9 +142,10 @@ def config_backup(job):
             )
             logger.debug("Completed configuration from devices.")
     except NornirNautobotException as err:
-        logger.error(
-            f"`E3027:` NornirNautobotException raised during backup tasks. Original exception message: ```{traceback.format_exc()}```"
-        )
+        if job.job_result.task_kwargs["debug"]:
+            logger.error(
+                f"`E3027:` NornirNautobotException raised during backup tasks. Original exception message: ```{traceback.format_exc()}```"
+            )
         # re-raise Exception if it's raised from nornir-nautobot or nautobot-app-nornir
         if str(err).startswith("`E2") or str(err).startswith("`E1"):
             raise NornirNautobotException(err) from err

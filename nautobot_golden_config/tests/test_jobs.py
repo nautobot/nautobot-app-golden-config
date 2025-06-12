@@ -7,7 +7,6 @@ from nautobot.dcim.models import Device
 from nautobot.extras.models import JobLogEntry
 
 from nautobot_golden_config import jobs
-from nautobot_golden_config.models import GoldenConfigSetting
 from nautobot_golden_config.tests.conftest import (
     create_device,
     create_orphan_device,
@@ -15,78 +14,40 @@ from nautobot_golden_config.tests.conftest import (
 )
 
 
-class BaseGoldenConfigTestCase(TransactionTestCase):
-    """Base test case with helper methods for GoldenConfigSetting."""
-
-    def setUp(self):
-        super().setUp()
-        self.settings = GoldenConfigSetting.objects.first()
-        self.settings.backup_enabled = True
-        self.settings.intended_enabled = True
-        self.settings.compliance_enabled = True
-        self.settings.plan_enabled = True
-        self.settings.deploy_enabled = True
-        self.settings.save()
-
-    def tearDown(self):
-        self.settings.backup_enabled = True
-        self.settings.intended_enabled = True
-        self.settings.compliance_enabled = True
-        self.settings.plan_enabled = True
-        self.settings.deploy_enabled = True
-        self.settings.save()
-        super().tearDown()
-
-    def update_golden_config_settings(  # pylint: disable=too-many-arguments
-        self,
-        backup_enabled=None,
-        intended_enabled=None,
-        compliance_enabled=None,
-        plan_enabled=None,
-        deploy_enabled=None,
-    ):
-        """Update fields of the GoldenConfigSetting instance."""
-        if backup_enabled is not None:
-            self.settings.backup_enabled = backup_enabled
-        if intended_enabled is not None:
-            self.settings.intended_enabled = intended_enabled
-        if compliance_enabled is not None:
-            self.settings.compliance_enabled = compliance_enabled
-        if plan_enabled is not None:
-            self.settings.plan_enabled = plan_enabled
-        if deploy_enabled is not None:
-            self.settings.deploy_enabled = deploy_enabled
-        self.settings.save()
-
-
 @patch("nautobot_golden_config.nornir_plays.config_backup.run_backup", MagicMock(return_value="foo"))
 @patch.object(jobs, "ensure_git_repository")
-class GCReposBackupTestCase(BaseGoldenConfigTestCase):
+class GCReposBackupTestCase(TransactionTestCase):
     """Test the repos to sync and commit are working for backup job."""
 
     databases = ("default", "job_logs")
 
     def setUp(self) -> None:
         """Setup test data."""
-        self.device = create_device(name="foobaz")
-        self.device2 = create_orphan_device(name="foobaz2")
-        dgs_gc_settings_and_job_repo_objects()
+        self.device = create_device(name="foobaz")  # platform 1
+        self.device2 = create_orphan_device(name="foobaz2")  # platform 4
+        self.gc_setting_1, self.gc_setting_2 = dgs_gc_settings_and_job_repo_objects()
         super().setUp()
 
     def test_backup_job_repos_one_setting(self, mock_ensure_git_repository):
         """Test backup job repo-types are backup only."""
         mock_ensure_git_repository.return_value = True
-        self.update_golden_config_settings(backup_enabled=True)
+        self.gc_setting_1.backup_enabled = True
+        self.gc_setting_1.save()
         job_result = create_job_result_and_run_job(
-            module="nautobot_golden_config.jobs", name="BackupJob", device=Device.objects.filter(name=self.device.name)
+            module="nautobot_golden_config.jobs",
+            name="BackupJob",
+            device=Device.objects.filter(name=self.device.name),
+            debug=True,
+        )
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs", log_level="debug")
+        self.assertEqual(
+            log_entries.first().message, "Repositories to sync for GC Setting test_name: test-backup-repo-1"
         )
 
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
-        self.assertEqual(log_entries.first().message, "Repository types to sync: backup_repository")
-
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.last().message, "In scope device count for this job: 1")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 1")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 0")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(log_entries.first().message, "Finished the Backup Configurations job execution.")
@@ -97,19 +58,20 @@ class GCReposBackupTestCase(BaseGoldenConfigTestCase):
     def test_backup_job_repos_two_setting(self, mock_ensure_git_repository):
         """Test backup job repo-types are backup only."""
         mock_ensure_git_repository.return_value = True
-        self.update_golden_config_settings(backup_enabled=True)
+        self.gc_setting_1.backup_enabled = True
+        self.gc_setting_1.save()
+        self.gc_setting_2.backup_enabled = True
+        self.gc_setting_2.save()
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs",
             name="BackupJob",
-            device=Device.objects.all(),
+            device=[self.device.id, self.device2.id],
         )
 
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.last().message, "In scope device count for this job: 2")
-
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
-        self.assertEqual(log_entries.first().message, "Repository types to sync: backup_repository")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 2")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 0")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(log_entries.first().message, "Finished the Backup Configurations job execution.")
@@ -120,46 +82,68 @@ class GCReposBackupTestCase(BaseGoldenConfigTestCase):
     def test_backup_job_repos_one_setting_backup_disabled(self, mock_ensure_git_repository):
         """Test backup job repo-types are backup only."""
         mock_ensure_git_repository.return_value = True
-        self.update_golden_config_settings(backup_enabled=False)
-
+        self.gc_setting_1.backup_enabled = False
+        self.gc_setting_1.save()
+        job_form_inputs = {
+            "device": Device.objects.filter(name=self.device.name),
+            "debug": True,
+        }
         job_result = create_job_result_and_run_job(
-            module="nautobot_golden_config.jobs", name="BackupJob", device=Device.objects.filter(name=self.device.name)
+            module="nautobot_golden_config.jobs",
+            name="BackupJob",
+            **job_form_inputs,
         )
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
-        self.assertEqual(log_entries.first().message, "Repository types to sync: ")
 
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.last().message, "In scope device count for this job: 1")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 1")
 
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="run")
+        log_entries = JobLogEntry.objects.filter(
+            job_result=job_result,
+            grouping="_set_filtered_queryset",
+        )
+        self.assertEqual(log_entries.count(), 1)
         self.assertEqual(
-            log_entries.last().message, "`E3038:` The backup feature is disabled in Golden Config settings."
+            log_entries.last().message,
+            f"E3038: Device {self.device.name} does not have the required settings to run the backup job. Skipping device.",
         )
 
     def test_backup_job_repos_two_setting_backup_disabled(self, mock_ensure_git_repository):
         """Test backup job repo-types are backup only."""
         mock_ensure_git_repository.return_value = True
-        self.update_golden_config_settings(backup_enabled=False)
+        self.gc_setting_1.backup_enabled = False
+        self.gc_setting_1.save()
+        self.gc_setting_2.backup_enabled = False
+        self.gc_setting_2.save()
         job_result = create_job_result_and_run_job(
-            module="nautobot_golden_config.jobs", name="BackupJob", device=Device.objects.all()
+            module="nautobot_golden_config.jobs",
+            name="BackupJob",
+            device=Device.objects.all(),
+            debug=True,
         )
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
-        self.assertEqual(log_entries.first().message, "Repository types to sync: ")
 
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.last().message, "In scope device count for this job: 2")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
 
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="run")
+        log_entries = JobLogEntry.objects.filter(
+            job_result=job_result, grouping="_set_filtered_queryset", log_level="warning"
+        )
         self.assertEqual(
-            log_entries.last().message, "`E3038:` The backup feature is disabled in Golden Config settings."
+            log_entries.first().message,
+            f"E3038: Device {self.device.name} does not have the required settings to run the backup job. Skipping device.",
+        )
+        self.assertEqual(
+            log_entries.last().message,
+            f"E3038: Device {self.device2.name} does not have the required settings to run the backup job. Skipping device.",
         )
 
 
 @patch("nautobot_golden_config.nornir_plays.config_intended.run_template", MagicMock(return_value="foo"))
 @patch.object(jobs, "ensure_git_repository")
-class GCReposIntendedTestCase(BaseGoldenConfigTestCase):
+class GCReposIntendedTestCase(TransactionTestCase):
     """Test the repos to sync and commit are working for intended job."""
 
     databases = ("default", "job_logs")
@@ -168,25 +152,24 @@ class GCReposIntendedTestCase(BaseGoldenConfigTestCase):
         """Setup test data."""
         self.device = create_device(name="foobaz")
         self.device2 = create_orphan_device(name="foobaz2")
-        dgs_gc_settings_and_job_repo_objects()
+        self.gc_setting_1, self.gc_setting_2 = dgs_gc_settings_and_job_repo_objects()
         super().setUp()
 
     def test_intended_job_repos_one_setting(self, mock_ensure_git_repository):
         """Test intended job one GC setting enabled_intended enabled"""
         mock_ensure_git_repository.return_value = True
-        self.update_golden_config_settings(intended_enabled=True)
+        self.gc_setting_1.intended_enabled = True
+        self.gc_setting_1.save()
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs",
             name="IntendedJob",
             device=Device.objects.filter(name=self.device.name),
         )
 
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
-        self.assertEqual(log_entries.first().message, "Repository types to sync: intended_repository, jinja_repository")
-
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.last().message, "In scope device count for this job: 1")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 1")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 0")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(log_entries.first().message, "Finished the Generate Intended Configurations job execution.")
@@ -197,16 +180,17 @@ class GCReposIntendedTestCase(BaseGoldenConfigTestCase):
     def test_intended_job_repos_two_setting(self, mock_ensure_git_repository):
         """Test intended job two GC setting enabled_intended enabled"""
         mock_ensure_git_repository.return_value = True
-        self.update_golden_config_settings(intended_enabled=True)
+        self.gc_setting_1.intended_enabled = True
+        self.gc_setting_1.save()
+        self.gc_setting_2.intended_enabled = True
+        self.gc_setting_2.save()
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="IntendedJob", device=Device.objects.all()
         )
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.last().message, "In scope device count for this job: 2")
-
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
-        self.assertEqual(log_entries.first().message, "Repository types to sync: intended_repository, jinja_repository")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 2")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 0")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(log_entries.first().message, "Finished the Generate Intended Configurations job execution.")
@@ -217,18 +201,19 @@ class GCReposIntendedTestCase(BaseGoldenConfigTestCase):
     def test_intended_job_repos_one_setting_intended_disabled(self, mock_ensure_git_repository):
         """Test intended job one GC setting enabled_intended disabled"""
         mock_ensure_git_repository.return_value = True
-        self.update_golden_config_settings(intended_enabled=False)
+        self.gc_setting_1.intended_enabled = True
+        self.gc_setting_1.save()
+        self.gc_setting_2.intended_enabled = False
+        self.gc_setting_2.save()
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs",
             name="IntendedJob",
             device=Device.objects.filter(name=self.device.name),
         )
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
-        self.assertEqual(log_entries.first().message, "Repository types to sync: ")
-
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.last().message, "In scope device count for this job: 1")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="run")
         self.assertEqual(
@@ -242,12 +227,10 @@ class GCReposIntendedTestCase(BaseGoldenConfigTestCase):
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="IntendedJob", device=Device.objects.all()
         )
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.last().message, "In scope device count for this job: 2")
-
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
-        self.assertEqual(log_entries.first().message, "Repository types to sync: ")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="run")
         self.assertEqual(
@@ -257,7 +240,7 @@ class GCReposIntendedTestCase(BaseGoldenConfigTestCase):
 
 @patch("nautobot_golden_config.nornir_plays.config_compliance.run_compliance", MagicMock(return_value="foo"))
 @patch.object(jobs, "ensure_git_repository")
-class GCReposComplianceTestCase(BaseGoldenConfigTestCase):
+class GCReposComplianceTestCase(TransactionTestCase):
     """Test the repos to sync and commit are working for compliance job."""
 
     databases = ("default", "job_logs")
@@ -279,14 +262,10 @@ class GCReposComplianceTestCase(BaseGoldenConfigTestCase):
             device=Device.objects.filter(name=self.device.name),
         )
 
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
-        self.assertEqual(
-            log_entries.first().message, "Repository types to sync: backup_repository, intended_repository"
-        )
-
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.last().message, "In scope device count for this job: 1")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(log_entries.first().message, "Finished the Perform Configuration Compliance job execution.")
@@ -301,14 +280,10 @@ class GCReposComplianceTestCase(BaseGoldenConfigTestCase):
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="ComplianceJob", device=Device.objects.all()
         )
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.last().message, "In scope device count for this job: 2")
-
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
-        self.assertEqual(
-            log_entries.first().message, "Repository types to sync: backup_repository, intended_repository"
-        )
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(log_entries.first().message, "Finished the Perform Configuration Compliance job execution.")
@@ -325,12 +300,10 @@ class GCReposComplianceTestCase(BaseGoldenConfigTestCase):
             name="ComplianceJob",
             device=Device.objects.filter(name=self.device.name),
         )
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
-        self.assertEqual(log_entries.first().message, "Repository types to sync: ")
-
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.last().message, "In scope device count for this job: 1")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="run")
         self.assertEqual(
@@ -344,12 +317,10 @@ class GCReposComplianceTestCase(BaseGoldenConfigTestCase):
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="ComplianceJob", device=Device.objects.all()
         )
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.last().message, "In scope device count for this job: 2")
-
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
-        self.assertEqual(log_entries.first().message, "Repository types to sync: ")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="run")
         self.assertEqual(
@@ -363,14 +334,10 @@ class GCReposComplianceTestCase(BaseGoldenConfigTestCase):
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="ComplianceJob", device=Device.objects.all()
         )
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.last().message, "In scope device count for this job: 2")
-
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
-        self.assertEqual(
-            log_entries.first().message, "Repository types to sync: backup_repository, intended_repository"
-        )
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(log_entries.first().message, "Finished the Perform Configuration Compliance job execution.")
@@ -385,13 +352,10 @@ class GCReposComplianceTestCase(BaseGoldenConfigTestCase):
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="ComplianceJob", device=Device.objects.all()
         )
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.last().message, "In scope device count for this job: 2")
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
-        self.assertEqual(
-            log_entries.first().message, "Repository types to sync: backup_repository, intended_repository"
-        )
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(log_entries.first().message, "Finished the Perform Configuration Compliance job execution.")
@@ -406,13 +370,10 @@ class GCReposComplianceTestCase(BaseGoldenConfigTestCase):
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="ComplianceJob", device=Device.objects.all()
         )
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.last().message, "In scope device count for this job: 2")
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
-        self.assertEqual(
-            log_entries.first().message, "Repository types to sync: backup_repository, intended_repository"
-        )
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(log_entries.first().message, "Finished the Perform Configuration Compliance job execution.")
@@ -425,7 +386,7 @@ class GCReposComplianceTestCase(BaseGoldenConfigTestCase):
 @patch("nautobot_golden_config.nornir_plays.config_intended.run_template", MagicMock(return_value="foo"))
 @patch("nautobot_golden_config.nornir_plays.config_compliance.run_compliance", MagicMock(return_value="foo"))
 @patch.object(jobs, "ensure_git_repository")
-class GCReposRunAllSingleTestCase(BaseGoldenConfigTestCase):
+class GCReposRunAllSingleTestCase(TransactionTestCase):
     """Test the repos to sync and commit are working for run all single job."""
 
     databases = ("default", "job_logs")
@@ -448,15 +409,10 @@ class GCReposRunAllSingleTestCase(BaseGoldenConfigTestCase):
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="AllGoldenConfig", device=self.device.id
         )
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
-        self.assertEqual(
-            log_entries.first().message,
-            "Repository types to sync: backup_repository, intended_repository, jinja_repository",
-        )
-
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.last().message, "In scope device count for this job: 1")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(
@@ -474,15 +430,10 @@ class GCReposRunAllSingleTestCase(BaseGoldenConfigTestCase):
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="AllGoldenConfig", device=self.device.id
         )
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
-        self.assertEqual(
-            log_entries.first().message,
-            "Repository types to sync: backup_repository, intended_repository, jinja_repository",
-        )
-
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.last().message, "In scope device count for this job: 1")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(
@@ -503,12 +454,13 @@ class GCReposRunAllSingleTestCase(BaseGoldenConfigTestCase):
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
         self.assertEqual(
             log_entries.first().message,
-            "Repository types to sync: backup_repository, intended_repository, jinja_repository",
+            "Repositories to sync for GC Setting test_name2: backup_repository, intended_repository, jinja_repository",
         )
 
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.last().message, "In scope device count for this job: 1")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(
@@ -526,15 +478,10 @@ class GCReposRunAllSingleTestCase(BaseGoldenConfigTestCase):
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="AllGoldenConfig", device=self.device.id
         )
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
-        self.assertEqual(
-            log_entries.first().message,
-            "Repository types to sync: backup_repository, intended_repository, jinja_repository",
-        )
-
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.last().message, "In scope device count for this job: 1")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(
@@ -550,7 +497,7 @@ class GCReposRunAllSingleTestCase(BaseGoldenConfigTestCase):
 @patch("nautobot_golden_config.nornir_plays.config_intended.run_template", MagicMock(return_value="foo"))
 @patch("nautobot_golden_config.nornir_plays.config_compliance.run_compliance", MagicMock(return_value="foo"))
 @patch.object(jobs, "ensure_git_repository")
-class GCReposRunAllMultipleTestCase(BaseGoldenConfigTestCase):
+class GCReposRunAllMultipleTestCase(TransactionTestCase):
     """Test the repos to sync and commit are working for run all multiple job."""
 
     databases = ("default", "job_logs")
@@ -569,15 +516,10 @@ class GCReposRunAllMultipleTestCase(BaseGoldenConfigTestCase):
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="AllDevicesGoldenConfig", device=Device.objects.all()
         )
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
-        self.assertEqual(
-            log_entries.first().message,
-            "Repository types to sync: backup_repository, intended_repository, jinja_repository",
-        )
-
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.last().message, "In scope device count for this job: 2")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(
@@ -595,15 +537,10 @@ class GCReposRunAllMultipleTestCase(BaseGoldenConfigTestCase):
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="AllDevicesGoldenConfig", device=Device.objects.all()
         )
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
-        self.assertEqual(
-            log_entries.first().message,
-            "Repository types to sync: backup_repository, intended_repository, jinja_repository",
-        )
-
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.last().message, "In scope device count for this job: 2")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(
@@ -621,15 +558,10 @@ class GCReposRunAllMultipleTestCase(BaseGoldenConfigTestCase):
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="AllDevicesGoldenConfig", device=Device.objects.all()
         )
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
-        self.assertEqual(
-            log_entries.first().message,
-            "Repository types to sync: backup_repository, intended_repository, jinja_repository",
-        )
-
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.last().message, "In scope device count for this job: 2")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(
@@ -647,15 +579,10 @@ class GCReposRunAllMultipleTestCase(BaseGoldenConfigTestCase):
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="AllDevicesGoldenConfig", device=Device.objects.all()
         )
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
-        self.assertEqual(
-            log_entries.first().message,
-            "Repository types to sync: backup_repository, intended_repository, jinja_repository",
-        )
-
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.last().message, "In scope device count for this job: 2")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(

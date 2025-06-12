@@ -15,7 +15,7 @@ services:
       # have all of your projects in the same directory. Uncomment out as required.
       # - "../../netutils/netutils:/usr/local/lib/python3.11/site-packages/netutils"
       # - "../../nornir-nautobot/nornir_nautobot:/usr/local/lib/python3.11/site-packages/nornir_nautobot"
-      # - "../../nautobot-plugin-nornir/nautobot_plugin_nornir:/usr/local/lib/python3.11/site-packages/nautobot_plugin_nornir"
+      - "../../nautobot-plugin-nornir/nautobot_plugin_nornir:/usr/local/lib/python3.11/site-packages/nautobot_plugin_nornir"
       # - "../../nautobot/nautobot:/usr/local/lib/python3.11/site-packages/nautobot"
 
     healthcheck:
@@ -39,7 +39,7 @@ services:
       - "sh"
       - "-c"  # this is to evaluate the $NAUTOBOT_LOG_LEVEL from the env
       - "watchmedo auto-restart --directory './' --pattern '*.py' --recursive -- nautobot-server celery worker -l $$NAUTOBOT_LOG_LEVEL --events"  ## $$ because of docker-compose
-      # - "watchmedo auto-restart --directory './' --directory '/usr/local/lib/python3.11/site-packages/' --pattern '*.py' --recursive -- nautobot-server celery worker -l $$NAUTOBOT_LOG_LEVEL --events"  ## $$ because of docker-compose
+      - "watchmedo auto-restart --directory './' --directory '/usr/local/lib/python3.11/site-packages/' --pattern '*.py' --recursive -- nautobot-server celery worker -l $$NAUTOBOT_LOG_LEVEL --events"  ## $$ because of docker-compose
     volumes:
       - "./nautobot_config.py:/opt/nautobot/nautobot_config.py"
       - "../:/source"
@@ -47,7 +47,7 @@ services:
       # have all of your projects in the same directory. Uncomment out as required.
       # - "../../netutils/netutils:/usr/local/lib/python3.11/site-packages/netutils"
       # - "../../nornir-nautobot/nornir_nautobot:/usr/local/lib/python3.11/site-packages/nornir_nautobot"
-      # - "../../nautobot-plugin-nornir/nautobot_plugin_nornir:/usr/local/lib/python3.11/site-packages/nautobot_plugin_nornir"
+      - "../../nautobot-plugin-nornir/nautobot_plugin_nornir:/usr/local/lib/python3.11/site-packages/nautobot_plugin_nornir"
       # - "../../nautobot/nautobot:/usr/local/lib/python3.11/site-packages/nautobot"
     healthcheck:
       test: ["CMD", "true"]  # Due to layering, disable: true won't work. Instead, change the test

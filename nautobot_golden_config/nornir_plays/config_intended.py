@@ -106,7 +106,7 @@ def config_intended(job):
     """
     now = make_aware(datetime.now())
     logger = NornirLogger(job.job_result, job.logger.getEffectiveLevel())
-    enabled_qs, disabled_qs = job.gc_advanced_filter.get_filtered_querysets("intended")
+    # enabled_qs, disabled_qs = job.gc_advanced_filter.get_filtered_querysets("intended")
     # device_filter = GCSettingsDeviceFilterSet(job.qs)
 
     # Verify intended feature is enabled and has required settings
@@ -115,12 +115,12 @@ def config_intended(job):
     #     "intended",
     #     required_settings=["jinja_path_template", "intended_path_template", "sot_agg_query"],
     # )
-    if job.job_result.task_kwargs["debug"]:
-        for device in disabled_qs:
-            logger.warning(
-                f"E3038: Device {device.name} does not have the required settings to run the intended job. Skipping device.",
-                extra={"object": device},
-            )
+    # if job.job_result.task_kwargs["debug"]:
+    #     for device in disabled_qs:
+    #         logger.warning(
+    #             f"E3038: Device {device.name} does not have the required settings to run the intended job. Skipping device.",
+    #             extra={"object": device},
+    #         )
     # Retrieve filters from the Django jinja template engine
     jinja_env = get_django_env()
     try:
@@ -132,7 +132,7 @@ def config_intended(job):
                 "options": {
                     "credentials_class": NORNIR_SETTINGS.get("credentials"),
                     "params": NORNIR_SETTINGS.get("inventory_params"),
-                    "queryset": enabled_qs,
+                    "queryset": job.qs,
                     "defaults": {"now": now},
                 },
             },

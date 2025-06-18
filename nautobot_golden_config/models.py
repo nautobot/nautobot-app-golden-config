@@ -3,7 +3,6 @@
 import json
 import logging
 import os
-from uuid import UUID
 
 from deepdiff import DeepDiff
 from django.core.exceptions import ValidationError
@@ -524,17 +523,28 @@ class GoldenConfigSettingManager(BaseManager.from_queryset(RestrictedQuerySet)):
             return dynamic_group.order_by("-golden_config_setting__weight").first().golden_config_setting
         return None
 
-    def get_repos_for_setting(self, setting, repo_types):
-        """Return t."""
-        if isinstance(setting, UUID):
-            setting = GoldenConfigSetting.objects.get(pk=str(setting))
-        repos = []
-        for repo_type in repo_types:
-            if hasattr(setting, f"{repo_type.split('_')[0]}_enabled"):
-                if getattr(setting, f"{repo_type.split('_')[0]}_enabled"):
-                    if getattr(setting, repo_type):
-                        repos.append(getattr(setting, repo_type))
-        return repos
+    def get_repos_for_settings(self, gcs_queryset, job_types):
+        """Return all enabled repos for all settings in a restricted queryset."""
+        repos_to_sync, repos_to_push = [], []
+        if isinstance(gcs_queryset, GoldenConfigSetting):
+            gcs_queryset = [gcs_queryset]
+        for setting in gcs_queryset:
+            for job_type in job_types:
+                if job_type == "backup_repository":
+                    if setting.backup_enabled and setting.backup_repository:
+                        repos_to_sync.append(setting.backup_repository)
+                        repos_to_push.append(setting.backup_repository)
+                    if not setting.backup_enabled and setting.backup_repository:
+                        repos_to_sync.append(setting.backup_repository)
+                if job_type == "intended_repository":
+                    if setting.intended_enabled and setting.intended_repository:
+                        repos_to_sync.append(setting.intended_repository)
+                        repos_to_push.append(setting.intended_repository)
+                        if setting.jinja_repository:
+                            repos_to_sync.append(setting.jinja_repository)
+                    if not setting.intended_enabled and setting.intended_repository:
+                        repos_to_push.append(setting.intended_repository)
+        return list(set(repos_to_sync)), list(set(repos_to_push))
 
 
 @extras_features(

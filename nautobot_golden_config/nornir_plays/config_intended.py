@@ -132,7 +132,7 @@ def config_intended(job):
                 "options": {
                     "credentials_class": NORNIR_SETTINGS.get("credentials"),
                     "params": NORNIR_SETTINGS.get("inventory_params"),
-                    "queryset": job.qs,
+                    "queryset": job.task_qs,
                     "defaults": {"now": now},
                 },
             },
@@ -145,7 +145,7 @@ def config_intended(job):
                 task=run_template,
                 name="RENDER CONFIG",
                 logger=logger,
-                device_to_settings_map=job.gc_advanced_filter.settings_filters["intended"][True],
+                device_to_settings_map=job.gc_advanced_settings_filter["intended"][True],
                 job_class_instance=job,
                 jinja_env=jinja_env,
             )

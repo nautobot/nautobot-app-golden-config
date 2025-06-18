@@ -25,7 +25,7 @@ from nautobot_golden_config import config as app_config
 from nautobot_golden_config import models
 from nautobot_golden_config.error_codes import ERROR_CODES
 from nautobot_golden_config.utilities import utils
-from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, JINJA_ENV, JOB_FUNCTION_MAP
+from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, JINJA_ENV
 
 FRAMEWORK_METHODS = {
     "default": utils.default_framework,
@@ -165,6 +165,16 @@ def render_jinja_template(obj, logger, template):
         raise NornirNautobotException(error_msg)
 
 
+def get_inscope_settings_from_device_qs(queryset):
+    """Wrapper function to return a queryset of GoldenConfigSettings that are in scope for the provided queryset."""
+    inscope_gcs = []
+    for gc in models.GoldenConfigSetting.objects.all():
+        common_objects_queryset = queryset.intersection(gc.dynamic_group.members)
+        if common_objects_queryset.count() > 0:
+            inscope_gcs.append(gc)
+    return inscope_gcs
+
+
 def get_device_to_settings_map(queryset, job_name):
     """Helper function to map heightest weighted GC settings to devices."""
     update_dynamic_groups_cache()
@@ -181,30 +191,15 @@ def get_device_to_settings_map(queryset, job_name):
         )
     )
     gcs = {gc.id: gc for gc in models.GoldenConfigSetting.objects.all()}
-    # settings_filters = {
-    #     setting: {True: {}, False: {}} for setting in ["backup", "intended", "compliance", "plan", "deploy"]
-    # }
-    to_build = JOB_FUNCTION_MAP[job_name]
-    # settings_filters2 = {
-    #     setting: {True: {}, False: {}} for setting in ["backup", "intended", "compliance", "plan", "deploy"]
-    # }
-    settings_filters2 = {setting: {True: {}, False: {}} for setting in [to_build]}
-    # Annotated queryset: <ConfigContextModelQuerySet [<Device: demo-cisco-xe>, <Device: demo-cisco-xe-2>, <Device: veos-01>]>
-
-    # def _populate_filters(self):
-    #     """Populate filters for each setting."""
-    # for device, gc_settings in {device.id: gcs[device.gc_settings] for device in annotated_queryset}.items():
-    #     for setting in settings_filters:
-    #         is_enabled = getattr(gc_settings, f"{setting}_enabled", False)
-    #         settings_filters[setting][is_enabled][device] = gc_settings
-    # print(settings_filters)
+    if job_name == "all":
+        job_name = ["backup", "intended", "compliance"]
+    else:
+        job_name = [job_name]
+    settings_filters2 = {setting: {True: {}, False: {}} for setting in job_name}
     for device in annotated_queryset:
         for setting in settings_filters2:
             is_enabled = getattr(gcs[device.gc_settings], f"{setting}_enabled", False)
             settings_filters2[setting][is_enabled][device.id] = gcs[device.gc_settings]
-    # print(settings_filters2)
-    # print(f"settings are equal: {settings_filters == settings_filters2}")
-    # return {device.id: gcs[device.gc_settings] for device in annotated_queryset}
     return settings_filters2
 
 

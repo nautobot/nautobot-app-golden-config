@@ -123,7 +123,7 @@ def config_backup(job):
                 "options": {
                     "credentials_class": NORNIR_SETTINGS.get("credentials"),
                     "params": NORNIR_SETTINGS.get("inventory_params"),
-                    "queryset": job.qs,
+                    "queryset": job.task_qs,
                     # "queryset": job.settings_filters["backup"][True].keys(),
                     "defaults": {"now": now},
                 },
@@ -136,7 +136,7 @@ def config_backup(job):
                 task=run_backup,
                 name="BACKUP CONFIG",
                 logger=logger,
-                device_to_settings_map=job.gc_advanced_filter.settings_filters["backup"][True],
+                device_to_settings_map=job.gc_advanced_settings_filter["backup"][True],
                 remove_regex_dict=remove_regex_dict,
                 replace_regex_dict=replace_regex_dict,
             )

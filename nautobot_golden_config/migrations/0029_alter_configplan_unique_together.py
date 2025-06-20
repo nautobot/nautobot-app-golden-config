@@ -24,7 +24,16 @@ def ensure_config_plan_created_timestamps_are_unique(apps, schema_editor):
     for duplicate_record in duplicate_records:
         duplicate_record.pop("count")
         for record in ConfigPlan.objects.filter(**duplicate_record):
-            record.created += timedelta(milliseconds=secrets.randbelow(1000))
+            new_time = record.created + timedelta(milliseconds=secrets.randbelow(1000))
+
+            while (
+                ConfigPlan.objects.filter(plan_type=record.plan_type, device=record.device, created=new_time).length()
+                > 0
+            ):
+                # Make sure there are no other lines conflicting with the new time
+                new_time = record.created + timedelta(milliseconds=secrets.randbelow(1000))
+
+            record.created = new_time
             record.save()
 
 

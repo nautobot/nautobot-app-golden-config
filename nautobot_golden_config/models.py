@@ -179,17 +179,40 @@ def _verify_get_custom_compliance_data(compliance_details):
 
 
 def _get_hierconfig_remediation(obj):
-    """Returns the remediating config."""
+    """
+    Generate the remediation configuration for a device using HierConfig.
+
+    This function determines the remediating configuration required to bring a device's actual configuration
+    in line with its intended configuration, using the HierConfig library. It performs the following steps:
+
+    1. Retrieves the HierConfig OS type for the device's platform from the device's network driver mappings.
+    2. Validates that the platform is supported by HierConfig.
+    3. Fetches the RemediationSetting object for the platform associated with the compliance rule.
+    4. Loads any remediation options defined for the platform into the HierConfig OS object.
+    5. Instantiates HierConfig objects for both the actual and intended configurations.
+    6. Uses WorkflowRemediation to compute the remediation configuration needed.
+    7. Returns the filtered remediation configuration as text.
+
+    Raises:
+        ValidationError: If the platform is not supported or remediation settings are missing.
+        Exception: If HierConfig cannot be instantiated due to device, platform, or option issues.
+
+    Args:
+        obj: The ConfigCompliance instance containing device, rule, actual, and intended configuration data.
+
+    Returns:
+        str: The remediation configuration as a string.
+    """
     hierconfig_os = obj.device.platform.network_driver_mappings.get("hier_config")
 
     if not hierconfig_os:
-        raise ValidationError(f"platform {obj.device.platform.network_driver} is not supported by hierconfig.")
+        raise ValidationError(f"platform {obj.device.platform.name} is not supported by hierconfig.")
 
     try:
         remediation_setting_obj = RemediationSetting.objects.get(platform=obj.rule.platform)
     except Exception as err:  # pylint: disable=broad-except:
         raise ValidationError(
-            f"Platform {obj.device.platform.network_driver} has no Remediation Settings defined."
+            f"Platform {obj.device.platform.name} has no Remediation Settings defined."
         ) from err
 
     remediation_options = remediation_setting_obj.remediation_options

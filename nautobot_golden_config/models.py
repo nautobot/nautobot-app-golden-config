@@ -216,8 +216,6 @@ def _get_hierconfig_remediation(obj):
     try:
         hierconfig_os = hconfig_v2_os_v3_platform_mapper(hierconfig_os)
 
-        hierconfig_os = hconfig_v2_os_v3_platform_mapper(hierconfig_os)
-
         if remediation_options:
             load_hconfig_v2_options(remediation_options, hierconfig_os)
 

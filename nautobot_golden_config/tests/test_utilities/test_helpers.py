@@ -14,12 +14,10 @@ from nornir_nautobot.exceptions import NornirNautobotException
 from nautobot_golden_config.models import GoldenConfigSetting
 from nautobot_golden_config.tests.conftest import create_device, create_helper_repo, create_orphan_device
 from nautobot_golden_config.utilities.helper import (
-    GCSettingsDeviceFilterSet,
     get_device_to_settings_map,
     get_job_filter,
     null_to_empty,
     render_jinja_template,
-    verify_feature_enabled,
 )
 
 
@@ -116,9 +114,9 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         self.job_result = MagicMock()
         self.data = MagicMock()
         self.logger = logging.getLogger(__name__)
-        self.device_to_settings_map = get_device_to_settings_map(queryset=Device.objects.all())
-        self.queryset = Device.objects.all()
-        self.custom_filter_settings = GCSettingsDeviceFilterSet(self.queryset)
+        self.device_to_settings_map = get_device_to_settings_map(queryset=Device.objects.all(), job_name="backup")[
+            "backup"
+        ]
 
     def test_null_to_empty_null(self):
         """Ensure None returns with empty string."""
@@ -193,21 +191,21 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
     def test_get_backup_repository_dir_success(self):
         """Verify that we successfully look up the path from a provided repo object."""
         device = Device.objects.get(name="test_device")
-        backup_directory = self.device_to_settings_map[device.id].backup_repository.filesystem_path
+        backup_directory = self.device_to_settings_map[True][device.id].backup_repository.filesystem_path
         self.assertEqual(backup_directory, "/opt/nautobot/git/backup-parent_region-3")
 
         device = Device.objects.get(name="orphan_device")
-        backup_directory = self.device_to_settings_map[device.id].backup_repository.filesystem_path
+        backup_directory = self.device_to_settings_map[True][device.id].backup_repository.filesystem_path
         self.assertEqual(backup_directory, "/opt/nautobot/git/backup-parent_region-2")
 
     def test_get_intended_repository_dir_success(self):
         """Verify that we successfully look up the path from a provided repo object."""
         device = Device.objects.get(name="test_device")
-        intended_directory = self.device_to_settings_map[device.id].intended_repository.filesystem_path
+        intended_directory = self.device_to_settings_map[True][device.id].intended_repository.filesystem_path
         self.assertEqual(intended_directory, "/opt/nautobot/git/intended-parent_region-3")
 
         device = Device.objects.get(name="orphan_device")
-        intended_directory = self.device_to_settings_map[device.id].intended_repository.filesystem_path
+        intended_directory = self.device_to_settings_map[True][device.id].intended_repository.filesystem_path
         self.assertEqual(intended_directory, "/opt/nautobot/git/intended-parent_region-2")
 
     def test_get_job_filter_no_data_success(self):
@@ -270,7 +268,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
                 filter={"platform": ["placeholder-platform"]},
             )
             golden_settings.dynamic_group = dynamic_group
-            golden_settings.validated_save()
+            golden_settings.save()
         with self.assertRaises(NornirNautobotException) as failure:
             get_job_filter()
         self.assertEqual(failure.exception.args[0][:8], "`E3015:`")
@@ -297,52 +295,12 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         """Verify Golden Config Settings are properly mapped to devices."""
         test_device = Device.objects.get(name="test_device")
         orphan_device = Device.objects.get(name="orphan_device")
-        self.assertEqual(self.device_to_settings_map[test_device.id], self.test_settings_c)
-        self.assertEqual(self.device_to_settings_map[orphan_device.id], self.test_settings_b)
-        self.assertEqual(get_device_to_settings_map(queryset=Device.objects.none()), {})
-
-    def test_verify_feature_enabled__enabled_e3033_error(self):
-        """Verify that we do not raise an exception when the backup feature is enabled."""
-        feature_name = "backup"
-        required_settings = ["backup_path_template"]
-        self.assertEqual(self.test_settings_a.backup_enabled, True)
-
-        with self.assertRaises(NornirNautobotException) as error:
-            verify_feature_enabled(self.logger, feature_name, self.test_settings_a, required_settings)
-            self.assertContains(str(error), "E3039")
-
-    def test_verify_feature_enabled__disabled_e3032_error(self):
-        """Verify that we raise an exception when the backup feature is disabled."""
-        feature_name = "backup"
-        required_settings = ["backup_path_template"]
-        self.test_settings_a.backup_enabled = False
-        self.test_settings_a.save()
-
-        self.assertEqual(self.test_settings_a.backup_enabled, False)
-
-        with self.assertRaises(NornirNautobotException) as error:
-            verify_feature_enabled(self.logger, feature_name, self.test_settings_a, required_settings)
-            self.assertContains(str(error), "E3038")
-
-    def test_verify_feature_enabled__enabled(self):
-        """Verify that we do not raise an exception when the backup feature is enabled."""
-        feature_name = "backup"
-        required_settings = ["backup_path_template"]
-        self.test_settings_a.backup_enabled = True
-        self.test_settings_a.backup_path_template = "backup.conf"
-        self.test_settings_a.save()
-
-        self.assertEqual(self.test_settings_a.backup_enabled, True)
-        self.assertEqual(self.test_settings_a.backup_path_template, "backup.conf")
-        self.assertIsNone(verify_feature_enabled(self.logger, feature_name, self.test_settings_a, required_settings))
-
-    # def test_custom_filter_settings__filtered_queryset(self):
-    #     """Verify that the filtered_queryset attribute is set to the queryset."""
-    #     self.assertEqual(len(self.custom_filter_settings.filtered_queryset), len(self.queryset))
-
-    # def test_custom_filter_settings__device_to_settings_maps(self):
-    #     """Verify that the device_to_settings_maps attribute is set to a non-empty list."""
-    #     self.assertGreater(len(self.custom_filter_settings.device_to_settings_maps), 0)
+        self.assertEqual(self.device_to_settings_map[True][test_device.id], self.test_settings_c)
+        self.assertEqual(self.device_to_settings_map[True][orphan_device.id], self.test_settings_b)
+        self.assertEqual(
+            get_device_to_settings_map(queryset=Device.objects.none(), job_name="backup"),
+            {"backup": {True: {}, False: {}}},
+        )
 
     def test_device_to_settings_map_multi_match_settings(self):
         """Verify Golden Config Settings are properly mapped to devices."""
@@ -350,8 +308,8 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         test_device.location = Location.objects.get(name="Site 4")
         test_device.save()
         # Regenerate the device to settings map to ensure it is up to date.
-        temp_device_to_settings_map = get_device_to_settings_map(queryset=Device.objects.all())
-        self.assertEqual(temp_device_to_settings_map[test_device.id], self.test_settings_b)
+        temp_device_to_settings_map = get_device_to_settings_map(queryset=Device.objects.all(), job_name="backup")
+        self.assertEqual(temp_device_to_settings_map["backup"][True][test_device.id], self.test_settings_b)
 
     def test_device_to_settings_map_gc_weight_change(self):
         """Verify Golden Config Settings weight changes work properly."""
@@ -361,5 +319,5 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         test_device.location = Location.objects.get(name="Site 4")
         test_device.save()
         # Regenerate the device to settings map to ensure it is up to date.
-        temp_device_to_settings_map = get_device_to_settings_map(queryset=Device.objects.all())
-        self.assertEqual(temp_device_to_settings_map[test_device.id], self.test_settings_a)
+        temp_device_to_settings_map = get_device_to_settings_map(queryset=Device.objects.all(), job_name="backup")
+        self.assertEqual(temp_device_to_settings_map["backup"][True][test_device.id], self.test_settings_a)

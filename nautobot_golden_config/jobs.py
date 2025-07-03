@@ -271,7 +271,8 @@ def gc_job_helper(func):
 
     def gc_job_wrapper(self, *args, **kwargs):
         """Decorator used for GC job setup, repo syncing, commiting, and pushing."""
-        self.gc_job_setup(data=kwargs, all_job=False)
+        # self.gc_job_setup(data=kwargs, all_job=False)
+        self.gc_job_setup(data=kwargs)
         # This is where the specific jobs run method runs via this decorator.
         try:
             func(self, *args, **kwargs)
@@ -361,7 +362,7 @@ class GoldenConfigJobMixin(Job):  # pylint: disable=abstract-method
         if disabled_devices_qs.count() > 0:
             for device in disabled_devices_qs:
                 self.logger.warning(
-                    f"E30XX: Device {device.name} does not have the required settings to run the job. Skipping device.",
+                    f"E3038: Device {device.name} does not have the required settings to run the job. Skipping device.",
                     extra={"object": device},
                 )
 

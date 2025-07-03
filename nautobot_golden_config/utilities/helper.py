@@ -168,10 +168,10 @@ def render_jinja_template(obj, logger, template):
 def get_inscope_settings_from_device_qs(queryset):
     """Wrapper function to return a queryset of GoldenConfigSettings that are in scope for the provided queryset."""
     inscope_gcs = []
-    for gc in models.GoldenConfigSetting.objects.all():
-        common_objects_queryset = queryset.intersection(gc.dynamic_group.members)
+    for gc_setting in models.GoldenConfigSetting.objects.all():
+        common_objects_queryset = queryset.intersection(gc_setting.dynamic_group.members)
         if common_objects_queryset.count() > 0:
-            inscope_gcs.append(gc)
+            inscope_gcs.append(gc_setting)
     return inscope_gcs
 
 

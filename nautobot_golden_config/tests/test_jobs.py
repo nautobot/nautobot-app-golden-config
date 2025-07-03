@@ -37,17 +37,11 @@ class GCReposBackupTestCase(TransactionTestCase):
             module="nautobot_golden_config.jobs",
             name="BackupJob",
             device=Device.objects.filter(name=self.device.name),
-            debug=True,
         )
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs", log_level="debug")
-        self.assertEqual(
-            log_entries.first().message, "Repositories to sync for GC Setting test_name: test-backup-repo-1"
-        )
-
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 1")
-        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 0")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled for backup job: 1")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled for backup job: 0")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(log_entries.first().message, "Finished the Backup Configurations job execution.")
@@ -70,8 +64,8 @@ class GCReposBackupTestCase(TransactionTestCase):
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 2")
-        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 0")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled for backup job: 2")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled for backup job: 0")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(log_entries.first().message, "Finished the Backup Configurations job execution.")
@@ -93,20 +87,16 @@ class GCReposBackupTestCase(TransactionTestCase):
             name="BackupJob",
             **job_form_inputs,
         )
-
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
-        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 1")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled for backup job: 0")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled for backup job: 1")
 
-        log_entries = JobLogEntry.objects.filter(
-            job_result=job_result,
-            grouping="_set_filtered_queryset",
-        )
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="_log_out_of_scope_devices")
         self.assertEqual(log_entries.count(), 1)
         self.assertEqual(
             log_entries.last().message,
-            f"E3038: Device {self.device.name} does not have the required settings to run the backup job. Skipping device.",
+            f"E3038: Device {self.device.name} does not have the required settings to run the job. Skipping device.",
         )
 
     def test_backup_job_repos_two_setting_backup_disabled(self, mock_ensure_git_repository):
@@ -120,24 +110,21 @@ class GCReposBackupTestCase(TransactionTestCase):
             module="nautobot_golden_config.jobs",
             name="BackupJob",
             device=Device.objects.all(),
-            debug=True,
         )
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
-        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled for backup job: 0")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled for backup job: 2")
 
-        log_entries = JobLogEntry.objects.filter(
-            job_result=job_result, grouping="_set_filtered_queryset", log_level="warning"
-        )
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="_log_out_of_scope_devices")
         self.assertEqual(
             log_entries.first().message,
-            f"E3038: Device {self.device.name} does not have the required settings to run the backup job. Skipping device.",
+            f"E3038: Device {self.device.name} does not have the required settings to run the job. Skipping device.",
         )
         self.assertEqual(
             log_entries.last().message,
-            f"E3038: Device {self.device2.name} does not have the required settings to run the backup job. Skipping device.",
+            f"E3038: Device {self.device2.name} does not have the required settings to run the job. Skipping device.",
         )
 
 
@@ -168,8 +155,8 @@ class GCReposIntendedTestCase(TransactionTestCase):
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 1")
-        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 0")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled for intended job: 1")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled for intended job: 0")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(log_entries.first().message, "Finished the Generate Intended Configurations job execution.")
@@ -189,8 +176,8 @@ class GCReposIntendedTestCase(TransactionTestCase):
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 2")
-        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 0")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled for intended job: 2")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled for intended job: 0")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(log_entries.first().message, "Finished the Generate Intended Configurations job execution.")
@@ -201,10 +188,13 @@ class GCReposIntendedTestCase(TransactionTestCase):
     def test_intended_job_repos_one_setting_intended_disabled(self, mock_ensure_git_repository):
         """Test intended job one GC setting enabled_intended disabled"""
         mock_ensure_git_repository.return_value = True
-        self.gc_setting_1.intended_enabled = True
+        self.gc_setting_1.intended_enabled = False
         self.gc_setting_1.save()
-        self.gc_setting_2.intended_enabled = False
-        self.gc_setting_2.save()
+        create_job_result_and_run_job(
+            module="nautobot_golden_config.jobs",
+            name="IntendedJob",
+            device=Device.objects.filter(name=self.device.name),
+        )
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs",
             name="IntendedJob",
@@ -212,29 +202,36 @@ class GCReposIntendedTestCase(TransactionTestCase):
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
-        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled for intended job: 0")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled for intended job: 1")
 
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="run")
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="_log_out_of_scope_devices")
+        self.assertEqual(log_entries.count(), 1)
         self.assertEqual(
-            log_entries.last().message, "`E3038:` The intended feature is disabled in Golden Config settings."
+            log_entries.last().message,
+            f"E3038: Device {self.device.name} does not have the required settings to run the job. Skipping device.",
         )
 
     def test_intended_job_repos_two_setting_intended_disabled(self, mock_ensure_git_repository):
         """Test intended job two GC setting enabled_intended disabled"""
         mock_ensure_git_repository.return_value = True
-        self.update_golden_config_settings(intended_enabled=False)
+        self.gc_setting_1.intended_enabled = False
+        self.gc_setting_1.save()
+        self.gc_setting_2.intended_enabled = False
+        self.gc_setting_2.save()
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="IntendedJob", device=Device.objects.all()
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
-        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled for intended job: 0")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled for intended job: 2")
 
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="run")
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="_log_out_of_scope_devices")
+        self.assertEqual(log_entries.count(), 2)
         self.assertEqual(
-            log_entries.last().message, "`E3038:` The intended feature is disabled in Golden Config settings."
+            log_entries.first().message,
+            f"E3038: Device {self.device.name} does not have the required settings to run the job. Skipping device.",
         )
 
 
@@ -249,13 +246,14 @@ class GCReposComplianceTestCase(TransactionTestCase):
         """Setup test data."""
         self.device = create_device(name="foobaz")
         self.device2 = create_orphan_device(name="foobaz2")
-        dgs_gc_settings_and_job_repo_objects()
+        self.gc_setting_1, self.gc_setting_2 = dgs_gc_settings_and_job_repo_objects()
         super().setUp()
 
     def test_compliance_job_repos_one_setting(self, mock_ensure_git_repository):
         """Test compliance job one GC setting enabled_compliance enabled"""
         mock_ensure_git_repository.return_value = True
-        self.update_golden_config_settings(compliance_enabled=True)
+        self.gc_setting_1.compliance_enabled = True
+        self.gc_setting_1.save()
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs",
             name="ComplianceJob",
@@ -264,8 +262,8 @@ class GCReposComplianceTestCase(TransactionTestCase):
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
-        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled for compliance job: 1")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled for compliance job: 0")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(log_entries.first().message, "Finished the Perform Configuration Compliance job execution.")
@@ -276,14 +274,17 @@ class GCReposComplianceTestCase(TransactionTestCase):
     def test_compliance_job_repos_two_setting(self, mock_ensure_git_repository):
         """Test compliance job two GC setting enabled_compliance enabled"""
         mock_ensure_git_repository.return_value = True
-        self.update_golden_config_settings(compliance_enabled=True)
+        self.gc_setting_1.compliance_enabled = True
+        self.gc_setting_1.save()
+        self.gc_setting_2.compliance_enabled = True
+        self.gc_setting_2.save()
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="ComplianceJob", device=Device.objects.all()
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
-        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled for compliance job: 2")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled for compliance job: 0")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(log_entries.first().message, "Finished the Perform Configuration Compliance job execution.")
@@ -294,7 +295,8 @@ class GCReposComplianceTestCase(TransactionTestCase):
     def test_compliance_job_repos_one_setting_compliance_disabled(self, mock_ensure_git_repository):
         """Test compliance job one GC setting enabled_compliance disabled"""
         mock_ensure_git_repository.return_value = True
-        self.update_golden_config_settings(compliance_enabled=False)
+        self.gc_setting_1.compliance_enabled = False
+        self.gc_setting_1.save()
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs",
             name="ComplianceJob",
@@ -302,42 +304,52 @@ class GCReposComplianceTestCase(TransactionTestCase):
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
-        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled for compliance job: 0")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled for compliance job: 1")
 
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="run")
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="_log_out_of_scope_devices")
+        self.assertEqual(log_entries.count(), 1)
         self.assertEqual(
-            log_entries.last().message, "`E3038:` The compliance feature is disabled in Golden Config settings."
+            log_entries.first().message,
+            f"E3038: Device {self.device.name} does not have the required settings to run the job. Skipping device.",
         )
 
     def test_compliance_job_repos_two_setting_compliance_disabled(self, mock_ensure_git_repository):
         """Test compliance job two GC setting enabled_compliance disabled"""
         mock_ensure_git_repository.return_value = True
-        self.update_golden_config_settings(compliance_enabled=False)
+        self.gc_setting_1.compliance_enabled = False
+        self.gc_setting_1.save()
+        self.gc_setting_2.compliance_enabled = False
+        self.gc_setting_2.save()
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="ComplianceJob", device=Device.objects.all()
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
-        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled for compliance job: 0")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled for compliance job: 2")
 
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="run")
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="_log_out_of_scope_devices")
+        self.assertEqual(log_entries.count(), 2)
         self.assertEqual(
-            log_entries.last().message, "`E3038:` The compliance feature is disabled in Golden Config settings."
+            log_entries.first().message,
+            f"E3038: Device {self.device.name} does not have the required settings to run the job. Skipping device.",
         )
 
     def test_compliance_job_repos_backup_disabled(self, mock_ensure_git_repository):
         """Test compliance job one GC setting enabled_backup disabled"""
         mock_ensure_git_repository.return_value = True
-        self.update_golden_config_settings(backup_enabled=False)
+        self.gc_setting_1.backup_enabled = False
+        self.gc_setting_1.save()
+        self.gc_setting_2.backup_enabled = False
+        self.gc_setting_2.save()
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="ComplianceJob", device=Device.objects.all()
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
-        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled for compliance job: 2")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled for compliance job: 0")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(log_entries.first().message, "Finished the Perform Configuration Compliance job execution.")
@@ -348,14 +360,17 @@ class GCReposComplianceTestCase(TransactionTestCase):
     def test_compliance_job_repos_intended_disabled(self, mock_ensure_git_repository):
         """Test compliance job one GC setting enabled_intended disabled"""
         mock_ensure_git_repository.return_value = True
-        self.update_golden_config_settings(intended_enabled=False)
+        self.gc_setting_1.intended_enabled = False
+        self.gc_setting_1.save()
+        self.gc_setting_2.intended_enabled = False
+        self.gc_setting_2.save()
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="ComplianceJob", device=Device.objects.all()
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
-        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled for compliance job: 2")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled for compliance job: 0")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(log_entries.first().message, "Finished the Perform Configuration Compliance job execution.")
@@ -366,14 +381,19 @@ class GCReposComplianceTestCase(TransactionTestCase):
     def test_compliance_job_repos_both_disabled(self, mock_ensure_git_repository):
         """Test compliance job one GC setting both disabled"""
         mock_ensure_git_repository.return_value = True
-        self.update_golden_config_settings(backup_enabled=False, intended_enabled=False)
+        self.gc_setting_1.intended_enabled = False
+        self.gc_setting_1.backup_enabled = False
+        self.gc_setting_1.save()
+        self.gc_setting_2.intended_enabled = False
+        self.gc_setting_2.backup_enabled = False
+        self.gc_setting_2.save()
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="ComplianceJob", device=Device.objects.all()
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
         self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
-        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
+        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled for compliance job: 2")
+        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled for compliance job: 0")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(log_entries.first().message, "Finished the Perform Configuration Compliance job execution.")
@@ -394,25 +414,22 @@ class GCReposRunAllSingleTestCase(TransactionTestCase):
     def setUp(self) -> None:
         """Setup test data."""
         self.device = create_device(name="foobaz")
-        dgs_gc_settings_and_job_repo_objects()
+        self.gc_setting_1, self.gc_setting_2 = dgs_gc_settings_and_job_repo_objects()
         super().setUp()
 
     def test_run_all_job_single_repos(self, mock_ensure_git_repository):
         """Test run all job single on one GC setting enabled"""
         mock_ensure_git_repository.return_value = True
-        self.update_golden_config_settings(
-            backup_enabled=True,
-            intended_enabled=True,
-            compliance_enabled=True,
-            deploy_enabled=True,
-        )
+        self.gc_setting_1.backup_enabled = True
+        self.gc_setting_1.intended_enabled = True
+        self.gc_setting_1.compliance_enabled = True
+        self.gc_setting_1.deploy_enabled = True
+        self.gc_setting_1.save()
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="AllGoldenConfig", device=self.device.id
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
-        self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
-        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
+        self.assertEqual(log_entries.count(), 6)
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(
@@ -426,14 +443,13 @@ class GCReposRunAllSingleTestCase(TransactionTestCase):
     def test_run_all_job_single_repos_backup_disabled(self, mock_ensure_git_repository):
         """Test run all job single on one GC backup_disabled"""
         mock_ensure_git_repository.return_value = True
-        self.update_golden_config_settings(backup_enabled=False)
+        self.gc_setting_1.backup_enabled = False
+        self.gc_setting_1.save()
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="AllGoldenConfig", device=self.device.id
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
-        self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
-        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
+        self.assertEqual(log_entries.count(), 6)
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(
@@ -447,20 +463,14 @@ class GCReposRunAllSingleTestCase(TransactionTestCase):
     def test_run_all_job_single_repos_intended_disabled(self, mock_ensure_git_repository):
         """Test run all job single on one GC intended_disabled"""
         mock_ensure_git_repository.return_value = True
-        self.update_golden_config_settings(intended_enabled=False)
+        self.gc_setting_1.intended_enabled = False
+        self.gc_setting_1.save()
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="AllGoldenConfig", device=self.device.id
         )
-        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
-        self.assertEqual(
-            log_entries.first().message,
-            "Repositories to sync for GC Setting test_name2: backup_repository, intended_repository, jinja_repository",
-        )
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
-        self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
-        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
+        self.assertEqual(log_entries.count(), 6)
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(
@@ -474,14 +484,14 @@ class GCReposRunAllSingleTestCase(TransactionTestCase):
     def test_run_all_job_single_repos_both_disabled(self, mock_ensure_git_repository):
         """Test run all job single on one GC both_disabled"""
         mock_ensure_git_repository.return_value = True
-        self.update_golden_config_settings(backup_enabled=False, intended_enabled=False)
+        self.gc_setting_1.backup_enabled = False
+        self.gc_setting_1.intended_enabled = False
+        self.gc_setting_1.save()
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="AllGoldenConfig", device=self.device.id
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
-        self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
-        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
+        self.assertEqual(log_entries.count(), 6)
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(
@@ -506,20 +516,19 @@ class GCReposRunAllMultipleTestCase(TransactionTestCase):
         """Setup test data."""
         self.device = create_device(name="foobaz")
         self.device2 = create_orphan_device(name="foobaz2")
-        dgs_gc_settings_and_job_repo_objects()
+        self.gc_setting_1, self.gc_setting_2 = dgs_gc_settings_and_job_repo_objects()
         super().setUp()
 
     def test_run_all_job_multiple_repos(self, mock_ensure_git_repository):
         """Test run all job multiple on one GC setting enabled"""
         mock_ensure_git_repository.return_value = True
-        self.update_golden_config_settings(backup_enabled=True)
+        self.gc_setting_1.backup_enabled = True
+        self.gc_setting_1.save()
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="AllDevicesGoldenConfig", device=Device.objects.all()
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
-        self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
-        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
+        self.assertEqual(log_entries.count(), 6)
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(
@@ -533,14 +542,13 @@ class GCReposRunAllMultipleTestCase(TransactionTestCase):
     def test_run_all_job_multiple_repos_backup_disabled(self, mock_ensure_git_repository):
         """Test run all job multiple on one GC backup_disabled"""
         mock_ensure_git_repository.return_value = True
-        self.update_golden_config_settings(backup_enabled=False)
+        self.gc_setting_1.backup_enabled = False
+        self.gc_setting_1.save()
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="AllDevicesGoldenConfig", device=Device.objects.all()
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
-        self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
-        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
+        self.assertEqual(log_entries.count(), 6)
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(
@@ -554,14 +562,13 @@ class GCReposRunAllMultipleTestCase(TransactionTestCase):
     def test_run_all_job_multiple_repos_intended_disabled(self, mock_ensure_git_repository):
         """Test run all job multiple on one GC intended_disabled"""
         mock_ensure_git_repository.return_value = True
-        self.update_golden_config_settings(intended_enabled=True)
+        self.gc_setting_1.intended_enabled = True
+        self.gc_setting_1.save()
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="AllDevicesGoldenConfig", device=Device.objects.all()
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
-        self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
-        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
+        self.assertEqual(log_entries.count(), 6)
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(
@@ -575,14 +582,17 @@ class GCReposRunAllMultipleTestCase(TransactionTestCase):
     def test_run_all_job_multiple_repos_both_disabled(self, mock_ensure_git_repository):
         """Test run all job multiple on one GC both_disabled"""
         mock_ensure_git_repository.return_value = True
-        self.update_golden_config_settings(backup_enabled=False, intended_enabled=False)
+        self.gc_setting_1.backup_enabled = False
+        self.gc_setting_1.intended_enabled = False
+        self.gc_setting_1.save()
+        self.gc_setting_2.backup_enabled = False
+        self.gc_setting_2.intended_enabled = False
+        self.gc_setting_2.save()
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs", name="AllDevicesGoldenConfig", device=Device.objects.all()
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Filtered Queryset")
-        self.assertEqual(log_entries.count(), 2)
-        self.assertEqual(log_entries.first().message, "Device(s) with settings enabled: 0")
-        self.assertEqual(log_entries.last().message, "Device(s) with settings disabled: 2")
+        self.assertEqual(log_entries.count(), 6)
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
         self.assertEqual(

@@ -28,7 +28,6 @@ from nautobot_golden_config.utilities.constant import (
     ENABLE_DEPLOY,
     ENABLE_INTENDED,
     ENABLE_PLAN,
-    ENABLE_SOTAGG,
     PLUGIN_CFG,
 )
 
@@ -543,7 +542,7 @@ class GoldenConfigSettingManager(BaseManager.from_queryset(RestrictedQuerySet)):
                         if setting.jinja_repository:
                             repos_to_sync.append(setting.jinja_repository)
                     if not setting.intended_enabled and setting.intended_repository:
-                        repos_to_push.append(setting.intended_repository)
+                        repos_to_sync.append(setting.intended_repository)
         return list(set(repos_to_sync)), list(set(repos_to_push))
 
 
@@ -667,8 +666,8 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         """Validate the scope and GraphQL query."""
         super().clean()
 
-        if ENABLE_SOTAGG and not self.sot_agg_query:
-            raise ValidationError("A GraphQL query must be defined when `ENABLE_SOTAGG` is True")
+        if self.intended_enabled and not self.sot_agg_query:
+            raise ValidationError("A GraphQL query must be defined when Intended Enabled is checked.")
 
         if self.sot_agg_query:
             LOGGER.debug("GraphQL - test  query start with: `%s`", GRAPHQL_STR_START)

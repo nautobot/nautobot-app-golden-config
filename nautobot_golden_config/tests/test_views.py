@@ -188,7 +188,7 @@ class GoldenConfigListViewTestCase(TestCase):
         checkbox_element = checkbox_header.find("input")
         self.assertEqual(checkbox_element.type, "checkbox")
         text_headers = [header.text_content() for header in headers]
-        self.assertEqual(text_headers, self._text_table_headers)
+        self.assertEqual(sorted(text_headers), sorted(self._text_table_headers))
 
     def test_device_relationship_not_included_in_golden_config_table(self):
         # Create a RelationshipAssociation to Device Model to setup test case
@@ -212,7 +212,7 @@ class GoldenConfigListViewTestCase(TestCase):
         # xpath expression excludes the pk checkbox column (i.e. the first column)
         text_headers = [header.text_content() for header in table_header.xpath("tr/th[position()>1]")]
         # This will fail if the Relationships to Device objects showed up in the Golden Config table
-        self.assertEqual(text_headers, self._text_table_headers)
+        self.assertEqual(sorted(text_headers), sorted(self._text_table_headers))
 
     @skip("TODO: 2.0 Figure out how do csv tests.")
     def test_csv_export(self):

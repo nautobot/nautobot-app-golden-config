@@ -2,79 +2,79 @@
 - platform_name: "example_platform"
   remediation_type: "hierconfig"
   remediation_options:
-    style: ios
-    negation: no
+    style: "ios"
+    negation: "no"
     ordering:
       - order: 700
         lineage:
-          - startswith: no vlan filter
+          - startswith: "no vlan filter"
       - order: 700
         lineage:
-          - startswith: interface
-          - startswith: no shutdown
+          - startswith: "interface"
+          - startswith: "no shutdown"
     per_line_sub:
-      - search: ^Building configuration.*
+      - search: "^Building configuration.*"
         replace: ""
-      - search: ^Current configuration.*
+      - search: "^Current configuration.*"
         replace: ""
-      - search: ^! Last configuration change.*
+      - search: "^! Last configuration change.*"
         replace: ""
-      - search: ^! NVRAM config last updated.*
+      - search: "^! NVRAM config last updated.*"
         replace: ""
-      - search: ^ntp clock-period .*
+      - search: "^ntp clock-period .*"
         replace: ""
-      - search: ^version.*
+      - search: "^version.*"
         replace: ""
-      - search: ^ logging event link-status$
+      - search: "^ logging event link-status$"
         replace: ""
-      - search: ^ logging event subif-link-status$
+      - search: "^ logging event subif-link-status$"
         replace: ""
-      - search: ^\\s*ipv6 unreachables disable$
+      - search: "^\\s*ipv6 unreachables disable$"
         replace: ""
-      - search: ^end$
+      - search: "^end$"
         replace: ""
-      - search: ^\\s*[#!].*
+      - search: "^\\s*[#!].*"
         replace: ""
-      - search: ^ no ip address
+      - search: "^ no ip address"
         replace: ""
-      - search: ^ exit-peer-policy
+      - search: "^ exit-peer-policy"
         replace: ""
-      - search: ^ exit-peer-session
+      - search: "^ exit-peer-session"
         replace: ""
-      - search: ^ exit-address-family
+      - search: "^ exit-address-family"
         replace: ""
-      - search: ^crypto key generate rsa general-keys.*$
+      - search: "^crypto key generate rsa general-keys.*$"
         replace: ""
-    syntax_style: cisco
+    syntax_style: "cisco"
     full_text_sub: []
     indent_adjust: []
     sectional_exiting:
       - lineage:
-          - startswith: router bgp
-          - startswith: template peer-policy
-        exit_text: exit-peer-policy
+          - startswith: "router bgp"
+          - startswith: "template peer-policy"
+        exit_text: "exit-peer-policy"
       - lineage:
-          - startswith: router bgp
-          - startswith: template peer-session
-        exit_text: exit-peer-session
+          - startswith: "router bgp"
+          - startswith: "template peer-session"
+        exit_text: "exit-peer-session"
       - lineage:
-          - startswith: router bgp
-          - startswith: address-family
-        exit_text: exit-address-family
+          - startswith: "router bgp"
+          - startswith: "address-family"
+        exit_text: "exit-address-family"
     idempotent_commands:
       - lineage:
-          - startswith: vlan
-          - startswith: name
+          - startswith: "vlan"
+          - startswith: "name"
       - lineage:
-          - startswith: interface
-          - startswith: description
+          - startswith: "interface"
+          - startswith: "description"
       - lineage:
-          - startswith: interface
-          - startswith: ip address
+          - startswith: "interface"
+          - startswith: "ip address"
       - lineage:
-          - startswith: banner
+          - startswith: "banner"
       - lineage:
-          - startswith: spanning-tree mode
+          - startswith: "spanning-tree mode"
     sectional_overwrite: []
     negation_negate_with: []
     negation_default_when: []

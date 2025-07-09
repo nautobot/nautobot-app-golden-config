@@ -4,12 +4,12 @@ import unittest
 from unittest.mock import MagicMock, Mock, patch
 
 from django.contrib.auth import get_user_model
-
-from nautobot_golden_config.nornir_plays.config_deployment import config_deployment
-from nautobot_golden_config.models import ConfigPlan
-from nautobot_golden_config.exceptions import ConfigPlanDeploymentFailure
 from nautobot.dcim.models import Device
-from nautobot.extras.models import Status, JobResult
+from nautobot.extras.models import JobResult, Status
+
+from nautobot_golden_config.exceptions import ConfigPlanDeploymentFailure
+from nautobot_golden_config.models import ConfigPlan
+from nautobot_golden_config.nornir_plays.config_deployment import config_deployment
 
 
 class ConfigDeploymentTest(unittest.TestCase):

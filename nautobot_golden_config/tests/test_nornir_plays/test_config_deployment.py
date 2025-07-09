@@ -10,6 +10,7 @@ from nautobot.extras.models import JobResult, Status
 from nautobot_golden_config.exceptions import ConfigPlanDeploymentFailure
 from nautobot_golden_config.models import ConfigPlan
 from nautobot_golden_config.nornir_plays.config_deployment import config_deployment
+from nautobot_golden_config.tests.conftest import create_device
 
 
 class ConfigDeploymentTest(unittest.TestCase):
@@ -17,6 +18,7 @@ class ConfigDeploymentTest(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
+        create_device()
         self.device = Device.objects.first()
         self.plan_result = JobResult.objects.create(
             name="Test Plan Result",
@@ -29,11 +31,12 @@ class ConfigDeploymentTest(unittest.TestCase):
             status=Status.objects.get(name="Approved"),
             plan_result=self.plan_result,
         )
+        self.user, _ = get_user_model().objects.get_or_create(username="testuser")
 
         # Create mock job
         self.job = MagicMock()
         self.job.data = {"config_plan": ConfigPlan.objects.all()}
-        self.job.celery_kwargs = {"nautobot_job_user_id": get_user_model().objects.first().id}
+        self.job.celery_kwargs = {"nautobot_job_user_id": self.user.id}
         self.job.job_result = Mock()
         self.job.logger.getEffectiveLevel = Mock(return_value=0)
 

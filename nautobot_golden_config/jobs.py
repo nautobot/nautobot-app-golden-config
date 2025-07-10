@@ -193,7 +193,7 @@ class FormEntry:  # pylint disable=too-few-public-method
     role = MultiObjectVar(model=Role, required=False)
     manufacturer = MultiObjectVar(model=Manufacturer, required=False)
     platform = MultiObjectVar(model=Platform, required=False)
-    device_type = MultiObjectVar(model=DeviceType, required=False)
+    device_type = MultiObjectVar(model=DeviceType, required=False, display_field="model")
     device = MultiObjectVar(model=Device, required=False)
     tags = MultiObjectVar(
         model=Tag, required=False, display_field="name", query_params={"content_types": "dcim.device"}

@@ -448,9 +448,19 @@ class GoldenConfigSettingUIViewSet(views.NautobotUIViewSet):
     serializer_class = serializers.GoldenConfigSettingSerializer
     table_class = tables.GoldenConfigSettingTable
     lookup_field = "pk"
+    object_detail_content = details.golden_config_setting
+    extra_buttons = ("clone",)
+
+    def _get_dg_context(self, instance):
+        dg = getattr(instance, "dynamic_group", None)
+        return {"Dynamic Group": dg, "Filter Query Logic": dg.filter, "Scope of Devices": dg}
 
     def get_extra_context(self, request, instance=None):
         """A GoldenConfig helper function to warn if the Job is not enabled to run."""
+        context = super().get_extra_context(request, instance)
+        if self.action == "retrieve":
+            context["dg_data"] = self._get_dg_context(instance)
+
         jobs = []
         jobs.append(["BackupJob", constant.ENABLE_BACKUP])
         jobs.append(["IntendedJob", constant.ENABLE_INTENDED])
@@ -481,7 +491,7 @@ class GoldenConfigSettingUIViewSet(views.NautobotUIViewSet):
             ]
         )
         add_message(jobs, request)
-        return {}
+        return context
 
 
 class ConfigRemoveUIViewSet(views.NautobotUIViewSet):

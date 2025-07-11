@@ -65,3 +65,41 @@ config_remediation = ui.ObjectDetailContent(
         ),
     ),
 )
+
+golden_config_setting = ui.ObjectDetailContent(
+    panels=(
+        ui.ObjectFieldsPanel(
+            section=ui.SectionChoices.LEFT_HALF,
+            weight=100,
+            fields=("weight", "description"),
+        ),
+        ui.KeyValueTablePanel(
+            section=ui.SectionChoices.LEFT_HALF,
+            weight=100,
+            context_data_key="dg_data",
+            label="Device Scope Details",
+            value_transforms={
+                "Filter Query Logic": [helpers.render_json],
+                "Scope of Devices": [lambda v: helpers.hyperlinked_field(v.members.count(), v.get_group_members_url())],
+            },
+        ),
+        ui.ObjectFieldsPanel(
+            label="Backup Configuration",
+            section=ui.SectionChoices.RIGHT_HALF,
+            weight=100,
+            fields=("backup_repository", "backup_path_template", "backup_test_connectivity"),
+        ),
+        ui.ObjectFieldsPanel(
+            label="Intended Configuration",
+            section=ui.SectionChoices.RIGHT_HALF,
+            weight=200,
+            fields=("intended_repository", "intended_path_template"),
+        ),
+        ui.ObjectFieldsPanel(
+            label="Templates Configuration",
+            section=ui.SectionChoices.RIGHT_HALF,
+            weight=300,
+            fields=("intended_repository", "intended_path_template", "sot_agg_query"),
+        ),
+    )
+)

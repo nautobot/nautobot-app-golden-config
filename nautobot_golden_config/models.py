@@ -622,6 +622,15 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
 
     objects = GoldenConfigSettingManager()
 
+    clone_fields = [
+        "weight",
+        "backup_path_template",
+        "backup_test_connectivity",
+        "intended_path_template",
+        "jinja_path_template",
+        "sot_agg_query",
+    ]
+
     def __str__(self):
         """Return a simple string if model is called."""
         return f"Golden Config Setting - {self.name}"

@@ -3,6 +3,8 @@
 from nautobot.apps import ui
 from nautobot.core.templatetags import helpers
 
+from nautobot_golden_config.templatetags import gc_helpers
+
 compliance_feature = ui.ObjectDetailContent(
     panels=(
         ui.ObjectFieldsPanel(
@@ -69,6 +71,7 @@ config_remediation = ui.ObjectDetailContent(
 golden_config_setting = ui.ObjectDetailContent(
     panels=(
         ui.ObjectFieldsPanel(
+            label="General Settings",
             section=ui.SectionChoices.LEFT_HALF,
             weight=100,
             fields=("weight", "description"),
@@ -99,7 +102,54 @@ golden_config_setting = ui.ObjectDetailContent(
             label="Templates Configuration",
             section=ui.SectionChoices.RIGHT_HALF,
             weight=300,
-            fields=("intended_repository", "intended_path_template", "sot_agg_query"),
+            fields=("jinja_repository", "jinja_path_template", "sot_agg_query"),
         ),
     )
+)
+
+golden_config = ui.ObjectDetailContent(
+    panels=(
+        ui.KeyValueTablePanel(
+            section=ui.SectionChoices.RIGHT_HALF,
+            weight=100,
+            label="Configuration Links",
+            context_data_key="device_object",
+            value_transforms={
+                "Backup Config": [
+                    lambda v: gc_helpers.hyperlinked_field_with_icon(v, title="Backup Configuration", gc_view="backup"),
+                ],
+                "Intended Config": [
+                    lambda v: gc_helpers.hyperlinked_field_with_icon(
+                        v, title="Intended Configuration", gc_view="intended"
+                    ),
+                ],
+                "Compliance Config": [
+                    lambda v: gc_helpers.hyperlinked_field_with_icon(v, title="Compliance", gc_view="compliance"),
+                ],
+            },
+        ),
+        ui.ObjectFieldsPanel(
+            section=ui.SectionChoices.LEFT_HALF,
+            weight=100,
+            fields=("device",),
+        ),
+        ui.ObjectFieldsPanel(
+            label="Backup Configuration",
+            section=ui.SectionChoices.LEFT_HALF,
+            weight=200,
+            fields=("backup_last_attempt_date", "backup_last_success_date"),
+        ),
+        ui.ObjectFieldsPanel(
+            label="Intended Configuration",
+            section=ui.SectionChoices.LEFT_HALF,
+            weight=300,
+            fields=("intended_last_attempt_date", "intended_last_success_date"),
+        ),
+        ui.ObjectFieldsPanel(
+            label="Compliance Details",
+            section=ui.SectionChoices.LEFT_HALF,
+            weight=400,
+            fields=("compliance_last_attempt_date", "compliance_last_success_date"),
+        ),
+    ),
 )

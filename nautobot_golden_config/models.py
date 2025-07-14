@@ -609,6 +609,7 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     sot_agg_query = models.ForeignKey(
         to="extras.GraphQLQuery",
         on_delete=models.PROTECT,
+        verbose_name="GraphQL Query",
         null=True,
         blank=True,
         related_name="sot_aggregation",

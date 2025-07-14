@@ -64,6 +64,7 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
     queryset = models.GoldenConfig.objects.all()
     serializer_class = serializers.GoldenConfigSerializer
     action_buttons = ("export",)
+    object_detail_content = details.golden_config
 
     def __init__(self, *args, **kwargs):
         """Used to set default variables on GoldenConfigUIViewSet."""
@@ -99,9 +100,18 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
 
         return queryset
 
+    def _get_device_context(self, instance):
+        return {
+            "Intended Config": instance.device.pk,
+            "Backup Config": instance.device.pk,
+            "Compliance Config": instance.device.pk,
+        }
+
     def get_extra_context(self, request, instance=None, **kwargs):
         """Get extra context data."""
         context = super().get_extra_context(request, instance)
+        if self.action == "retrieve":
+            context["device_object"] = self._get_device_context(instance)
         context["compliance"] = constant.ENABLE_COMPLIANCE
         context["backup"] = constant.ENABLE_BACKUP
         context["intended"] = constant.ENABLE_INTENDED

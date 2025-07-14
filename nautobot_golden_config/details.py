@@ -116,15 +116,13 @@ golden_config = ui.ObjectDetailContent(
             context_data_key="device_object",
             value_transforms={
                 "Backup Config": [
-                    lambda v: gc_helpers.hyperlinked_field_with_icon(v, title="Backup Configuration", gc_view="backup"),
+                    lambda v: gc_helpers.hyperlinked_field_with_icon(v, title="Backup Configuration"),
                 ],
                 "Intended Config": [
-                    lambda v: gc_helpers.hyperlinked_field_with_icon(
-                        v, title="Intended Configuration", gc_view="intended"
-                    ),
+                    lambda v: gc_helpers.hyperlinked_field_with_icon(v, title="Intended Configuration"),
                 ],
                 "Compliance Config": [
-                    lambda v: gc_helpers.hyperlinked_field_with_icon(v, title="Compliance", gc_view="compliance"),
+                    lambda v: gc_helpers.hyperlinked_field_with_icon(v, title="Compliance"),
                 ],
             },
         ),

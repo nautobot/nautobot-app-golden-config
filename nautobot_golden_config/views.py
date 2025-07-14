@@ -102,9 +102,15 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
 
     def _get_device_context(self, instance):
         return {
-            "Intended Config": instance.device.pk,
-            "Backup Config": instance.device.pk,
-            "Compliance Config": instance.device.pk,
+            "Backup Config": reverse(
+                "plugins:nautobot_golden_config:goldenconfig_backup", kwargs={"pk": instance.device.pk}
+            ),
+            "Intended Config": reverse(
+                "plugins:nautobot_golden_config:goldenconfig_intended", kwargs={"pk": instance.device.pk}
+            ),
+            "Compliance Config": reverse(
+                "plugins:nautobot_golden_config:goldenconfig_compliance", kwargs={"pk": instance.device.pk}
+            ),
         }
 
     def get_extra_context(self, request, instance=None, **kwargs):

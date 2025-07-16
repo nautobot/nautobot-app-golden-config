@@ -200,3 +200,19 @@ config_plan = ui.ObjectDetailContent(
         ),
     ),
 )
+
+
+config_compliance = ui.ObjectDetailContent(
+    panels=(
+        ui.ObjectFieldsPanel(
+            section=ui.SectionChoices.LEFT_HALF,
+            weight=100,
+            fields=("device", "rule", "compliance"),
+        ),
+        ui.ObjectFieldsPanel(
+            section=ui.SectionChoices.RIGHT_HALF,
+            weight=100,
+            fields=("actual", "intended", "remediation", "missing", "extra"),
+        ),
+    ),
+)

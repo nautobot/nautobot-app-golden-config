@@ -265,6 +265,7 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
 
     custom_action_permission_map = None
     action_buttons = ("export",)
+    object_detail_content = details.config_compliance
 
     def __init__(self, *args, **kwargs):
         """Used to set default variables on ConfigComplianceUIViewSet."""

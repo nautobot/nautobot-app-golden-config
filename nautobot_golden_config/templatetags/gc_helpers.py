@@ -18,9 +18,10 @@ def hyperlinked_field_with_icon(url, title, icon_class="mdi mdi-text-box-check-o
 @library.filter()
 @register.filter()
 def get_model_instances(m2m_object):
-    """Return a list of model instances from a queryset."""
-    return (
-        format_html("\n".join([core_helpers.hyperlinked_object(instance) for instance in m2m_object.all()]))
-        if m2m_object
-        else None
-    )
+    """Return a unordered bullet list of model instances from a m2m object."""
+    if m2m_object.count() == 0:
+        return None
+    ul_elements = []
+    for obj in m2m_object.all():
+        ul_elements.append(f"<li>{core_helpers.hyperlinked_object(obj)}</li>")
+    return format_html(f"<ul>{''.join(ul_elements)}</ul>")

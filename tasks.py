@@ -838,6 +838,16 @@ def markdownlint(context, fix=False):
 
 
 @task
+def djlint(context, fix=False):
+    """Lint HTML files."""
+    if fix:
+        command = "djlint . --reformat"
+        run_command(context, command)
+    command = "djlint ."
+    run_command(context, command)
+
+
+@task
 def check_migrations(context):
     """Check for missing migrations."""
     command = "nautobot-server makemigrations --dry-run --check"

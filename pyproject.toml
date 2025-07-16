@@ -72,6 +72,7 @@ griffe = "1.1.1"
 towncrier = ">=23.6.0,<=24.8.0"
 to-json-schema = "*"
 jsonschema = "*"
+djlint = "~1.36.4"
 
 [tool.poetry.extras]
 all = [
@@ -107,6 +108,9 @@ notes = """,
 supported_nautobot_versions = [
     "2.0.0"
 ]
+
+[tool.djlint]
+ignore = "H005,H006,H008,H011,H012,H013,H014,H015,H016,H019,H020,H021,H022,H023,H025,H026,H030,H031,H037"
 
 [tool.ruff]
 line-length = 120

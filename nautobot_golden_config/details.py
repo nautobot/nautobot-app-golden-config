@@ -91,18 +91,27 @@ golden_config_setting = ui.ObjectDetailContent(
             section=ui.SectionChoices.RIGHT_HALF,
             weight=100,
             fields=("backup_repository", "backup_path_template", "backup_test_connectivity"),
+            value_transforms={
+                "backup_path_template": [helpers.pre_tag],
+            },
         ),
         ui.ObjectFieldsPanel(
             label="Intended Configuration",
             section=ui.SectionChoices.RIGHT_HALF,
             weight=200,
             fields=("intended_repository", "intended_path_template"),
+            value_transforms={
+                "intended_path_template": [helpers.pre_tag],
+            },
         ),
         ui.ObjectFieldsPanel(
             label="Templates Configuration",
             section=ui.SectionChoices.RIGHT_HALF,
             weight=300,
             fields=("jinja_repository", "jinja_path_template", "sot_agg_query"),
+            value_transforms={
+                "jinja_path_template": [helpers.pre_tag],
+            },
         ),
     )
 )

@@ -151,3 +151,52 @@ golden_config = ui.ObjectDetailContent(
         ),
     ),
 )
+
+config_plan = ui.ObjectDetailContent(
+    panels=(
+        ui.ObjectFieldsPanel(
+            section=ui.SectionChoices.LEFT_HALF,
+            label="Config Plan Details",
+            weight=100,
+            fields=(
+                "device",
+                "status",
+                "created",
+                "plan_type",
+                "feature",
+                "plan_result",
+            ),
+            value_transforms={
+                "plan_result": [lambda v: helpers.hyperlinked_field(getattr(v, "status", v))],
+                "feature": [gc_helpers.get_model_instances, helpers.placeholder],
+            },
+        ),
+        ui.ObjectFieldsPanel(
+            section=ui.SectionChoices.RIGHT_HALF,
+            label="Config Deployment Details",
+            weight=100,
+            fields=(
+                "change_control_id",
+                "change_control_url",
+                "deploy_result",
+            ),
+            value_transforms={
+                "deploy_result": [lambda v: helpers.hyperlinked_field(getattr(v, "status", v))],
+            },
+        ),
+        ui.Panel(
+            label="Postprocessed Config Set",
+            weight=100,
+            section=ui.SectionChoices.RIGHT_HALF,
+            body_content_template_path="nautobot_golden_config/configplan_postprocessing.html",
+        ),
+        ui.ObjectTextPanel(
+            weight=200,
+            label="Config Set",
+            section=ui.SectionChoices.FULL_WIDTH,
+            object_field="config_set",
+            render_as=ui.TextPanel.RenderOptions.CODE,
+            render_placeholder=True,
+        ),
+    ),
+)

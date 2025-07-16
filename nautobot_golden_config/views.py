@@ -581,6 +581,7 @@ class ConfigPlanUIViewSet(views.NautobotUIViewSet):
     lookup_field = "pk"
     action_buttons = ("add",)
     update_form_class = forms.ConfigPlanUpdateForm
+    object_detail_content = details.config_plan
 
     def alter_queryset(self, request):
         """Build actual runtime queryset to automatically remove `Completed` by default."""
@@ -590,12 +591,31 @@ class ConfigPlanUIViewSet(views.NautobotUIViewSet):
 
     def get_extra_context(self, request, instance=None):
         """A ConfigPlan helper function to warn if the Job is not enabled to run."""
+        context = super().get_extra_context(request, instance)
+        if self.action == "retrieve":
+            context.update({"text": get_config_postprocessing(instance, request)})
         jobs = []
         jobs.append(["GenerateConfigPlans", constant.ENABLE_PLAN])
         jobs.append(["DeployConfigPlans", constant.ENABLE_DEPLOY])
         jobs.append(["DeployConfigPlanJobButtonReceiver", constant.ENABLE_DEPLOY])
         add_message(jobs, request)
-        return {}
+        return context
+
+    # @action(
+    #     detail=True,
+    #     url_path="golden-config",
+    #     # custom_view_base_action="view",
+    #     # custom_view_additional_permissions=["nautobot_golden_config.view_config_plan"],
+    # )
+    # def postprocessing(self, request, *args, **kwargs):
+    #     print(vars(self))
+    #     instance = self.get_object()
+    #     print(f"Postprocessing for Config Plan: {instance.device.pk}")
+    #     return Response(
+    #         {
+    #             "device": instance.device.pk,
+    #         }
+    #     )
 
 
 class ConfigPlanBulkDeploy(ObjectPermissionRequiredMixin, View):

@@ -594,7 +594,7 @@ class ConfigPlanUIViewSet(views.NautobotUIViewSet):
         """A ConfigPlan helper function to warn if the Job is not enabled to run."""
         context = super().get_extra_context(request, instance)
         if self.action == "retrieve":
-            context.update({"text": get_config_postprocessing(instance, request)})
+            context["text"] = get_config_postprocessing(instance, request)
         jobs = []
         jobs.append(["GenerateConfigPlans", constant.ENABLE_PLAN])
         jobs.append(["DeployConfigPlans", constant.ENABLE_DEPLOY])

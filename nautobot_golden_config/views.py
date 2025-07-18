@@ -468,15 +468,12 @@ class GoldenConfigSettingUIViewSet(views.NautobotUIViewSet):
     object_detail_content = details.golden_config_setting
     extra_buttons = ("clone",)
 
-    def _get_dg_context(self, instance):
-        dg = getattr(instance, "dynamic_group", None)
-        return {"Dynamic Group": dg, "Filter Query Logic": dg.filter, "Scope of Devices": dg}
-
     def get_extra_context(self, request, instance=None):
         """A GoldenConfig helper function to warn if the Job is not enabled to run."""
         context = super().get_extra_context(request, instance)
         if self.action == "retrieve":
-            context["dg_data"] = self._get_dg_context(instance)
+            dg = getattr(instance, "dynamic_group", None)
+            context["dg_data"] = {"Dynamic Group": dg, "Filter Query Logic": dg.filter, "Scope of Devices": dg}
 
         jobs = []
         jobs.append(["BackupJob", constant.ENABLE_BACKUP])
@@ -593,30 +590,12 @@ class ConfigPlanUIViewSet(views.NautobotUIViewSet):
     def get_extra_context(self, request, instance=None):
         """A ConfigPlan helper function to warn if the Job is not enabled to run."""
         context = super().get_extra_context(request, instance)
-        if self.action == "retrieve":
-            context["text"] = get_config_postprocessing(instance, request)
         jobs = []
         jobs.append(["GenerateConfigPlans", constant.ENABLE_PLAN])
         jobs.append(["DeployConfigPlans", constant.ENABLE_DEPLOY])
         jobs.append(["DeployConfigPlanJobButtonReceiver", constant.ENABLE_DEPLOY])
         add_message(jobs, request)
         return context
-
-    # @action(
-    #     detail=True,
-    #     url_path="golden-config",
-    #     # custom_view_base_action="view",
-    #     # custom_view_additional_permissions=["nautobot_golden_config.view_config_plan"],
-    # )
-    # def postprocessing(self, request, *args, **kwargs):
-    #     print(vars(self))
-    #     instance = self.get_object()
-    #     print(f"Postprocessing for Config Plan: {instance.device.pk}")
-    #     return Response(
-    #         {
-    #             "device": instance.device.pk,
-    #         }
-    #     )
 
 
 class ConfigPlanBulkDeploy(ObjectPermissionRequiredMixin, View):

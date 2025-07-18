@@ -1,9 +1,24 @@
 """Object Detail components for golden config."""
 
+from django.utils.html import format_html
 from nautobot.apps import ui
 from nautobot.core.templatetags import helpers
 
-from nautobot_golden_config.templatetags import gc_helpers
+
+def get_model_instances(m2m_object):
+    """Return a unordered bullet list of model instances from a m2m object."""
+    if m2m_object.count() == 0:
+        return None
+    ul_elements = []
+    for obj in m2m_object.all():
+        ul_elements.append(f"<li>{helpers.hyperlinked_object(obj)}</li>")
+    return format_html(f"<ul>{''.join(ul_elements)}</ul>")
+
+
+def hyperlinked_field_with_icon(url, title, icon_class="mdi mdi-text-box-check-outline"):
+    """Render a redirect link with custom icon."""
+    return format_html('<a href="{}"><i class="{}" title="{}"></i></a>', url, icon_class, title)
+
 
 compliance_feature = ui.ObjectDetailContent(
     panels=(
@@ -125,13 +140,13 @@ golden_config = ui.ObjectDetailContent(
             context_data_key="device_object",
             value_transforms={
                 "Backup Config": [
-                    lambda v: gc_helpers.hyperlinked_field_with_icon(v, title="Backup Configuration"),
+                    lambda v: hyperlinked_field_with_icon(v, title="Backup Configuration"),
                 ],
                 "Intended Config": [
-                    lambda v: gc_helpers.hyperlinked_field_with_icon(v, title="Intended Configuration"),
+                    lambda v: hyperlinked_field_with_icon(v, title="Intended Configuration"),
                 ],
                 "Compliance Config": [
-                    lambda v: gc_helpers.hyperlinked_field_with_icon(v, title="Compliance"),
+                    lambda v: hyperlinked_field_with_icon(v, title="Compliance"),
                 ],
             },
         ),
@@ -177,7 +192,7 @@ config_plan = ui.ObjectDetailContent(
             ),
             value_transforms={
                 "plan_result": [lambda v: helpers.hyperlinked_field(getattr(v, "status", v))],
-                "feature": [gc_helpers.get_model_instances, helpers.placeholder],
+                "feature": [get_model_instances, helpers.placeholder],
             },
         ),
         ui.ObjectFieldsPanel(

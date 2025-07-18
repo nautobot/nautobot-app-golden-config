@@ -17,9 +17,6 @@
         var url = link.attr('href');
         var modal = $(this);
 
-        // Show loading message
-        modal.find('.modal-body').html("Loading...");
-
         $.ajax({
             url: url,
             success: function(data) {

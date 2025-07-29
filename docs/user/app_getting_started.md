@@ -266,7 +266,7 @@ The `YAML` files will contain all the attributes necessary to identify an object
       - lineage:
           - startswith: vlan
           - startswith: name
-    ....
+...
 ```
 
 CustomField data can be added using the `_custom_field_data` attribute, that takes a dictionary mapping custom_field names to their values:

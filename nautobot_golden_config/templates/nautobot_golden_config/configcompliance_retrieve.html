@@ -1,8 +1,9 @@
 {% extends 'generic/object_detail.html' %}
 {% load helpers %}
 {% load static %}
+
 {% block extra_styles %}
-    <style>
+<style>
     #config-output pre {
         white-space: pre-wrap;       /* CSS 2.1 */
         white-space: -moz-pre-wrap;  /* Firefox < 3.5 */
@@ -10,8 +11,9 @@
         white-space: -o-pre-wrap;    /* Opera 7 */
         word-wrap: break-word;       /* IE >= 5.5 */
     }
-    </style>
+</style>
 {% endblock extra_styles %}
+
 {% block content_left_page %}
     <div id="config-output" class="panel panel-default">
         <div class="panel-heading">
@@ -29,11 +31,11 @@
             <tr>
                 <td>Compliance Status</td>
                 <td>
-                    {% if object.compliance %}
-                        <span class="text-success"><i class="mdi mdi-check-bold"></i></span>
-                    {% else %}
-                        <span class="text-danger"><i class="mdi mdi-close"></i></span>
-                    {% endif %}
+                {% if object.compliance %}
+                    <span class="text-success"><i class="mdi mdi-check-bold"></i></span>
+                {% else %}
+                    <span class="text-danger"><i class="mdi mdi-close"></i></span>
+                {% endif %}
                 </td>
             </tr>
             <tr>
@@ -74,11 +76,11 @@
             <tr>
                 <td>Ordered</td>
                 <td>
-                    {% if object.ordered %}
-                        <span class="text-success"><i class="mdi mdi-check-bold"></i></span>
-                    {% else %}
-                        <span class="text-danger"><i class="mdi mdi-close"></i></span>
-                    {% endif %}
+                {% if object.ordered %}
+                    <span class="text-success"><i class="mdi mdi-check-bold"></i></span>
+                {% else %}
+                    <span class="text-danger"><i class="mdi mdi-close"></i></span>
+                {% endif %}
                 </td>
             </tr>
         </table>
@@ -86,11 +88,12 @@
     {% include 'inc/custom_fields_panel.html' %}
     {% include 'inc/relationships_panel.html' %}
 {% endblock %}
+
 {% block javascript %}
-    {{ block.super }}
-    <script>
+{{ block.super }}
+<script>
     var clipboard = new ClipboardJS('.btn');
     clipboard.on('success', function (e) {});
     clipboard.on('error', function (e) {});
-    </script>
+</script>
 {% endblock javascript %}

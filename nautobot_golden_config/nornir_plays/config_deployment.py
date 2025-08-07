@@ -16,6 +16,7 @@ from nornir.core.task import Result, Task
 from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
 
+from nautobot_golden_config.exceptions import ConfigPlanDeploymentFailure
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
 from nautobot_golden_config.utilities.constant import DEFAULT_DEPLOY_STATUS, ENABLE_POSTPROCESSING
@@ -115,7 +116,7 @@ def config_deployment(job):
         ) as nornir_obj:
             nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
 
-            nr_with_processors.run(
+            results = nr_with_processors.run(
                 task=run_deployment,
                 name="DEPLOY CONFIG",
                 logger=logger,
@@ -129,3 +130,5 @@ def config_deployment(job):
         raise NornirNautobotException(error_msg) from error
 
     logger.debug("Completed configuration deployment.")
+    if results.failed:
+        raise ConfigPlanDeploymentFailure()

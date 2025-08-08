@@ -2,12 +2,17 @@
 
 # pylint: disable=relative-beyond-top-level
 import difflib
+import hashlib
+import json
 import logging
 import os
 from collections import defaultdict
 from datetime import datetime
 
+import hier_config
+import yaml
 from django.utils.timezone import make_aware
+from hier_config.utils import HCONFIG_PLATFORM_V2_TO_V3_MAPPING, load_hconfig_v2_tags
 from lxml import etree
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
@@ -16,6 +21,7 @@ from nornir import InitNornir
 from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir.core.task import Result, Task
 from nornir_nautobot.exceptions import NornirNautobotException
+from pydantic import TypeAdapter
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
 from nautobot_golden_config.exceptions import ComplianceFailure
@@ -171,8 +177,17 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     intended_cfg = _open_file_config(intended_file)
 
     for rule in rules[obj.platform.network_driver]:
-        _actual = get_config_element(rule, backup_cfg, obj, logger)
-        _intended = get_config_element(rule, intended_cfg, obj, logger)
+        hier_config_rule = False
+
+        # Check for hier config compliance rule
+        section_type = rule["section"][0]
+        if "# hier_config" in section_type:
+            hier_config_rule = True
+        if hier_config_rule:
+            _actual, _intended = process_nested_compliance_rule_hier_config(rule, backup_cfg, intended_cfg, obj, logger)
+        else:
+            _actual = get_config_element(rule, backup_cfg, obj, logger)
+            _intended = get_config_element(rule, intended_cfg, obj, logger)
 
         # using update_or_create() method to conveniently update actual obj or create new one.
         ConfigCompliance.objects.update_or_create(
@@ -192,6 +207,115 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     logger.info("Successfully tested compliance job.", extra={"object": obj})
 
     return Result(host=task.host)
+
+
+def process_nested_compliance_rule_hier_config(rule, backup_cfg, intended_cfg, obj, logger):
+    """
+    Processes nested compliance rules using hierarchical configuration comparison.
+
+    This function compares backup (running) and intended configurations using hierarchical config parsing.
+    It applies tag-based filtering according to match criteria defined in the compliance rule's match_config.
+
+    Args:
+        rule (dict): Contains compliance rule details, including match configuration.
+        backup_cfg (str): The backup (running) configuration as a string.
+        intended_cfg (str): The intended configuration as a string.
+        obj (object): Object containing platform and device information.
+        logger (logging.Logger): Logger instance for logging errors and debug information.
+
+    Returns:
+        tuple[str, str]: Filtered running and intended configuration text for compliance comparison.
+
+    Notes:
+        Syntax from hier config v2 or v3 can be used. The match config must have # hier_config_v2 or # hier_config_v3
+        as a comment at the top of the YAML block to indicate which syntax is being used.
+
+    The match_config field in the rule should define hierarchical config tags and matching criteria in YAML format.
+    See: https://hier-config.readthedocs.io/en/latest/tags/
+    """
+    # Check if the compliance rule is of type CLI
+    if rule["obj"].config_type != ComplianceRuleConfigTypeChoice.TYPE_CLI:
+        error_msg = "Hier config compliance rules are only supported for CLI config types."
+        logger.error(error_msg, extra={"object": obj})
+        raise NornirNautobotException(error_msg)
+
+    # Convert v2 platform to v3 platform
+    v2_platform = obj.platform.network_driver_mappings.get("hier_config")
+    platform = HCONFIG_PLATFORM_V2_TO_V3_MAPPING.get(v2_platform)
+
+    if not platform:
+        error_msg = f"Unsupported platform for hier_config v3: {v2_platform}"
+        logger.error(error_msg, extra={"object": obj})
+        raise NornirNautobotException(error_msg)
+
+    # Create config objects using v3 API
+    running_config = hier_config.get_hconfig(platform_or_driver=platform, config_raw=backup_cfg)
+    generated_config = hier_config.get_hconfig(platform_or_driver=platform, config_raw=intended_cfg)
+
+    v3_tags = tuple()
+    tag_names = set()
+
+    # Convert hier config v2 syntax to v3 tags
+    if "hier_config_v2" in rule["obj"].match_config:
+        try:
+            match_config = yaml.safe_load(rule["obj"].match_config)
+            for lineage in match_config:
+                # Create a unique tag name for each lineage
+                tag_name = hashlib.sha1(json.dumps(lineage, sort_keys=True).encode()).hexdigest()  # noqa: S324
+                lineage["add_tags"] = tag_name
+                tag_names.add(tag_name)
+                v3_tags += load_hconfig_v2_tags([lineage])
+        except yaml.YAMLError as e:
+            error_msg = f"Invalid YAML in match_config: {str(e)}"
+            logger.error(error_msg, extra={"object": obj})
+            raise NornirNautobotException(error_msg)
+
+    # Create hier config v3 tags
+    if "hier_config_v3" in rule["obj"].match_config:
+        try:
+            match_config = yaml.safe_load(rule["obj"].match_config)
+            for tag_rule in match_config:
+                # Create a unique tag name for each match rule
+                tag_name = hashlib.sha1(json.dumps(tag_rule, sort_keys=True).encode()).hexdigest()  # noqa: S324
+                tag_rule["apply_tags"] = frozenset([tag_name])
+                tag_names.add(tag_name)
+            v3_tags = TypeAdapter(tuple[hier_config.models.TagRule, ...]).validate_python(match_config)
+        except yaml.YAMLError as e:
+            error_msg = f"Invalid YAML in match_config: {str(e)}"
+            logger.error(error_msg, extra={"object": obj})
+            raise NornirNautobotException(error_msg)
+
+    # Apply tags to the running and generated configs
+    for tag_rule in v3_tags:
+        for child in running_config.get_children_deep(tag_rule.match_rules):
+            child.tags_add(tag_rule.apply_tags)
+
+    for tag_rule in v3_tags:
+        for child in generated_config.get_children_deep(tag_rule.match_rules):
+            child.tags_add(tag_rule.apply_tags)
+
+    # Filter configs by the applied tags
+    running_config_generator = running_config.all_children_sorted_by_tags(tag_names, set())
+    running_text = "\n".join(c.cisco_style_text() for c in running_config_generator)
+
+    intended_config_generator = generated_config.all_children_sorted_by_tags(tag_names, set())
+    intended_text = "\n".join(c.cisco_style_text() for c in intended_config_generator)
+
+    # If the intended text is None, inject the top level parent lines from running config into the intended config.
+    # This will prevent the removal of top-level interfaces or other sections that are not matched by the tags
+    # For example, if the intent is to remove 'flow exporter' from the config when remediating
+    # Instead of this:
+    # no interface GigabitEthernet0/0
+    # we will have this:
+    # no flow exporter 192.0.0.1
+    if not intended_text:
+        running_config_top_level_lines = []
+        for child in running_config.all_children_sorted_by_tags(tag_names, set()):
+            if child.real_indent_level == 0 and child.cisco_style_text().startswith("interface"):
+                running_config_top_level_lines.append(child.cisco_style_text())
+        intended_text = "\n".join(running_config_top_level_lines)
+
+    return running_text, intended_text
 
 
 def config_compliance(job):  # pylint: disable=unused-argument

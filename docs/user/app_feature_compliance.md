@@ -61,6 +61,9 @@ For JSON based configs, the match is based on JSON's structure top level key nam
 !!! note
     "Config to Match" is mandatory for CLI configurations. If config to match is not defined for JSON, the complete JSON configuration will be compared. If the config to match is defined, comparison will take place only for defined keys.
 
+!!! tip "Advanced CLI Compliance: Hierarchical Configuration"
+    For more sophisticated CLI compliance checking, you can use **Hierarchical Configuration Compliance** which leverages the `hier_config` library for advanced tag-based filtering. This allows you to define complex matching rules based on configuration hierarchy rather than simple line-starting patterns. To use this feature, start your "Config to Match" field with `# hier_config_v2` or `# hier_config_v3` followed by YAML-formatted matching rules. See [Hierarchical Configuration Compliance](./app_feature_compliance_hierarchical.md) for detailed documentation.
+
 !!! note
     If the data is accidentally "corrupted" with a bad tested match, simply delete the devices an re-run the compliance process.
 

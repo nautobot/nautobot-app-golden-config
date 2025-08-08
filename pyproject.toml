@@ -115,7 +115,9 @@ max_line_length = 1000
 preserve_blank_lines = true
 preserve_leading_space = true
 max_attribute_length = 1000
-
+line_break_after_multiline_tag = false
+profile="django"
+extend_exclude = "docs/,nautobot_golden_config/static/"
 
 [tool.ruff]
 line-length = 120

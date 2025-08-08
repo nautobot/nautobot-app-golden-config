@@ -115,6 +115,7 @@ max_line_length = 1000
 preserve_blank_lines = true
 max_attribute_length = 1000
 line_break_after_multiline_tag = false
+format_attribute_template_tags = false
 profile="django"
 extend_exclude = "docs/,nautobot_golden_config/static/"
 

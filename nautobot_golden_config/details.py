@@ -97,7 +97,7 @@ golden_config_setting = ui.ObjectDetailContent(
             context_data_key="dg_data",
             label="Device Scope Details",
             value_transforms={
-                "Filter Query Logic": [helpers.render_json],
+                "Filter Query Logic": [lambda v: helpers.render_json(v, pretty_print=True)],
                 "Scope of Devices": [lambda v: helpers.hyperlinked_field(v.members.count(), v.get_group_members_url())],
             },
         ),

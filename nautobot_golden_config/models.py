@@ -24,6 +24,7 @@ from netutils.config.compliance import feature_compliance
 from xmldiff import actions, main
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
+from nautobot_golden_config.compliance_utils import parse_diff
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
 
 LOGGER = logging.getLogger(__name__)
@@ -127,13 +128,14 @@ def _get_json_compliance(obj):
 
 def _get_json_jdiff_compliance(obj):
     """This function performs the actual compliance for json serializable data."""
-    from nautobot_golden_config.utilities.helper import parse_diff  # pylint: disable=import-outside-toplevel
+    # from nautobot_golden_config.utilities.helper import parse_diff  # pylint: disable=import-outside-toplevel
 
     jdiff_param_match = CheckType.create("exact_match")
     actual_json = obj.actual.get(obj.rule.match_config, {})
     intended_json = obj.intended.get(obj.rule.match_config, {})
 
     result, compliant = jdiff_param_match.evaluate(actual_json, intended_json)
+    print(result)
     if compliant:
         compliance_int = 1
         compliance = True

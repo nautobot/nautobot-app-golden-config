@@ -128,9 +128,7 @@ router bgp 65001
         # Mock an unsupported platform
         self.mock_obj.platform.network_driver_mappings = {"hier_config": "unsupported_platform"}
 
-        with patch(
-            "nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING", {}
-        ):
+        with patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING", {}):
             with self.assertRaises(NornirNautobotException) as context:
                 process_nested_compliance_rule_hier_config(
                     mock_rule, self.backup_cfg, self.intended_cfg, self.mock_obj, self.mock_logger

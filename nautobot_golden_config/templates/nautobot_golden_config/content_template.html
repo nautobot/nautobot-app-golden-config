@@ -9,14 +9,20 @@
             <table class="table table-hover panel-body">
                 <thead>
                     <tr class="table-headings">
-                        <th>Feature</th>
-                        <th>Compliance</th>
+                        <th>
+Feature
+                        </th>
+                        <th>
+Compliance
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for item in compliance %}
                         <tr>
-                            <td>{{ item.rule__feature__name }}</td>
+                            <td>
+{{ item.rule__feature__name }}
+                            </td>
                             <td>
                                 {% if item.compliance == False %}
                                     <span class="label label-danger">Non-Compliant</span>
@@ -34,15 +40,23 @@
             <table class="table table-hover panel-body">
                 <thead>
                     <tr class="table-headings">
-                        <th>Feature</th>
-                        <th>Non-compliant</th>
-                        <th>Compliant</th>
+                        <th>
+Feature
+                        </th>
+                        <th>
+Non-compliant
+                        </th>
+                        <th>
+Compliant
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for item in compliance %}
                         <tr>
-                            <td>{{ item.rule__feature__name }}</td>
+                            <td>
+{{ item.rule__feature__name }}
+                            </td>
                             <td>
                                 <span class="label label-danger">{{ item.non_compliant }}</span>
                             </td>
@@ -65,14 +79,20 @@
         <table class="table table-hover panel-body">
             <thead>
                 <tr class="table-headings">
-                    <th>Type</th>
-                    <th>Config</th>
+                    <th>
+Type
+                    </th>
+                    <th>
+Config
+                    </th>
                 </tr>
             </thead>
             <tbody>
                 {% if config_features.compliance and golden_config.compliance_config %}
                     <tr>
-                        <td>Compliance</td>
+                        <td>
+Compliance
+                        </td>
                         <td>
                             <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=device.pk %}">
                                 <i class="mdi mdi-file-compare"></i>
@@ -80,9 +100,12 @@
                         </td>
                     </tr>
                 {% endif %}
+
                 {% if config_features.intended and golden_config.intended_config %}
                     <tr>
-                        <td>Intended</td>
+                        <td>
+Intended
+                        </td>
                         <td>
                             <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=device.pk %}">
                                 <i class="mdi mdi-text-box-check-outline"></i>
@@ -90,9 +113,12 @@
                         </td>
                     </tr>
                 {% endif %}
+
                 {% if config_features.postprocessing and golden_config.intended_config %}
                     <tr>
-                        <td>Configuration Postprocessing</td>
+                        <td>
+Configuration Postprocessing
+                        </td>
                         <td>
                             <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=device.pk %}">
                                 <i class="mdi mdi-text-box-check"></i>
@@ -100,9 +126,12 @@
                         </td>
                     </tr>
                 {% endif %}
+
                 {% if config_features.backup and golden_config.backup_config %}
                     <tr>
-                        <td>Actual</td>
+                        <td>
+Actual
+                        </td>
                         <td>
                             <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=device.pk %}">
                                 <i class="mdi mdi-file-document-outline"></i>
@@ -110,9 +139,12 @@
                         </td>
                     </tr>
                 {% endif %}
+
                 {% if config_features.sotagg %}
                     <tr>
-                        <td>SoT Aggregation Data</td>
+                        <td>
+SoT Aggregation Data
+                        </td>
                         <td>
                             <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_sotagg' pk=device.pk %}">
                                 <i class="mdi mdi-code-json"></i>

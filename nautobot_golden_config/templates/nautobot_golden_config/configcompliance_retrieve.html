@@ -19,15 +19,25 @@
         </div>
         <table class="table table-hover panel-body attr-table">
             <tr>
-                <td>Device Name</td>
-                <td>{{ object.device|hyperlinked_object }}</td>
+                <td>
+Device Name
+                </td>
+                <td>
+{{ object.device|hyperlinked_object }}
+                </td>
             </tr>
             <tr>
-                <td>Feature</td>
-                <td>{{ object.rule.feature|hyperlinked_object }}</td>
+                <td>
+Feature
+                </td>
+                <td>
+{{ object.rule.feature|hyperlinked_object }}
+                </td>
             </tr>
             <tr>
-                <td>Compliance Status</td>
+                <td>
+Compliance Status
+                </td>
                 <td>
                     {% if object.compliance %}
                         <span class="text-success"><i class="mdi mdi-check-bold"></i></span>
@@ -37,42 +47,54 @@
                 </td>
             </tr>
             <tr>
-                <td>Actual Configuration</td>
+                <td>
+Actual Configuration
+                </td>
                 <td>
                     <pre id="actual_config">{{ object.actual }}</pre>
-                    {% include "nautobot_golden_config/include/span_button.html" with target="actual_config" %}
+{% include "nautobot_golden_config/include/span_button.html" with target="actual_config" %}
                 </td>
             </tr>
             <tr>
-                <td>Intended Configuration</td>
+                <td>
+Intended Configuration
+                </td>
                 <td>
                     <pre id="intended_config">{{ object.intended }}</pre>
-                    {% include "nautobot_golden_config/include/span_button.html" with target="intended_config" %}
+{% include "nautobot_golden_config/include/span_button.html" with target="intended_config" %}
                 </td>
             </tr>
             <tr>
-                <td>Extra Configuration</td>
+                <td>
+Extra Configuration
+                </td>
                 <td>
                     <pre id="extra_config">{{ object.extra }}</pre>
-                    {% include "nautobot_golden_config/include/span_button.html" with target="extra_config" %}
+{% include "nautobot_golden_config/include/span_button.html" with target="extra_config" %}
                 </td>
             </tr>
             <tr>
-                <td>Missing Configuration</td>
+                <td>
+Missing Configuration
+                </td>
                 <td>
                     <pre id="missing_config">{{ object.missing }}</pre>
-                    {% include "nautobot_golden_config/include/span_button.html" with target="missing_config" %}
+{% include "nautobot_golden_config/include/span_button.html" with target="missing_config" %}
                 </td>
             </tr>
             <tr>
-                <td>Remediating Configuration</td>
+                <td>
+Remediating Configuration
+                </td>
                 <td>
                     <pre id="remediation_config">{{ object.remediation }}</pre>
-                    {% include "nautobot_golden_config/include/span_button.html" with target="remediation_config" %}
+{% include "nautobot_golden_config/include/span_button.html" with target="remediation_config" %}
                 </td>
             </tr>
             <tr>
-                <td>Ordered</td>
+                <td>
+Ordered
+                </td>
                 <td>
                     {% if object.ordered %}
                         <span class="text-success"><i class="mdi mdi-check-bold"></i></span>
@@ -83,8 +105,8 @@
             </tr>
         </table>
     </div>
-    {% include 'inc/custom_fields_panel.html' %}
-    {% include 'inc/relationships_panel.html' %}
+{% include 'inc/custom_fields_panel.html' %}
+{% include 'inc/relationships_panel.html' %}
 {% endblock %}
 {% block javascript %}
     {{ block.super }}

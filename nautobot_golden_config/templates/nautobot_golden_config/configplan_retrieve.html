@@ -18,19 +18,33 @@
         </div>
         <table class="table table-hover panel-body attr-table table-responsive">
             <tr>
-                <td>Device</td>
-                <td>{{ object.device|hyperlinked_object }}</td>
+                <td>
+Device
+                </td>
+                <td>
+{{ object.device|hyperlinked_object }}
+                </td>
             </tr>
             <tr>
-                <td>Date Created</td>
-                <td>{{ object.created }}</td>
+                <td>
+Date Created
+                </td>
+                <td>
+{{ object.created }}
+                </td>
             </tr>
             <tr>
-                <td>Plan Type</td>
-                <td>{{ object.plan_type|title }}</td>
+                <td>
+Plan Type
+                </td>
+                <td>
+{{ object.plan_type|title }}
+                </td>
             </tr>
             <tr>
-                <td>Features</td>
+                <td>
+Features
+                </td>
                 <td>
                     {% if object.feature.exists %}
                         <ul>
@@ -46,31 +60,43 @@
                 </td>
             </tr>
             <tr>
-                <td>Change Control ID</td>
-                <td>{{ object.change_control_id|placeholder }}</td>
+                <td>
+Change Control ID
+                </td>
+                <td>
+{{ object.change_control_id|placeholder }}
+                </td>
             </tr>
             <tr>
-                <td>Change Control URL</td>
+                <td>
+Change Control URL
+                </td>
                 <td>
                     <a href="{{ object.change_control_url }}">{{ object.change_control_url|placeholder }}</a>
                 </td>
             </tr>
             <tr>
-                <td>Plan Result</td>
-                <td>{{ object.plan_result|hyperlinked_object:"status" }}</td>
+                <td>
+Plan Result
+                </td>
+                <td>
+{{ object.plan_result|hyperlinked_object:"status" }}
+                </td>
             </tr>
             <tr>
-                <td>Deploy Result</td>
                 <td>
-                {{ object.deploy_result|hyperlinked_object:"status"|placeholder }}</a>
+Deploy Result
+                </td>
+                <td>
+                                {{ object.deploy_result|hyperlinked_object:"status"|placeholder }}</a>
             </td>
         </tr>
         <tr>
-            <td>Status</td>
             <td>
-                <span class="label"
-                      style="color: {{ object.status.color|fgcolor }};
-                             background-color: #{{ object.status.color }}">{{ object.get_status_display }}</span>
+Status
+            </td>
+            <td>
+                <span class="label" style="color: {{ object.status.color|fgcolor }}; background-color: #{{ object.status.color }}">{{ object.get_status_display }}</span>
             </td>
         </tr>
     </table>
@@ -83,38 +109,35 @@
         </div>
         <table class="table table-hover panel-body attr-table table-responsive table-wrapper">
             <tr>
-                <td>Config Set</td>
+                <td>
+Config Set
+                </td>
                 <td>
                     <span id="config_set"><pre>{{ object.config_set }}</pre></span>
                     <span class="config_hover_button">
-                        <button type="button"
-                                class="btn btn-inline btn-default hover_copy_button"
-                                data-clipboard-action='copy'
-                                data-clipboard-target="#config_set">
+                        <button type="button" class="btn btn-inline btn-default hover_copy_button" data-clipboard-action='copy' data-clipboard-target="#config_set">
                             <span class="mdi mdi-content-copy"></span>
                         </button>
                     </span>
                 </td>
             </tr>
             <tr>
-                <td>Postprocessed Config Set</td>
                 <td>
-                    <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=object.device.id %}?config_plan_id={{ object.id }}&modal=true"
-                       data-toggle="modal"
-                       data-target="#ccppModal">
+Postprocessed Config Set
+                </td>
+                <td>
+                    <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=object.device.id %}?config_plan_id={{ object.id }}&modal=true" data-toggle="modal" data-target="#ccppModal">
                         <i class="mdi mdi-text-box-check"></i>
                     </a>
-                    <div class="modal fade"
-                         id="ccppModal"
-                         tabindex="-1"
-                         role="dialog"
-                         aria-labelledby="ccppModalLabel">
+                    <div class="modal fade" id="ccppModal" tabindex="-1" role="dialog" aria-labelledby="ccppModalLabel">
                         <div class="modal-dialog modal-lg" role="document">
                             <div class="modal-content">
                                 <div class="modal-body">
                                     Generating Post Processed Config...
-                                    <div class="loader"></div>
-                                    <div id="diff-loader" class="loader"></div>
+                                    <div class="loader">
+                                    </div>
+                                    <div id="diff-loader" class="loader">
+                                    </div>
                                 </div>
                             </div>
                         </div>

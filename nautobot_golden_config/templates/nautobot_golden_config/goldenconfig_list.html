@@ -2,9 +2,13 @@
 {% load buttons %}
 {% load static %}
 {% load helpers %}
+
 <h1>
-    {% block title %}Configuration Overview{% endblock %}
+    {% block title %}
+Configuration Overview
+    {% endblock %}
 </h1>
+
 {% block extra_styles %}
     <style>
     #actions {
@@ -30,13 +34,10 @@
     }
     </style>
 {% endblock extra_styles %}
+
 {% block buttons %}
     <div class="btn-group">
-        <button type="button"
-                class="btn btn-primary dropdown-toggle"
-                data-toggle="dropdown"
-                aria-haspopup="true"
-                aria-expanded="false">
+        <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <span class="mdi mdi-plus-thick" aria-hidden="true"></span> Execute <span class="caret"></span>
         </button>
         <ul class="dropdown-menu">
@@ -64,26 +65,30 @@
     </div>
 {% endblock %}
 {% block content %}
-    {{ block.super }}
+  {{ block.super }}
+
     <div class="modal fade" id="gcModal" role="dialog">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title">
-                        Golden Configuration
+Golden Configuration
                     </h4>
                 </div>
-                <div id="gc-modal-body" class="modal-body"></div>
+                <div id="gc-modal-body" class="modal-body">
+                </div>
                 <div class="modal-footer">
                     <a id="detail_view" class="btn btn-primary">Detailed View</a>
-                    <button id="close" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button id="close" type="button" class="btn btn-default" data-dismiss="modal">
+Close
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 {% endblock %}
 {% block javascript %}
-    {{ block.super }}
+{{ block.super }}
     <script src="{% static 'js/tableconfig.js' %}"></script>
     <script>
     $( document ).ready(function(){

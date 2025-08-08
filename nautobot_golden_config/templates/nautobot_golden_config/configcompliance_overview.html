@@ -2,7 +2,11 @@
 {% load buttons %}
 {% load static %}
 {% load helpers %}
-{% block title %}Overview Reports{% endblock %}
+
+{% block title %}
+Overview Reports
+{% endblock %}
+
 {% block breadcrumbs %}
     <li>
         <a href="{% url 'plugins:nautobot_golden_config:configcompliance_overview' %}">Overview Reports</a>
@@ -10,13 +14,10 @@
     {% block extra_breadcrumbs %}
     {% endblock extra_breadcrumbs %}
 {% endblock breadcrumbs %}
+
 {% block buttons %}
     <div class="btn-group">
-        <button type="button"
-                class="btn btn-primary dropdown-toggle"
-                data-toggle="dropdown"
-                aria-haspopup="true"
-                aria-expanded="false">
+        <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <span class="mdi mdi-plus-thick" aria-hidden="true"></span> Execute <span class="caret"></span>
         </button>
         <ul class="dropdown-menu">
@@ -28,6 +29,7 @@
         </ul>
     </div>
 {% endblock %}
+
 {% block table %}
     <div class="col-md-12">
         <!-- VISUAL BLOCK -->
@@ -41,7 +43,9 @@
             <span class=" text-center alert-danger p-4 m-4 ">-- Oops, no config compliances found, visual not made! --</span>
         {% endif %}
         <!-- END VISUAL BLOCK -->
-        <h3 class="text-center m-2 p-3">Executive Summary</h3>
+        <h3 class="text-center m-2 p-3">
+Executive Summary
+        </h3>
         <table class="table table-hover table-headings">
             <thead>
                 <tr>
@@ -67,84 +71,88 @@
             </thead>
             <tbody>
                 <tr class="even">
-                    <td>Devices</td>
+                    <td>
+Devices
+                    </td>
                     <td>
                         {% if device_aggr.total is not None %}
-                            {{ device_aggr.total }}
+ {{ device_aggr.total }}
                         {% else %}
-                            --
+ --
                         {% endif %}
                     </td>
                     <td>
                         {% if device_aggr.compliants is not None %}
-                            {{ device_aggr.compliants }}
+ {{ device_aggr.compliants }}
                         {% else %}
-                            --
+ --
                         {% endif %}
                     </td>
                     <td>
                         {% if device_aggr.non_compliants is not None %}
-                            {{ device_aggr.non_compliants }}
+ {{ device_aggr.non_compliants }}
                         {% else %}
-                            --
+ --
                         {% endif %}
                     </td>
                     <td>
                         {% if device_aggr.comp_percents is not None %}
-                            {{ device_aggr.comp_percents }} %
+ {{ device_aggr.comp_percents }} %
                         {% else %}
-                            --
+ --
                         {% endif %}
                     </td>
                     <td>
-                        <img style="width:120px"
-                             src="data:image/png;base64,{{ device_visual|safe }}">
+                        <img style="width:120px;" src= "data:image/png;base64,{{ device_visual|safe }}">
                     </td>
                 </tr>
                 <tr class="even">
-                    <td>Features</td>
+                    <td>
+Features
+                    </td>
                     <td>
                         {% if feature_aggr.total is not None %}
-                            {{ feature_aggr.total }}
+ {{ feature_aggr.total }}
                         {% else %}
-                            --
+ --
                         {% endif %}
                     </td>
                     <td>
                         {% if feature_aggr.compliants is not None %}
-                            {{ feature_aggr.compliants }}
+ {{ feature_aggr.compliants }}
                         {% else %}
-                            --
+ --
                         {% endif %}
                     </td>
                     <td>
                         {% if feature_aggr.non_compliants is not None %}
-                            {{ feature_aggr.non_compliants }}
+ {{ feature_aggr.non_compliants }}
                         {% else %}
-                            --
+ --
                         {% endif %}
                     </td>
                     <td>
                         {% if feature_aggr.comp_percents is not None %}
-                            {{ feature_aggr.comp_percents }} %
+ {{ feature_aggr.comp_percents }} %
                         {% else %}
-                            --
+ --
                         {% endif %}
                     </td>
                     <td>
-                        <img style="width:120px"
-                             src="data:image/png;base64,{{ feature_visual|safe }}">
+                        <img style="width:120px;" src= "data:image/png;base64,{{ feature_visual|safe }}">
                     </td>
                 </tr>
             </tbody>
         </table>
-        <h3 class="text-center m-2 p-3">Feature Summary</h3>
-        {% include 'utilities/obj_table.html' %}
+        <h3 class="text-center m-2 p-3">
+Feature Summary
+        </h3>
+{% include 'utilities/obj_table.html' %}
     </div>
 </div>
 {% table_config_form table table_name="ObjectTable" %}
 {% endblock %}
 {% block javascript %}
-    {{ block.super }}
+{{ block.super }}
     <script src="{% static 'js/tableconfig.js' %}"></script>
 {% endblock %}

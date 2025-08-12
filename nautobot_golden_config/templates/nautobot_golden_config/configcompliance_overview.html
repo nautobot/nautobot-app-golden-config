@@ -15,8 +15,8 @@
 
 {% block buttons %}
     <div class="btn-group">
-        <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            <span class="mdi mdi-plus-thick" aria-hidden="true"></span> Execute <span class="caret"></span>
+        <button aria-expanded="false" aria-haspopup="true" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" type="button">
+            <span aria-hidden="true" class="mdi mdi-plus-thick"></span> Execute <span class="caret"></span>
         </button>
         <ul class="dropdown-menu">
             {% if compliance %}
@@ -34,11 +34,11 @@
         {% if bar_chart is not None %}
             {% block graphic %}
                 <div id="content">
-                    <img src="data:image/png;base64,{{ bar_chart|safe }}" style="width:100%">
+                    <img src="data:image/png;base64,{{ bar_chart|safe }}" style="width:100%" />
                 </div>
             {% endblock %}
         {% else %}
-            <span class=" text-center alert-danger p-4 m-4 ">-- Oops, no config compliances found, visual not made! --</span>
+            <span class="text-center alert-danger p-4 m-4">-- Oops, no config compliances found, visual not made! --</span>
         {% endif %}
         <!-- END VISUAL BLOCK -->
         <h3 class="text-center m-2 p-3">Executive Summary</h3>
@@ -97,7 +97,7 @@
                         {% endif %}
                     </td>
                     <td>
-                        <img style="width:120px;" src= "data:image/png;base64,{{ device_visual|safe }}">
+                        <img src="data:image/png;base64,{{ device_visual|safe }}" style="width:120px;" />
                     </td>
                 </tr>
                 <tr class="even">
@@ -131,7 +131,7 @@
                         {% endif %}
                     </td>
                     <td>
-                        <img style="width:120px;" src= "data:image/png;base64,{{ feature_visual|safe }}">
+                        <img src="data:image/png;base64,{{ feature_visual|safe }}" style="width:120px;" />
                     </td>
                 </tr>
             </tbody>
@@ -139,8 +139,8 @@
         <h3 class="text-center m-2 p-3">Feature Summary</h3>
         {% include 'utilities/obj_table.html' %}
     </div>
-</div>
-{% table_config_form table table_name="ObjectTable" %}
+
+    {% table_config_form table table_name="ObjectTable" %}
 {% endblock %}
 {% block javascript %}
     {{ block.super }}

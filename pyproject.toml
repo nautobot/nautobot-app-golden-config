@@ -72,6 +72,7 @@ griffe = "1.1.1"
 towncrier = ">=23.6.0,<=24.8.0"
 to-json-schema = "*"
 jsonschema = "*"
+djhtml = ">=3.0.8,<4.0.0"
 
 [tool.poetry.extras]
 all = [

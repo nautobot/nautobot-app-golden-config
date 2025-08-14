@@ -139,52 +139,9 @@ router bgp 65001
 
     @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
     @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.load_hconfig_v2_tags")
-    def test_hier_config_v2_syntax_success(self, mock_load_v2_tags, mock_platform_mapping, mock_hier_config):
-        """Test successful processing with hier_config v2 syntax."""
-        # Setup mocks
-        mock_platform_mapping.get.return_value = "cisco_ios"
-        mock_running_config = Mock()
-        mock_generated_config = Mock()
-        mock_hier_config.get_hconfig.side_effect = [mock_running_config, mock_generated_config]
-
-        # Mock tag rule
-        mock_tag_rule = Mock()
-        mock_tag_rule.match_rules = ["interface"]
-        mock_tag_rule.apply_tags = frozenset(["test_tag"])
-        mock_load_v2_tags.return_value = (mock_tag_rule,)
-
-        # Mock config children
-        mock_child = Mock()
-        mock_child.cisco_style_text.return_value = "interface GigabitEthernet0/1"
-        mock_running_config.get_children_deep.return_value = [mock_child]
-        mock_generated_config.get_children_deep.return_value = [mock_child]
-        mock_running_config.all_children_sorted_by_tags.return_value = [mock_child]
-        mock_generated_config.all_children_sorted_by_tags.return_value = [mock_child]
-
-        mock_rule = {
-            "obj": Mock(
-                config_type=ComplianceRuleConfigTypeChoice.TYPE_CLI,
-                match_config="# hier_config_v2\n- lineage:\n  - startswith: interface",
-            )
-        }
-
-        running_text, intended_text = process_nested_compliance_rule_hier_config(
-            mock_rule, self.backup_cfg, self.intended_cfg, self.mock_obj, self.mock_logger
-        )
-
-        # Verify results
-        self.assertEqual(running_text, "interface GigabitEthernet0/1")
-        self.assertEqual(intended_text, "interface GigabitEthernet0/1")
-        mock_hier_config.get_hconfig.assert_called()
-        mock_load_v2_tags.assert_called_once()
-
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")
     @patch("nautobot_golden_config.nornir_plays.config_compliance.TypeAdapter")
-    def test_hier_config_v3_syntax_success(self, mock_type_adapter, mock_platform_mapping, mock_hier_config):
-        """Test successful processing with hier_config v3 syntax."""
-        # Setup mocks
+    def test_hier_config_syntax_success(self, mock_type_adapter, mock_platform_mapping, mock_hier_config):
+        """Test successful processing with hier_config syntax (# hier_config)."""
         mock_platform_mapping.get.return_value = "cisco_ios"
         mock_running_config = Mock()
         mock_generated_config = Mock()
@@ -209,7 +166,7 @@ router bgp 65001
         mock_rule = {
             "obj": Mock(
                 config_type=ComplianceRuleConfigTypeChoice.TYPE_CLI,
-                match_config="# hier_config_v3\n- match_rules:\n  - startswith: interface",
+                match_config="# hier_config\n- match_rules:\n  - startswith: interface",
             )
         }
 
@@ -226,116 +183,30 @@ router bgp 65001
     @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
     @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")
     @patch("nautobot_golden_config.nornir_plays.config_compliance.yaml.safe_load")
-    def test_invalid_yaml_v2_raises_exception(self, mock_yaml_load, mock_platform_mapping, mock_hier_config):
-        """Test that invalid YAML in v2 config raises an exception."""
-        # Setup platform mapping
+    def test_invalid_yaml_raises_exception(self, mock_yaml_load, mock_platform_mapping, mock_hier_config):
+        """Test that invalid YAML in compliance rule raises an exception."""
         mock_platform_mapping.get.return_value = "cisco_ios"
 
         # Mock YAML parsing to raise an exception
         mock_yaml_load.side_effect = yaml.YAMLError("Invalid YAML syntax")
-
         mock_rule = {
             "obj": Mock(
                 config_type=ComplianceRuleConfigTypeChoice.TYPE_CLI,
-                match_config="# hier_config_v2\ninvalid: yaml: content: [",
+                match_config="# hier_config\ninvalid: yaml: content: [",
             )
         }
-
         with self.assertRaises(NornirNautobotException) as context:
             process_nested_compliance_rule_hier_config(
                 mock_rule, self.backup_cfg, self.intended_cfg, self.mock_obj, self.mock_logger
             )
-
         self.assertIn("Invalid YAML in match_config", str(context.exception))
         self.mock_logger.error.assert_called_once()
-
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.yaml.safe_load")
-    def test_invalid_yaml_v3_raises_exception(self, mock_yaml_load, mock_platform_mapping, mock_hier_config):
-        """Test that invalid YAML in v3 config raises an exception."""
-        # Setup platform mapping
-        mock_platform_mapping.get.return_value = "cisco_ios"
-
-        # Mock YAML parsing to raise an exception
-        mock_yaml_load.side_effect = yaml.YAMLError("Invalid YAML syntax")
-
-        mock_rule = {
-            "obj": Mock(
-                config_type=ComplianceRuleConfigTypeChoice.TYPE_CLI,
-                match_config="# hier_config_v3\ninvalid: yaml: content: [",
-            )
-        }
-
-        with self.assertRaises(NornirNautobotException) as context:
-            process_nested_compliance_rule_hier_config(
-                mock_rule, self.backup_cfg, self.intended_cfg, self.mock_obj, self.mock_logger
-            )
-
-        self.assertIn("Invalid YAML in match_config", str(context.exception))
-        self.mock_logger.error.assert_called_once()
-
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.load_hconfig_v2_tags")
-    def test_multiple_rules_v2_syntax(self, mock_load_v2_tags, mock_platform_mapping, mock_hier_config):
-        """Test processing with multiple rules in v2 syntax."""
-        # Setup mocks
-        mock_platform_mapping.get.return_value = "cisco_ios"
-        mock_running_config = Mock()
-        mock_generated_config = Mock()
-        mock_hier_config.get_hconfig.side_effect = [mock_running_config, mock_generated_config]
-
-        # Mock tag rules
-        mock_tag_rule1 = Mock()
-        mock_tag_rule1.match_rules = ["interface"]
-        mock_tag_rule1.apply_tags = frozenset(["interface_tag"])
-
-        mock_tag_rule2 = Mock()
-        mock_tag_rule2.match_rules = ["router bgp"]
-        mock_tag_rule2.apply_tags = frozenset(["bgp_tag"])
-
-        mock_load_v2_tags.side_effect = [(mock_tag_rule1,), (mock_tag_rule2,)]
-
-        # Mock config children
-        mock_interface_child = Mock()
-        mock_interface_child.cisco_style_text.return_value = "interface GigabitEthernet0/1"
-        mock_bgp_child = Mock()
-        mock_bgp_child.cisco_style_text.return_value = "router bgp 65001"
-
-        mock_running_config.get_children_deep.return_value = [mock_interface_child, mock_bgp_child]
-        mock_generated_config.get_children_deep.return_value = [mock_interface_child, mock_bgp_child]
-        mock_running_config.all_children_sorted_by_tags.return_value = [mock_interface_child, mock_bgp_child]
-        mock_generated_config.all_children_sorted_by_tags.return_value = [mock_interface_child, mock_bgp_child]
-
-        mock_rule = {
-            "obj": Mock(
-                config_type=ComplianceRuleConfigTypeChoice.TYPE_CLI,
-                match_config="""# hier_config_v2
-- lineage:
-  - startswith: interface
-- lineage:
-  - startswith: router bgp""",
-            )
-        }
-
-        running_text, intended_text = process_nested_compliance_rule_hier_config(
-            mock_rule, self.backup_cfg, self.intended_cfg, self.mock_obj, self.mock_logger
-        )
-
-        expected_text = "interface GigabitEthernet0/1\nrouter bgp 65001"
-        self.assertEqual(running_text, expected_text)
-        self.assertEqual(intended_text, expected_text)
-
-        # Verify load_hconfig_v2_tags was called twice (once for each lineage)
-        self.assertEqual(mock_load_v2_tags.call_count, 2)
 
     @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
     @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")
     @patch("nautobot_golden_config.nornir_plays.config_compliance.TypeAdapter")
-    def test_multiple_rules_v3_syntax(self, mock_type_adapter, mock_platform_mapping, mock_hier_config):
-        """Test processing with multiple rules in v3 syntax."""
-        # Setup mocks
+    def test_multiple_rules(self, mock_type_adapter, mock_platform_mapping, mock_hier_config):
+        """Test processing with multiple match configs in a single compliance rule."""
         mock_platform_mapping.get.return_value = "cisco_ios"
         mock_running_config = Mock()
         mock_generated_config = Mock()
@@ -345,11 +216,9 @@ router bgp 65001
         mock_tag_rule1 = Mock()
         mock_tag_rule1.match_rules = ["interface"]
         mock_tag_rule1.apply_tags = frozenset(["interface_tag"])
-
         mock_tag_rule2 = Mock()
         mock_tag_rule2.match_rules = ["router bgp"]
         mock_tag_rule2.apply_tags = frozenset(["bgp_tag"])
-
         mock_type_adapter_instance = Mock()
         mock_type_adapter_instance.validate_python.return_value = (mock_tag_rule1, mock_tag_rule2)
         mock_type_adapter.return_value = mock_type_adapter_instance
@@ -359,7 +228,6 @@ router bgp 65001
         mock_interface_child.cisco_style_text.return_value = "interface GigabitEthernet0/1"
         mock_bgp_child = Mock()
         mock_bgp_child.cisco_style_text.return_value = "router bgp 65001"
-
         mock_running_config.get_children_deep.return_value = [mock_interface_child, mock_bgp_child]
         mock_generated_config.get_children_deep.return_value = [mock_interface_child, mock_bgp_child]
         mock_running_config.all_children_sorted_by_tags.return_value = [mock_interface_child, mock_bgp_child]
@@ -368,7 +236,7 @@ router bgp 65001
         mock_rule = {
             "obj": Mock(
                 config_type=ComplianceRuleConfigTypeChoice.TYPE_CLI,
-                match_config="""# hier_config_v3
+                match_config="""# hier_config
 - match_rules:
   - startswith: interface
 - match_rules:
@@ -379,19 +247,16 @@ router bgp 65001
         running_text, intended_text = process_nested_compliance_rule_hier_config(
             mock_rule, self.backup_cfg, self.intended_cfg, self.mock_obj, self.mock_logger
         )
-
         expected_text = "interface GigabitEthernet0/1\nrouter bgp 65001"
         self.assertEqual(running_text, expected_text)
         self.assertEqual(intended_text, expected_text)
-
-        # Verify TypeAdapter was used to validate the rules
         mock_type_adapter_instance.validate_python.assert_called_once()
 
     @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
     @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.load_hconfig_v2_tags")
+    @patch("nautobot_golden_config.nornir_plays.config_compliance.TypeAdapter")
     def test_empty_filtered_config_with_interface_fallback(
-        self, mock_load_v2_tags, mock_platform_mapping, mock_hier_config
+        self, mock_type_adapter, mock_platform_mapping, mock_hier_config
     ):
         """Test processing when intended config is empty but running config has interfaces (fallback behavior)."""
         # Setup mocks
@@ -399,12 +264,13 @@ router bgp 65001
         mock_running_config = Mock()
         mock_generated_config = Mock()
         mock_hier_config.get_hconfig.side_effect = [mock_running_config, mock_generated_config]
-
-        # Mock tag rule
+        # Mock tag rule via TypeAdapter
         mock_tag_rule = Mock()
         mock_tag_rule.match_rules = ["flow exporter"]
         mock_tag_rule.apply_tags = frozenset(["test_tag"])
-        mock_load_v2_tags.return_value = (mock_tag_rule,)
+        mock_type_adapter_instance = Mock()
+        mock_type_adapter_instance.validate_python.return_value = (mock_tag_rule,)
+        mock_type_adapter.return_value = mock_type_adapter_instance
 
         # Mock running config with interface and flow exporter
         mock_interface_child = Mock()
@@ -417,8 +283,11 @@ router bgp 65001
 
         # Only the flow exporter should match the tag rule
         mock_running_config.get_children_deep.return_value = [mock_flow_child]
-        # Only tagged elements should be returned by all_children_sorted_by_tags
-        mock_running_config.all_children_sorted_by_tags.return_value = [mock_flow_child]
+        # Fallback second call coverage
+        mock_running_config.all_children_sorted_by_tags.side_effect = [
+            [mock_flow_child],
+            [mock_interface_child, mock_flow_child],
+        ]
 
         # Generated config has no matching elements (empty intended config)
         mock_generated_config.get_children_deep.return_value = []
@@ -427,15 +296,9 @@ router bgp 65001
         mock_rule = {
             "obj": Mock(
                 config_type=ComplianceRuleConfigTypeChoice.TYPE_CLI,
-                match_config="# hier_config_v2\n- lineage:\n  - startswith: flow exporter",
+                match_config="# hier_config\n- match_rules:\n  - startswith: flow exporter",
             )
         }
-
-        # Mock the second call to all_children_sorted_by_tags for interface fallback
-        mock_running_config.all_children_sorted_by_tags.side_effect = [
-            [mock_flow_child],  # First call returns tagged elements
-            [mock_interface_child, mock_flow_child],  # Second call in fallback returns all elements
-        ]
 
         running_text, intended_text = process_nested_compliance_rule_hier_config(
             mock_rule, self.backup_cfg, self.intended_cfg, self.mock_obj, self.mock_logger
@@ -448,8 +311,8 @@ router bgp 65001
 
     @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
     @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.load_hconfig_v2_tags")
-    def test_empty_filtered_config_no_interfaces(self, mock_load_v2_tags, mock_platform_mapping, mock_hier_config):
+    @patch("nautobot_golden_config.nornir_plays.config_compliance.TypeAdapter")
+    def test_empty_filtered_config_no_interfaces(self, mock_type_adapter, mock_platform_mapping, mock_hier_config):
         """Test processing when both configs are empty and no interfaces are available for fallback."""
         # Setup mocks
         mock_platform_mapping.get.return_value = "cisco_ios"
@@ -461,7 +324,9 @@ router bgp 65001
         mock_tag_rule = Mock()
         mock_tag_rule.match_rules = ["nonexistent"]
         mock_tag_rule.apply_tags = frozenset(["test_tag"])
-        mock_load_v2_tags.return_value = (mock_tag_rule,)
+        mock_type_adapter_instance = Mock()
+        mock_type_adapter_instance.validate_python.return_value = (mock_tag_rule,)
+        mock_type_adapter.return_value = mock_type_adapter_instance
 
         # Mock empty results for both configs
         mock_running_config.get_children_deep.return_value = []
@@ -472,7 +337,7 @@ router bgp 65001
         mock_rule = {
             "obj": Mock(
                 config_type=ComplianceRuleConfigTypeChoice.TYPE_CLI,
-                match_config="# hier_config_v2\n- lineage:\n  - startswith: nonexistent",
+                match_config="# hier_config\n- match_rules:\n  - startswith: nonexistent",
             )
         }
 
@@ -486,9 +351,9 @@ router bgp 65001
 
     @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
     @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.load_hconfig_v2_tags")
+    @patch("nautobot_golden_config.nornir_plays.config_compliance.TypeAdapter")
     def test_interface_fallback_only_top_level_interfaces(
-        self, mock_load_v2_tags, mock_platform_mapping, mock_hier_config
+        self, mock_type_adapter, mock_platform_mapping, mock_hier_config
     ):
         """Test that fallback only includes top-level interface lines."""
         # Setup mocks
@@ -499,50 +364,38 @@ router bgp 65001
 
         # Mock tag rule
         mock_tag_rule = Mock()
-        mock_tag_rule.match_rules = ["bgp"]
+        mock_tag_rule.match_rules = ["router bgp"]
         mock_tag_rule.apply_tags = frozenset(["test_tag"])
-        mock_load_v2_tags.return_value = (mock_tag_rule,)
+        mock_type_adapter_instance = Mock()
+        mock_type_adapter_instance.validate_python.return_value = (mock_tag_rule,)
+        mock_type_adapter.return_value = mock_type_adapter_instance
 
         # Mock children with different indent levels
         mock_interface_child = Mock()
         mock_interface_child.cisco_style_text.return_value = "interface GigabitEthernet0/1"
-        mock_interface_child.real_indent_level = 0  # Top-level
-
+        mock_interface_child.real_indent_level = 0
         mock_sub_interface_child = Mock()
         mock_sub_interface_child.cisco_style_text.return_value = "interface GigabitEthernet0/1.100"
-        mock_sub_interface_child.real_indent_level = 1  # Nested, should be excluded
-
+        mock_sub_interface_child.real_indent_level = 1
         mock_other_child = Mock()
         mock_other_child.cisco_style_text.return_value = "hostname router1"
-        mock_other_child.real_indent_level = 0  # Top-level but not interface
-
-        # Running config has BGP
+        mock_other_child.real_indent_level = 0
         mock_bgp_child = Mock()
         mock_bgp_child.cisco_style_text.return_value = "router bgp 65001"
         mock_running_config.get_children_deep.return_value = [mock_bgp_child]
-
-        # Mock the second call to all_children_sorted_by_tags for interface fallback
         mock_running_config.all_children_sorted_by_tags.side_effect = [
-            [mock_bgp_child],  # First call returns only tagged BGP elements
-            [
-                mock_interface_child,
-                mock_sub_interface_child,
-                mock_other_child,
-                mock_bgp_child,
-            ],  # Second call for fallback
+            [mock_bgp_child],
+            [mock_interface_child, mock_sub_interface_child, mock_other_child, mock_bgp_child],
         ]
-
         # Generated config is empty
         mock_generated_config.get_children_deep.return_value = []
         mock_generated_config.all_children_sorted_by_tags.return_value = []
-
         mock_rule = {
             "obj": Mock(
                 config_type=ComplianceRuleConfigTypeChoice.TYPE_CLI,
-                match_config="# hier_config_v2\n- lineage:\n  - startswith: router bgp",
+                match_config="# hier_config\n- match_rules:\n  - startswith: router bgp",
             )
         }
-
         running_text, intended_text = process_nested_compliance_rule_hier_config(
             mock_rule, self.backup_cfg, self.intended_cfg, self.mock_obj, self.mock_logger
         )
@@ -554,8 +407,8 @@ router bgp 65001
 
     @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
     @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.load_hconfig_v2_tags")
-    def test_multiple_interface_fallback(self, mock_load_v2_tags, mock_platform_mapping, mock_hier_config):
+    @patch("nautobot_golden_config.nornir_plays.config_compliance.TypeAdapter")
+    def test_multiple_interface_fallback(self, mock_type_adapter, mock_platform_mapping, mock_hier_config):
         """Test fallback behavior with multiple top-level interfaces."""
         # Setup mocks
         mock_platform_mapping.get.return_value = "cisco_ios"
@@ -565,19 +418,17 @@ router bgp 65001
 
         # Mock tag rule
         mock_tag_rule = Mock()
-        mock_tag_rule.match_rules = ["snmp"]
+        mock_tag_rule.match_rules = ["snmp-server"]
         mock_tag_rule.apply_tags = frozenset(["test_tag"])
-        mock_load_v2_tags.return_value = (mock_tag_rule,)
-
-        # Mock multiple interface children
+        mock_type_adapter_instance = Mock()
+        mock_type_adapter_instance.validate_python.return_value = (mock_tag_rule,)
+        mock_type_adapter.return_value = mock_type_adapter_instance
         mock_interface1 = Mock()
         mock_interface1.cisco_style_text.return_value = "interface GigabitEthernet0/1"
         mock_interface1.real_indent_level = 0
-
         mock_interface2 = Mock()
         mock_interface2.cisco_style_text.return_value = "interface GigabitEthernet0/2"
         mock_interface2.real_indent_level = 0
-
         mock_snmp_child = Mock()
         mock_snmp_child.cisco_style_text.return_value = "snmp-server community public"
 
@@ -586,21 +437,19 @@ router bgp 65001
 
         # Mock the second call to all_children_sorted_by_tags for interface fallback
         mock_running_config.all_children_sorted_by_tags.side_effect = [
-            [mock_snmp_child],  # First call returns only tagged SNMP elements
-            [mock_interface1, mock_interface2, mock_snmp_child],  # Second call for fallback
+            [mock_snmp_child],
+            [mock_interface1, mock_interface2, mock_snmp_child],
         ]
 
         # Generated config is empty
         mock_generated_config.get_children_deep.return_value = []
         mock_generated_config.all_children_sorted_by_tags.return_value = []
-
         mock_rule = {
             "obj": Mock(
                 config_type=ComplianceRuleConfigTypeChoice.TYPE_CLI,
-                match_config="# hier_config_v2\n- lineage:\n  - startswith: snmp-server",
+                match_config="# hier_config\n- match_rules:\n  - startswith: snmp-server",
             )
         }
-
         running_text, intended_text = process_nested_compliance_rule_hier_config(
             mock_rule, self.backup_cfg, self.intended_cfg, self.mock_obj, self.mock_logger
         )
@@ -612,10 +461,9 @@ router bgp 65001
 
     @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
     @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.load_hconfig_v2_tags")
-    def test_tag_application_to_configs(self, mock_load_v2_tags, mock_platform_mapping, mock_hier_config):
-        """Test that tags are properly applied to both running and generated configs."""
-        # Setup mocks
+    @patch("nautobot_golden_config.nornir_plays.config_compliance.TypeAdapter")
+    def test_tag_application_to_configs(self, mock_type_adapter, mock_platform_mapping, mock_hier_config):
+        """Test that tags are properly applied to both running and generated configs in unified syntax."""
         mock_platform_mapping.get.return_value = "cisco_ios"
         mock_running_config = Mock()
         mock_generated_config = Mock()
@@ -625,7 +473,9 @@ router bgp 65001
         mock_tag_rule = Mock()
         mock_tag_rule.match_rules = ["interface"]
         mock_tag_rule.apply_tags = frozenset(["interface_tag"])
-        mock_load_v2_tags.return_value = (mock_tag_rule,)
+        mock_type_adapter_instance = Mock()
+        mock_type_adapter_instance.validate_python.return_value = (mock_tag_rule,)
+        mock_type_adapter.return_value = mock_type_adapter_instance
 
         # Mock config children
         mock_child = Mock()
@@ -638,7 +488,7 @@ router bgp 65001
         mock_rule = {
             "obj": Mock(
                 config_type=ComplianceRuleConfigTypeChoice.TYPE_CLI,
-                match_config="# hier_config_v2\n- lineage:\n  - startswith: interface",
+                match_config="# hier_config\n- match_rules:\n  - startswith: interface",
             )
         }
 

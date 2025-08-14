@@ -12,7 +12,7 @@ from datetime import datetime
 import hier_config
 import yaml
 from django.utils.timezone import make_aware
-from hier_config.utils import HCONFIG_PLATFORM_V2_TO_V3_MAPPING, load_hconfig_v2_tags
+from hier_config.utils import HCONFIG_PLATFORM_V2_TO_V3_MAPPING
 from lxml import etree
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
@@ -182,8 +182,6 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
         # Check for hier config compliance rule
         section_type = rule["section"][0]
         if "# hier_config" in section_type:
-            hier_config_rule = True
-        if hier_config_rule:
             _actual, _intended = process_nested_compliance_rule_hier_config(rule, backup_cfg, intended_cfg, obj, logger)
         else:
             _actual = get_config_element(rule, backup_cfg, obj, logger)
@@ -227,8 +225,7 @@ def process_nested_compliance_rule_hier_config(rule, backup_cfg, intended_cfg, o
         tuple[str, str]: Filtered running and intended configuration text for compliance comparison.
 
     Notes:
-        Syntax from hier config v2 or v3 can be used. The match config must have # hier_config_v2 or # hier_config_v3
-        as a comment at the top of the YAML block to indicate which syntax is being used.
+        The match config must have # hier_config as a comment at the top of the YAML block.
 
     The match_config field in the rule should define hierarchical config tags and matching criteria in YAML format.
     See: https://hier-config.readthedocs.io/en/latest/tags/
@@ -255,35 +252,19 @@ def process_nested_compliance_rule_hier_config(rule, backup_cfg, intended_cfg, o
     v3_tags = tuple()
     tag_names = set()
 
-    # Convert hier config v2 syntax to v3 tags
-    if "hier_config_v2" in rule["obj"].match_config:
-        try:
-            match_config = yaml.safe_load(rule["obj"].match_config)
-            for lineage in match_config:
-                # Create a unique tag name for each lineage
-                tag_name = hashlib.sha1(json.dumps(lineage, sort_keys=True).encode()).hexdigest()  # noqa: S324
-                lineage["add_tags"] = tag_name
-                tag_names.add(tag_name)
-                v3_tags += load_hconfig_v2_tags([lineage])
-        except yaml.YAMLError as e:
-            error_msg = f"Invalid YAML in match_config: {str(e)}"
-            logger.error(error_msg, extra={"object": obj})
-            raise NornirNautobotException(error_msg)
-
     # Create hier config v3 tags
-    if "hier_config_v3" in rule["obj"].match_config:
-        try:
-            match_config = yaml.safe_load(rule["obj"].match_config)
-            for tag_rule in match_config:
-                # Create a unique tag name for each match rule
-                tag_name = hashlib.sha1(json.dumps(tag_rule, sort_keys=True).encode()).hexdigest()  # noqa: S324
-                tag_rule["apply_tags"] = frozenset([tag_name])
-                tag_names.add(tag_name)
-            v3_tags = TypeAdapter(tuple[hier_config.models.TagRule, ...]).validate_python(match_config)
-        except yaml.YAMLError as e:
-            error_msg = f"Invalid YAML in match_config: {str(e)}"
-            logger.error(error_msg, extra={"object": obj})
-            raise NornirNautobotException(error_msg)
+    try:
+        match_config = yaml.safe_load(rule["obj"].match_config)
+        for tag_rule in match_config:
+            # Create a unique tag name for each match rule
+            tag_name = hashlib.sha1(json.dumps(tag_rule, sort_keys=True).encode()).hexdigest()  # noqa: S324
+            tag_rule["apply_tags"] = frozenset([tag_name])
+            tag_names.add(tag_name)
+        v3_tags = TypeAdapter(tuple[hier_config.models.TagRule, ...]).validate_python(match_config)
+    except yaml.YAMLError as e:
+        error_msg = f"Invalid YAML in match_config: {str(e)}"
+        logger.error(error_msg, extra={"object": obj})
+        raise NornirNautobotException(error_msg)
 
     # Apply tags to the running and generated configs
     for tag_rule in v3_tags:

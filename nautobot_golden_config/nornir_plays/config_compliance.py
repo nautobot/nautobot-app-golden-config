@@ -177,8 +177,6 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     intended_cfg = _open_file_config(intended_file)
 
     for rule in rules[obj.platform.network_driver]:
-        hier_config_rule = False
-
         # Check for hier config compliance rule
         section_type = rule["section"][0]
         if "# hier_config" in section_type:

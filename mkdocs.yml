@@ -113,7 +113,7 @@ nav:
       - Navigate Compliance JSON: "user/app_feature_compliancejson.md"
       - Navigate Compliance XML: "user/app_feature_compliancexml.md"
       - Navigate Compliance Custom: "user/app_feature_compliancecustom.md"
-      - Navigate Compliance Hierarchical: "user/app_feature_compliance_hierarchical.md"
+      - Navigate Compliance Filtered: "user/app_feature_compliancefiltered.md"
       - Navigate Intended: "user/app_feature_intended.md"
       - Navigate SoT Agg: "user/app_feature_sotagg.md"
       - Navigate Configuration Post-Processing: "user/app_feature_config_postprocessing.md"

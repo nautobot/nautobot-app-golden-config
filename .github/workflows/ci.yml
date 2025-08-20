@@ -151,7 +151,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        python-version: ["3.8"]  # 3.12 stable is tested in unittest_report stage.
+        python-version: ["3.9"]  # 3.12 stable is tested in unittest_report stage.
         db-backend: ["postgresql"]
         nautobot-version: ["stable"]
         include:

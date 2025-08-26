@@ -11,7 +11,7 @@ from django.db.models.manager import BaseManager
 from django.utils.module_loading import import_string
 from hier_config import WorkflowRemediation, get_hconfig
 from hier_config.utils import hconfig_v2_os_v3_platform_mapper, load_hconfig_v2_options
-from jdiff import CheckType, extract_data_from_json
+from jdiff import CheckType
 from jdiff.utils.diff_helpers import parse_diff
 from nautobot.apps.models import RestrictedQuerySet
 from nautobot.apps.utils import render_jinja2
@@ -128,7 +128,6 @@ def _get_json_compliance(obj):
 
 def _get_json_jdiff_compliance(obj):
     """This function performs the actual compliance for json serializable data."""
-    import json
     jdiff_param_match = CheckType.create("exact_match")
     extracted_actual = obj.actual.get(obj.rule.match_config, {})
     extracted_intended = obj.intended.get(obj.rule.match_config, {})

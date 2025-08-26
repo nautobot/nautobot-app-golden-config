@@ -647,6 +647,7 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     sot_agg_query = models.ForeignKey(
         to="extras.GraphQLQuery",
         on_delete=models.PROTECT,
+        verbose_name="GraphQL Query",
         null=True,
         blank=True,
         related_name="sot_aggregation",
@@ -659,6 +660,15 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     is_dynamic_group_associable_model = False
 
     objects = GoldenConfigSettingManager()
+
+    clone_fields = [
+        "weight",
+        "backup_path_template",
+        "backup_test_connectivity",
+        "intended_path_template",
+        "jinja_path_template",
+        "sot_agg_query",
+    ]
 
     def __str__(self):
         """Return a simple string if model is called."""

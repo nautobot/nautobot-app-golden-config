@@ -11,7 +11,8 @@ from django.db.models.manager import BaseManager
 from django.utils.module_loading import import_string
 from hier_config import WorkflowRemediation, get_hconfig
 from hier_config.utils import hconfig_v2_os_v3_platform_mapper, load_hconfig_v2_options
-from jdiff import CheckType
+from jdiff import CheckType, extract_data_from_json
+from jdiff.utils.diff_helpers import parse_diff
 from nautobot.apps.models import RestrictedQuerySet
 from nautobot.apps.utils import render_jinja2
 from nautobot.core.models.generics import PrimaryModel
@@ -24,7 +25,6 @@ from netutils.config.compliance import feature_compliance
 from xmldiff import actions, main
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
-from nautobot_golden_config.compliance_utils import parse_diff
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
 
 LOGGER = logging.getLogger(__name__)
@@ -128,14 +128,11 @@ def _get_json_compliance(obj):
 
 def _get_json_jdiff_compliance(obj):
     """This function performs the actual compliance for json serializable data."""
-    # from nautobot_golden_config.utilities.helper import parse_diff  # pylint: disable=import-outside-toplevel
 
     jdiff_param_match = CheckType.create("exact_match")
-    actual_json = obj.actual.get(obj.rule.match_config, {})
-    intended_json = obj.intended.get(obj.rule.match_config, {})
-
-    result, compliant = jdiff_param_match.evaluate(actual_json, intended_json)
-    print(result)
+    extracted_actual = extract_data_from_json(obj.actual, obj.rule.match_config)
+    extracted_intended = extract_data_from_json(obj.intended, obj.rule.match_config)
+    jdiff_evaluate_response, compliant = jdiff_param_match.evaluate(extracted_intended, extracted_actual)
     if compliant:
         compliance_int = 1
         compliance = True
@@ -143,8 +140,8 @@ def _get_json_jdiff_compliance(obj):
         missing = ""
         extra = ""
     else:
-        extra_json, missing_json = parse_diff(
-            result,
+        parsed_extra, parsed_missing = parse_diff(
+            jdiff_evaluate_response,
             obj.actual,
             obj.intended,
             obj.rule.match_config,
@@ -152,8 +149,8 @@ def _get_json_jdiff_compliance(obj):
         compliance_int = 0
         compliance = False
         ordered = False
-        missing = missing_json
-        extra = extra_json
+        missing = parsed_missing
+        extra = parsed_extra
 
     return {
         "compliance": compliance,

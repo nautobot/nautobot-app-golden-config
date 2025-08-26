@@ -128,10 +128,10 @@ def _get_json_compliance(obj):
 
 def _get_json_jdiff_compliance(obj):
     """This function performs the actual compliance for json serializable data."""
-
+    import json
     jdiff_param_match = CheckType.create("exact_match")
-    extracted_actual = extract_data_from_json(obj.actual, obj.rule.match_config)
-    extracted_intended = extract_data_from_json(obj.intended, obj.rule.match_config)
+    extracted_actual = obj.actual.get(obj.rule.match_config, {})
+    extracted_intended = obj.intended.get(obj.rule.match_config, {})
     jdiff_evaluate_response, compliant = jdiff_param_match.evaluate(extracted_intended, extracted_actual)
     if compliant:
         compliance_int = 1

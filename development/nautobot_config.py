@@ -162,10 +162,9 @@ PLUGINS_CONFIG = {
         # custom_dispatcher is not required for preferring a framework such as netmiko or napalm.
         # Instead, this is only required if you are truly "rolling your own" dispatcher, potentially
         # to accommodate OS's not currently supported or to add your own business logic.
-        # "custom_dispatcher": {
-        #     "arista_eos": "my_custom.dispatcher.NornirDriver",
-        #     "arbitrary_platform_name": "my_custom.dispatcher.OtherNornirDriver",
-        # },
+        "custom_dispatcher": {
+            "arista_eos": "parts.restconf_dispatcher.RestconfDefault",
+        },
     },
 }
 

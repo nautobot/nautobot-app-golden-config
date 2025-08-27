@@ -36,34 +36,34 @@ class ConfigComplianceTest(unittest.TestCase):
         )
 
     def test_get_config_element_match_config_present(self):
-        """Test proper return when Config JSON is returned with match_config."""
+        """Test proper return when Config JSON DEEPDIFF is returned with match_config."""
         self.mock_rule["obj"].match_config = "key1"
         self.mock_rule["obj"].config_ordered = True
-        self.mock_rule["obj"].config_type = ComplianceRuleConfigTypeChoice.TYPE_JSON
+        self.mock_rule["obj"].config_type = ComplianceRuleConfigTypeChoice.TYPE_JSON_DEEPDIFF
         return_config = json.dumps(get_config_element(self.mock_rule, self.mock_config, self.mock_obj, None))
         self.assertEqual(return_config, json.dumps({"key1": "value1"}))
 
     def test_get_config_element_match_config_absent(self):
-        """Test proper return when Config JSON is returned without match_config."""
+        """Test proper return when Config JSON DEEPDIFF is returned without match_config."""
         self.mock_rule["obj"].match_config = ""
         self.mock_rule["obj"].config_ordered = True
-        self.mock_rule["obj"].config_type = ComplianceRuleConfigTypeChoice.TYPE_JSON
+        self.mock_rule["obj"].config_type = ComplianceRuleConfigTypeChoice.TYPE_JSON_DEEPDIFF
         return_config = json.dumps(get_config_element(self.mock_rule, self.mock_config, self.mock_obj, None))
         self.assertEqual(return_config, self.mock_config)
 
     def test_get_config_element_match_config_present_jdiff(self):
-        """Test proper return when Config JSONV2 is returned with match_config."""
+        """Test proper return when Config JSON JDIFF is returned with match_config."""
         self.mock_rule["obj"].match_config = "key1"
         self.mock_rule["obj"].config_ordered = True
-        self.mock_rule["obj"].config_type = ComplianceRuleConfigTypeChoice.TYPE_JSONV2
+        self.mock_rule["obj"].config_type = ComplianceRuleConfigTypeChoice.TYPE_JSON_JDIFF
         return_config = json.dumps(get_config_element(self.mock_rule, self.mock_config, self.mock_obj, None))
         self.assertEqual(return_config, json.dumps({"key1": "value1"}))
 
     def test_get_config_element_match_config_absent_jdiff(self):
-        """Test proper return when Config JSONV2 is returned without match_config."""
+        """Test proper return when Config JSON JDIFF is returned without match_config."""
         self.mock_rule["obj"].match_config = ""
         self.mock_rule["obj"].config_ordered = True
-        self.mock_rule["obj"].config_type = ComplianceRuleConfigTypeChoice.TYPE_JSONV2
+        self.mock_rule["obj"].config_type = ComplianceRuleConfigTypeChoice.TYPE_JSON_JDIFF
         return_config = json.dumps(get_config_element(self.mock_rule, self.mock_config, self.mock_obj, None))
         self.assertEqual(return_config, self.mock_config)
 
@@ -81,7 +81,7 @@ class ConfigComplianceTest(unittest.TestCase):
         self.mock_config = "aaa\nsnmp\n"
         self.mock_rule["obj"].match_config = ""
         self.mock_rule["obj"].config_ordered = True
-        self.mock_rule["obj"].config_type = ComplianceRuleConfigTypeChoice.TYPE_JSON
+        self.mock_rule["obj"].config_type = ComplianceRuleConfigTypeChoice.TYPE_JSON_DEEPDIFF
         with self.assertRaises(NornirNautobotException) as context:
             json.dumps(get_config_element(self.mock_rule, self.mock_config, self.mock_obj, self.mock_logger))
         self.assertEqual(str(context.exception), "`E3002:` Unable to interpret configuration as JSON.")

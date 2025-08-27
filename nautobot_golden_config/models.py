@@ -276,8 +276,8 @@ def _get_hierconfig_remediation(obj):
 # The below maps the provided compliance types
 FUNC_MAPPER = {
     ComplianceRuleConfigTypeChoice.TYPE_CLI: _get_cli_compliance,
-    ComplianceRuleConfigTypeChoice.TYPE_JSON: _get_json_compliance,
-    ComplianceRuleConfigTypeChoice.TYPE_JSONV2: _get_json_jdiff_compliance,
+    ComplianceRuleConfigTypeChoice.TYPE_JSON_DEEPDIFF: _get_json_compliance,
+    ComplianceRuleConfigTypeChoice.TYPE_JSON_JDIFF: _get_json_jdiff_compliance,
     ComplianceRuleConfigTypeChoice.TYPE_XML: _get_xml_compliance,
     RemediationTypeChoice.TYPE_HIERCONFIG: _get_hierconfig_remediation,
 }

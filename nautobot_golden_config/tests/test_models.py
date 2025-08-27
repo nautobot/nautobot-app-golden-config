@@ -25,8 +25,8 @@ from .conftest import (
     create_config_compliance,
     create_device,
     create_feature_rule_cli_with_remediation,
-    create_feature_rule_json,
-    create_feature_rule_jsonv2,
+    create_feature_rule_json_deepdiff,
+    create_feature_rule_json_jdiff,
     create_feature_rule_xml,
     create_job_result,
     create_saved_queries,
@@ -40,8 +40,8 @@ class ConfigComplianceModelTestCase(TestCase):
     def setUpTestData(cls):
         """Set up base objects."""
         cls.device = create_device()
-        cls.compliance_rule_json = create_feature_rule_json(cls.device)
-        cls.compliance_rule_jsonv2 = create_feature_rule_jsonv2(cls.device)
+        cls.compliance_rule_json = create_feature_rule_json_deepdiff(cls.device)
+        cls.compliance_rule_jsonv2 = create_feature_rule_json_jdiff(cls.device)
         cls.compliance_rule_xml = create_feature_rule_xml(cls.device)
         cls.compliance_rule_cli = create_feature_rule_cli_with_remediation(cls.device)
 
@@ -113,7 +113,6 @@ class ConfigComplianceModelTestCase(TestCase):
 
     def test_create_config_compliance_success_jsonv2_nested_1(self):
         """Successful."""
-        self.maxDiff = None
         actual = {
             "foo": {
                 "servers": {
@@ -135,11 +134,13 @@ class ConfigComplianceModelTestCase(TestCase):
             cc_obj.extra,
             {
                 "servers": {
-                    "server": [{
-                        "address": "1.us.pool.ntp.org",
-                        "config": {"address": "1.us.pool.ntp.org"},
-                        "state": {"address": "1.us.pool.ntp.org"},
-                    }]
+                    "server": [
+                        {
+                            "address": "1.us.pool.ntp.org",
+                            "config": {"address": "1.us.pool.ntp.org"},
+                            "state": {"address": "1.us.pool.ntp.org"},
+                        }
+                    ]
                 }
             },
         )
@@ -228,7 +229,7 @@ class ConfigComplianceModelTestCase(TestCase):
         )
         self.assertEqual(ConfigCompliance.objects.filter(device=self.device).count(), 1)
         self.device.platform = Platform.objects.create(name="Platform Change")
-        new_rule_json = create_feature_rule_json(self.device)
+        new_rule_json = create_feature_rule_json_deepdiff(self.device)
 
         ConfigCompliance.objects.create(
             device=self.device,
@@ -548,7 +549,7 @@ class ConfigPlanModelTestCase(TestCase):
     def setUpTestData(cls):
         """Setup Object."""
         cls.device = create_device()
-        cls.rule = create_feature_rule_json(cls.device)
+        cls.rule = create_feature_rule_json_deepdiff(cls.device)
         cls.feature = cls.rule.feature
         cls.status = Status.objects.get(name="Not Approved")
         cls.job_result = create_job_result()
@@ -575,7 +576,7 @@ class ConfigPlanModelTestCase(TestCase):
 
     def test_create_config_plan_intended_multiple_features(self):
         """Test Create Object."""
-        rule2 = create_feature_rule_json(self.device, feature="feature2")
+        rule2 = create_feature_rule_json_deepdiff(self.device, feature="feature2")
         config_plan = ConfigPlan.objects.create(
             device=self.device,
             plan_type="intended",

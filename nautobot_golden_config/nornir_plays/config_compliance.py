@@ -60,8 +60,8 @@ def get_config_element(rule, config, obj, logger):
        - top level JSON key for `JSON` based config types
     """
     if rule["obj"].config_type in [
-        ComplianceRuleConfigTypeChoice.TYPE_JSON,
-        ComplianceRuleConfigTypeChoice.TYPE_JSONV2,
+        ComplianceRuleConfigTypeChoice.TYPE_JSON_DEEPDIFF,
+        ComplianceRuleConfigTypeChoice.TYPE_JSON_JDIFF,
     ]:
         config_json = get_json_config(config)
 

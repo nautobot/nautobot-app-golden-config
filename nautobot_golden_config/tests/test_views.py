@@ -22,7 +22,7 @@ from packaging import version
 from nautobot_golden_config import models, views
 from nautobot_golden_config.utilities.constant import PLUGIN_CFG
 
-from .conftest import create_device_data, create_feature_rule_json, create_job_result
+from .conftest import create_device_data, create_feature_rule_json_deepdiff, create_job_result
 
 User = get_user_model()
 
@@ -40,9 +40,9 @@ class ConfigComplianceOverviewHelperTestCase(TestCase):
         dev03 = Device.objects.get(name="Device 3")
         dev04 = Device.objects.get(name="Device 4")
 
-        feature_dev01 = create_feature_rule_json(dev01)
-        feature_dev02 = create_feature_rule_json(dev02)
-        feature_dev03 = create_feature_rule_json(dev03)
+        feature_dev01 = create_feature_rule_json_deepdiff(dev01)
+        feature_dev02 = create_feature_rule_json_deepdiff(dev02)
+        feature_dev03 = create_feature_rule_json_deepdiff(dev03)
 
         updates = [
             {"device": dev01, "feature": feature_dev01},
@@ -277,10 +277,10 @@ class ConfigPlanTestCase(
         device2 = Device.objects.get(name="Device 2")
         device3 = Device.objects.get(name="Device 3")
 
-        rule1 = create_feature_rule_json(device1, feature="Test Feature 1")
-        rule2 = create_feature_rule_json(device2, feature="Test Feature 2")
-        rule3 = create_feature_rule_json(device3, feature="Test Feature 3")
-        rule4 = create_feature_rule_json(device3, feature="Test Feature 4")
+        rule1 = create_feature_rule_json_deepdiff(device1, feature="Test Feature 1")
+        rule2 = create_feature_rule_json_deepdiff(device2, feature="Test Feature 2")
+        rule3 = create_feature_rule_json_deepdiff(device3, feature="Test Feature 3")
+        rule4 = create_feature_rule_json_deepdiff(device3, feature="Test Feature 4")
 
         job_result1 = create_job_result()
         job_result2 = create_job_result()
@@ -354,9 +354,9 @@ class ConfigComplianceUIViewSetTestCase(
         dev04 = Device.objects.get(name="Device 4")
 
         for iterator_i in range(4):
-            feature_dev01 = create_feature_rule_json(dev01, feature=f"TestFeature{iterator_i}")
-            feature_dev02 = create_feature_rule_json(dev02, feature=f"TestFeature{iterator_i}")
-            feature_dev03 = create_feature_rule_json(dev03, feature=f"TestFeature{iterator_i}")
+            feature_dev01 = create_feature_rule_json_deepdiff(dev01, feature=f"TestFeature{iterator_i}")
+            feature_dev02 = create_feature_rule_json_deepdiff(dev02, feature=f"TestFeature{iterator_i}")
+            feature_dev03 = create_feature_rule_json_deepdiff(dev03, feature=f"TestFeature{iterator_i}")
 
             updates = [
                 {"device": dev01, "feature": feature_dev01},
@@ -410,7 +410,7 @@ class ConfigComplianceUIViewSetTestCase(
 
         # Add a new compliance feature and ensure the table headers update correctly
         device2 = Device.objects.get(name="Device 2")
-        new_compliance_feature = create_feature_rule_json(device2, feature="NewTestFeature")
+        new_compliance_feature = create_feature_rule_json_deepdiff(device2, feature="NewTestFeature")
         models.ConfigCompliance.objects.create(
             device=device2,
             rule=new_compliance_feature,

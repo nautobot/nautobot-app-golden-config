@@ -21,7 +21,7 @@ from nautobot_golden_config.tests.conftest import (
     create_config_compliance,
     create_device,
     create_device_data,
-    create_feature_rule_json,
+    create_feature_rule_json_deepdiff,
     create_git_repos,
     create_job_result,
     create_saved_queries,
@@ -37,7 +37,7 @@ class GoldenConfigAPITest(APITestCase):  # pylint: disable=too-many-ancestors
         """Create a superuser and token for API calls."""
         super().setUp()
         self.device = create_device()
-        self.compliance_rule_json = create_feature_rule_json(self.device)
+        self.compliance_rule_json = create_feature_rule_json_deepdiff(self.device)
         self.base_view = reverse("plugins-api:nautobot_golden_config-api:configcompliance-list")
 
     def test_root(self):
@@ -378,9 +378,9 @@ class ConfigPlanTest(
         device2 = Device.objects.get(name="Device 2")
         device3 = Device.objects.get(name="Device 3")
 
-        rule1 = create_feature_rule_json(device1, feature="Test Feature 1")
-        rule2 = create_feature_rule_json(device2, feature="Test Feature 2")
-        rule3 = create_feature_rule_json(device3, feature="Test Feature 3")
+        rule1 = create_feature_rule_json_deepdiff(device1, feature="Test Feature 1")
+        rule2 = create_feature_rule_json_deepdiff(device2, feature="Test Feature 2")
+        rule3 = create_feature_rule_json_deepdiff(device3, feature="Test Feature 3")
 
         job_result1 = create_job_result()
         job_result2 = create_job_result()

@@ -243,27 +243,27 @@ def create_orphan_device(name="orphan"):
     return device
 
 
-def create_feature_rule_json(device, feature="foo1", rule="json"):
+def create_feature_rule_json_deepdiff(device, feature="foo1", rule="json"):
     """Creates a Feature/Rule Mapping and Returns the rule."""
     feature_obj, _ = ComplianceFeature.objects.get_or_create(slug=feature, name=feature)
     rule = ComplianceRule(
         feature=feature_obj,
         platform=device.platform,
-        config_type=ComplianceRuleConfigTypeChoice.TYPE_JSON,
+        config_type=ComplianceRuleConfigTypeChoice.TYPE_JSON_DEEPDIFF,
         config_ordered=False,
     )
     rule.save()
     return rule
 
 
-def create_feature_rule_jsonv2(device, feature="foo1v2", rule="jsonv2"):
+def create_feature_rule_json_jdiff(device, feature="foo1v2", rule="json_jdiff"):
     """Creates a Feature/Rule Mapping and Returns the rule."""
     feature_obj, _ = ComplianceFeature.objects.get_or_create(slug=feature, name=feature)
     rule = ComplianceRule(
         feature=feature_obj,
         platform=device.platform,
         match_config="foo",
-        config_type=ComplianceRuleConfigTypeChoice.TYPE_JSONV2,
+        config_type=ComplianceRuleConfigTypeChoice.TYPE_JSON_JDIFF,
         config_ordered=False,
     )
     rule.save()
@@ -276,7 +276,7 @@ def create_feature_rule_json_with_remediation(device, feature="foo2", rule="json
     rule = ComplianceRule(
         feature=feature_obj,
         platform=device.platform,
-        config_type=ComplianceRuleConfigTypeChoice.TYPE_JSON,
+        config_type=ComplianceRuleConfigTypeChoice.TYPE_JSON_DEEPDIFF,
         config_ordered=False,
         config_remediation=True,
     )

@@ -773,6 +773,7 @@ def pylint(context):
 def autoformat(context):
     """Run code autoformatting."""
     ruff(context, action=["format"], fix=True)
+    djlint(context, action=["format"], fix=True)
 
 
 @task(
@@ -810,6 +811,39 @@ def ruff(context, action=None, target=None, fix=False, output_format="concise"):
         if not run_command(context, command, warn=True):
             exit_code = 1
 
+    if exit_code != 0:
+        raise Exit(code=exit_code)
+
+
+@task(
+    help={
+        "action": "Available values are `['lint', 'format']`. Can be used multiple times. (default: `--action format`)",
+        "target": "File or directory to inspect, repeatable (default: all files in the project will be inspected)",
+        "fix": "Automatically fix the formatting. (default: False)",
+        "quiet": "Suppress output when formatting or checking (default: False)",
+    },
+    iterable=["target", "action"],
+)
+def djlint(context, action=None, target=None, fix=False, quiet=False):
+    """Run djlint to validate Django template formatting."""
+    if not action:
+        action = ["format"]  # TODO: Add 'lint' when we are ready to enforce linting
+    if not target:
+        target = ["."]
+
+    command = "djlint "
+
+    if "format" in action:
+        command += "--reformat --warn " if fix else "--check "
+        if quiet:
+            command += "--quiet "
+
+    if "lint" in action:
+        command += "--lint "
+
+    command += " ".join(target)
+
+    exit_code = 0 if run_command(context, command, warn=True) else 1
     if exit_code != 0:
         raise Exit(code=exit_code)
 
@@ -930,6 +964,8 @@ def tests(context, failfast=False, keepdb=False, lint_only=False):
     # Sorted loosely from fastest to slowest
     print("Running ruff...")
     ruff(context)
+    print("Running djlint...")
+    djlint(context)
     print("Running yamllint...")
     yamllint(context)
     print("Running markdownlint...")

@@ -1,6 +1,6 @@
 {% load static %}
 <!-- Reference https://cdn.jsdelivr.net/npm/diff2html/bundles/ and obtain files and version folder name -->
-<link rel="stylesheet" type="text/css" href="{% static 'nautobot_golden_config/diff2html-3.4.43/diff2html.min.css' %}"/>
+<link rel="stylesheet" type="text/css" href="{% static 'nautobot_golden_config/diff2html-3.4.43/diff2html.min.css' %}" />
 <script type="text/javascript" src="{% static 'nautobot_golden_config/diff2html-3.4.43/diff2html.min.js' %}"></script>
 
 <style>
@@ -14,7 +14,8 @@
         display: none;
     }
 </style>
-<h1>{{ title_name }} - {{ device_name }}
+<h1>
+    {{ title_name }} - {{ device_name }}
     {% if format != 'diff' %}
         <span class="config_hover_button">
             <button type="button" class="btn btn-inline btn-default hover_copy_button" data-clipboard-action="copy" data-clipboard-target="#{{ title_name|slugify }}_{{ device_name|slugify }}">

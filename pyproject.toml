@@ -47,7 +47,8 @@ nautobot = ">=2.4.2, <3.0.0"
 
 [tool.poetry.group.dev.dependencies]
 coverage = "*"
-django-debug-toolbar = "<4.4"
+# Currently pinned to 5.2.0 due to https://github.com/django-commons/django-debug-toolbar/issues/2168
+django-debug-toolbar = "~5.2.0"
 invoke = "*"
 ipython = "*"
 pylint = "*"
@@ -72,6 +73,7 @@ griffe = "1.1.1"
 towncrier = ">=23.6.0,<=24.8.0"
 to-json-schema = "*"
 jsonschema = "*"
+djlint = ">=1.36.4,<2.0.0"
 
 [tool.poetry.extras]
 all = [
@@ -277,3 +279,12 @@ showcontent = true
 directory = "housekeeping"
 name = "Housekeeping"
 showcontent = true
+
+[tool.djlint]
+ignore = "H005,H006,H008,H011,H012,H013,H014,H015,H016,H019,H020,H021,H022,H023,H025,H026,H030,H031,H037"
+max_line_length = 1000
+preserve_blank_lines = true
+max_attribute_length = 1000
+line_break_after_multiline_tag = false
+profile="django"
+extend_exclude = "docs/,nautobot_golden_config/static/"

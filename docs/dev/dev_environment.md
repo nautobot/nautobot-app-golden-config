@@ -127,6 +127,7 @@ Each command can be executed with `invoke <command>`. All commands support the a
   markdownlint     Run pymarkdown linting.
   tests            Run all tests for this app.
   unittest         Run Django unit tests for the app.
+  djlint           Run djlint to perform django template formatting and/or linting.
 ```
 
 ## Project Overview

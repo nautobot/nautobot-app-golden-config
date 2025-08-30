@@ -9,8 +9,14 @@ from nautobot.extras.choices import LogLevelChoices
 from nautobot.extras.registry import DatasourceContent
 
 from nautobot_golden_config.exceptions import MissingReference, MultipleReferences
-from nautobot_golden_config.models import ComplianceFeature, ComplianceRule, ConfigRemove, ConfigReplace
-from nautobot_golden_config.utilities.helper import get_error_message  # , get_golden_config_settings
+from nautobot_golden_config.models import (
+    ComplianceFeature,
+    ComplianceRule,
+    ConfigRemove,
+    ConfigReplace,
+    RemediationSetting,
+)
+from nautobot_golden_config.utilities.helper import get_error_message
 
 # settings = get_golden_config_settings()
 
@@ -48,6 +54,7 @@ def refresh_git_gc_properties(repository_record, job_result, delete=False):  # p
     │   ├── compliance_rules
     │   ├── config_removes
     │   ├── config_replaces
+    │   ├── remediation_settings
 
     """
     if "nautobot_golden_config.pluginproperties" not in repository_record.provided_contents:
@@ -93,6 +100,11 @@ def refresh_git_gc_properties(repository_record, job_result, delete=False):  # p
             "directory_name": "config_replaces",
             "class": ConfigReplace,
             "id_keys": (("name", "name"), ("platform", "platform_network_driver"), ("platform", "platform_name")),
+        },
+        {
+            "directory_name": "remediation_settings",
+            "class": RemediationSetting,
+            "id_keys": (("platform", "platform_name"),),
         },
     )
 

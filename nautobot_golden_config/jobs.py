@@ -715,6 +715,7 @@ class DeployConfigPlans(Job):
     """Job to deploy config plans."""
 
     config_plan = MultiObjectVar(model=ConfigPlan, required=True)
+    fail_job_on_task_failure = BooleanVar(description="If any tasks for any device fails, fail the entire job result.")
     debug = BooleanVar(description="Enable for more verbose debug logging")
 
     class Meta:
@@ -741,7 +742,13 @@ class DeployConfigPlans(Job):
         for config_plan in self.data["config_plan"]:
             verify_deployment_eligibility(self.logger, config_plan, settings)
 
-        config_deployment(self)
+        try:
+            config_deployment(self)
+        except Exception as error:  # pylint: disable=broad-exception-caught
+            error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
+            self.logger.error(error_msg)
+            if data.get("fail_job_on_task_failure"):
+                raise NornirNautobotException(error_msg) from error
 
 
 class DeployConfigPlanJobButtonReceiver(JobButtonReceiver):

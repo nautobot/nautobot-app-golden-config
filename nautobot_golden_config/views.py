@@ -64,6 +64,7 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
     queryset = models.GoldenConfig.objects.all()
     serializer_class = serializers.GoldenConfigSerializer
     action_buttons = ("export",)
+    object_detail_content = details.golden_config
 
     def __init__(self, *args, **kwargs):
         """Used to set default variables on GoldenConfigUIViewSet."""
@@ -99,10 +100,25 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
 
         return queryset
 
+    def _get_device_context(self, instance):
+        return {
+            "Backup Config": reverse(
+                "plugins:nautobot_golden_config:goldenconfig_backup", kwargs={"pk": instance.device.pk}
+            ),
+            "Intended Config": reverse(
+                "plugins:nautobot_golden_config:goldenconfig_intended", kwargs={"pk": instance.device.pk}
+            ),
+            "Compliance Config": reverse(
+                "plugins:nautobot_golden_config:goldenconfig_compliance", kwargs={"pk": instance.device.pk}
+            ),
+        }
+
     def get_extra_context(self, request, instance=None, **kwargs):
         """Get extra context data."""
         settings = get_golden_config_settings()
         context = super().get_extra_context(request, instance)
+        if self.action == "retrieve":
+            context["device_object"] = self._get_device_context(instance)
         context["compliance"] = settings.compliance_enabled
         context["backup"] = settings.backup_enabled
         context["intended"] = settings.intended_enabled
@@ -250,6 +266,7 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
 
     custom_action_permission_map = None
     action_buttons = ("export",)
+    object_detail_content = details.config_compliance
 
     def __init__(self, *args, **kwargs):
         """Used to set default variables on ConfigComplianceUIViewSet."""
@@ -453,10 +470,17 @@ class GoldenConfigSettingUIViewSet(views.NautobotUIViewSet):
     serializer_class = serializers.GoldenConfigSettingSerializer
     table_class = tables.GoldenConfigSettingTable
     lookup_field = "pk"
+    object_detail_content = details.golden_config_setting
+    extra_buttons = ("clone",)
 
     def get_extra_context(self, request, instance=None):
         """A GoldenConfig helper function to warn if the Job is not enabled to run."""
         settings = get_golden_config_settings()
+        context = super().get_extra_context(request, instance)
+        if self.action == "retrieve":
+            dg = getattr(instance, "dynamic_group", None)
+            context["dg_data"] = {"Dynamic Group": dg, "Filter Query Logic": dg.filter, "Scope of Devices": dg}
+
         jobs = []
         jobs.append(["BackupJob", settings.backup_enabled])
         jobs.append(["IntendedJob", settings.intended_enabled])
@@ -487,7 +511,7 @@ class GoldenConfigSettingUIViewSet(views.NautobotUIViewSet):
             ]
         )
         add_message(jobs, request)
-        return {}
+        return context
 
 
 class ConfigRemoveUIViewSet(views.NautobotUIViewSet):
@@ -564,6 +588,7 @@ class ConfigPlanUIViewSet(views.NautobotUIViewSet):
     lookup_field = "pk"
     action_buttons = ("add",)
     update_form_class = forms.ConfigPlanUpdateForm
+    object_detail_content = details.config_plan
 
     def alter_queryset(self, request):
         """Build actual runtime queryset to automatically remove `Completed` by default."""
@@ -574,12 +599,13 @@ class ConfigPlanUIViewSet(views.NautobotUIViewSet):
     def get_extra_context(self, request, instance=None):
         """A ConfigPlan helper function to warn if the Job is not enabled to run."""
         settings = get_golden_config_settings()
+        context = super().get_extra_context(request, instance)
         jobs = []
         jobs.append(["GenerateConfigPlans", settings.plan_enabled])
         jobs.append(["DeployConfigPlans", settings.deploy_enabled])
         jobs.append(["DeployConfigPlanJobButtonReceiver", settings.deploy_enabled])
         add_message(jobs, request)
-        return {}
+        return context
 
 
 class ConfigPlanBulkDeploy(ObjectPermissionRequiredMixin, View):

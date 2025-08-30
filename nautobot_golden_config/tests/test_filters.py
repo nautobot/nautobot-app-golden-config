@@ -8,7 +8,7 @@ from nautobot.extras.models import Status, Tag
 
 from nautobot_golden_config import filters, models
 
-from .conftest import create_device_data, create_feature_rule_cli, create_feature_rule_json, create_job_result
+from .conftest import create_device_data, create_feature_rule_cli, create_feature_rule_json_deepdiff, create_job_result
 
 
 class ConfigComplianceModelTestCase(TestCase):  # pylint: disable=too-many-public-methods
@@ -28,11 +28,11 @@ class ConfigComplianceModelTestCase(TestCase):  # pylint: disable=too-many-publi
         dev05 = Device.objects.get(name="Device 5")
         dev06 = Device.objects.get(name="Device 6")
 
-        feature_dev01 = create_feature_rule_json(cls.dev01)
-        feature_dev02 = create_feature_rule_json(dev02)
-        feature_dev03 = create_feature_rule_json(cls.dev03)
-        feature_dev05 = create_feature_rule_json(dev05, feature="baz")
-        feature_dev06 = create_feature_rule_json(dev06, feature="bar")
+        feature_dev01 = create_feature_rule_json_deepdiff(cls.dev01)
+        feature_dev02 = create_feature_rule_json_deepdiff(dev02)
+        feature_dev03 = create_feature_rule_json_deepdiff(cls.dev03)
+        feature_dev05 = create_feature_rule_json_deepdiff(dev05, feature="baz")
+        feature_dev06 = create_feature_rule_json_deepdiff(dev06, feature="bar")
 
         updates = [
             {"device": cls.dev01, "feature": feature_dev01},

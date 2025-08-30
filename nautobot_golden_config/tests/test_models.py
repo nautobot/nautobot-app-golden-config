@@ -25,7 +25,8 @@ from .conftest import (
     create_config_compliance,
     create_device,
     create_feature_rule_cli_with_remediation,
-    create_feature_rule_json,
+    create_feature_rule_json_deepdiff,
+    create_feature_rule_json_jdiff,
     create_feature_rule_xml,
     create_job_result,
     create_saved_queries,
@@ -39,7 +40,8 @@ class ConfigComplianceModelTestCase(TestCase):
     def setUpTestData(cls):
         """Set up base objects."""
         cls.device = create_device()
-        cls.compliance_rule_json = create_feature_rule_json(cls.device)
+        cls.compliance_rule_json = create_feature_rule_json_deepdiff(cls.device)
+        cls.compliance_rule_jsonv2 = create_feature_rule_json_jdiff(cls.device)
         cls.compliance_rule_xml = create_feature_rule_xml(cls.device)
         cls.compliance_rule_cli = create_feature_rule_cli_with_remediation(cls.device)
 
@@ -56,6 +58,118 @@ class ConfigComplianceModelTestCase(TestCase):
         self.assertEqual(cc_obj.intended, {"foo": {"bar-2": "baz"}})
         self.assertEqual(cc_obj.missing, ["root['foo']['bar-2']"])
         self.assertEqual(cc_obj.extra, ["root['foo']['bar-1']"])
+
+    def test_create_config_compliance_success_jsonv2(self):
+        """Successful."""
+        actual = {"foo": {"bar-1": "baz"}}
+        intended = {"foo": {"bar-2": "baz"}}
+        cc_obj = create_config_compliance(
+            self.device, actual=actual, intended=intended, compliance_rule=self.compliance_rule_jsonv2
+        )
+        self.assertFalse(cc_obj.compliance)
+        self.assertEqual(cc_obj.actual, {"foo": {"bar-1": "baz"}})
+        self.assertEqual(cc_obj.intended, {"foo": {"bar-2": "baz"}})
+        self.assertEqual(cc_obj.missing, {"bar-2": "baz"})
+        self.assertEqual(cc_obj.extra, {"bar-1": "baz"})
+
+    def test_create_config_compliance_success_samekey_jsonv2(self):
+        """Successful."""
+        actual = {"foo": {"bar-1": "baz"}}
+        intended = {"foo": {"bar-1": "baz2"}}
+        cc_obj = create_config_compliance(
+            self.device, actual=actual, intended=intended, compliance_rule=self.compliance_rule_jsonv2
+        )
+        self.assertFalse(cc_obj.compliance)
+        self.assertEqual(cc_obj.actual, {"foo": {"bar-1": "baz"}})
+        self.assertEqual(cc_obj.intended, {"foo": {"bar-1": "baz2"}})
+        self.assertEqual(cc_obj.missing, {"bar-1": "baz2"})
+        self.assertEqual(cc_obj.extra, {"bar-1": "baz"})
+
+    def test_create_config_compliance_success_missingkey_jsonv2(self):
+        """Successful."""
+        actual = {"foo": {"bar-1": "baz"}}
+        intended = {"foo1": {"bar-1": "baz2"}}
+        cc_obj = create_config_compliance(
+            self.device, actual=actual, intended=intended, compliance_rule=self.compliance_rule_jsonv2
+        )
+        self.assertFalse(cc_obj.compliance)
+        self.assertEqual(cc_obj.actual, {"foo": {"bar-1": "baz"}})
+        self.assertEqual(cc_obj.intended, {"foo1": {"bar-1": "baz2"}})
+        self.assertEqual(cc_obj.missing, {})
+        self.assertEqual(cc_obj.extra, {"bar-1": "baz"})
+
+    def test_create_config_compliance_success_multikey_jsonv2(self):
+        """Successful."""
+        actual = {"foo": {"bar-1": "baz", "bar-2": "baz2"}}
+        intended = {"foo": {"bar-1": "baz2", "bar-3": "baz3"}}
+        cc_obj = create_config_compliance(
+            self.device, actual=actual, intended=intended, compliance_rule=self.compliance_rule_jsonv2
+        )
+        self.assertFalse(cc_obj.compliance)
+        self.assertEqual(cc_obj.actual, {"foo": {"bar-1": "baz", "bar-2": "baz2"}})
+        self.assertEqual(cc_obj.intended, {"foo": {"bar-1": "baz2", "bar-3": "baz3"}})
+        self.assertEqual(cc_obj.missing, {"bar-1": "baz2", "bar-3": "baz3"})
+        self.assertEqual(cc_obj.extra, {"bar-1": "baz", "bar-2": "baz2"})
+
+    def test_create_config_compliance_success_jsonv2_nested_1(self):
+        """Successful."""
+        actual = {
+            "foo": {
+                "servers": {
+                    "server": [
+                        {
+                            "address": "1.us.pool.ntp.org",
+                            "config": {"address": "1.us.pool.ntp.org"},
+                            "state": {"address": "1.us.pool.ntp.org"},
+                        }
+                    ]
+                }
+            }
+        }
+        intended = {"foo": {"servers": {"server": []}}}
+        cc_obj = create_config_compliance(
+            self.device, actual=actual, intended=intended, compliance_rule=self.compliance_rule_jsonv2
+        )
+        self.assertEqual(
+            cc_obj.extra,
+            {
+                "servers": {
+                    "server": [
+                        {
+                            "address": "1.us.pool.ntp.org",
+                            "config": {"address": "1.us.pool.ntp.org"},
+                            "state": {"address": "1.us.pool.ntp.org"},
+                        }
+                    ]
+                }
+            },
+        )
+
+    def test_create_config_compliance_success_noroot_jsonv2(self):
+        """Successful."""
+        actual = {"foo1": {"bar-1": "baz"}}
+        intended = {"foo1": {"bar-1": "baz"}}
+        cc_obj = create_config_compliance(
+            self.device, actual=actual, intended=intended, compliance_rule=self.compliance_rule_jsonv2
+        )
+        self.assertTrue(cc_obj.compliance)
+        self.assertEqual(cc_obj.actual, {"foo1": {"bar-1": "baz"}})
+        self.assertEqual(cc_obj.intended, {"foo1": {"bar-1": "baz"}})
+        self.assertEqual(cc_obj.missing, "")
+        self.assertEqual(cc_obj.extra, "")
+
+    def test_create_config_compliance_success_match_jsonv2(self):
+        """Successful."""
+        actual = {"foo": {"bar-1": "baz"}}
+        intended = {"foo": {"bar-1": "baz"}}
+        cc_obj = create_config_compliance(
+            self.device, actual=actual, intended=intended, compliance_rule=self.compliance_rule_jsonv2
+        )
+        self.assertTrue(cc_obj.compliance)
+        self.assertEqual(cc_obj.actual, {"foo": {"bar-1": "baz"}})
+        self.assertEqual(cc_obj.intended, {"foo": {"bar-1": "baz"}})
+        self.assertEqual(cc_obj.missing, "")
+        self.assertEqual(cc_obj.extra, "")
 
     def test_create_config_compliance_success_xml(self):
         """Successful."""
@@ -115,7 +229,7 @@ class ConfigComplianceModelTestCase(TestCase):
         )
         self.assertEqual(ConfigCompliance.objects.filter(device=self.device).count(), 1)
         self.device.platform = Platform.objects.create(name="Platform Change")
-        new_rule_json = create_feature_rule_json(self.device)
+        new_rule_json = create_feature_rule_json_deepdiff(self.device)
 
         ConfigCompliance.objects.create(
             device=self.device,
@@ -435,7 +549,7 @@ class ConfigPlanModelTestCase(TestCase):
     def setUpTestData(cls):
         """Setup Object."""
         cls.device = create_device()
-        cls.rule = create_feature_rule_json(cls.device)
+        cls.rule = create_feature_rule_json_deepdiff(cls.device)
         cls.feature = cls.rule.feature
         cls.status = Status.objects.get(name="Not Approved")
         cls.job_result = create_job_result()
@@ -462,7 +576,7 @@ class ConfigPlanModelTestCase(TestCase):
 
     def test_create_config_plan_intended_multiple_features(self):
         """Test Create Object."""
-        rule2 = create_feature_rule_json(self.device, feature="feature2")
+        rule2 = create_feature_rule_json_deepdiff(self.device, feature="feature2")
         config_plan = ConfigPlan.objects.create(
             device=self.device,
             plan_type="intended",

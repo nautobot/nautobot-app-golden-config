@@ -7,12 +7,14 @@ class ComplianceRuleConfigTypeChoice(ChoiceSet):
     """Choiceset used by ComplianceRule."""
 
     TYPE_CLI = "cli"
-    TYPE_JSON = "json"
+    TYPE_JSON_DEEPDIFF = "json-deepdiff"
+    TYPE_JSON_JDIFF = "json-jdiff"
     TYPE_XML = "xml"
 
     CHOICES = (
         (TYPE_CLI, "CLI"),
-        (TYPE_JSON, "JSON"),
+        (TYPE_JSON_DEEPDIFF, "JSON_DEEPDIFF"),
+        (TYPE_JSON_JDIFF, "JSON_JDIFF"),
         (TYPE_XML, "XML"),
     )
 

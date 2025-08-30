@@ -165,7 +165,7 @@ PLUGINS_CONFIG = {
         # "custom_dispatcher": {
         #     "arista_eos": "my_custom.dispatcher.NornirDriver",
         #     "arbitrary_platform_name": "my_custom.dispatcher.OtherNornirDriver",
-        # },
+        # }
     },
 }
 

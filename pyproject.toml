@@ -44,6 +44,7 @@ nautobot-capacity-metrics = "^3.0.1"
 xmldiff = "^2.6.3"
 # Used for local development
 nautobot = ">=2.4.2, <3.0.0"
+jdiff = ">=1.0.0,<2.0.0"
 
 [tool.poetry.group.dev.dependencies]
 coverage = "*"

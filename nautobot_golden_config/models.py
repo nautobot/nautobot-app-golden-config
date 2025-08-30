@@ -11,6 +11,8 @@ from django.db.models.manager import BaseManager
 from django.utils.module_loading import import_string
 from hier_config import WorkflowRemediation, get_hconfig
 from hier_config.utils import hconfig_v2_os_v3_platform_mapper, load_hconfig_v2_options
+from jdiff import CheckType
+from jdiff.utils.diff_helpers import parse_diff
 from nautobot.apps.models import RestrictedQuerySet
 from nautobot.apps.utils import render_jinja2
 from nautobot.core.models.generics import PrimaryModel
@@ -114,6 +116,40 @@ def _get_json_compliance(obj):
         ordered = False
         missing = _null_to_empty(_normalize_diff(diff, "added"))
         extra = _null_to_empty(_normalize_diff(diff, "removed"))
+
+    return {
+        "compliance": compliance,
+        "compliance_int": compliance_int,
+        "ordered": ordered,
+        "missing": missing,
+        "extra": extra,
+    }
+
+
+def _get_json_jdiff_compliance(obj):
+    """This function performs the actual compliance for json serializable data."""
+    jdiff_param_match = CheckType.create("exact_match")
+    extracted_actual = obj.actual.get(obj.rule.match_config, {})
+    extracted_intended = obj.intended.get(obj.rule.match_config, {})
+    jdiff_evaluate_response, compliant = jdiff_param_match.evaluate(extracted_intended, extracted_actual)
+    if compliant:
+        compliance_int = 1
+        compliance = True
+        ordered = True
+        missing = ""
+        extra = ""
+    else:
+        parsed_extra, parsed_missing = parse_diff(
+            jdiff_evaluate_response,
+            obj.actual,
+            obj.intended,
+            obj.rule.match_config,
+        )
+        compliance_int = 0
+        compliance = False
+        ordered = False
+        missing = parsed_missing
+        extra = parsed_extra
 
     return {
         "compliance": compliance,
@@ -240,7 +276,8 @@ def _get_hierconfig_remediation(obj):
 # The below maps the provided compliance types
 FUNC_MAPPER = {
     ComplianceRuleConfigTypeChoice.TYPE_CLI: _get_cli_compliance,
-    ComplianceRuleConfigTypeChoice.TYPE_JSON: _get_json_compliance,
+    ComplianceRuleConfigTypeChoice.TYPE_JSON_DEEPDIFF: _get_json_compliance,
+    ComplianceRuleConfigTypeChoice.TYPE_JSON_JDIFF: _get_json_jdiff_compliance,
     ComplianceRuleConfigTypeChoice.TYPE_XML: _get_xml_compliance,
     RemediationTypeChoice.TYPE_HIERCONFIG: _get_hierconfig_remediation,
 }

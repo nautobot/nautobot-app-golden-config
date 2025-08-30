@@ -72,5 +72,3 @@ Seeing the diff button alone will **only** show up for devices using JSON compli
 ![Example of Diff Icon](../images/navigating-compliance-json-dark.png#only-dark)
 
 The detailed diff view will show a side by side diff, this looks the same as the CLI view.
-
-![Detail Diff View](../images/08-navigating-compliance-json.png)

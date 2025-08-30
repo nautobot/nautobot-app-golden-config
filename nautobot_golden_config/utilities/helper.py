@@ -7,7 +7,6 @@ from copy import deepcopy
 from django.conf import settings
 from django.contrib import messages
 from django.db.models import OuterRef, Q, Subquery
-from django.db.utils import ProgrammingError
 from django.template import engines
 from django.urls import reverse
 from django.utils.html import format_html
@@ -329,18 +328,18 @@ class GoldenConfigDefaults:
         return "<GoldenConfigDefaults fallback>"
 
 
-def get_golden_config_settings():
-    """Return the first GoldenConfigSetting in the database if it exists; otherwise return a fallback object that uses GoldenConfig.default_settings."""
-    try:
-        db_instance = models.GoldenConfigSetting.objects.first()
-        if db_instance:
-            return db_instance
-    except ProgrammingError:
-        # Table doesn't exist yet, or other DB issues
-        pass
+# def get_golden_config_settings():
+#     """Return the first GoldenConfigSetting in the database if it exists; otherwise return a fallback object that uses GoldenConfig.default_settings."""
+#     try:
+#         db_instance = models.GoldenConfigSetting.objects.first()
+#         if db_instance:
+#             return db_instance
+#     except ProgrammingError:
+#         # Table doesn't exist yet, or other DB issues
+#         pass
 
-    # Fall back to default settings if no DB row is available
-    return GoldenConfigDefaults(app_config.default_settings)
+#     # Fall back to default settings if no DB row is available
+#     return GoldenConfigDefaults(app_config.default_settings)
 
 
 def verify_feature_enabled(logger, feature_name, gc_settings, required_settings=None):

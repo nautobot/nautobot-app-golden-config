@@ -25,10 +25,11 @@ from rest_framework.response import Response
 
 from nautobot_golden_config import details, filters, forms, models, tables
 from nautobot_golden_config.api import serializers
-from nautobot_golden_config.utilities import constant
 from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
 from nautobot_golden_config.utilities.graphql import graph_ql_query
-from nautobot_golden_config.utilities.helper import add_message, get_device_to_settings_map, get_golden_config_settings
+from nautobot_golden_config.utilities.helper import (  # , get_golden_config_settings
+    get_device_to_settings_map,
+)
 from nautobot_golden_config.utilities.mat_plot import get_global_aggr, plot_barchart_visual, plot_visual
 
 # TODO: Future #4512
@@ -115,18 +116,18 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
 
     def get_extra_context(self, request, instance=None, **kwargs):
         """Get extra context data."""
-        settings = get_golden_config_settings()
+        # settings = get_golden_config_settings()
         context = super().get_extra_context(request, instance)
         if self.action == "retrieve":
             context["device_object"] = self._get_device_context(instance)
-        context["compliance"] = settings.compliance_enabled
-        context["backup"] = settings.backup_enabled
-        context["intended"] = settings.intended_enabled
-        jobs = []
-        jobs.append(["BackupJob", settings.backup_enabled])
-        jobs.append(["IntendedJob", settings.intended_enabled])
-        jobs.append(["ComplianceJob", settings.compliance_enabled])
-        add_message(jobs, request)
+        # context["compliance"] = settings.compliance_enabled
+        # context["backup"] = settings.backup_enabled
+        # context["intended"] = settings.intended_enabled
+        # jobs = []
+        # jobs.append(["BackupJob", settings.backup_enabled])
+        # jobs.append(["IntendedJob", settings.intended_enabled])
+        # jobs.append(["ComplianceJob", settings.compliance_enabled])
+        # add_message(jobs, request)
         return context
 
     def _pre_helper(self, pk, request):
@@ -277,7 +278,7 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
 
     def get_extra_context(self, request, instance=None, **kwargs):
         """A ConfigCompliance helper function to warn if the Job is not enabled to run."""
-        settings = get_golden_config_settings()
+        # settings = get_golden_config_settings()
         context = super().get_extra_context(request, instance)
         if self.action == "overview":
             context = {**context, **self.report_context}
@@ -285,10 +286,10 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
         if self.action == "bulk_destroy":
             context["table"] = self.store_table
 
-        context["compliance"] = settings.compliance_enabled
-        context["backup"] = settings.backup_enabled
-        context["intended"] = settings.intended_enabled
-        add_message([["ComplianceJob", settings.compliance_enabled]], request)
+        # context["compliance"] = settings.compliance_enabled
+        # context["backup"] = settings.backup_enabled
+        # context["intended"] = settings.intended_enabled
+        # add_message([["ComplianceJob", settings.compliance_enabled]], request)
         return context
 
     def alter_queryset(self, request):
@@ -398,7 +399,7 @@ class ConfigComplianceOverview(generic.ObjectListView):
     def setup(self, request, *args, **kwargs):
         """Using request object to perform filtering based on query params."""
         super().setup(request, *args, **kwargs)
-        settings = get_golden_config_settings()
+        # settings = get_golden_config_settings()
         filter_params = self.get_filter_params(request)
         # Add .restrict() to the queryset to restrict the view based on user permissions.
         main_qs = models.ConfigCompliance.objects.restrict(request.user, "view")
@@ -410,7 +411,7 @@ class ConfigComplianceOverview(generic.ObjectListView):
             "device_visual": plot_visual(device_aggr),
             "feature_aggr": feature_aggr,
             "feature_visual": plot_visual(feature_aggr),
-            "compliance": settings.compliance_enabled,
+            "compliance": True,  # TODO fix
         }
 
     def extra_context(self):
@@ -432,11 +433,11 @@ class ComplianceFeatureUIViewSet(views.NautobotUIViewSet):
     lookup_field = "pk"
     object_detail_content = details.compliance_feature
 
-    def get_extra_context(self, request, instance=None):
-        """A ComplianceFeature helper function to warn if the Job is not enabled to run."""
-        settings = get_golden_config_settings()
-        add_message([["ComplianceJob", settings.compliance_enabled]], request)
-        return {}
+    # def get_extra_context(self, request, instance=None):
+    #     """A ComplianceFeature helper function to warn if the Job is not enabled to run."""
+    #     settings = get_golden_config_settings()
+    #     add_message([["ComplianceJob", settings.compliance_enabled]], request)
+    #     return {}
 
 
 class ComplianceRuleUIViewSet(views.NautobotUIViewSet):
@@ -452,11 +453,11 @@ class ComplianceRuleUIViewSet(views.NautobotUIViewSet):
     lookup_field = "pk"
     object_detail_content = details.compliance_rule
 
-    def get_extra_context(self, request, instance=None):
-        """A ComplianceRule helper function to warn if the Job is not enabled to run."""
-        settings = get_golden_config_settings()
-        add_message([["ComplianceJob", settings.compliance_enabled]], request)
-        return {}
+    # def get_extra_context(self, request, instance=None):
+    #     """A ComplianceRule helper function to warn if the Job is not enabled to run."""
+    #     settings = get_golden_config_settings()
+    #     add_message([["ComplianceJob", settings.compliance_enabled]], request)
+    #     return {}
 
 
 class GoldenConfigSettingUIViewSet(views.NautobotUIViewSet):
@@ -475,42 +476,42 @@ class GoldenConfigSettingUIViewSet(views.NautobotUIViewSet):
 
     def get_extra_context(self, request, instance=None):
         """A GoldenConfig helper function to warn if the Job is not enabled to run."""
-        settings = get_golden_config_settings()
+        # settings = get_golden_config_settings()
         context = super().get_extra_context(request, instance)
         if self.action == "retrieve":
             dg = getattr(instance, "dynamic_group", None)
             context["dg_data"] = {"Dynamic Group": dg, "Filter Query Logic": dg.filter, "Scope of Devices": dg}
 
-        jobs = []
-        jobs.append(["BackupJob", settings.backup_enabled])
-        jobs.append(["IntendedJob", settings.intended_enabled])
-        jobs.append(["DeployConfigPlans", settings.plan_enabled])
-        jobs.append(["ComplianceJob", settings.compliance_enabled])
-        jobs.append(
-            [
-                "AllGoldenConfig",
-                [
-                    settings.backup_enabled,
-                    settings.compliance_enabled,
-                    settings.deploy_enabled,
-                    settings.intended_enabled,
-                    constant.ENABLE_SOTAGG,
-                ],
-            ]
-        )
-        jobs.append(
-            [
-                "AllDevicesGoldenConfig",
-                [
-                    settings.backup_enabled,
-                    settings.compliance_enabled,
-                    settings.deploy_enabled,
-                    settings.intended_enabled,
-                    constant.ENABLE_SOTAGG,
-                ],
-            ]
-        )
-        add_message(jobs, request)
+        # jobs = []
+        # jobs.append(["BackupJob", settings.backup_enabled])
+        # jobs.append(["IntendedJob", settings.intended_enabled])
+        # jobs.append(["DeployConfigPlans", settings.plan_enabled])
+        # jobs.append(["ComplianceJob", settings.compliance_enabled])
+        # jobs.append(
+        #     [
+        #         "AllGoldenConfig",
+        #         [
+        #             settings.backup_enabled,
+        #             settings.compliance_enabled,
+        #             settings.deploy_enabled,
+        #             settings.intended_enabled,
+        #             constant.ENABLE_SOTAGG,
+        #         ],
+        #     ]
+        # )
+        # jobs.append(
+        #     [
+        #         "AllDevicesGoldenConfig",
+        #         [
+        #             settings.backup_enabled,
+        #             settings.compliance_enabled,
+        #             settings.deploy_enabled,
+        #             settings.intended_enabled,
+        #             constant.ENABLE_SOTAGG,
+        #         ],
+        #     ]
+        # )
+        # add_message(jobs, request)
         return context
 
 
@@ -527,11 +528,11 @@ class ConfigRemoveUIViewSet(views.NautobotUIViewSet):
     lookup_field = "pk"
     object_detail_content = details.config_remove
 
-    def get_extra_context(self, request, instance=None):
-        """A ConfigRemove helper function to warn if the Job is not enabled to run."""
-        settings = get_golden_config_settings()
-        add_message([["BackupJob", settings.backup_enabled]], request)
-        return {}
+    # def get_extra_context(self, request, instance=None):
+    #     """A ConfigRemove helper function to warn if the Job is not enabled to run."""
+    #     settings = get_golden_config_settings()
+    #     add_message([["BackupJob", settings.backup_enabled]], request)
+    #     return {}
 
 
 class ConfigReplaceUIViewSet(views.NautobotUIViewSet):
@@ -547,11 +548,11 @@ class ConfigReplaceUIViewSet(views.NautobotUIViewSet):
     lookup_field = "pk"
     object_detail_content = details.config_replace
 
-    def get_extra_context(self, request, instance=None):
-        """A ConfigReplace helper function to warn if the Job is not enabled to run."""
-        settings = get_golden_config_settings()
-        add_message([["BackupJob", settings.backup_enabled]], request)
-        return {}
+    # def get_extra_context(self, request, instance=None):
+    #     """A ConfigReplace helper function to warn if the Job is not enabled to run."""
+    #     settings = get_golden_config_settings()
+    #     add_message([["BackupJob", settings.backup_enabled]], request)
+    #     return {}
 
 
 class RemediationSettingUIViewSet(views.NautobotUIViewSet):
@@ -568,11 +569,11 @@ class RemediationSettingUIViewSet(views.NautobotUIViewSet):
     lookup_field = "pk"
     object_detail_content = details.config_remediation
 
-    def get_extra_context(self, request, instance=None):
-        """A RemediationSetting helper function to warn if the Job is not enabled to run."""
-        settings = get_golden_config_settings()
-        add_message([["ComplianceJob", settings.compliance_enabled]], request)
-        return {}
+    # def get_extra_context(self, request, instance=None):
+    #     """A RemediationSetting helper function to warn if the Job is not enabled to run."""
+    #     settings = get_golden_config_settings()
+    #     add_message([["ComplianceJob", settings.compliance_enabled]], request)
+    #     return {}
 
 
 class ConfigPlanUIViewSet(views.NautobotUIViewSet):
@@ -598,13 +599,13 @@ class ConfigPlanUIViewSet(views.NautobotUIViewSet):
 
     def get_extra_context(self, request, instance=None):
         """A ConfigPlan helper function to warn if the Job is not enabled to run."""
-        settings = get_golden_config_settings()
+        # settings = get_golden_config_settings()
         context = super().get_extra_context(request, instance)
-        jobs = []
-        jobs.append(["GenerateConfigPlans", settings.plan_enabled])
-        jobs.append(["DeployConfigPlans", settings.deploy_enabled])
-        jobs.append(["DeployConfigPlanJobButtonReceiver", settings.deploy_enabled])
-        add_message(jobs, request)
+        # jobs = []
+        # jobs.append(["GenerateConfigPlans", settings.plan_enabled])
+        # jobs.append(["DeployConfigPlans", settings.deploy_enabled])
+        # jobs.append(["DeployConfigPlanJobButtonReceiver", settings.deploy_enabled])
+        # add_message(jobs, request)
         return context
 
 

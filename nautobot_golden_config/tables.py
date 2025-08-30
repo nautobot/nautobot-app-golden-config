@@ -7,18 +7,18 @@ from nautobot.apps.tables import BaseTable, BooleanColumn, TagColumn, ToggleColu
 from nautobot.extras.tables import StatusTableMixin
 
 from nautobot_golden_config import models
-from nautobot_golden_config.utilities.constant import ENABLE_POSTPROCESSING, ENABLE_SOTAGG
-from nautobot_golden_config.utilities.helper import get_golden_config_settings
 
-settings = get_golden_config_settings()
+# from nautobot_golden_config.utilities.helper import get_golden_config_settings
 
-CONFIG_FEATURES = {
-    "intended": settings.intended_enabled,
-    "compliance": settings.compliance_enabled,
-    "backup": settings.backup_enabled,
-    "sotagg": ENABLE_SOTAGG,
-    "postprocessing": ENABLE_POSTPROCESSING,
-}
+# settings = get_golden_config_settings()
+
+# CONFIG_FEATURES = {
+#     "intended": settings.intended_enabled,
+#     "compliance": settings.compliance_enabled,
+#     "backup": settings.backup_enabled,
+#     "sotagg": ENABLE_SOTAGG,
+#     "postprocessing": ENABLE_POSTPROCESSING,
+# }
 
 ALL_ACTIONS = """
 {% if backup == True %}

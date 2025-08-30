@@ -89,7 +89,15 @@ golden_config_setting = ui.ObjectDetailContent(
             label="General Settings",
             section=ui.SectionChoices.LEFT_HALF,
             weight=100,
-            fields=("weight", "description"),
+            fields=(
+                "weight",
+                "description",
+                "backup_enabled",
+                "intended_enabled",
+                "compliance_enabled",
+                "plan_enabled",
+                "deploy_enabled",
+            ),
         ),
         ui.KeyValueTablePanel(
             section=ui.SectionChoices.LEFT_HALF,

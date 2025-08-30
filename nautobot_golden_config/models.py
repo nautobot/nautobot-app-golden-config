@@ -706,8 +706,12 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         """Validate the scope and GraphQL query."""
         super().clean()
 
-        if self.intended_enabled and not self.sot_agg_query:
-            raise ValidationError("A GraphQL query must be defined when Intended Enabled is checked.")
+        if self.intended_enabled and (
+            not self.jinja_repository or not self.sot_agg_query or not self.jinja_path_template
+        ):
+            raise ValidationError(
+                "When Intended is enabled, you must be define a `Sot agg query`, `Jinja repository` and `Jinja Template Path`."
+            )
 
         if self.sot_agg_query:
             LOGGER.debug("GraphQL - test  query start with: `%s`", GRAPHQL_STR_START)

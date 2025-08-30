@@ -5,19 +5,19 @@ from django.db.models import Count, Q
 from django.urls import reverse
 from nautobot.extras.plugins import PluginTemplateExtension
 
-from nautobot_golden_config.models import ConfigCompliance, GoldenConfig
-from nautobot_golden_config.utilities.constant import ENABLE_POSTPROCESSING, ENABLE_SOTAGG
-from nautobot_golden_config.utilities.helper import get_golden_config_settings
+from nautobot_golden_config.models import ConfigCompliance, GoldenConfig, GoldenConfigSetting
 
-settings = get_golden_config_settings()
+# from nautobot_golden_config.utilities.helper import get_golden_config_settings
 
-CONFIG_FEATURES = {
-    "intended": settings.intended_enabled,
-    "compliance": settings.compliance_enabled,
-    "backup": settings.backup_enabled,
-    "sotagg": ENABLE_SOTAGG,
-    "postprocessing": ENABLE_POSTPROCESSING,
-}
+# settings = get_golden_config_settings()
+
+# CONFIG_FEATURES = {
+#     "intended": settings.intended_enabled,
+#     "compliance": settings.compliance_enabled,
+#     "backup": settings.backup_enabled,
+#     "sotagg": ENABLE_SOTAGG,
+#     "postprocessing": ENABLE_POSTPROCESSING,
+# }
 
 
 class ConfigComplianceDeviceCheck(PluginTemplateExtension):  # pylint: disable=abstract-method
@@ -117,7 +117,8 @@ class ConfigDeviceDetails(PluginTemplateExtension):  # pylint: disable=abstract-
             "device": self.get_device(),  # device,
             "golden_config": golden_config,
             "template_type": "device-configs",
-            "config_features": CONFIG_FEATURES,
+            "config_features": GoldenConfigSetting.objects.get_for_device(device),
+            # "config_features": CONFIG_FEATURES,
         }
         return self.render(
             "nautobot_golden_config/content_template.html",
@@ -157,10 +158,10 @@ class ConfigComplianceTenantCheck(PluginTemplateExtension):  # pylint: disable=a
 
 
 extensions = [ConfigDeviceDetails]
-if settings.compliance_enabled:
-    extensions.append(ConfigComplianceDeviceCheck)
-    extensions.append(ConfigComplianceLocationCheck)
-    extensions.append(ConfigComplianceTenantCheck)
+# if settings.compliance_enabled:
+extensions.append(ConfigComplianceDeviceCheck)
+extensions.append(ConfigComplianceLocationCheck)
+extensions.append(ConfigComplianceTenantCheck)
 
 
 template_extensions = extensions

@@ -42,7 +42,7 @@ from nautobot_golden_config.utilities.constant import JOB_FUNCTION_MAP
 from nautobot_golden_config.utilities.git import GitRepo
 from nautobot_golden_config.utilities.helper import (
     get_device_to_settings_map,
-    get_golden_config_settings,
+    # get_golden_config_settings,
     get_inscope_settings_from_device_qs,
     get_job_filter,
     update_dynamic_groups_cache,
@@ -53,45 +53,6 @@ from nautobot_golden_config.utilities.helper import (
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 
 name = "Golden Configuration"  # pylint: disable=invalid-name
-
-
-"""
-What do we need for each job related to repositories?
-- The best GoldenConfigSettings across all inscope devices. should be get_inscope_settings_from_device_qs from helpers.
-- Helps with quickly determining if a repo is needed for a job.
-- get_repo_types_for_job accompanied by inscope settings gets actual repos.
-- Device to settings map. This is a dict of device pk to the GoldenConfigSettings object.
-
-From a device qs, we need to get the following:
-- The best GoldenConfigSettings across all inscope devices. should be get_inscope_settings_from_device_qs from helpers.
-- Device to settings map. This is a dict of device pk to the GoldenConfigSettings object.
-- Repos per inscope settings, if that specific setting is enabled based on the repos needed for the job (get_repo_types_for_job).
-
-
-Other considerations for (only for compliance job, and all jobs)
-- If a setting is disabled, but a repo/repo path is set that means we need to do:
-    - Still run ensure_git_repository on the repo.
-    - Don't add repo to the list of repos to commit/push.
------------
-Backup job:
-- Repo types needed: backup_repository
-- Always sync repos if a device is in scope for the job that matches a GC setting.
-- If setting is enabled, and repo is set, and if a device is in scope for the job, then we need to commit/push only backup_repository.
-- We should log if a device is in the queryset, but the setting is disabled.
-
-Intended job:
-- Repo types needed: jinja_repository, intended_repository
-- Always sync repos if a device is in scope for the job that matches a GC setting.
-- If setting is enabled, and repo is set, and if a device is in scope for the job, then we need to commit/push only intended_repository.
-- We should log if a device is in the queryset, but the setting is disabled.
-    - Also if templates git repo is not set, but intended is set, and setting is enabled.
-
-
-Compliance job:
-- Repo types needed: intended_repository, backup_repository
-- All job:
-- Repo types needed: backup_repository, jinja_repository, intended_repository
-"""
 
 
 def get_repo_types_for_job(job_name):
@@ -349,6 +310,11 @@ class GoldenConfigJobMixin(Job):  # pylint: disable=abstract-method
             return
         enabled_qs, disabled_qs = self._get_filtered_queryset(self.job_function)
         self._log_out_of_scope_devices(disabled_qs)
+        if enabled_qs.count() == 0:
+            self.logger.warning(
+                f"E3039: No devices found with Golden Config settings enabled for the {self.job_function} job."
+            )
+            return
         inscope_gcs = get_inscope_settings_from_device_qs(enabled_qs)
         repos_to_sync, self.repos_to_push = GoldenConfigSetting.objects.get_repos_for_settings(
             inscope_gcs, get_repo_types_for_job(self.job_function)
@@ -398,6 +364,8 @@ class ComplianceJob(GoldenConfigJobMixin, FormEntry):
     @gc_job_helper
     def run(self, *args, **data):  # pylint: disable=unused-argument
         """Run config compliance report script."""
+        if self.task_qs.count() == 0:
+            return
         try:
             self.logger.debug("Starting config compliance nornir play.")
             config_compliance(self)
@@ -420,6 +388,8 @@ class IntendedJob(GoldenConfigJobMixin, FormEntry):
     @gc_job_helper
     def run(self, *args, **data):  # pylint: disable=unused-argument
         """Run config generation script."""
+        if self.task_qs.count() == 0:
+            return
         try:
             self.logger.debug("Building device settings mapping and running intended config nornir play.")
             config_intended(self)
@@ -442,6 +412,8 @@ class BackupJob(GoldenConfigJobMixin, FormEntry):
     @gc_job_helper
     def run(self, *args, **data):  # pylint: disable=unused-argument
         """Run config backup process."""
+        if self.task_qs.count() == 0:
+            return
         try:
             self.logger.debug("Starting config backup nornir play.")
             config_backup(self)
@@ -684,7 +656,7 @@ class GenerateConfigPlans(Job, FormEntry):
     def run(self, **data):
         """Run config plan generation process."""
         self.logger.debug("Starting config plan generation job.")
-        settings = get_golden_config_settings()
+        settings = None
 
         self._validate_inputs(data)
         try:
@@ -736,7 +708,7 @@ class DeployConfigPlans(Job):
         update_dynamic_groups_cache()
         self.logger.debug("Starting config plan deployment job.")
         self.data = data
-        settings = get_golden_config_settings()
+        settings = None
 
         # Verify deployment eligibility for each config plan
         for config_plan in self.data["config_plan"]:

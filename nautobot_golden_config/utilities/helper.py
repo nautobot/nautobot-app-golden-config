@@ -198,6 +198,7 @@ def get_device_to_settings_map(queryset, job_name):
         for setting in settings_filters2:
             is_enabled = getattr(gcs[device.gc_settings], f"enable_{setting}", False)
             settings_filters2[setting][is_enabled][device.id] = gcs[device.gc_settings]
+    print(f"Settings Filters: {settings_filters2}")
     return settings_filters2
 
 

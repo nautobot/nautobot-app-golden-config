@@ -437,35 +437,35 @@ class GoldenConfigSettingTable(BaseTable):
 
     pk = ToggleColumn()
     name = Column(order_by=("_name",), linkify=True)
-    jinja_repository = Column(
-        verbose_name="Jinja Repository",
-        empty_values=(),
-    )
-    intended_repository = Column(
-        verbose_name="Intended Repository",
-        empty_values=(),
-    )
-    backup_repository = Column(
-        verbose_name="Backup Repository",
-        empty_values=(),
-    )
+    # jinja_repository = Column(
+    #     verbose_name="Jinja Repository",
+    #     empty_values=(),
+    # )
+    # intended_repository = Column(
+    #     verbose_name="Intended Repository",
+    #     empty_values=(),
+    # )
+    # backup_repository = Column(
+    #     verbose_name="Backup Repository",
+    #     empty_values=(),
+    # )
 
     def _render_capability(self, record, column, record_attribute):  # pylint: disable=unused-argument
         if getattr(record, record_attribute, None):
             return format_html('<span class="text-success"><i class="mdi mdi-check-bold"></i></span>')
         return format_html('<span class="text-danger"><i class="mdi mdi-close-thick"></i></span>')
 
-    def render_backup_repository(self, record, column):
-        """Render backup repository boolean value."""
-        return self._render_capability(record=record, column=column, record_attribute="backup_repository")
+    # def render_backup_repository(self, record, column):
+    #     """Render backup repository boolean value."""
+    #     return self._render_capability(record=record, column=column, record_attribute="backup_repository")
 
-    def render_intended_repository(self, record, column):
-        """Render intended repository boolean value."""
-        return self._render_capability(record=record, column=column, record_attribute="intended_repository")
+    # def render_intended_repository(self, record, column):
+    #     """Render intended repository boolean value."""
+    #     return self._render_capability(record=record, column=column, record_attribute="intended_repository")
 
-    def render_jinja_repository(self, record, column):
-        """Render jinja repository boolean value."""
-        return self._render_capability(record=record, column=column, record_attribute="jinja_repository")
+    # def render_jinja_repository(self, record, column):
+    #     """Render jinja repository boolean value."""
+    #     return self._render_capability(record=record, column=column, record_attribute="jinja_repository")
 
     class Meta(BaseTable.Meta):
         """Meta attributes."""
@@ -475,10 +475,13 @@ class GoldenConfigSettingTable(BaseTable):
             "pk",
             "name",
             "weight",
-            "description",
-            "backup_repository",
-            "intended_repository",
-            "jinja_repository",
+            # "description",
+            "enable_backup",
+            # "backup_repository",
+            "enable_intended",
+            # "intended_repository",
+            # "jinja_repository",
+            "enable_compliance",
         )
 
 

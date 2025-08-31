@@ -23,7 +23,14 @@ from netutils.config.compliance import feature_compliance
 from xmldiff import actions, main
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
-from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
+from nautobot_golden_config.utilities.constant import (
+    ENABLE_BACKUP,
+    ENABLE_COMPLIANCE,
+    ENABLE_DEPLOY,
+    ENABLE_INTENDED,
+    ENABLE_PLAN,
+    PLUGIN_CFG,
+)
 
 LOGGER = logging.getLogger(__name__)
 GRAPHQL_STR_START = "query ($device_id: ID!)"
@@ -545,6 +552,29 @@ class GoldenConfigSettingManager(BaseManager.from_queryset(RestrictedQuerySet)):
             return dynamic_group.order_by("-golden_config_setting__weight").first().golden_config_setting
         return None
 
+    def get_repos_for_settings(self, gcs_queryset, job_types):
+        """Return all enabled repos for all settings in a restricted queryset."""
+        repos_to_sync, repos_to_push = [], []
+        if isinstance(gcs_queryset, GoldenConfigSetting):
+            gcs_queryset = [gcs_queryset]
+        for setting in gcs_queryset:
+            for job_type in job_types:
+                if job_type == "backup_repository":
+                    if setting.enable_backup and setting.backup_repository:
+                        repos_to_sync.append(setting.backup_repository)
+                        repos_to_push.append(setting.backup_repository)
+                    if not setting.enable_backup and setting.backup_repository:
+                        repos_to_sync.append(setting.backup_repository)
+                if job_type == "intended_repository":
+                    if setting.enable_intended and setting.intended_repository:
+                        repos_to_sync.append(setting.intended_repository)
+                        repos_to_push.append(setting.intended_repository)
+                        if setting.jinja_repository:
+                            repos_to_sync.append(setting.jinja_repository)
+                    if not setting.enable_intended and setting.intended_repository:
+                        repos_to_sync.append(setting.intended_repository)
+        return list(set(repos_to_sync)), list(set(repos_to_push))
+
 
 @extras_features(
     "graphql",
@@ -573,6 +603,11 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         verbose_name="Backup Path in Jinja Template Form",
         help_text="The Jinja path representation of where the backup file will be found. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.location.name|slugify}}/{{obj.name}}.cfg`",
     )
+    enable_backup = models.BooleanField(
+        default=ENABLE_BACKUP,
+        verbose_name="Enable Backup",
+        help_text="Whether or not backups are performed by Golden Config. This can be disabled if backups are fetched from another process.",
+    )
     intended_repository = models.ForeignKey(
         to="extras.GitRepository",
         on_delete=models.PROTECT,
@@ -586,6 +621,11 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         blank=True,
         verbose_name="Intended Path in Jinja Template Form",
         help_text="The Jinja path representation of where the generated file will be placed. e.g. `{{obj.location.name|slugify}}/{{obj.name}}.cfg`",
+    )
+    enable_intended = models.BooleanField(
+        default=ENABLE_INTENDED,
+        verbose_name="Enable Intended",
+        help_text="Whether or not intended config tasks are performed by Golden Config. This can be disabled if intended configs are fetched from another process.",
     )
     jinja_repository = models.ForeignKey(
         to="extras.GitRepository",
@@ -619,6 +659,21 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         on_delete=models.PROTECT,
         related_name="golden_config_setting",
     )
+    enable_compliance = models.BooleanField(
+        default=ENABLE_COMPLIANCE,
+        verbose_name="Enable Compliance",
+        help_text="Whether or not compliance tasks are performed by Golden Config.",
+    )
+    enable_plan = models.BooleanField(
+        default=ENABLE_PLAN,
+        verbose_name="Enable Config Plan",
+        help_text="Whether or not config plan tasks are performed by Golden Config.",
+    )
+    enable_deploy = models.BooleanField(
+        default=ENABLE_DEPLOY,
+        verbose_name="Enable Deploy",
+        help_text="Whether or not deploy tasks are performed by Golden Config.",
+    )
     is_dynamic_group_associable_model = False
 
     objects = GoldenConfigSettingManager()
@@ -651,8 +706,12 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         """Validate the scope and GraphQL query."""
         super().clean()
 
-        if ENABLE_SOTAGG and not self.sot_agg_query:
-            raise ValidationError("A GraphQL query must be defined when `ENABLE_SOTAGG` is True")
+        if self.enable_intended and (
+            not self.jinja_repository or not self.sot_agg_query or not self.jinja_path_template
+        ):
+            raise ValidationError(
+                "When Intended is enabled, you must be define a `Sot agg query`, `Jinja repository` and `Jinja Template Path`."
+            )
 
         if self.sot_agg_query:
             LOGGER.debug("GraphQL - test  query start with: `%s`", GRAPHQL_STR_START)

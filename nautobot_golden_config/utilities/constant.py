@@ -27,3 +27,25 @@ if not JINJA_ENV.get("undefined"):
     raise ValueError("The `jinja_env` setting did not include the required key for `undefined`.")
 if isinstance(JINJA_ENV["undefined"], str):
     JINJA_ENV["undefined"] = import_string(JINJA_ENV["undefined"])
+
+JOB_FUNCTION_MAP = {
+    "nautobot_golden_config.jobs.BackupJob": "backup",
+    "Backup Configurations": "backup",
+    "BackupJob": "backup",
+    "backup": "backup",
+    "nautobot_golden_config.jobs.IntendedJob": "intended",
+    "Generate Intended Configurations": "intended",
+    "intended": "intended",
+    "IntendedJob": "intended",
+    "nautobot_golden_config.jobs.ComplianceJob": "compliance",
+    "Perform Configuration Compliance": "compliance",
+    "ComplianceJob": "compliance",
+    "compliance": "compliance",
+    "Execute All Golden Configuration Jobs - Multiple Device": "all",
+    "nautobot_golden_config.jobs.AllDevicesGoldenConfig": "all",
+    "AllDevicesGoldenConfig": "all",
+    "Execute All Golden Configuration Jobs - Single Device": "all",
+    "nautobot_golden_config.jobs.AllGoldenConfig": "all",
+    "AllGoldenConfig": "all",
+    "all": "all",
+}

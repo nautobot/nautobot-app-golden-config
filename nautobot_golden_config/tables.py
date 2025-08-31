@@ -10,30 +10,26 @@ from nautobot_golden_config import models
 from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
 
 ALL_ACTIONS = """
-{% if backup == True %}
-    {% if record.config_type == 'json' %}
-        <i class="mdi mdi-circle-small"></i>
+{% if record.config_type == 'json' %}
+    <i class="mdi mdi-circle-small"></i>
+{% else %}
+    {% if record.backup_config %}
+        <a value="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=record.device.pk %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=record.device.pk %}?modal=true">
+            <i class="mdi mdi-file-document-outline" title="Backup Configuration"></i>
+        </a>
     {% else %}
-        {% if record.backup_config %}
-            <a value="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=record.device.pk %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=record.device.pk %}?modal=true">
-                <i class="mdi mdi-file-document-outline" title="Backup Configuration"></i>
-            </a>
-        {% else %}
-            <i class="mdi mdi-circle-small"></i>
-        {% endif %}
+        <i class="mdi mdi-circle-small"></i>
     {% endif %}
 {% endif %}
-{% if intended == True %}
     {% if record.config_type == 'json' %}
-        <i class="mdi mdi-circle-small"></i>
+    <i class="mdi mdi-circle-small"></i>
+{% else %}
+    {% if record.intended_config %}
+        <a value="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=record.device.pk %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=record.device.pk %}?modal=true">
+            <i class="mdi mdi-text-box-check-outline" title="Intended Configuration"></i>
+        </a>
     {% else %}
-        {% if record.intended_config %}
-            <a value="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=record.device.pk %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=record.device.pk %}?modal=true">
-                <i class="mdi mdi-text-box-check-outline" title="Intended Configuration"></i>
-            </a>
-        {% else %}
-            <i class="mdi mdi-circle-small"></i>
-        {% endif %}
+        <i class="mdi mdi-circle-small"></i>
     {% endif %}
 {% endif %}
 {% if postprocessing == True %}
@@ -45,14 +41,12 @@ ALL_ACTIONS = """
         <i class="mdi mdi-circle-small"></i>
     {% endif %}
 {% endif %}
-{% if compliance == True %}
-    {% if record.intended_config and record.backup_config %}
-        <a value="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=record.device.pk %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=record.device.pk %}?modal=true">
-            <i class="mdi mdi-file-compare" title="Compliance Details"></i>
-        </a>
-    {% else %}
-        <i class="mdi mdi-circle-small"></i>
-    {% endif %}
+{% if record.intended_config and record.backup_config %}
+    <a value="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=record.device.pk %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=record.device.pk %}?modal=true">
+        <i class="mdi mdi-file-compare" title="Compliance Details"></i>
+    </a>
+{% else %}
+    <i class="mdi mdi-circle-small"></i>
 {% endif %}
 {% if sotagg == True %}
     <a value="{% url 'plugins:nautobot_golden_config:goldenconfig_sotagg' pk=record.device.pk %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_sotagg' pk=record.device.pk %}?modal=true">
@@ -122,12 +116,12 @@ MATCH_CONFIG = """{{ record.match_config|linebreaksbr }}"""
 def actual_fields():
     """Convienance function to conditionally toggle columns."""
     active_fields = ["pk", "name"]
-    if ENABLE_BACKUP:
-        active_fields.append("backup_last_success_date")
-    if ENABLE_INTENDED:
-        active_fields.append("intended_last_success_date")
-    if ENABLE_COMPLIANCE:
-        active_fields.append("compliance_last_success_date")
+    # if ENABLE_BACKUP:
+    active_fields.append("backup_last_success_date")
+    # if ENABLE_INTENDED:
+    active_fields.append("intended_last_success_date")
+    # if ENABLE_COMPLIANCE:
+    active_fields.append("compliance_last_success_date")
     active_fields.append("actions")
     return tuple(active_fields)
 
@@ -281,25 +275,33 @@ class GoldenConfigTable(BaseTable):
         verbose_name="Device",
     )
 
-    if ENABLE_BACKUP:
-        backup_last_success_date = Column(
-            verbose_name="Backup Status", empty_values=(), order_by="backup_last_success_date"
-        )
-    if ENABLE_INTENDED:
-        intended_last_success_date = Column(
-            verbose_name="Intended Status",
-            empty_values=(),
-            order_by="intended_last_success_date",
-        )
-    if ENABLE_COMPLIANCE:
-        compliance_last_success_date = Column(
-            verbose_name="Compliance Status",
-            empty_values=(),
-            order_by="compliance_last_success_date",
-        )
+    # if ENABLE_BACKUP:
+    backup_last_success_date = Column(
+        verbose_name="Backup Status", empty_values=(), order_by="backup_last_success_date"
+    )
+    # if ENABLE_INTENDED:
+    intended_last_success_date = Column(
+        verbose_name="Intended Status",
+        empty_values=(),
+        order_by="intended_last_success_date",
+    )
+    # if ENABLE_COMPLIANCE:
+    compliance_last_success_date = Column(
+        verbose_name="Compliance Status",
+        empty_values=(),
+        order_by="compliance_last_success_date",
+    )
+
+    config_features = {
+    "intended": True, # models.GoldenConfigSetting.objects.filter(enable_intended=True).exists() or True,
+    "compliance": True, #models.GoldenConfigSetting.objects.filter(enable_compliance=True).exists() or True,
+    "backup": True, #models.GoldenConfigSetting.objects.filter(enable_backup=True).exists() or True,
+    "sotagg": True, # Figure out if this is even needed
+    "postprocessing": True, # Figure out if this is even needed
+    }
 
     actions = TemplateColumn(
-        template_code=ALL_ACTIONS, verbose_name="Actions", extra_context=CONFIG_FEATURES, orderable=False
+        template_code=ALL_ACTIONS, verbose_name="Actions", extra_context=config_features, orderable=False
     )
 
     def _render_last_success_date(self, record, column, value):

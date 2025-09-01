@@ -20,6 +20,7 @@ from nautobot.users import models as users_models
 from packaging import version
 
 from nautobot_golden_config import models, views
+from nautobot_golden_config.utilities.constant import PLUGIN_CFG
 
 from .conftest import create_device_data, create_feature_rule_json, create_job_result
 
@@ -328,6 +329,7 @@ class ConfigPlanTestCase(
             "change_control_url": "https://4.example.com/",
             "status": approved_status.pk,
         }
+        PLUGIN_CFG["postprocessing_subscribed"] = ["whatever"]
 
     @skip("TODO: 2.0 Figure out how to have pass.")
     def test_list_objects_with_constrained_permission(self):

@@ -437,6 +437,8 @@ class GoldenConfigSettingTable(BaseTable):
 
     pk = ToggleColumn()
     name = Column(order_by=("_name",), linkify=True)
+    # kwargs = {"accessor": A("dynamic_group.pk"), "tab": "members", "verbose_name": "Dynamic Group"}
+    dynamic_group__members__count = LinkColumn(viewname="extras:dynamicgroup", kwargs={"pk": A("dynamic_group.pk")} )
     # jinja_repository = Column(
     #     verbose_name="Jinja Repository",
     #     empty_values=(),
@@ -482,6 +484,7 @@ class GoldenConfigSettingTable(BaseTable):
             # "intended_repository",
             # "jinja_repository",
             "enable_compliance",
+            "dynamic_group__members__count",
         )
 
 

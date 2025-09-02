@@ -6,17 +6,17 @@
 {% block title %}Generate Config Plans{% endblock %}
 
 {% block form %}
-  <div class="panel panel-default">
-    <div class="panel-heading"><strong>Plan Details</strong></div>
-    <div class="panel-body">
+  <div class="card">
+    <div class="card-header"><strong>Plan Details</strong></div>
+    <div class="card-body">
       {% render_field form.plan_type %}
       {% render_field form.change_control_id %}
       {% render_field form.change_control_url %}
       {% render_field form.feature %}
       {% render_field form.commands %}
     </div>
-    <div class="panel-heading"><strong>Plan Filters</strong></div>
-    <div class="panel-body">
+    <div class="card"><strong>Plan Filters</strong></div>
+    <div class="card-body">
       <span class="help-block">
         <p>Note: Selecting no filters will generate plans for all applicable devices.</p>
       </span>
@@ -40,8 +40,8 @@
 {% block buttons %}
   {% include "nautobot_golden_config/job_result_modal.html" with modal_title="Generate Config Plans" %}
 
-  <a href="#" id="startJob" class="openBtn" data-backdrop="static">
-    <button type="submit" class="btn btn-primary">Generate</button>
+  <a class="openBtn" data-backdrop="static" href="#" id="startJob">
+    <button class="btn btn-primary" type="submit">Generate</button>
   </a>
 
 {% endblock %}

@@ -315,6 +315,9 @@ class GoldenConfigJobMixin(Job):  # pylint: disable=abstract-method
                 f"E3039: No devices found with Golden Config settings enabled for the {self.job_function} job."
             )
             return
+        self._get_repos_to_sync(enabled_qs)
+
+    def _get_repos_to_sync(self, enabled_qs):
         inscope_gcs = get_inscope_settings_from_device_qs(enabled_qs)
         repos_to_sync, self.repos_to_push = GoldenConfigSetting.objects.get_repos_for_settings(
             inscope_gcs, get_repo_types_for_job(self.job_function)
@@ -436,51 +439,68 @@ class AllGoldenConfig(GoldenConfigJobMixin):
         description = "Process to run all Golden Configuration jobs configured."
         has_sensitive_variables = False
 
+    @gc_job_helper
     def run(self, *args, **data):  # pylint: disable=unused-argument, too-many-branches
         """Run all jobs on a single device."""
         failed_jobs = []
-        error_msg, jobs_list = "", "All"
-        self.gc_job_setup(data)
-        gc_setting = GoldenConfigSetting.objects.get_for_device(data["device"])
-        repos_to_sync, self.repos_to_push = GoldenConfigSetting.objects.get_repos_for_settings(
-            gc_setting,
-            get_repo_types_for_job(self.job_function),
-        )
-        if repos_to_sync:
-            for repository_record in repos_to_sync:
-                ensure_git_repository(repository_record, self.logger)
-        for nornir_play in [config_intended, config_backup, config_compliance]:
-            self.task_qs, _ = self._get_filtered_queryset(nornir_play.__name__.split("_")[1])
-            try:
-                nornir_play(self)
-            except BackupFailure:
-                self.logger.error("Backup failure occurred!")
-                failed_jobs.append("Backup")
-            except IntendedGenerationFailure:
-                self.logger.error("Intended failure occurred!")
-                failed_jobs.append("Intended")
-            except ComplianceFailure:
-                self.logger.error("Compliance failure occurred!")
-                failed_jobs.append("Compliance")
-            except Exception as error:  # pylint: disable=broad-exception-caught
-                error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
-        gc_repo_pushv2(
-            job=self,
-            current_repos=get_refreshed_reposv2(self.repos_to_push),
-            commit_message=data.get("commit_message", ""),
-        )
-        if len(failed_jobs) > 1:
-            jobs_list = ", ".join(failed_jobs)
-        elif len(failed_jobs) == 1:
-            jobs_list = failed_jobs[0]
-        failure_msg = f"`E3030:` Failure during {jobs_list} Job(s)."
-        if len(failed_jobs) > 0:
-            self.logger.error(failure_msg)
-        if (len(failed_jobs) > 0 or error_msg) and data["fail_job_on_task_failure"]:
-            if not error_msg:
-                error_msg = failure_msg
-            # Raise error only if the job kwarg (checkbox) is selected to do so on the job execution form.
-            raise NornirNautobotException(error_msg)
+        # error_msg, jobs_list = "", "All"
+        # self.gc_job_setup(data)
+        # gc_setting = GoldenConfigSetting.objects.get_for_device(data["device"])
+        # repos_to_sync, self.repos_to_push = GoldenConfigSetting.objects.get_repos_for_settings(
+        #     gc_setting,
+        #     get_repo_types_for_job(self.job_function),
+        # )
+        # if repos_to_sync:
+        #     for repository_record in repos_to_sync:
+                # ensure_git_repository(repository_record, self.logger)
+        try:
+            for nornir_play in [config_intended, config_backup, config_compliance]:
+                # "backup", "intended", "compliance"
+                self.task_qs, disabled_qs = self._get_filtered_queryset(nornir_play.__name__.split("_")[1])
+                self._get_repos_to_sync(self.task_qs)
+                self._log_out_of_scope_devices(disabled_qs)
+                try:
+                    if self.task_qs.count() == 0:
+                        self.logger.warning(
+                            f"E3039: No devices found with Golden Config settings enabled for the {nornir_play.__name__.split('_')[1]} job."
+                        )
+                        continue
+                    nornir_play(self)
+                except BackupFailure:
+                    self.logger.error("Backup failure occurred!")
+                    failed_jobs.append("Backup")
+                except IntendedGenerationFailure:
+                    self.logger.error("Intended failure occurred!")
+                    failed_jobs.append("Intended")
+                except ComplianceFailure:
+                    self.logger.error("Compliance failure occurred!")
+                    failed_jobs.append("Compliance")
+                except Exception as error:  # pylint: disable=broad-exception-caught
+                    error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
+            failure_msg = f"`E3030:` Failure during {', '.join(failed_jobs)} Job(s)."
+            if len(failed_jobs) > 0:
+                self.logger.error(failure_msg)
+        except NornirNautobotException as error:
+            error_msg = str(error)
+            self.logger.error(error_msg)
+            raise NornirNautobotException(error_msg) from error
+        # gc_repo_pushv2(
+        #     job=self,
+        #     current_repos=get_refreshed_reposv2(self.repos_to_push),
+        #     commit_message=data.get("commit_message", ""),
+        # )
+        # if len(failed_jobs) > 1:
+        #     jobs_list = ", ".join(failed_jobs)
+        # elif len(failed_jobs) == 1:
+        #     jobs_list = failed_jobs[0]
+        # failure_msg = f"`E3030:` Failure during {', '.join(failed_jobs)} Job(s)."
+        # if len(failed_jobs) > 0:
+        #     self.logger.error(failure_msg)
+        # if (len(failed_jobs) > 0 or error_msg) and data["fail_job_on_task_failure"]:
+        #     if not error_msg:
+        #         error_msg = failure_msg
+        #     # Raise error only if the job kwarg (checkbox) is selected to do so on the job execution form.
+        #     raise NornirNautobotException(error_msg)
 
 
 class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):

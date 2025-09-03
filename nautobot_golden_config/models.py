@@ -9,7 +9,8 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.manager import BaseManager
 from django.utils.module_loading import import_string
-from hier_config import Host as HierConfigHost
+from hier_config import WorkflowRemediation, get_hconfig
+from hier_config.utils import hconfig_v2_os_v3_platform_mapper, load_hconfig_v2_options
 from nautobot.apps.models import RestrictedQuerySet
 from nautobot.apps.utils import render_jinja2
 from nautobot.core.models.generics import PrimaryModel
@@ -176,33 +177,62 @@ def _verify_get_custom_compliance_data(compliance_details):
 
 
 def _get_hierconfig_remediation(obj):
-    """Returns the remediating config."""
-    hierconfig_os = obj.device.platform.network_driver_mappings["hier_config"]
+    """
+    Generate the remediation configuration for a device using HierConfig.
+
+    This function determines the remediating configuration required to bring a device's actual configuration
+    in line with its intended configuration, using the HierConfig library. It performs the following steps:
+
+    1. Retrieves the HierConfig OS type for the device's platform from the device's network driver mappings.
+    2. Validates that the platform is supported by HierConfig.
+    3. Fetches the RemediationSetting object for the platform associated with the compliance rule.
+    4. Loads any remediation options defined for the platform into the HierConfig OS object.
+    5. Instantiates HierConfig objects for both the actual and intended configurations.
+    6. Uses WorkflowRemediation to compute the remediation configuration needed.
+    7. Returns the filtered remediation configuration as text.
+
+    Raises:
+        ValidationError: If the platform is not supported or remediation settings are missing.
+        Exception: If HierConfig cannot be instantiated due to device, platform, or option issues.
+
+    Args:
+        obj: The ConfigCompliance instance containing device, rule, actual, and intended configuration data.
+
+    Returns:
+        str: The remediation configuration as a string.
+    """
+    hierconfig_os = obj.device.platform.network_driver_mappings.get("hier_config")
+
     if not hierconfig_os:
-        raise ValidationError(f"platform {obj.network_driver} is not supported by hierconfig.")
+        raise ValidationError(f"platform {obj.device.platform.name} is not supported by hierconfig.")
 
     try:
         remediation_setting_obj = RemediationSetting.objects.get(platform=obj.rule.platform)
     except Exception as err:  # pylint: disable=broad-except:
-        raise ValidationError(f"Platform {obj.network_driver} has no Remediation Settings defined.") from err
+        raise ValidationError(f"Platform {obj.device.platform.name} has no Remediation Settings defined.") from err
 
     remediation_options = remediation_setting_obj.remediation_options
 
     try:
-        hc_kwargs = {"hostname": obj.device.name, "os": hierconfig_os}
+        hierconfig_os = hconfig_v2_os_v3_platform_mapper(hierconfig_os)
+
         if remediation_options:
-            hc_kwargs.update(hconfig_options=remediation_options)
-        host = HierConfigHost(**hc_kwargs)
+            load_hconfig_v2_options(remediation_options, hierconfig_os)
+
+        hierconfig_running_config = get_hconfig(hierconfig_os, obj.actual)
+        hierconfig_intended_config = get_hconfig(hierconfig_os, obj.intended)
+        hierconfig_wfr = WorkflowRemediation(
+            hierconfig_running_config,
+            hierconfig_intended_config,
+        )
 
     except Exception as err:  # pylint: disable=broad-except:
         raise Exception(  # pylint: disable=broad-exception-raised
             f"Cannot instantiate HierConfig on {obj.device.name}, check Device, Platform and Hier Options."
         ) from err
 
-    host.load_generated_config(obj.intended)
-    host.load_running_config(obj.actual)
-    host.remediation_config()
-    remediation_config = host.remediation_config_filtered_text(include_tags={}, exclude_tags={})
+    hierconfig_wfr.remediation_config  # pylint: disable=pointless-statement
+    remediation_config = hierconfig_wfr.remediation_config_filtered_text(include_tags={}, exclude_tags={})
 
     return remediation_config
 
@@ -220,7 +250,7 @@ for custom_function, custom_type in CUSTOM_FUNCTIONS.items():
         try:
             FUNC_MAPPER[custom_type] = import_string(PLUGIN_CFG[custom_function])
         except Exception as error:  # pylint: disable=broad-except
-            msg = (
+            msg = (  # pylint: disable=invalid-name
                 "There was an issue attempting to import the custom function of"
                 f"{PLUGIN_CFG[custom_function]}, this is expected with a local configuration issue "
                 "and not related to the Golden Configuration App, please contact your system admin for further details"
@@ -579,6 +609,7 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     sot_agg_query = models.ForeignKey(
         to="extras.GraphQLQuery",
         on_delete=models.PROTECT,
+        verbose_name="GraphQL Query",
         null=True,
         blank=True,
         related_name="sot_aggregation",
@@ -591,6 +622,15 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     is_dynamic_group_associable_model = False
 
     objects = GoldenConfigSettingManager()
+
+    clone_fields = [
+        "weight",
+        "backup_path_template",
+        "backup_test_connectivity",
+        "intended_path_template",
+        "jinja_path_template",
+        "sot_agg_query",
+    ]
 
     def __str__(self):
         """Return a simple string if model is called."""

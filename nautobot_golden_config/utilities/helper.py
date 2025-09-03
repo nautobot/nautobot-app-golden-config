@@ -6,7 +6,7 @@ from copy import deepcopy
 
 from django.conf import settings
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import OuterRef, Q, Subquery
 from django.template import engines
 from django.urls import reverse
 from django.utils.html import format_html
@@ -22,6 +22,7 @@ from nornir_nautobot.exceptions import NornirNautobotException
 
 from nautobot_golden_config import config as app_config
 from nautobot_golden_config import models
+from nautobot_golden_config.error_codes import ERROR_CODES
 from nautobot_golden_config.utilities import utils
 from nautobot_golden_config.utilities.constant import JINJA_ENV
 
@@ -173,16 +174,22 @@ def render_jinja_template(obj, logger, template):
 
 
 def get_device_to_settings_map(queryset):
-    """Helper function to map settings to devices."""
-    device_to_settings_map = {}
+    """Helper function to map heightest weighted GC settings to devices."""
     update_dynamic_groups_cache()
-    for device in queryset:
-        dynamic_group = device.dynamic_groups.exclude(golden_config_setting__isnull=True).order_by(
-            "-golden_config_setting__weight"
+    annotated_queryset = queryset.all().annotate(
+        gc_settings=Subquery(
+            models.GoldenConfigSetting.objects.filter(
+                dynamic_group__static_group_associations__associated_object_id=OuterRef("id"),
+                dynamic_group__static_group_associations__associated_object_type__app_label="dcim",
+                dynamic_group__static_group_associations__associated_object_type__model="device",
+            )
+            .order_by("-weight")
+            # [:1] is a ORM/DB "limit 1" query, not a python slice.
+            .values("id")[:1]
         )
-        if dynamic_group.exists():
-            device_to_settings_map[device.id] = dynamic_group.first().golden_config_setting
-    return device_to_settings_map
+    )
+    gcs = {gc.id: gc for gc in models.GoldenConfigSetting.objects.all()}
+    return {device.id: gcs[device.gc_settings] for device in annotated_queryset}
 
 
 def get_json_config(config):
@@ -288,3 +295,22 @@ def update_dynamic_groups_cache():
     if not settings.PLUGINS_CONFIG[app_config.name].get("_manual_dynamic_group_mgmt"):
         for setting in models.GoldenConfigSetting.objects.all():
             setting.dynamic_group.update_cached_members()
+
+
+def get_error_message(error_code, **kwargs):
+    """Get the error message for a given error code.
+
+    Args:
+        error_code (str): The error code.
+        **kwargs: Any additional context data to be interpolated in the error message.
+
+    Returns:
+        str: The constructed error message.
+    """
+    try:
+        error_message = ERROR_CODES.get(error_code, ERROR_CODES["E3XXX"]).error_message.format(**kwargs)
+    except KeyError as missing_kwarg:
+        error_message = f"Error Code was found, but failed to format, message expected kwarg `{missing_kwarg}`."
+    except Exception:  # pylint: disable=broad-except
+        error_message = "Error Code was found, but failed to format message, unknown cause."
+    return f"{error_code}: {error_message}"

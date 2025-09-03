@@ -1,13 +1,15 @@
 """Unit tests for nautobot_golden_config datasources."""
 
-from unittest import skip
-from unittest.mock import Mock
+from unittest.mock import MagicMock, Mock
 
 from django.test import TestCase
+from nautobot.apps.testing import TransactionTestCase
 from nautobot.dcim.models import Platform
+from nautobot.extras.models import JobResult
 
-from nautobot_golden_config.datasources import MissingReference, get_id_kwargs
-from nautobot_golden_config.models import ComplianceFeature
+from nautobot_golden_config.datasources import get_id_kwargs, refresh_git_gc_properties
+from nautobot_golden_config.exceptions import MissingReference, MultipleReferences
+from nautobot_golden_config.models import ComplianceFeature, ComplianceRule, RemediationSetting
 
 
 class GitPropertiesDatasourceTestCase(TestCase):
@@ -16,6 +18,8 @@ class GitPropertiesDatasourceTestCase(TestCase):
     def setUp(self):
         """Setup Object."""
         self.platform = Platform.objects.create(name="example_platform")
+        self.platform.network_driver = "example_platform"
+        self.platform.save()
         self.compliance_feature = ComplianceFeature.objects.create(slug="example_feature")
         self.job_result = Mock()
 
@@ -63,7 +67,6 @@ class GitPropertiesDatasourceTestCase(TestCase):
                 self.job_result,
             )
 
-    @skip("TODO: 2.0 Figure out why this is failing.")
     def test_get_id_kwargs_5(self):
         """Test simple get_id_kwargs 5."""
         gc_config_item_dict = {"platform_network_driver": "example_platform"}
@@ -95,3 +98,91 @@ class GitPropertiesDatasourceTestCase(TestCase):
         )
         self.assertEqual(id_kwargs, {"feature": self.compliance_feature})
         self.assertEqual(gc_config_item_dict, {})
+
+    def test_two_platforms_same_network_driver_exc(self):
+        """Test multiple platforms using same network driver raises exception."""
+        platform2 = Platform.objects.create(name="example_platform2")
+        platform2.network_driver = "example_platform"
+        platform2.save()
+        gc_config_item_dict = {"platform_network_driver": "example_platform"}
+        with self.assertRaises(MultipleReferences):
+            get_id_kwargs(
+                gc_config_item_dict,
+                (("platform", "platform_network_driver"),),
+                self.job_result,
+            )
+
+    def test_two_platforms_same_network_driver_two_keys(self):
+        """Test platform name takes precedence over platform network driver 1."""
+        gc_config_item_dict = {"platform_name": "example_platform", "platform_network_driver": "example_platform"}
+        id_kwargs = get_id_kwargs(
+            gc_config_item_dict,
+            (("platform", "platform_name"),),
+            self.job_result,
+        )
+        self.assertEqual(id_kwargs, {"platform": self.platform})
+        self.assertEqual(gc_config_item_dict, {})
+
+    def test_two_platforms_same_network_driver_two_keys_2(self):
+        """Test platform name takes precedence over platform network driver 2."""
+        platform2 = Platform.objects.create(name="example_platform2")
+        platform2.network_driver = "example_platform"
+        platform2.save()
+        gc_config_item_dict = {"platform_name": "example_platform2", "platform_network_driver": "example_platform"}
+        id_kwargs = get_id_kwargs(
+            gc_config_item_dict,
+            (("platform", "platform_name"),),
+            self.job_result,
+        )
+        self.assertEqual(id_kwargs, {"platform": platform2})
+        self.assertEqual(gc_config_item_dict, {})
+
+
+class TestDatasources(TransactionTestCase):
+    """Test Datasources."""
+
+    def setUp(self):
+        """Setup Object."""
+        self.platform = Platform.objects.create(name="example_platform")
+        self.platform.network_driver = "example_platform"
+        self.platform.save()
+        self.job_result = Mock()
+
+    def test_refresh_git_gc_properties_1(self):
+        """Test refresh_git_gc_properties with one platform."""
+        repository_record = MagicMock()
+        repository_record.filesystem_path = "nautobot_golden_config/tests/fixtures/datasource_mocks1"
+        repository_record.provided_contents = "nautobot_golden_config.pluginproperties"
+        job_result = JobResult()
+        job_result.log = MagicMock(return_value=None)
+        refresh_git_gc_properties(repository_record=repository_record, job_result=job_result)
+        self.assertEqual(ComplianceFeature.objects.count(), 3)
+        self.assertEqual(ComplianceRule.objects.count(), 3)
+        self.assertEqual(RemediationSetting.objects.count(), 1)
+
+    def test_refresh_git_gc_properties_2(self):
+        """Test refresh_git_gc_properties with two platforms using same network driver."""
+        platform2 = Platform.objects.create(name="example_platform2")
+        platform2.network_driver = "example_platform"
+        platform2.save()
+        repository_record = MagicMock()
+        repository_record.filesystem_path = "nautobot_golden_config/tests/fixtures/datasource_mocks1"
+        repository_record.provided_contents = "nautobot_golden_config.pluginproperties"
+        job_result = JobResult()
+        job_result.log = MagicMock(return_value=None)
+        with self.assertRaises(MultipleReferences):
+            refresh_git_gc_properties(repository_record=repository_record, job_result=job_result)
+
+    def test_refresh_git_gc_properties_3(self):
+        """Test refresh_git_gc_properties with two platforms using same network driver."""
+        platform2 = Platform.objects.create(name="example_platform2")
+        platform2.network_driver = "example_platform"
+        platform2.save()
+        repository_record = MagicMock()
+        repository_record.filesystem_path = "nautobot_golden_config/tests/fixtures/datasource_mocks2"
+        repository_record.provided_contents = "nautobot_golden_config.pluginproperties"
+        job_result = JobResult()
+        job_result.log = MagicMock(return_value=None)
+        refresh_git_gc_properties(repository_record=repository_record, job_result=job_result)
+        self.assertEqual(ComplianceFeature.objects.count(), 3)
+        self.assertEqual(ComplianceRule.objects.count(), 3)

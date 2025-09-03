@@ -46,12 +46,6 @@ theme:
 extra_css:
   - "assets/extra.css"
 
-# needed for RTD version flyout menu
-# jquery is not (yet) injected by RTD automatically and it might be dropped
-# as a dependency in the future
-extra_javascript:
-  - "https://code.jquery.com/jquery-3.6.0.min.js"
-
 extra:
   generator: false
   ntc_sponsor: true
@@ -102,8 +96,10 @@ watch:
   - "README.md"
 
 validation:
-  nav:
-    omitted_files: "warn"
+  omitted_files: "warn"
+  absolute_links: "warn"
+  unrecognized_links: "warn"
+  anchors: "warn"
 
 nav:
   - Overview: "index.md"
@@ -135,6 +131,7 @@ nav:
       - Compatibility Matrix: "admin/compatibility_matrix.md"
       - Troubleshooting:
           - "admin/troubleshooting/index.md"
+          - E3XXX: "admin/troubleshooting/E3XXX.md"
           - E3001: "admin/troubleshooting/E3001.md"
           - E3002: "admin/troubleshooting/E3002.md"
           - E3003: "admin/troubleshooting/E3003.md"
@@ -166,6 +163,8 @@ nav:
           - E3029: "admin/troubleshooting/E3029.md"
           - E3030: "admin/troubleshooting/E3030.md"
           - E3031: "admin/troubleshooting/E3031.md"
+          - E3032: "admin/troubleshooting/E3032.md"
+          - E3033: "admin/troubleshooting/E3033.md"
       - Migrating To v2: "admin/migrating_to_v2.md"
       - Release Notes:
           - "admin/release_notes/index.md"

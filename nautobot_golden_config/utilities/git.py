@@ -10,7 +10,7 @@ LOGGER = logging.getLogger(__name__)
 class GitRepo(_GitRepo):  # pylint: disable=too-many-instance-attributes
     """Git Repo object to help with git actions."""
 
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         path,
         url,

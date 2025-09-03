@@ -23,7 +23,7 @@ packages = [
 ]
 include = [
     # Poetry by default will exclude files that are in .gitignore
-    "nautobot_golden_config/static/nautobot_golden_config/docs/**/*",
+    { path = "nautobot_golden_config/static/nautobot_golden_config/docs/**/*", format = ["sdist", "wheel"] }
 ]
 
 [tool.poetry.urls]
@@ -39,7 +39,7 @@ nautobot-plugin-nornir = {git = "https://github.com/nautobot/nautobot-app-nornir
 # nautobot-plugin-nornir = "^3.0.0"  # TODO: Uncomment after v3.0.0 is released
 toml = "^0.10.2"
 netutils = "^1.5.0"
-hier-config = "^2.2.2"
+hier-config = "^3.2.2"
 nautobot-capacity-metrics = {git = "https://github.com/nautobot/nautobot-app-capacity-metrics.git", rev = "next-3.0"}
 # nautobot-capacity-metrics = "^4.0.0"  # TODO: Uncomment after v4.0.0 is released
 xmldiff = "^2.6.3"
@@ -71,7 +71,7 @@ mkdocstrings = "0.25.2"
 mkdocstrings-python = "1.10.8"
 mkdocs-autorefs = "1.2.0"
 griffe = "1.1.1"
-towncrier = "~23.6.0"
+towncrier = ">=23.6.0,<=24.8.0"
 to-json-schema = "*"
 jsonschema = "*"
 
@@ -153,6 +153,17 @@ convention = "google"
 "nautobot_golden_config/tests/*" = [
     "D",
     "S"
+]
+
+[tool.coverage.run]
+disable_warnings = ["already-imported"]
+relative_files = true
+omit = [
+    # Skip Tests
+    "*/tests/*",
+]
+include = [
+    "nautobot_golden_config/*",
 ]
 
 [tool.pymarkdown]

@@ -13,7 +13,7 @@
 <!-- Deploy Button -->
     {% if perms.extras.run_job %}
         {% include "nautobot_golden_config/job_result_modal.html" with modal_title="Deploy Config Plans" %}
-        <button class="btn btn-primary btn-md" data-bs-target="#modalPopup" data-bs-toggle="modal" id="startJob" type="button">
+        <button class="btn btn-primary btn-sm" data-bs-target="#modalPopup" data-bs-toggle="modal" id="startJob" type="button">
             <span aria-hidden="true" class="mdi mdi-upload-multiple"></span> Deploy Selected
         </button>
     {% endif %}

@@ -33,8 +33,8 @@
 
 {% block buttons %}
     <div class="btn-group">
-        <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            <span class="mdi mdi-plus-thick" aria-hidden="true"></span> Execute <span class="caret"></span>
+        <button aria-expanded="false" aria-haspopup="true" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" type="button">
+            <span aria-hidden="true" class="mdi mdi-plus-thick"></span> Execute <span class="mdi mdi-chevron-down"></span>
         </button>
         <ul class="dropdown-menu">
             {% if compliance %}
@@ -47,7 +47,7 @@
                 <li><a href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.BackupJob' %}">Backup</a></li>
             {% endif %}
             {% if not compliance and not intended and not backup %}
-                <li><a href="#" class="disabled">Features are not enabled.</a></li>
+                <li><a class="disabled" href="#">Features are not enabled.</a></li>
             {% endif %}
         </ul>
     </div>
@@ -59,13 +59,13 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title">Golden Configuration</h4>
+                    <h1 class="modal-title">Golden Configuration</h1>
                 </div>
-                <div id="gc-modal-body" class="modal-body">
+                <div class="modal-body" id="gc-modal-body">
                 </div>
                 <div class="modal-footer">
-                    <a id="detail_view" class="btn btn-primary">Detailed View</a>
-                    <button id="close" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <a class="btn btn-primary" id="detail_view">Detailed View</a>
+                    <button class="btn btn-secondary" data-bs-dismiss="modal" id="close" type="button">Close</button>
                 </div>
             </div>
         </div>

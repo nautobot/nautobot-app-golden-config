@@ -3,8 +3,8 @@
 
 
 {% block buttons %}
-    <a href="{% url 'plugins:nautobot_golden_config:configplan_list' %}?status=Completed" class="btn btn-primary" id="completed-button">
-        <span class="mdi mdi-link" aria-hidden="true"></span> Completed Plans
+    <a class="btn btn-primary" href="{% url 'plugins:nautobot_golden_config:configplan_list' %}?status=Completed" id="completed-button">
+        <span aria-hidden="true" class="mdi mdi-link"></span> Completed Plans
     </a>
 {% endblock %}
 
@@ -13,8 +13,8 @@
 <!-- Deploy Button -->
     {% if perms.extras.run_job %}
         {% include "nautobot_golden_config/job_result_modal.html" with modal_title="Deploy Config Plans" %}
-        <button id="startJob" type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modalPopup">
-            <span class="mdi mdi-upload-multiple" aria-hidden="true"></span> Deploy Selected
+        <button class="btn btn-primary btn-sm" data-bs-target="#modalPopup" data-bs-toggle="modal" id="startJob" type="button">
+            <span aria-hidden="true" class="mdi mdi-upload-multiple"></span> Deploy Selected
         </button>
     {% endif %}
 

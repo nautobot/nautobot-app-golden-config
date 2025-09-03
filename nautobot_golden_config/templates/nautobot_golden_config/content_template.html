@@ -1,12 +1,12 @@
 {% if compliance %}
-    <div class="panel panel-default">
+    <div class="card">
         {% if template_type == "devicetab" %}
-            <div class="panel-heading">
+            <div class="card-header">
                 <a href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab=nautobot_golden_config:1">
                     <strong>Config Compliance Validation</strong>
                 </a>
             </div>
-            <table class="table table-hover panel-body">
+            <table class="table table-hover card-body">
                 <thead>
                     <tr class="table-headings">
                         <th>Feature</th>
@@ -19,11 +19,11 @@
                             <td>{{ item.rule__feature__name }}</td>
                             <td>
                                 {% if item.compliance == False %}
-                                    <span class="label label-danger">Non-Compliant</span>
+                                    <span class="label bg-danger">Non-Compliant</span>
                                 {% elif item.compliance == True %}
-                                    <span class="label label-success">Compliant</span>
+                                    <span class="label bg-success">Compliant</span>
                                 {% else %}
-                                    <span class="label label-info">N/A</span>
+                                    <span class="label bg-info">N/A</span>
                                 {% endif %}
                             </td>
                         </tr>
@@ -31,7 +31,7 @@
                 </tbody>
             </table>
         {% elif template_type == 'location' %}
-            <table class="table table-hover panel-body">
+            <table class="table table-hover card-body">
                 <thead>
                     <tr class="table-headings">
                         <th>Feature</th>
@@ -43,8 +43,8 @@
                     {% for item in compliance %}
                         <tr>
                             <td>{{ item.rule__feature__name }}</td>
-                            <td><span class="label label-danger">{{ item.non_compliant }}</span></td>
-                            <td><span class="label label-success">{{ item.compliant }}</span></td>
+                            <td><span class="label bg-danger">{{ item.non_compliant }}</span></td>
+                            <td><span class="label bg-success">{{ item.compliant }}</span></td>
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -54,11 +54,11 @@
 {% endif %}
 {# The panel will not show up, since it is returned early in template_content.py based on an actual GoldenConfig object existing #}
 {% if template_type == "device-configs" %}
-    <div class="panel panel-default">
-        <div class="panel-heading">
+    <div class="card">
+        <div class="card-header">
             <strong>Configuration Types</strong>
         </div>
-        <table class="table table-hover panel-body">
+        <table class="table table-hover card-body">
             <thead>
                 <tr class="table-headings">
                     <th>Type</th>
@@ -71,7 +71,7 @@
                         <td>Compliance</td>
                         <td>
                             <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=device.pk %}">
-                                <i class="mdi mdi-file-compare"></i>
+                                <span class="mdi mdi-file-compare"></span>
                             </a>
                         </td>
                     </tr>
@@ -80,7 +80,7 @@
                         <td>Intended</td>
                         <td>
                             <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=device.pk %}">
-                                <i class="mdi mdi-text-box-check-outline"></i>
+                                <span class="mdi mdi-text-box-check-outline"></span>
                             </a>
                         </td>
                     </tr>
@@ -89,7 +89,7 @@
                         <td>Configuration Postprocessing</td>
                         <td>
                             <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=device.pk %}">
-                                <i class="mdi mdi-text-box-check"></i>
+                                <span class="mdi mdi-text-box-check"></span>
                             </a>
                         </td>
                     </tr>
@@ -98,7 +98,7 @@
                         <td>Actual</td>
                         <td>
                             <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=device.pk %}">
-                                <i class="mdi mdi-file-document-outline"></i>
+                                <span class="mdi mdi-file-document-outline"></span>
                             </a>
                         </td>
                     </tr>
@@ -107,7 +107,7 @@
                         <td>SoT Aggregation Data</td>
                         <td>
                             <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_sotagg' pk=device.pk %}">
-                                <i class="mdi mdi-code-json"></i>
+                                <span class="mdi mdi-code-json"></span>
                             </a>
                         </td>
                     </tr>

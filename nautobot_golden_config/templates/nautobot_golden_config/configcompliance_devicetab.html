@@ -69,8 +69,8 @@
     {% block navigation %}
         <div class="card" style="width:100%">
             <div class="card-header"><strong>Feature Navigation</strong>
-                <a class="btn btn-success" href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab={{ active_tab }}&compliance=compliant">Compliant</a>
-                <a class="btn btn-danger" href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab={{ active_tab }}&compliance=non-compliant">Non-Compliant</a>
+                <a class="btn btn-success" href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab={{ active_tab }}&amp;compliance=compliant">Compliant</a>
+                <a class="btn btn-danger" href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab={{ active_tab }}&amp;compliance=non-compliant">Non-Compliant</a>
                 <a class="btn btn-info" href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab={{ active_tab }}">Clear</a>
             </div>
             <div id="navigation">

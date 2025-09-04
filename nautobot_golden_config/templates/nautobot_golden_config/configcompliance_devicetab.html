@@ -104,15 +104,15 @@
                     <td style="width:250px">Status</td>
                     {% if item.rule.config_ordered %}
                         {% if item.compliance %}
-                            <td><span class="badge text-bg-success">Compliant</span> <span class="mdi mdi-sort" title="Ordered Configuration Test"></span></td>
+                            <td><span class="badge bg-success">Compliant</span> <span class="mdi mdi-sort" title="Ordered Configuration Test"></span></td>
                         {% else %}
-                            <td><span class="badge text-bg-danger">Non-Compliant</span> <span class="mdi mdi-sort" title="Ordered Configuration Test"></span></td>
+                            <td><span class="badge bg-danger">Non-Compliant</span> <span class="mdi mdi-sort" title="Ordered Configuration Test"></span></td>
                         {% endif %}
                     {% else %}
                         {% if item.compliance %}
-                            <td><span class="badge text-bg-success">Compliant</span> <span class="mdi mdi-swap-vertical" title="Unordered Configuration Test"></span></td>
+                            <td><span class="badge bg-success">Compliant</span> <span class="mdi mdi-swap-vertical" title="Unordered Configuration Test"></span></td>
                         {% else %}
-                            <td><span class="badge text-bg-danger">Non-Compliant</span> <span class="mdi mdi-swap-vertical" title="Unordered Configuration Test"></span></td>
+                            <td><span class="badge bg-danger">Non-Compliant</span> <span class="mdi mdi-swap-vertical" title="Unordered Configuration Test"></span></td>
                         {% endif %}
                     {% endif %}
 

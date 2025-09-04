@@ -2,38 +2,38 @@
 {% load form_helpers %}
 
 {% block form %}
-  <div class="panel panel-default">
-    <div class="panel-heading"><strong>GoldenConfigSetting</strong></div>
-    <div class="panel-body">
-      {% render_field form.name %}
-      {% render_field form.slug %}
-      {% render_field form.weight %}
-      {% render_field form.description %}
-      {% render_field form.dynamic_group %}
+    <div class="card">
+        <div class="card-header"><strong>GoldenConfigSetting</strong></div>
+        <div class="card-body">
+            {% render_field form.name %}
+            {% render_field form.slug %}
+            {% render_field form.weight %}
+            {% render_field form.description %}
+            {% render_field form.dynamic_group %}
+        </div>
     </div>
-  </div>
-  <div class="panel panel-default">
-    <div class="panel-heading"><strong>Backup Configuration</strong></div>
-    <div class="panel-body">
-      {% render_field form.backup_repository %}
-      {% render_field form.backup_path_template %}
-      {% render_field form.backup_test_connectivity %}
+    <div class="card">
+        <div class="card-header"><strong>Backup Configuration</strong></div>
+        <div class="card-body">
+            {% render_field form.backup_repository %}
+            {% render_field form.backup_path_template %}
+            {% render_field form.backup_test_connectivity %}
+        </div>
     </div>
-  </div>
-  <div class="panel panel-default">
-    <div class="panel-heading"><strong>Intended Configuration</strong></div>
-    <div class="panel-body">
-      {% render_field form.intended_repository %}
-      {% render_field form.intended_path_template %}
+    <div class="card">
+        <div class="card-header"><strong>Intended Configuration</strong></div>
+        <div class="card-body">
+            {% render_field form.intended_repository %}
+            {% render_field form.intended_path_template %}
+        </div>
     </div>
-  </div>
-  <div class="panel panel-default">
-    <div class="panel-heading"><strong>Templates Configuration</strong></div>
-    <div class="panel-body">
-      {% render_field form.jinja_repository %}
-      {% render_field form.jinja_path_template %}
-      {% render_field form.sot_agg_query %}
+    <div class="card">
+        <div class="card-header"><strong>Templates Configuration</strong></div>
+        <div class="card-body">
+            {% render_field form.jinja_repository %}
+            {% render_field form.jinja_path_template %}
+            {% render_field form.sot_agg_query %}
+        </div>
     </div>
-  </div>
-  {% include 'inc/extras_features_edit_form_fields.html' %}
+    {% include 'inc/extras_features_edit_form_fields.html' %}
 {% endblock %}

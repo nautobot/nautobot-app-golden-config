@@ -3,54 +3,54 @@
 
 
 {% block buttons %}
-<a href="{% url 'plugins:nautobot_golden_config:configplan_list' %}?status=Completed" class="btn btn-primary" id="completed-button">
-  <span class="mdi mdi-link" aria-hidden="true"></span> Completed Plans
-</a>
+    <a class="btn btn-primary" href="{% url 'plugins:nautobot_golden_config:configplan_list' %}?status=Completed" id="completed-button">
+        <span aria-hidden="true" class="mdi mdi-link"></span> Completed Plans
+    </a>
 {% endblock %}
 
 {% block bulk_buttons %}
 
 <!-- Deploy Button -->
-{% if perms.extras.run_job %}
-{% include "nautobot_golden_config/job_result_modal.html" with modal_title="Deploy Config Plans" %}
-<button id="startJob" type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modalPopup">
-  <span class="mdi mdi-upload-multiple" aria-hidden="true"></span> Deploy Selected
-</button>
-{% endif %}
+    {% if perms.extras.run_job %}
+        {% include "nautobot_golden_config/job_result_modal.html" with modal_title="Deploy Config Plans" %}
+        <button class="btn btn-primary btn-sm" data-bs-target="#modalPopup" data-bs-toggle="modal" id="startJob" type="button">
+            <span aria-hidden="true" class="mdi mdi-upload-multiple"></span> Deploy Selected
+        </button>
+    {% endif %}
 
 {% endblock %}
 
 {% block javascript %}
-  {{ block.super }}
-<script src="{% static 'toggle_fields.js' %}"></script>
-<script src="{% static 'run_job.js' %}"></script>
-<script>
-var nautobot_csrf_token = "{{ csrf_token }}";
+    {{ block.super }}
+    <script src="{% static 'toggle_fields.js' %}"></script>
+    <script src="{% static 'run_job.js' %}"></script>
+    <script>
+        var nautobot_csrf_token = "{{ csrf_token }}";
 
-document.addEventListener("DOMContentLoaded", function() {
-    var startJobButton = document.getElementById("startJob");
-    startJobButton.addEventListener("click", function(event) {
-        var userConfirmed = confirm("Warning! This will deploy configurations to the devices you have selected, are you sure you want to deploy?");
-        if (!userConfirmed) {
+        document.addEventListener("DOMContentLoaded", function() {
+            var startJobButton = document.getElementById("startJob");
+            startJobButton.addEventListener("click", function(event) {
+                var userConfirmed = confirm("Warning! This will deploy configurations to the devices you have selected, are you sure you want to deploy?");
+                if (!userConfirmed) {
             // If user clicked "Cancel", stop the modal from showing
-            event.preventDefault();
-            event.stopPropagation();
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+            });
+        });
+
+        function formatJobData(data) {
+            var arrayFields = ["pk"]
+            var form_data = formDataToDictionary(data, arrayFields);
+            return {
+                "commit": true,
+                "data": {
+                    "config_plan": form_data.pk,
+                    "debug": false
+                },
+            };
         }
-    });
-});
+        document.getElementById("startJob").onclick = function() {startJob("Deploy Config Plans", formatJobData($("form").serializeArray()))};
 
-function formatJobData(data) {
-  var arrayFields = ["pk"]
-  var form_data = formDataToDictionary(data, arrayFields);
-  return {
-    "commit": true,
-    "data": {
-        "config_plan": form_data.pk,
-        "debug": false
-    },
-  };
-}
-document.getElementById("startJob").onclick = function() {startJob("Deploy Config Plans", formatJobData($("form").serializeArray()))};
-
-</script>
+    </script>
 {% endblock javascript %}

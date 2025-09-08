@@ -32,7 +32,7 @@ include = [
 
 [tool.poetry.dependencies]
 python = ">=3.9.2,<3.13"
-deepdiff = ">=5.5.0,!=6.0,!=6.1,<8"
+deepdiff = "^8.6.1"
 django-pivot = ">=1.9.0,<1.10.0" # The signature changed to return a non-queryset, do not upgrade without ensuring it returns a queryset
 matplotlib = "^3.3.2"
 nautobot-plugin-nornir = "^2.2.1"

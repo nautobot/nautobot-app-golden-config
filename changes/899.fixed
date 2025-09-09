@@ -1,1 +1,0 @@
-Fixed template include errors during intended config rendering due to incorrect Jinja root path.

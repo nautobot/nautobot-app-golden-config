@@ -296,3 +296,23 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         self.assertEqual(self.device_to_settings_map[test_device.id], self.test_settings_c)
         self.assertEqual(self.device_to_settings_map[orphan_device.id], self.test_settings_b)
         self.assertEqual(get_device_to_settings_map(queryset=Device.objects.none()), {})
+
+    def test_device_to_settings_map_multi_match_settings(self):
+        """Verify Golden Config Settings are properly mapped to devices."""
+        test_device = Device.objects.get(name="test_device")
+        test_device.location = Location.objects.get(name="Site 4")
+        test_device.save()
+        # Regenerate the device to settings map to ensure it is up to date.
+        temp_device_to_settings_map = get_device_to_settings_map(queryset=Device.objects.all())
+        self.assertEqual(temp_device_to_settings_map[test_device.id], self.test_settings_b)
+
+    def test_device_to_settings_map_gc_weight_change(self):
+        """Verify Golden Config Settings weight changes work properly."""
+        self.test_settings_a.weight = 3000
+        self.test_settings_a.save()
+        test_device = Device.objects.get(name="test_device")
+        test_device.location = Location.objects.get(name="Site 4")
+        test_device.save()
+        # Regenerate the device to settings map to ensure it is up to date.
+        temp_device_to_settings_map = get_device_to_settings_map(queryset=Device.objects.all())
+        self.assertEqual(temp_device_to_settings_map[test_device.id], self.test_settings_a)

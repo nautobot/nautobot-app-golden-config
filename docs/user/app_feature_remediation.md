@@ -46,7 +46,7 @@ Default Hier config options can be used or customized on a per platform basis, a
 ![Hier Options Customization](../images/remediation_hier_edit_options.png)
 
 For additional information on how to customize Hier Config options, please refer to the Hierarchical Configuration development guide:
-https://netdevops.io/hier_config/advanced-topics/
+https://hier-config.readthedocs.io/en/latest/
 
 ### Custom Config Remediation Type
 

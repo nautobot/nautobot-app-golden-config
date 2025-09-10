@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nautobot-golden-config"
-version = "2.4.1"
+version = "2.5.0"
 description = "An app for configuration on nautobot"
 authors = ["Network to Code, LLC <opensource@networktocode.com>"]
 license = "Apache-2.0"
@@ -23,7 +23,7 @@ packages = [
 ]
 include = [
     # Poetry by default will exclude files that are in .gitignore
-    "nautobot_golden_config/static/nautobot_golden_config/docs/**/*",
+    { path = "nautobot_golden_config/static/nautobot_golden_config/docs/**/*", format = ["sdist", "wheel"] }
 ]
 
 [tool.poetry.urls]
@@ -32,14 +32,14 @@ include = [
 
 [tool.poetry.dependencies]
 python = ">=3.9.2,<3.13"
-deepdiff = ">=5.5.0,!=6.0,!=6.1,<8"
+deepdiff = ">=8.6.1,<9.0.0"
 django-pivot = ">=1.9.0,<1.10.0" # The signature changed to return a non-queryset, do not upgrade without ensuring it returns a queryset
 matplotlib = "^3.3.2"
 nautobot-plugin-nornir = "^2.2.1"
 
 toml = "^0.10.2"
 netutils = "^1.5.0"
-hier-config = "^2.2.2"
+hier-config = "^3.2.2"
 nautobot-capacity-metrics = "^3.0.1"
 xmldiff = "^2.6.3"
 # Used for local development
@@ -69,7 +69,7 @@ mkdocstrings = "0.25.2"
 mkdocstrings-python = "1.10.8"
 mkdocs-autorefs = "1.2.0"
 griffe = "1.1.1"
-towncrier = "~23.6.0"
+towncrier = ">=23.6.0,<=24.8.0"
 to-json-schema = "*"
 jsonschema = "*"
 
@@ -153,6 +153,17 @@ convention = "google"
     "S"
 ]
 
+[tool.coverage.run]
+disable_warnings = ["already-imported"]
+relative_files = true
+omit = [
+    # Skip Tests
+    "*/tests/*",
+]
+include = [
+    "nautobot_golden_config/*",
+]
+
 [tool.pymarkdown]
 # Seems to be not support for whitelisting rules: https://github.com/jackdewinter/pymarkdown/issues/1396
 plugins.md001.enabled = false
@@ -207,7 +218,7 @@ plugins.md049.enabled = false
 plugins.md050.enabled = false
 plugins.pml100.enabled = false
 plugins.pml101.enabled = true # list-anchored-indent
-plugins.pml102.enabled = false 
+plugins.pml102.enabled = false
 plugins.pml103.enabled = false
 
 [build-system]

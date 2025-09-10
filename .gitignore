@@ -2,6 +2,9 @@ nautobot_golden_config/transposer.py
 golden-config/
 nautobot.sql
 
+# Avoid accidental commit of analytics template override generated via ./docs/insert-analytics.sh
+docs/assets/overrides/main.html
+
 # Ansible Retry Files
 *.retry
 
@@ -60,6 +63,7 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+lcov.info
 
 # Translations
 *.mo

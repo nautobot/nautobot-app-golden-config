@@ -193,7 +193,7 @@ class FormEntry:  # pylint disable=too-few-public-method
     role = MultiObjectVar(model=Role, required=False)
     manufacturer = MultiObjectVar(model=Manufacturer, required=False)
     platform = MultiObjectVar(model=Platform, required=False)
-    device_type = MultiObjectVar(model=DeviceType, required=False, display_field="display_name")
+    device_type = MultiObjectVar(model=DeviceType, required=False, display_field="model")
     device = MultiObjectVar(model=Device, required=False)
     tags = MultiObjectVar(
         model=Tag, required=False, display_field="name", query_params={"content_types": "dcim.device"}
@@ -529,6 +529,7 @@ class DeployConfigPlans(Job):
     """Job to deploy config plans."""
 
     config_plan = MultiObjectVar(model=ConfigPlan, required=True)
+    fail_job_on_task_failure = BooleanVar(description="If any tasks for any device fails, fail the entire job result.")
     debug = BooleanVar(description="Enable for more verbose debug logging")
 
     class Meta:
@@ -549,7 +550,13 @@ class DeployConfigPlans(Job):
         update_dynamic_groups_cache()
         self.logger.debug("Starting config plan deployment job.")
         self.data = data
-        config_deployment(self)
+        try:
+            config_deployment(self)
+        except Exception as error:  # pylint: disable=broad-exception-caught
+            error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
+            self.logger.error(error_msg)
+            if data.get("fail_job_on_task_failure"):
+                raise NornirNautobotException(error_msg) from error
 
 
 class DeployConfigPlanJobButtonReceiver(JobButtonReceiver):

@@ -60,13 +60,28 @@ if ENABLE_COMPLIANCE:
         )
     )
 
-
 if ENABLE_COMPLIANCE:
     items_operate.append(
         NavMenuItem(
             link="plugins:nautobot_golden_config:configcompliance_overview",
             name="Compliance Report",
             permissions=["nautobot_golden_config.view_configcompliance"],
+        )
+    )
+
+if ENABLE_COMPLIANCE:
+    items_operate.append(
+        NavMenuItem(
+            link="plugins:nautobot_golden_config:configcompliancehash_list",
+            name="Config Hashes",
+            permissions=["nautobot_golden_config.view_confighash"],
+        )
+    )
+    items_operate.append(
+        NavMenuItem(
+            link="plugins:nautobot_golden_config:confighashgrouping_list",
+            name="Config Hash Report",
+            permissions=["nautobot_golden_config.view_confighashgrouping"],
         )
     )
 

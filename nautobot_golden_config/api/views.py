@@ -219,6 +219,22 @@ class ConfigPlanViewSet(
         return context
 
 
+class ConfigHashGroupingViewSet(NautobotModelViewSet):  # pylint:disable=too-many-ancestors
+    """API viewset for interacting with ConfigHashGrouping objects."""
+
+    queryset = models.ConfigHashGrouping.objects.all()
+    serializer_class = serializers.ConfigHashGroupingSerializer
+    filterset_class = filters.ConfigHashGroupingFilterSet
+
+
+class ConfigComplianceHashViewSet(NautobotModelViewSet):  # pylint:disable=too-many-ancestors
+    """API viewset for interacting with ConfigComplianceHash objects."""
+
+    queryset = models.ConfigComplianceHash.objects.all()
+    serializer_class = serializers.ConfigComplianceHashSerializer
+    filterset_class = filters.ConfigComplianceHashFilterSet
+
+
 class GenerateIntendedConfigException(APIException):
     """Exception for when the intended config cannot be generated."""
 

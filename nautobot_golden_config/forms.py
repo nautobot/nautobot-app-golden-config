@@ -640,3 +640,50 @@ class GenerateIntendedConfigForm(django_forms.Form):
         super().__init__(*args, **kwargs)
         if version.parse(settings.VERSION) < version.parse("2.4.2"):
             self.fields["git_repository_branch"].widget = django_forms.HiddenInput
+
+
+class ConfigHashGroupingFilterForm(django_forms.Form):
+    """Filter Form for Configuration Hash Grouping."""
+
+    model = models.ConfigHashGrouping
+
+    q = django_forms.CharField(required=False, label="Search")
+
+    feature = forms.DynamicModelMultipleChoiceField(
+        queryset=models.ComplianceFeature.objects.all(),
+        required=False,
+        label="Feature",
+        to_field_name="name",
+    )
+    device = forms.DynamicModelMultipleChoiceField(queryset=Device.objects.all(), required=False)
+
+
+class ConfigComplianceHashFilterForm(DeviceRelatedFilterForm):
+    """Filter Form for Config Hash Group."""
+
+    model = models.ConfigComplianceHash
+    field_order = [
+        "q",
+        "location_id",
+        "location",
+        "role",
+        "manufacturer",
+        "platform",
+        "device_status",
+        "device_type",
+        "device",
+    ]
+    q = django_forms.CharField(required=False, label="Search")
+
+    def __init__(self, *args, **kwargs):
+        """Required for status to work."""
+        super().__init__(*args, **kwargs)
+        self.fields["device_status"] = forms.DynamicModelMultipleChoiceField(
+            required=False,
+            queryset=Status.objects.all(),
+            query_params={"content_types": Device._meta.label_lower},
+            display_field="label",
+            label="Device Status",
+            to_field_name="name",
+        )
+        self.order_fields(self.field_order)  # Reorder fields again

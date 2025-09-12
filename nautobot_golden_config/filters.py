@@ -1,6 +1,7 @@
 """Filtering for nautobot_golden_config."""
 
 import django_filters
+from django.db.models import Count, F, Q
 from nautobot.apps.filters import (
     MultiValueDateTimeFilter,
     NaturalKeyOrPKMultipleChoiceFilter,
@@ -146,11 +147,168 @@ class ConfigComplianceFilterSet(GoldenConfigFilterSet):  # pylint: disable=too-m
         to_field_name="slug",
         label="ComplianceFeature (slug)",
     )
+    compliance = django_filters.BooleanFilter(
+        field_name="compliance",
+        label="Compliance Status",
+    )
+    config_hash_group = django_filters.CharFilter(
+        method="filter_by_hash_group",
+        label="Config Hash Group",
+    )
+
+    def filter_by_hash_group(self, queryset, _name, value):
+        """Filter ConfigCompliance records by config hash group ID."""
+        if not value:
+            return queryset
+
+        try:
+            # Get the hash group
+            hash_group = models.ConfigHashGrouping.objects.get(pk=value)
+
+            # Find all devices that are linked to this hash group via ConfigComplianceHash
+            devices_in_group = models.ConfigComplianceHash.objects.filter(
+                config_group=hash_group, config_type="actual"
+            ).values_list("device_id", flat=True)
+
+            # Filter ConfigCompliance records to show only these devices for this rule
+            return queryset.filter(device_id__in=devices_in_group, rule=hash_group.rule)
+
+        except models.ConfigHashGrouping.DoesNotExist:
+            # If hash group doesn't exist, return empty queryset
+            return queryset.none()
 
     class Meta:
         """Meta class attributes for ConfigComplianceFilter."""
 
         model = models.ConfigCompliance
+        fields = "__all__"
+
+
+class ConfigHashGroupingFilterSet(NautobotFilterSet):
+    """Custom filter for configuration hash grouping that handles device filtering properly."""
+
+    feature = django_filters.ModelMultipleChoiceFilter(
+        field_name="rule__feature__name",
+        queryset=models.ComplianceFeature.objects.all(),
+        to_field_name="name",
+        label="Feature",
+    )
+
+    device = NaturalKeyOrPKMultipleChoiceFilter(
+        queryset=Device.objects.all(),
+        to_field_name="name",
+        label="Device (name or ID)",
+        method="filter_by_device",
+    )
+
+    class Meta:
+        """Meta class attributes for ConfigHashGroupingFilterSet."""
+
+        model = models.ConfigHashGrouping
+        fields = "__all__"
+
+    def filter_by_device(self, queryset, _name, value):
+        """Filter ConfigHashGrouping records by devices that are members of the groups."""
+        if not value:
+            return queryset
+
+        # Get device IDs from the filter value
+        device_ids = []
+        for device in value:
+            if hasattr(device, "id"):
+                device_ids.append(device.id)
+            else:
+                device_ids.append(device)
+
+        # Find all ConfigHashGrouping IDs where these devices have corresponding ConfigComplianceHash records
+        hash_group_ids = (
+            models.ConfigComplianceHash.objects.filter(device_id__in=device_ids, config_group__isnull=False)
+            .values_list("config_group_id", flat=True)
+            .distinct()
+        )
+
+        return queryset.filter(id__in=hash_group_ids)
+
+
+class ConfigComplianceHashFilterSet(GoldenConfigFilterSet):
+    """Custom filter for mismatch grouping that handles device filtering properly."""
+
+    location = TreeNodeMultipleChoiceFilter(
+        queryset=Location.objects.all(),
+        field_name="device__location",
+        to_field_name="name",
+        label="Location (name)",
+    )
+    platform = NaturalKeyOrPKMultipleChoiceFilter(
+        field_name="device__platform",
+        queryset=Platform.objects.all(),
+        to_field_name="name",
+        label="Platform (name or ID)",
+    )
+
+    device = NaturalKeyOrPKMultipleChoiceFilter(
+        field_name="device",
+        queryset=Device.objects.all(),
+        to_field_name="name",
+        label="Device (name or ID)",
+    )
+
+    def filter_device(self, queryset, _name, value):
+        """Custom device filtering for grouped mismatch data."""
+        # Get the devices to filter by
+        device_ids = [device.id if hasattr(device, "id") else device for device in value]
+
+        # Find ConfigComplianceHash records for these devices that correspond to non-compliant actual configs
+        hash_records = (
+            models.ConfigComplianceHash.objects.filter(
+                device_id__in=device_ids,
+                config_type="actual",
+                device__configcompliance__rule=F("rule"),
+                device__configcompliance__compliance=False,
+            )
+            .values("rule", "config_hash")
+            .distinct()
+        )
+
+        # Build filters for rule+hash combinations
+        hash_filters = Q()
+        filter_count = 0
+        for record in hash_records:
+            if record["config_hash"]:
+                hash_filters |= Q(rule=record["rule"], config_hash=record["config_hash"])
+                filter_count += 1
+
+        if hash_filters:
+            # Filter the base ConfigComplianceHash records before they get grouped
+            base_qs = models.ConfigComplianceHash.objects.filter(
+                config_type="actual",
+                device__configcompliance__rule=F("rule"),
+                device__configcompliance__compliance=False,
+            ).filter(hash_filters)
+
+            # Apply grouping to the filtered base queryset
+            grouped_qs = (
+                base_qs.values(
+                    "rule__feature__id", "rule__feature__name", "rule__feature__slug", "config_hash", "config_content"
+                )
+                .annotate(
+                    device_count=Count("device", distinct=True),
+                    feature_id=F("rule__feature__id"),
+                    feature_name=F("rule__feature__name"),
+                    feature_slug=F("rule__feature__slug"),
+                )
+                .filter(device_count__gt=1)
+                .order_by("-device_count", "rule__feature__name")
+            )
+
+            return grouped_qs
+
+        return queryset.none()
+
+    class Meta:
+        """Boilerplate filter Meta data for Config Hash."""
+
+        model = models.ConfigComplianceHash
         fields = "__all__"
 
 
@@ -257,7 +415,7 @@ class GoldenConfigSettingFilterSet(NautobotFilterSet):
         method="filter_device_id",
     )
 
-    def filter_device_id(self, queryset, name, value):  # pylint: disable=unused-argument
+    def filter_device_id(self, queryset, _name, value):
         """Filter by Device ID."""
         if not value:
             return queryset

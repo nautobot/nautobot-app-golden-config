@@ -17,7 +17,7 @@ env:
 
 jobs:
   ruff-format:
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "True"
     steps:
@@ -26,11 +26,11 @@ jobs:
       - name: "Setup environment"
         uses: "networktocode/gh-action-setup-poetry-environment@v6"
         with:
-          poetry-version: "1.8.5"
+          poetry-version: "2.1.3"
       - name: "Linting: ruff format"
         run: "poetry run invoke ruff --action format"
   ruff-lint:
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "True"
     steps:
@@ -39,11 +39,11 @@ jobs:
       - name: "Setup environment"
         uses: "networktocode/gh-action-setup-poetry-environment@v6"
         with:
-          poetry-version: "1.8.5"
+          poetry-version: "2.1.3"
       - name: "Linting: ruff"
         run: "poetry run invoke ruff --action lint"
   check-docs-build:
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "True"
     steps:
@@ -52,11 +52,12 @@ jobs:
       - name: "Setup environment"
         uses: "networktocode/gh-action-setup-poetry-environment@v6"
         with:
-          poetry-version: "1.8.5"
+          poetry-version: "2.1.3"
+          poetry-install-options: "--only dev,docs"
       - name: "Check Docs Build"
         run: "poetry run invoke build-and-check-docs"
   poetry:
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "True"
     steps:
@@ -65,11 +66,11 @@ jobs:
       - name: "Setup environment"
         uses: "networktocode/gh-action-setup-poetry-environment@v6"
         with:
-          poetry-version: "1.8.5"
+          poetry-version: "2.1.3"
       - name: "Checking: poetry lock file"
         run: "poetry run invoke lock --check"
   yamllint:
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "True"
     steps:
@@ -78,11 +79,11 @@ jobs:
       - name: "Setup environment"
         uses: "networktocode/gh-action-setup-poetry-environment@v6"
         with:
-          poetry-version: "1.8.5"
+          poetry-version: "2.1.3"
       - name: "Linting: yamllint"
         run: "poetry run invoke yamllint"
   markdownlint:
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "True"
     steps:
@@ -91,7 +92,7 @@ jobs:
       - name: "Setup environment"
         uses: "networktocode/gh-action-setup-poetry-environment@v6"
         with:
-          poetry-version: "1.8.5"
+          poetry-version: "2.1.3"
       - name: "Linting: markdownlint"
         run: "poetry run invoke markdownlint"
   check-in-docker:
@@ -101,12 +102,12 @@ jobs:
       - "poetry"
       - "yamllint"
       - "markdownlint"
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     strategy:
       fail-fast: true
       matrix:
         python-version: ["3.11"]
-        nautobot-version: ["2.0.0"]
+        nautobot-version: ["2.4.2"]
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_PYTHON_VER: "${{ matrix.python-version }}"
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_NAUTOBOT_VER: "${{ matrix.nautobot-version }}"
@@ -116,11 +117,12 @@ jobs:
       - name: "Setup environment"
         uses: "networktocode/gh-action-setup-poetry-environment@v6"
         with:
-          poetry-version: "1.8.5"
+          poetry-version: "2.1.3"
       - name: "Constrain Nautobot version and regenerate lock file"
         env:
           INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "true"
-        run: "poetry run invoke lock --constrain-nautobot-ver --constrain-python-ver"
+          PY_CONSTRAINT: "${{ matrix.python-version == '3.9' && '3.9.2' || matrix.python-version }}"
+        run: "poetry run invoke lock --constrain-nautobot-ver --constrain-python-ver=${{ env.PY_CONSTRAINT }}"
       - name: "Set up Docker Buildx"
         id: "buildx"
         uses: "docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2"  # v3.10.0
@@ -157,11 +159,11 @@ jobs:
         include:
           - python-version: "3.11"
             db-backend: "postgresql"
-            nautobot-version: "2.0.0"
+            nautobot-version: "2.4.2"
           - python-version: "3.12"
             db-backend: "mysql"
             nautobot-version: "stable"
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_PYTHON_VER: "${{ matrix.python-version }}"
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_NAUTOBOT_VER: "${{ matrix.nautobot-version }}"
@@ -171,11 +173,12 @@ jobs:
       - name: "Setup environment"
         uses: "networktocode/gh-action-setup-poetry-environment@v6"
         with:
-          poetry-version: "1.8.5"
+          poetry-version: "2.1.3"
       - name: "Constrain Nautobot version and regenerate lock file"
         env:
           INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "true"
-        run: "poetry run invoke lock --constrain-nautobot-ver --constrain-python-ver"
+          PY_CONSTRAINT: "${{ matrix.python-version == '3.9' && '3.9.2' || matrix.python-version }}"
+        run: "poetry run invoke lock --constrain-nautobot-ver --constrain-python-ver=${{ env.PY_CONSTRAINT }}"
       - name: "Set up Docker Buildx"
         id: "buildx"
         uses: "docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2"  # v3.10.0
@@ -209,7 +212,7 @@ jobs:
         python-version: ["3.12"]
         db-backend: ["postgresql"]
         nautobot-version: ["stable"]
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     permissions:
       pull-requests: "write"
       contents: "write"
@@ -222,11 +225,12 @@ jobs:
       - name: "Setup environment"
         uses: "networktocode/gh-action-setup-poetry-environment@v6"
         with:
-          poetry-version: "1.8.5"
+          poetry-version: "2.1.3"
       - name: "Constrain Nautobot version and regenerate lock file"
         env:
           INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "true"
-        run: "poetry run invoke lock --constrain-nautobot-ver --constrain-python-ver"
+          PY_CONSTRAINT: "${{ matrix.python-version == '3.9' && '3.9.2' || matrix.python-version }}"
+        run: "poetry run invoke lock --constrain-nautobot-ver --constrain-python-ver=${{ env.PY_CONSTRAINT }}"
       - name: "Set up Docker Buildx"
         id: "buildx"
         uses: "docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2"  # v3.10.0
@@ -277,7 +281,7 @@ jobs:
     if: >
       contains(fromJson('["develop","ltm-1.6"]'), github.base_ref) &&
       (github.head_ref != 'main') && (!startsWith(github.head_ref, 'release'))
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v4"
@@ -286,7 +290,7 @@ jobs:
       - name: "Setup environment"
         uses: "networktocode/gh-action-setup-poetry-environment@v6"
         with:
-          poetry-version: "1.8.5"
+          poetry-version: "2.1.3"
       - name: "Check for changelog entry"
         run: |
           git fetch --no-tags origin +refs/heads/${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
@@ -296,7 +300,7 @@ jobs:
       - "unittest"
       - "unittest_report"
     name: "Publish to GitHub"
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     if: "startsWith(github.ref, 'refs/tags/v')"
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "True"
@@ -308,7 +312,7 @@ jobs:
       - name: "Setup environment"
         uses: "networktocode/gh-action-setup-poetry-environment@v6"
         with:
-          poetry-version: "1.8.5"
+          poetry-version: "2.1.3"
           python-version: "3.12"
           poetry-install-options: "--no-root"
       - name: "Set env"
@@ -328,7 +332,7 @@ jobs:
       - "unittest"
       - "unittest_report"
     name: "Push Package to PyPI"
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     if: "startsWith(github.ref, 'refs/tags/v')"
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "True"
@@ -338,7 +342,7 @@ jobs:
       - name: "Setup environment"
         uses: "networktocode/gh-action-setup-poetry-environment@v6"
         with:
-          poetry-version: "1.8.5"
+          poetry-version: "2.1.3"
           python-version: "3.12"
           poetry-install-options: "--no-root"
       - name: "Set env"
@@ -358,9 +362,9 @@ jobs:
     needs:
       - "publish_gh"
       - "publish_pypi"
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     env:
-      SLACK_WEBHOOK_URL: "${{ secrets.SLACK_WEBHOOK_URL }}"
+      SLACK_WEBHOOK_URL: "${{ secrets.OSS_PYPI_SLACK_WEBHOOK_URL }}"
       SLACK_MESSAGE: >-
         *NOTIFICATION: NEW-RELEASE-PUBLISHED*\n
         Repository: <${{ github.server_url }}/${{ github.repository }}|${{ github.repository }}>\n
@@ -387,5 +391,5 @@ jobs:
               ]
             }
         env:
-          SLACK_WEBHOOK_URL: "${{ secrets.SLACK_WEBHOOK_URL }}"
+          SLACK_WEBHOOK_URL: "${{ secrets.OSS_PYPI_SLACK_WEBHOOK_URL }}"
           SLACK_WEBHOOK_TYPE: "INCOMING_WEBHOOK"

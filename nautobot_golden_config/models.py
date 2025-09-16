@@ -4,6 +4,7 @@
 from django.db import models
 
 # Nautobot imports
+from nautobot.apps.constants import CHARFIELD_MAX_LENGTH
 from nautobot.apps.models import PrimaryModel, extras_features
 
 # If you want to choose a specific model to overload in your class declaration, please reference the following documentation:
@@ -14,8 +15,8 @@ from nautobot.apps.models import PrimaryModel, extras_features
 class ComplianceFeature(PrimaryModel):  # pylint: disable=too-many-ancestors
     """Base model for Golden Config app."""
 
-    name = models.CharField(max_length=100, unique=True)
-    description = models.CharField(max_length=200, blank=True)
+    name = models.CharField(max_length=CHARFIELD_MAX_LENGTH, unique=True)
+    description = models.CharField(max_length=CHARFIELD_MAX_LENGTH, blank=True)
     # additional model fields
 
     class Meta:

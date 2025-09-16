@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('nautobot_golden_config', '0030_alter_goldenconfig_device'),
+        ("nautobot_golden_config", "0030_alter_goldenconfig_device"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='configplan',
-            name='change_control_url',
+            model_name="configplan",
+            name="change_control_url",
             field=models.URLField(blank=True, max_length=2048),
         ),
     ]

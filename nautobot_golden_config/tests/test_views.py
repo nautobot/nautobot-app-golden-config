@@ -326,7 +326,7 @@ class ConfigPlanTestCase(
         # Used for EditObjectViewTestCase
         cls.form_data = {
             "change_control_id": "Test Change Control ID 4",
-            "change_control_url": "https://4.example.com/",
+            "change_control_url": "https://example.com/?" + "x" * 1000,
             "status": approved_status.pk,
         }
         PLUGIN_CFG["postprocessing_subscribed"] = ["whatever"]

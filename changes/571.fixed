@@ -1,1 +1,1 @@
-Increased Change Control URL field limit from 256 to 2048 characters in Config Plans and Bulk Edit.
+Fixed Change Control URL field max length in the Config Plan bulk edit form.

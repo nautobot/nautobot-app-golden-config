@@ -10,8 +10,6 @@
         "project_slug": "nautobot-app-golden-config",
         "repo_url": "https://github.com/nautobot/nautobot-app-golden-config",
         "base_url": "golden-config",
-        "min_nautobot_version": "2.0.0",
-        "max_nautobot_version": "2.9999",
         "camel_name": "NautobotGoldenConfig",
         "project_short_description": "An app for configuration on nautobot",
         "model_class_name": "ComplianceFeature",
@@ -21,13 +19,17 @@
         "_drift_manager": {
             "template": "https://github.com/nautobot/cookiecutter-nautobot-app.git",
             "template_dir": "nautobot-app",
-            "template_ref": "nautobot-app-v2.5.1",
+            "template_ref": "nautobot-app-v2.6.0",
             "cookie_dir": "",
             "branch_prefix": "drift-manager",
-            "pull_request_strategy": "create",
+            "pull_request_strategy": "update-or-create",
             "post_actions": [],
             "draft": false,
+<<<<<<< HEAD
             "baked_commit_ref": "bef141f8bdbc25beec0f7138010447b8e8e9fee4"
+=======
+            "baked_commit_ref": "058f54b8807016881e6eb0c4e81d1924d61b4ae9"
+>>>>>>> 1502cc4 (Cookie updated by NetworkToCode Cookie Drift Manager Tool)
         }
     }
 }

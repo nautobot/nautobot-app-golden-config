@@ -20,6 +20,7 @@ class GoldenConfig(NautobotAppConfig):
     author_email = "opensource@networktocode.com"
     description = "Nautobot Apps that embraces NetDevOps and automates configuration backups, performs configuration compliance, generates intended configurations, and has config remediation and deployment features. Includes native Git integration and gives users the flexibility to mix and match the supported features."
     base_url = "golden-config"
+<<<<<<< HEAD
     docs_view_name = "plugins:nautobot_golden_config:docs"
     default_settings = {
         "enable_backup": True,
@@ -84,6 +85,13 @@ class GoldenConfig(NautobotAppConfig):
 
         super().ready()
         post_migrate.connect(config_compliance_platform_cleanup, sender=ConfigCompliance)
+=======
+    required_settings = []
+    default_settings = {}
+    caching_config = {}
+    docs_view_name = "plugins:nautobot_golden_config:docs"
+    searchable_models = ["compliancefeature"]
+>>>>>>> 1502cc4 (Cookie updated by NetworkToCode Cookie Drift Manager Tool)
 
 
 config = GoldenConfig  # pylint:disable=invalid-name

@@ -4,8 +4,12 @@ Here you will find detailed instructions on how to **install** and **configure**
 
 ## Prerequisites
 
+<<<<<<< HEAD
 - The app relies on [`nautobot_plugin_nornir`](https://pypi.org/project/nautobot-plugin-nornir/) to be installed and both apps to be enabled in your configuration settings.
 - The latest version of this app is compatible with Nautobot 2.0.0 and higher, see [this dedicated page](compatibility_matrix.md) for a full compatibility matrix and the deprecation policy.
+=======
+- The app is compatible with Nautobot 2.4.2 and higher.
+>>>>>>> 1502cc4 (Cookie updated by NetworkToCode Cookie Drift Manager Tool)
 - Databases supported: PostgreSQL, MySQL
 
 ### Access Requirements

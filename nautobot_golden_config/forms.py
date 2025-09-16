@@ -1,6 +1,7 @@
 """Forms for Device Configuration Backup."""
 # pylint: disable=too-many-ancestors
 
+<<<<<<< HEAD
 import json
 
 import django.forms as django_forms
@@ -11,6 +12,11 @@ from nautobot.extras.forms import NautobotBulkEditForm, NautobotFilterForm, Naut
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, JobResult, Role, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
 from packaging import version
+=======
+from django import forms
+from nautobot.apps.constants import CHARFIELD_MAX_LENGTH
+from nautobot.apps.forms import NautobotBulkEditForm, NautobotFilterForm, NautobotModelForm, TagsBulkEditFormMixin
+>>>>>>> 1502cc4 (Cookie updated by NetworkToCode Cookie Drift Manager Tool)
 
 from nautobot_golden_config import models
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
@@ -239,6 +245,7 @@ class ComplianceFeatureForm(NautobotModelForm):
 class ComplianceFeatureFilterForm(NautobotFilterForm):
     """Form for ComplianceFeature instances."""
 
+<<<<<<< HEAD
     model = models.ComplianceFeature
     q = django_forms.CharField(required=False, label="Search")
     name = forms.DynamicModelChoiceField(queryset=models.ComplianceFeature.objects.all(), required=False)
@@ -251,6 +258,10 @@ class ComplianceFeatureBulkEditForm(NautobotBulkEditForm):
         queryset=models.ComplianceFeature.objects.all(), widget=django_forms.MultipleHiddenInput
     )
     description = django_forms.CharField(max_length=200, required=False)
+=======
+    pk = forms.ModelMultipleChoiceField(queryset=models.ComplianceFeature.objects.all(), widget=forms.MultipleHiddenInput)
+    description = forms.CharField(required=False, max_length=CHARFIELD_MAX_LENGTH)
+>>>>>>> 1502cc4 (Cookie updated by NetworkToCode Cookie Drift Manager Tool)
 
     class Meta:
         """Boilerplate form Meta data for ComplianceFeature."""

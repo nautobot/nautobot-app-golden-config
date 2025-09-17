@@ -4,6 +4,16 @@
 - Add a job that can deploy config_set based on a generated ConfigPlan object.
 - Add functionality to compliance result to provide a Remediation plan.
 - Supports Nautobot >=1.6.1,<2.0.0.
+- Drops Python 3.8 support.
+
+## v1.6.8 2025-09
+
+### Security
+
+- [#989](https://github.com/nautobot/nautobot-app-golden-config/issues/989) - Upgraded DeepDiff to `8.6.1` version to address CVE-2025-58367.
+
+### Dependencies
+- Removed Python 3.8 Support. As Python 3.8 has reached end-of-life, A major security issue (CVE-2025-58367) in the DeepDiff dependency requires a minimum of Python 3.9 to address the vulnerability.
 
 ## v1.6.3 - 2023-10
 

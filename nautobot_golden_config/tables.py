@@ -1,4 +1,5 @@
 """Django Tables2 classes for golden_config plugin."""
+
 import copy
 
 from django.utils.html import format_html

@@ -1,4 +1,5 @@
 """Django views for Nautobot Golden Configuration."""  # pylint: disable=too-many-lines
+
 import base64
 import difflib
 import io

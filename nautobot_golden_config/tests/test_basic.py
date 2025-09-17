@@ -1,4 +1,5 @@
 """Basic tests that do not require Django."""
+
 import os
 import unittest
 

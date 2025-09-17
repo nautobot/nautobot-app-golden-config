@@ -1,4 +1,5 @@
 """Helper functions."""
+
 # pylint: disable=raise-missing-from
 import json
 

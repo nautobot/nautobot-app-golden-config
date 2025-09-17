@@ -1,4 +1,5 @@
 """Unit tests for the nautobot_golden_config utilities config_plan."""
+
 import unittest
 from unittest.mock import Mock, patch
 

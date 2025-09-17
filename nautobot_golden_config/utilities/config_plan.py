@@ -1,4 +1,5 @@
 """Functions to support config plan."""
+
 from nautobot.dcim.models import Device
 from nautobot.extras.models import Status
 from nautobot.utilities.utils import render_jinja2

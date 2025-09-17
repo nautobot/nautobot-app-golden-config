@@ -1,4 +1,5 @@
 """Signal helpers."""
+
 from django.apps import apps as global_apps
 from django.db.models.signals import post_save
 from django.dispatch import receiver

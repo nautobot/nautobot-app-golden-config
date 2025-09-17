@@ -1,4 +1,5 @@
 """Nornir job for generating the compliance data."""
+
 # pylint: disable=relative-beyond-top-level
 import difflib
 import logging

@@ -1,4 +1,5 @@
 """Functions related to prepare configuration with postprocessing."""
+
 from functools import partial
 from typing import Optional
 

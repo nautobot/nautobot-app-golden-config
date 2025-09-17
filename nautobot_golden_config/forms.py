@@ -1,4 +1,5 @@
 """Forms for Device Configuration Backup."""
+
 # pylint: disable=too-many-ancestors
 
 import json

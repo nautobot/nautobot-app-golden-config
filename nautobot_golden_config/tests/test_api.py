@@ -1,4 +1,5 @@
 """Unit tests for nautobot_golden_config."""
+
 from copy import deepcopy
 
 from django.contrib.auth import get_user_model

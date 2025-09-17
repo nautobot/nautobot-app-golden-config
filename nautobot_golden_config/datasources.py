@@ -1,4 +1,5 @@
 """Data source plugin extension to register additional git repo types."""
+
 import os
 from django.db import IntegrityError
 import yaml

@@ -1,4 +1,5 @@
 """Choicesets for golden config."""
+
 from nautobot.utilities.choices import ChoiceSet
 
 

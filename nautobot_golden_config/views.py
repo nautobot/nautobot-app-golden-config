@@ -1,4 +1,5 @@
 """Django views for Nautobot Golden Configuration."""  # pylint: disable=too-many-lines
+
 import base64
 import difflib
 import io
@@ -407,7 +408,9 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
             backup_yaml = yaml.safe_dump(json.loads(backup_data))
             intend_yaml = yaml.safe_dump(json.loads(intended_data))
 
-            for line in difflib.unified_diff(backup_yaml.splitlines(), intend_yaml.splitlines(), lineterm=""):
+            for line in difflib.unified_diff(  # pylint: disable=use-yield-from
+                backup_yaml.splitlines(), intend_yaml.splitlines(), lineterm=""
+            ):
                 yield line
 
         device = Device.objects.get(pk=pk)
@@ -472,7 +475,7 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
                     actual[obj.rule.feature.slug] = obj.actual
                     intended[obj.rule.feature.slug] = obj.intended
                     # Update most_recent_time each time the compliance objects time is more recent then previous.
-                    if obj.last_updated > most_recent_time:
+                    if obj.last_updated > most_recent_time:  # pylint: disable=consider-using-max-builtin
                         most_recent_time = obj.last_updated
                 config_details.compliance_last_attempt_date = most_recent_time
                 config_details.compliance_last_success_date = most_recent_time
@@ -485,7 +488,12 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
                 backup_date = intended_date = str(most_recent_time.strftime("%b %d %Y"))
             if output == "":
                 # This is used if all config snippets are in compliance and no diff exist.
-                output = f"--- Backup {diff_type} - " + backup_date + f"\n+++ Intended {diff_type} - " + intended_date
+                output = (
+                    f"--- Backup {diff_type} - "  # pylint: disable=possibly-used-before-assignment
+                    + backup_date  # pylint: disable=possibly-used-before-assignment
+                    + f"\n+++ Intended {diff_type} - "
+                    + intended_date  # pylint: disable=possibly-used-before-assignment
+                )
             else:
                 first_occurence = output.index("@@")
                 second_occurence = output.index("@@", first_occurence)

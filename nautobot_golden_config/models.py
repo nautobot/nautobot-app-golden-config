@@ -99,7 +99,9 @@ def _get_json_compliance(obj):
         type_changes = list(diff.get("type_changes", {}).keys())
         return dictionary_items + list_items + values_changed + type_changes
 
-    diff = DeepDiff(obj.actual, obj.intended, ignore_order=obj.ordered, report_repetition=True)
+    diff = DeepDiff(
+        obj.actual, obj.intended, ignore_order=obj.ordered, report_repetition=True, threshold_to_diff_deeper=0
+    )
     if not diff:
         compliance_int = 1
         compliance = True
@@ -183,7 +185,7 @@ for custom_function, custom_type in CUSTOM_FUNCTIONS.items():
         try:
             FUNC_MAPPER[custom_type] = import_string(PLUGIN_CFG[custom_function])
         except Exception as error:  # pylint: disable=broad-except
-            msg = (
+            msg = (  # pylint: disable=invalid-name
                 "There was an issue attempting to import the custom function of"
                 f"{PLUGIN_CFG[custom_function]}, this is expected with a local configuration issue "
                 "and not related to the Golden Configuration Plugin, please contact your system admin for further details"

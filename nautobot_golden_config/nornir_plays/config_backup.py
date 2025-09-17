@@ -1,4 +1,5 @@
 """Nornir job for backing up actual config."""
+
 # pylint: disable=relative-beyond-top-level
 import os
 

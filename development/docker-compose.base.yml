@@ -13,7 +13,6 @@ x-nautobot-base: &nautobot-base
     - "creds.env"
   tty: true
 
-version: "3.8"
 services:
   nautobot:
     depends_on:

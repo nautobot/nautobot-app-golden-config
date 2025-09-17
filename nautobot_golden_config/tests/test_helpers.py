@@ -1,4 +1,5 @@
 """Unit tests for nautobot_golden_config helpers."""
+
 import os
 from unittest import mock
 import jinja2

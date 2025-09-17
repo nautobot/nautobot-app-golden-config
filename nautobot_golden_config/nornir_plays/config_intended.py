@@ -1,4 +1,5 @@
 """Nornir job for generating the intended config."""
+
 # pylint: disable=relative-beyond-top-level
 import logging
 import os

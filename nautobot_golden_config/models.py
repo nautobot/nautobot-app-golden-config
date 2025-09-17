@@ -868,7 +868,7 @@ class ConfigPlan(PrimaryModel):  # pylint: disable=too-many-ancestors
         verbose_name="Change Control ID",
         help_text="Change Control ID for this configuration plan.",
     )
-    change_control_url = models.URLField(blank=True, verbose_name="Change Control URL")
+    change_control_url = models.URLField(blank=True, verbose_name="Change Control URL", max_length=2048)
     status = StatusField(blank=True, null=True, on_delete=models.PROTECT)
 
     class Meta:

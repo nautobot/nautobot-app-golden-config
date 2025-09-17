@@ -129,7 +129,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        python-version: ["3.8", "3.11"]
+        python-version: ["3.9", "3.11"]
         db-backend: ["postgresql"]
         nautobot-version: ["ltm-1.6"]
         # The include is a method to limit the amount of jobs ran. This essentially
@@ -139,7 +139,7 @@ jobs:
           - python-version: "3.11"
             db-backend: "postgresql"
             nautobot-version: "1.6.1"
-          - python-version: "3.8"
+          - python-version: "3.9"
             db-backend: "mysql"
             nautobot-version: "1.6.1"
           - python-version: "3.11"

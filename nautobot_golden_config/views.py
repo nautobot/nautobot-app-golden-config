@@ -408,8 +408,8 @@ class ConfigComplianceDetails(ContentTypePermissionRequiredMixin, generic.View):
             backup_yaml = yaml.safe_dump(json.loads(backup_data))
             intend_yaml = yaml.safe_dump(json.loads(intended_data))
 
-            for line in difflib.unified_diff(
-                backup_yaml.splitlines(), intend_yaml.splitlines(), lineterm=""  # pylint: disable=use-yield-from
+            for line in difflib.unified_diff(  # pylint: disable=use-yield-from
+                backup_yaml.splitlines(), intend_yaml.splitlines(), lineterm=""
             ):
                 yield line
 

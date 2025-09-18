@@ -22,14 +22,8 @@ from nautobot.extras.utils import extras_features
 from netutils.config.compliance import feature_compliance
 from xmldiff import actions, main
 
-<<<<<<< HEAD
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
-=======
-# Nautobot imports
-from nautobot.apps.constants import CHARFIELD_MAX_LENGTH
-from nautobot.apps.models import PrimaryModel, extras_features
->>>>>>> 1502cc4 (Cookie updated by NetworkToCode Cookie Drift Manager Tool)
 
 LOGGER = logging.getLogger(__name__)
 GRAPHQL_STR_START = "query ($device_id: ID!)"
@@ -277,15 +271,9 @@ for custom_function, custom_type in CUSTOM_FUNCTIONS.items():
 class ComplianceFeature(PrimaryModel):  # pylint: disable=too-many-ancestors
     """ComplianceFeature details."""
 
-<<<<<<< HEAD
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(max_length=100, unique=True)
     description = models.CharField(max_length=200, blank=True)
-=======
-    name = models.CharField(max_length=CHARFIELD_MAX_LENGTH, unique=True)
-    description = models.CharField(max_length=CHARFIELD_MAX_LENGTH, blank=True)
-    # additional model fields
->>>>>>> 1502cc4 (Cookie updated by NetworkToCode Cookie Drift Manager Tool)
 
     class Meta:
         """Meta information for ComplianceFeature model."""

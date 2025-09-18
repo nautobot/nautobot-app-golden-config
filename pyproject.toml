@@ -43,11 +43,7 @@ hier-config = "^3.2.2"
 nautobot-capacity-metrics = "^3.0.1"
 xmldiff = "^2.6.3"
 # Used for local development
-<<<<<<< HEAD
-nautobot = ">=2.4.2, <3.0.0"
-=======
 nautobot = ">=2.4.2,<3.0.0"
->>>>>>> 1502cc4 (Cookie updated by NetworkToCode Cookie Drift Manager Tool)
 
 [tool.poetry.group.dev.dependencies]
 coverage = "*"
@@ -100,15 +96,12 @@ good-names = ["pk"]
 [tool.pylint.messages_control]
 disable = """,
     line-too-long,
-<<<<<<< HEAD
     too-few-public-methods,
     duplicate-code,
-=======
     too-many-positional-arguments,
     nb-warn-dunder-filter-field,
     nb-no-search-function,
     nb-no-char-filter-q,
->>>>>>> 1502cc4 (Cookie updated by NetworkToCode Cookie Drift Manager Tool)
 """
 
 [tool.pylint.miscellaneous]

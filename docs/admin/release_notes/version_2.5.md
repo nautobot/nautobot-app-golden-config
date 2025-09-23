@@ -26,7 +26,6 @@ This document describes all new features and changes in the release. The format 
 - Rebaked from the cookie `nautobot-app-v2.6.0`.
 - Updated ltm-1.6 release notes with new patch release information.
 
-
 ## [v2.5.0 (2025-09-09)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v2.5.0)
 
 ### Security

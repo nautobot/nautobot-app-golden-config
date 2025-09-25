@@ -141,7 +141,7 @@ class ConfigMismatchHashViewSetTestCase(TestCase):
         self.assertIn("compliance", context)
 
     @patch("nautobot_golden_config.views.messages")
-    def test_perform_bulk_destroy_confirmation_phase(self, mock_messages):
+    def test_perform_bulk_destroy_confirmation_phase(self, _mock_messages):
         """Test the initial confirmation phase of bulk destroy."""
         request = self.factory.post(
             "/mismatch-hash/delete/",
@@ -212,7 +212,7 @@ class ConfigMismatchHashViewSetTestCase(TestCase):
         self.assertIn("2 device/rule combinations", success_message)
 
     @patch("nautobot_golden_config.views.messages")
-    def test_perform_bulk_destroy_handles_empty_selection(self, mock_messages):
+    def test_perform_bulk_destroy_handles_empty_selection(self, _mock_messages):
         """Test that bulk delete handles empty selection gracefully."""
         request = self.factory.post("/mismatch-hash/delete/", data={"pk": []})
         request.user = self.user
@@ -263,7 +263,7 @@ class ConfigMismatchHashViewSetTestCase(TestCase):
         self.assertEqual(final_count, 8)
 
     @patch("nautobot_golden_config.views.messages")
-    def test_perform_bulk_destroy_groups_by_device_rule_combination(self, mock_messages):
+    def test_perform_bulk_destroy_groups_by_device_rule_combination(self, _mock_messages):
         """Test that bulk delete correctly groups deletions by device/rule combinations."""
         # Verify initial state
         initial_count = models.ConfigComplianceHash.objects.count()
@@ -302,7 +302,7 @@ class ConfigMismatchHashViewSetTestCase(TestCase):
         self.assertEqual(final_count, initial_count - 4)
 
     @patch("nautobot_golden_config.views.messages")
-    def test_perform_bulk_destroy_with_all_selection(self, mock_messages):
+    def test_perform_bulk_destroy_with_all_selection(self, _mock_messages):
         """Test that bulk delete handles '_all' selection correctly."""
         request = self.factory.post("/mismatch-hash/delete/", data={"_all": "true"})
         request.user = self.user

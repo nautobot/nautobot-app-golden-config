@@ -230,7 +230,7 @@ class ConfigHashGroupingFilterSet(NautobotFilterSet):
         return queryset.filter(id__in=hash_group_ids)
 
 
-class ConfigComplianceHashFilterSet(GoldenConfigFilterSet):
+class ConfigComplianceHashFilterSet(GoldenConfigFilterSet):  # pylint: disable=too-many-ancestors
     """Custom filter for mismatch grouping that handles device filtering properly."""
 
     location = TreeNodeMultipleChoiceFilter(

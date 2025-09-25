@@ -662,10 +662,15 @@ class ConfigHashGroupingTable(BaseTable):  # pylint: disable=nb-sub-class-name
     actions = TemplateColumn(
         template_code="""
         <div class="btn-group" role="group">
-            <a href="{% url 'plugins:nautobot_golden_config:configcompliance_remediate' %}?feature_id={{ record.feature_id }}&config_hash={{ record.config_hash }}"
-               class="btn btn-sm btn-outline-primary" title="Generate Remediation Config Plans">
+            <button type="button"
+                    class="btn btn-sm btn-outline-primary hash-plan-generate"
+                    title="Generate Remediation Config Plans"
+                    data-feature-id="{{ record.feature_id }}"
+                    data-config-hash="{{ record.config_hash }}"
+                    data-feature-name="{{ record.feature_name }}"
+                    data-device-count="{{ record.device_count }}">
                 <i class="mdi mdi-map-check-outline"></i>
-            </a>
+            </button>
         </div>
         """,
         verbose_name="Actions",

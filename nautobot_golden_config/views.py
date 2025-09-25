@@ -8,8 +8,8 @@ import yaml
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import CharField, Count, Exists, ExpressionWrapper, F, FloatField, Max, OuterRef, Q, Value
-from django.db.models.functions import Cast, Concat
+from django.db.models import Count, Exists, ExpressionWrapper, F, FloatField, Max, OuterRef, Q
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.html import format_html
@@ -760,11 +760,10 @@ class ConfigComplianceHashUIViewSet(views.NautobotUIViewSet):
         )
         return context
 
-    def perform_bulk_destroy(self, request, **kwargs):
-        """Override bulk destroy to delete both actual and intended hashes for the same device/rule combinations."""
+    def _get_pk_list_for_bulk_destroy(self, request):
+        """Extract primary key list based on request parameters."""
         model = self.queryset.model
 
-        # Handle the primary key collection like the existing ConfigCompliance bulk delete
         if request.POST.get("_all"):
             filter_params = self.get_filter_params(request)
             if not filter_params:
@@ -773,13 +772,47 @@ class ConfigComplianceHashUIViewSet(views.NautobotUIViewSet):
                 raise NotImplementedError("filterset_class must be defined to use _all")
             else:
                 hash_objects = self.filterset_class(filter_params, model.objects.only("pk")).qs
-            self.pk_list = list(hash_objects.values_list("pk", flat=True))
-        elif "_confirm" not in request.POST:
-            # Initial selection - get the pk list from the form
-            self.pk_list = request.POST.getlist("pk")
-        else:
-            # Get the pk list from the form
-            self.pk_list = request.POST.getlist("pk")
+            return list(hash_objects.values_list("pk", flat=True))
+
+        return request.POST.getlist("pk")
+
+    def _perform_hash_deletion(self, request):
+        """Perform the actual deletion of hash records."""
+        if not self.pk_list:
+            messages.error(request, "No items selected for deletion.")
+            return redirect(self.get_return_url(request))
+
+        # Get the selected ConfigComplianceHash records
+        selected_hashes = models.ConfigComplianceHash.objects.filter(pk__in=self.pk_list)
+
+        if not selected_hashes.exists():
+            messages.error(request, "Selected items not found.")
+            return redirect(self.get_return_url(request))
+
+        # Extract device/rule combinations from selected hashes
+        device_rule_combinations = set()
+        for hash_record in selected_hashes:
+            device_rule_combinations.add((hash_record.device_id, hash_record.rule_id))
+
+        # Delete both actual and intended hashes for the same device/rule combinations
+        # Use Q objects to filter by device/rule combinations more reliably
+        q_objects = Q()
+        for device_id, rule_id in device_rule_combinations:
+            q_objects |= Q(device_id=device_id, rule_id=rule_id)
+
+        deleted_count, _ = models.ConfigComplianceHash.objects.filter(q_objects).delete()
+
+        messages.success(
+            request,
+            f"Successfully deleted {deleted_count} configuration hash records "
+            f"(both actual and intended) for {len(device_rule_combinations)} device/rule combinations.",
+        )
+
+        return redirect(self.get_return_url(request))
+
+    def perform_bulk_destroy(self, request, **kwargs):
+        """Override bulk destroy to delete both actual and intended hashes for the same device/rule combinations."""
+        self.pk_list = self._get_pk_list_for_bulk_destroy(request)
 
         form_class = self.get_form_class(**kwargs)
         data = {}
@@ -787,49 +820,7 @@ class ConfigComplianceHashUIViewSet(views.NautobotUIViewSet):
         if "_confirm" in request.POST:
             form = form_class(request.POST)
             if form.is_valid():
-                # Perform the actual deletion
-                if not self.pk_list:
-                    messages.error(request, "No items selected for deletion.")
-                    return redirect(self.get_return_url(request))
-
-                # Get the selected ConfigComplianceHash records
-                selected_hashes = models.ConfigComplianceHash.objects.filter(pk__in=self.pk_list)
-
-                if not selected_hashes.exists():
-                    messages.error(request, "Selected items not found.")
-                    return redirect(self.get_return_url(request))
-
-                # Extract device/rule combinations from selected hashes
-                device_rule_combinations = set()
-                for hash_record in selected_hashes:
-                    device_rule_combinations.add((hash_record.device_id, hash_record.rule_id))
-
-                # Delete both actual and intended hashes for the same device/rule combinations using bulk delete
-                # Use Django's tuple matching to filter by (device_id, rule_id) pairs in a single query
-                # Create a list of concatenated device_rule identifiers for matching
-                device_rule_identifiers = [f"{device_id}-{rule_id}" for device_id, rule_id in device_rule_combinations]
-
-                # Perform single bulk delete operation using concatenated field matching
-                # Cast both fields to CharField to avoid mixed type errors
-                deleted_count, _ = (
-                    models.ConfigComplianceHash.objects.annotate(
-                        device_rule_key=Concat(
-                            Cast("device_id", output_field=CharField()),
-                            Value("-"),
-                            Cast("rule_id", output_field=CharField()),
-                        )
-                    )
-                    .filter(device_rule_key__in=device_rule_identifiers)
-                    .delete()
-                )
-
-                messages.success(
-                    request,
-                    f"Successfully deleted {deleted_count} configuration hash records "
-                    f"(both actual and intended) for {len(device_rule_combinations)} device/rule combinations.",
-                )
-
-                return redirect(self.get_return_url(request))
+                return self._perform_hash_deletion(request)
             return self.form_invalid(form)
 
         # Show confirmation page
@@ -860,6 +851,7 @@ class ConfigHashGroupingUIViewSet(views.NautobotUIViewSet):
 
     # Disable add and import actions since this is a read-only report
     action_buttons = []
+    template_name = "nautobot_golden_config/confighashgrouping_list.html"
 
     queryset = (
         models.ConfigHashGrouping.objects.annotate(
@@ -880,6 +872,11 @@ class ConfigHashGroupingUIViewSet(views.NautobotUIViewSet):
         .order_by("-device_count", "rule__feature__name")
     )
 
+    def __init__(self, *args, **kwargs):
+        """Used to set default variables on ConfigHashGroupingUIViewSet."""
+        super().__init__(*args, **kwargs)
+        self.pk_list = None
+
     def get_extra_context(self, request, instance=None, **kwargs):
         """Add extra context for the template."""
         context = super().get_extra_context(request, instance, **kwargs)  # pylint: disable=no-member
@@ -891,7 +888,7 @@ class ConfigHashGroupingUIViewSet(views.NautobotUIViewSet):
         )
         return context
 
-    def perform_bulk_destroy(self, request, **kwargs):
+    def perform_bulk_destroy(self, request, **kwargs):  # pylint: disable=too-many-locals
         """Override bulk destroy to cascade delete related ConfigComplianceHash records for each group's rule."""
         model = self.queryset.model
 
@@ -955,7 +952,7 @@ class ConfigHashGroupingUIViewSet(views.NautobotUIViewSet):
                         f"for {len(device_rule_combinations)} device/rule combination{'' if len(device_rule_combinations) == 1 else 's'}.",
                     )
 
-                except Exception as e:
+                except ObjectDoesNotExist as e:
                     messages.error(request, f"Error during deletion: {str(e)}")
 
                 return redirect(self.get_return_url(request))
@@ -1045,3 +1042,66 @@ class RemediateHashGroupView(PermissionRequiredMixin, View):
         except (Job.DoesNotExist, ValueError, TypeError, RuntimeError) as e:
             messages.error(request, f"Error starting remediation job: {str(e)}")
             return redirect("plugins:nautobot_golden_config:configcompliance_hash_grouping")
+
+    def post(self, request):  # pylint: disable=too-many-return-statements
+        """Handle POST request for AJAX modal job execution."""
+        feature_id = request.POST.get("feature_id")
+        config_hash = request.POST.get("config_hash")
+        get_devices_only = request.POST.get("get_devices_only")
+
+        if not feature_id or not config_hash:
+            return JsonResponse({"error": "Missing feature_id or config_hash parameters."}, status=400)
+
+        try:
+            feature = models.ComplianceFeature.objects.get(pk=feature_id)
+
+            # Get the config group for this feature and hash
+            try:
+                config_group = models.ConfigHashGrouping.objects.get(
+                    rule__feature_id=feature_id, config_hash=config_hash
+                )
+            except models.ConfigHashGrouping.DoesNotExist:
+                return JsonResponse({"error": "Configuration group not found for this feature and hash"}, status=404)
+
+            # Get all devices in this hash group
+            devices_in_group = (
+                models.ConfigComplianceHash.objects.filter(
+                    config_group=config_group,
+                    config_type="actual",
+                    device__configcompliance__rule__feature_id=feature_id,
+                    device__configcompliance__compliance=False,
+                )
+                .values_list("device_id", flat=True)
+                .distinct()
+            )
+
+            if not devices_in_group:
+                return JsonResponse({"error": "No devices found in hash group for this feature"}, status=404)
+
+            device_ids = list(devices_in_group)
+
+            if not device_ids:
+                return JsonResponse({"error": "No devices found for this hash group."}, status=404)
+
+            # If only requesting device IDs, return them without starting a job
+            if get_devices_only == "true":
+                return JsonResponse({"device_ids": device_ids})
+
+            # Get the GenerateConfigPlans job
+            job = Job.objects.get(name="Generate Config Plans")
+
+            # Enqueue the job
+            job_result = JobResult.enqueue_job(
+                job,
+                request.user,
+                plan_type="remediation",
+                feature=[feature.pk],
+                device=device_ids,
+            )
+
+            return JsonResponse({"job_result": {"id": str(job_result.pk), "url": job_result.get_absolute_url()}})
+
+        except (Job.DoesNotExist, ValueError, TypeError, RuntimeError) as e:
+            return JsonResponse({"error": f"Error starting remediation job: {str(e)}"}, status=500)
+        except models.ComplianceFeature.DoesNotExist:
+            return JsonResponse({"error": f"Feature with ID {feature_id} not found"}, status=404)

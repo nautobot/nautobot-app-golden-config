@@ -12,7 +12,7 @@ from nautobot_golden_config.tests.conftest import (
 )
 
 
-class ConfigHashGroupingAPITestCase(APIViewTestCases.APIViewTestCase):
+class ConfigHashGroupingAPITestCase(APIViewTestCases.APIViewTestCase):  # pylint: disable=too-many-ancestors
     """Test API for ConfigHashGrouping."""
 
     model = models.ConfigHashGrouping
@@ -99,7 +99,7 @@ class ConfigHashGroupingAPITestCase(APIViewTestCases.APIViewTestCase):
         }
 
 
-class ConfigComplianceHashAPITestCase(APIViewTestCases.APIViewTestCase):
+class ConfigComplianceHashAPITestCase(APIViewTestCases.APIViewTestCase):  # pylint: disable=too-many-ancestors
     """Test API for ConfigComplianceHash."""
 
     model = models.ConfigComplianceHash
@@ -211,7 +211,7 @@ class ConfigComplianceHashAPITestCase(APIViewTestCases.APIViewTestCase):
         cls.choices_fields = ["config_type"]
 
 
-class ConfigHashGroupingListAPITest(APITestCase):
+class ConfigHashGroupingListAPITest(APITestCase):  # pylint: disable=too-many-ancestors
     """Test ConfigHashGrouping list API."""
 
     def setUp(self):
@@ -280,7 +280,7 @@ class ConfigHashGroupingListAPITest(APITestCase):
             self.assertEqual(str(result["rule"]["id"]), str(self.feature1.id))
 
 
-class ConfigComplianceHashListAPITest(APITestCase):
+class ConfigComplianceHashListAPITest(APITestCase):  # pylint: disable=too-many-ancestors
     """Test ConfigComplianceHash list API."""
 
     def setUp(self):
@@ -371,7 +371,7 @@ class ConfigComplianceHashListAPITest(APITestCase):
             self.assertEqual(str(result["rule"]["id"]), str(self.feature1.id))
 
 
-class ConfigHashGroupingCSVTest(APITestCase):
+class ConfigHashGroupingCSVTest(APITestCase):  # pylint: disable=too-many-ancestors
     """Test ConfigHashGrouping CSV export."""
 
     def setUp(self):
@@ -386,7 +386,7 @@ class ConfigHashGroupingCSVTest(APITestCase):
         self.assertIn("text/csv", response["content-type"])
 
 
-class ConfigComplianceHashCSVTest(APITestCase):
+class ConfigComplianceHashCSVTest(APITestCase):  # pylint: disable=too-many-ancestors
     """Test ConfigComplianceHash CSV export."""
 
     def setUp(self):

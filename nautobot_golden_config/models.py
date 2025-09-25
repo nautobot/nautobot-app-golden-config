@@ -1,4 +1,5 @@
 """Django Models for tracking the configuration compliance per feature and device."""
+# pylint: disable=too-many-lines
 
 import json
 import logging
@@ -23,7 +24,7 @@ from xmldiff import actions, main
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
-from nautobot_golden_config.utilities.hash_utils import cleanup_orphaned_hash_groups_for_rule, compute_config_hash
+from nautobot_golden_config.utilities.hash_utils import compute_config_hash
 
 LOGGER = logging.getLogger(__name__)
 GRAPHQL_STR_START = "query ($device_id: ID!)"
@@ -357,6 +358,15 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
         if self.config_type == ComplianceRuleConfigTypeChoice.TYPE_CLI and not self.match_config:
             raise ValidationError("CLI configuration set, but no configuration set to match.")
 
+    def cleanup_orphaned_hash_groups(self):
+        """Remove ConfigHashGrouping records for this rule that no longer have any linked devices."""
+        orphaned_groups = ConfigHashGrouping.objects.filter(rule=self).exclude(
+            id__in=ConfigComplianceHash.objects.filter(rule=self, config_group__isnull=False).values_list(
+                "config_group_id", flat=True
+            )
+        )
+        orphaned_groups.delete()
+
 
 @extras_features(
     "custom_fields",
@@ -490,7 +500,7 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors, too
         )
 
         # Clean up orphaned ConfigHashGrouping records that no longer have any linked devices
-        cleanup_orphaned_hash_groups_for_rule(self.rule)
+        self.rule.cleanup_orphaned_hash_groups()
 
     def remediation_on_save(self):
         """The actual remediation happens here, before saving the object."""
@@ -1002,11 +1012,10 @@ class ConfigComplianceHash(PrimaryModel):  # pylint: disable=too-many-ancestors
 
     def delete(self, *args, **kwargs):
         """Override delete to clean up orphaned ConfigHashGrouping records."""
-        rule = self.rule
         result = super().delete(*args, **kwargs)
 
         # Clean up orphaned groups for this rule after deletion
-        cleanup_orphaned_hash_groups_for_rule(rule)
+        self.rule.cleanup_orphaned_hash_groups()
         return result
 
 

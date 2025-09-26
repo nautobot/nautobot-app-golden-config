@@ -23,7 +23,6 @@ from nautobot_golden_config.utilities.helper import (
     dispatch_params,
     get_django_env,
     render_jinja_template,
-    verify_settings,
 )
 from nautobot_golden_config.utilities.logger import NornirLogger
 
@@ -107,10 +106,21 @@ def config_intended(job):
     """
     now = make_aware(datetime.now())
     logger = NornirLogger(job.job_result, job.logger.getEffectiveLevel())
+    # enabled_qs, disabled_qs = job.gc_advanced_filter.get_filtered_querysets("intended")
+    # device_filter = GCSettingsDeviceFilterSet(job.qs)
 
-    for settings in set(job.device_to_settings_map.values()):
-        verify_settings(logger, settings, ["jinja_path_template", "intended_path_template", "sot_agg_query"])
-
+    # Verify intended feature is enabled and has required settings
+    # device_filter.verify_feature_enabled(
+    #     logger,
+    #     "intended",
+    #     required_settings=["jinja_path_template", "intended_path_template", "sot_agg_query"],
+    # )
+    # if job.job_result.task_kwargs["debug"]:
+    #     for device in disabled_qs:
+    #         logger.warning(
+    #             f"E3038: Device {device.name} does not have the required settings to run the intended job. Skipping device.",
+    #             extra={"object": device},
+    #         )
     # Retrieve filters from the Django jinja template engine
     jinja_env = get_django_env()
     try:
@@ -122,7 +132,7 @@ def config_intended(job):
                 "options": {
                     "credentials_class": NORNIR_SETTINGS.get("credentials"),
                     "params": NORNIR_SETTINGS.get("inventory_params"),
-                    "queryset": job.qs,
+                    "queryset": job.task_qs,
                     "defaults": {"now": now},
                 },
             },
@@ -135,7 +145,7 @@ def config_intended(job):
                 task=run_template,
                 name="RENDER CONFIG",
                 logger=logger,
-                device_to_settings_map=job.device_to_settings_map,
+                device_to_settings_map=job.gc_advanced_settings_filter["intended"][True],
                 job_class_instance=job,
                 jinja_env=jinja_env,
             )

@@ -7,6 +7,8 @@ The project is following Network to Code software development guidelines and is 
 - Python linting and formatting: `pylint` and `ruff`.
 - YAML linting is done with `yamllint`.
 - Django unit test to ensure the app is working properly.
+- Django Template linting: `djlint`
+- Django Template formatting: `djhtml`
 
 Documentation is built using [mkdocs](https://www.mkdocs.org/). The [Docker based development environment](dev_environment.md#docker-development-environment) automatically starts a container hosting a live version of the documentation website on [http://localhost:8001](http://localhost:8001) that auto-refreshes when you make any changes to your local files.
 

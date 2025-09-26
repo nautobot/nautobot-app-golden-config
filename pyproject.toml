@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nautobot-golden-config"
-version = "2.5.0"
+version = "2.5.1"
 description = "An app for configuration on nautobot"
 authors = ["Network to Code, LLC <opensource@networktocode.com>"]
 license = "Apache-2.0"
@@ -43,7 +43,7 @@ hier-config = "^3.2.2"
 nautobot-capacity-metrics = "^3.0.1"
 xmldiff = "^2.6.3"
 # Used for local development
-nautobot = ">=2.4.2, <3.0.0"
+nautobot = ">=2.4.2,<3.0.0"
 
 [tool.poetry.group.dev.dependencies]
 coverage = "*"
@@ -56,8 +56,15 @@ pylint-nautobot = "*"
 ruff = "0.5.5"
 yamllint = "*"
 # Python implementation of markdownlint
-pymarkdownlnt = "~0.9.29"
+pymarkdownlnt = "~0.9.30"
 Markdown = "*"
+towncrier = ">=23.6.0,<=24.8.0"
+to-json-schema = "*"
+jsonschema = "*"
+djlint = ">=1.36.4,<2.0.0"
+djhtml = ">=3.0.8,<4.0.0"
+
+[tool.poetry.group.docs.dependencies]
 # Render custom markdown for version added/changed/remove notes
 markdown-version-annotations = "1.0.1"
 # Rendering docs to HTML
@@ -69,9 +76,6 @@ mkdocstrings = "0.25.2"
 mkdocstrings-python = "1.10.8"
 mkdocs-autorefs = "1.2.0"
 griffe = "1.1.1"
-towncrier = ">=23.6.0,<=24.8.0"
-to-json-schema = "*"
-jsonschema = "*"
 
 [tool.poetry.extras]
 all = [
@@ -94,6 +98,10 @@ disable = """,
     line-too-long,
     too-few-public-methods,
     duplicate-code,
+    too-many-positional-arguments,
+    nb-warn-dunder-filter-field,
+    nb-no-search-function,
+    nb-no-char-filter-q,
 """
 
 [tool.pylint.miscellaneous]
@@ -105,7 +113,7 @@ notes = """,
 
 [tool.pylint-nautobot]
 supported_nautobot_versions = [
-    "2.0.0"
+    "2"
 ]
 
 [tool.ruff]
@@ -165,64 +173,13 @@ include = [
 ]
 
 [tool.pymarkdown]
-# Seems to be not support for whitelisting rules: https://github.com/jackdewinter/pymarkdown/issues/1396
-plugins.md001.enabled = false
-plugins.md002.enabled = false
-plugins.md003.enabled = false
-plugins.md004.enabled = false
-plugins.md005.enabled = false
-plugins.md006.enabled = false
-plugins.md007.enabled = false
-plugins.md008.enabled = false
-plugins.md009.enabled = false
-plugins.md010.enabled = false
-plugins.md011.enabled = false
-plugins.md012.enabled = false
-plugins.md013.enabled = false
-plugins.md014.enabled = false
-plugins.md015.enabled = false
-plugins.md016.enabled = false
-plugins.md017.enabled = false
-plugins.md018.enabled = false
-plugins.md019.enabled = false
-plugins.md020.enabled = false
-plugins.md021.enabled = false
-plugins.md022.enabled = false
-plugins.md023.enabled = false
-plugins.md024.enabled = false
-plugins.md025.enabled = false
-plugins.md026.enabled = false
-plugins.md027.enabled = false
-plugins.md028.enabled = false
-plugins.md029.enabled = false
-plugins.md030.enabled = false
-plugins.md031.enabled = false
-plugins.md032.enabled = true # blanks-around-lists
-plugins.md033.enabled = false
-plugins.md034.enabled = false
-plugins.md035.enabled = false
-plugins.md036.enabled = false
-plugins.md037.enabled = false
-plugins.md038.enabled = false
-plugins.md039.enabled = false
-plugins.md040.enabled = false
-plugins.md041.enabled = false
-plugins.md042.enabled = false
-plugins.md043.enabled = false
-plugins.md044.enabled = false
-plugins.md045.enabled = false
-plugins.md046.enabled = false
-plugins.md047.enabled = false
-plugins.md048.enabled = false
-plugins.md049.enabled = false
-plugins.md050.enabled = false
-plugins.pml100.enabled = false
-plugins.pml101.enabled = true # list-anchored-indent
-plugins.pml102.enabled = false
-plugins.pml103.enabled = false
+plugins.selectively_enable_rules = true
+plugins.blanks-around-lists.enabled = true
+plugins.list-anchored-indent.enabled = true
+extensions.front-matter.enabled = true
 
 [build-system]
-requires = ["poetry_core>=1.0.0"]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.towncrier]
@@ -277,3 +234,8 @@ showcontent = true
 directory = "housekeeping"
 name = "Housekeeping"
 showcontent = true
+
+[tool.djlint]
+ignore = "H005,H006,H008,H011,H012,H013,H014,H015,H016,H019,H020,H021,H022,H023,H025,H026,H030,H031,H037"
+profile="django"
+extend_exclude = "docs/,nautobot_golden_config/static/"

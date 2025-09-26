@@ -607,7 +607,7 @@ class ConfigPlanBulkEditForm(NautobotBulkEditForm):
         required=False,
     )
     change_control_id = django_forms.CharField(required=False, label="Change Control ID")
-    change_control_url = django_forms.URLField(required=False, label="Change Control URL")
+    change_control_url = django_forms.URLField(required=False, label="Change Control URL", max_length=2048)
 
     class Meta:
         """Boilerplate form Meta data for ConfigPlan."""

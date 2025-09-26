@@ -522,6 +522,20 @@ class ConfigPlanTable(StatusTableMixin, BaseTable):
         {% endif %}
         """
     )
+
+    change_control_url = TemplateColumn(
+        template_code=(
+            "{% if record.change_control_url %}"
+            '<a href="{{ record.change_control_url }}" target="_blank" title="{{ record.change_control_url }}">'
+            "{{ record.change_control_url|truncatechars:80 }}"
+            "</a>"
+            "{% else %}&mdash;{% endif %}"
+        ),
+        verbose_name="Change Control URL",
+        orderable=True,
+        order_by="change_control_url",
+    )
+
     config_set = TemplateColumn(template_code=CONFIG_SET_BUTTON, verbose_name="Config Set", orderable=False)
     tags = TagColumn(url_name="plugins:nautobot_golden_config:configplan_list")
 

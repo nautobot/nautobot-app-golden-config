@@ -10,7 +10,7 @@ This document describes all new features and changes in the release. The format 
 - Add the ability to manage remediation settings via Git data sources.
 - Add additional options to fail Config Plans better.
 
-## [v2.5.1 (2025-09-23)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v2.5.1)
+## [v2.5.1 (2025-09-26)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v2.5.1)
 
 ### Changed
 

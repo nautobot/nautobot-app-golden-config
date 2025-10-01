@@ -101,7 +101,9 @@ def _get_json_compliance(obj):
         type_changes = list(diff.get("type_changes", {}).keys())
         return dictionary_items + list_items + values_changed + type_changes
 
-    diff = DeepDiff(obj.actual, obj.intended, ignore_order=obj.ordered, report_repetition=True)
+    diff = DeepDiff(
+        obj.actual, obj.intended, ignore_order=obj.ordered, report_repetition=True, threshold_to_diff_deeper=0
+    )
     if not diff:
         compliance_int = 1
         compliance = True
@@ -609,6 +611,7 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     sot_agg_query = models.ForeignKey(
         to="extras.GraphQLQuery",
         on_delete=models.PROTECT,
+        verbose_name="GraphQL Query",
         null=True,
         blank=True,
         related_name="sot_aggregation",
@@ -621,6 +624,15 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     is_dynamic_group_associable_model = False
 
     objects = GoldenConfigSettingManager()
+
+    clone_fields = [
+        "weight",
+        "backup_path_template",
+        "backup_test_connectivity",
+        "intended_path_template",
+        "jinja_path_template",
+        "sot_agg_query",
+    ]
 
     def __str__(self):
         """Return a simple string if model is called."""
@@ -856,7 +868,7 @@ class ConfigPlan(PrimaryModel):  # pylint: disable=too-many-ancestors
         verbose_name="Change Control ID",
         help_text="Change Control ID for this configuration plan.",
     )
-    change_control_url = models.URLField(blank=True, verbose_name="Change Control URL")
+    change_control_url = models.URLField(blank=True, verbose_name="Change Control URL", max_length=2048)
     status = StatusField(blank=True, null=True, on_delete=models.PROTECT)
 
     class Meta:

@@ -4,6 +4,59 @@
 - Add a job that can deploy config_set based on a generated ConfigPlan object.
 - Add functionality to compliance result to provide a Remediation plan.
 - Supports Nautobot >=1.6.1,<2.0.0.
+- Drops Python 3.8 support.
+
+## v1.6.8 2025-09
+
+### Security
+
+- [#989](https://github.com/nautobot/nautobot-app-golden-config/issues/989) - Upgraded DeepDiff to `8.6.1` version to address CVE-2025-58367.
+
+### Dependencies
+
+- Removed Python 3.8 Support. As Python 3.8 has reached end-of-life, A major security issue (CVE-2025-58367) in the DeepDiff dependency requires a minimum of Python 3.9 to address the vulnerability.
+
+## v1.6.7 - 2025-05
+
+### Changed
+
+- [#912](https://github.com/nautobot/nautobot-app-golden-config/issues/912) - Changed logging from git repo url to name to avoid exposing credentials in job logs.
+
+### Documentation
+
+- [#775](https://github.com/nautobot/nautobot-app-golden-config/issues/775) - Added FAQ for deepdiff and numpy dependency issue.
+
+### Dependencies
+
+- [#773](https://github.com/nautobot/nautobot-app-golden-config/issues/773) - Fixed deepdiff dependency range.
+- [#913](https://github.com/nautobot/nautobot-app-golden-config/issues/913) - Updated docs dependencies.
+
+## v1.6.6 - 2024-08
+
+### Fixed
+
+- [#787](https://github.com/nautobot/nautobot-app-golden-config/pull/787) - Allow version 7 of deepdiff.
+
+## v1.6.5 - 2024-04
+
+### Fixed
+
+- [#714](https://github.com/nautobot/nautobot-app-golden-config/pull/714) - Fixed close threaded db connections during config deployment.
+- [#744](https://github.com/nautobot/nautobot-app-golden-config/pull/744) - Fixed issue where parser is not mapped when not matching netutils normalized names.
+
+### Changed
+
+- [#744](https://github.com/nautobot/nautobot-app-golden-config/pull/744) - Changed netutils to support 1.8.0 and up.
+
+## v1.6.4 - 2024-01
+
+### Fixed
+
+- [#695](https://github.com/nautobot/nautobot-app-golden-config/pull/695) - Removed optional job_result parameter from ensure_git_repository
+
+### Changed
+
+- [#670](https://github.com/nautobot/nautobot-app-golden-config/pull/670) - Update Nautobot Nornir Dependency
 
 ## v1.6.3 - 2023-10
 

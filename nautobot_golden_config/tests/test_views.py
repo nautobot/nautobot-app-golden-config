@@ -15,7 +15,7 @@ from lxml import html
 from nautobot.apps.models import RestrictedQuerySet
 from nautobot.apps.testing import TestCase, ViewTestCases
 from nautobot.dcim.models import Device
-from nautobot.extras.models import Relationship, RelationshipAssociation, Status
+from nautobot.extras.models import Status
 from nautobot.users import models as users_models
 from packaging import version
 

@@ -30,8 +30,10 @@ def graph_ql_query(request, device, query):
 
     LOGGER.debug("GraphQL - execute query with variables")
     result = execute(schema=schema, document=document, context_value=request, variable_values=variables)
-    if result.invalid:
+    if result.errors:
         LOGGER.warning("GraphQL - query executed unsuccessfully")
+        for err in result.errors:
+            LOGGER.warning("GraphQL - error: `%s`", str(err))
         return (400, result.to_dict())
     data = result.data
 

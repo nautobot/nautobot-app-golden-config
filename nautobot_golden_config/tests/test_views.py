@@ -269,6 +269,9 @@ class ConfigPlanTestCase(
     """Test ConfigPlan views."""
 
     model = models.ConfigPlan
+    allowed_number_of_tree_queries_per_view_type = {
+        "retrieve": 1,
+    }
 
     @classmethod
     def setUpTestData(cls):

@@ -407,13 +407,13 @@ class ConfigPlanTest(
 
         cls.update_data = {
             "change_control_id": "Test Change Control ID 4",
-            "change_control_url": "https://4.example.com/",
+            "change_control_url": "https://example.com/?" + "x" * 1000,
             "status": approved_status.pk,
         }
 
         cls.bulk_update_data = {
             "change_control_id": "Test Change Control ID 5",
-            "change_control_url": "https://5.example.com/",
+            "change_control_url": "https://example.com/?" + "x" * 1000,
             "status": approved_status.pk,
         }
 
@@ -547,6 +547,7 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
         """Verify that the intended config API succeeds when the branch parameter is supplied on Nautobot v2.4.2."""
 
         self.add_permissions("dcim.view_device")
+        self.add_permissions("dcim.view_location")
         self.add_permissions("extras.view_gitrepository")
 
         self._setup_mock_path(MockPath)
@@ -601,6 +602,7 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
         """Verify that the intended config is generated as expected."""
 
         self.add_permissions("dcim.view_device")
+        self.add_permissions("dcim.view_location")
         self.add_permissions("extras.view_gitrepository")
 
         self._setup_mock_path(MockPath)
@@ -668,6 +670,7 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
         """Verify that errors are handled as expected."""
 
         self.add_permissions("dcim.view_device")
+        self.add_permissions("dcim.view_location")
         self.add_permissions("extras.view_gitrepository")
 
         mock_path_instance = self._setup_mock_path(MockPath)

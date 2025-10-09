@@ -95,9 +95,9 @@ The current supported platform and the associated *default* platform network_dri
 
 In many use cases, this can be extended with a custom dispatcher for nornir tasks, which is controlled in the [nornir-nautobot](https://github.com/nautobot/nornir-nautobot) repository. Additionally you can "roll your own" dispatcher with the `custom_dispatcher` configuration parameter to map and/or extend for your environment. Please see the instructions there for further details.
 
-## _Why not provide the corrective configurations?_
+## _Does this application provide the corrective configurations?_
 
-Configuration enforcement is a difficult problem to attack. While potentially could integrate with a system to provide the enforcement, this is currently out-of-scope for the app.
+Yes. While configuration enforcement is a challenging problem, this application integrates with Hier-Config to determine the commands required to bring a device into compliance with its intended configuration for traditional nested CLI config and allows you to bring your own custom remediation for JSON or XML based remediation.
 
 ## _Why does the compliance section scroll so much?_
 

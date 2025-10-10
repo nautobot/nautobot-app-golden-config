@@ -17,12 +17,7 @@ from nautobot.extras.models.jobs import Job
 from nautobot.extras.models.roles import Role
 from nautobot.extras.models.statuses import Status
 
-from nautobot_golden_config.models import (
-    ComplianceFeature,
-    ComplianceRule,
-    GoldenConfigSetting,
-    RemediationSetting
-)
+from nautobot_golden_config.models import ComplianceFeature, ComplianceRule, GoldenConfigSetting, RemediationSetting
 
 
 class Command(BaseCommand):
@@ -37,7 +32,7 @@ class Command(BaseCommand):
         self.git_url: str = os.getenv("GIT_URL", "http://git-server:3000/gclab")
         self.device_name_prefix: str = os.getenv("DEVICE_NAME_PREFIX", "ceos")
         self.devices: List[str] = []
-        self.device_count: int = 1  # Default to creating 1 device
+        self.device_count: int = 4  # Default to creating 4 devices
 
         self.interfaces = [
             {"name": "Ethernet1", "type": "100base-tx"},
@@ -74,7 +69,9 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR(f"Error creating Location Type"))
 
         try:
-            location_obj, _ = Location.objects.get_or_create(name="Data Center 1", location_type=location_type_obj, status=status_active_obj)
+            location_obj, _ = Location.objects.get_or_create(
+                name="Data Center 1", location_type=location_type_obj, status=status_active_obj
+            )
             self.stdout.write(self.style.SUCCESS(f"Location {location_obj} created"))
         except Exception as e:
             self.stderr.write(str(e))
@@ -100,7 +97,9 @@ class Command(BaseCommand):
 
         # --- 4. Platform --- #
         try:
-            platform_obj, _ = Platform.objects.using(db).get_or_create(name="ceos", manufacturer=mfg_obj, napalm_driver="eos", network_driver="arista_eos")
+            platform_obj, _ = Platform.objects.using(db).get_or_create(
+                name="ceos", manufacturer=mfg_obj, napalm_driver="eos", network_driver="arista_eos"
+            )
             self.stdout.write(self.style.SUCCESS(f"Platform {platform_obj} created"))
         except Exception as e:
             self.stderr.write(str(e))
@@ -111,7 +110,9 @@ class Command(BaseCommand):
             device_type_obj, _ = DeviceType.objects.using(db).get_or_create(model="ceos", manufacturer=mfg_obj)
             for interface in self.interfaces:
                 try:
-                    device_type_obj.interface_templates.create(name=interface["name"], type=interface["type"], mgmt_only=interface.get("mgmt_only", False))
+                    device_type_obj.interface_templates.create(
+                        name=interface["name"], type=interface["type"], mgmt_only=interface.get("mgmt_only", False)
+                    )
                 except IntegrityError:
                     pass  # Interface already exists
             device_type_obj.validated_save()
@@ -140,13 +141,18 @@ class Command(BaseCommand):
 
         # --- 7. Git Repository --- #
         try:
-            git_repo_obj, _ = GitRepository.objects.using(db).get_or_create(name="localgit", remote_url=self.git_url, branch="main", provided_contents=[
-                "nautobot_golden_config.backupconfigs",
-                "nautobot_golden_config.jinjatemplate",
-                "nautobot_golden_config.intendedconfigs",
-                "extras.configcontext",
-                "extras.configcontextschema",
-            ])
+            git_repo_obj, _ = GitRepository.objects.using(db).get_or_create(
+                name="localgit",
+                remote_url=self.git_url,
+                branch="main",
+                provided_contents=[
+                    "nautobot_golden_config.backupconfigs",
+                    "nautobot_golden_config.jinjatemplate",
+                    "nautobot_golden_config.intendedconfigs",
+                    "extras.configcontext",
+                    "extras.configcontextschema",
+                ],
+            )
             self.stdout.write(self.style.SUCCESS(f"Git Repository {git_repo_obj} created"))
         except Exception as e:
             self.stderr.write(str(e))
@@ -154,7 +160,9 @@ class Command(BaseCommand):
 
         # --- 8. Remediation Setting --- #
         try:
-            gc_remediation_obj, _ = RemediationSetting.objects.using(db).get_or_create(platform=platform_obj, remediation_type="HIERCONFIG")
+            gc_remediation_obj, _ = RemediationSetting.objects.using(db).get_or_create(
+                platform=platform_obj, remediation_type="hierconfig"
+            )
             self.stdout.write(self.style.SUCCESS(f"Remediation Setting {gc_remediation_obj} created"))
         except Exception as e:
             self.stderr.write(str(e))
@@ -163,7 +171,9 @@ class Command(BaseCommand):
         # --- 9. Compliance Features and Rules --- #
         try:
             for feature in self.features:
-                gc_feature_obj, _ = ComplianceFeature.objects.using(db).get_or_create(name=feature, slug=feature.lower())
+                gc_feature_obj, _ = ComplianceFeature.objects.using(db).get_or_create(
+                    name=feature, slug=feature.lower()
+                )
 
                 gc_rule_obj, _ = ComplianceRule.objects.using(db).get_or_create(
                     feature=gc_feature_obj,
@@ -171,7 +181,9 @@ class Command(BaseCommand):
                     match_config=self.features[feature],
                     config_remediation=True,
                 )
-                self.stdout.write(self.style.SUCCESS(f"Compliance Feature {gc_feature_obj} and Rule {gc_rule_obj} created"))
+                self.stdout.write(
+                    self.style.SUCCESS(f"Compliance Feature {gc_feature_obj} and Rule {gc_rule_obj} created")
+                )
         except Exception as e:
             self.stderr.write(str(e))
             self.stdout.write(self.style.ERROR(f"Error creating Compliance Features and Rules"))
@@ -183,7 +195,7 @@ class Command(BaseCommand):
         except Exception as e:
             self.stderr.write(str(e))
             self.stdout.write(self.style.ERROR(f"Error enabling Golden Config Jobs"))
-        
+
         # --- 11. GraphQL Query --- #
         graphql_query = """
             query ($device_id: ID!) {
@@ -210,10 +222,15 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"GraphQL Query {gql_query_obj} created"))
         except:
             self.stdout.write(self.style.ERROR(f"Error creating GraphQL Query"))
-        
+
         # --- 13. Update Dynamic Group for Golden Config --- #
         try:
-            dynamic_group_obj, _ = DynamicGroup.objects.using(db).get_or_create(name="GoldenConfigSetting Lab Settings scope", group_type="dynamic-filter", content_type_id=ct_device_obj.id, filter={"platform": ["ceos"]})
+            dynamic_group_obj, _ = DynamicGroup.objects.using(db).get_or_create(
+                name="GoldenConfigSetting Lab Settings scope",
+                group_type="dynamic-filter",
+                content_type_id=ct_device_obj.id,
+                filter={"platform": ["ceos"]},
+            )
             self.stdout.write(self.style.SUCCESS(f"Dynamic Group {dynamic_group_obj} created"))
         except Exception as e:
             self.stderr.write(str(e))
@@ -221,9 +238,10 @@ class Command(BaseCommand):
 
         # --- 14. Update Golden Config settings --- #
         try:
-            GoldenConfigSetting.objects.using(db).get_or_create(
+            GoldenConfigSetting.objects.using(db).create(
                 name="Lab Settings",
-                weight=100,
+                slug="lab-settings",
+                weight=2000,
                 dynamic_group_id=dynamic_group_obj.id,
                 backup_repository=git_repo_obj,
                 intended_repository=git_repo_obj,
@@ -231,17 +249,12 @@ class Command(BaseCommand):
                 sot_agg_query=gql_query_obj,
                 backup_path_template="backups/{{ obj.name }}.cfg",
                 intended_path_template="intended/{{ obj.name }}.cfg",
-                jinja_path_template="templates/{{ obj.platform.network_driver }}.j2"
+                jinja_path_template="templates/{{ obj.platform.network_driver }}.j2",
             )
             self.stdout.write(self.style.SUCCESS(f"Lab Golden Config Settings updated"))
         except Exception as e:
             self.stderr.write(str(e))
-            self.stdout.write(self.style.ERROR(f"Error updating Lab Golden Config Settings"))
-
-        # --- 15. Run Compliance Job for all devices --- #
-        # TODO?
-        # job_obj = Job.objects.using(db).get(name="Execute All Golden Configuration Jobs - Multiple Device")
-
+            self.stdout.write(self.style.ERROR(f"Error creating Lab Golden Config Settings"))
 
     def handle(self, *args, **options):
         """Entry point to the management command."""

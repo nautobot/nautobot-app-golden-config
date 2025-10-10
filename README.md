@@ -76,6 +76,10 @@ If you need to view the fully generated documentation site, you can build it wit
 
 Any PRs with fixes or improvements are very welcome!
 
+## Local Development Quickstart
+
+For a quickstart guide to get a local dev instance of Nautobot with Golden Config using virtual network devices and git repos, see the [Local Dev Environment Quickstart Guide](docs/dev/local_dev_quickstart.md). This is a fast way to get a full dev instance up and running with sample data, virtual devices, and a git server, requiring no additional setup of external Git repos or physical hardware.
+
 ## Questions
 
 For any questions or comments, please check the [FAQ](https://docs.nautobot.com/projects/golden-config/en/latest/user/faq/) first. Feel free to also swing by the [Network to Code Slack](https://networktocode.slack.com/) (channel `#nautobot`), sign up [here](http://slack.networktocode.com/) if you don't have an account.

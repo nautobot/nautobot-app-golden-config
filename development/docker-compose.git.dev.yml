@@ -1,0 +1,6 @@
+---
+services:
+  git-server:
+    image: git-server:latest
+    ports:
+      - "3000:3000"

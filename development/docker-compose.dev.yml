@@ -24,16 +24,16 @@ services:
       start_period: "60s"
       retries: 3
       test: ["CMD", "true"]  # Due to layering, disable: true won't work. Instead, change the test
-  docs:
-    entrypoint: "mkdocs serve -v -a 0.0.0.0:8080"
-    ports:
-      - "8001:8080"
-    volumes:
-      - "../:/source"
-    image: "nautobot-golden-config/nautobot:${NAUTOBOT_VER}-py${PYTHON_VER}"
-    healthcheck:
-      disable: true
-    tty: true
+  # docs:
+  #   entrypoint: "mkdocs serve -v -a 0.0.0.0:8080"
+  #   ports:
+  #     - "8001:8080"
+  #   volumes:
+  #     - "../:/source"
+  #   image: "nautobot-golden-config/nautobot:${NAUTOBOT_VER}-py${PYTHON_VER}"
+  #   healthcheck:
+  #     disable: true
+  #   tty: true
   worker:
     entrypoint:
       - "sh"

@@ -1,8 +1,7 @@
 """Quickly deploy a local lab environment for developing on the Golden Config app."""
 
-from typing import Dict, List
-
 import os
+from typing import Dict, List
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
@@ -66,7 +65,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"Location Type {location_type_obj} created"))
         except Exception as e:
             self.stderr.write(str(e))
-            self.stdout.write(self.style.ERROR(f"Error creating Location Type"))
+            self.stdout.write(self.style.ERROR("Error creating Location Type"))
 
         try:
             location_obj, _ = Location.objects.get_or_create(
@@ -75,7 +74,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"Location {location_obj} created"))
         except Exception as e:
             self.stderr.write(str(e))
-            self.stdout.write(self.style.ERROR(f"Error creating Location"))
+            self.stdout.write(self.style.ERROR("Error creating Location"))
 
         # --- 2. Device Role --- #
         try:
@@ -85,7 +84,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"Device Role {role_obj} created"))
         except IntegrityError:
             pass  # Role already exists
-            self.stdout.write(self.style.ERROR(f"Error creating Device Role"))
+            self.stdout.write(self.style.ERROR("Error creating Device Role"))
 
         # --- 3. Manufacturer --- #
         try:
@@ -93,7 +92,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"Manufacturer {mfg_obj} created"))
         except Exception as e:
             self.stderr.write(str(e))
-            self.stdout.write(self.style.ERROR(f"Error creating Manufacturer"))
+            self.stdout.write(self.style.ERROR("Error creating Manufacturer"))
 
         # --- 4. Platform --- #
         try:
@@ -103,7 +102,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"Platform {platform_obj} created"))
         except Exception as e:
             self.stderr.write(str(e))
-            self.stdout.write(self.style.ERROR(f"Error creating Platform"))
+            self.stdout.write(self.style.ERROR("Error creating Platform"))
 
         # --- 5. Device Type and Interfaces --- #
         try:
@@ -119,7 +118,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"Device Type {device_type_obj} created"))
         except Exception as e:
             self.stderr.write(str(e))
-            self.stdout.write(self.style.ERROR(f"Error creating Device Type and Interfaces"))
+            self.stdout.write(self.style.ERROR("Error creating Device Type and Interfaces"))
 
         # --- 6. Devices --- #
         device_objects = []
@@ -137,7 +136,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"Devices {', '.join([d.name for d in device_objects])} created"))
         except Exception as e:
             self.stderr.write(str(e))
-            self.stdout.write(self.style.ERROR(f"Error creating Devices"))
+            self.stdout.write(self.style.ERROR("Error creating Devices"))
 
         # --- 7. Git Repository --- #
         try:
@@ -156,7 +155,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"Git Repository {git_repo_obj} created"))
         except Exception as e:
             self.stderr.write(str(e))
-            self.stdout.write(self.style.ERROR(f"Error creating Git Repository"))
+            self.stdout.write(self.style.ERROR("Error creating Git Repository"))
 
         # --- 8. Remediation Setting --- #
         try:
@@ -166,7 +165,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"Remediation Setting {gc_remediation_obj} created"))
         except Exception as e:
             self.stderr.write(str(e))
-            self.stdout.write(self.style.ERROR(f"Error creating Remediation Setting"))
+            self.stdout.write(self.style.ERROR("Error creating Remediation Setting"))
 
         # --- 9. Compliance Features and Rules --- #
         try:
@@ -186,7 +185,7 @@ class Command(BaseCommand):
                 )
         except Exception as e:
             self.stderr.write(str(e))
-            self.stdout.write(self.style.ERROR(f"Error creating Compliance Features and Rules"))
+            self.stdout.write(self.style.ERROR("Error creating Compliance Features and Rules"))
 
         # --- 10. Enable Golden Config Jobs --- #
         try:
@@ -194,7 +193,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS("Golden Config Jobs enabled"))
         except Exception as e:
             self.stderr.write(str(e))
-            self.stdout.write(self.style.ERROR(f"Error enabling Golden Config Jobs"))
+            self.stdout.write(self.style.ERROR("Error enabling Golden Config Jobs"))
 
         # --- 11. GraphQL Query --- #
         graphql_query = """
@@ -220,8 +219,9 @@ class Command(BaseCommand):
                 query=graphql_query,
             )
             self.stdout.write(self.style.SUCCESS(f"GraphQL Query {gql_query_obj} created"))
-        except:
-            self.stdout.write(self.style.ERROR(f"Error creating GraphQL Query"))
+        except Exception as e:
+            self.stderr.write(str(e))
+            self.stdout.write(self.style.ERROR("Error creating GraphQL Query"))
 
         # --- 13. Update Dynamic Group for Golden Config --- #
         try:
@@ -234,7 +234,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"Dynamic Group {dynamic_group_obj} created"))
         except Exception as e:
             self.stderr.write(str(e))
-            self.stdout.write(self.style.ERROR(f"Error creating Dynamic Group"))
+            self.stdout.write(self.style.ERROR("Error creating Dynamic Group"))
 
         # --- 14. Update Golden Config settings --- #
         try:
@@ -251,10 +251,10 @@ class Command(BaseCommand):
                 intended_path_template="intended/{{ obj.name }}.cfg",
                 jinja_path_template="templates/{{ obj.platform.network_driver }}.j2",
             )
-            self.stdout.write(self.style.SUCCESS(f"Lab Golden Config Settings updated"))
+            self.stdout.write(self.style.SUCCESS("Lab Golden Config Settings updated"))
         except Exception as e:
             self.stderr.write(str(e))
-            self.stdout.write(self.style.ERROR(f"Error creating Lab Golden Config Settings"))
+            self.stdout.write(self.style.ERROR("Error creating Lab Golden Config Settings"))
 
     def handle(self, *args, **options):
         """Entry point to the management command."""
@@ -264,7 +264,7 @@ class Command(BaseCommand):
                 if int(options["device_count"]) < 1:
                     raise ValueError
             except ValueError:
-                self.stdout.write(self.style.ERROR(f"Please define --device-count as a positive integer"))
+                self.stdout.write(self.style.ERROR("Please define --device-count as a positive integer"))
                 return
             self.device_count = int(options["device_count"])
 

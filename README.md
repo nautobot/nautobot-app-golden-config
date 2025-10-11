@@ -78,7 +78,7 @@ Any PRs with fixes or improvements are very welcome!
 
 ## Local Development Quickstart
 
-For a quickstart guide to get a local dev instance of Nautobot with Golden Config using virtual network devices and git repos, see the [Local Dev Environment Quickstart Guide](docs/dev/local_dev_quickstart.md). This is a fast way to get a full dev instance up and running with sample data, virtual devices, and a git server, requiring no additional setup of external Git repos or physical hardware.
+For a quickstart guide to get a local dev instance of Nautobot with Golden Config using virtual network devices and git repos, see the [Local Dev Environment Quickstart Guide](dev/local_dev_quickstart.md). This is a fast way to get a full dev instance up and running with sample data, virtual devices, and a git server, requiring no additional setup of external Git repos or physical hardware.
 
 ## Questions
 

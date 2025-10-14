@@ -1,11 +1,12 @@
 """Functions to support config plan."""
 
-from nautobot.core.utils.data import render_jinja2
+from django.template import engines
 from nautobot.dcim.models import Device
 from nautobot.extras.models import Status
 
 from nautobot_golden_config.models import ComplianceFeature
 from nautobot_golden_config.utilities.constant import DEFAULT_DEPLOY_STATUS
+from nautobot_golden_config.utilities.helper import get_django_env
 
 
 def config_plan_default_status():
@@ -37,7 +38,10 @@ def generate_config_set_from_manual(device: Device, commands: str, context: dict
         commands (str): The commands for the generated config set.
         context (dict, optional): The context to render the commands with.
     """
+    rendering_engine = engines["jinja"]
+    rendering_engine.env = get_django_env()
     if context is None:
         context = {}
     context.update({"obj": device})
-    return render_jinja2(template_code=commands, context=context)
+    template = rendering_engine.from_string(commands)
+    return "" + template.render(context=context)

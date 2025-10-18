@@ -8,9 +8,9 @@ from django.http import HttpRequest
 from django.utils.module_loading import import_string
 from jinja2 import exceptions as jinja_errors
 from jinja2.sandbox import SandboxedEnvironment
+from nautobot.apps.choices import SecretsGroupAccessTypeChoices
 from nautobot.core.models.querysets import RestrictedQuerySet
 from nautobot.dcim.models import Device
-from nautobot.extras.choices import SecretsGroupAccessTypeChoices
 from nautobot.extras.models.secrets import SecretsGroup
 from nautobot.users.models import User
 from netutils.utils import jinja2_convenience_function

@@ -18,7 +18,8 @@ class ConfigDeploymentTest(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        create_device()
+        if not Device.objects.first():
+            create_device()
         self.device = Device.objects.first()
         self.plan_result = JobResult.objects.create(
             name="Test Plan Result",

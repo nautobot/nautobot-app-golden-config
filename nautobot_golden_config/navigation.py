@@ -143,6 +143,7 @@ menu_items = (
     NavMenuTab(
         name="Golden Config",
         weight=1000,
+        icon="control-panel",
         groups=(
             NavMenuGroup(name="Manage", weight=100, items=tuple(items_operate)),
             NavMenuGroup(name="Setup", weight=100, items=tuple(items_setup)),

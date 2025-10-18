@@ -1,9 +1,9 @@
-{% extends 'generic/object_create.html' %}
+{% extends "generic/object_create.html" %}
 {% load form_helpers %}
 {% load helpers %}
 {% load static %}
 
-{% block title %}Generate Config Plans{% endblock %}
+{% block title %}Generate Config Plans{% endblock title %}
 
 {% block form %}
     <div class="card">
@@ -35,7 +35,7 @@
         </div>
     </div>
 
-{% endblock %}
+{% endblock form %}
 
 {% block buttons %}
     {% include "nautobot_golden_config/job_result_modal.html" with modal_title="Generate Config Plans" %}
@@ -44,7 +44,7 @@
         <button class="btn btn-primary" type="submit">Generate</button>
     </a>
 
-{% endblock %}
+{% endblock buttons %}
 
 {% block javascript %}
     {{ block.super }}

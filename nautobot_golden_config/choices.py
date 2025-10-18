@@ -1,6 +1,6 @@
 """Choicesets for golden config."""
 
-from nautobot.core.choices import ChoiceSet
+from nautobot.apps.choices import ChoiceSet
 
 
 class ComplianceRuleConfigTypeChoice(ChoiceSet):

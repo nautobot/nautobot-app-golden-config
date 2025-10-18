@@ -1,0 +1,4 @@
+Changed the rendering engine from mat_plot_lib to Apache ECharts.
+Updated imports to use preferred `nautobot.apps.*` where applicable.
+Updated compliance view to use collapsible cards.
+Updated navigation icon.

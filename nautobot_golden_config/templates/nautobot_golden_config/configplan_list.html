@@ -1,4 +1,4 @@
-{% extends 'generic/object_list.html' %}
+{% extends "generic/object_list.html" %}
 {% load static %}
 
 
@@ -6,7 +6,7 @@
     <a class="btn btn-primary" href="{% url 'plugins:nautobot_golden_config:configplan_list' %}?status=Completed" id="completed-button">
         <span aria-hidden="true" class="mdi mdi-link"></span> Completed Plans
     </a>
-{% endblock %}
+{% endblock buttons %}
 
 {% block bulk_buttons %}
 
@@ -18,7 +18,7 @@
         </button>
     {% endif %}
 
-{% endblock %}
+{% endblock bulk_buttons %}
 
 {% block javascript %}
     {{ block.super }}

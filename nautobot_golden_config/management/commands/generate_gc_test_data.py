@@ -5,7 +5,7 @@ import random
 from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
 from django.db import DEFAULT_DB_ALIAS
-from nautobot.core.factory import get_random_instances
+from nautobot.apps.factory import get_random_instances
 from nautobot.dcim.models import Platform
 from nautobot.extras.models import DynamicGroup, GraphQLQuery
 from netutils.lib_mapper import NETUTILSPARSER_LIB_MAPPER_REVERSE

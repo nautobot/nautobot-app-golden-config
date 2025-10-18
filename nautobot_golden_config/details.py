@@ -2,7 +2,7 @@
 
 from django.utils.html import format_html
 from nautobot.apps import ui
-from nautobot.core.templatetags import helpers
+from nautobot.core.templatetags import helpers  # core-import-update
 
 
 def get_model_instances(m2m_object):

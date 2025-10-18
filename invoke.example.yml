@@ -1,7 +1,7 @@
 ---
 nautobot_golden_config:
   nautobot_ver: "next"  # TODO: Change to 3.0.0 after v3.0.0 is released
-  python_ver: "3.11"
+  python_ver: "3.13"
   # local: false
   # compose_dir: "/full/path/to/nautobot-app-golden-config/development"
 

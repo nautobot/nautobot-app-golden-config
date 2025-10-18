@@ -1,4 +1,4 @@
-{% extends 'generic/object_edit.html' %}
+{% extends "generic/object_edit.html" %}
 {% load form_helpers %}
 
 {% block form %}
@@ -35,5 +35,5 @@
             {% render_field form.sot_agg_query %}
         </div>
     </div>
-    {% include 'inc/extras_features_edit_form_fields.html' %}
-{% endblock %}
+    {% include "inc/extras_features_edit_form_fields.html" %}
+{% endblock body %}

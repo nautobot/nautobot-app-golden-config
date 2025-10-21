@@ -3,13 +3,13 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, Q
 from django.urls import reverse
-from nautobot.extras.plugins import PluginTemplateExtension
+from nautobot.extras.plugins import TemplateExtension
 
 from nautobot_golden_config.models import ConfigCompliance, GoldenConfig
 from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_COMPLIANCE
 
 
-class ConfigComplianceDeviceCheck(PluginTemplateExtension):  # pylint: disable=abstract-method
+class ConfigComplianceDeviceCheck(TemplateExtension):  # pylint: disable=abstract-method
     """App extension class for config compliance."""
 
     model = "dcim.device"
@@ -53,7 +53,7 @@ class ConfigComplianceDeviceCheck(PluginTemplateExtension):  # pylint: disable=a
         return []
 
 
-class ConfigComplianceLocationCheck(PluginTemplateExtension):  # pylint: disable=abstract-method
+class ConfigComplianceLocationCheck(TemplateExtension):  # pylint: disable=abstract-method
     """App extension class for config compliance."""
 
     model = "dcim.location"
@@ -87,7 +87,7 @@ class ConfigComplianceLocationCheck(PluginTemplateExtension):  # pylint: disable
         )
 
 
-class ConfigDeviceDetails(PluginTemplateExtension):  # pylint: disable=abstract-method
+class ConfigDeviceDetails(TemplateExtension):  # pylint: disable=abstract-method
     """App extension class for config compliance."""
 
     model = "dcim.device"
@@ -114,7 +114,7 @@ class ConfigDeviceDetails(PluginTemplateExtension):  # pylint: disable=abstract-
         )
 
 
-class ConfigComplianceTenantCheck(PluginTemplateExtension):  # pylint: disable=abstract-method
+class ConfigComplianceTenantCheck(TemplateExtension):  # pylint: disable=abstract-method
     """App extension class for config compliance."""
 
     model = "tenancy.tenant"

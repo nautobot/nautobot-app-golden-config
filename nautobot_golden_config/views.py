@@ -1,7 +1,7 @@
 """Views for nautobot_golden_config."""
 
 from nautobot.apps.views import NautobotUIViewSet
-from nautobot.apps.ui import ObjectDetailContent, ObjectFieldsPanel, ObjectTablePanel, SectionChoices
+from nautobot.apps.ui import ObjectDetailContent, ObjectFieldsPanel, ObjectsTablePanel, SectionChoices
 from nautobot.core.templatetags import helpers
 
 from nautobot_golden_config import filters, forms, models, tables
@@ -39,9 +39,9 @@ class ComplianceFeatureUIViewSet(NautobotUIViewSet):
                 #     "name": [helpers.bettertitle]
                 # },
             ),
-            # If there is a ForeignKey or M2M with this model we can use ObjectTablePanel
+            # If there is a ForeignKey or M2M with this model we can use ObjectsTablePanel
             # to display them in a table format.
-            # ObjectTablePanel(
+            # ObjectsTablePanel(
                 # weight=200,
                 # section=SectionChoices.RIGHT_HALF,
                 # table_class=tables.ComplianceFeatureTable,

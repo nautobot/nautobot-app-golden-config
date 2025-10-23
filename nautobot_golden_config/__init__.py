@@ -19,7 +19,6 @@ class NautobotGoldenConfigConfig(NautobotAppConfig):
     base_url = "golden-config"
     required_settings = []
     default_settings = {}
-    caching_config = {}
     docs_view_name = "plugins:nautobot_golden_config:docs"
     searchable_models = ["compliancefeature"]
 

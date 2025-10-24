@@ -4,6 +4,7 @@ import unittest
 from unittest.mock import MagicMock, Mock, patch
 
 from django.contrib.auth import get_user_model
+from django.test import override_settings
 from nautobot.dcim.models import Device
 from nautobot.extras.models import JobResult, Status
 
@@ -16,6 +17,7 @@ from nautobot_golden_config.tests.conftest import create_device
 class ConfigDeploymentTest(unittest.TestCase):
     """Unit tests for config_deployment.py."""
 
+    @override_settings(DEVICE_UNIQUENESS="none")
     def setUp(self):
         """Set up test fixtures."""
         create_device()

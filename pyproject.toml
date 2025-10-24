@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nautobot-golden-config"
-version = "2.5.2a0"
+version = "2.6.0a0"
 description = "An app for configuration on nautobot"
 authors = ["Network to Code, LLC <opensource@networktocode.com>"]
 license = "Apache-2.0"
@@ -30,8 +30,7 @@ include = [
 "Bug Tracker" = "https://github.com/nautobot/nautobot-app-golden-config/issues"
 
 [tool.poetry.dependencies]
-<<<<<<< HEAD
-python = ">=3.9.2,<3.13"
+python = ">=3.10,<3.13"
 deepdiff = ">=8.6.1,<9.0.0"
 django-pivot = ">=1.9.0,<1.10.0" # The signature changed to return a non-queryset, do not upgrade without ensuring it returns a queryset
 matplotlib = "^3.3.2"
@@ -42,9 +41,6 @@ netutils = "^1.5.0"
 hier-config = "^3.2.2"
 nautobot-capacity-metrics = "^3.0.1"
 xmldiff = "^2.6.3"
-=======
-python = ">=3.10,<3.13"
->>>>>>> ef9e697 (Cookie updated by NetworkToCode Cookie Drift Manager Tool)
 # Used for local development
 nautobot = ">=2.4.20,<3.0.0"
 

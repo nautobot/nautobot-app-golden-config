@@ -10,8 +10,8 @@
 # TODO: Change to 3.0.0 after v3.0.0 is released
 ARG NAUTOBOT_VER="next"
 
-# Accepts a desired Python version as build argument, default to 3.11
-ARG PYTHON_VER="3.11"
+# Accepts a desired Python version as build argument, default to 3.12
+ARG PYTHON_VER="3.12"
 
 # Retrieve published development image of Nautobot base which should include most CI dependencies
 FROM ghcr.io/nautobot/nautobot-dev:${NAUTOBOT_VER}-py${PYTHON_VER}

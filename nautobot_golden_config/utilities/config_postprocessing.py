@@ -57,8 +57,8 @@ def get_secret_by_secret_group_name(
 
 def _get_device_agg_data(device, request):
     """Helper method to retrieve GraphQL data from a device."""
-    settings = get_device_to_settings_map(Device.objects.filter(pk=device.pk))[device.id]
-    _, device_data = graph_ql_query(request, device, settings.sot_agg_query.query)
+    settings = get_device_to_settings_map(queryset=Device.objects.filter(pk=device.pk),job_name="intended")
+    _, device_data = graph_ql_query(request, device, settings["intended"][True][device.pk].sot_agg_query.query)
     return device_data
 
 

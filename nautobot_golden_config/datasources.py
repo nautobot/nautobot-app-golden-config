@@ -14,6 +14,7 @@ from nautobot_golden_config.models import (
     ComplianceRule,
     ConfigRemove,
     ConfigReplace,
+    GoldenConfigSetting,
     RemediationSetting,
 )
 from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
@@ -232,42 +233,45 @@ def update_git_gc_properties(golden_config_path, job_result, gc_config_item):  #
 
 
 datasource_contents = []
-if ENABLE_INTENDED or ENABLE_COMPLIANCE:
-    datasource_contents.append(
-        (
-            "extras.gitrepository",
-            DatasourceContent(
-                name="intended configs",
-                content_identifier="nautobot_golden_config.intendedconfigs",
-                icon="mdi-file-document-outline",
-                callback=refresh_git_intended,
-            ),
-        )
+# if GoldenConfigSetting.objects.filter(enable_intended=True).exists() or GoldenConfigSetting.objects.filter(enable_compliance=True).exists():
+# if ENABLE_INTENDED or ENABLE_COMPLIANCE:
+datasource_contents.append(
+    (
+        "extras.gitrepository",
+        DatasourceContent(
+            name="intended configs",
+            content_identifier="nautobot_golden_config.intendedconfigs",
+            icon="mdi-file-document-outline",
+            callback=refresh_git_intended,
+        ),
     )
-if ENABLE_INTENDED:
-    datasource_contents.append(
-        (
-            "extras.gitrepository",
-            DatasourceContent(
-                name="jinja templates",
-                content_identifier="nautobot_golden_config.jinjatemplate",
-                icon="mdi-text-box-check-outline",
-                callback=refresh_git_jinja,
-            ),
-        )
+)
+# if GoldenConfigSetting.objects.filter(enable_intended=True).exists():
+# if ENABLE_INTENDED:
+datasource_contents.append(
+    (
+        "extras.gitrepository",
+        DatasourceContent(
+            name="jinja templates",
+            content_identifier="nautobot_golden_config.jinjatemplate",
+            icon="mdi-text-box-check-outline",
+            callback=refresh_git_jinja,
+        ),
     )
-if ENABLE_BACKUP or ENABLE_COMPLIANCE:
-    datasource_contents.append(
-        (
-            "extras.gitrepository",
-            DatasourceContent(
-                name="backup configs",
-                content_identifier="nautobot_golden_config.backupconfigs",
-                icon="mdi-file-code",
-                callback=refresh_git_backup,
-            ),
-        )
+)
+# if GoldenConfigSetting.objects.filter(enable_backup=True).exists() or GoldenConfigSetting.objects.filter(enable_compliance=True).exists():
+# if ENABLE_BACKUP or ENABLE_COMPLIANCE:
+datasource_contents.append(
+    (
+        "extras.gitrepository",
+        DatasourceContent(
+            name="backup configs",
+            content_identifier="nautobot_golden_config.backupconfigs",
+            icon="mdi-file-code",
+            callback=refresh_git_backup,
+        ),
     )
+)
 
 datasource_contents.append(
     (

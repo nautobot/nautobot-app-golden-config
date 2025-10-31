@@ -5,8 +5,8 @@ from django.db.models import Count, Q
 from django.urls import reverse
 from nautobot.apps.ui import TemplateExtension
 
-from nautobot_golden_config.models import ConfigCompliance, GoldenConfig
-from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_COMPLIANCE
+from nautobot_golden_config.models import ConfigCompliance, GoldenConfig, GoldenConfigSetting
+# from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_COMPLIANCE
 
 
 class ConfigComplianceDeviceCheck(TemplateExtension):  # pylint: disable=abstract-method
@@ -100,13 +100,20 @@ class ConfigDeviceDetails(TemplateExtension):  # pylint: disable=abstract-method
         """Content to add to the configuration compliance."""
         device = self.get_device()
         golden_config = GoldenConfig.objects.filter(device=device).first()
+        gc_setting = GoldenConfigSetting.objects.get_for_device(device)
         if not golden_config:
             return ""
         extra_context = {
             "device": self.get_device(),  # device,
             "golden_config": golden_config,
             "template_type": "device-configs",
-            "config_features": CONFIG_FEATURES,
+            "config_features": {
+                "intended": gc_setting.enable_intended,
+                "compliance": gc_setting.enable_compliance,
+                "backup": gc_setting.enable_backup,
+                "sotagg": True,  # Figure out if this is even needed
+                "postprocessing": True,  # Figure out if this is even needed
+            },
         }
         return self.render(
             "nautobot_golden_config/content_template.html",
@@ -146,10 +153,10 @@ class ConfigComplianceTenantCheck(TemplateExtension):  # pylint: disable=abstrac
 
 
 extensions = [ConfigDeviceDetails]
-if ENABLE_COMPLIANCE:
-    extensions.append(ConfigComplianceDeviceCheck)
-    extensions.append(ConfigComplianceLocationCheck)
-    extensions.append(ConfigComplianceTenantCheck)
+# if GoldenConfigSetting.objects.filter(enable_compliance=True).exists():
+extensions.append(ConfigComplianceDeviceCheck)
+extensions.append(ConfigComplianceLocationCheck)
+extensions.append(ConfigComplianceTenantCheck)
 
 
 template_extensions = extensions

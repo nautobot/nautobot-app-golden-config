@@ -10,11 +10,17 @@
       {% render_field form.weight %}
       {% render_field form.description %}
       {% render_field form.dynamic_group %}
+      {% render_field form.enable_backup %}
+      {% render_field form.enable_intended %}
+      {% render_field form.enable_compliance %}
+      {% render_field form.enable_plan %}
+      {% render_field form.enable_deploy %}
     </div>
   </div>
   <div class="panel panel-default">
     <div class="panel-heading"><strong>Backup Configuration</strong></div>
     <div class="panel-body">
+
       {% render_field form.backup_repository %}
       {% render_field form.backup_path_template %}
       {% render_field form.backup_test_connectivity %}

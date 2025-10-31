@@ -173,7 +173,7 @@ def render_jinja_template(obj, logger, template):
         raise NornirNautobotException(error_msg)
 
 
-def get_device_to_settings_map(queryset):
+def get_device_to_settings_map(queryset, job_name):
     """Helper function to map heightest weighted GC settings to devices."""
     update_dynamic_groups_cache()
     annotated_queryset = queryset.all().annotate(
@@ -189,7 +189,16 @@ def get_device_to_settings_map(queryset):
         )
     )
     gcs = {gc.id: gc for gc in models.GoldenConfigSetting.objects.all()}
-    return {device.id: gcs[device.gc_settings] for device in annotated_queryset}
+    if job_name == "all":
+        job_name = ["backup", "intended", "compliance"]
+    else:
+        job_name = [job_name]
+    settings_filters2 = {setting: {True: {}, False: {}} for setting in job_name}
+    for device in annotated_queryset:
+        for setting in settings_filters2:
+            is_enabled = getattr(gcs[device.gc_settings], f"enable_{setting}", False)
+            settings_filters2[setting][is_enabled][device.id] = gcs[device.gc_settings]
+    return settings_filters2
 
 
 def get_json_config(config):
@@ -314,3 +323,12 @@ def get_error_message(error_code, **kwargs):
     except Exception:  # pylint: disable=broad-except
         error_message = "Error Code was found, but failed to format message, unknown cause."
     return f"{error_code}: {error_message}"
+
+def get_inscope_settings_from_device_qs(queryset):
+    """Wrapper function to return a queryset of GoldenConfigSettings that are in scope for the provided queryset."""
+    inscope_gcs = []
+    for gc_setting in models.GoldenConfigSetting.objects.all():
+        common_objects_queryset = queryset.intersection(gc_setting.dynamic_group.members)
+        if common_objects_queryset.count() > 0:
+            inscope_gcs.append(gc_setting)
+    return inscope_gcs

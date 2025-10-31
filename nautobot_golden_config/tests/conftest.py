@@ -311,6 +311,19 @@ def create_feature_rule_xml_with_remediation(device, feature="foo5", rule="xml")
     return rule
 
 
+def create_feature_rule_xml_ordered(device, feature="foo6", rule="xml"):
+    """Creates a Feature/Rule Mapping with config_ordered=True and Returns the rule."""
+    feature_obj, _ = ComplianceFeature.objects.get_or_create(slug=feature, name=feature)
+    rule = ComplianceRule(
+        feature=feature_obj,
+        platform=device.platform,
+        config_type=ComplianceRuleConfigTypeChoice.TYPE_XML,
+        config_ordered=True,
+    )
+    rule.save()
+    return rule
+
+
 def create_feature_rule_cli(device, feature="foo_cli"):
     """Creates a Feature/Rule Mapping and Returns the rule."""
     feature_obj, _ = ComplianceFeature.objects.get_or_create(slug=feature, name=feature)

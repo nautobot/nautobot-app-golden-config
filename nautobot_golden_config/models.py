@@ -11,6 +11,7 @@ from django.db.models.manager import BaseManager
 from django.utils.module_loading import import_string
 from hier_config import WorkflowRemediation, get_hconfig
 from hier_config.utils import hconfig_v2_os_v3_platform_mapper, load_hconfig_v2_options
+from lxml import etree
 from nautobot.apps.models import RestrictedQuerySet
 from nautobot.apps.utils import render_jinja2
 from nautobot.core.models.generics import PrimaryModel
@@ -138,17 +139,43 @@ def _get_xml_compliance(obj):
                 formatted_diff.append(formatted_operation)
         return "\n".join(formatted_diff)
 
+    def _sort_xml(xml_string):
+        """Sort XML elements and attributes recursively for deterministic comparison."""
+
+        def canonical_sort(elem):
+            """Recursively sort XML elements and attributes."""
+            elem.attrib.update(dict(sorted(elem.attrib.items())))
+            elem[:] = sorted(elem, key=lambda e: (e.tag, e.get("name", ""), e.get("id", "")))
+            for child in elem:
+                canonical_sort(child)
+
+        try:
+            parser = etree.XMLParser(remove_blank_text=True)
+            root = etree.fromstring(xml_string, parser=parser)  # noqa: S320
+            canonical_sort(root)
+            return etree.tostring(root, encoding="unicode", pretty_print=True)
+        except etree.ParseError:
+            return xml_string
+
     # Options for the diff operation. These are set to prefer updates over node insertions/deletions.
     diff_options = {
         "F": 0.1,
         "fast_match": True,
     }
-    missing = main.diff_texts(obj.actual, obj.intended, diff_options=diff_options)
-    extra = main.diff_texts(obj.intended, obj.actual, diff_options=diff_options)
+
+    if not obj.rule.config_ordered:
+        actual_xml = _sort_xml(obj.actual)
+        intended_xml = _sort_xml(obj.intended)
+    else:
+        actual_xml = obj.actual
+        intended_xml = obj.intended
+
+    missing = main.diff_texts(actual_xml, intended_xml, diff_options=diff_options)
+    extra = main.diff_texts(intended_xml, actual_xml, diff_options=diff_options)
 
     compliance = not missing and not extra
     compliance_int = int(compliance)
-    ordered = obj.ordered
+    ordered = obj.rule.config_ordered
     missing = _null_to_empty(_normalize_diff(missing))
     extra = _null_to_empty(_normalize_diff(extra))
 

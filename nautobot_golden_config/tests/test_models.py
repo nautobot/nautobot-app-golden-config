@@ -27,6 +27,7 @@ from .conftest import (
     create_feature_rule_cli_with_remediation,
     create_feature_rule_json,
     create_feature_rule_xml,
+    create_feature_rule_xml_ordered,
     create_job_result,
     create_saved_queries,
 )
@@ -41,6 +42,7 @@ class ConfigComplianceModelTestCase(TestCase):
         cls.device = create_device()
         cls.compliance_rule_json = create_feature_rule_json(cls.device)
         cls.compliance_rule_xml = create_feature_rule_xml(cls.device)
+        cls.compliance_rule_xml_ordered = create_feature_rule_xml_ordered(cls.device)
         cls.compliance_rule_cli = create_feature_rule_cli_with_remediation(cls.device)
 
     def test_create_config_compliance_success_json(self):
@@ -70,6 +72,28 @@ class ConfigComplianceModelTestCase(TestCase):
         self.assertEqual(cc_obj.intended, "<root><foo><bar-1>baz</bar-1></foo></root>")
         self.assertEqual(cc_obj.missing, "/root/foo/bar-1[1], baz")
         self.assertEqual(cc_obj.extra, "/root/foo/bar-1[1], notbaz")
+
+    def test_create_config_compliance_success_xml_unordered(self):
+        """XML elements in different order should be compliant when config_ordered=False."""
+        actual = '<root><user id="2"><name>bob</name></user><user id="1"><name>alice</name></user></root>'
+        intended = '<root><user id="1"><name>alice</name></user><user id="2"><name>bob</name></user></root>'
+        cc_obj = create_config_compliance(
+            self.device, actual=actual, intended=intended, compliance_rule=self.compliance_rule_xml
+        )
+
+        self.assertTrue(cc_obj.compliance)
+        self.assertEqual(cc_obj.missing, "")
+        self.assertEqual(cc_obj.extra, "")
+
+    def test_create_config_compliance_failure_xml_ordered(self):
+        """XML elements in different order should NOT be compliant when config_ordered=True."""
+        actual = "<root><acl>deny 2.2.2.2</acl><acl>permit 1.1.1.1</acl></root>"
+        intended = "<root><acl>permit 1.1.1.1</acl><acl>deny 2.2.2.2</acl></root>"
+        cc_obj = create_config_compliance(
+            self.device, actual=actual, intended=intended, compliance_rule=self.compliance_rule_xml_ordered
+        )
+
+        self.assertFalse(cc_obj.compliance)
 
     def test_create_config_compliance_unique_failure(self):
         """Raises error when attempting to create duplicate."""

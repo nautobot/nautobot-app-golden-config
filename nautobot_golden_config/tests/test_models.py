@@ -109,8 +109,12 @@ class ConfigComplianceModelTestCase(TestCase):
 
     def test_create_config_compliance_xml_custom_attributes(self):
         """XML elements with arbitrary attributes (not just name/id) should sort correctly."""
-        actual = '<root><interface port="2" vlan="20">eth2</interface><interface port="1" vlan="10">eth1</interface></root>'
-        intended = '<root><interface port="1" vlan="10">eth1</interface><interface port="2" vlan="20">eth2</interface></root>'
+        actual = (
+            '<root><interface port="2" vlan="20">eth2</interface><interface port="1" vlan="10">eth1</interface></root>'
+        )
+        intended = (
+            '<root><interface port="1" vlan="10">eth1</interface><interface port="2" vlan="20">eth2</interface></root>'
+        )
         cc_obj = create_config_compliance(
             self.device, actual=actual, intended=intended, compliance_rule=self.compliance_rule_xml
         )

@@ -95,6 +95,62 @@ class ConfigComplianceModelTestCase(TestCase):
 
         self.assertFalse(cc_obj.compliance)
 
+    def test_create_config_compliance_xml_no_attributes(self):
+        """XML elements with no attributes should be sorted by tag name only."""
+        actual = "<root><zebra>test</zebra><apple>test</apple></root>"
+        intended = "<root><apple>test</apple><zebra>test</zebra></root>"
+        cc_obj = create_config_compliance(
+            self.device, actual=actual, intended=intended, compliance_rule=self.compliance_rule_xml
+        )
+
+        self.assertTrue(cc_obj.compliance)
+        self.assertEqual(cc_obj.missing, "")
+        self.assertEqual(cc_obj.extra, "")
+
+    def test_create_config_compliance_xml_custom_attributes(self):
+        """XML elements with arbitrary attributes (not just name/id) should sort correctly."""
+        actual = '<root><interface port="2" vlan="20">eth2</interface><interface port="1" vlan="10">eth1</interface></root>'
+        intended = '<root><interface port="1" vlan="10">eth1</interface><interface port="2" vlan="20">eth2</interface></root>'
+        cc_obj = create_config_compliance(
+            self.device, actual=actual, intended=intended, compliance_rule=self.compliance_rule_xml
+        )
+
+        self.assertTrue(cc_obj.compliance)
+        self.assertEqual(cc_obj.missing, "")
+        self.assertEqual(cc_obj.extra, "")
+
+    def test_create_config_compliance_xml_text_content_only(self):
+        """XML elements with same tag but different text content should sort by text."""
+        actual = "<root><item>zebra</item><item>apple</item></root>"
+        intended = "<root><item>apple</item><item>zebra</item></root>"
+        cc_obj = create_config_compliance(
+            self.device, actual=actual, intended=intended, compliance_rule=self.compliance_rule_xml
+        )
+
+        self.assertTrue(cc_obj.compliance)
+        self.assertEqual(cc_obj.missing, "")
+        self.assertEqual(cc_obj.extra, "")
+
+    def test_create_config_compliance_xml_mixed_attributes(self):
+        """XML with mixed attribute scenarios should handle all cases."""
+        actual = """<root>
+            <config type="vlan" priority="high">vlan100</config>
+            <config status="active">default</config>
+            <config type="interface">eth0</config>
+        </root>"""
+        intended = """<root>
+            <config status="active">default</config>
+            <config type="interface">eth0</config>
+            <config type="vlan" priority="high">vlan100</config>
+        </root>"""
+        cc_obj = create_config_compliance(
+            self.device, actual=actual, intended=intended, compliance_rule=self.compliance_rule_xml
+        )
+
+        self.assertTrue(cc_obj.compliance)
+        self.assertEqual(cc_obj.missing, "")
+        self.assertEqual(cc_obj.extra, "")
+
     def test_create_config_compliance_unique_failure(self):
         """Raises error when attempting to create duplicate."""
         ConfigCompliance.objects.create(

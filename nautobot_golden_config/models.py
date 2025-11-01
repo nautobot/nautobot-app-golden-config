@@ -145,7 +145,14 @@ def _get_xml_compliance(obj):
         def canonical_sort(elem):
             """Recursively sort XML elements and attributes."""
             elem.attrib.update(dict(sorted(elem.attrib.items())))
-            elem[:] = sorted(elem, key=lambda e: (e.tag, e.get("name", ""), e.get("id", "")))
+            elem[:] = sorted(
+                elem,
+                key=lambda e: (
+                    e.tag,
+                    tuple(sorted(e.attrib.items())),
+                    (e.text or "").strip(),
+                ),
+            )
             for child in elem:
                 canonical_sort(child)
 

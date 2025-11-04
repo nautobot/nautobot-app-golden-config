@@ -1,9 +1,9 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% load buttons %}
-{% block content %}
 
+{% block content %}
     {% include "nautobot_golden_config/goldenconfig_detailsmodal.html" %}
-{% endblock %}
+{% endblock content %}
 
 {% block javascript %}
     {{ block.super }}

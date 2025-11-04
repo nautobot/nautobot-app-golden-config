@@ -5,9 +5,9 @@ from datetime import datetime, timezone
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.utils.text import slugify
+from nautobot.apps.choices import JobResultStatusChoices
 from nautobot.dcim.models import Device, DeviceType, Location, LocationType, Manufacturer, Platform, Rack, RackGroup
-from nautobot.extras.choices import JobResultStatusChoices
-from nautobot.extras.datasources.registry import get_datasource_contents
+from nautobot.extras.datasources.registry import get_datasource_contents  # core-import-update
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, JobResult, Role, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
 

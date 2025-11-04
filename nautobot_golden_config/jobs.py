@@ -7,10 +7,7 @@
 from datetime import datetime
 
 from django.utils.timezone import make_aware
-from nautobot.core.celery import register_jobs
-from nautobot.dcim.models import Device, DeviceType, Location, Manufacturer, Platform, Rack, RackGroup
-from nautobot.extras.datasources.git import ensure_git_repository, get_repo_from_url_to_path_and_from_branch
-from nautobot.extras.jobs import (
+from nautobot.apps.jobs import (
     BooleanVar,
     ChoiceVar,
     Job,
@@ -19,6 +16,12 @@ from nautobot.extras.jobs import (
     ObjectVar,
     StringVar,
     TextVar,
+    register_jobs,
+)
+from nautobot.dcim.models import Device, DeviceType, Location, Manufacturer, Platform, Rack, RackGroup
+from nautobot.extras.datasources.git import (  # core-import-update
+    ensure_git_repository,
+    get_repo_from_url_to_path_and_from_branch,
 )
 from nautobot.extras.models import DynamicGroup, Role, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup

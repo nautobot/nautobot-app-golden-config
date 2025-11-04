@@ -1,9 +1,9 @@
-{% extends 'generic/object_list.html' %}
+{% extends "generic/object_list.html" %}
 {% load buttons %}
 {% load static %}
 {% load helpers %}
 
-<h1>{% block title %}Configuration Overview{% endblock %}</h1>
+<h1>{% block title %}Configuration Overview{% endblock title %}</h1>
 
 {% block extra_styles %}
     <style>
@@ -51,7 +51,7 @@
             {% endif %}
         </ul>
     </div>
-{% endblock %}
+{% endblock buttons %}
 {% block content %}
     {{ block.super }}
 
@@ -70,7 +70,7 @@
             </div>
         </div>
     </div>
-{% endblock %}
+{% endblock content %}
 {% block javascript %}
     {{ block.super }}
     <script src="{% static 'js/tableconfig.js' %}"></script>
@@ -90,4 +90,4 @@
             $(this).css('cursor', 'pointer');
         });
     </script>
-{% endblock %}
+{% endblock javascript %}

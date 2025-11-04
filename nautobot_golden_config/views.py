@@ -17,8 +17,12 @@ from django.views.generic import TemplateView, View
 from django_pivot.pivot import pivot
 from django_tables2 import RequestConfig
 from nautobot.apps import views
-from nautobot.apps.ui import EChartsPanel, EChartsTypeChoices, queryset_to_nested_dict_keys_as_series
-from nautobot.core.ui.constants import UI_COLORS
+from nautobot.apps.ui import (
+    EChartsPanel,
+    EChartsThemeColors,
+    EChartsTypeChoices,
+    queryset_to_nested_dict_keys_as_series,
+)
 from nautobot.core.views.mixins import PERMISSIONS_ACTION_MAP
 from nautobot.dcim.models import Device
 from nautobot.extras.models import Job, JobResult
@@ -249,14 +253,6 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
 #
 
 
-class _EChartsPanel(EChartsPanel):
-    """Custom EChartsPanel to override get_theme_colors method."""
-
-    def get_theme_colors(self):
-        """Get theme colors based on the current theme."""
-        return [UI_COLORS["green-lighter"][self.theme], UI_COLORS["red-lighter"][self.theme]]
-
-
 class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
     views.ObjectDetailViewMixin,
     views.ObjectDestroyViewMixin,
@@ -421,14 +417,14 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
             record_key="rule__feature__slug",  # becomes the x-axis
             value_keys=["compliant", "non_compliant"],  # becomes the series names
         )
-        bar_chart_panel = _EChartsPanel(
+        bar_chart_panel = EChartsPanel(
             label="Compliance Overview",
             weight=100,
             chart_kwargs={
                 "chart_type": EChartsTypeChoices.BAR,
                 "header": "Compliance per Feature",
                 "description": "This shows the compliance status for each feature.",
-                "theme": theme,
+                "theme_colors": EChartsThemeColors.LIGHTER_GREEN_RED_COLORS,
                 "data": chart_data,
             },
         )
@@ -452,14 +448,14 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
         device_aggr = calculate_aggr_percentage(device_aggr)
         feature_aggr = calculate_aggr_percentage(feature_aggr)
 
-        pie_device_panel = _EChartsPanel(
+        pie_device_panel = EChartsPanel(
             label="Device Compliance Overview",
             weight=100,
             chart_kwargs={
                 "chart_type": EChartsTypeChoices.PIE,
                 "header": "Compliant vs Non-Compliant Devices",
                 "description": "This shows the compliance status on a device level.",
-                "theme": theme,
+                "theme_colors": EChartsThemeColors.LIGHTER_GREEN_RED_COLORS,
                 "data": {
                     "Device Compliance": {
                         "Compliant": device_aggr["compliants"],
@@ -470,14 +466,14 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
         )
         context["pie_device_panel"] = [pie_device_panel]
 
-        pie_feature_panel = _EChartsPanel(
+        pie_feature_panel = EChartsPanel(
             label="Feature Compliance Overview",
             weight=100,
             chart_kwargs={
                 "chart_type": EChartsTypeChoices.PIE,
                 "header": "Compliant vs Non-Compliant Features",
                 "description": "This shows the compliance status on a feature level.",
-                "theme": theme,
+                "theme_colors": EChartsThemeColors.LIGHTER_GREEN_RED_COLORS,
                 "data": {
                     "Feature Compliance": {
                         "Compliant": feature_aggr["compliants"],

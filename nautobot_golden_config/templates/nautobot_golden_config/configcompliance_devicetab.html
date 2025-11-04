@@ -145,8 +145,9 @@
                                     <span id="{{ item.rule|slugify }}_actual"><pre>{{ item.actual|placeholder }}</pre></span>
                                 {% endif %}
                                 <span class="config_hover_button">
-                                    <button class="btn btn-inline btn-secondary hover_copy_button" data-clipboard-target="#{{ item.rule|slugify }}_actual">
-                                        <span class="mdi mdi-content-copy"></span>
+                                    <button class="btn btn-secondary nb-btn-inline-hover" data-clipboard-target="#{{ item.rule|slugify }}_actual">
+                                        <span aria-hidden="true" class="mdi mdi-content-copy"></span>
+                                        <span class="visually-hidden">Copy</span>
                                     </button>
                                 </span>
                             </td>
@@ -163,8 +164,9 @@
                                     <span id="{{ item.rule|slugify }}_intended"><pre>{{ item.intended|placeholder }}</pre></span>
                                 {% endif %}
                                 <span class="config_hover_button">
-                                    <button class="btn btn-inline btn-secondary hover_copy_button" data-clipboard-target="#{{ item.rule|slugify }}_intended">
-                                        <span class="mdi mdi-content-copy"></span>
+                                    <button class="btn btn-secondary nb-btn-inline-hover" data-clipboard-target="#{{ item.rule|slugify }}_intended">
+                                        <span aria-hidden="true" class="mdi mdi-content-copy"></span>
+                                        <span class="visually-hidden">Copy</span>
                                     </button>
                                 </span>
                             </td>
@@ -180,8 +182,9 @@
                                     <span id="{{ item.rule|slugify }}_actual"><pre>{{ item.actual|placeholder }}</pre></span>
                                 {% endif %}
                                 <span class="config_hover_button">
-                                    <button class="btn btn-inline btn-secondary hover_copy_button" data-clipboard-target="#{{ item.rule|slugify }}_actual">
-                                        <span class="mdi mdi-content-copy"></span>
+                                    <button class="btn btn-secondary nb-btn-inline-hover" data-clipboard-target="#{{ item.rule|slugify }}_actual">
+                                        <span aria-hidden="true" class="mdi mdi-content-copy"></span>
+                                        <span class="visually-hidden">Copy</span>
                                     </button>
                                 </span>
                             </td>
@@ -193,8 +196,9 @@
                             <td class="config_hover">
                                 <span id="{{ item.rule|slugify }}_missing"><pre>{{ item.missing|condition_render_json }}</pre></span>
                                 <span class="config_hover_button">
-                                    <button class="btn btn-inline btn-secondary hover_copy_button" data-clipboard-target="#{{ item.rule|slugify }}_missing">
-                                        <span class="mdi mdi-content-copy"></span>
+                                    <button class="btn btn-secondary nb-btn-inline-hover" data-clipboard-target="#{{ item.rule|slugify }}_missing">
+                                        <span aria-hidden="true" class="mdi mdi-content-copy"></span>
+                                        <span class="visually-hidden">Copy</span>
                                     </button>
                                 </span>
                             </td>
@@ -206,8 +210,9 @@
                             <td class="config_hover">
                                 <span id="{{ item.rule|slugify }}_extra"><pre>{{ item.extra|condition_render_json }}</pre></span>
                                 <span class="config_hover_button">
-                                    <button class="btn btn-inline btn-secondary hover_copy_button" data-clipboard-target="#{{ item.rule|slugify }}_extra">
-                                        <span class="mdi mdi-content-copy"></span>
+                                    <button class="btn btn-secondary nb-btn-inline-hover" data-clipboard-target="#{{ item.rule|slugify }}_extra">
+                                        <span aria-hidden="true" class="mdi mdi-content-copy"></span>
+                                        <span class="visually-hidden">Copy</span>
                                     </button>
                                 </span>
                             </td>
@@ -219,8 +224,9 @@
                             <td class="config_hover">
                                 <span id="{{ item.rule|slugify }}_remediation"><pre>{{ item.remediation|condition_render_json }}</pre></span>
                                 <span class="config_hover_button">
-                                    <button class="btn btn-inline btn-secondary hover_copy_button" data-clipboard-target="#{{ item.rule|slugify }}_remediation">
-                                        <span class="mdi mdi-content-copy"></span>
+                                    <button class="btn btn-secondary nb-btn-inline-hover" data-clipboard-target="#{{ item.rule|slugify }}_remediation">
+                                        <span aria-hidden="true" class="mdi mdi-content-copy"></span>
+                                        <span class="visually-hidden">Copy</span>
                                     </button>
                                 </span>
                             </td>

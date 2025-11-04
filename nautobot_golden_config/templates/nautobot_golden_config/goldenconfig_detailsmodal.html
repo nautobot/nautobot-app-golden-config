@@ -16,7 +16,7 @@
 <h1>{{ title_name }} - {{ device_name }}
     {% if format != 'diff' %}
         <span class="config_hover_button">
-            <button class="btn btn-inline btn-secondary hover_copy_button" data-clipboard-action="copy" data-clipboard-target="#{{ title_name|slugify }}_{{ device_name|slugify }}" type="button">
+            <button class="btn btn-secondary nb-btn-inline-hover" data-clipboard-action="copy" data-clipboard-target="#{{ title_name|slugify }}_{{ device_name|slugify }}" type="button">
                 <span class="mdi mdi-content-copy"></span>
             </button>
         </span>

@@ -45,7 +45,7 @@ nautobot = ">=3.0.0a2,<3.0.0rc99"  # TODO: Change to '>=3.0.0,<4.0.0' for the re
 
 [tool.poetry.group.dev.dependencies]
 coverage = "*"
-django-debug-toolbar = "<4.4"
+django-debug-toolbar = "~5.2.0"
 invoke = "*"
 ipython = "*"
 pylint = "*"

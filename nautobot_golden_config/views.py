@@ -597,6 +597,28 @@ class ConfigPlanUIViewSet(views.NautobotUIViewSet):
         add_message(jobs, request)
         return context
 
+    @action(detail=False, methods=["get"])
+    def confirmation(self, request):
+        """View to confirm the Config Plan Deploy Job."""
+        config_plan_ids = request.GET.getlist("plan_ids")
+        if config_plan_ids:
+            config_plan_ids = config_plan_ids[0].split(",")
+        # Use queryset to get the ConfigPlan objects
+        config_plans = self.queryset.filter(pk__in=config_plan_ids)
+        # Extract device_ids from the config_plans
+        device_ids = config_plans.values_list("device_id", flat=True)
+        # Query the Device model using the device_ids
+        selected_devices = models.Device.objects.filter(pk__in=device_ids)
+        return render(
+            request,
+            "nautobot_golden_config/configplan_confirmation.html",
+            {
+                "selected_devices": selected_devices,
+                "config_plans": config_plans,
+                "config_plan_ids": json.dumps(config_plan_ids),
+            },
+        )
+
 
 class ConfigPlanBulkDeploy(ObjectPermissionRequiredMixin, View):
     """View to run the Config Plan Deploy Job."""

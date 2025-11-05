@@ -9,7 +9,7 @@ This document describes all new features and changes in the release. The format 
 - Added support for Python 3.13.
 - Dropped support for Python 3.9.
 
-## [v3.0.0a2 (2025-11-04)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v3.0.0a2)
+## [v3.0.0a3 (2025-11-04)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v3.0.0a3)
 
 ### Changed
 

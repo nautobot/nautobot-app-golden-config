@@ -34,11 +34,11 @@
             {% render_field form.status %}
         </div>
     </div>
+    {% include "nautobot_golden_config/job_result_modal.html" with modal_title="Generate Config Plans" %}
 
 {% endblock form %}
 
 {% block buttons %}
-    {% include "nautobot_golden_config/job_result_modal.html" with modal_title="Generate Config Plans" %}
 
     <a class="openBtn" data-bs-backdrop="static" href="#" id="startJob">
         <button class="btn btn-primary" type="submit">Generate</button>
@@ -54,8 +54,8 @@
         var nautobot_csrf_token = "{{ csrf_token }}";
         const hideFormData = JSON.parse('{{ form.hide_form_data|safe }}')
 
-        clearFields(hideFormData)
-        setupFieldListeners(hideFormData)
+        clearFields(hideFormData);
+        setupFieldListeners(hideFormData);
 
         function formatJobData(data) {
             var arrayFields = [
@@ -115,9 +115,11 @@
             if (changeControlUrl && !isValidURL(changeControlUrl)) {
                 alert("Please enter a valid URL for Change Control URL.");
             } else {
-    // If validation passes, trigger the modal to open
-                $('#modalPopup').modal('show');
-    // Start the job
+                // If validation passes, trigger the modal to open
+                var modalPopup = document.getElementById('modalPopup');
+                var bsModal = new bootstrap.Modal(modalPopup, {backdrop: 'static'});
+                bsModal.show();
+                // Start the job
                 startJob("Generate Config Plans", formatJobData($("form").serializeArray()), redirectUrlTemplate, configPlanCount);
             }
         }

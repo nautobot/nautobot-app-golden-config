@@ -14,8 +14,8 @@ ALL_ACTIONS = """
         <i class="mdi mdi-circle-small"></i>
     {% else %}
         {% if record.backup_config %}
-            <a value="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=record.device.pk %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=record.device.pk %}?modal=true">
-                <i class="mdi mdi-file-document-outline" title="Backup Configuration"></i>
+            <a class="openBtn" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
+                <span class="mdi mdi-file-document-outline" title="Backup Configuration"></span>
             </a>
         {% else %}
             <i class="mdi mdi-circle-small"></i>
@@ -27,8 +27,8 @@ ALL_ACTIONS = """
         <i class="mdi mdi-circle-small"></i>
     {% else %}
         {% if record.intended_config %}
-            <a value="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=record.device.pk %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=record.device.pk %}?modal=true">
-                <i class="mdi mdi-text-box-check-outline" title="Intended Configuration"></i>
+            <a class="openBtn" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
+                <span class="mdi mdi-text-box-check-outline" title="Intended Configuration"></span>
             </a>
         {% else %}
             <i class="mdi mdi-circle-small"></i>
@@ -37,8 +37,8 @@ ALL_ACTIONS = """
 {% endif %}
 {% if postprocessing == True %}
     {% if record.intended_config %}
-        <a value="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=record.device.pk %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=record.device.pk %}?modal=true">
-            <i class="mdi mdi-text-box-check" title="Configuration after Postprocessing"></i>
+        <a class="openBtn" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
+            <span class="mdi mdi-text-box-check" title="Postprocessing"></span>
         </a>
     {% else %}
         <i class="mdi mdi-circle-small"></i>
@@ -46,16 +46,16 @@ ALL_ACTIONS = """
 {% endif %}
 {% if compliance == True %}
     {% if record.intended_config and record.backup_config %}
-        <a value="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=record.device.pk %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=record.device.pk %}?modal=true">
-            <i class="mdi mdi-file-compare" title="Compliance Details"></i>
+        <a class="openBtn" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
+            <span class="mdi mdi-file-compare" title="Compliance Details"></span>
         </a>
     {% else %}
         <i class="mdi mdi-circle-small"></i>
     {% endif %}
 {% endif %}
 {% if sotagg == True %}
-    <a value="{% url 'plugins:nautobot_golden_config:goldenconfig_sotagg' pk=record.device.pk %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_sotagg' pk=record.device.pk %}?modal=true">
-        <i class="mdi mdi-code-json" title="SOT Aggregate Data"></i>
+    <a class="openBtn" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_sotagg' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_sotagg' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
+        <span class="mdi mdi-code-json" title="SOT Aggregate Data"></span>
     </a>
     {% if record.config_type == 'json' %}
         <i class="mdi mdi-circle-small"></i>
@@ -70,7 +70,7 @@ ALL_ACTIONS = """
 """
 
 CONFIG_SET_BUTTON = """
-<a href="#" class="openBtn" data-toggle="modal" data-target="#codeModal-{{ record.pk }}">
+<a href="#" class="openBtn" data-bs-toggle="modal" data-bs-target="#codeModal-{{ record.pk }}">
     <i class="mdi mdi-file-document-outline"></i>
 </a>
 
@@ -80,7 +80,7 @@ CONFIG_SET_BUTTON = """
             <!-- Modal Header -->
             <div class="modal-header">
                 <h3 class="modal-title">Config Set - {{ record.device }}</h3>
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
             <!-- Modal body -->
@@ -91,8 +91,9 @@ CONFIG_SET_BUTTON = """
                         <td>
                             <span id="config_set_{{ record.pk }}"><pre>{{ record.config_set }}</pre></span>
                             <span class="config_hover_button">
-                                <button type="button" class="btn btn-inline btn-default hover_copy_button" data-clipboard-action='copy' data-clipboard-target="#config_set_{{ record.pk }}">
-                                    <span class="mdi mdi-content-copy"></span>
+                                <button type="button" class="btn btn-secondary nb-btn-inline-hover" data-clipboard-action='copy' data-clipboard-target="#config_set_{{ record.pk }}">
+                                    <span aria-hidden="true" class="mdi mdi-content-copy"></span>
+                                    <span class="visually-hidden">Copy</span>
                                 </button>
                             </span>
                         </td>
@@ -109,7 +110,7 @@ CONFIG_SET_BUTTON = """
             </div>
             <!-- Modal footer -->
             <div class="modal-footer">
-                <button id="close" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button id="close" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>

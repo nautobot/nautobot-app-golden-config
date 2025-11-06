@@ -25,6 +25,7 @@ from nautobot.apps.ui import (
 )
 from nautobot.core.views.mixins import PERMISSIONS_ACTION_MAP
 from nautobot.dcim.models import Device
+from nautobot.dcim.views import DeviceUIViewSet
 from nautobot.extras.models import Job, JobResult
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -382,7 +383,9 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
         context["active_tab"] = request.GET.get("tab")
         context["device"] = device
         context["object"] = device
+        context["object_detail_content"] = DeviceUIViewSet.object_detail_content
         context["verbose_name"] = "Device"
+
         return render(request, "nautobot_golden_config/configcompliance_devicetab.html", context)
 
     @action(detail=False, methods=["get"])

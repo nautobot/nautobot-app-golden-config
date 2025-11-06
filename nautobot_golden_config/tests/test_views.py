@@ -71,13 +71,13 @@ class ConfigComplianceOverviewHelperTestCase(TestCase):
     def test_config_compliance_list_view_with_sotagg_enabled(self):
         models.GoldenConfig.objects.create(device=Device.objects.first())
         request = self.client.get("/plugins/golden-config/golden-config/")
-        self.assertContains(request, '<i class="mdi mdi-code-json" title="SOT Aggregate Data"></i>')
+        self.assertContains(request, '<span class="mdi mdi-code-json" title="SOT Aggregate Data"></span>')
 
     @mock.patch.dict("nautobot_golden_config.tables.CONFIG_FEATURES", {"sotagg": False})
     def test_config_compliance_list_view_with_sotagg_disabled(self):
         models.GoldenConfig.objects.create(device=Device.objects.first())
         request = self.client.get("/plugins/golden-config/golden-config/")
-        self.assertNotContains(request, '<i class="mdi mdi-code-json" title="SOT Aggregate Data"></i>')
+        self.assertNotContains(request, '<span class="mdi mdi-code-json" title="SOT Aggregate Data"></span>')
 
     @mock.patch.object(views, "graph_ql_query")
     @mock.patch.object(views, "get_device_to_settings_map")

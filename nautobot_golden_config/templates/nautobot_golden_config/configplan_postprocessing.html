@@ -10,20 +10,3 @@
         </div>
     </div>
 </div>
-<script>
-    $('#ccppModal').on('show.bs.modal', function(event) {
-        var link = $(event.relatedTarget);
-        var url = link.attr('href');
-        var modal = $(this);
-
-        $.ajax({
-            url: url,
-            success: function(data) {
-                modal.find('.modal-content').html(data);
-            },
-            error: function() {
-                modal.find('.modal-body').html("Error loading content.");
-            }
-        });
-    });
-</script>

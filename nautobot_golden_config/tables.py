@@ -3,46 +3,35 @@
 from django.utils.html import format_html
 from django_tables2 import Column, LinkColumn, TemplateColumn
 from django_tables2.utils import A
-from nautobot.apps.tables import BaseTable, BooleanColumn, StatusTableMixin, TagColumn, ToggleColumn
+from nautobot.apps.tables import BaseTable, BooleanColumn, ButtonsColumn, StatusTableMixin, TagColumn, ToggleColumn
 
 from nautobot_golden_config import models
 from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
 
 ALL_ACTIONS = """
-{% if backup == True %}
-    {% if record.config_type == 'json' %}
-        <i class="mdi mdi-circle-small"></i>
-    {% else %}
-        {% if record.backup_config %}
-            <a class="openBtn" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
-                <span class="mdi mdi-file-document-outline" title="Backup Configuration"></span>
-            </a>
-        {% else %}
-            <i class="mdi mdi-circle-small"></i>
-        {% endif %}
-    {% endif %}
-{% endif %}
-{% if intended == True %}
-    {% if record.config_type == 'json' %}
-        <i class="mdi mdi-circle-small"></i>
-    {% else %}
-        {% if record.intended_config %}
-            <a class="openBtn" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
-                <span class="mdi mdi-text-box-check-outline" title="Intended Configuration"></span>
-            </a>
-        {% else %}
-            <i class="mdi mdi-circle-small"></i>
-        {% endif %}
-    {% endif %}
-{% endif %}
-{% if postprocessing == True %}
-    {% if record.intended_config %}
-        <a class="openBtn" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
-            <span class="mdi mdi-text-box-check" title="Postprocessing"></span>
+{% if backup == True and record.backup_config %}
+    <li>
+        <a class="dropdown-item text-primary" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
+            <span class="mdi mdi-file-document-outline" title="Backup Configuration"></span>
+            Backup Configuration
         </a>
-    {% else %}
-        <i class="mdi mdi-circle-small"></i>
-    {% endif %}
+    </li>
+{% endif %}
+{% if intended == True and record.intended_config %}
+    <li>
+        <a class="dropdown-item text-primary" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
+            <span class="mdi mdi-text-box-check-outline" title="Intended Configuration"></span>
+            Intended Configuration
+        </a>
+    </li>
+{% endif %}
+{% if postprocessing == True and record.intended_config %}
+    <li>
+        <a class="dropdown-item text-primary" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
+            <span class="mdi mdi-text-box-check" title="Postprocessing"></span>
+            Postprocessing
+        </a>
+    </li>
 {% endif %}
 {% if compliance == True %}
     {% if record.intended_config and record.backup_config %}
@@ -298,8 +287,13 @@ class GoldenConfigTable(BaseTable):
             order_by="compliance_last_success_date",
         )
 
-    actions = TemplateColumn(
-        template_code=ALL_ACTIONS, verbose_name="Actions", extra_context=CONFIG_FEATURES, orderable=False
+    actions = ButtonsColumn(
+        buttons=("delete",),
+        model=models.GoldenConfig,
+        verbose_name="Actions",
+        prepend_template=ALL_ACTIONS,
+        extra_context=CONFIG_FEATURES,
+        orderable=False,
     )
 
     def _render_last_success_date(self, record, column, value):

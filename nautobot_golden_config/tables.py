@@ -9,7 +9,7 @@ from nautobot_golden_config import models
 from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
 
 ALL_ACTIONS = """
-{% if backup == True and record.backup_config %}
+{% if backup == True and record.backup_config and not record.config_type == "json" %}
     <li>
         <a class="dropdown-item text-primary" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
             <span class="mdi mdi-file-document-outline" title="Backup Configuration"></span>
@@ -17,7 +17,7 @@ ALL_ACTIONS = """
         </a>
     </li>
 {% endif %}
-{% if intended == True and record.intended_config %}
+{% if intended == True and record.intended_config and not record.config_type == "json" %}
     <li>
         <a class="dropdown-item text-primary" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
             <span class="mdi mdi-text-box-check-outline" title="Intended Configuration"></span>
@@ -25,7 +25,7 @@ ALL_ACTIONS = """
         </a>
     </li>
 {% endif %}
-{% if postprocessing == True and record.intended_config %}
+{% if postprocessing == True and record.intended_config and not record.config_type == "json" %}
     <li>
         <a class="dropdown-item text-primary" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
             <span class="mdi mdi-text-box-check" title="Postprocessing"></span>
@@ -33,7 +33,7 @@ ALL_ACTIONS = """
         </a>
     </li>
 {% endif %}
-{% if compliance == True and record.intended_config and record.backup_config %}
+{% if compliance == True and record.intended_config and record.backup_config and not record.config_type == "json" %}
     <li>
         <a class="dropdown-item text-primary" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
             <span class="mdi mdi-file-compare" title="Compliance Details"></span>
@@ -48,8 +48,10 @@ ALL_ACTIONS = """
             SOT Aggregate Data
         </a>
     </li>
+{% endif %}
+{% if not record.config_type == "json" %}
     <li>
-        <a class="dropdown-item text-primary" href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.AllGoldenConfig' %}?device={{ record.device.pk }}">
+        <a class="dropdown-item text-success" href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.AllGoldenConfig' %}?device={{ record.device.pk }}">
             <span class="mdi mdi-play-circle" title="Execute All Golden Config Jobs"></span>
             Execute All Golden Config Jobs
         </a>

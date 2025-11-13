@@ -33,28 +33,27 @@ ALL_ACTIONS = """
         </a>
     </li>
 {% endif %}
-{% if compliance == True %}
-    {% if record.intended_config and record.backup_config %}
-        <a class="openBtn" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
+{% if compliance == True and record.intended_config and record.backup_config %}
+    <li>
+        <a class="dropdown-item text-primary" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
             <span class="mdi mdi-file-compare" title="Compliance Details"></span>
+            Compliance Details
         </a>
-    {% else %}
-        <i class="mdi mdi-circle-small"></i>
-    {% endif %}
+    </li>
 {% endif %}
 {% if sotagg == True %}
-    <a class="openBtn" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_sotagg' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_sotagg' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
-        <span class="mdi mdi-code-json" title="SOT Aggregate Data"></span>
-    </a>
-    {% if record.config_type == 'json' %}
-        <i class="mdi mdi-circle-small"></i>
-    {% else %}
-        <a href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.AllGoldenConfig' %}?device={{ record.device.pk }}">
-            <span class="text-primary">
-                <i class="mdi mdi-play-circle" title="Execute All Golden Config Jobs"></i>
-            </span>
+    <li>
+        <a class="dropdown-item text-primary" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_sotagg' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_sotagg' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
+            <span class="mdi mdi-code-json" title="SOT Aggregate Data"></span>
+            SOT Aggregate Data
         </a>
-    {% endif %}
+    </li>
+    <li>
+        <a class="dropdown-item text-primary" href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.AllGoldenConfig' %}?device={{ record.device.pk }}">
+            <span class="mdi mdi-play-circle" title="Execute All Golden Config Jobs"></span>
+            Execute All Golden Config Jobs
+        </a>
+    </li>
 {% endif %}
 """
 

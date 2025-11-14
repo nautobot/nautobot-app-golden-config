@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nautobot-golden-config"
-version = "3.0.0a5"
+version = "3.0.0"
 description = "An app for configuration on nautobot"
 authors = ["Network to Code, LLC <opensource@networktocode.com>"]
 license = "Apache-2.0"
@@ -34,14 +34,13 @@ include = [
 python = ">=3.10,<3.14"
 deepdiff = ">=8.6.1,<9.0.0"
 django-pivot = ">=1.9.0,<1.10.0" # The signature changed to return a non-queryset, do not upgrade without ensuring it returns a queryset
-nautobot-plugin-nornir = ">=3.0.0a1,<3.0.0rc99"  # TODO: Change to '>=3.0.0,<4.0.0' for the release
+nautobot-plugin-nornir = ">=3.0.0,<4.0.0"
 toml = "^0.10.2"
 netutils = "^1.5.0"
 hier-config = "^3.2.2"
-nautobot-capacity-metrics = ">=4.0.0a1,<4.0.0rc99"  # TODO: Change to '>=4.0.0,<5.0.0' for the release
+nautobot-capacity-metrics = ">=4.0.0,<5.0.0"
 xmldiff = "^2.6.3"
-# Used for local development
-nautobot = ">=3.0.0a2,<3.0.0rc99"  # TODO: Change to '>=3.0.0,<4.0.0' for the release
+nautobot = ">=3.0.0,<4.0.0"
 
 [tool.poetry.group.dev.dependencies]
 coverage = "*"
@@ -179,7 +178,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.towncrier]
 package = "nautobot_golden_config"
 directory = "changes"
-filename = "docs/admin/release_notes/version_X.Y.md"
+filename = "docs/admin/release_notes/version_3.0.md"
 template = "development/towncrier_template.j2"
 start_string = "<!-- towncrier release notes start -->"
 issue_format = "[#{issue}](https://github.com/nautobot/nautobot-app-golden-config/issues/{issue})"

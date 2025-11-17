@@ -1,1 +1,0 @@
-Update any call to `get_extra_context` to call super of the method first.

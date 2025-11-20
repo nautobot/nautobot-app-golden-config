@@ -7,7 +7,8 @@ from django.core.management.base import BaseCommand
 from django.db import DEFAULT_DB_ALIAS
 from nautobot.apps.factory import get_random_instances
 from nautobot.dcim.models import Platform
-from nautobot.extras.models import DynamicGroup, GraphQLQuery, Job as JobModel, JobResult
+from nautobot.extras.models import DynamicGroup, GraphQLQuery, JobResult
+from nautobot.extras.models import Job as JobModel
 from netutils.lib_mapper import NETUTILSPARSER_LIB_MAPPER_REVERSE
 
 from nautobot_golden_config.choices import ConfigPlanTypeChoice
@@ -224,7 +225,7 @@ class Command(BaseCommand):
                 plan_type=ConfigPlanTypeChoice.TYPE_MANUAL,
                 device=device,
                 config_set="""hostname foo""",
-                plan_result=plan_result
+                plan_result=plan_result,
             )
         JobModel.objects.using(db).filter(module_name="nautobot_golden_config.jobs").update(
             enabled=True,

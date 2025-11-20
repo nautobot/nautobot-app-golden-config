@@ -1,1 +1,1 @@
-Fixed bug with Config Plans being deployed despite the cancel being clicked.
+Fixed a bug with Config Plans being deployed despite the cancel button being clicked.

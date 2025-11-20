@@ -7,13 +7,16 @@ from django.core.management.base import BaseCommand
 from django.db import DEFAULT_DB_ALIAS
 from nautobot.apps.factory import get_random_instances
 from nautobot.dcim.models import Platform
-from nautobot.extras.models import DynamicGroup, GraphQLQuery
+from nautobot.extras.models import DynamicGroup, GraphQLQuery, Job as JobModel, JobResult
 from netutils.lib_mapper import NETUTILSPARSER_LIB_MAPPER_REVERSE
 
+from nautobot_golden_config.choices import ConfigPlanTypeChoice
+from nautobot_golden_config.jobs import GenerateConfigPlans
 from nautobot_golden_config.models import (
     ComplianceFeature,
     ComplianceRule,
     ConfigCompliance,
+    ConfigPlan,
     GoldenConfig,
     GoldenConfigSetting,
 )
@@ -211,7 +214,21 @@ class Command(BaseCommand):
         # TODO: Create ConfigRemoves
         # TODO: Create ConfigReplaces
         # TODO: Create RemediationSettings
-        # TODO: Create ConfigPlans
+        self.stdout.write(f"Creating {len(devices)} ConfigPlans")
+        for device in devices:
+            job_model = GenerateConfigPlans().job_model
+            plan_result = JobResult.objects.create(
+                job_model=job_model,
+            )
+            ConfigPlan.objects.create(
+                plan_type=ConfigPlanTypeChoice.TYPE_MANUAL,
+                device=device,
+                config_set="""hostname foo""",
+                plan_result=plan_result
+            )
+        JobModel.objects.using(db).filter(module_name="nautobot_golden_config.jobs").update(
+            enabled=True,
+        )
 
     def handle(self, *args, **options):
         """Entry point to the management command."""

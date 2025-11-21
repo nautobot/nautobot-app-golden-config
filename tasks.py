@@ -1030,3 +1030,13 @@ def validate_app_config(context):
         file="development/app_config_schema.py",
         env={"APP_CONFIG_SCHEMA_COMMAND": "validate"},
     )
+
+
+@task
+def generate_test_data(context):
+    """Generate test data inside Nautobot."""
+    command = "nautobot-server generate_test_data --seed nautobot --flush"
+
+    run_command(context, command)
+    command = "nautobot-server generate_gc_test_data"
+    run_command(context, command)

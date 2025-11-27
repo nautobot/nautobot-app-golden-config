@@ -95,6 +95,7 @@ plugins:
             show_root_heading: true
 watch:
   - "README.md"
+  - "docs"
 
 validation:
   omitted_files: "warn"

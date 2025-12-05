@@ -23,7 +23,7 @@ from nautobot.apps.ui import (
     EChartsTypeChoices,
     queryset_to_nested_dict_keys_as_series,
 )
-from nautobot.core.views.mixins import PERMISSIONS_ACTION_MAP
+from nautobot.core.views.mixins import PERMISSIONS_ACTION_MAP, ObjectDataComplianceViewMixin
 from nautobot.dcim.models import Device
 from nautobot.dcim.views import DeviceUIViewSet
 from nautobot.extras.models import Job, JobResult
@@ -60,6 +60,7 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
     views.ObjectDestroyViewMixin,
     views.ObjectBulkDestroyViewMixin,
     views.ObjectListViewMixin,  # TODO: Changing the order of the mixins breaks things... why?
+    ObjectDataComplianceViewMixin,
 ):
     """Views for the GoldenConfig model."""
 

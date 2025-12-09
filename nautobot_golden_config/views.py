@@ -60,7 +60,7 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
     views.ObjectDestroyViewMixin,
     views.ObjectBulkDestroyViewMixin,
     views.ObjectListViewMixin,  # TODO: Changing the order of the mixins breaks things... why?
-    ObjectDataComplianceViewMixin,
+    ObjectDataComplianceViewMixin,  # TODO: Import from views after nautobot release
 ):
     """Views for the GoldenConfig model."""
 

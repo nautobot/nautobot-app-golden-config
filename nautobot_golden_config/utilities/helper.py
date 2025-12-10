@@ -13,8 +13,7 @@ from django.utils.html import format_html
 from jinja2 import exceptions as jinja_errors
 from jinja2.sandbox import SandboxedEnvironment
 from lxml import etree
-
-# from nautobot.apps.utils import render_jinja2
+from nautobot.apps.utils import render_jinja2
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.dcim.models import Device
 from nautobot.extras.choices import DynamicGroupTypeChoices  # core-import-update
@@ -127,14 +126,6 @@ def get_django_env():
     jinja_env = SandboxedEnvironment(**JINJA_ENV)
     jinja_env.filters = engines["jinja"].env.filters
     return jinja_env
-
-
-def render_jinja2(template_code, context, env=None):
-    """Render a Jinja2 template with the provided context. Return the rendered content."""
-    rendering_engine = engines["jinja"]
-    template = rendering_engine.from_string(template_code)
-
-    return "" + template.render(context=context)
 
 
 def render_jinja_template(obj, logger, template):

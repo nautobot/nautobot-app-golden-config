@@ -191,7 +191,6 @@ config_plan = ui.ObjectDetailContent(
                 "plan_result",
             ),
             value_transforms={
-                "plan_result": [lambda v: helpers.hyperlinked_field(getattr(v, "status", v))],
                 "feature": [get_model_instances, helpers.placeholder],
             },
         ),
@@ -237,6 +236,13 @@ config_compliance = ui.ObjectDetailContent(
             section=ui.SectionChoices.RIGHT_HALF,
             weight=100,
             fields=("actual", "intended", "remediation", "missing", "extra"),
+            value_transforms={
+                "actual": [helpers.pre_tag],
+                "intended": [helpers.pre_tag],
+                "remediation": [helpers.pre_tag],
+                "missing": [helpers.pre_tag],
+                "extra": [helpers.pre_tag],
+            },
         ),
     ),
 )

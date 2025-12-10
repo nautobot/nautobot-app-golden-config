@@ -36,21 +36,23 @@
         {% endif %}
     </div>
 </div>
-<script type="text/javascript">
-    var is_modal = {{ is_modal|lower }};
-    async function renderDiff() {
-        const str_input = document.getElementById("diffoutput").innerText;
-        const outputFormat = is_modal ? "line-by-line" : "side-by-side";
-        const diffHtml = Diff2Html.html(str_input, {
-            drawFileList: true,
-            matching: 'lines',
-            outputFormat: outputFormat,
-        });
-        document.getElementById('diffrender').innerHTML = diffHtml;
-    }
-    if (is_modal) {
-        renderDiff();
-    } else {
-        document.addEventListener("DOMContentLoaded", renderDiff);
-    }
-</script>
+{% if format == 'diff' %}
+    <script type="text/javascript">
+        var is_modal = {{ is_modal|lower }};
+        async function renderDiff() {
+            const str_input = document.getElementById("diffoutput").innerText;
+            const outputFormat = is_modal ? "line-by-line" : "side-by-side";
+            const diffHtml = Diff2Html.html(str_input, {
+                drawFileList: true,
+                matching: 'lines',
+                outputFormat: outputFormat,
+            });
+            document.getElementById('diffrender').innerHTML = diffHtml;
+        }
+        if (is_modal) {
+            renderDiff();
+        } else {
+            document.addEventListener("DOMContentLoaded", renderDiff);
+        }
+    </script>
+{% endif %}

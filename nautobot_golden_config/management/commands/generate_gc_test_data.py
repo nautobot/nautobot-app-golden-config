@@ -10,9 +10,9 @@ from nautobot.dcim.models import Platform
 from nautobot.extras.models import DynamicGroup, GraphQLQuery, JobResult
 from nautobot.extras.models import Job as JobModel
 from netutils.lib_mapper import NETUTILSPARSER_LIB_MAPPER_REVERSE
+
 from nautobot_golden_config.choices import ConfigPlanTypeChoice
 from nautobot_golden_config.jobs import GenerateConfigPlans
-
 from nautobot_golden_config.models import (
     ComplianceFeature,
     ComplianceRule,

@@ -11,6 +11,8 @@ This major release marks the compatibility of the Nautobot Plugin Golden Config 
 - Updated UI framework to use latest Bootstrap 5.3.
 - Changed the charts rendering engine to Apache ECharts.
 
+We will continue to support the previous major release for users of Nautobot LTM 2.4 only with critical bug and security fixes as per the [Software Lifecycle Policy](https://networktocode.com/company/legal/software-lifecycle-policy/).
+
 ## [v3.0.0 (2025-11-17)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v3.0.0)
 
 ### Added

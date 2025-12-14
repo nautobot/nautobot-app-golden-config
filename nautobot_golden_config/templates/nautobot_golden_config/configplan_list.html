@@ -13,7 +13,7 @@
 <!-- Deploy Button -->
     {% if perms.extras.run_job %}
         {% include "nautobot_golden_config/job_result_modal.html" with modal_title="Deploy Config Plans" %}
-        <button class="btn btn-primary btn-sm" data-bs-target="#modalPopup" data-bs-toggle="modal" id="startJob" type="button">
+        <button class="btn btn-primary btn-sm" id="startJobButton" type="button">
             <span aria-hidden="true" class="mdi mdi-upload-multiple"></span> Deploy Selected
         </button>
     {% endif %}
@@ -28,13 +28,13 @@
         var nautobot_csrf_token = "{{ csrf_token }}";
 
         document.addEventListener("DOMContentLoaded", function() {
-            var startJobButton = document.getElementById("startJob");
+            var startJobButton = document.getElementById("startJobButton");
             startJobButton.addEventListener("click", function(event) {
                 var userConfirmed = confirm("Warning! This will deploy configurations to the devices you have selected, are you sure you want to deploy?");
-                if (!userConfirmed) {
-            // If user clicked "Cancel", stop the modal from showing
-                    event.preventDefault();
-                    event.stopPropagation();
+                if (userConfirmed) {
+                    startJob("Deploy Config Plans", formatJobData($("form").serializeArray()));
+                    new bootstrap.Modal('#modalPopup', {}).show();
+
                 }
             });
         });
@@ -50,7 +50,6 @@
                 },
             };
         }
-        document.getElementById("startJob").onclick = function() {startJob("Deploy Config Plans", formatJobData($("form").serializeArray()))};
 
     </script>
 {% endblock javascript %}

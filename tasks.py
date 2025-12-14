@@ -52,7 +52,7 @@ namespace = Collection("nautobot_golden_config")
 namespace.configure(
     {
         "nautobot_golden_config": {
-            "nautobot_ver": "next",  # TODO: Change to 3.0.0 after v3.0.0 is released
+            "nautobot_ver": "3.0.0",
             "project_name": "nautobot-golden-config",
             "python_ver": "3.13",
             "local": False,
@@ -1030,3 +1030,13 @@ def validate_app_config(context):
         file="development/app_config_schema.py",
         env={"APP_CONFIG_SCHEMA_COMMAND": "validate"},
     )
+
+
+@task
+def generate_test_data(context):
+    """Generate test data inside Nautobot."""
+    command = "nautobot-server generate_test_data --seed nautobot --flush"
+
+    run_command(context, command)
+    command = "nautobot-server generate_gc_test_data"
+    run_command(context, command)

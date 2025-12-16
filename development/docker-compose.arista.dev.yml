@@ -1,6 +1,6 @@
 ---
 x-ceos-common: &ceos-common
-  image: "ceos-arm:4.34.2F"
+  image: "ceos:latest"
   privileged: true
   tty: true
   stdin_open: true
@@ -35,16 +35,16 @@ services:
     volumes:
       - "./startup_configs/ceos2/startup-config:/mnt/flash/startup-config"
 
-  ceos3:
-    <<: *ceos-common
-    container_name: "ceos3"
-    hostname: "ceos3"
-    volumes:
-      - "./startup_configs/ceos3/startup-config:/mnt/flash/startup-config"
+  # ceos3:
+  #   <<: *ceos-common
+  #   container_name: "ceos3"
+  #   hostname: "ceos3"
+  #   volumes:
+  #     - "./startup_configs/ceos3/startup-config:/mnt/flash/startup-config"
 
-  ceos4:
-    <<: *ceos-common
-    container_name: "ceos4"
-    hostname: "ceos4"
-    volumes:
-      - "./startup_configs/ceos4/startup-config:/mnt/flash/startup-config"
+  # ceos4:
+  #   <<: *ceos-common
+  #   container_name: "ceos4"
+  #   hostname: "ceos4"
+  #   volumes:
+  #     - "./startup_configs/ceos4/startup-config:/mnt/flash/startup-config"

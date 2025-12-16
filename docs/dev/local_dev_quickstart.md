@@ -2,7 +2,7 @@
 
 This repo is intended to quickly get started with a local Golden Config instance using sample data, virutal Arista lab devices, and a local ephemeral Git server.
 
-By default, this guide will automatically deploy 4 Arista virtual cEOS devices and 1 Git server as Docker containers, then fully configure Nautobot and Golden Config with all required objects for 4 devices named "ceos[1-4]". Finally, it will run the inital Golden Config Job for backups, intended, and compliance against all 4 devices.
+By default, this guide will automatically deploy 2 Arista virtual cEOS devices and 1 Git server as Docker containers, then fully configure Nautobot and Golden Config with all required objects for 4 devices named "ceos[1-4]". Finally, it will run the inital Golden Config Job for backups, intended, and compliance against all 4 devices.
 
 The number of devices can be specified when running the management command in step 6 below using the `--device-count` option.
 
@@ -75,7 +75,7 @@ Replace `#` with the device number below:
     poetry env activate
     ```
 
-4. In your Golden Config local dev folder, copy `invoke.example.yml` to `invoke.yml` and uncomment all configuration lines, including the settings for Docker Compose files `docker-compose.arista.dev.yml` and `docker-compose.git.dev.yml`.
+4. In your Golden Config local dev folder, copy `invoke.example.yml` to `invoke.yml` and uncomment all configuration lines, including the settings for Docker Compose files `docker-compose.arista.dev.yml` and `docker-compose.git.dev.yml`. Lastly, change setting `compose_dir` to point to the `development/` folder.
 
 5. Start the Nautobot Golden Config dev instance. Note: Wait for it and all 4 cEOS containers to fully boot up before proceeding.
 

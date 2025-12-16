@@ -170,6 +170,7 @@ nav:
       - Release Notes:
           - "admin/release_notes/index.md"
           - v3.0: "admin/release_notes/version_3.0.md"
+          - v2.6: "admin/release_notes/version_2.6.md"
           - v2.5: "admin/release_notes/version_2.5.md"
           - v2.4: "admin/release_notes/version_2.4.md"
           - v2.3: "admin/release_notes/version_2.3.md"

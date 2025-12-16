@@ -8,6 +8,14 @@ This document describes all new features and changes in the release. The format 
 - Dropped support for Python 3.9.
 
 <!-- towncrier release notes start -->
+
+
+## [v2.6.1 (2025-12-16)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v2.6.1)
+
+### Fixed
+
+- [#1051](https://github.com/nautobot/nautobot-app-golden-config/issues/1051) - Improved gc_repo_prep decorator compatibility with Inherited Jobs.
+
 ## [v2.6.0 (2025-12-05)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v2.6.0)
 
 ### Housekeeping

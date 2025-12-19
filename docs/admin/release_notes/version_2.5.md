@@ -10,6 +10,22 @@ This document describes all new features and changes in the release. The format 
 - Add the ability to manage remediation settings via Git data sources.
 - Add additional options to fail Config Plans better.
 
+## [v2.5.1 (2025-09-26)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v2.5.1)
+
+### Changed
+
+- [#994](https://github.com/nautobot/nautobot-app-golden-config/issues/994) - Increased Change Control URL field max length from 256 to 2048 characters in Config Plan model.
+
+### Fixed
+
+- [#994](https://github.com/nautobot/nautobot-app-golden-config/issues/994) - Fixed Change Control URL field max length in the Config Plan bulk edit form.
+- [#995](https://github.com/nautobot/nautobot-app-golden-config/issues/995) - Fixed Compatibility Matrix by adding versions 2.4.x and 2.5.x.
+
+### Housekeeping
+
+- Rebaked from the cookie `nautobot-app-v2.6.0`.
+- Updated ltm-1.6 release notes with new patch release information.
+
 ## [v2.5.0 (2025-09-09)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v2.5.0)
 
 ### Security

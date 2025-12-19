@@ -12,16 +12,17 @@ from django.utils.timezone import make_aware
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from jinja2.exceptions import TemplateError, TemplateSyntaxError
-from nautobot.apps.api import NautobotModelViewSet, NotesViewSetMixin
-from nautobot.apps.utils import render_jinja2
-from nautobot.core.api.views import (
+from nautobot.apps.api import (
     BulkDestroyModelMixin,
     BulkUpdateModelMixin,
     ModelViewSetMixin,
-    NautobotAPIVersionMixin,
+    NautobotModelViewSet,
+    NotesViewSetMixin,
 )
+from nautobot.apps.utils import render_jinja2
+from nautobot.core.api.views import NautobotAPIVersionMixin  # core-import-update
 from nautobot.dcim.models import Device
-from nautobot.extras.datasources.git import ensure_git_repository
+from nautobot.extras.datasources.git import ensure_git_repository  # core-import-update
 from nautobot.extras.models import GitRepository, GraphQLQuery
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nornir import InitNornir

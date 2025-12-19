@@ -2,7 +2,7 @@
 ## To use MySQL as the database backend instead of Postgres, use "docker-compose.mysql.yml" instead of "docker-compose.postgres.yml" below ##
 ## Important: Only use 1 database backend compose file at a time! ##
 nautobot_golden_config:
-  nautobot_ver: "2.4.19"
+  nautobot_ver: "3.0.0"
   python_ver: "3.12"
   # local: false
   # compose_dir: "/full/path/to/nautobot-app-golden-config/development"

@@ -6,8 +6,8 @@ import json
 import django.forms as django_forms
 from django.conf import settings
 from nautobot.apps import forms
+from nautobot.apps.forms import NautobotBulkEditForm, NautobotFilterForm, NautobotModelForm
 from nautobot.dcim.models import Device, DeviceType, Location, Manufacturer, Platform, Rack, RackGroup
-from nautobot.extras.forms import NautobotBulkEditForm, NautobotFilterForm, NautobotModelForm
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, JobResult, Role, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
 from packaging import version

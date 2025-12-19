@@ -1,15 +1,15 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% load buttons %}
-{% block content %}
 
-{% include "nautobot_golden_config/goldenconfig_detailsmodal.html" %}
-{% endblock %}
+{% block content %}
+    {% include "nautobot_golden_config/goldenconfig_detailsmodal.html" %}
+{% endblock content %}
 
 {% block javascript %}
-{{ block.super }}
-<script>
-    var clipboard = new ClipboardJS('.btn');
-    clipboard.on('success', function (e) {});
-    clipboard.on('error', function (e) {});
-</script>
+    {{ block.super }}
+    <script>
+        var clipboard = new ClipboardJS('.btn');
+        clipboard.on('success', function (e) {});
+        clipboard.on('error', function (e) {});
+    </script>
 {% endblock javascript %}

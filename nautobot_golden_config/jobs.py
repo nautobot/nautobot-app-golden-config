@@ -7,10 +7,7 @@
 from datetime import datetime
 
 from django.utils.timezone import make_aware
-from nautobot.core.celery import register_jobs
-from nautobot.dcim.models import Device, DeviceType, Location, Manufacturer, Platform, Rack, RackGroup
-from nautobot.extras.datasources.git import ensure_git_repository, get_repo_from_url_to_path_and_from_branch
-from nautobot.extras.jobs import (
+from nautobot.apps.jobs import (
     BooleanVar,
     ChoiceVar,
     Job,
@@ -19,6 +16,12 @@ from nautobot.extras.jobs import (
     ObjectVar,
     StringVar,
     TextVar,
+    register_jobs,
+)
+from nautobot.dcim.models import Device, DeviceType, Location, Manufacturer, Platform, Rack, RackGroup
+from nautobot.extras.datasources.git import (  # core-import-update
+    ensure_git_repository,
+    get_repo_from_url_to_path_and_from_branch,
 )
 from nautobot.extras.models import DynamicGroup, Role, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
@@ -51,18 +54,20 @@ InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 name = "Golden Configuration"  # pylint: disable=invalid-name
 
 
-def get_repo_types_for_job(job_name):
+def get_repo_types_for_job(job):
     """Logic to determine which repo_types are needed based on job + plugin settings."""
-    repo_types = []
-    if constant.ENABLE_BACKUP and job_name == "nautobot_golden_config.jobs.BackupJob":
-        repo_types.extend(["backup_repository"])
-    if constant.ENABLE_INTENDED and job_name == "nautobot_golden_config.jobs.IntendedJob":
-        repo_types.extend(["jinja_repository", "intended_repository"])
-    if constant.ENABLE_COMPLIANCE and job_name == "nautobot_golden_config.jobs.ComplianceJob":
-        repo_types.extend(["intended_repository", "backup_repository"])
-    if "All" in job_name:
-        repo_types.extend(["backup_repository", "jinja_repository", "intended_repository"])
-    return repo_types
+    repo_types = set()
+
+    if constant.ENABLE_BACKUP and isinstance(job, BackupJob):
+        repo_types.add("backup_repository")
+    elif constant.ENABLE_INTENDED and isinstance(job, IntendedJob):
+        repo_types.update(["jinja_repository", "intended_repository"])
+    elif constant.ENABLE_COMPLIANCE and isinstance(job, ComplianceJob):
+        repo_types.update(["intended_repository", "backup_repository"])
+    elif "All" in job.class_path:
+        repo_types.update(["backup_repository", "jinja_repository", "intended_repository"])
+
+    return list(repo_types)
 
 
 def get_refreshed_repos(job_obj, repo_types, data=None):
@@ -121,7 +126,7 @@ def gc_repo_prep(job, data):
     job.logger.debug(f"In scope device count for this job: {job.qs.count()}", extra={"grouping": "Get Job Filter"})
     job.logger.debug("Mapping device(s) to GC Settings.", extra={"grouping": "Device to Settings Map"})
     job.device_to_settings_map = get_device_to_settings_map(queryset=job.qs)
-    gitrepo_types = list(set(get_repo_types_for_job(job.class_path)))
+    gitrepo_types = get_repo_types_for_job(job)
     job.logger.debug(
         f"Repository types to sync: {', '.join(sorted(gitrepo_types))}",
         extra={"grouping": "GC Repo Syncs"},

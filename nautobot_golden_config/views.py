@@ -389,7 +389,7 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
 
         return render(request, "nautobot_golden_config/configcompliance_devicetab.html", context)
 
-    @action(detail=False, methods=["get"])
+    @action(detail=False, methods=["get"], custom_view_base_action="view")
     def overview(self, request, *args, **kwargs):  # pylint: disable=too-many-locals
         """Custom action to show the visual report of the compliance stats."""
         # Basic Setup

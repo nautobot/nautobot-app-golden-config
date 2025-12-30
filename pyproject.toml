@@ -32,7 +32,6 @@ include = [
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.14"
-<<<<<<< HEAD
 deepdiff = ">=8.6.1,<9.0.0"
 django-pivot = ">=1.9.0,<1.10.0" # The signature changed to return a non-queryset, do not upgrade without ensuring it returns a queryset
 nautobot-plugin-nornir = ">=3.0.0,<4.0.0"
@@ -41,9 +40,7 @@ netutils = "^1.5.0"
 hier-config = "^3.2.2"
 nautobot-capacity-metrics = ">=4.0.0,<5.0.0"
 xmldiff = "^2.6.3"
-=======
 # Used for local development
->>>>>>> bde9288 (Cookie updated targeting develop by NetworkToCode Cookie Drift Manager Tool)
 nautobot = ">=3.0.0,<4.0.0"
 
 [tool.poetry.group.dev.dependencies]

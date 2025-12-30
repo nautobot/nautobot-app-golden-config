@@ -7,6 +7,7 @@ The **deprecation policy** will be announced within the [release notes](./releas
 While that last supported version will not be strictly enforced via the `max_version` setting, any issues with an updated Nautobot supported version in a minor release will require raising a bug and fixing it in Nautobot core, with no fixes expected in this app. This allows the Golden Config App the ability to quickly take advantage of the latest features in Nautobot.
 
 | Golden Config Version | Nautobot First Support Version | Nautobot Last Support Version |
+<<<<<<< HEAD
 | --------------------- | ------------------------------ | ----------------------------- |
 | 0.9.X                 | 1.0.0                          | 1.2.99 [Official]             |
 | 0.10.X                | 1.0.0                          | 1.2.99 [Official]             |
@@ -25,3 +26,7 @@ While that last supported version will not be strictly enforced via the `max_ver
 | 2.5.x                 | 2.4.2                          | 2.4.99                        |
 | 2.6.x                 | 2.4.20                         | 2.4.99                        |
 | 3.0.x                 | 3.0.0                          | 3.99.99                       |
+=======
+| ------------- | -------------------- | ------------- |
+| 1.0.X         | 3.0.0                | 2.99.99        |
+>>>>>>> bde9288 (Cookie updated targeting develop by NetworkToCode Cookie Drift Manager Tool)

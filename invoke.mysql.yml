@@ -1,7 +1,7 @@
 ---
 nautobot_golden_config:
   project_name: "nautobot-golden-config"
-  nautobot_ver: "2.4.20"
+  nautobot_ver: "3.0.0"
   local: false
   python_ver: "3.12"
   compose_dir: "development"

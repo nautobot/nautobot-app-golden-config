@@ -52,7 +52,7 @@ namespace = Collection("nautobot_golden_config")
 namespace.configure(
     {
         "nautobot_golden_config": {
-            "nautobot_ver": "2.4.20",
+            "nautobot_ver": "3.0.0",
             "project_name": "nautobot-golden-config",
             "python_ver": "3.12",
             "local": False,

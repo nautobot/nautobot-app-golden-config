@@ -75,7 +75,8 @@ configurations that will change each time. A match simply means to remove.
 In order to specify line removals. Navigate to **Golden Config -> Config Removals**.  Click the **Add** button and fill out the details.
 
 The remove setting is based on `Platform`.  An example is shown below.
-![Config Removals View](../images/00-navigating-backup.png)
+![Config Removals View](../images/ss1_00-navigating-backup_light.png#only-light){ .on-glb }
+![Config Removals View](../images/ss1_00-navigating-backup_dark.png#only-dark){ .on-glb }
 
 ## Config Replacements
 
@@ -83,7 +84,8 @@ This is a replacement config with a regex pattern with a single capture groups t
 
 The replace lines setting is based on `Platform`.  An example is shown below.
 
-![Config Replacements View](../images/01-navigating-backup.png)
+![Config Replacements View](../images/ss1_01-navigating-backup_light.png#only-light){ .on-glb }
+![Config Replacements View](../images/ss1_01-navigating-backup_dark.png#only-dark){ .on-glb }
 
 The line replace uses Python's `re.sub` method. As shown, a common pattern is to obtain the non-confidential data in a capture group e.g. `()`, and return the rest of the string returned in the backreference, e.g. `\2`.
 

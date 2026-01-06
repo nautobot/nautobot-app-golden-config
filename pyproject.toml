@@ -31,7 +31,7 @@ include = [
 "Bug Tracker" = "https://github.com/nautobot/nautobot-app-golden-config/issues"
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.14"
+python = ">=3.10,<3.13"
 deepdiff = ">=8.6.1,<9.0.0"
 django-pivot = ">=1.9.0,<1.10.0" # The signature changed to return a non-queryset, do not upgrade without ensuring it returns a queryset
 nautobot-plugin-nornir = ">=3.0.0,<4.0.0"

@@ -1,6 +1,10 @@
 """Unit tests for nautobot_golden_config models."""
 
-from unittest.mock import patch
+import json
+import pathlib
+from collections import deque
+from typing import Any
+from unittest.mock import MagicMock, patch
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
@@ -11,10 +15,12 @@ from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, St
 
 from nautobot_golden_config.choices import RemediationTypeChoice
 from nautobot_golden_config.models import (
+    ApiRemediation,
     ConfigCompliance,
     ConfigPlan,
     ConfigRemove,
     ConfigReplace,
+    DictKey,
     GoldenConfigSetting,
     RemediationSetting,
     _get_hierconfig_remediation,
@@ -30,6 +36,8 @@ from .conftest import (
     create_job_result,
     create_saved_queries,
 )
+
+# pylint: disable=protected-access
 
 
 class ConfigComplianceModelTestCase(TestCase):
@@ -685,3 +693,106 @@ class GetHierConfigRemediationTestCase(TestCase):
         mock_get_hconfig.assert_called_once()
         # WorkflowRemediation should never be called since get_hconfig raises exception
         mock_workflow_remediation.assert_not_called()
+
+
+def load_fixture(filename: str) -> Any:
+    """Load a JSON fixture from a file.
+
+    Args:
+        filename (str): Path to the JSON file.
+
+    Returns:
+        Any: The loaded JSON data.
+    """
+    with pathlib.Path(filename).open(encoding="utf-8") as f:
+        return json.load(fp=f)
+
+
+class TestApiRemediation(TestCase):
+    """Test ApiRemediation class."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.base_fixtures_path: str = "nautobot_golden_config/tests/fixtures/remediation/"
+        cls.intended_config = load_fixture(filename=f"{cls.base_fixtures_path}intended_config.json")
+        cls.actual_config = load_fixture(filename=f"{cls.base_fixtures_path}actual_config.json")
+        cls.config_context = load_fixture(filename=f"{cls.base_fixtures_path}config_context.json")
+        super().setUpClass()
+
+    def setUp(self):
+        rule = MagicMock()
+        rule.feature.name = "feature"
+        rule.config_type = "json"
+        device = MagicMock()
+        device.get_config_context.return_value = {"feature_remediation": self.config_context}
+        self.compliance_obj = MagicMock()
+        self.compliance_obj.rule = rule
+        self.compliance_obj.device = device
+        self.compliance_obj.intended = self.intended_config
+        self.compliance_obj.actual = self.actual_config
+
+    def test_process_diff_dictkey(self):
+        diff = {}
+        path = (DictKey("foo"),)
+        value = "bar"
+        remediation = ApiRemediation(MagicMock())
+        remediation._process_diff(diff, path, value)
+        self.assertEqual(diff["foo"], "bar")
+
+    def test_process_diff_str_key(self):
+        diff = {}
+        path = ("foo",)
+        value = "bar"
+        remediation = ApiRemediation(MagicMock())
+        remediation._process_diff(diff, path, value)
+        self.assertEqual(diff["foo"], "bar")
+
+    def test_process_diff_int_key(self):
+        diff = []
+        path = (0,)
+        value = "bar"
+        remediation = ApiRemediation(MagicMock())
+        remediation._process_diff(diff, path, value)
+        self.assertEqual(diff[0], "bar")
+
+    def test_dict_config(self):
+        remediation = ApiRemediation(MagicMock())
+        intended = {"foo": {"bar": 1}}
+        actual = {"foo": {}}
+        diff = {}
+        stack = deque()
+        remediation._dict_config(intended, actual, diff, tuple(), stack)
+        self.assertEqual(diff["foo"]["bar"], 1)
+
+    def test_list_config(self):
+        remediation = ApiRemediation(MagicMock())
+        intended = [{"bar": 1}]
+        actual = [{}]
+        diff = []
+        stack = deque()
+        remediation._list_config(intended, actual, diff, tuple(), stack)
+        self.assertEqual(diff[0]["bar"], 1)
+
+    def test_str_int_float_config(self):
+        remediation = ApiRemediation(MagicMock())
+        diff = {}
+        remediation._str_int_float_config("foo", "bar", diff, ("baz",))
+        self.assertEqual(diff["baz"], "foo")
+
+    def test_clean_diff(self):
+        remediation = ApiRemediation(MagicMock())
+        diff = {"foo": {}, "bar": {"baz": "qux"}, "empty": []}
+        cleaned = remediation._clean_diff(diff)
+        self.assertNotIn("foo", cleaned)
+        self.assertIn("bar", cleaned)
+        self.assertNotIn("empty", cleaned)
+
+    def test_controller_remediation_no_context(self):
+        compliance_obj = MagicMock()
+        compliance_obj.rule.feature.name = "feature"
+        compliance_obj.intended = {"feature": {}}
+        compliance_obj.actual = {"feature": {}}
+        compliance_obj.device.get_config_context.return_value = {}
+        remediation = ApiRemediation(compliance_obj)
+        with self.assertRaises(Exception):
+            remediation.controller_remediation()

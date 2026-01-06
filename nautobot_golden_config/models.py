@@ -27,6 +27,8 @@ from xmldiff import actions, main
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
 
+# pylint: disable=too-many-lines
+
 LOGGER = logging.getLogger(__name__)
 GRAPHQL_STR_START = "query ($device_id: ID!)"
 
@@ -251,7 +253,7 @@ class DictKey:
     key: Any
 
 
-class JsonControllerRemediation:  # pylint: disable=too-few-public-methods
+class ApiRemediation:  # pylint: disable=too-few-public-methods
     """Remediation class for controllers."""
 
     def __init__(
@@ -367,7 +369,7 @@ class JsonControllerRemediation:  # pylint: disable=too-few-public-methods
                 exc_msg: str = f"Unsupported key type: {key}"
                 raise TypeError(exc_msg)
 
-    def _dict_config(
+    def _dict_config(  # pylint: disable=too-many-arguments
         self,
         intended: dict[Any, Any],
         actual: dict[Any, Any],
@@ -430,7 +432,7 @@ class JsonControllerRemediation:  # pylint: disable=too-few-public-methods
                         path=path + (DictKey(key=key),),
                     )
 
-    def _list_config(
+    def _list_config(  # pylint: disable=too-many-arguments
         self,
         intended: list[Any],
         actual: list[Any],
@@ -609,7 +611,7 @@ def _get_api_remediation(obj) -> dict[Any, Any]:
     Returns:
         dict[Any, Any]: The remediation configuration as a dictionary.
     """
-    json_controller = JsonControllerRemediation(compliance_obj=obj)
+    json_controller = ApiRemediation(compliance_obj=obj)
     remediation_config = json_controller.controller_remediation()
     return remediation_config
 

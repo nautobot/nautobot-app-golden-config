@@ -40,10 +40,9 @@ def is_truthy(arg):
     val = str(arg).lower()
     if val in ("y", "yes", "t", "true", "on", "1"):
         return True
-    elif val in ("n", "no", "f", "false", "off", "0"):
+    if val in ("n", "no", "f", "false", "off", "0"):
         return False
-    else:
-        raise ValueError(f"Invalid truthy value: `{arg}`")
+    raise ValueError(f"Invalid truthy value: `{arg}`")
 
 
 # Use pyinvoke configuration for default values, see http://docs.pyinvoke.org/en/stable/concepts/configuration.html
@@ -54,7 +53,7 @@ namespace.configure(
         "nautobot_golden_config": {
             "nautobot_ver": "3.0.0",
             "project_name": "nautobot-golden-config",
-            "python_ver": "3.13",
+            "python_ver": "3.12",
             "local": False,
             "compose_dir": os.path.join(os.path.dirname(__file__), "development"),
             "compose_files": [
@@ -160,25 +159,24 @@ def run_command(context, command, service="nautobot", **kwargs):
                 **kwargs.pop("command_env"),
             }
         return context.run(command, **kwargs)
+    # Check if service is running, no need to start another container to run a command
+    docker_compose_status = "ps --services --filter status=running"
+    results = docker_compose(context, docker_compose_status, hide="out")
+
+    command_env_args = ""
+    if "command_env" in kwargs:
+        command_env = kwargs.pop("command_env")
+        for key, value in command_env.items():
+            command_env_args += f' --env="{key}={value}"'
+
+    if service in results.stdout:
+        compose_command = f"exec{command_env_args} {service} {command}"
     else:
-        # Check if service is running, no need to start another container to run a command
-        docker_compose_status = "ps --services --filter status=running"
-        results = docker_compose(context, docker_compose_status, hide="out")
+        compose_command = f"run{command_env_args} --rm --entrypoint='{command}' {service}"
 
-        command_env_args = ""
-        if "command_env" in kwargs:
-            command_env = kwargs.pop("command_env")
-            for key, value in command_env.items():
-                command_env_args += f' --env="{key}={value}"'
+    pty = kwargs.pop("pty", True)
 
-        if service in results.stdout:
-            compose_command = f"exec{command_env_args} {service} {command}"
-        else:
-            compose_command = f"run{command_env_args} --rm --entrypoint='{command}' {service}"
-
-        pty = kwargs.pop("pty", True)
-
-        return docker_compose(context, compose_command, pty=pty, **kwargs)
+    return docker_compose(context, compose_command, pty=pty, **kwargs)
 
 
 # ------------------------------------------------------------------------------
@@ -205,7 +203,7 @@ def build(context, force_rm=False, cache=True):
 
 def _ensure_creds_env_file(context):
     """Ensure that the development/creds.env file exists."""
-    if not os.path.exists(os.path.join(context.nautobot_golden_config.compose_dir, "creds.env")):
+    if not Path(os.path.join(context.nautobot_golden_config.compose_dir, "creds.env")).exists():
         # Warn the user that the creds.env file does not exist and that we are copying the example file to it
         print("⚠️⚠️ The creds.env file does not exist, using the example file to create it. ⚠️⚠️")
         # Copy the creds.example.env file to creds.env
@@ -235,8 +233,7 @@ def _get_docker_nautobot_version(context, nautobot_ver=None, python_ver=None):
     match_version = re.search(r"^Version: (.+)$", pip_nautobot_ver.stdout.strip(), flags=re.MULTILINE)
     if match_version:
         return match_version.group(1)
-    else:
-        raise Exit(f"Nautobot version not found in Docker base image {base_image}.")
+    raise Exit(f"Nautobot version not found in Docker base image {base_image}.")
 
 
 @task(
@@ -473,8 +470,7 @@ def migrate(context):
 
 @task(help={})
 def post_upgrade(context):
-    """
-    Performs Nautobot common post-upgrade operations using a single entrypoint.
+    """Performs Nautobot common post-upgrade operations using a single entrypoint.
 
     This will run the following management commands with default settings, in order:
 
@@ -643,7 +639,7 @@ def backup_db(context, db_name="", output_file="dump.sql", readable=True):
             "--user=root",
             "--password=$MYSQL_ROOT_PASSWORD",
             "--skip-extended-insert" if readable else "",
-            db_name if db_name else "$MYSQL_DATABASE",
+            db_name or "$MYSQL_DATABASE",
         ]
     elif _is_compose_included(context, "postgres"):
         command += [

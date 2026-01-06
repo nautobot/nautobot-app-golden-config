@@ -267,7 +267,6 @@ class JsonControllerRemediation:  # pylint: disable=too-few-public-methods
         self.feature_name: str = compliance_obj.rule.feature.name.lower()
         self.intended_config: dict[str, Any] = compliance_obj.intended
         self.backup_config: dict[str, Any] = compliance_obj.actual
-        self.required_parameters: list[str] = []
 
     def _filter_allowed_params(
         self,
@@ -287,17 +286,16 @@ class JsonControllerRemediation:  # pylint: disable=too-few-public-methods
         """
         if not config_context:
             return {}
-        all_optional_arguments: list[str] = []
+        endpoint_fields: list[str] = []
         for endpoint in config_context:
-            if not endpoint.get("parameters", {}).get("optional"):
+            if not endpoint.get("fields"):
                 return {}
-            all_optional_arguments.extend(endpoint["parameters"]["optional"])
-            self.required_parameters.extend(endpoint["parameters"]["non_optional"])
+            endpoint_fields.extend(endpoint["fields"])
 
         if isinstance(config[feature_name], dict):
             valid_payload_config: dict[str, Any] = {feature_name: {}}
             for key, value in config[feature_name].items():
-                if key in all_optional_arguments or key in self.required_parameters:
+                if key in endpoint_fields:
                     valid_payload_config[feature_name][key] = value
             return valid_payload_config
 
@@ -306,7 +304,7 @@ class JsonControllerRemediation:  # pylint: disable=too-few-public-methods
             for item in config[feature_name]:
                 params_dict = {}
                 for key, value in item.items():
-                    if key in all_optional_arguments or key in self.required_parameters:
+                    if key in endpoint_fields:
                         params_dict[key] = value
                 if params_dict:
                     valid_payload_config[feature_name].append(params_dict)
@@ -507,43 +505,6 @@ class JsonControllerRemediation:  # pylint: disable=too-few-public-methods
         if actual != intended:
             self._process_diff(diff=diff, path=path, value=intended)
 
-    def _inject_required_fields(
-        self,
-        diff: list[Any] | dict[Any, Any],
-        intended: list[Any] | dict[Any, Any],
-        path: tuple[Any],
-    ) -> dict[Any, Any]:
-        """Ensure required parameters are added to modified sections of the diff.
-
-        Args:
-            diff (Union[list[Any], dict[Any, Any]]): Diff dictionary.
-            intended (Union[list[Any], dict[Any, Any]]): Full intended config.
-            path (tuple[Any]): Path of keys.
-        """
-        if isinstance(diff, dict) and isinstance(intended, dict):
-            if diff:
-                for param in self.required_parameters:
-                    if param in intended:
-                        diff[param] = intended[param]
-
-            for key in diff:
-                if key in intended:
-                    self._inject_required_fields(
-                        diff=diff[key],
-                        intended=intended[key],
-                        path=path + (key,),
-                    )
-
-        elif isinstance(diff, list) and isinstance(intended, list):
-            for idx, (d_item, i_item) in enumerate(zip(diff, intended, strict=False)):
-                self._inject_required_fields(
-                    diff=d_item,
-                    intended=i_item,
-                    path=path + (idx,),
-                )
-
-        return diff
-
     def _clean_diff(self, diff: list[Any] | dict[Any, Any]) -> dict[Any, Any]:
         """Recursively remove empty dicts/lists in diff.
 
@@ -578,7 +539,7 @@ class JsonControllerRemediation:  # pylint: disable=too-few-public-methods
             str: Remediation config.
         """
         config_context: dict[str, Any] = self.compliance_obj.device.get_config_context()
-        if config_context.get("remediate_full_intended", False):
+        if config_context.get("remediate_full_intended"):
             if isinstance(self.intended_config, str):
                 self.intended_config: dict[Any, Any] = json.loads(self.intended_config)
             return json.dumps(
@@ -596,7 +557,7 @@ class JsonControllerRemediation:  # pylint: disable=too-few-public-methods
             config_context=config_context.get(f"{self.feature_name}_remediation"),
         )
         if not actual or not intended:
-            exc_msg: str = "There was no config context passed or the config context does not have optional parameters."
+            exc_msg: str = "There was no config context passed."
             raise ValidationError(exc_msg)
         diff: dict[str, Any] = {}
         stack: deque[tuple[tuple[str, ...], Any, Any]] = deque()
@@ -635,12 +596,7 @@ class JsonControllerRemediation:  # pylint: disable=too-few-public-methods
         if not diff.get(self.feature_name):
             exc_msg: str = f"No differences found for feature {self.feature_name}."
             raise ValidationError(exc_msg)
-        valid_diff: dict[Any, Any] = self._inject_required_fields(
-            diff=diff,
-            intended=self.intended_config,
-            path=(),
-        )
-        cleaned_diff: dict[Any, Any] = self._clean_diff(diff=valid_diff)
+        cleaned_diff: dict[Any, Any] = self._clean_diff(diff=diff)
         return json.dumps(cleaned_diff, indent=4)
 
 

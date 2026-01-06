@@ -8,7 +8,8 @@ This document describes common use-cases and scenarios for this App.
 
 The Home view is a portal to understand what the status of the devices are.
 
-![Home Overview](../images/ss_golden-overview.png)
+![Home Overview](../images/ss1_ss_golden-overview_light.png#only-light){ .on-glb }
+![Home Overview](../images/ss1_ss_golden-overview_dark.png#only-dark){ .on-glb }
 
 Some of the information described in this view, may not be immediately obvious.
 
@@ -30,11 +31,13 @@ components against all of the devices.
 
 There are a series of Jobs that are registered via the App. They can be viewed from the standard Jobs view.
 
-![Job Overview](../images/job-overview.png)
+![Job Overview](../images/ss1_job-overview_light.png#only-light){ .on-glb }
+![Job Overview](../images/ss1_job-overview_dark.png#only-dark){ .on-glb }
 
 Each Job attempts to provide sane error handling, and respects the `debug` flag to provide more information.
 
-![Job Result](../images/job-result.png)
+![Job Result](../images/ss1_job-result_light.png#only-light){ .on-glb }
+![Job Result](../images/ss1_job-result_dark.png#only-dark){ .on-glb }
 
 ### Application Settings
 
@@ -45,7 +48,8 @@ You could use a combination of settings to customize your Configuration Complian
 Settings have a name and a weight. The weight parameter indicates the priority of given Settings - the higher the weight, the device matching the Dynamic Group defined will be assigned to the scope.
 At the same moment, each device will be matched up to maximum of only one `Settings.` In case of the same weight, the sorting is performed by the name.
 
-![Navigate to Settings](../images/navigate-compliance-rules.png)
+![Navigate to Settings](../images/ss1_navigate-compliance-rules_light.png#only-light){ .on-glb }
+![Navigate to Settings](../images/ss1_navigate-compliance-rules_dark.png#only-dark){ .on-glb }
 
 To create new settings click on the `+Add` button.
 To update existing settings click on one of the `Settings` name.
@@ -76,7 +80,8 @@ The [Dynamic Group](https://docs.nautobot.com/projects/core/en/stable/models/ext
 
 Within the Detail view of a Golden Config Setting the section to denote the scope of devices links back to the Dynamic Group that is assigned and renders the filter attribute of the Dynamic Group as JSON. All updates to the scope of Devices must be done via the Dynamic Group not directly on the Golden Config Setting.
 
-![Dynamic Group](../images/setting-dynamic-group.png)
+![Dynamic Group](../images/ss1_setting-dynamic-group_light.png#only-light){ .on-glb }
+![Dynamic Group](../images/ss1_setting-dynamic-group_dark.png#only-dark){ .on-glb }
 
 The below configurations of scope can either be removed or specified for pre 1.2 only, the same logic applies in 1.2 and onwards but via DynamicGroups.
 
@@ -137,7 +142,8 @@ For our example, let's configure and create with:
 | Provider | Environment Variable |
 | Variable | NAUTOBOT_GOLDEN_CONFIG_GIT_TOKEN. |
 
-![Secret Creation](../images/secret-step1.png)
+![Secret Creation](../images/ss1_secret-step1_light.png#only-light){ .on-glb }
+![Secret Creation](../images/ss1_secret-step1_dark.png#only-dark){ .on-glb }
 
 Depending on your provider, you may also need a username, so you would repeat the process such as:
 
@@ -161,7 +167,8 @@ For our example, let's configure and create with:
 !!! tip
     If your instance requires a username as well, please ensure to add that as well.
 
-![Secret Group Creation](../images/secret-step2.png)
+![Secret Group Creation](../images/ss1_secret-step2_light.png#only-light){ .on-glb }
+![Secret Group Creation](../images/ss1_secret-step2_dark.png#only-dark){ .on-glb }
 
 The steps to add the variables to your environment are outside the scope of this document and may or may not be needed depending on how you manage your Secrets in your environment, but please be mindful of ensuring the Secrets end up on your system.
 
@@ -171,7 +178,8 @@ The app makes heavy use of the Nautobot git data sources feature. There are up t
 
 In order to setup this repository, go to Nautobot and navigate to the Data Sources Git integration. `Extensibility -> Git Repositories`.
 
-![Backup Git Navigation](../images/git-step1.png)
+![Backup Git Navigation](../images/ss1_git-step1_light.png#only-light){ .on-glb }
+![Backup Git Navigation](../images/ss1_git-step1_dark.png#only-dark){ .on-glb }
 
 From the Git Repositories page we can add the **Backup** repository.
 
@@ -193,12 +201,14 @@ Parameters:
 !!! note
     When Secret Group is used for a Repository the secrets type HTTP(S) is required for this plugin, as shown previously.
 
-![Example Git Backups](../images/backup-git-step2.png)
+![Example Git Backups](../images/ss1_backup-git-step2_light.png#only-light){ .on-glb }
+![Example Git Backups](../images/ss1_backup-git-step2_dark.png#only-dark){ .on-glb }
 
 Select `backup configs` and click on `Create`.
 
 Once you click `Create` and the repository syncs, the main page will now show the repo along with its status.
-![Git Backup Repo Status](../images/backup-git-step3.png)
+![Git Backup Repo Status](../images/ss1_backup-git-step3_light.png#only-light){ .on-glb }
+![Git Backup Repo Status](../images/ss1_backup-git-step3_dark.png#only-dark){ .on-glb }
 
 For their respective features, the "Provides" field could be backup intended configs and jinja templates.
 
@@ -251,15 +261,20 @@ There are many features and capabilities the app provides into the Nautobot ecos
 
 The golden configuration is driven by jobs that run a series of tasks and the result is captured in this overview.
 
-![Overview](../images/ss_golden-overview.png)
+![Overview](../images/ss1_ss_golden-overview_light.png#only-light){ .on-glb }
+![Overview](../images/ss1_ss_golden-overview_dark.png#only-dark){ .on-glb }
 
 The compliance report provides a high-level overview on the compliance of your network.
-![Compliance Report](../images/ss_compliance-report.png)
+![Compliance Report](../images/ss1_ss_compliance-report_light.png#only-light){ .on-glb }
+![Compliance Report](../images/ss1_ss_compliance-report_dark.png#only-dark){ .on-glb }
 
 The compliance overview will provide a per device and feature overview on the compliance of your network devices.
-![Compliance Overview](../images/ss_compliance-overview.png)
+![Compliance Overview](../images/ss1_ss_compliance-overview_light.png#only-light){ .on-glb }
+![Compliance Overview](../images/ss1_ss_compliance-overview_dark.png#only-dark){ .on-glb }
 
 Drilling into a specific device and feature, you can get an immediate detailed understanding of your device.
-![Compliance Device](../images/ss_compliance-device.png)
+![Compliance Device](../images/ss1_ss_compliance-device_light.png#only-light){ .on-glb }
+![Compliance Device](../images/ss1_ss_compliance-device_dark.png#only-dark){ .on-glb }
 
-![Compliance Rule](../images/ss_compliance-rule.png)
+![Compliance Rule](../images/ss1_ss_compliance-rule_light.png#only-light){ .on-glb }
+![Compliance Rule](../images/ss1_ss_compliance-rule_dark.png#only-dark){ .on-glb }

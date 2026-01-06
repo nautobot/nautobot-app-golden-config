@@ -41,6 +41,7 @@ hier-config = "^3.2.2"
 nautobot-capacity-metrics = ">=4.0.0,<5.0.0"
 xmldiff = "^2.6.3"
 nautobot = ">=3.0.0,<4.0.0"
+remote-pdb = "^2.1.0"
 
 [tool.poetry.group.dev.dependencies]
 coverage = "*"

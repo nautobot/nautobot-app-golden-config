@@ -1,9 +1,8 @@
 # Navigating Configuration Remediation
 
-Automated network configuration remediation is a systematic approach that leverages technology and processes to address and rectify configuration issues in network devices. 
+Automated network configuration remediation is a systematic approach that leverages technology and processes to address and rectify configuration issues in network devices.
 It involves the use of the Golden Configuration app to understand the current configuration state, compare it against the intended configuration state, and automatically generate remediation data.
 Automated network configuration remediation improves efficiency by eliminating manual efforts and reducing the risk of human errors. It enables rapid response to security vulnerabilities, minimizes downtime, and enhances compliance with regulatory and industry standards.
-
 
 The current sources of data to generate remediating configuration are as follows:
 
@@ -15,10 +14,8 @@ Based on this information, Golden Configuration will create a remediating config
 
 - The **Remediation** configuration of a specific Compliance Feature
 
-
 !!! note
-    The Intended, Missing and Extra configuration come from the [Configuration Compliance](./app_feature_compliance.md#compliance-details-view) object that is created when you run the [Perform Configuration Compliance Job](./app_feature_compliance.md#starting-a-compliance-job).
-
+The Intended, Missing and Extra configuration come from the [Configuration Compliance](./app_feature_compliance.md#compliance-details-view) object that is created when you run the [Perform Configuration Compliance Job](./app_feature_compliance.md#starting-a-compliance-job).
 
 ## Setting up Configuration Remediation
 
@@ -26,6 +23,7 @@ The type of remediation to be performed in a particular platform is defined by n
 Network device operating systems (Nautobot Platforms) can consume two different types of remediation, namely:
 
 - **HIERCONFIG remediation (CLI - hierarchical)**
+- **API remediation (API - JSON body)**
 - **Custom Remediation**
 
 ![Remediation Platform Settings](../images/remediation_settings_per_platform.png)
@@ -48,6 +46,28 @@ Default Hier config options can be used or customized on a per platform basis, a
 For additional information on how to customize Hier Config options, please refer to the Hierarchical Configuration development guide:
 https://hier-config.readthedocs.io/en/latest/
 
+### API Remediation Type
+
+You can use the TYPE_API option to enable a device to use the API type of remediation. To use this, you would need to pass the settings
+that the API request would use as config context. Here is an example using Cisco Meraki platform.
+
+```json
+org_remediation:
+  - endpoint: "/organizations/{{ obj.get_config_context().get('organization_id', '')}}"
+    method: "PUT"
+    query: []
+    fields:
+      - "name"
+```
+
+The way to create this is like this:
+
+- The high level key should be '**feature-name**\_remediation', in this case the feature is **org**
+  - endpoint: This is the endpoint you should call. You could pass jinja to the endpoint to dynamically create the endpoint.
+  - method: This is the HTTP method to use for the call.
+  - query: You add strings here, used as a filter if the endpoint supports it, like for example '?user=NTC' if you would like to filter a response searching for the NTC user.
+  - fields: This is also a list of strings, and it should hold the key names of the response you got from the device, to include that in the payload you will send to the device when you execute the Config Plan. In this example, we only want the "name" field from the response.
+
 ### Custom Config Remediation Type
 
 When a Network Operating System delivers configuration data in a format that is not CLI/Hierarchical, we can still perform remediation by using the Custom Remediation options. Custom Remediation is defined within a Python function that takes as input a Configuration Compliance object and returns a Remediation Field.
@@ -60,7 +80,6 @@ Custom remediation performs a call to the remediation function every time a Comp
 Once remediation settings are configured for a particular platform, remediation can be enabled on a per compliance rule basis. In order to enable configuration remediation for a particular rule, navigate to **Golden Config -> Compliance Rules**, and choose a rule for a platform that has remediation settings set up. Edit the compliance rule and check the box "Enable Remediation". This action effectively enables remediation for that particular Platform/Feature pair.
 
 ![Enable Configuration Remediation per Feature](../images/remediation_enable_compliance_rule_feature.png)
-
 
 ## Validating Configuration Remediation
 

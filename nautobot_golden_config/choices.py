@@ -21,10 +21,12 @@ class RemediationTypeChoice(ChoiceSet):
     """Choiceset used by RemediationSetting."""
 
     TYPE_HIERCONFIG = "hierconfig"
+    TYPE_API = "api"
     TYPE_CUSTOM = "custom_remediation"
 
     CHOICES = (
         (TYPE_HIERCONFIG, "HIERCONFIG"),
+        (TYPE_API, "API"),
         (TYPE_CUSTOM, "CUSTOM_REMEDIATION"),
     )
 

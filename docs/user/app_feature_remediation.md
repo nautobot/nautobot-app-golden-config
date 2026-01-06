@@ -1,6 +1,6 @@
 # Navigating Configuration Remediation
 
-Automated network configuration remediation is a systematic approach that leverages technology and processes to address and rectify configuration issues in network devices. 
+Automated network configuration remediation is a systematic approach that leverages technology and processes to address and rectify configuration issues in network devices.
 It involves the use of the Golden Configuration app to understand the current configuration state, compare it against the intended configuration state, and automatically generate remediation data.
 Automated network configuration remediation improves efficiency by eliminating manual efforts and reducing the risk of human errors. It enables rapid response to security vulnerabilities, minimizes downtime, and enhances compliance with regulatory and industry standards.
 
@@ -47,6 +47,28 @@ Default Hier config options can be used or customized on a per platform basis, a
 
 For additional information on how to customize Hier Config options, please refer to the Hierarchical Configuration development guide:
 https://hier-config.readthedocs.io/en/latest/
+
+### API Remediation Type
+
+You can use the TYPE_API option to enable a device to use the API type of remediation. To use this, you would need to pass the settings
+that the API request would use as config context. Here is an example using Cisco Meraki platform.
+
+```json
+org_remediation:
+  - endpoint: "/organizations/{{ obj.get_config_context().get('organization_id', '')}}"
+    method: "PUT"
+    query: []
+    fields:
+      - "name"
+```
+
+The way to create this is like this:
+
+- The high level key should be '**feature-name**\_remediation', in this case the feature is **org**
+    - endpoint: This is the endpoint you should call. You could pass jinja to the endpoint to dynamically create the endpoint.
+    - method: This is the HTTP method to use for the call.
+    - query: You add strings here, used as a filter if the endpoint supports it, like for example '?user=NTC' if you would like to filter a response searching for the NTC user.
+    - fields: This is also a list of strings, and it should hold the key names of the response you got from the device, to include that in the payload you will send to the device when you execute the Config Plan. In this example, we only want the "name" field from the response.
 
 ### Custom Config Remediation Type
 

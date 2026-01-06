@@ -9,13 +9,11 @@ class ComplianceRuleConfigTypeChoice(ChoiceSet):
     TYPE_CLI = "cli"
     TYPE_JSON = "json"
     TYPE_XML = "xml"
-    TYPE_API = "api"
 
     CHOICES = (
         (TYPE_CLI, "CLI"),
         (TYPE_JSON, "JSON"),
         (TYPE_XML, "XML"),
-        (TYPE_API, "API"),
     )
 
 
@@ -23,10 +21,12 @@ class RemediationTypeChoice(ChoiceSet):
     """Choiceset used by RemediationSetting."""
 
     TYPE_HIERCONFIG = "hierconfig"
+    TYPE_API = "api"
     TYPE_CUSTOM = "custom_remediation"
 
     CHOICES = (
         (TYPE_HIERCONFIG, "HIERCONFIG"),
+        (TYPE_API, "API"),
         (TYPE_CUSTOM, "CUSTOM_REMEDIATION"),
     )
 

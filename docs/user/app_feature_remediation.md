@@ -63,10 +63,10 @@ org_remediation:
 The way to create this is like this:
 
 - The high level key should be '**feature-name**\_remediation', in this case the feature is **org**
-  - endpoint: This is the endpoint you should call. You could pass jinja to the endpoint to dynamically create the endpoint.
-  - method: This is the HTTP method to use for the call.
-  - query: You add strings here, used as a filter if the endpoint supports it, like for example '?user=NTC' if you would like to filter a response searching for the NTC user.
-  - fields: This is also a list of strings, and it should hold the key names of the response you got from the device, to include that in the payload you will send to the device when you execute the Config Plan. In this example, we only want the "name" field from the response.
+    - endpoint: This is the endpoint you should call. You could pass jinja to the endpoint to dynamically create the endpoint.
+    - method: This is the HTTP method to use for the call.
+    - query: You add strings here, used as a filter if the endpoint supports it, like for example '?user=NTC' if you would like to filter a response searching for the NTC user.
+    - fields: This is also a list of strings, and it should hold the key names of the response you got from the device, to include that in the payload you will send to the device when you execute the Config Plan. In this example, we only want the "name" field from the response.
 
 ### Custom Config Remediation Type
 

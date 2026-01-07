@@ -377,8 +377,10 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
         compliance_details = models.ConfigCompliance.objects.filter(device=device)
         context["compliance_details"] = compliance_details
         if request.GET.get("compliance") == "compliant":
+            context["compliance_filter"] = "compliant"
             context["compliance_details"] = compliance_details.filter(compliance=True)
         elif request.GET.get("compliance") == "non-compliant":
+            context["compliance_filter"] = "non-compliant"
             context["compliance_details"] = compliance_details.filter(compliance=False)
 
         context["active_tab"] = request.GET.get("tab")

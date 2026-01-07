@@ -9,7 +9,7 @@ The development environment can be used in two ways:
 
 This is a detailed reference guide if you're already familiar with the development environment provided, which you can read more about later in this document.
 
-For a quickstart guide to get and entire virtualized lab up and running local alongside your development environment up and running, include local virtualized switches and a git server, see the [Local Dev Environment Quickstart](local_dev_quickstart.md) document.
+To quickly get a full local development environment up and running with all supporting services including virtualized switches and a git server, see the [Local Dev Environment Quickstart](local_dev_quickstart.md) document.
 
 ### Invoke
 

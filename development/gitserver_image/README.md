@@ -4,7 +4,7 @@ This will build an image of a local Git server that runs on HTTP port 3000 with 
 
 This image is intended for use with the GitHub repo https://github.com/networktocode-llc/gc-dev-setup.git
 
-It comes with 1 existing repository installed with 3 folders:
+It comes with one existing repository installed with three folders:
 
 * backups/
 * intended/

@@ -1,6 +1,6 @@
 # Local Dev Environment Quickstart Guide
 
-This repo is intended to quickly get started with a local Golden Config instance using sample data, virutal Arista lab devices, and a local ephemeral Git server.
+This repo is intended to quickly get a developer started with a local Golden Config instance using sample data, virtual Arista lab devices, and a local ephemeral Git server.
 
 By default, this guide will automatically deploy 2 Arista virtual cEOS devices and 1 Git server as Docker containers, then fully configure Nautobot and Golden Config with all required objects for 4 devices named "ceos[1-4]". Finally, it will run the inital Golden Config Job for backups, intended, and compliance against all 4 devices.
 
@@ -15,7 +15,7 @@ Follow these steps to quickly get a new dev instance spun up for Nautobot's [Gol
 
 ## Prerequisites
 
-This setup currently supports only Arista cEOS devices. Before starting, you will need to download the corresponding cEOS image for your CPU architecture from the Arista [software download site](https://www.arista.com/en/support/software-download). You will need an Arista support account to access the download.
+This setup currently supports only Arista cEOS devices. Before starting, you will need to download the corresponding cEOS image for your CPU architecture from the Arista [software download site](https://www.arista.com/en/support/software-download). You will need a free Arista account to access the download.
 
 Once logged in, download the latest cEOS Lab image for your architecture:
 

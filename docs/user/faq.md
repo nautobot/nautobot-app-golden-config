@@ -115,9 +115,9 @@ With the original Git Data Source implementation, passwords were stored in the d
   Applying ipam.0006_ipaddress_nat_outside_list... OK
   Applying ipam.0007_add_natural_indexing... OK
   Applying nautobot_golden_config.0006_multi_repo_support_temp_field...Traceback (most recent call last):
-  File "/usr/local/lib/python3.11/site-packages/django/db/models/fields/related_descriptors.py", line 173, in __get__
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/fields/related_descriptors.py", line 173, in __get__
     rel_obj = self.field.get_cached_value(instance)
-  File "/usr/local/lib/python3.11/site-packages/django/db/models/fields/mixins.py", line 15, in get_cached_value
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/fields/mixins.py", line 15, in get_cached_value
     return instance._state.fields_cache[cache_name]
 KeyError: 'backup_repository'
 
@@ -125,7 +125,7 @@ During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
 <omitted>
-  File "/usr/local/lib/python3.11/site-packages/cryptography/hazmat/backends/openssl/hmac.py", line 85, in verify
+  File "/usr/local/lib/python3.13/site-packages/cryptography/hazmat/backends/openssl/hmac.py", line 85, in verify
     raise InvalidSignature("Signature did not match digest.")
 cryptography.exceptions.InvalidSignature: Signature did not match digest.
 
@@ -133,7 +133,7 @@ During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
 <omitted>
-  File "/usr/local/lib/python3.11/site-packages/django_cryptography/core/signing.py", line 239, in unsign
+  File "/usr/local/lib/python3.13/site-packages/django_cryptography/core/signing.py", line 239, in unsign
     raise BadSignature(
 django.core.signing.BadSignature: Signature "b'A9QMEEeCk2+tAc6naf2KDiZBvACNWGNHGMPJ/SHOYY8=\n'" does not match
 ERROR: 1

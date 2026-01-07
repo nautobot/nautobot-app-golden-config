@@ -2,7 +2,7 @@
 
 from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
-from nautobot.core.testing import FilterTestCases
+from nautobot.apps.testing import FilterTestCases
 from nautobot.dcim.models import Device, Platform
 from nautobot.extras.models import Status, Tag
 

@@ -2,7 +2,7 @@
 
 import logging
 
-from nautobot.core.utils.git import GitRepo as _GitRepo
+from nautobot.apps.utils import GitRepo as _GitRepo
 
 LOGGER = logging.getLogger(__name__)
 

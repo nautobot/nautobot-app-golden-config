@@ -1,6 +1,6 @@
 # Building Your Development Environment
 
-## Development Guide
+## Quickstart Guide
 
 The development environment can be used in two ways:
 

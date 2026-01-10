@@ -54,7 +54,7 @@ Replace `#` with the device number below:
 
 ## Setup Steps
 
-1. Import the corresponding Arista image based on your CPU architecture.
+1. Import the corresponding Arista image based on your CPU architecture by issuing **one of** these commands.
 
     ```bash
     docker import cEOS64-lab-4.34.2F.tar.xz ceos:latest   # x64 image

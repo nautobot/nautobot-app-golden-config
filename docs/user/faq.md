@@ -97,7 +97,7 @@ In many use cases, this can be extended with a custom dispatcher for nornir task
 
 ## _Does this application provide the corrective configurations?_
 
-Yes. While configuration enforcement is a challenging problem, this application integrates with Hier-Config to determine the commands required to bring a device into compliance with its intended configuration for traditional nested CLI config and allows you to bring your own custom remediation for JSON or XML based remediation.
+Yes. While configuration enforcement is a challenging problem, this application integrates with [Hier Config](https://hier-config.readthedocs.io/en/latest/) to determine the commands required to bring a device into compliance with its intended configuration for traditional nested CLI config and allows you to bring your own custom remediation for JSON or XML based remediation.
 
 ## _Why does the compliance section scroll so much?_
 

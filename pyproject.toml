@@ -40,6 +40,7 @@ netutils = "^1.5.0"
 hier-config = "^3.2.2"
 nautobot-capacity-metrics = ">=4.0.0,<5.0.0"
 xmldiff = "^2.6.3"
+# Used for local development
 nautobot = ">=3.0.0,<4.0.0"
 
 [tool.poetry.group.dev.dependencies]

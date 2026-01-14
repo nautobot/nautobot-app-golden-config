@@ -1,0 +1,5 @@
+[
+  {
+    "fields": ["id", "name", "active", "values", "meta"]
+  }
+]

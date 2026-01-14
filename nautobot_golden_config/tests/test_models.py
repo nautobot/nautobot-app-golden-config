@@ -1,6 +1,9 @@
 """Unit tests for nautobot_golden_config models."""
 
-from unittest.mock import patch
+import json
+import pathlib
+from typing import Any
+from unittest.mock import MagicMock, patch
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
@@ -11,13 +14,17 @@ from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, St
 
 from nautobot_golden_config.choices import RemediationTypeChoice
 from nautobot_golden_config.models import (
+    ApiRemediation,
     ConfigCompliance,
     ConfigPlan,
     ConfigRemove,
     ConfigReplace,
+    DictKey,
     GoldenConfigSetting,
     RemediationSetting,
+    _create_deepdiff_object,
     _get_hierconfig_remediation,
+    _wrap_dict_keys,
 )
 from nautobot_golden_config.tests.conftest import create_git_repos
 
@@ -30,6 +37,8 @@ from .conftest import (
     create_job_result,
     create_saved_queries,
 )
+
+# pylint: disable=protected-access
 
 
 class ConfigComplianceModelTestCase(TestCase):
@@ -734,3 +743,189 @@ class GetHierConfigRemediationTestCase(TestCase):
         mock_get_hconfig.assert_called_once()
         # WorkflowRemediation should never be called since get_hconfig raises exception
         mock_workflow_remediation.assert_not_called()
+
+
+def load_fixture(filename: str) -> Any:
+    """Load a JSON fixture from a file.
+
+    Args:
+        filename (str): Path to the JSON file.
+
+    Returns:
+        Any: The loaded JSON data.
+    """
+    with pathlib.Path(filename).open(encoding="utf-8") as f:
+        return json.load(fp=f)
+
+
+class TestDictKey(TestCase):
+    """Test cases for the DictKey class."""
+
+    def test_str_and_repr(self):
+        k = DictKey("foo")
+        self.assertEqual(str(k), "foo")
+        self.assertEqual(repr(k), "DictKey('foo')")
+
+
+class TestWrapDictKeys(TestCase):
+    """Test cases for the _wrap_dict_keys function."""
+
+    def test_wrap_dict_keys(self):
+        obj = {"a": 1, "b": {"c": 2}, "d": [3, {"e": 4}]}
+        wrapped = _wrap_dict_keys(obj)
+        # Check top-level keys are DictKey
+        self.assertTrue(all(isinstance(k, DictKey) for k in wrapped.keys()))
+        # Check nested dict keys are DictKey
+        self.assertTrue(all(isinstance(k, DictKey) for k in wrapped[DictKey("b")].keys()))
+        # Check list elements are preserved
+        self.assertEqual(wrapped[DictKey("d")][0], 3)
+        self.assertTrue(isinstance(wrapped[DictKey("d")][1], dict))
+        self.assertTrue(isinstance(list(wrapped[DictKey("d")][1].keys())[0], DictKey))
+
+
+class TestCreateDeepDiffObject(TestCase):
+    """Test cases for the _create_deepdiff_object function."""
+
+    def test_deepdiff_object(self):
+        a = {"foo": 1, "bar": 2}
+        b = {"foo": 1, "bar": 3}
+        dd = _create_deepdiff_object(a, b)
+        self.assertIn("values_changed", dd)
+
+
+class TestApiRemediation(TestCase):
+    """Test ApiRemediation class using mocks and fixture files."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.base_fixtures_path = "nautobot_golden_config/tests/fixtures/remediation/"
+        cls.dict_intended_config = load_fixture(filename=f"{cls.base_fixtures_path}dict_intended_config.json")
+        cls.dict_actual_config = load_fixture(filename=f"{cls.base_fixtures_path}dict_actual_config.json")
+        cls.list_intended_config = load_fixture(filename=f"{cls.base_fixtures_path}list_intended_config.json")
+        cls.list_actual_config = load_fixture(filename=f"{cls.base_fixtures_path}list_actual_config.json")
+        cls.dict_config_context = load_fixture(filename=f"{cls.base_fixtures_path}dict_config_context.json")
+        cls.list_config_context = load_fixture(filename=f"{cls.base_fixtures_path}list_config_context.json")
+        super().setUpClass()
+
+    def setUp(self):
+        rule = MagicMock()
+        rule.feature.name = "feature"
+        rule.config_type = "json"
+        device = MagicMock()
+        device.get_config_context.return_value = {"feature_remediation": self.dict_config_context}
+        compliance_obj = MagicMock()
+        compliance_obj.rule = rule
+        compliance_obj.device = device
+        compliance_obj.intended = self.dict_intended_config
+        compliance_obj.actual = self.dict_actual_config
+        self.compliance_obj = compliance_obj
+        self.api = ApiRemediation(self.compliance_obj)
+
+    def test_dict_remediation_delta(self):
+        api = ApiRemediation(compliance_obj=self.compliance_obj)
+        payload = api.api_remediation()
+        self.assertTrue(isinstance(payload, str))
+        if payload:
+            data = json.loads(payload)
+            self.assertIn("feature", data)
+            self.assertIsInstance(data["feature"], dict)
+
+    def test_list_remediation_delta(self):
+        rule = MagicMock()
+        rule.feature.name = "feature"
+        rule.config_type = "json"
+        device = MagicMock()
+        device.get_config_context.return_value = {"feature_remediation": self.list_config_context}
+        compliance_obj = MagicMock()
+        compliance_obj.rule = rule
+        compliance_obj.device = device
+        compliance_obj.intended = self.list_intended_config
+        compliance_obj.actual = self.list_actual_config
+        self.compliance_obj = compliance_obj
+        api = ApiRemediation(compliance_obj=self.compliance_obj)
+        payload = api.api_remediation()
+        self.assertTrue(isinstance(payload, str))
+        if payload:
+            data = json.loads(payload)
+            self.assertIn("feature", data)
+            self.assertIsInstance(data["feature"], list)
+
+    def test_clean_diff(self):
+        a = {"feature": {"x": 1, "y": 0}}
+        b = {"feature": {"x": 1, "y": 2}}
+        dd = _create_deepdiff_object(a, b)
+        cleaned = self.api._clean_diff(dd)
+        self.assertIn("feature", cleaned)
+        self.assertIn("y", cleaned["feature"])
+
+    def test_api_remediation_delta(self):
+        payload = self.api.api_remediation()
+        # Should be a JSON string with only changed fields
+        if payload:
+            data = json.loads(payload)
+            self.assertIn("feature", data)
+            # The actual changed fields depend on the fixture content
+            self.assertIsInstance(data["feature"], dict)
+
+    def test_dict_remediation_full_intended(self):
+        # If remediate_full_intended is True, should return full intended config
+        rule = MagicMock()
+        rule.feature.name = "feature"
+        rule.config_type = "json"
+        device = MagicMock()
+        device.get_config_context.return_value = {"remediate_full_intended": True}
+        compliance_obj = MagicMock()
+        compliance_obj.rule = rule
+        compliance_obj.device = device
+        compliance_obj.intended = self.dict_intended_config
+        compliance_obj.actual = self.dict_actual_config
+        api = ApiRemediation(compliance_obj)
+        payload = api.api_remediation()
+        self.assertEqual(json.loads(payload), self.dict_intended_config)
+
+    def test_list_remediation_full_intended(self):
+        # If remediate_full_intended is True, should return full intended config
+        rule = MagicMock()
+        rule.feature.name = "feature"
+        rule.config_type = "json"
+        device = MagicMock()
+        device.get_config_context.return_value = {"remediate_full_intended": True}
+        compliance_obj = MagicMock()
+        compliance_obj.rule = rule
+        compliance_obj.device = device
+        compliance_obj.intended = self.list_intended_config
+        compliance_obj.actual = self.list_actual_config
+        api = ApiRemediation(compliance_obj)
+        payload = api.api_remediation()
+        self.assertEqual(json.loads(payload), self.list_intended_config)
+
+    def test_api_remediation_no_context(self):
+        rule = MagicMock()
+        rule.feature.name = "feature"
+        rule.config_type = "json"
+        device = MagicMock()
+        device.get_config_context.return_value = {}
+        compliance_obj = MagicMock()
+        compliance_obj.rule = rule
+        compliance_obj.device = device
+        compliance_obj.intended = {"feature": {"x": 1}}
+        compliance_obj.actual = {"feature": {"x": 0}}
+        api = ApiRemediation(compliance_obj)
+        with self.assertRaises(ValidationError):
+            api.api_remediation()
+
+    def test_api_remediation_no_diff(self):
+        # Should return empty string if no diff
+        rule = MagicMock()
+        rule.feature.name = "feature"
+        rule.config_type = "json"
+        device = MagicMock()
+        device.get_config_context.return_value = {"feature_remediation": self.dict_config_context}
+        compliance_obj = MagicMock()
+        compliance_obj.rule = rule
+        compliance_obj.device = device
+        compliance_obj.intended = {"feature": {"x": 1}}
+        compliance_obj.actual = {"feature": {"x": 1}}
+        api = ApiRemediation(compliance_obj)
+        payload = api.api_remediation()
+        self.assertEqual(payload, "")

@@ -1,0 +1,37 @@
+{
+  "feature": [
+    {
+      "id": 1,
+      "name": "alpha",
+      "active": false,
+      "values": [1, 2],
+      "meta": {
+        "score": 9.5,
+        "tags": ["a", "b", "x"],
+        "extra": null
+      }
+    },
+    {
+      "id": 2,
+      "name": "beta",
+      "active": false,
+      "values": [4, 5],
+      "meta": {
+        "score": 6.5,
+        "tags": ["c", "d"],
+        "extra": null
+      }
+    },
+    {
+      "id": 4,
+      "name": "delta",
+      "active": true,
+      "values": [7, 8],
+      "meta": {
+        "score": 1.0,
+        "tags": ["z"],
+        "extra": "new"
+      }
+    }
+  ]
+}

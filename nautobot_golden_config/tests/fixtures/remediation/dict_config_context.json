@@ -1,0 +1,14 @@
+[
+  {
+    "fields": [
+      "param1",
+      "param2",
+      "param3",
+      "nested_dict",
+      "nested_list",
+      "scalar_none",
+      "scalar_float",
+      "scalar_bool"
+    ]
+  }
+]

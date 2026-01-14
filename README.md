@@ -39,18 +39,18 @@ There are many features and capabilities the app provides into the Nautobot ecos
 
 The golden configuration is driven by jobs that run a series of tasks and the result is captured in this overview.
 
-![Overview](https://raw.githubusercontent.com/nautobot/nautobot-app-golden-config/develop/docs/images/ss_golden-overview.png)
+![Overview](https://raw.githubusercontent.com/nautobot/nautobot-app-golden-config/develop/docs/images/ss1_ss_golden-overview_dark.png)
 
 The compliance report provides a high-level overview on the compliance of your network.
-![Compliance Report](https://raw.githubusercontent.com/nautobot/nautobot-app-golden-config/develop/docs/images/ss_compliance-report.png)
+![Compliance Report](https://raw.githubusercontent.com/nautobot/nautobot-app-golden-config/develop/docs/images/ss1_ss_compliance-report_dark.png)
 
 The compliance overview will provide a per device and feature overview on the compliance of your network devices.
-![Compliance Overview](https://raw.githubusercontent.com/nautobot/nautobot-app-golden-config/develop/docs/images/ss_compliance-overview.png)
+![Compliance Overview](https://raw.githubusercontent.com/nautobot/nautobot-app-golden-config/develop/docs/images/ss1_ss_compliance-overview_dark.png)
 
 Drilling into a specific device and feature, you can get an immediate detailed understanding of your device.
-![Compliance Device](https://raw.githubusercontent.com/nautobot/nautobot-app-golden-config/develop/docs/images/ss_compliance-device.png)
+![Compliance Device](https://raw.githubusercontent.com/nautobot/nautobot-app-golden-config/develop/docs/images/ss1_ss_compliance-device_dark.png)
 
-![Compliance Rule](https://raw.githubusercontent.com/nautobot/nautobot-app-golden-config/develop/docs/images/ss_compliance-rule.png)
+![Compliance Rule](https://raw.githubusercontent.com/nautobot/nautobot-app-golden-config/develop/docs/images/ss1_ss_compliance-rule_dark.png)
 
 ## Try it out!
 

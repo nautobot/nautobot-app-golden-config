@@ -265,8 +265,10 @@ The golden configuration is driven by jobs that run a series of tasks and the re
 ![Overview](../images/ss1_ss_golden-overview_dark.png#only-dark){ .on-glb }
 
 The compliance report provides a high-level overview on the compliance of your network.
-![Compliance Report](../images/ss1_ss_compliance-report_light.png#only-light){ .on-glb }
-![Compliance Report](../images/ss1_ss_compliance-report_dark.png#only-dark){ .on-glb }
+![Compliance Report](../images/ss1_ss_compliance-report_1_light.png#only-light){ .on-glb }
+![Compliance Report](../images/ss1_ss_compliance-report_1_dark.png#only-dark){ .on-glb }
+![Compliance Report](../images/ss1_ss_compliance-report_2_light.png#only-light){ .on-glb }
+![Compliance Report](../images/ss1_ss_compliance-report_2_dark.png#only-dark){ .on-glb }
 
 The compliance overview will provide a per device and feature overview on the compliance of your network devices.
 ![Compliance Overview](../images/ss1_ss_compliance-overview_light.png#only-light){ .on-glb }

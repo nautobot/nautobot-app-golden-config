@@ -3,7 +3,6 @@
 import json
 import logging
 import os
-from collections import deque
 from dataclasses import dataclass
 from typing import Any
 
@@ -242,46 +241,109 @@ def _get_hierconfig_remediation(obj):
     return remediation_config
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class DictKey:
     """Dict key dataclass.
 
+    A wrapper class for dictionary keys to enable custom behavior or identification.
+    Primarily used to distinguish dictionary keys with list indexes.
+
     Attrs:
-        key (Any): The key.
+        key (Any): The dictionary key.
     """
 
     key: Any
+
+    def __str__(self) -> str:
+        """Return the string representation of the key.
+
+        Returns:
+            str: The string representation of the key.
+        """
+        return str(self.key)
+
+    def __repr__(self) -> str:
+        """Return the official string representation of the DictKey.
+
+        Returns:
+            str: The official string representation of the DictKey.
+        """
+        return f"DictKey({self.key!r})"
+
+
+def _wrap_dict_keys(obj: list[Any] | dict[Any, Any]) -> list[Any] | dict[Any, Any]:
+    """Recursively walk dicts and lists and wrap *only* dict keys as DictKey(key=<original>).
+
+    Scalars are returned unchanged.
+
+    Args:
+        obj (list[Any] | dict[Any, Any]): The object to wrap.
+
+    Returns:
+        list[Any] | dict[Any, Any]: The object with dict keys wrapped as DictKey, or the original scalar.
+    """
+    if isinstance(obj, dict):
+        return {DictKey(k): _wrap_dict_keys(v) for k, v in obj.items()}
+
+    if isinstance(obj, list):
+        return [_wrap_dict_keys(x) for x in obj]
+    return obj
+
+
+def _create_deepdiff_object(actual: list[Any] | dict[Any, Any], intended: list[Any] | dict[Any, Any]) -> DeepDiff:
+    """Create a DeepDiff object.
+
+    Args:
+        actual (list[Any] | dict[Any, Any]): Actual configuration.
+        intended (list[Any] | dict[Any, Any]): Intended configuration.
+
+    Returns:
+        DeepDiff: DeepDiff object representing the differences.
+    """
+    dd = DeepDiff(
+        t1=actual,
+        t2=intended,
+        view="tree",
+        verbose_level=2,
+    )
+    return dd
 
 
 class ApiRemediation:  # pylint: disable=too-few-public-methods
     """Remediation class for controllers."""
 
+    _DEEPCONFIG_CHANGE_TYPES: tuple[str, ...] = (
+        "values_changed",
+        "dictionary_item_added",
+        "iterable_item_added",
+    )
+
     def __init__(
         self,
         compliance_obj,
     ) -> None:
-        """Controller remediation.
+        """Initialize controller remediation.
 
         Args:
             compliance_obj (ConfigCompliance): Golden Config Compliance object.
         """
         self.compliance_obj = compliance_obj
         self.feature_name: str = compliance_obj.rule.feature.name.lower()
-        self.intended_config: dict[str, Any] = compliance_obj.intended
-        self.backup_config: dict[str, Any] = compliance_obj.actual
+        self.intended_config: dict[str, Any] | str = compliance_obj.intended
+        self.backup_config: dict[str, Any] | str = compliance_obj.actual
 
-    def _filter_allowed_params(
+    def _filter_allowed_params(  # pylint: disable=too-many-branches
         self,
         feature_name: str,
         config: dict[str, Any],
-        config_context: dict[str, Any] | None,
+        config_context: list[dict[str, Any]] | None,
     ) -> dict[str, Any]:
         """Filter allowed parameters and remove unwanted parameters.
 
         Args:
             feature_name (str): Compliance feature name.
-            config (Optional[dict[str, Any]]): Intended or actual config.
-            config_context (ConfigContext): Device config context.
+            config (dict[str, Any]): Intended or actual config.
+            config_context (list[dict[str, Any]] | None): Device config context.
 
         Returns:
             dict[str, Any]: Filtered config.
@@ -294,16 +356,23 @@ class ApiRemediation:  # pylint: disable=too-few-public-methods
                 return {}
             endpoint_fields.extend(endpoint["fields"])
 
-        if isinstance(config[feature_name], dict):
+        feature_value: Any = config.get(feature_name)
+
+        if feature_value is None:
+            return {}
+
+        if isinstance(feature_value, dict):
             valid_payload_config: dict[str, Any] = {feature_name: {}}
-            for key, value in config[feature_name].items():
+            for key, value in feature_value.items():
                 if key in endpoint_fields:
                     valid_payload_config[feature_name][key] = value
             return valid_payload_config
 
-        if isinstance(config[feature_name], list):
+        if isinstance(feature_value, list):
             valid_payload_config: dict[str, Any] = {feature_name: []}
-            for item in config[feature_name]:
+            for item in feature_value:
+                if not isinstance(item, dict):
+                    continue
                 params_dict = {}
                 for key, value in item.items():
                     if key in endpoint_fields:
@@ -313,241 +382,178 @@ class ApiRemediation:  # pylint: disable=too-few-public-methods
             return valid_payload_config
         return {}
 
+    def _prune_empty_containers(self, obj: list[Any] | dict[Any, Any]) -> list[Any] | dict[Any, Any]:
+        """Recursively remove empty dicts/lists while preserving None.
+
+        This is appropriate for API payload generation where `None` (JSON null) is a valid value.
+
+        Args:
+            obj (list[Any] | dict[Any, Any]): Arbitrary nested structure.
+
+        Returns:
+            list[Any] | dict[Any, Any]: Structure with empty dict/list containers removed; None preserved.
+        """
+        if isinstance(obj, dict):
+            cleaned: dict[Any, Any] = {}
+            for k, v in obj.items():
+                cv = self._prune_empty_containers(v)
+                if cv not in ({}, []):
+                    cleaned[k] = cv
+            return cleaned
+
+        if isinstance(obj, list):
+            cleaned_list = [self._prune_empty_containers(x) for x in obj]
+            cleaned_list = [x for x in cleaned_list if x not in ({}, [])]
+            return cleaned_list or []
+
+        return obj
+
     def _process_diff(  # pylint: disable=too-many-branches
         self,
         diff: dict[Any, Any],
-        path: tuple[str, ...],
-        value: str,
+        path: tuple[Any, ...],
+        value: Any,
     ) -> None:
-        """Process the diff.
+        """Populate a nested delta structure given a DeepDiff path and value.
+
+        This method walks the supplied path tokens and creates intermediate dicts/lists
+        as required, then sets the final leaf node to `value`.
 
         Args:
-            diff (dict[Any, Any]): Diff dictionary.
-            path (tuple[str, ...]): Path of dictionary keys.
-            value (str): The key's value.
+            diff (dict[Any, Any]): Delta dictionary being populated.
+            path (tuple[Any, ...]): Path tokens (DictKey, str, or int list indices).
+            value (Any): Value to assign at the leaf path.
 
         Raises:
-            TypeError: If an unexpected type is encountered.
+            TypeError: If an unexpected container type is encountered during traversal.
         """
-        current = diff
+        cur: Any = diff
 
-        for i, key in enumerate(path):
-            is_last = i == len(path) - 1
-            next_key = path[i + 1] if not is_last else None
+        for i, raw_key in enumerate(path):
+            is_last: bool = i == len(path) - 1
+            next_key = None if is_last else path[i + 1]
 
-            if isinstance(key, DictKey):
-                dict_key: Any = key.key
+            key = raw_key.key if isinstance(raw_key, DictKey) else raw_key
+
+            if isinstance(key, int):
+                if not isinstance(cur, list):
+                    err_msg: str = f"Expected list at path[{i}] (index {key}), got {type(cur)}"
+                    raise TypeError(err_msg)
+
+                while len(cur) <= key:
+                    cur.append(None)
+
                 if is_last:
-                    current[dict_key] = value
-                else:
-                    if dict_key not in current:
-                        current[dict_key] = [] if isinstance(next_key, int) else {}
-                    current = current[dict_key]
-            elif isinstance(key, (str, float)):
-                if is_last:
-                    current[key] = value
-                else:
-                    if key not in current:
-                        current[key] = [] if isinstance(next_key, int) else {}
-                    current = current[key]
+                    cur[key] = value
+                    return
 
-            elif isinstance(key, int):
-                # current must be a list
-                if not isinstance(current, list):
-                    exc_msg: str = f"Expected list at index {i}, got {type(current)}"
-                    raise TypeError(exc_msg)
-                while len(current) <= key:
-                    current.append({})
-                if is_last:
-                    current[key] = value
-                else:
-                    if not isinstance(current[key], (dict, list)):
-                        current[key] = [] if isinstance(next_key, int) else {}
-                    current = current[key]
+                if cur[key] is None or not isinstance(cur[key], (dict, list)):
+                    cur[key] = [] if isinstance(next_key, int) else {}
 
-            else:
-                exc_msg: str = f"Unsupported key type: {key}"
-                raise TypeError(exc_msg)
-
-    def _dict_config(  # pylint: disable=too-many-arguments
-        self,
-        intended: dict[Any, Any],
-        actual: dict[Any, Any],
-        diff: dict[Any, Any],
-        path: tuple[Any],
-        stack: deque[tuple[tuple[str, ...], Any, Any]],
-    ) -> None:
-        """Dictionary config.
-
-        Args:
-            intended (dict[Any, Any]): Intended config.
-            actual (dict[Any, Any]): Actual config.
-            diff (dict[Any, Any]): Diff dictionary.
-            path (tuple[Any]): Path of keys.
-            stack (deque[Tuple[Tuple[str, ...], Any, Any]]): Stack of tuples.
-        """
-        for key, value in intended.items():
-            if isinstance(value, dict):
-                stack.append(
-                    (
-                        path + (DictKey(key=key),),
-                        actual.get(key, {}),
-                        value,
-                    ),
-                )
-                self._dict_config(
-                    intended=value,
-                    actual=actual.get(key, {}),
-                    diff=diff,
-                    path=path + (DictKey(key=key),),
-                    stack=stack,
-                )
-            elif isinstance(value, list):
-                stack.append(
-                    (
-                        path + (DictKey(key=key),),
-                        actual.get(key, []),
-                        value,
-                    ),
-                )
-                self._list_config(
-                    intended=value,
-                    actual=actual.get(key, []),
-                    diff=diff,
-                    path=path + (DictKey(key=key),),
-                    stack=stack,
-                )
-            elif isinstance(value, (str, int, float, bool)):
-                if key not in actual:
-                    self._process_diff(
-                        diff=diff,
-                        path=path + (DictKey(key=key),),
-                        value=value,
-                    )
-                else:
-                    self._str_int_float_config(
-                        intended=value,
-                        actual=actual.get(key, ""),
-                        diff=diff,
-                        path=path + (DictKey(key=key),),
-                    )
-
-    def _list_config(  # pylint: disable=too-many-arguments
-        self,
-        intended: list[Any],
-        actual: list[Any],
-        diff: dict[Any, Any],
-        path: tuple[Any],
-        stack: deque[tuple[tuple[str, ...], Any, Any]],
-    ) -> None:
-        """List config.
-
-        Args:
-            intended (list[Any]): Intended config.
-            actual (list[Any]): Actual config.
-            required_params (list[Any]): Required parameters.
-            diff (dict[Any, Any]): Diff dictionary.
-            path (tuple[Any]): Path of keys.
-            stack (deque[Tuple[Tuple[str, ...], Any, Any]]): Stack of tuples.
-        """
-        for index, intended_item in enumerate(intended):
-            if index >= len(actual):
-                self._process_diff(
-                    diff=diff,
-                    path=path + (index,),
-                    value=intended_item,
-                )
+                cur = cur[key]
                 continue
-            try:
-                actual_item = actual[index]
-            except IndexError:
-                actual_item = None
 
-            if isinstance(intended_item, dict):
-                stack.append((path + (index,), actual_item, intended_item))
-                self._dict_config(
-                    intended=intended_item,
-                    actual=actual_item if isinstance(actual_item, dict) else {},
-                    diff=diff,
-                    path=path + (index,),
-                    stack=stack,
-                )
-            elif isinstance(intended_item, list):
-                stack.append((path + (index,), actual_item, intended_item))
-                self._list_config(
-                    intended=intended_item,
-                    actual=actual_item if isinstance(actual_item, list) else [],
-                    diff=diff,
-                    path=path + (index,),
-                    stack=stack,
-                )
-            else:
-                self._str_int_float_config(
-                    intended=intended_item,
-                    actual=actual_item if isinstance(actual_item, (str, int, float, bool)) else "",
-                    diff=diff,
-                    path=path + (index,),
-                )
+            if isinstance(key, (str, float)):
+                if not isinstance(cur, dict):
+                    err_msg: str = f"Expected dict at path[{i}] (key {key!r}), got {type(cur)}"
+                    raise TypeError(err_msg)
 
-    def _str_int_float_config(
-        self,
-        intended: str,
-        actual: str,
-        diff: dict[Any, Any],
-        path: tuple[Any],
-    ) -> None:
-        """Str config.
+                if is_last:
+                    cur[key] = value
+                    return
+
+                if key not in cur or not isinstance(cur[key], (dict, list)):
+                    cur[key] = [] if isinstance(next_key, int) else {}
+
+                cur = cur[key]
+                continue
+
+            err_msg: str = f"Unsupported key type at path[{i}]: {type(key)} ({key!r})"
+            raise TypeError(err_msg)
+
+    def _apply_deepdiff_changes(self, delta: dict[Any, Any], changes: list[Any]) -> None:
+        """Apply DeepDiff change objects onto the delta payload using intended-side values (t2).
 
         Args:
-            intended (str): Intended config.
-            actual (str): Actual config.
-            diff (dict[Any, Any]): Diff dictionary.
-            path (tuple[Any]): Path of keys.
+            delta (dict[Any, Any]): Delta payload being constructed.
+            changes (list[Any]): DeepDiff tree change objects.
         """
-        if actual != intended:
-            self._process_diff(diff=diff, path=path, value=intended)
+        for change in changes:
+            if not hasattr(change, "t2"):
+                continue
 
-    def _clean_diff(self, diff: list[Any] | dict[Any, Any]) -> dict[Any, Any]:
-        """Recursively remove empty dicts/lists in diff.
+            if not hasattr(change, "path"):
+                continue
+
+            try:
+                tokens = change.path(output_format="list")
+            except (TypeError, AttributeError):
+                continue
+
+            if tokens and tokens[0] == "root":
+                tokens = tokens[1:]
+
+            self._process_diff(
+                diff=delta,
+                path=tuple(tokens),
+                value=change.t2,
+            )
+
+    def _clean_diff(self, diff: Any) -> list[Any] | dict[Any, Any]:
+        """Convert DeepDiff(tree) into an intended-shaped delta, then prune empty containers.
+
+        If `diff` resembles DeepDiff(tree) output, a delta is built from intended-side values (t2).
+        Otherwise, the object is only pruned for empty dict/list containers.
+
+        None values are preserved because they are meaningful in API payloads.
 
         Args:
-            diff (Union[list[Any], dict[Any, Any]]): Diff dictionary.
+            diff (Any): DeepDiff(tree) result or empty dictionary.
 
         Returns:
-            dict[Any, Any]: Cleaned diff dictionary.
+            list[Any] | dict[Any, Any]: Intended-shaped delta with empty containers removed (None preserved).
         """
-        if isinstance(diff, dict):
-            cleaned = {}
-            for k, v in diff.items():
-                cleaned_value = self._clean_diff(diff=v)
-                if cleaned_value not in ({}, [], None):
-                    cleaned[k] = cleaned_value
-            return cleaned
+        if not isinstance(diff, dict):
+            return self._prune_empty_containers(obj=diff)
 
-        if isinstance(diff, list):
-            cleaned = [self._clean_diff(item) for item in diff]
-            cleaned = [item for item in cleaned if item not in ({}, [], None)]
-            return cleaned or []
+        if not any(k in diff for k in self._DEEPCONFIG_CHANGE_TYPES):
+            return self._prune_empty_containers(obj=diff)
 
-        return diff
+        delta: dict[Any, Any] = {}
+        for change_type in self._DEEPCONFIG_CHANGE_TYPES:
+            self._apply_deepdiff_changes(delta=delta, changes=diff.get(change_type, []) or [])
+        return self._prune_empty_containers(obj=delta)
 
-    def controller_remediation(self) -> str:
-        """Controller remediation.
+    def api_remediation(self) -> str:
+        """Generate the remediation payload for the current feature.
+
+        Workflow:
+        1. Load device config context and honor the "remediate_full_intended" flag.
+        2. Filter intended/actual configs down to the fields allowed by the remediation context.
+        3. Wrap dictionary keys with DictKey to preserve dict-key semantics in DeepDiff paths.
+        4. Compute DeepDiff(tree) between actual (t1) and intended (t2).
+        5. Convert DeepDiff output into an intended-shaped delta via `_clean_diff`.
+        6. Return the remediation payload as JSON.
 
         Raises:
-            ValidationError: Intended or Actual does not have the feature name as the top level key.
+            ValidationError: If remediation context is missing or intended/actual cannot be filtered.
 
         Returns:
-            str: Remediation config.
+            str: JSON remediation payload (delta), or an empty string when there are no differences.
         """
         config_context: dict[str, Any] = self.compliance_obj.device.get_config_context()
-        if config_context.get("remediate_full_intended"):
+        try:
+            if isinstance(self.backup_config, str):
+                self.backup_config = json.loads(self.backup_config)
             if isinstance(self.intended_config, str):
-                self.intended_config: dict[Any, Any] = json.loads(self.intended_config)
-            return json.dumps(
-                obj=self.intended_config,
-                indent=4,
-            )
+                self.intended_config = json.loads(self.intended_config)
+        except json.JSONDecodeError as exc:
+            err_msg: str = f"Invalid JSON config: {exc}"
+            raise ValidationError(err_msg) from exc
+
+        if config_context.get("remediate_full_intended"):
+            return json.dumps(obj=self.intended_config, indent=4)
+
         intended: list[Any] | dict[Any, Any] = self._filter_allowed_params(
             feature_name=self.feature_name,
             config=self.intended_config,
@@ -558,47 +564,27 @@ class ApiRemediation:  # pylint: disable=too-few-public-methods
             config=self.backup_config,
             config_context=config_context.get(f"{self.feature_name}_remediation"),
         )
+
         if not actual or not intended:
-            exc_msg: str = "There was no config context passed."
-            raise ValidationError(exc_msg)
-        diff: dict[str, Any] = {}
-        stack: deque[tuple[tuple[str, ...], Any, Any]] = deque()
-        stack.append((tuple(), actual, intended))
+            err_msg: str = "There was no config context fields that matched the intended or actual configuration."
+            raise ValidationError(err_msg)
 
-        while stack:
-            path, actual, intended = stack.pop()
+        dict_key_intended: list[Any] | dict[Any, Any] = _wrap_dict_keys(obj=intended)
+        dict_key_actual: list[Any] | dict[Any, Any] = _wrap_dict_keys(obj=actual)
 
-            if isinstance(actual, dict) and isinstance(intended, dict):
-                self._dict_config(
-                    intended=intended,
-                    actual=actual,
-                    diff=diff,
-                    path=path,
-                    stack=stack,
-                )
+        dd: DeepDiff = _create_deepdiff_object(
+            actual=dict_key_actual,
+            intended=dict_key_intended,
+        )
 
-            elif isinstance(actual, list) and isinstance(intended, list):
-                self._list_config(
-                    intended=intended,
-                    actual=actual,
-                    diff=diff,
-                    path=path,
-                    stack=stack,
-                )
-            else:
-                self._str_int_float_config(
-                    intended=intended,
-                    actual=actual,
-                    diff=diff,
-                    path=path,
-                )
-
-        if not diff:
+        if not dd:
             return ""
-        if not diff.get(self.feature_name):
-            exc_msg: str = f"No differences found for feature {self.feature_name}."
-            raise ValidationError(exc_msg)
-        cleaned_diff: dict[Any, Any] = self._clean_diff(diff=diff)
+
+        cleaned_diff: list[Any] | dict[Any, Any] = self._clean_diff(diff=dd)
+
+        if not cleaned_diff:
+            return ""
+
         return json.dumps(cleaned_diff, indent=4)
 
 
@@ -612,7 +598,7 @@ def _get_api_remediation(obj) -> str:
         str: The remediation configuration as a string.
     """
     json_controller = ApiRemediation(compliance_obj=obj)
-    return json_controller.controller_remediation()
+    return json_controller.api_remediation()
 
 
 # The below maps the provided compliance types

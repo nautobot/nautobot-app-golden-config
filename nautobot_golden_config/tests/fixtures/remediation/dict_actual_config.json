@@ -1,0 +1,37 @@
+{
+  "feature": {
+    "param1": "value1",
+    "param2": "DIFFERENT",
+    "param4": "extra",
+    "nested_dict": {
+      "a": 1,
+      "b": false,
+      "c": null,
+      "d": 2.71,
+      "e": [
+        { "x": "foo", "y": 10 },
+        { "x": "baz", "y": 99 }
+      ]
+    },
+    "nested_list": [
+      {
+        "id": 1,
+        "values": [1, 2, 3],
+        "flag": false
+      },
+      {
+        "id": 2,
+        "values": [4, 5],
+        "flag": false
+      },
+      {
+        "id": 3,
+        "values": [],
+        "flag": true
+      }
+    ],
+    "scalar_none": null,
+    "scalar_float": 2.718,
+    "scalar_bool": true
+  }
+}

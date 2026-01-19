@@ -49,8 +49,8 @@ For more advanced use cases, the form accepts an optional "GraphQL Query" to spe
 
 Starting in Nautobot v2.4.2, this UI also allows you to supply a "Git Repository Branch" to specify the branch of the Jinja2 templates Git repository to use when rendering the configuration. If the branch is not provided, the configured branch of the Golden Config Setting's Jinja template Git repository will be used.
 
-![Intended Configuration Web UI](../images/generate-intended-config-ui.png#only-light)
-![Intended Configuration Web UI](../images/generate-intended-config-ui-dark.png#only-dark)
+![Intended Configuration Web UI](../images/ss1_generate-intended-config-ui_light.png#only-light)
+![Intended Configuration Web UI](../images/ss1_generate-intended-config-ui_dark.png#only-dark)
 
 #### REST API
 

@@ -77,5 +77,5 @@ If the Config Plan has post processing functions, you can render the post proces
 
 Post Processing occurs in a modal popup, and allows a user to view the configuration before approving the Config Plan.
 
-![Intended Configuration Web UI](../images/config_plan_pp-rendered.png#only-light){ .on-glb }
-![Intended Configuration Web UI](../images/config_plan_pp-rendered-dark.png#only-dark){ .on-glb }
+![Intended Configuration Web UI](../images/ss1_config_plan_pp-rendered_light.png#only-light){ .on-glb }
+![Intended Configuration Web UI](../images/ss1_config_plan_pp-rendered_dark.png#only-dark){ .on-glb }

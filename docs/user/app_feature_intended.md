@@ -36,7 +36,8 @@ or
 
     This is how the [demo instance](https://demo.nautobot.com) of Nautobot handles the configuration of Golden Config. This may be one recommended method for you to set up Golden Configuration. In the configuration of [Golden Config settings](https://demo.nautobot.com/plugins/golden-config/golden-config-setting/c5c257d0-906d-4790-9e80-030d8231b738/?tab=main) which you get to by navigating to the top menu, expanding **Golden Config**, selecting **Golden Config Settings**. Then select the **Default Settings** option. You now see all of the options that are used to configure the application. Then on the right hand side in the **Templates Configuration** section you can set the entrypoint of the generating the configuration. This instance uses `{{obj.platform.network_driver}}.j2`. `obj` refers to the Device you are using. `platform` is the platform associated with the device. And `network_driver` refers to the setting of the network driver. 
 
-    ![Golden Config Settings Page](../images/intended-demo-instance.png)
+    ![Golden Config Settings Page](../images/ss1_intended-demo-instance_light.png#only-light){ .on-glb }
+    ![Golden Config Settings Page](../images/ss1_intended-demo-instance_dark.png#only-dark){ .on-glb }
 
     The actual jinja2 file can then be found within the [Git repository for the templates](https://github.com/nautobot/demo-gc-templates).
 
@@ -58,8 +59,8 @@ For more advanced use cases, the form accepts an optional "GraphQL Query" to spe
 
 Starting in Nautobot v2.4.2, this UI also allows you to supply a "Git Repository Branch" to specify the branch of the Jinja2 templates Git repository to use when rendering the configuration. If the branch is not provided, the configured branch of the Golden Config Setting's Jinja template Git repository will be used.
 
-![Intended Configuration Web UI](../images/generate-intended-config-ui.png#only-light)
-![Intended Configuration Web UI](../images/generate-intended-config-ui-dark.png#only-dark)
+![Intended Configuration Web UI](../images/ss1_generate-intended-config-ui_light.png#only-light)
+![Intended Configuration Web UI](../images/ss1_generate-intended-config-ui_dark.png#only-dark)
 
 #### REST API
 

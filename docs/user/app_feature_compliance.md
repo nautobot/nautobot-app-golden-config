@@ -37,16 +37,18 @@ To start a compliance job manually:
 
 ## Configuration Compliance Settings
 
-Configuration compliance requires the Git Repo settings for `config backups` and `intended configs`--which are covered in their respective sections regardless if they are actually managed via the app or not. The same is true for the `Backup Path` and `Intended Path`.
+Configuration compliance requires the Git Repo settings for `config backups` and `intended configs`--which are covered in their respective sections--regardless if they are actually managed via the app or not. The same is true for the `Backup Path` and `Intended Path`.
 
-The Configuration compliance rule map must be created per the operator/user. You can find these configurations via `Golden Config -> Compliance Rules` links, which brings up the specific configurations.
+The Configuration compliance rule map must be created per the operator/user. You can find these configurations via `Golden Config -> Compliance Rules`
+links, which brings up the specific configurations.
 
-![Configuration Rule](../images/navigate-compliance-rules.png)
+![Configuration Rule](../images/ss1_navigate-compliance-rules_light.png#only-light){ .on-glb }
+![Configuration Rule](../images/ss1_navigate-compliance-rules_dark.png#only-dark){ .on-glb }
 
 Each configuration can be added and edits from this table. When editing/adding the configurations, the following should be noted.
 
-![Configuration Rule Edit](../images/ss_compliance-rule.png#only-light)
-![Configuration Rule Edit](../images/ss_compliance-rule-darkui.png#only-dark)
+![Configuration Rule Edit](../images/ss1_ss_compliance-rule_light.png#only-light){ .on-glb }
+![Configuration Rule Edit](../images/ss1_ss_compliance-rule_dark.png#only-dark){ .on-glb }
 
 The platform must refer to a platform with a valid network_driver supported by the configuration compliance engine. While there is no enforcement of this data from
 a database perspective, the job will never run successfully, rendering the additional configuration ineffective.
@@ -70,22 +72,18 @@ For JSON based configs, the match is based on JSON's structure top level key nam
 ## Compliance View
 
 The compliance overview will provide a per device and feature overview on the compliance of your network devices. From here you can navigate to the details view.
-![Compliance Overview](../images/ss_compliance-overview.png#only-light)
-![Compliance Overview](../images/ss_compliance-overview-darkui.png#only-dark)
+![Compliance Overview](../images/ss1_ss_compliance-overview_light.png#only-light){ .on-glb }
+![Compliance Overview](../images/ss1_ss_compliance-overview_dark.png#only-dark){ .on-glb }
 
 ## Compliance Details View
 
 Drilling into a specific device and feature, you can get an immediate detailed understanding of your device.
 
-![Compliance Device](../images/device-compliance.png#only-light)
-![Compliance Device](../images/device-compliance-darkui.png#only-dark)
+![Compliance Device](../images/ss1_device-compliance_light.png#only-light){ .on-glb }
+![Compliance Device](../images/ss1_device-compliance_dark.png#only-dark){ .on-glb }
 
-At the bottom of the image above you see AAA configuration showing as all compliant configuration wise based on the compliance engine.
-
-Below is a non-compliant configuration. This shows the Intended Configuration, Actual Configuration, Missing Configuration, Extra Configuration, and the Remediation Configuration.
-
-![Compliance Rule](../images/compliance-rule-detail.png#only-light)
-![Compliance Rule](../images/compliance-rule-detail-darkui.png#only-dark)
+![Compliance Rule](../images/ss1_compliance-rule-detail_light.png#only-light){ .on-glb }
+![Compliance Rule](../images/ss1_compliance-rule-detail_dark.png#only-dark){ .on-glb }
 
 Please note the following about the compliance details page.
 
@@ -120,5 +118,5 @@ You can configure the columns to limit how much is showing on one screen.
 
 You can get to the device details form either the Compliance details page, or there is a `content_template` on the device model page is Nautobot's core instance.
 
-![Configuration Features](../images/device-detail-compliance.png#only-light)
-![Configuration Features](../images/device-detail-compliance-darkui.png#only-dark)
+![Configuration Features](../images/ss1_device-compliance_light.png#only-light){ .on-glb }
+![Configuration Features](../images/ss1_device-compliance_dark.png#only-dark){ .on-glb }

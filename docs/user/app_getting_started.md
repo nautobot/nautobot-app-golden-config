@@ -92,7 +92,8 @@ Follow the steps below to get up and running for the intended configuration elem
 
     1. Navigate to `Golden Config -> Config Overview`.
     2. Click on the `Execute` button and select `Intended`.
-    ![Generated Intended Configuration](../images/generate-intended-config-ui.png)
+    ![Generated Intended Configuration](../images/ss1_generate-intended-config-ui_light.png#only-light){ .on-glb }
+    ![Generated Intended Configuration](../images/ss1_generate-intended-config-ui_dark.png#only-dark){ .on-glb }
     3. Select what to run the intended generation on.
     4. Run the Job.
 

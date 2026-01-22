@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nautobot-golden-config"
-version = "3.0.0"
+version = "3.0.1"
 description = "An app for configuration on nautobot"
 authors = ["Network to Code, LLC <opensource@networktocode.com>"]
 license = "Apache-2.0"
@@ -40,6 +40,7 @@ netutils = "^1.5.0"
 hier-config = "^3.2.2"
 nautobot-capacity-metrics = ">=4.0.0,<5.0.0"
 xmldiff = "^2.6.3"
+# Used for local development
 nautobot = ">=3.0.0,<4.0.0"
 
 [tool.poetry.group.dev.dependencies]

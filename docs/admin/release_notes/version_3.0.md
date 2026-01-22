@@ -11,6 +11,31 @@ This major release marks the compatibility of the Nautobot Plugin Golden Config 
 - Updated UI framework to use latest Bootstrap 5.3.
 - Changed the charts rendering engine to Apache ECharts.
 
+We will continue to support the previous major release for users of Nautobot LTM 2.4 only with critical bug and security fixes as per the [Software Lifecycle Policy](https://networktocode.com/company/legal/software-lifecycle-policy/).
+
+## [v3.0.1 (2026-01-22)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v3.0.1)
+
+### Fixed
+
+- [#1011](https://github.com/nautobot/nautobot-app-golden-config/issues/1011) - Fixed FAQ for remediation.
+- [#1030](https://github.com/nautobot/nautobot-app-golden-config/issues/1030) - Fixed a bug with Config Plans being deployed despite the cancel button being clicked.
+- [#1041](https://github.com/nautobot/nautobot-app-golden-config/issues/1041) - Fixed compliance filter buttons appearance.
+- [#1050](https://github.com/nautobot/nautobot-app-golden-config/issues/1050) - Added Data Compliance tab on a Golden Config view.
+- [#1051](https://github.com/nautobot/nautobot-app-golden-config/issues/1051) - Improved gc_repo_prep decorator compatibility with Inherited Jobs.
+- [#1055](https://github.com/nautobot/nautobot-app-golden-config/issues/1055) - Fixed permissions for the GC Compliance report view.
+- [#1061](https://github.com/nautobot/nautobot-app-golden-config/issues/1061) - Fixed an issue where Hier Config Remediation Options were not being applied.
+
+### Documentation
+
+- [#1035](https://github.com/nautobot/nautobot-app-golden-config/issues/1035) - Added Demo Instance Methodology section to Intended Configuration documentation showing how the demo instance configures Golden Config settings.
+- [#1045](https://github.com/nautobot/nautobot-app-golden-config/issues/1045) - Updated documentation removing old references and updated a few images with dark mode.
+- [#1062](https://github.com/nautobot/nautobot-app-golden-config/issues/1062) - Updated documentation to include 3.0 screenshots.
+- Sync in LTM release notes into main app documentation.
+
+### Housekeeping
+
+- Rebaked from the cookie `nautobot-app-v3.0.0`.
+
 ## [v3.0.0 (2025-11-17)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v3.0.0)
 
 ### Added

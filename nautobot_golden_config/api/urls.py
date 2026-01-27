@@ -17,6 +17,8 @@ router.register("config-replace", views.ConfigReplaceViewSet)
 router.register("remediation-setting", views.RemediationSettingViewSet)
 router.register("config-postprocessing", views.ConfigToPushViewSet)
 router.register("config-plan", views.ConfigPlanViewSet)
+router.register("config-hash-grouping", views.ConfigHashGroupingViewSet)
+router.register("config-compliance-hash", views.ConfigComplianceHashViewSet)
 
 urlpatterns = [
     path(

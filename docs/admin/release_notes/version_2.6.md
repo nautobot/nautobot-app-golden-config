@@ -10,6 +10,21 @@ This document describes all new features and changes in the release. The format 
 <!-- towncrier release notes start -->
 
 
+## [v2.6.2 (2026-01-28)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v2.6.2)
+
+### Changed
+
+- [#1073](https://github.com/nautobot/nautobot-app-golden-config/issues/1073) - Changed Compliance Rule's "Config to Match" form field to preserve leading spaces to properly match some operating systems.
+
+### Fixed
+
+- [#1053](https://github.com/nautobot/nautobot-app-golden-config/issues/1053) - Fixed various issues with templates and modals.
+- [#1061](https://github.com/nautobot/nautobot-app-golden-config/issues/1061) - Fixed an issue where Hier Config Remediation Options were not being applied.
+
+### Housekeeping
+
+- [#1069](https://github.com/nautobot/nautobot-app-golden-config/issues/1069) - Updated django-debug-toolbar to 4.4.0 to fix import errors.
+
 ## [v2.6.1 (2025-12-16)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v2.6.1)
 
 ### Fixed

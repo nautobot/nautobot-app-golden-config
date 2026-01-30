@@ -1,3 +1,16 @@
+
+
+## [v3.0.2 (2026-01-30)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v3.0.2)
+
+### Changed
+
+- [#1073](https://github.com/nautobot/nautobot-app-golden-config/issues/1073) - Changed Compliance Rule's "Config to Match" form field to preserve leading spaces to properly match some operating systems.
+
+### Dependencies
+
+- Updated the minimum version of netutils to 1.17.0.
+- Updated the minimum version of hier-config to 3.4.1.
+
 # v3.0 Release Notes
 
 This document describes all new features and changes in the release. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).

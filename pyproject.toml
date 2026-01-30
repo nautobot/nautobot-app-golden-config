@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nautobot-golden-config"
-version = "3.0.1"
+version = "3.0.2"
 description = "An app for configuration on nautobot"
 authors = ["Network to Code, LLC <opensource@networktocode.com>"]
 license = "Apache-2.0"
@@ -36,8 +36,8 @@ deepdiff = ">=8.6.1,<9.0.0"
 django-pivot = ">=1.9.0,<1.10.0" # The signature changed to return a non-queryset, do not upgrade without ensuring it returns a queryset
 nautobot-plugin-nornir = ">=3.0.0,<4.0.0"
 toml = "^0.10.2"
-netutils = "^1.5.0"
-hier-config = "^3.2.2"
+netutils = "^1.17.0"
+hier-config = "^3.4.1"
 nautobot-capacity-metrics = ">=4.0.0,<5.0.0"
 xmldiff = "^2.6.3"
 # Used for local development

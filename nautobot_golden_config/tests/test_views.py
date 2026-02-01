@@ -17,7 +17,7 @@ from nautobot.apps.testing import TestCase, ViewTestCases
 from nautobot.core.utils import lookup
 from nautobot.core.views.mixins import PERMISSIONS_ACTION_MAP, NautobotViewSetMixin
 from nautobot.dcim.models import Device
-from nautobot.extras.models import Status
+from nautobot.extras.models import DynamicGroup, Status
 from nautobot.users import models as users_models
 from packaging import version
 
@@ -72,7 +72,7 @@ class ConfigComplianceOverviewHelperTestCase(TestCase):
     @mock.patch.dict("nautobot_golden_config.tables.CONFIG_FEATURES", {"sotagg": True})
     def test_config_compliance_list_view_with_sotagg_enabled(self):
         models.GoldenConfig.objects.create(device=Device.objects.first())
-        request = self.client.get("/plugins/golden-config/golden-config/")
+        request = self.client.get("/plugins/golden-config/golden-config/", headers={"HX-Request": "false"})
         self.assertContains(request, '<span class="mdi mdi-code-json" title="SOT Aggregate Data"></span>')
 
     @mock.patch.dict("nautobot_golden_config.tables.CONFIG_FEATURES", {"sotagg": False})
@@ -158,8 +158,12 @@ class GoldenConfigListViewTestCase(TestCase):
     def setUpTestData(cls):
         """Set up base objects."""
         create_device_data()
-        cls.gc_settings = models.GoldenConfigSetting.objects.first()
-        cls.gc_dynamic_group = cls.gc_settings.dynamic_group
+        cls.gc_dynamic_group = DynamicGroup.objects.create(
+            name="GoldenConfig Default Group",
+            filter={},
+            content_type=ContentType.objects.get_for_model(Device),
+        )
+        cls.gc_settings = models.GoldenConfigSetting.objects.create(dynamic_group=cls.gc_dynamic_group)
         cls.gc_dynamic_group.filter = {"name": [dev.name for dev in Device.objects.all()]}
         cls.gc_dynamic_group.validated_save()
         models.GoldenConfig.objects.create(device=Device.objects.first())
@@ -465,9 +469,14 @@ class ConfigComplianceUIViewSetTestCase(
 
     def test_table_columns(self):
         """Test the columns of the ConfigCompliance table return the expected pivoted data."""
-        response = self.client.get(reverse("plugins:nautobot_golden_config:configcompliance_list"))
+        response = self.client.get(
+            reverse("plugins:nautobot_golden_config:configcompliance_list"), headers={"HX-Request": "false"}
+        )
         expected_table_headers = ["Device", "TestFeature0", "TestFeature1", "TestFeature2", "TestFeature3"]
-        table_headers = re.findall(r'<th class="orderable"><a href=.*>(.+)</a></th>', response.content.decode())
+        table_headers = [
+            h.strip()
+            for h in re.findall(r'<th class="orderable"><a href=[^>]*>([^<]+)</a></th>', response.content.decode())
+        ]
         self.assertEqual(table_headers, expected_table_headers)
 
         # Add a new compliance feature and ensure the table headers update correctly
@@ -482,7 +491,9 @@ class ConfigComplianceUIViewSetTestCase(
             compliance_int=1,
         )
 
-        response = self.client.get(reverse("plugins:nautobot_golden_config:configcompliance_list"))
+        response = self.client.get(
+            reverse("plugins:nautobot_golden_config:configcompliance_list"), headers={"HX-Request": "false"}
+        )
         expected_table_headers = [
             "Device",
             "TestFeature0",
@@ -491,15 +502,23 @@ class ConfigComplianceUIViewSetTestCase(
             "TestFeature3",
             "NewTestFeature",
         ]
-        table_headers = re.findall(r'<th class="orderable"><a href=.*>(.+)</a></th>', response.content.decode())
+        table_headers = [
+            h.strip()
+            for h in re.findall(r'<th class="orderable"><a href=[^>]*>([^<]+)</a></th>', response.content.decode())
+        ]
         self.assertEqual(table_headers, expected_table_headers)
 
         # Remove compliance features and ensure the table headers update correctly
         models.ConfigCompliance.objects.filter(rule__feature__name__in=["TestFeature0", "TestFeature1"]).delete()
 
-        response = self.client.get(reverse("plugins:nautobot_golden_config:configcompliance_list"))
+        response = self.client.get(
+            reverse("plugins:nautobot_golden_config:configcompliance_list"), headers={"HX-Request": "false"}
+        )
         expected_table_headers = ["Device", "TestFeature2", "TestFeature3", "NewTestFeature"]
-        table_headers = re.findall(r'<th class="orderable"><a href=.*>(.+)</a></th>', response.content.decode())
+        table_headers = [
+            h.strip()
+            for h in re.findall(r'<th class="orderable"><a href=[^>]*>([^<]+)</a></th>', response.content.decode())
+        ]
         self.assertEqual(table_headers, expected_table_headers)
 
     def test_bulk_delete_form_contains_all_objects(self):  # pylint: disable=inconsistent-return-statements

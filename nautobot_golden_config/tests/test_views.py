@@ -72,7 +72,7 @@ class ConfigComplianceOverviewHelperTestCase(TestCase):
     @mock.patch.dict("nautobot_golden_config.tables.CONFIG_FEATURES", {"sotagg": True})
     def test_config_compliance_list_view_with_sotagg_enabled(self):
         models.GoldenConfig.objects.create(device=Device.objects.first())
-        request = self.client.get("/plugins/golden-config/golden-config/", headers={"HX-Request": "false"})
+        request = self.client.get("/plugins/golden-config/golden-config/", headers={"HX-Request": "true"})
         self.assertContains(request, '<span class="mdi mdi-code-json" title="SOT Aggregate Data"></span>')
 
     @mock.patch.dict("nautobot_golden_config.tables.CONFIG_FEATURES", {"sotagg": False})
@@ -469,9 +469,7 @@ class ConfigComplianceUIViewSetTestCase(
 
     def test_table_columns(self):
         """Test the columns of the ConfigCompliance table return the expected pivoted data."""
-        response = self.client.get(
-            reverse("plugins:nautobot_golden_config:configcompliance_list"), headers={"HX-Request": "false"}
-        )
+        response = self.client.get(reverse("plugins:nautobot_golden_config:configcompliance_list"))
         expected_table_headers = ["Device", "TestFeature0", "TestFeature1", "TestFeature2", "TestFeature3"]
         table_headers = [
             h.strip()
@@ -491,9 +489,7 @@ class ConfigComplianceUIViewSetTestCase(
             compliance_int=1,
         )
 
-        response = self.client.get(
-            reverse("plugins:nautobot_golden_config:configcompliance_list"), headers={"HX-Request": "false"}
-        )
+        response = self.client.get(reverse("plugins:nautobot_golden_config:configcompliance_list"))
         expected_table_headers = [
             "Device",
             "TestFeature0",
@@ -511,9 +507,7 @@ class ConfigComplianceUIViewSetTestCase(
         # Remove compliance features and ensure the table headers update correctly
         models.ConfigCompliance.objects.filter(rule__feature__name__in=["TestFeature0", "TestFeature1"]).delete()
 
-        response = self.client.get(
-            reverse("plugins:nautobot_golden_config:configcompliance_list"), headers={"HX-Request": "false"}
-        )
+        response = self.client.get(reverse("plugins:nautobot_golden_config:configcompliance_list"))
         expected_table_headers = ["Device", "TestFeature2", "TestFeature3", "NewTestFeature"]
         table_headers = [
             h.strip()

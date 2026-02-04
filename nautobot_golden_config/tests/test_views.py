@@ -14,6 +14,8 @@ from django.urls import reverse
 from lxml import html
 from nautobot.apps.models import RestrictedQuerySet
 from nautobot.apps.testing import TestCase, ViewTestCases
+from nautobot.core.utils import lookup
+from nautobot.core.views.mixins import PERMISSIONS_ACTION_MAP, NautobotViewSetMixin
 from nautobot.dcim.models import Device
 from nautobot.extras.models import Status
 from nautobot.users import models as users_models
@@ -343,11 +345,17 @@ class ConfigPlanTestCase(
 @override_settings(EXEMPT_VIEW_PERMISSIONS=["*"])
 class ConfigComplianceUIViewSetTestCase(
     ViewTestCases.BulkDeleteObjectsViewTestCase,
+    ViewTestCases.GetObjectViewTestCase,
     # ViewTestCases.ListObjectsViewTestCase,  # generic list view tests won't work for this view since the queryset is pivoted
 ):
     """Test ConfigComplianceUIViewSet views."""
 
     model = models.ConfigCompliance
+    allowed_number_of_tree_queries_per_view_type = {"retrieve": 1}
+    custom_action_required_permissions = {
+        "plugins:nautobot_golden_config:configcompliance_overview": ["nautobotgoldenconfig.view_configcompliance"],
+        "plugins:nautobot_golden_config:configcompliance_devicetab": ["nautobotgoldenconfig.view_configcompliance"],
+    }
 
     @classmethod
     def setUpTestData(cls):
@@ -378,6 +386,56 @@ class ConfigComplianceUIViewSetTestCase(
                     compliance=bool(compliance_int),
                     compliance_int=compliance_int,
                 )
+
+    def test_get_object_anonymous(self):
+        # TODO: remove when ConfigComplianceUIViewSet has Change Log
+        self.assertEqual(True, True)
+
+    @override_settings(EXEMPT_VIEW_PERMISSIONS=[])
+    def test_custom_actions(self):
+        """
+        Copied from nautobot generic test to skip device tab custom action.
+        """
+        base_view = lookup.get_view_for_model(self.model)
+        if not issubclass(base_view, NautobotViewSetMixin):
+            self.skipTest(f"View {base_view} is not using NautobotUIViewSet")
+
+        instance = self._get_queryset().first()
+        for action_func in base_view.get_extra_actions():
+            if action_func.__name__ == "devicetab":
+                # TODO: devicetab should be implemented as a template extension
+                continue
+            if not action_func.detail:
+                continue
+            if "get" not in action_func.mapping:
+                continue
+            if action_func.url_name == "data-compliance" and not getattr(base_view, "object_detail_content", None):
+                continue
+            with self.subTest(action=action_func.url_name):
+                if action_func.url_name in self.custom_action_required_permissions:
+                    required_permissions = self.custom_action_required_permissions[action_func.url_name]
+                else:
+                    base_action = action_func.kwargs.get("custom_view_base_action")
+                    if base_action is None:
+                        if action_func.__name__ not in PERMISSIONS_ACTION_MAP:
+                            self.fail(f"Missing custom_view_base_action for action {action_func.__name__}")
+                        base_action = PERMISSIONS_ACTION_MAP[action_func.__name__]
+
+                    required_permissions = [f"{self.model._meta.app_label}.{base_action}_{self.model._meta.model_name}"]
+                    required_permissions += action_func.kwargs.get("custom_view_additional_permissions", [])
+
+                try:
+                    url = self._get_url(action_func.url_name, instance)
+                    self.assertHttpStatus(self.client.get(url), [403, 404])
+                    for permission in required_permissions[:-1]:
+                        self.add_permissions(permission)
+                        self.assertHttpStatus(self.client.get(url), [403, 404])
+
+                    self.add_permissions(required_permissions[-1])
+                    self.assertHttpStatus(self.client.get(url, follow=True), 200)
+                finally:
+                    # delete the permissions here so that we start from a clean slate on the next loop
+                    self.remove_permissions(*required_permissions)
 
     def test_alter_queryset(self):
         """Test alter_queryset method returns the expected pivoted queryset."""

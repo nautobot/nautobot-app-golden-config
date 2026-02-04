@@ -15,13 +15,35 @@ env:
   APP_NAME: "nautobot-golden-config"
 
 jobs:
+  generate-lockfile:
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Check out repository code"
+        uses: "actions/checkout@v4"
+      - name: "Setup environment"
+        uses: "networktocode/gh-action-setup-poetry-environment@v6"
+        with:
+          poetry-version: "2.1.3"
+          poetry-install-options: "--only-root"
+      - name: "Regenerate poetry.lock"
+        run: "poetry lock --regenerate"
+      - name: "Upload poetry.lock"
+        uses: "actions/upload-artifact@v4"
+        with:
+          name: "poetry-lock"
+          path: "poetry.lock"
   ruff-format:
+    needs: "generate-lockfile"
     runs-on: "ubuntu-latest"
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "True"
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v4"
+      - name: "Download poetry.lock artifact"
+        uses: "actions/download-artifact@v4"
+        with:
+          name: "poetry-lock"
       - name: "Setup environment"
         uses: "networktocode/gh-action-setup-poetry-environment@v6"
         with:
@@ -29,12 +51,17 @@ jobs:
       - name: "Linting: ruff format"
         run: "poetry run invoke ruff --action format"
   ruff-lint:
+    needs: "generate-lockfile"
     runs-on: "ubuntu-latest"
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "True"
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v4"
+      - name: "Download poetry.lock artifact"
+        uses: "actions/download-artifact@v4"
+        with:
+          name: "poetry-lock"
       - name: "Setup environment"
         uses: "networktocode/gh-action-setup-poetry-environment@v6"
         with:
@@ -42,12 +69,17 @@ jobs:
       - name: "Linting: ruff"
         run: "poetry run invoke ruff --action lint"
   check-docs-build:
+    needs: "generate-lockfile"
     runs-on: "ubuntu-latest"
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "True"
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v4"
+      - name: "Download poetry.lock artifact"
+        uses: "actions/download-artifact@v4"
+        with:
+          name: "poetry-lock"
       - name: "Setup environment"
         uses: "networktocode/gh-action-setup-poetry-environment@v6"
         with:
@@ -69,12 +101,17 @@ jobs:
       - name: "Checking: poetry lock file"
         run: "poetry run invoke lock --check"
   yamllint:
+    needs: "generate-lockfile"
     runs-on: "ubuntu-latest"
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "True"
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v4"
+      - name: "Download poetry.lock artifact"
+        uses: "actions/download-artifact@v4"
+        with:
+          name: "poetry-lock"
       - name: "Setup environment"
         uses: "networktocode/gh-action-setup-poetry-environment@v6"
         with:
@@ -82,12 +119,17 @@ jobs:
       - name: "Linting: yamllint"
         run: "poetry run invoke yamllint"
   markdownlint:
+    needs: "generate-lockfile"
     runs-on: "ubuntu-latest"
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_LOCAL: "True"
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v4"
+      - name: "Download poetry.lock artifact"
+        uses: "actions/download-artifact@v4"
+        with:
+          name: "poetry-lock"
       - name: "Setup environment"
         uses: "networktocode/gh-action-setup-poetry-environment@v6"
         with:
@@ -105,7 +147,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        python-version: ["3.11"]
+        python-version: ["3.10"]
         nautobot-version: ["3.0.0"]
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_PYTHON_VER: "${{ matrix.python-version }}"
@@ -151,11 +193,11 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        python-version: ["3.10"]  # 3.12 stable is tested in unittest_report stage.
+        python-version: ["3.10"]  # 3.13 stable is tested in unittest_report stage.
         db-backend: ["postgresql"]
         nautobot-version: ["stable"]
         include:
-          - python-version: "3.11"
+          - python-version: "3.10"
             db-backend: "postgresql"
             nautobot-version: "3.0.0"
           - python-version: "3.13"
@@ -199,7 +241,6 @@ jobs:
         if: "matrix.db-backend == 'mysql'"
       - name: "Run Tests"
         run: "poetry run invoke unittest"
-
   unittest_report:
     needs:
       - "check-in-docker"
@@ -272,8 +313,8 @@ jobs:
         with:
           name: "python-coverage-comment-action"
           path: "python-coverage-comment-action.txt"
-
   changelog:
+    needs: "generate-lockfile"
     if: >
       contains(fromJson('["develop","ltm-1.6"]'), github.base_ref) &&
       (github.head_ref != 'main') && (!startsWith(github.head_ref, 'release'))
@@ -283,6 +324,10 @@ jobs:
         uses: "actions/checkout@v4"
         with:
           fetch-depth: "0"
+      - name: "Download poetry.lock artifact"
+        uses: "actions/download-artifact@v4"
+        with:
+          name: "poetry-lock"
       - name: "Setup environment"
         uses: "networktocode/gh-action-setup-poetry-environment@v6"
         with:

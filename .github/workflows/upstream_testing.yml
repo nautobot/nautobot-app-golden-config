@@ -3,12 +3,26 @@ name: "Nautobot Upstream Monitor"
 
 on:  # yamllint disable-line rule:truthy rule:comments
   schedule:
-    - cron: "0 4 */2 * *"  # every other day at midnight
+    - cron: "0 4 */2 * *"  # every other day at 4 AM
   workflow_dispatch:
 
 jobs:
   upstream-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - nautobot_branch: "develop"
+            app_branch: "main"
+          - nautobot_branch: "next"
+            app_branch: "main"
+          - nautobot_branch: "ltm-2.4"
+            app_branch: "ltm-2.4"
+          # - nautobot_branch: "next-4.0"
+          #   app_branch: "next-4.0"
     uses: "nautobot/nautobot/.github/workflows/plugin_upstream_testing_base.yml@develop"
     with:  # Below could potentially be collapsed into a single argument if a concrete relationship between both is enforced
       invoke_context_name: "NAUTOBOT_GOLDEN_CONFIG"
-      plugin_name: "nautobot-golden-config"
+      app_name: "nautobot-golden-config"
+      nautobot_branch: "${{ matrix.nautobot_branch }}"
+      app_branch: "${{ matrix.app_branch }}"

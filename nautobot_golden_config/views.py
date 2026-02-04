@@ -23,7 +23,7 @@ from nautobot.apps.ui import (
     EChartsTypeChoices,
     queryset_to_nested_dict_keys_as_series,
 )
-from nautobot.core.views.mixins import PERMISSIONS_ACTION_MAP
+from nautobot.core.views.mixins import PERMISSIONS_ACTION_MAP, ObjectDataComplianceViewMixin
 from nautobot.dcim.models import Device
 from nautobot.dcim.views import DeviceUIViewSet
 from nautobot.extras.models import Job, JobResult
@@ -60,6 +60,7 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
     views.ObjectDestroyViewMixin,
     views.ObjectBulkDestroyViewMixin,
     views.ObjectListViewMixin,  # TODO: Changing the order of the mixins breaks things... why?
+    ObjectDataComplianceViewMixin,  # TODO: Import from views after nautobot release
 ):
     """Views for the GoldenConfig model."""
 
@@ -376,8 +377,10 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
         compliance_details = models.ConfigCompliance.objects.filter(device=device)
         context["compliance_details"] = compliance_details
         if request.GET.get("compliance") == "compliant":
+            context["compliance_filter"] = "compliant"
             context["compliance_details"] = compliance_details.filter(compliance=True)
         elif request.GET.get("compliance") == "non-compliant":
+            context["compliance_filter"] = "non-compliant"
             context["compliance_details"] = compliance_details.filter(compliance=False)
 
         context["active_tab"] = request.GET.get("tab")
@@ -388,7 +391,7 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
 
         return render(request, "nautobot_golden_config/configcompliance_devicetab.html", context)
 
-    @action(detail=False, methods=["get"])
+    @action(detail=False, methods=["get"], custom_view_base_action="view")
     def overview(self, request, *args, **kwargs):  # pylint: disable=too-many-locals
         """Custom action to show the visual report of the compliance stats."""
         # Basic Setup

@@ -69,9 +69,11 @@
     {% block navigation %}
         <div class="card" style="width:100%">
             <div class="card-header"><strong>Feature Navigation</strong>
-                <a class="btn btn-success float-end" href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab={{ active_tab }}&amp;compliance=compliant">Compliant</a>
-                <a class="btn btn-danger float-end" href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab={{ active_tab }}&amp;compliance=non-compliant">Non-Compliant</a>
-                <a class="btn btn-info float-end" href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab={{ active_tab }}">Clear</a>
+                <div class="btn-group float-end" role="group" aria-label="Compliance Filter">
+                    <a class="btn btn-xs btn-success{% if compliance_filter == 'compliant' %} bg-success nb-text-body-bg{% endif %}" href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab={{ active_tab }}&amp;compliance=compliant">Compliant</a>
+                    <a class="btn btn-xs btn-danger{% if compliance_filter == 'non-compliant' %} bg-danger nb-text-body-bg{% endif %}" href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab={{ active_tab }}&amp;compliance=non-compliant">Non-Compliant</a>
+                    <a class="btn btn-xs btn-info" href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab={{ active_tab }}">Clear</a>
+                </div>
             </div>
             <div id="navigation">
                 <table>

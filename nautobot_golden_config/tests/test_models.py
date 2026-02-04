@@ -604,6 +604,55 @@ class GetHierConfigRemediationTestCase(TestCase):
         self.assertIsInstance(remediation, str)
         self.assertIn("interface Ethernet1\n  description Test", remediation)
 
+    def test_successful_remediation_with_options(self):
+        """Test successful remediation generation with options (Issue #1061)."""
+        device = create_device()
+        compliance_rule_cli = create_feature_rule_cli_with_remediation(device)
+
+        remediation_options = {"idempotent_commands": [{"lineage": [{"startswith": "foo"}]}]}
+        actual = "foo test"
+        intended = "foo bar"
+
+        RemediationSetting.objects.create(
+            platform=device.platform,
+            remediation_type=RemediationTypeChoice.TYPE_HIERCONFIG,
+            remediation_options=remediation_options,
+        )
+        config_compliance = ConfigCompliance(
+            device=device,
+            rule=compliance_rule_cli,
+            actual=actual,
+            intended=intended,
+        )
+        remediation = _get_hierconfig_remediation(config_compliance)
+        self.assertIsInstance(remediation, str)
+        self.assertEqual(remediation, intended)
+
+    def test_remediation_options_merge(self):
+        """Test that remediation options are merged with the default options (Issue #915)."""
+        device = create_device()
+        compliance_rule_cli = create_feature_rule_cli_with_remediation(device)
+        # This adds 'foo' as an idempotent command,
+        # but should not override the existing idempotent command 'errdisable recovery interval'.
+        remediation_options = {"idempotent_commands": [{"lineage": [{"startswith": "foo"}]}]}
+        actual = "errdisable recovery interval 100\n!\nfoo test"
+        intended = "errdisable recovery interval 200\n!\nfoo bar"
+        expected = "errdisable recovery interval 200\nfoo bar"
+        RemediationSetting.objects.create(
+            platform=device.platform,
+            remediation_type=RemediationTypeChoice.TYPE_HIERCONFIG,
+            remediation_options=remediation_options,
+        )
+        config_compliance = ConfigCompliance(
+            device=device,
+            rule=compliance_rule_cli,
+            actual=actual,
+            intended=intended,
+        )
+        remediation = _get_hierconfig_remediation(config_compliance)
+        self.assertIsInstance(remediation, str)
+        self.assertEqual(remediation, expected)
+
     def test_platform_not_supported_by_hierconfig(self):
         """Test error when platform is not supported by hierconfig."""
         device = create_device()

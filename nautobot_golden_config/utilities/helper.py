@@ -25,6 +25,7 @@ from nautobot_golden_config import models
 from nautobot_golden_config.error_codes import ERROR_CODES
 from nautobot_golden_config.utilities import utils
 from nautobot_golden_config.utilities.constant import JINJA_ENV
+from nautobot_golden_config.utilities.jinja_library import update_env
 
 FRAMEWORK_METHODS = {
     "default": utils.default_framework,
@@ -125,6 +126,9 @@ def get_django_env():
     # Use a custom Jinja2 environment instead of Django's to avoid HTML escaping
     jinja_env = SandboxedEnvironment(**JINJA_ENV)
     jinja_env.filters = engines["jinja"].env.filters
+
+    # attach user-registered filters, globals, and tests to jinja_env
+    update_env(jinja_env)
     return jinja_env
 
 

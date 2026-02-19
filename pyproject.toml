@@ -17,6 +17,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 packages = [
     { include = "nautobot_golden_config" },
@@ -31,17 +32,21 @@ include = [
 "Bug Tracker" = "https://github.com/nautobot/nautobot-app-golden-config/issues"
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.14"
+python = ">=3.10,<3.15"
 deepdiff = ">=8.6.1,<9.0.0"
 django-pivot = ">=1.9.0,<1.10.0" # The signature changed to return a non-queryset, do not upgrade without ensuring it returns a queryset
-nautobot-plugin-nornir = ">=3.0.0,<4.0.0"
+# nautobot-plugin-nornir = ">=3.0.0,<4.0.0"
+nautobot-plugin-nornir = {git = "https://github.com/nautobot/nautobot-app-nornir.git", rev = "next-3.1"}
 toml = "^0.10.2"
-netutils = "^1.17.0"
+netutils = {git = "https://github.com/networktocode/netutils.git", rev = "next-3.1"}
+# netutils = "^1.17.0"
 hier-config = "^3.4.1"
-nautobot-capacity-metrics = ">=4.0.0,<5.0.0"
+# nautobot-capacity-metrics = ">=4.0.0,<5.0.0"
+nautobot-capacity-metrics = {git = "https://github.com/nautobot/nautobot-app-capacity-metrics.git", rev = "next-3.1"}
 xmldiff = "^2.6.3"
 # Used for local development
-nautobot = ">=3.0.0,<4.0.0"
+# nautobot = ">=3.1.0,<4.0.0"  # TODO: Uncomment when Nautobot 3.1.0 is released
+nautobot = {git = "https://github.com/nautobot/nautobot.git", rev = "next"}
 
 [tool.poetry.group.dev.dependencies]
 coverage = "*"

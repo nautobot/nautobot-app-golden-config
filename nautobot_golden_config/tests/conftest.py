@@ -8,6 +8,7 @@ from django.utils.text import slugify
 from nautobot.apps.choices import JobResultStatusChoices
 from nautobot.dcim.models import Device, DeviceType, Location, LocationType, Manufacturer, Platform, Rack, RackGroup
 from nautobot.extras.datasources.registry import get_datasource_contents  # core-import-update
+from nautobot.extras.management import populate_status_choices
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, JobResult, Role, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
 
@@ -19,6 +20,7 @@ User = get_user_model()
 
 def create_device_data():  # pylint: disable=too-many-locals
     """Creates a Device and associated data."""
+    populate_status_choices()
     ct_device = ContentType.objects.get_for_model(Device)
 
     manufacturers = (

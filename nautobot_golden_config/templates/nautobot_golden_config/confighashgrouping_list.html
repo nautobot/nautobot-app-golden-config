@@ -1,0 +1,139 @@
+{% extends 'generic/object_list.html' %}
+{% load static %}
+
+{% block content %}
+{{ block.super }}
+
+{% include "nautobot_golden_config/job_result_modal.html" with modal_title="Generate Remediation Config Plans" %}
+
+{% endblock %}
+
+{% block javascript %}
+{{ block.super }}
+<script src="{% static 'run_job.js' %}"></script>
+<script>
+var nautobot_csrf_token = "{{ csrf_token }}";
+
+function formatHashGroupJobData(featureId, configHash, deviceIds) {
+    return {
+        "data": {
+            "plan_type": "remediation",
+            "feature": [featureId],
+            "device": deviceIds
+        }
+    };
+}
+
+function configPlanCount(jobResultId) {
+    return new Promise(function(resolve, reject) {
+        var configPlanApi = `/api/plugins/golden-config/config-plan/?plan_result_id=${jobResultId}`;
+        $.ajax({
+            url: configPlanApi,
+            type: "GET",
+            dataType: "json",
+            headers: {
+                'X-CSRFToken': nautobot_csrf_token
+            },
+            success: function(data) {
+                var count = data.count;
+                resolve("Job Completed Successfully." +
+                "<br>Number of Config Plans generated: " + count);
+            },
+            error: function(e) {
+                resolve("Job completed successfully, but no Config Plans were generated." +
+                "<br>If this is unexpected, please validate your input parameters.");
+            }
+        });
+    });
+}
+
+function getDeviceIdsForHashGroup(featureId, configHash) {
+    return new Promise(function(resolve, reject) {
+        // Use our custom endpoint to get device IDs, but just for getting the data
+        $.ajax({
+            url: '/plugins/golden-config/config-compliance/remediate/',
+            type: 'POST',
+            contentType: "application/x-www-form-urlencoded",
+            data: $.param({
+                "feature_id": featureId,
+                "config_hash": configHash,
+                "get_devices_only": "true"  // Add a flag to just get device IDs
+            }),
+            headers: {
+                'X-CSRFToken': nautobot_csrf_token
+            },
+            success: function(response) {
+                if (response.device_ids) {
+                    resolve(response.device_ids);
+                } else if (response.error) {
+                    reject(response.error);
+                } else {
+                    reject("No device IDs returned from server");
+                }
+            },
+            error: function(xhr, status, error) {
+                var errorMessage = "Failed to get device information";
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage = xhr.responseJSON.error;
+                }
+                reject(errorMessage);
+            }
+        });
+    });
+}
+
+function startHashGroupRemediationJob(featureId, configHash, featureName, deviceCount) {
+    // Update modal title with feature info
+    $('.modal-title').text(`Generate Remediation Config Plans - ${featureName} (${deviceCount} devices)`);
+
+    // Show modal
+    $('#modalPopup').modal('show');
+
+    // Get device IDs for this hash group
+    getDeviceIdsForHashGroup(featureId, configHash)
+        .then(function(deviceIds) {
+            if (deviceIds.length === 0) {
+                $('#jobStatus').html("Failed").show();
+                $('#detailMessages').show();
+                $('#detailMessages').attr('class', 'alert alert-warning text-center');
+                $('#detailMessages').html("No devices found for this hash group.");
+                return;
+            }
+
+            // Format job data for the standard job API
+            var jobData = formatHashGroupJobData(featureId, configHash, deviceIds);
+
+            // Set up redirect URL template
+            var redirectUrlTemplate = "/plugins/golden-config/config-plan/?plan_result_id={jobData.job_result.id}";
+
+            // Use the standard startJob function from run_job.js
+            startJob("Generate Config Plans", jobData, redirectUrlTemplate, configPlanCount);
+        })
+        .catch(function(error) {
+            $('#jobStatus').html("Failed").show();
+            $('#detailMessages').show();
+            $('#detailMessages').attr('class', 'alert alert-danger text-center');
+            $('#detailMessages').html("<b>Error: </b>" + error);
+        });
+}
+
+// Event delegation for dynamically created buttons
+$(document).on('click', '.hash-plan-generate', function(event) {
+    event.preventDefault();
+
+    var button = $(this);
+    var featureId = button.data('feature-id');
+    var configHash = button.data('config-hash');
+    var featureName = button.data('feature-name');
+    var deviceCount = button.data('device-count');
+
+    if (!featureId || !configHash) {
+        alert('Missing feature ID or config hash data');
+        return;
+    }
+
+    startHashGroupRemediationJob(featureId, configHash, featureName, deviceCount);
+});
+
+</script>
+{% endblock javascript %}

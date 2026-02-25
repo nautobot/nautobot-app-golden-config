@@ -120,6 +120,7 @@ nav:
       - Navigate Configuration Post-Processing: "user/app_feature_config_postprocessing.md"
       - Navigate Config Plans: "user/app_feature_config_plans.md"
       - Navigate Remediation: "user/app_feature_remediation.md"
+      - Navigate Config Hashes: "user/app_feature_hash.md"
       - Frequently Asked Questions: "user/faq.md"
       - External Interactions: "user/external_interactions.md"
       - Troubleshooting:

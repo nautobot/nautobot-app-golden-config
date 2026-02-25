@@ -122,6 +122,34 @@ def actual_fields():
     return tuple(active_fields)
 
 
+def get_display_template(field_name):
+    """Return a display template for the given field name."""
+    return (
+        """
+        {% load helpers %}
+        <pre><code><div title="Click to copy to clipboard" """
+        "onClick=\"toClipboard('{{ record.id }}" + field_name + '\')" id="{{ record.id }}' + field_name + '"'
+        """style="height:auto;max-height:50vh;line-height:1.5em;white-space:pre-wrap;word-break:break-all;overflow:auto;">{{ value }}</div></code></pre>
+        <script>
+            function toClipboard(id) {
+                const element = document.getElementById(id);
+                const content = element.innerText || element.textContent;
+                navigator.clipboard.writeText(content).then(() => {
+                    console.log("Copied to clipboard");
+                }).catch(err => {
+                    console.error("Failed to copy: ", err);
+                    alert("Error copying to clipboard.");
+                });
+
+                // Improve alert message to be less intrusive or more informative
+                const displayContent = content.length > 100 ? content.slice(0, 100) + "..." : content;
+                alert("Copied to clipboard: " + displayContent);
+            }
+        </script>
+    """
+    )
+
+
 #
 # Columns
 #
@@ -556,4 +584,114 @@ class ConfigPlanTable(StatusTableMixin, BaseTable):
             "deploy_result",
             "config_set",
             "status",
+        )
+
+
+# Config Hash
+
+
+class ConfigComplianceHashTable(BaseTable):
+    """Table for displaying individual ConfigComplianceHash records with bulk operations."""
+
+    pk = ToggleColumn()
+    device = LinkColumn("dcim:device", args=[A("device.pk")], verbose_name="Device")
+    rule = LinkColumn("plugins:nautobot_golden_config:compliancerule", args=[A("rule.pk")], verbose_name="Feature")
+    actual_config_hash = Column(verbose_name="Actual Config Hash", accessor="config_hash")
+    intended_config_hash = Column(verbose_name="Intended Config Hash", accessor="config_hash")
+
+    def render_actual_config_hash(self, value):
+        """Render actual config hash with only the last 10 characters."""
+        if value:
+            return value
+        return value
+
+    def render_intended_config_hash(self, record):
+        """Render intended config hash."""
+        # Get intended hash from ConfigComplianceHash records for the same device/rule
+        try:
+            intended_hash_record = models.ConfigComplianceHash.objects.get(
+                device=record.device, rule=record.rule, config_type="intended"
+            )
+            if intended_hash_record.config_hash:
+                return intended_hash_record.config_hash
+            return "--"
+        except models.ConfigComplianceHash.DoesNotExist:
+            return "--"
+
+    class Meta(BaseTable.Meta):
+        """Meta information for ConfigComplianceHashTable."""
+
+        model = models.ConfigComplianceHash
+        fields = (
+            "pk",
+            "device",
+            "rule",
+            "actual_config_hash",
+            "intended_config_hash",
+        )
+        default_columns = (
+            "pk",
+            "device",
+            "rule",
+            "actual_config_hash",
+            "intended_config_hash",
+        )
+
+
+class ConfigHashGroupingTable(BaseTable):  # pylint: disable=nb-sub-class-name
+    """Table for displaying configuration hash grouping results."""
+
+    pk = ToggleColumn()
+    feature_name = Column(verbose_name="Feature", accessor="feature_name")
+    device_count = TemplateColumn(
+        template_code="""
+        <a href="{% url 'plugins:nautobot_golden_config:configcompliance_list' %}?feature_id={{ record.feature_id }}&compliance=false&config_hash_group={{ record.pk }}"
+           class="text-primary" style="text-decoration: none; font-weight: bold;">
+            {{ record.device_count }} device{{ record.device_count|pluralize }}
+        </a>
+        """,
+        verbose_name="Device Count",
+        orderable=True,
+        order_by=("device_count",),
+    )
+    config_content = TemplateColumn(
+        template_code=get_display_template("config_content"),
+        verbose_name="Configuration Snippet",
+        orderable=False,
+    )
+    actions = TemplateColumn(
+        template_code="""
+        <div class="btn-group" role="group">
+            <button type="button"
+                    class="btn btn-sm btn-outline-primary hash-plan-generate"
+                    title="Generate Remediation Config Plans"
+                    data-feature-id="{{ record.feature_id }}"
+                    data-config-hash="{{ record.config_hash }}"
+                    data-feature-name="{{ record.feature_name }}"
+                    data-device-count="{{ record.device_count }}">
+                <i class="mdi mdi-map-check-outline"></i>
+            </button>
+        </div>
+        """,
+        verbose_name="Actions",
+        orderable=False,
+    )
+
+    class Meta(BaseTable.Meta):
+        """Meta information for ConfigHashGroupingTable."""
+
+        model = models.ConfigHashGrouping
+        fields = (
+            "pk",
+            "feature_name",
+            "device_count",
+            "config_content",
+            "actions",
+        )
+        default_columns = (
+            "pk",
+            "feature_name",
+            "device_count",
+            "config_content",
+            "actions",
         )

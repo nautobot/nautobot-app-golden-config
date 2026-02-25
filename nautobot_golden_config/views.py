@@ -8,7 +8,8 @@ import yaml
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Count, ExpressionWrapper, F, FloatField, Max, Q
+from django.db.models import Count, ExpressionWrapper, FloatField, Max, Q, Sum, Value
+from django.db.models.functions import Coalesce, NullIf
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.html import format_html
@@ -273,22 +274,6 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
     custom_action_permission_map = None
     action_buttons = ("export",)
     object_detail_content = details.config_compliance
-    queryset_report_for_table = (
-        models.ConfigCompliance.objects.values("rule__feature__slug")
-        .annotate(
-            count=Count("rule__feature__slug"),
-            compliant=Count("rule__feature__slug", filter=Q(compliance=True)),
-            non_compliant=Count("rule__feature__slug", filter=~Q(compliance=True)),
-            comp_percent=ExpressionWrapper(100 * F("compliant") / F("count"), output_field=FloatField()),
-        )
-        .order_by("-comp_percent")
-    )
-    queryset_report_for_chart = models.ConfigCompliance.objects.annotate(
-        count=Count("rule__feature__slug"),
-        compliant=Count("rule__feature__slug", filter=Q(compliance=True)),
-        non_compliant=Count("rule__feature__slug", filter=~Q(compliance=True)),
-        comp_percent=ExpressionWrapper(100 * F("compliant") / F("count"), output_field=FloatField()),
-    ).order_by("-comp_percent")
 
     def __init__(self, *args, **kwargs):
         """Used to set default variables on ConfigComplianceUIViewSet."""
@@ -399,30 +384,57 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
         theme = request.COOKIES["theme"] if "theme" in request.COOKIES else "light"
         if theme not in ["light", "dark"]:
             theme = "light"
-        filter_params = self.get_filter_params(request)
+
+        context["filter_form"] = forms.ComplianceFeatureFilterFormAlt(request.GET)
+        context["action_buttons"] = ("export",)
+
+        # Queryset & Filter Setup
+
+        # The filterset tells us which devices match the filter criteria.
+        # We use those device IDs as filter= in Count/Sum so that only ConfigCompliance
+        # records for the matching devices are counted per feature.
+        # Annotating the filterset queryset directly would cause inflated counts (Cartesian
+        # product) because filter JOINs multiply rows before aggregation, so we annotate
+        # a clean queryset and scope via filter=.
+        # Use ConfigComplianceFilterSet (device__ paths) so all conditions hit the same
+        # device row in a single join chain — no duplicate joins, no Cartesian product.
+        filtered_device_ids = list(
+            filters.ConfigComplianceFilterSet(request.GET, models.ConfigCompliance.objects.all())
+            .qs.order_by()
+            .values_list("device_id", flat=True)
+            .distinct()
+        )
+
+        device_filter = Q(feature__rule__device__in=filtered_device_ids)
+        feature_qs = models.ComplianceFeature.objects.annotate(
+            count=Count("feature__rule", filter=device_filter),
+            compliant=Coalesce(Sum("feature__rule__compliance_int", filter=device_filter), 0),
+            non_compliant=Count("feature__rule", filter=device_filter)
+            - Coalesce(Sum("feature__rule__compliance_int", filter=device_filter), 0),
+            comp_percent=ExpressionWrapper(
+                100.0
+                * Coalesce(Sum("feature__rule__compliance_int", filter=device_filter), 0)
+                / NullIf(Count("feature__rule", filter=device_filter), Value(0)),
+                output_field=FloatField(),
+            ),
+        ).order_by("-comp_percent")
 
         # Table Setup
-        filterset = self.filterset_class(request.GET, self.queryset_report_for_table)
-        table = tables.ConfigComplianceGlobalFeatureTable(filterset.qs, user=request.user)
+        table = tables.ConfigComplianceGlobalFeatureTable(feature_qs, user=request.user)
         paginate = {
             "paginator_class": views.EnhancedPaginator,
             "per_page": views.get_paginate_count(request),
         }
         RequestConfig(request, paginate).configure(table)
-
-        context["filterset"] = filterset
         context["table"] = table
-        context["filter_form"] = self.filterset_form_class
-        context["action_buttons"] = ("export",)
-        context["filter"] = self.filterset_class
 
         # Bar Chart Setup
-        feature_qs = self.filterset_class(request.GET, self.queryset_report_for_chart).qs
         chart_data = queryset_to_nested_dict_keys_as_series(
-            feature_qs,
-            record_key="rule__feature__slug",  # becomes the x-axis
-            value_keys=["compliant", "non_compliant"],  # becomes the series names
+            queryset=feature_qs,
+            record_key="slug",
+            value_keys=["compliant", "non_compliant"],
         )
+
         bar_chart_panel = EChartsPanel(
             label="Compliance Overview",
             weight=100,
@@ -437,22 +449,16 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
         context["bar_chart_panel"] = [bar_chart_panel]
 
         # Pie Charts Setup
-        main_qs = models.ConfigCompliance.objects
+        # Re-use filtered_device_ids to avoid JOIN chains or Cartesian product
+        cc_qs = models.ConfigCompliance.objects.filter(device_id__in=filtered_device_ids)
 
-        device_aggr, feature_aggr = {}, {}
-        if self.filterset_class is not None:
-            device_aggr = (
-                self.filterset_class(filter_params, main_qs)
-                .qs.values("device")
-                .annotate(compliant=Count("device", filter=Q(compliance=False)))
-                .aggregate(total=Count("device", distinct=True), compliants=Count("compliant", filter=Q(compliant=0)))
-            )
-
-            feature_aggr = self.filterset_class(filter_params, main_qs).qs.aggregate(
-                total=Count("rule"), compliants=Count("rule", filter=Q(compliance=True))
-            )
-        device_aggr = calculate_aggr_percentage(device_aggr)
-        feature_aggr = calculate_aggr_percentage(feature_aggr)
+        # Device pie: total = distinct devices with ≥1 compliance record;
+        # compliants = devices with zero non-compliant records.
+        device_total = cc_qs.values("device_id").distinct().count()
+        device_non_compliant = cc_qs.filter(compliance=False).values("device_id").distinct().count()
+        device_aggr = calculate_aggr_percentage(
+            {"total": device_total, "compliants": device_total - device_non_compliant}
+        )
 
         pie_device_panel = EChartsPanel(
             label="Device Compliance Overview",
@@ -471,6 +477,12 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
             },
         )
         context["pie_device_panel"] = [pie_device_panel]
+
+        # Feature pie: total = all compliance records for filtered devices;
+        # compliants = those marked compliant.
+        feature_aggr = calculate_aggr_percentage(
+            cc_qs.aggregate(total=Count("id"), compliants=Count("id", filter=Q(compliance=True)))
+        )
 
         pie_feature_panel = EChartsPanel(
             label="Feature Compliance Overview",

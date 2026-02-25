@@ -252,6 +252,43 @@ class ComplianceFeatureFilterForm(NautobotFilterForm):
     name = forms.DynamicModelChoiceField(queryset=models.ComplianceFeature.objects.all(), required=False)
 
 
+class ComplianceFeatureFilterFormAlt(DeviceRelatedFilterForm):  # pylint: disable=nb-sub-class-name
+    """Filter Form for ComplianceFeature instances used in chart reporting."""
+
+    model = models.ComplianceFeature
+    field_order = [
+        "q",
+        "tenant_group",
+        "tenant",
+        "location_id",
+        "location",
+        "rack_group_id",
+        "rack_group",
+        "rack_id",
+        "role",
+        "manufacturer",
+        "platform",
+        "device_status",
+        "device_type",
+        "device",
+    ]
+
+    q = django_forms.CharField(required=False, label="Search")
+
+    def __init__(self, *args, **kwargs):
+        """Required for status to work."""
+        super().__init__(*args, **kwargs)
+        self.fields["device_status"] = forms.DynamicModelMultipleChoiceField(
+            required=False,
+            queryset=Status.objects.all(),
+            query_params={"content_types": Device._meta.label_lower},
+            display_field="label",
+            label="Device Status",
+            to_field_name="name",
+        )
+        self.order_fields(self.field_order)
+
+
 class ComplianceFeatureBulkEditForm(NautobotBulkEditForm):
     """BulkEdit form for ComplianceFeature instances."""
 

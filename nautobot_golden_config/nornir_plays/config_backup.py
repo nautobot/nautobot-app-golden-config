@@ -113,7 +113,7 @@ def config_backup(job):
 
     # Build a dictionary, with keys of platform.network_driver, and the regex and replace keys for the netutils func.
     replace_regex_dict = {}
-    for regex in ConfigReplace.objects.all():
+    for regex in ConfigReplace.objects.all().order_by("name"):
         if not replace_regex_dict.get(regex.platform.network_driver):
             replace_regex_dict[regex.platform.network_driver] = []
         replace_regex_dict[regex.platform.network_driver].append({"replace": regex.replace, "regex": regex.regex})

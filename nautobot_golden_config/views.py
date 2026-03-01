@@ -256,6 +256,61 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
 #
 
 
+def _get_filtered_compliance_device_ids(query_params):
+    """Return a deduplicated list of device IDs from ConfigCompliance records that match query_params.
+
+    Uses ConfigComplianceFilterSet so every filter condition (location, status, platform, etc.)
+    hits the same device JOIN chain. .order_by() strips default ordering that would otherwise
+    add extra columns to GROUP BY; .distinct() ensures each device_id appears exactly once
+    even when multiple filter conditions would otherwise produce duplicate rows.
+    """
+    return list(
+        filters.ConfigComplianceFilterSet(query_params, models.ConfigCompliance.objects.all())
+        .qs.order_by()
+        .values_list("device_id", flat=True)
+        .distinct()
+    )
+
+
+def _get_feature_compliance_queryset(device_ids):
+    """Return annotated ComplianceFeature queryset for the given device IDs.
+
+    Annotates each ComplianceFeature with count, compliant, non_compliant, and comp_percent
+    scoped to the provided device IDs. Uses filter= on Count/Sum so that no rows are inflated
+    by JOIN multiplicity. comp_percent is NULL (not zero) when count is zero, preventing
+    division-by-zero.
+    """
+    device_filter = Q(feature__rule__device__in=device_ids)
+    return models.ComplianceFeature.objects.annotate(
+        count=Count("feature__rule", filter=device_filter),
+        compliant=Coalesce(Sum("feature__rule__compliance_int", filter=device_filter), 0),
+        non_compliant=Count("feature__rule", filter=device_filter)
+        - Coalesce(Sum("feature__rule__compliance_int", filter=device_filter), 0),
+        comp_percent=ExpressionWrapper(
+            100.0
+            * Coalesce(Sum("feature__rule__compliance_int", filter=device_filter), 0)
+            / NullIf(Count("feature__rule", filter=device_filter), Value(0)),
+            output_field=FloatField(),
+        ),
+    ).order_by("-comp_percent")
+
+
+def get_compliance_overview_queryset(query_params):
+    """Return an annotated ComplianceFeature queryset scoped to devices matching query_params.
+
+    Combines _get_filtered_compliance_device_ids and _get_feature_compliance_queryset:
+    1. Extract a deduplicated list of device IDs from ConfigCompliance records that satisfy
+       the filter — this is a plain DISTINCT SELECT, so no aggregation runs here.
+    2. Annotate ComplianceFeature using those IDs as a CASE WHEN inside Count/Sum (the
+       filter= parameter), never as a WHERE JOIN — so rows cannot multiply before GROUP BY.
+
+    This separation is what prevents Cartesian-product inflation when any filter path
+    traverses a one-to-many or many-to-many relationship before aggregation.
+    """
+    device_ids = _get_filtered_compliance_device_ids(query_params)
+    return _get_feature_compliance_queryset(device_ids)
+
+
 class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
     views.ObjectDetailViewMixin,
     views.ObjectDestroyViewMixin,
@@ -390,34 +445,8 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
 
         # Queryset & Filter Setup
 
-        # The filterset tells us which devices match the filter criteria.
-        # We use those device IDs as filter= in Count/Sum so that only ConfigCompliance
-        # records for the matching devices are counted per feature.
-        # Annotating the filterset queryset directly would cause inflated counts (Cartesian
-        # product) because filter JOINs multiply rows before aggregation, so we annotate
-        # a clean queryset and scope via filter=.
-        # Use ConfigComplianceFilterSet (device__ paths) so all conditions hit the same
-        # device row in a single join chain — no duplicate joins, no Cartesian product.
-        filtered_device_ids = list(
-            filters.ConfigComplianceFilterSet(request.GET, models.ConfigCompliance.objects.all())
-            .qs.order_by()
-            .values_list("device_id", flat=True)
-            .distinct()
-        )
-
-        device_filter = Q(feature__rule__device__in=filtered_device_ids)
-        feature_qs = models.ComplianceFeature.objects.annotate(
-            count=Count("feature__rule", filter=device_filter),
-            compliant=Coalesce(Sum("feature__rule__compliance_int", filter=device_filter), 0),
-            non_compliant=Count("feature__rule", filter=device_filter)
-            - Coalesce(Sum("feature__rule__compliance_int", filter=device_filter), 0),
-            comp_percent=ExpressionWrapper(
-                100.0
-                * Coalesce(Sum("feature__rule__compliance_int", filter=device_filter), 0)
-                / NullIf(Count("feature__rule", filter=device_filter), Value(0)),
-                output_field=FloatField(),
-            ),
-        ).order_by("-comp_percent")
+        filtered_device_ids = _get_filtered_compliance_device_ids(request.GET)
+        feature_qs = _get_feature_compliance_queryset(filtered_device_ids)
 
         # Table Setup
         table = tables.ConfigComplianceGlobalFeatureTable(feature_qs, user=request.user)

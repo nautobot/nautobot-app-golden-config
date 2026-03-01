@@ -36,7 +36,7 @@ class DeviceRelatedFilterForm(NautobotFilterForm):  # pylint: disable=nb-no-mode
         to_field_name="name",
         required=False,
         null_option="None",
-        query_params={"group": "$tenant_group"},
+        query_params={"tenant_group": "$tenant_group"},
     )
     location_id = forms.DynamicModelMultipleChoiceField(
         # Not limiting to query_params={"content_type": "dcim.device" to allow parent locations to be included

@@ -132,7 +132,7 @@ class PercentageColumn(Column):
 
     def render(self, value):
         """Render percentage value."""
-        return f"{value} %"
+        return f"{value:.2f} %"
 
 
 class ComplianceColumn(Column):
@@ -201,7 +201,7 @@ class ConfigComplianceTable(BaseTable):
 class ConfigComplianceGlobalFeatureTable(BaseTable):  # pylint: disable=nb-sub-class-name
     """Table for feature compliance report."""
 
-    name = Column(accessor="rule__feature__slug", verbose_name="Feature")
+    name = Column(accessor="slug", verbose_name="Feature")
     count = Column(accessor="count", verbose_name="Total")
     compliant = Column(accessor="compliant", verbose_name="Compliant")
     non_compliant = Column(accessor="non_compliant", verbose_name="Non-Compliant")
@@ -210,7 +210,7 @@ class ConfigComplianceGlobalFeatureTable(BaseTable):  # pylint: disable=nb-sub-c
     class Meta(BaseTable.Meta):
         """Metaclass attributes of ConfigComplianceGlobalFeatureTable."""
 
-        model = models.ConfigCompliance
+        model = models.ComplianceFeature
         fields = ["name", "count", "compliant", "non_compliant", "comp_percent"]
         default_columns = [
             "name",

@@ -9,6 +9,7 @@ from django.test.client import RequestFactory
 from graphene_django.settings import graphene_settings
 from graphql import execute, parse
 from nautobot.dcim.models import Device, DeviceType, Location, LocationType, Manufacturer, Platform
+from nautobot.extras.management import populate_status_choices
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Role, Status
 
 from nautobot_golden_config.models import (
@@ -74,6 +75,7 @@ class TestGraphQLQuery(TestCase):  # pylint: disable=too-many-instance-attribute
         super().setUp()
         self.user = User.objects.create(username="Super User", is_active=True, is_superuser=True)
         create_saved_queries()
+        populate_status_choices()
 
         # Initialize fake request that will be required to execute GraphQL query
         self.request = RequestFactory().request(SERVER_NAME="WebRequestContext")

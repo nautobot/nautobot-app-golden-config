@@ -8,6 +8,7 @@ from django.template import engines
 from django.test import TestCase
 from jinja2 import exceptions as jinja_errors
 from nautobot.dcim.models import Device, Location, LocationType, Platform
+from nautobot.extras.management import populate_status_choices
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status, Tag
 from nornir_nautobot.exceptions import NornirNautobotException
 
@@ -109,6 +110,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
             sot_agg_query=graphql_query,
         )
 
+        populate_status_choices()
         create_device(name="test_device")
         create_orphan_device(name="orphan_device")
         self.job_result = MagicMock()

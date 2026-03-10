@@ -18,7 +18,10 @@ services:
       retries: 3
       test: ["CMD", "true"]  # Due to layering, disable: true won't work. Instead, change the test
   docs:
-    entrypoint: "mkdocs serve -v -a 0.0.0.0:8080"
+    # Note: explicitly enabling --livereload was added as a workaround
+    # and can be removed if/when mkdocs is updated.
+    # Ref: https://github.com/mkdocs/mkdocs/issues/4032
+    entrypoint: "mkdocs serve -v --livereload -a 0.0.0.0:8080"
     ports:
       - "8001:8080"
     volumes:

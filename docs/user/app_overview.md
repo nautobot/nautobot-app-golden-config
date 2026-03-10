@@ -7,6 +7,8 @@ This document provides an overview of the App including critical information and
 
 ## Description
 
+![Main Page](../media/ss_main_page_light.png#only-light)
+![Main Page](../media/ss_main_page_dark.png#only-dark)
 
 ## Audience (User Personas) - Who should use this App?
 

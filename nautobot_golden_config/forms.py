@@ -31,7 +31,7 @@ class ComplianceFeatureBulkEditForm(TagsBulkEditFormMixin, NautobotBulkEditForm)
         ]
 
 
-class ComplianceFeatureFilterForm(NautobotFilterForm):
+class ComplianceFeatureFilterForm(NautobotFilterForm):  # pylint: disable=too-many-ancestors
     """Filter form to filter searches."""
 
     model = models.ComplianceFeature

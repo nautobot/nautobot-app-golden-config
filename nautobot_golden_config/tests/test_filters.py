@@ -6,7 +6,7 @@ from nautobot_golden_config import filters, models
 from nautobot_golden_config.tests import fixtures
 
 
-class ComplianceFeatureFilterTestCase(FilterTestCases.FilterTestCase):
+class ComplianceFeatureFilterTestCase(FilterTestCases.FilterTestCase):  # pylint: disable=too-many-ancestors
     """ComplianceFeature Filter Test Case."""
 
     queryset = models.ComplianceFeature.objects.all()

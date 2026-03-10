@@ -664,13 +664,8 @@ class ConfigPlanBulkEditForm(NautobotBulkEditForm):
         ]
 
 
-<<<<<<< HEAD
 class GenerateIntendedConfigForm(django_forms.Form):
     """Form for generating intended configuration."""
-=======
-class ComplianceFeatureFilterForm(NautobotFilterForm):  # pylint: disable=too-many-ancestors
-    """Filter form to filter searches."""
->>>>>>> d09ecf9 (Cookie updated targeting develop by NetworkToCode Cookie Drift Manager Tool)
 
     device = forms.DynamicModelChoiceField(
         queryset=Device.objects.all(),

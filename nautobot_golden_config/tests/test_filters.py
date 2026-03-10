@@ -12,8 +12,13 @@ from nautobot_golden_config import filters, models
 from .conftest import create_device_data, create_feature_rule_cli, create_feature_rule_json, create_job_result
 
 
+<<<<<<< HEAD
 class ConfigComplianceModelTestCase(TestCase):  # pylint: disable=too-many-public-methods
     """Test filtering operations for ConfigCompliance Model."""
+=======
+class ComplianceFeatureFilterTestCase(FilterTestCases.FilterTestCase):  # pylint: disable=too-many-ancestors
+    """ComplianceFeature Filter Test Case."""
+>>>>>>> d09ecf9 (Cookie updated targeting develop by NetworkToCode Cookie Drift Manager Tool)
 
     queryset = models.ConfigCompliance.objects.all()
     filterset = filters.ConfigComplianceFilterSet

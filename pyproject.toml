@@ -65,6 +65,7 @@ mkdocstrings = "0.25.2"
 mkdocstrings-python = "1.10.8"
 mkdocs-autorefs = "1.2.0"
 griffe = "1.1.1"
+glightbox = "3.2.0"
 
 [tool.poetry.extras]
 all = [

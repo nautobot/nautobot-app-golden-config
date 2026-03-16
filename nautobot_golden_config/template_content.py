@@ -1,7 +1,7 @@
 """Added content to the device model view for config compliance."""
 
 from django.db.models import Count, Q
-from nautobot.apps.ui import DistinctViewTab, KeyValueTablePanel, SectionChoices, TemplateExtension
+from nautobot.apps.ui import DistinctViewTab, TemplateExtension
 
 from nautobot_golden_config.models import ConfigCompliance, GoldenConfig
 from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_COMPLIANCE
@@ -136,20 +136,9 @@ class ConfigComplianceTenantCheck(TemplateExtension):  # pylint: disable=abstrac
         )
 
 
-class ConfigComplianceDeviceTab(TemplateExtension):  # pylint: disable=abstract-method
-    """App extension class for config compliance."""
-
-    model = "dcim.device"
-
-    object_detail_panels = [
-        KeyValueTablePanel(weight=100, section=SectionChoices.RIGHT_HALF, label="SOME Label", data={"^": "<br>"})
-    ]
-
-
 extensions = [ConfigDeviceDetails]
 if ENABLE_COMPLIANCE:
     extensions.append(ConfigComplianceDeviceCheck)
-    extensions.append(ConfigComplianceDeviceTab)
     extensions.append(ConfigComplianceLocationCheck)
     extensions.append(ConfigComplianceTenantCheck)
 

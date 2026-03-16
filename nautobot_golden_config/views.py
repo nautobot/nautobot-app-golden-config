@@ -409,7 +409,10 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
             data.update({"table": None, "delete_all": True, "total_objs_to_delete": len(table.rows)})
         return Response(data)
 
-    @action(detail=True, methods=["get"])
+    @action(
+        detail=True,
+        methods=["get"],
+    )
     def devicetab(self, request, pk, *args, **kwargs):
         """Additional action to handle backup_config."""
         device = Device.objects.get(pk=pk)

@@ -579,10 +579,12 @@ class GetFilterLookupDictTestCase(TestCase):
 
         # First, call with a datetime filter to trigger the isnull addition
         datetime_filter = MultiValueDateTimeFilter()
+        # pylint: disable=protected-access
         datetime_lookup = filters.GoldenConfigFilterSet._get_filter_lookup_dict(datetime_filter)
         self.assertIn("isnull", datetime_lookup)
 
         # Then verify a numeric filter does NOT get isnull
         number_filter = MultiValueNumberFilter()
+        # pylint: disable=protected-access
         number_lookup = filters.GoldenConfigFilterSet._get_filter_lookup_dict(number_filter)
         self.assertNotIn("isnull", number_lookup)

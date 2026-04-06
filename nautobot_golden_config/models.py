@@ -21,7 +21,12 @@ from nautobot.extras.models.statuses import StatusField
 from netutils.config.compliance import feature_compliance
 from xmldiff import actions, main
 
-from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
+from nautobot_golden_config.choices import (
+    ComplianceRuleConfigTypeChoice,
+    ConfigPlanTypeChoice,
+    EmptyComplianceBehaviorChoice,
+    RemediationTypeChoice,
+)
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
 
 LOGGER = logging.getLogger(__name__)
@@ -72,17 +77,11 @@ def _get_cli_compliance(obj):
         feature, obj.actual, obj.intended, obj.device.platform.network_driver_mappings.get("netutils_parser")
     )
     compliance = value["compliant"]
-    if compliance:
-        compliance_int = 1
-        ordered = value["ordered_compliant"]
-    else:
-        compliance_int = 0
-        ordered = value["ordered_compliant"]
+    ordered = value["ordered_compliant"]
     missing = _null_to_empty(value["missing"])
     extra = _null_to_empty(value["extra"])
     return {
         "compliance": compliance,
-        "compliance_int": compliance_int,
         "ordered": ordered,
         "missing": missing,
         "extra": extra,
@@ -104,13 +103,11 @@ def _get_json_compliance(obj):
         obj.actual, obj.intended, ignore_order=obj.ordered, report_repetition=True, threshold_to_diff_deeper=0
     )
     if not diff:
-        compliance_int = 1
         compliance = True
         ordered = True
         missing = ""
         extra = ""
     else:
-        compliance_int = 0
         compliance = False
         ordered = False
         missing = _null_to_empty(_normalize_diff(diff, "added"))
@@ -118,7 +115,6 @@ def _get_json_compliance(obj):
 
     return {
         "compliance": compliance,
-        "compliance_int": compliance_int,
         "ordered": ordered,
         "missing": missing,
         "extra": extra,
@@ -146,14 +142,12 @@ def _get_xml_compliance(obj):
     extra = main.diff_texts(obj.intended, obj.actual, diff_options=diff_options)
 
     compliance = not missing and not extra
-    compliance_int = int(compliance)
     ordered = obj.ordered
     missing = _null_to_empty(_normalize_diff(missing))
     extra = _null_to_empty(_normalize_diff(extra))
 
     return {
         "compliance": compliance,
-        "compliance_int": compliance_int,
         "ordered": ordered,
         "missing": missing,
         "extra": extra,
@@ -162,16 +156,16 @@ def _get_xml_compliance(obj):
 
 def _verify_get_custom_compliance_data(compliance_details):
     """This function verifies the data is as expected when a custom function is used."""
-    for val in ["compliance", "compliance_int", "ordered", "missing", "extra"]:
+    for val in ["compliance", "ordered", "missing", "extra"]:
         try:
             compliance_details[val]
         except KeyError:
             raise ValidationError(MISSING_MSG.format(val)) from KeyError
+    if "compliance_int" in compliance_details:
+        LOGGER.warning("The 'compliance_int' key in custom compliance return data is deprecated and will be ignored.")
     for val in ["compliance", "ordered"]:
         if compliance_details[val] not in [True, False]:
             raise ValidationError(VALIDATION_MSG.format(val, "Boolean", compliance_details[val]))
-    if compliance_details["compliance_int"] not in [0, 1]:
-        raise ValidationError(VALIDATION_MSG.format("compliance_int", "0 or 1", compliance_details["compliance_int"]))
     for val in ["missing", "extra"]:
         if not isinstance(compliance_details[val], str) and not _is_jsonable(compliance_details[val]):
             raise ValidationError(VALIDATION_MSG.format(val, "String or Json", compliance_details[val]))
@@ -371,7 +365,7 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
 
     device = models.ForeignKey(to="dcim.Device", on_delete=models.CASCADE, help_text="The device")
     rule = models.ForeignKey(to="ComplianceRule", on_delete=models.CASCADE, related_name="rule")
-    compliance = models.BooleanField(blank=True)
+    compliance = models.BooleanField(blank=True, null=True)
     actual = models.JSONField(blank=True, help_text="Actual Configuration for feature")
     intended = models.JSONField(blank=True, help_text="Intended Configuration for feature")
     # these three are config snippets exposed for the ConfigDeployment.
@@ -379,8 +373,17 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
     missing = models.JSONField(blank=True, help_text="Configuration that should be on the device.")
     extra = models.JSONField(blank=True, help_text="Configuration that should not be on the device.")
     ordered = models.BooleanField(default=False)
-    # Used for django-pivot, both compliance and compliance_int should be set.
-    compliance_int = models.IntegerField(blank=True)
+
+    @property
+    def compliance_int(self):
+        """Backwards-compatible property mapping compliance boolean to integer."""
+        if self.compliance is None:
+            return None
+        return int(self.compliance)
+
+    @compliance_int.setter
+    def compliance_int(self, value):
+        """No-op setter for backwards compatibility."""
 
     is_saved_view_model = False
 
@@ -415,6 +418,23 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
 
     def compliance_on_save(self):
         """The actual configuration compliance happens here, but the details for actual compliance job would be found in FUNC_MAPPER."""
+        if self.intended == "":
+            setting = getattr(self, "_golden_config_setting", None) or GoldenConfigSetting.objects.get_for_device(
+                self.device
+            )
+            behavior = setting.empty_compliance_behavior if setting else EmptyComplianceBehaviorChoice.TYPE_VALIDATED
+            if behavior == EmptyComplianceBehaviorChoice.TYPE_EMPTY_INTENDED:
+                self.compliance = None
+                self.missing = self.missing or ""
+                self.extra = self.extra or ""
+                return
+            if behavior == EmptyComplianceBehaviorChoice.TYPE_EMPTY_BOTH and self.actual == "":
+                self.compliance = None
+                self.missing = self.missing or ""
+                self.extra = self.extra or ""
+                return
+            # TYPE_VALIDATED falls through to normal compliance check
+
         if self.rule.custom_compliance:
             if not FUNC_MAPPER.get("custom"):
                 raise ValidationError(
@@ -426,14 +446,13 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
             compliance_details = FUNC_MAPPER[self.rule.config_type](obj=self)
 
         self.compliance = compliance_details["compliance"]
-        self.compliance_int = compliance_details["compliance_int"]
         self.ordered = compliance_details["ordered"]
         self.missing = compliance_details["missing"]
         self.extra = compliance_details["extra"]
 
     def remediation_on_save(self):
         """The actual remediation happens here, before saving the object."""
-        if self.compliance:
+        if self.compliance or self.compliance is None:
             self.remediation = ""
             return
 
@@ -457,9 +476,7 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
         # This accounts for django 4.2 `Setting update_fields in Model.save() may now be required` change
         # in behavior
         if kwargs.get("update_fields"):
-            kwargs["update_fields"].update(
-                {"compliance", "compliance_int", "ordered", "missing", "extra", "remediation"}
-            )
+            kwargs["update_fields"].update({"compliance", "ordered", "missing", "extra", "remediation"})
 
         super().save(*args, **kwargs)
 
@@ -608,6 +625,16 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         default=True,
         verbose_name="Backup Test",
         help_text="Whether or not to pretest the connectivity of the device by verifying there is a resolvable IP that can connect to port 22.",
+    )
+    empty_compliance_behavior = models.CharField(
+        max_length=20,
+        choices=EmptyComplianceBehaviorChoice,
+        default=EmptyComplianceBehaviorChoice.TYPE_VALIDATED,
+        verbose_name="Empty Compliance Behavior",
+        help_text="How to handle compliance when configurations are empty. "
+        "'Validated' (default) treats empty-matches-empty as compliant. "
+        "'Empty Both' marks as N/A when both actual and intended are empty. "
+        "'Empty Intended' marks as N/A when intended is empty, regardless of actual.",
     )
     sot_agg_query = models.ForeignKey(
         to="extras.GraphQLQuery",

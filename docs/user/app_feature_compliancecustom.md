@@ -40,14 +40,16 @@ The interface of contract provided to your custom function is based on the follo
 
 ### Outputs
 
-- The function should return a single dictionary, with the keys of `compliance`, `compliance_int`, `ordered`, `missing`, and `extra`.
+- The function should return a single dictionary, with the keys of `compliance`, `ordered`, `missing`, and `extra`.
 - The `compliance` key should be a boolean with either True or False as acceptable responses, which determines if the config is compliant or not.
-- The `compliance_int` key should be an integer with either 1 (when compliance is True) or 0 (when compliance is False) as acceptable responses. This is required to handle a counting use case where boolean does not suffice.
 - The `ordered` key should be a boolean with either True or False as acceptable responses, which determines if the config is compliant and ordered or not.
 - The `missing` key should be a string or json, empty when nothing is missing and appropriate string or json data when configuration is missing.
 - The `extra` key should be a string or json, empty when nothing is extra and appropriate string or json data when there is extra configuration.
 
 There is validation to ensure the data structure returned is compliant to the above assertions.
+
+!!! warning "Deprecated"
+    The `compliance_int` key is deprecated and should no longer be returned. If present, a deprecation warning will be logged and the value will be ignored. The `compliance` boolean is the sole source of truth.
 
 The function provided in string path format, must be installed in the same environment as nautobot and the workers.
 
@@ -73,14 +75,12 @@ To provide boiler plate code for any future use case, the following is provided
 ```python
 def custom_compliance_func(obj):
     # Modify with actual logic, this would always presume compliant.
-    compliance_int = 1
     compliance = True
     ordered = True
     missing = ""
     extra = ""
     return {
         "compliance": compliance,
-        "compliance_int": compliance_int,
         "ordered": ordered,
         "missing": missing,
         "extra": extra,
@@ -116,20 +116,17 @@ def custom_compliance_func(obj):
     neighbors = list(set(neighbors))
     secrets = list(set(secrets))
     if secrets != neighbors:
-        compliance_int = 0
         compliance = False
         ordered = False
         missing = f"neighbors Found: {str(neighbors)}\nneigbors with secrets found: {str(secrets)}"
         extra = ""
     else:
-        compliance_int = 1
         compliance = True
         ordered = True
         missing = ""
         extra = ""
     return {
         "compliance": compliance,
-        "compliance_int": compliance_int,
         "ordered": ordered,
         "missing": missing,
         "extra": extra,

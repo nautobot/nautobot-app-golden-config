@@ -1,0 +1,1 @@
+Replaced `django_pivot` dependency with hand-built pivot query for the compliance overview table.

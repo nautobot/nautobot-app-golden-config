@@ -171,7 +171,6 @@ class Command(BaseCommand):
                         device=device,
                         rule=rule,
                         compliance=is_compliant,
-                        compliance_int=1 if is_compliant else 0,
                         actual=actual,
                         intended=intended,
                         missing=missing_config,

@@ -13,6 +13,17 @@ This major release marks the compatibility of the Nautobot Plugin Golden Config 
 
 We will continue to support the previous major release for users of Nautobot LTM 2.4 only with critical bug and security fixes as per the [Software Lifecycle Policy](https://networktocode.com/company/legal/software-lifecycle-policy/).
 
+## [v3.0.4 (2026-04-07)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v3.0.4)
+
+### Fixed
+
+- [#975](https://github.com/nautobot/nautobot-app-golden-config/issues/975) - Fixed Add jinja_env support to manual config plan.
+- [#1094](https://github.com/nautobot/nautobot-app-golden-config/issues/1094) - Fixed an issue where the `isnull` filter was inadvertently being added to extra fields.
+
+### Housekeeping
+
+- [#1093](https://github.com/nautobot/nautobot-app-golden-config/issues/1093) - Updated the Device template extension to use object_detail_tabs in place of the deprecated detail_tabs.
+
 ## [v3.0.3 (2026-03-03)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v3.0.3)
 
 ### Fixed

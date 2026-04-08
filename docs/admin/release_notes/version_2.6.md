@@ -10,6 +10,12 @@ This document describes all new features and changes in the release. The format 
 <!-- towncrier release notes start -->
 
 
+## [v2.6.3 (2026-04-08)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v2.6.3)
+
+### Fixed
+
+- [#1094](https://github.com/nautobot/nautobot-app-golden-config/issues/1094) - Fixed an issue where the `isnull` filter was inadvertently being added to extra fields.
+
 ## [v2.6.2 (2026-01-28)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v2.6.2)
 
 ### Changed

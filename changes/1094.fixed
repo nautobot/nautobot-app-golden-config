@@ -1,1 +1,0 @@
-Fixed an issue where the `isnull` filter was inadvertently being added to extra fields.

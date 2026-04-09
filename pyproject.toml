@@ -43,7 +43,7 @@ nautobot-capacity-metrics = ">=4.0.0,<5.0.0"
 xmldiff = "^2.6.3"
 # Used for local development
 # nautobot = ">=3.1.0,<4.0.0"  # TODO: Uncomment when Nautobot 3.1.0 is released
-nautobot = "3.1.0a5"
+nautobot = "3.1.0a5,<3.1.0rc99"
 
 [tool.poetry.group.dev.dependencies]
 coverage = "*"

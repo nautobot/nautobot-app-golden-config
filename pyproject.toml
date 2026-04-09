@@ -17,6 +17,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 packages = [
     { include = "nautobot_golden_config" },
@@ -31,7 +32,7 @@ include = [
 "Bug Tracker" = "https://github.com/nautobot/nautobot-app-golden-config/issues"
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.14"
+python = ">=3.10,<3.15"
 deepdiff = ">=8.6.1,<9.0.0"
 django-pivot = ">=1.9.0,<1.10.0" # The signature changed to return a non-queryset, do not upgrade without ensuring it returns a queryset
 nautobot-plugin-nornir = ">=3.0.0,<4.0.0"
@@ -75,6 +76,8 @@ mkdocstrings = "0.25.2"
 mkdocstrings-python = "1.10.8"
 mkdocs-autorefs = "1.2.0"
 griffe = "1.1.1"
+# Image lightboxing in mkdocs
+mkdocs-glightbox = "~0.5.2"
 
 [tool.poetry.extras]
 all = [

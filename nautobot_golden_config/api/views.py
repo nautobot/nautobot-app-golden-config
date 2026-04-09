@@ -34,21 +34,12 @@ from rest_framework.generics import GenericAPIView, RetrieveAPIView
 from rest_framework.mixins import DestroyModelMixin, ListModelMixin, RetrieveModelMixin, UpdateModelMixin
 from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.routers import APIRootView
 from rest_framework.viewsets import GenericViewSet
 
 from nautobot_golden_config import filters, models
 from nautobot_golden_config.api import serializers
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import dispatch_params, get_django_env
-
-
-class GoldenConfigRootView(APIRootView):
-    """Golden Config API root view."""
-
-    def get_view_name(self):
-        """Golden Config API root view boilerplate."""
-        return "Golden Config"
 
 
 class SOTAggDeviceDetailView(NautobotAPIVersionMixin, GenericAPIView):

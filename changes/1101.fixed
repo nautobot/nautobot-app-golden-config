@@ -1,0 +1,1 @@
+Fixed `OrderedDefaultRouter` warning from showing on startup.

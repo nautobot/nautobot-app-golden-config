@@ -8,14 +8,12 @@ import yaml
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Count, ExpressionWrapper, FloatField, Max, Q, Sum, Value
-from django.db.models.functions import Coalesce, NullIf
+from django.db.models import Case, Count, ExpressionWrapper, FloatField, Max, Q, Value, When
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.timezone import make_aware
 from django.views.generic import TemplateView, View
-from django_pivot.pivot import pivot
 from django_tables2 import RequestConfig
 from nautobot.apps import views
 from nautobot.apps.ui import (
@@ -281,16 +279,21 @@ def _get_feature_compliance_queryset(device_ids):
     division-by-zero.
     """
     device_filter = Q(feature__rule__device__in=device_ids)
+    # Exclude N/A records (compliance is NULL when configs are empty and behavior is non-default)
+    active_filter = device_filter & Q(feature__rule__compliance__isnull=False)
+    compliant_filter = active_filter & Q(feature__rule__compliance=True)
+    total = Count("feature__rule", filter=active_filter)
+    compliant_count = Count("feature__rule", filter=compliant_filter)
     return models.ComplianceFeature.objects.annotate(
-        count=Count("feature__rule", filter=device_filter),
-        compliant=Coalesce(Sum("feature__rule__compliance_int", filter=device_filter), 0),
-        non_compliant=Count("feature__rule", filter=device_filter)
-        - Coalesce(Sum("feature__rule__compliance_int", filter=device_filter), 0),
-        comp_percent=ExpressionWrapper(
-            100.0
-            * Coalesce(Sum("feature__rule__compliance_int", filter=device_filter), 0)
-            / NullIf(Count("feature__rule", filter=device_filter), Value(0)),
-            output_field=FloatField(),
+        count=total,
+        compliant=compliant_count,
+        non_compliant=Count("feature__rule", filter=active_filter & Q(feature__rule__compliance=False)),
+        comp_percent=Case(
+            When(
+                **{"count__gt": 0},
+                then=ExpressionWrapper(100.0 * compliant_count / total, output_field=FloatField()),
+            ),
+            default=None,
         ),
     ).order_by("-comp_percent")
 
@@ -354,13 +357,23 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
         """Build actual runtime queryset as the build time queryset of table `pivoted`."""
         # Super because alter_queryset() calls get_queryset(), which is what calls queryset.restrict()
         self.queryset = super().alter_queryset(request)
-        return pivot(
-            self.queryset,
-            ["device", "device__name"],
-            "rule__feature__slug",
-            "compliance_int",
-            aggregation=Max,
-        )
+        features = self.queryset.values_list("rule__feature__slug", flat=True).distinct()
+        annotations = {}
+        for slug in features:
+            annotations[slug] = Max(
+                Case(
+                    When(
+                        rule__feature__slug=slug,
+                        then=Case(
+                            When(compliance=True, then=Value("True")),
+                            When(compliance=False, then=Value("False")),
+                            default=Value("None"),
+                        ),
+                    ),
+                    default=None,
+                )
+            )
+        return self.queryset.values("device", "device__name").annotate(**annotations)
 
     def perform_bulk_destroy(self, request, **kwargs):
         """Overwrite perform_bulk_destroy to handle special use case in which the UI shows devices but want to delete ConfigCompliance objects."""
@@ -422,6 +435,9 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
         elif request.GET.get("compliance") == "non-compliant":
             context["compliance_filter"] = "non-compliant"
             context["compliance_details"] = compliance_details.filter(compliance=False)
+        elif request.GET.get("compliance") == "n-a":
+            context["compliance_filter"] = "n-a"
+            context["compliance_details"] = compliance_details.filter(compliance__isnull=True)
 
         context["active_tab"] = request.GET.get("tab")
         context["device"] = device
@@ -483,8 +499,10 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
 
         # Device pie: total = distinct devices with ≥1 compliance record;
         # compliants = devices with zero non-compliant records.
-        device_total = cc_qs.values("device_id").distinct().count()
-        device_non_compliant = cc_qs.filter(compliance=False).values("device_id").distinct().count()
+        # Exclude N/A records (compliance is NULL when both actual and intended are empty)
+        cc_active_qs = cc_qs.filter(compliance__isnull=False)
+        device_total = cc_active_qs.values("device_id").distinct().count()
+        device_non_compliant = cc_active_qs.filter(compliance=False).values("device_id").distinct().count()
         device_aggr = calculate_aggr_percentage(
             {"total": device_total, "compliants": device_total - device_non_compliant}
         )
@@ -510,7 +528,7 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
         # Feature pie: total = all compliance records for filtered devices;
         # compliants = those marked compliant.
         feature_aggr = calculate_aggr_percentage(
-            cc_qs.aggregate(total=Count("id"), compliants=Count("id", filter=Q(compliance=True)))
+            cc_active_qs.aggregate(total=Count("id"), compliants=Count("id", filter=Q(compliance=True)))
         )
 
         pie_feature_panel = EChartsPanel(

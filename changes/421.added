@@ -1,0 +1,1 @@
+Added configurable `empty_compliance_behavior` setting to `GoldenConfigSetting` to control how compliance is evaluated when configurations are empty.

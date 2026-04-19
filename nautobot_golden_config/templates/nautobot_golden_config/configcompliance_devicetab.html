@@ -72,6 +72,7 @@
                 <div class="btn-group float-end" role="group" aria-label="Compliance Filter">
                     <a class="btn btn-xs btn-success{% if compliance_filter == 'compliant' %} bg-success nb-text-body-bg{% endif %}" href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab={{ active_tab }}&amp;compliance=compliant">Compliant</a>
                     <a class="btn btn-xs btn-danger{% if compliance_filter == 'non-compliant' %} bg-danger nb-text-body-bg{% endif %}" href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab={{ active_tab }}&amp;compliance=non-compliant">Non-Compliant</a>
+                    <a class="btn btn-xs btn-secondary{% if compliance_filter == 'n-a' %} bg-secondary nb-text-body-bg{% endif %}" href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab={{ active_tab }}&amp;compliance=n-a">N/A</a>
                     <a class="btn btn-xs btn-info" href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab={{ active_tab }}">Clear</a>
                 </div>
             </div>
@@ -79,7 +80,9 @@
                 <table>
                     <tr>
                         {% for item in compliance_details %}
-                            {% if item.compliance %}
+                            {% if item.compliance == None %}
+                                <td style="background-color: #808080;">
+                            {% elif item.compliance %}
                                 <td style="background-color: #5cb85c;">
                             {% else %}
                                 <td style="background-color: #d9534f;">
@@ -120,7 +123,9 @@
                 <table class="table table-hover attr-table compliance-content">
                     <tr>
                         <td class="w-25">Status</td>
-                        {% if item.rule.config_ordered %}
+                        {% if item.compliance == None %}
+                            <td><span class="badge bg-secondary">N/A</span></td>
+                        {% elif item.rule.config_ordered %}
                             {% if item.compliance %}
                                 <td><span class="badge bg-success">Compliant</span> <span class="mdi mdi-sort" title="Ordered Configuration Test"></span></td>
                             {% else %}

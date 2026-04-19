@@ -9,7 +9,7 @@ from nautobot.apps.testing import TestCase
 from nautobot.dcim.models import Platform
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status
 
-from nautobot_golden_config.choices import RemediationTypeChoice
+from nautobot_golden_config.choices import EmptyComplianceBehaviorChoice, RemediationTypeChoice
 from nautobot_golden_config.models import (
     ConfigCompliance,
     ConfigPlan,
@@ -24,6 +24,7 @@ from nautobot_golden_config.tests.conftest import create_git_repos
 from .conftest import (
     create_config_compliance,
     create_device,
+    create_feature_rule_cli,
     create_feature_rule_cli_with_remediation,
     create_feature_rule_json,
     create_feature_rule_xml,
@@ -734,3 +735,104 @@ class GetHierConfigRemediationTestCase(TestCase):
         mock_get_hconfig.assert_called_once()
         # WorkflowRemediation should never be called since get_hconfig raises exception
         mock_workflow_remediation.assert_not_called()
+
+
+class EmptyComplianceBehaviorTestCase(TestCase):
+    """Test configurable empty compliance behavior on GoldenConfigSetting."""
+
+    @classmethod
+    def setUpTestData(cls):
+        """Set up base objects."""
+        create_git_repos()
+        create_saved_queries()
+        cls.device = create_device()
+        cls.compliance_rule_cli = create_feature_rule_cli(cls.device)
+        cls.dynamic_group = DynamicGroup.objects.create(
+            name="test_empty_compliance",
+            content_type=ContentType.objects.get_for_model(cls.device),
+            filter={},
+        )
+
+    def _create_setting(self, behavior):
+        """Helper to create GoldenConfigSetting with given behavior."""
+        GoldenConfigSetting.objects.all().delete()
+        return GoldenConfigSetting.objects.create(
+            name="test_empty",
+            slug="test_empty",
+            weight=1000,
+            dynamic_group=self.dynamic_group,
+            empty_compliance_behavior=behavior,
+            sot_agg_query=GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1"),
+            backup_repository=GitRepository.objects.get(name="test-backup-repo-1"),
+            intended_repository=GitRepository.objects.get(name="test-intended-repo-1"),
+            jinja_repository=GitRepository.objects.get(name="test-jinja-repo-1"),
+        )
+
+    def _create_compliance(self, actual, intended):
+        """Helper to create or update a ConfigCompliance record."""
+        cc, _ = ConfigCompliance.objects.update_or_create(
+            device=self.device,
+            rule=self.compliance_rule_cli,
+            defaults={"actual": actual, "intended": intended},
+        )
+        return cc
+
+    def test_validated_both_empty(self):
+        """With TYPE_VALIDATED, empty+empty should be compliant."""
+        self._create_setting(EmptyComplianceBehaviorChoice.TYPE_VALIDATED)
+        cc = self._create_compliance(actual="", intended="")
+        self.assertTrue(cc.compliance)
+        self.assertEqual(cc.compliance_int, 1)
+
+    def test_validated_intended_empty_actual_populated(self):
+        """With TYPE_VALIDATED, empty intended + populated actual runs normal check."""
+        self._create_setting(EmptyComplianceBehaviorChoice.TYPE_VALIDATED)
+        cc = self._create_compliance(actual="ntp 1.1.1.1", intended="")
+        self.assertIsNotNone(cc.compliance)
+
+    def test_empty_both_both_empty(self):
+        """With TYPE_EMPTY_BOTH, both empty should be N/A."""
+        self._create_setting(EmptyComplianceBehaviorChoice.TYPE_EMPTY_BOTH)
+        cc = self._create_compliance(actual="", intended="")
+        self.assertIsNone(cc.compliance)
+        self.assertIsNone(cc.compliance_int)
+
+    def test_empty_both_intended_empty_actual_populated(self):
+        """With TYPE_EMPTY_BOTH, only intended empty should run normal check."""
+        self._create_setting(EmptyComplianceBehaviorChoice.TYPE_EMPTY_BOTH)
+        cc = self._create_compliance(actual="ntp 1.1.1.1", intended="")
+        self.assertIsNotNone(cc.compliance)
+        self.assertIsNotNone(cc.compliance_int)
+
+    def test_empty_both_actual_empty_intended_populated(self):
+        """With TYPE_EMPTY_BOTH, populated intended should run normal check."""
+        self._create_setting(EmptyComplianceBehaviorChoice.TYPE_EMPTY_BOTH)
+        cc = self._create_compliance(actual="", intended="ntp 1.1.1.1")
+        self.assertIsNotNone(cc.compliance)
+
+    def test_empty_intended_both_empty(self):
+        """With TYPE_EMPTY_INTENDED, both empty should be N/A."""
+        self._create_setting(EmptyComplianceBehaviorChoice.TYPE_EMPTY_INTENDED)
+        cc = self._create_compliance(actual="", intended="")
+        self.assertIsNone(cc.compliance)
+        self.assertIsNone(cc.compliance_int)
+
+    def test_empty_intended_intended_empty_actual_populated(self):
+        """With TYPE_EMPTY_INTENDED, empty intended should be N/A regardless of actual."""
+        self._create_setting(EmptyComplianceBehaviorChoice.TYPE_EMPTY_INTENDED)
+        cc = self._create_compliance(actual="ntp 1.1.1.1", intended="")
+        self.assertIsNone(cc.compliance)
+        self.assertIsNone(cc.compliance_int)
+
+    def test_empty_intended_actual_empty_intended_populated(self):
+        """With TYPE_EMPTY_INTENDED, populated intended should run normal check."""
+        self._create_setting(EmptyComplianceBehaviorChoice.TYPE_EMPTY_INTENDED)
+        cc = self._create_compliance(actual="", intended="ntp 1.1.1.1")
+        self.assertIsNotNone(cc.compliance)
+
+    def test_na_compliance_skips_remediation(self):
+        """N/A compliance should result in empty remediation."""
+        self._create_setting(EmptyComplianceBehaviorChoice.TYPE_EMPTY_BOTH)
+        cc = self._create_compliance(actual="", intended="")
+        self.assertIsNone(cc.compliance)
+        self.assertEqual(cc.remediation, "")

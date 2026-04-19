@@ -136,16 +136,24 @@ class PercentageColumn(Column):
 
 
 class ComplianceColumn(Column):
-    """Column used to display config compliance status (True/False/None)."""
+    """Column used to display config compliance status.
+
+    Values from the pivot subquery:
+        "True"  - compliant
+        "False" - non-compliant
+        "None"  - N/A (record exists, compliance is NULL)
+        None    - no record for this device+feature (no subquery match)
+    """
 
     def render(self, value):
         """Render an entry in this column."""
-        if value == 1:  # pylint: disable=no-else-return
+        if value == "True":
             return format_html('<span class="text-success"><i class="mdi mdi-check-bold"></i></span>')
-        elif value == 0:
+        if value == "False":
             return format_html('<span class="text-danger"><i class="mdi mdi-close-thick"></i></span>')
-        else:  # value is None
-            return format_html('<span class="mdi mdi-minus"></span>')
+        if value == "None":
+            return format_html('<span class="text-muted" title="N/A - Empty configuration">- -</span>')
+        return format_html('<span class="mdi mdi-minus" title="No rule defined"></span>')
 
 
 #

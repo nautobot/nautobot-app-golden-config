@@ -4,6 +4,7 @@ import logging
 
 from git.exc import GitCommandError
 from nautobot.apps.utils import GitRepo as _GitRepo
+from nautobot.core.utils.git import GIT_ENVIRONMENT
 
 LOGGER = logging.getLogger(__name__)
 
@@ -52,6 +53,17 @@ class GitRepo(_GitRepo):  # pylint: disable=too-many-instance-attributes
         self.repo.index.commit(commit_description)
         LOGGER.debug("Commit completed")
 
+    def _identity_environment(self) -> dict:
+        """Retrieve identity environment variables derived from the HEAD commit."""
+        head = self.repo.head.commit
+        return {
+            **GIT_ENVIRONMENT,
+            "GIT_AUTHOR_NAME": head.author.name,
+            "GIT_AUTHOR_EMAIL": head.author.email,
+            "GIT_COMMITTER_NAME": head.committer.name,
+            "GIT_COMMITTER_EMAIL": head.committer.email,
+        }
+
     def push(self, max_retries: int = 3) -> None:
         """Push latest to the git repo, recovering from concurrent-update rejections.
 
@@ -80,7 +92,8 @@ class GitRepo(_GitRepo):  # pylint: disable=too-many-instance-attributes
                 self.fetch()
                 branch = self.repo.active_branch.name
                 try:
-                    self.repo.git.rebase(f"origin/{branch}")
+                    with self.repo.git.custom_environment(**self._identity_environment()):
+                        self.repo.git.rebase(f"origin/{branch}")
                 except GitCommandError:
                     LOGGER.debug("Rebase onto origin/%s failed; aborting and surfacing error.", branch)
                     self.repo.git.rebase("--abort")

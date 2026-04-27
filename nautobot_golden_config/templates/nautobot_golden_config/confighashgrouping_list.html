@@ -12,6 +12,11 @@
 {{ block.super }}
 <script src="{% static 'run_job.js' %}"></script>
 <script>
+var clipboard = new ClipboardJS('.btn');
+clipboard.on('success', function (e) {});
+clipboard.on('error', function (e) {});
+</script>
+<script>
 var nautobot_csrf_token = "{{ csrf_token }}";
 
 function formatHashGroupJobData(featureId, configHash, deviceIds) {

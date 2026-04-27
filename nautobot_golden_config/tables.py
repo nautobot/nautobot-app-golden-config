@@ -127,25 +127,17 @@ def get_display_template(field_name):
     return (
         """
         {% load helpers %}
-        <pre><code><div title="Click to copy to clipboard" """
-        "onClick=\"toClipboard('{{ record.id }}" + field_name + '\')" id="{{ record.id }}' + field_name + '"'
-        """style="height:auto;max-height:50vh;line-height:1.5em;white-space:pre-wrap;word-break:break-all;overflow:auto;">{{ value }}</div></code></pre>
-        <script>
-            function toClipboard(id) {
-                const element = document.getElementById(id);
-                const content = element.innerText || element.textContent;
-                navigator.clipboard.writeText(content).then(() => {
-                    console.log("Copied to clipboard");
-                }).catch(err => {
-                    console.error("Failed to copy: ", err);
-                    alert("Error copying to clipboard.");
-                });
-
-                // Improve alert message to be less intrusive or more informative
-                const displayContent = content.length > 100 ? content.slice(0, 100) + "..." : content;
-                alert("Copied to clipboard: " + displayContent);
-            }
-        </script>
+        <span id="{{ record.id }}"""
+        + field_name
+        + """"><pre><code><div style="height:auto;max-height:50vh;line-height:1.5em;white-space:pre-wrap;word-break:break-all;overflow:auto;">{{ value }}</div></code></pre></span>
+        <span class="config_hover_button">
+            <button type="button" class="btn btn-secondary nb-btn-inline-hover" data-clipboard-action="copy" data-clipboard-target="#{{ record.id }}"""
+        + field_name
+        + """">
+                <span aria-hidden="true" class="mdi mdi-content-copy"></span>
+                <span class="visually-hidden">Copy</span>
+            </button>
+        </span>
     """
     )
 
@@ -602,7 +594,7 @@ class ConfigComplianceHashTable(BaseTable):
     def render_actual_config_hash(self, value):
         """Render actual config hash with only the last 10 characters."""
         if value:
-            return value
+            return value[:7]
         return value
 
     def render_intended_config_hash(self, record):
@@ -613,7 +605,7 @@ class ConfigComplianceHashTable(BaseTable):
                 device=record.device, rule=record.rule, config_type="intended"
             )
             if intended_hash_record.config_hash:
-                return intended_hash_record.config_hash
+                return intended_hash_record.config_hash[:7]
             return "--"
         except models.ConfigComplianceHash.DoesNotExist:
             return "--"
@@ -646,8 +638,8 @@ class ConfigHashGroupingTable(BaseTable):  # pylint: disable=nb-sub-class-name
     device_count = TemplateColumn(
         template_code="""
         <a href="{% url 'plugins:nautobot_golden_config:configcompliance_list' %}?feature_id={{ record.feature_id }}&compliance=false&config_hash_group={{ record.pk }}"
-           class="text-primary" style="text-decoration: none; font-weight: bold;">
-            {{ record.device_count }} device{{ record.device_count|pluralize }}
+           style="text-decoration: none;">
+            <span class="badge bg-primary">{{ record.device_count }}</span>
         </a>
         """,
         verbose_name="Device Count",

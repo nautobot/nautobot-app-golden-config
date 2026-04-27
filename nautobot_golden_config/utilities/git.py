@@ -2,9 +2,27 @@
 
 import logging
 
+from git.exc import GitCommandError
 from nautobot.apps.utils import GitRepo as _GitRepo
+from nautobot.core.utils.git import GIT_ENVIRONMENT
 
 LOGGER = logging.getLogger(__name__)
+
+_NON_FAST_FORWARD_MARKERS = (
+    "non-fast-forward",
+    "failed to push some refs",
+    "fetch first",
+    "[rejected]",
+)
+
+
+def _is_non_fast_forward(exc: GitCommandError) -> bool:
+    """Return True when a push failure looks like a non-fast-forward rejection."""
+    stderr = getattr(exc, "stderr", None) or ""
+    if isinstance(stderr, bytes):
+        stderr = stderr.decode("utf-8", errors="replace")
+    stderr = stderr.lower()
+    return any(marker in stderr for marker in _NON_FAST_FORWARD_MARKERS)
 
 
 class GitRepo(_GitRepo):  # pylint: disable=too-many-instance-attributes
@@ -35,7 +53,48 @@ class GitRepo(_GitRepo):  # pylint: disable=too-many-instance-attributes
         self.repo.index.commit(commit_description)
         LOGGER.debug("Commit completed")
 
-    def push(self):
-        """Push latest to the git repo."""
-        LOGGER.debug("Push changes to repo")
-        self.repo.remotes.origin.push().raise_if_error()
+    def _identity_environment(self) -> dict:
+        """Retrieve identity environment variables derived from the HEAD commit."""
+        head = self.repo.head.commit
+        return {
+            **GIT_ENVIRONMENT,
+            "GIT_AUTHOR_NAME": head.author.name,
+            "GIT_AUTHOR_EMAIL": head.author.email,
+            "GIT_COMMITTER_NAME": head.committer.name,
+            "GIT_COMMITTER_EMAIL": head.committer.email,
+        }
+
+    def push(self, max_retries: int = 3) -> None:
+        """Push latest to the git repo, recovering from concurrent-update rejections.
+
+        When a push is rejected as non-fast-forward (another worker pushed first),
+        fetch from origin, rebase the local branch onto the remote tip, and retry
+        the push up to ``max_retries`` times. Other ``GitCommandError`` failures
+        (auth, network, etc.) are re-raised immediately. If a rebase produces a
+        true conflict, the rebase is aborted and the error is surfaced.
+
+        Args:
+            max_retries (int): Maximum push attempts before giving up.
+        """
+        for attempt in range(1, max_retries + 1):
+            try:
+                LOGGER.debug("Push changes to repo (attempt %d/%d)", attempt, max_retries)
+                self.repo.remotes.origin.push().raise_if_error()
+                return
+            except GitCommandError as exc:
+                if not _is_non_fast_forward(exc) or attempt == max_retries:
+                    raise
+                LOGGER.debug(
+                    "Push attempt %d/%d rejected as non-fast-forward; fetching and rebasing onto remote.",
+                    attempt,
+                    max_retries,
+                )
+                self.fetch()
+                branch = self.repo.active_branch.name
+                try:
+                    with self.repo.git.custom_environment(**self._identity_environment()):
+                        self.repo.git.rebase(f"origin/{branch}")
+                except GitCommandError:
+                    LOGGER.debug("Rebase onto origin/%s failed; aborting and surfacing error.", branch)
+                    self.repo.git.rebase("--abort")
+                    raise

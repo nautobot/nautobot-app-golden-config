@@ -716,9 +716,15 @@ class ConfigComplianceHashFilterForm(DeviceRelatedFilterForm):
         "platform",
         "device_status",
         "device_type",
-        "device",
+        "feature",
     ]
     q = django_forms.CharField(required=False, label="Search")
+    feature = forms.DynamicModelMultipleChoiceField(
+        queryset=models.ComplianceFeature.objects.all(),
+        required=False,
+        label="Feature",
+        to_field_name="slug",
+    )
 
     def __init__(self, *args, **kwargs):
         """Required for status to work."""

@@ -1,0 +1,1 @@
+Fixed concurrent Golden Config jobs failing to push due to non-fast-forward errors by retrying with a fetch and rebase.

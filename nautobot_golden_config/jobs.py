@@ -31,7 +31,13 @@ from nornir_nautobot.exceptions import NornirNautobotException
 
 from nautobot_golden_config.choices import ConfigPlanTypeChoice
 from nautobot_golden_config.exceptions import BackupFailure, ComplianceFailure, IntendedGenerationFailure
-from nautobot_golden_config.models import ComplianceFeature, ConfigPlan, GoldenConfig
+from nautobot_golden_config.models import (
+    ComplianceFeature,
+    ConfigComplianceHash,
+    ConfigHashGrouping,
+    ConfigPlan,
+    GoldenConfig,
+)
 from nautobot_golden_config.nornir_plays.config_backup import config_backup
 from nautobot_golden_config.nornir_plays.config_compliance import config_compliance
 from nautobot_golden_config.nornir_plays.config_deployment import config_deployment
@@ -399,6 +405,7 @@ class GenerateConfigPlans(Job, FormEntry):
     # Config Plan generation fields
     plan_type = ChoiceVar(choices=ConfigPlanTypeChoice.CHOICES)
     feature = MultiObjectVar(model=ComplianceFeature, required=False)
+    config_hash = StringVar(required=False)
     change_control_id = StringVar(required=False)
     change_control_url = StringVar(required=False)
     commands = TextVar(required=False)
@@ -417,6 +424,7 @@ class GenerateConfigPlans(Job, FormEntry):
         super().__init__(*args, **kwargs)
         self._plan_type = None
         self._feature = None
+        self._config_hash = ""
         self._change_control_id = None
         self._change_control_url = None
         self._commands = None
@@ -433,9 +441,19 @@ class GenerateConfigPlans(Job, FormEntry):
     def _validate_inputs(self, data):
         self._plan_type = data["plan_type"]
         self._feature = data.get("feature", [])
+        self._config_hash = data.get("config_hash", "") or ""
         self._change_control_id = data.get("change_control_id", "")
         self._change_control_url = data.get("change_control_url", "")
         self._commands = data.get("commands", "")
+        if self._config_hash:
+            if self._plan_type != "remediation":
+                error_msg = "`config_hash` is only supported with `plan_type=remediation`."
+                self.logger.error(error_msg)
+                raise ValueError(error_msg)
+            if not self._feature or len(self._feature) != 1:
+                error_msg = "`config_hash` requires exactly one `feature` to be supplied."
+                self.logger.error(error_msg)
+                raise ValueError(error_msg)
         if self._plan_type in ["intended", "missing", "remediation"]:
             if not self._feature:
                 self._feature = ComplianceFeature.objects.all()
@@ -444,6 +462,35 @@ class GenerateConfigPlans(Job, FormEntry):
                 error_msg = "No commands entered for config plan generation."
                 self.logger.error(error_msg)
                 raise ValueError(error_msg)
+
+    def _resolve_devices_from_config_hash(self, data):
+        """Restrict ``data['device']`` to devices in the supplied hash group.
+
+        Mutates ``data`` in place so the existing :func:`get_job_filter` flow
+        applies Golden Config scope on top of the resolved set.
+        """
+        feature = list(self._feature)[0]
+        try:
+            config_group = ConfigHashGrouping.objects.get(rule__feature=feature, config_hash=self._config_hash)
+        except ConfigHashGrouping.DoesNotExist as error:
+            error_msg = f"No configuration hash group found for feature `{feature}` and hash `{self._config_hash}`."
+            self.logger.error(error_msg)
+            raise ValueError(error_msg) from error
+        device_pks = list(
+            ConfigComplianceHash.objects.filter(
+                config_group=config_group,
+                config_type="actual",
+                device__configcompliance__rule__feature=feature,
+                device__configcompliance__compliance=False,
+            )
+            .values_list("device_id", flat=True)
+            .distinct()
+        )
+        if not device_pks:
+            error_msg = f"No non-compliant devices found in hash group for feature `{feature}`."
+            self.logger.error(error_msg)
+            raise ValueError(error_msg)
+        data["device"] = Device.objects.filter(pk__in=device_pks)
 
     def _generate_config_plan_from_feature(self):
         """Generate config plans from features."""
@@ -512,6 +559,8 @@ class GenerateConfigPlans(Job, FormEntry):
         update_dynamic_groups_cache()
         self.logger.debug("Starting config plan generation job.")
         self._validate_inputs(data)
+        if self._config_hash:
+            self._resolve_devices_from_config_hash(data)
         try:
             self._device_qs = get_job_filter(data)
         except NornirNautobotException as error:

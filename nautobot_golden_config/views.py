@@ -967,24 +967,26 @@ class ConfigHashGroupingUIViewSet(views.NautobotUIViewSet):
                     selected_groups = model.objects.filter(pk__in=self.pk_list)
                     group_count = selected_groups.count()
 
-                    # Get all ConfigComplianceHash records that reference any of the selected groups
-                    # This single query replaces the loop that was doing individual queries per group
-                    related_hash_records = models.ConfigComplianceHash.objects.filter(
-                        config_group__in=selected_groups
-                    ).select_related("device", "rule")
+                    # Actual hash records are FK-linked to the selected groups.
+                    actual_records = models.ConfigComplianceHash.objects.filter(config_group__in=selected_groups)
+                    device_rule_combinations = set(actual_records.values_list("device_id", "rule_id"))
 
-                    # Collect device/rule combinations for the success message
-                    # Use values() to get distinct combinations efficiently
-                    device_rule_combinations = set(related_hash_records.values_list("device_id", "rule_id"))
+                    # Intended hash records have config_group=None, so we have to find them
+                    # by the (device, rule) pairs derived from the actual records being deleted.
+                    intended_filter = Q()
+                    for device_id, rule_id in device_rule_combinations:
+                        intended_filter |= Q(device_id=device_id, rule_id=rule_id)
+                    intended_records = (
+                        models.ConfigComplianceHash.objects.filter(intended_filter, config_type="intended")
+                        if device_rule_combinations
+                        else models.ConfigComplianceHash.objects.none()
+                    )
 
-                    # Count hash records that will be deleted before deletion
-                    hash_records_count = related_hash_records.count()
+                    hash_records_count = actual_records.count() + intended_records.count()
 
-                    # Delete all related ConfigComplianceHash records in one operation
-                    # This handles both actual and intended records since we're deleting by device/rule combinations
-                    related_hash_records.delete()
-
-                    # Now delete the hash groups themselves
+                    # Delete actual + intended hash records, then the groups themselves.
+                    actual_records.delete()
+                    intended_records.delete()
                     selected_groups.delete()
 
                     messages.success(

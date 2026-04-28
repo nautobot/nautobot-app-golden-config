@@ -1,4 +1,4 @@
-{% extends 'generic/object_list.html' %}
+{% extends "generic/object_list.html" %}
 {% load static %}
 
 {% block content %}
@@ -6,7 +6,7 @@
 
 {% include "nautobot_golden_config/job_result_modal.html" with modal_title="Generate Remediation Config Plans" %}
 
-{% endblock %}
+{% endblock content %}
 
 {% block javascript %}
 {{ block.super }}

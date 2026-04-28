@@ -1122,7 +1122,6 @@ class ConfigComplianceHashFilterSetTestCase(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-
         cls.filterset_class = ConfigComplianceHashFilterSet
 
         create_device_data()
@@ -1161,7 +1160,6 @@ class ConfigComplianceConfigHashGroupFilterTestCase(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-
         cls.filterset_class = ConfigComplianceFilterSet
         create_device_data()
         # Use three devices on the same platform (Devices 1, 4, 5 are all on
@@ -1349,7 +1347,6 @@ class ConfigComplianceHashFilterFormTestCase(TestCase):
     """Smoke-test ``ConfigComplianceHashFilterForm`` validates with no required fields."""
 
     def test_form_is_valid_when_empty(self):
-
         form = ConfigComplianceHashFilterForm(data={})
         self.assertTrue(form.is_valid(), form.errors)
 
@@ -1360,7 +1357,6 @@ class ConfigComplianceHashTableRenderTestCase(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-
         cls.table_class = ConfigComplianceHashTable
         create_device_data()
         cls.device1 = Device.objects.get(name="Device 1")

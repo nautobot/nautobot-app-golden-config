@@ -1,7 +1,7 @@
 """Filtering for nautobot_golden_config."""
 
 import django_filters
-from django.db.models import Count, F, Q
+from django.db.models import Count, Exists, F, OuterRef, Q
 from nautobot.apps.filters import (
     MultiValueDateTimeFilter,
     NaturalKeyOrPKMultipleChoiceFilter,
@@ -155,6 +155,10 @@ class ConfigComplianceFilterSet(GoldenConfigFilterSet):  # pylint: disable=too-m
         method="filter_by_hash_group",
         label="Config Hash Group",
     )
+    config_hash = django_filters.CharFilter(
+        method="filter_by_config_hash",
+        label="Config Hash",
+    )
 
     def filter_by_hash_group(self, queryset, _name, value):
         """Filter ConfigCompliance records by config hash group ID."""
@@ -176,6 +180,23 @@ class ConfigComplianceFilterSet(GoldenConfigFilterSet):  # pylint: disable=too-m
         except models.ConfigHashGrouping.DoesNotExist:
             # If hash group doesn't exist, return empty queryset
             return queryset.none()
+
+    def filter_by_config_hash(self, queryset, _name, value):
+        """Filter ConfigCompliance by hash value, exact or prefix."""
+        if not value:
+            return queryset
+        matching_groups = models.ConfigHashGrouping.objects.filter(
+            config_hash__istartswith=value,
+        )
+        if not matching_groups.exists():
+            return queryset.none()
+        matching_hash_rows = models.ConfigComplianceHash.objects.filter(
+            device=OuterRef("device"),
+            rule=OuterRef("rule"),
+            config_type="actual",
+            config_group__in=matching_groups,
+        )
+        return queryset.filter(Exists(matching_hash_rows))
 
     class Meta:
         """Meta class attributes for ConfigComplianceFilter."""

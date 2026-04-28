@@ -1217,6 +1217,126 @@ class ConfigComplianceConfigHashGroupFilterTestCase(TestCase):
         self.assertEqual(list(qs), [])
 
 
+@override_settings(EXEMPT_VIEW_PERMISSIONS=["*"])
+class ConfigComplianceConfigHashFilterTestCase(TestCase):
+    """Cover ``ConfigComplianceFilterSet.filter_by_config_hash`` (the config_hash filter).
+
+    The filter accepts a hash value (full or prefix) and returns the
+    ConfigCompliance rows whose actual config hashes start with that value
+    (case-insensitive). Mirrors the display in ``ConfigComplianceHashTable``,
+    which truncates the hash to its first 7 characters.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.filterset_class = ConfigComplianceFilterSet
+        create_device_data()
+        # Three devices on Platform 1 so the rule's platform matches each
+        # one — keeps ``config_compliance_platform_cleanup`` from deleting
+        # off-platform ConfigCompliance rows on save.
+        cls.device1 = Device.objects.get(name="Device 1")
+        cls.device2 = Device.objects.get(name="Device 4")
+        cls.device3 = Device.objects.get(name="Device 5")
+
+        cls.rule_a = create_feature_rule_json(cls.device1, feature="ConfigHashFilterFeatureA")
+        cls.rule_b = create_feature_rule_json(cls.device1, feature="ConfigHashFilterFeatureB")
+
+        # Devices 1 & 2 share rule_a actual config; device 3 is on its own.
+        cls.shared_a = {"shared": "a"}
+        cls.unique_a = {"unique": True}
+        for device in (cls.device1, cls.device2):
+            models.ConfigCompliance.objects.create(
+                device=device,
+                rule=cls.rule_a,
+                actual=cls.shared_a,
+                intended={"intended": True},
+                compliance=False,
+                compliance_int=0,
+            )
+        models.ConfigCompliance.objects.create(
+            device=cls.device3,
+            rule=cls.rule_a,
+            actual=cls.unique_a,
+            intended={"intended": True},
+            compliance=False,
+            compliance_int=0,
+        )
+
+        # rule_b on devices 1 & 3 with a third shared config — ensures the
+        # filter must traverse multiple rules, not short-circuit to one.
+        cls.shared_b = {"shared": "b"}
+        for device in (cls.device1, cls.device3):
+            models.ConfigCompliance.objects.create(
+                device=device,
+                rule=cls.rule_b,
+                actual=cls.shared_b,
+                intended={"intended": True},
+                compliance=False,
+                compliance_int=0,
+            )
+
+        cls.shared_a_hash = compute_config_hash(cls.shared_a)
+        cls.unique_a_hash = compute_config_hash(cls.unique_a)
+        cls.shared_b_hash = compute_config_hash(cls.shared_b)
+
+    def _device_rule_pairs(self, qs):
+        return set(qs.values_list("device_id", "rule_id"))
+
+    def test_filter_exact_full_hash_returns_matching_devices(self):
+        params = {"config_hash": self.shared_a_hash}
+        qs = self.filterset_class(params, models.ConfigCompliance.objects.all()).qs
+        self.assertEqual(
+            self._device_rule_pairs(qs),
+            {(self.device1.pk, self.rule_a.pk), (self.device2.pk, self.rule_a.pk)},
+        )
+
+    def test_filter_seven_char_prefix_returns_matching_devices(self):
+        params = {"config_hash": self.shared_a_hash[:7]}
+        qs = self.filterset_class(params, models.ConfigCompliance.objects.all()).qs
+        self.assertEqual(
+            self._device_rule_pairs(qs),
+            {(self.device1.pk, self.rule_a.pk), (self.device2.pk, self.rule_a.pk)},
+        )
+
+    def test_filter_traverses_multiple_rules(self):
+        # A prefix matching rule_b's group should return rule_b devices —
+        # confirms the filter is not scoped to a single rule like the
+        # legacy ``filter_by_hash_group`` is.
+        params = {"config_hash": self.shared_b_hash[:7]}
+        qs = self.filterset_class(params, models.ConfigCompliance.objects.all()).qs
+        self.assertEqual(
+            self._device_rule_pairs(qs),
+            {(self.device1.pk, self.rule_b.pk), (self.device3.pk, self.rule_b.pk)},
+        )
+
+    def test_filter_unique_device_full_hash(self):
+        params = {"config_hash": self.unique_a_hash}
+        qs = self.filterset_class(params, models.ConfigCompliance.objects.all()).qs
+        self.assertEqual(
+            self._device_rule_pairs(qs),
+            {(self.device3.pk, self.rule_a.pk)},
+        )
+
+    def test_filter_no_match_returns_empty(self):
+        # 64 zeros — vanishingly unlikely to collide with a real SHA-256.
+        params = {"config_hash": "0" * 64}
+        qs = self.filterset_class(params, models.ConfigCompliance.objects.all()).qs
+        self.assertEqual(list(qs), [])
+
+    def test_filter_empty_value_is_noop(self):
+        params = {"config_hash": ""}
+        qs = self.filterset_class(params, models.ConfigCompliance.objects.all()).qs
+        self.assertEqual(qs.count(), models.ConfigCompliance.objects.count())
+
+    def test_filter_is_case_insensitive(self):
+        params_lower = {"config_hash": self.shared_a_hash[:7].lower()}
+        params_upper = {"config_hash": self.shared_a_hash[:7].upper()}
+        qs_lower = self.filterset_class(params_lower, models.ConfigCompliance.objects.all()).qs
+        qs_upper = self.filterset_class(params_upper, models.ConfigCompliance.objects.all()).qs
+        self.assertEqual(self._device_rule_pairs(qs_lower), self._device_rule_pairs(qs_upper))
+        self.assertTrue(qs_upper.exists())
+
+
 class ConfigHashGroupingFilterFormTestCase(TestCase):
     """Smoke-test ``ConfigHashGroupingFilterForm`` validates with no required fields."""
 

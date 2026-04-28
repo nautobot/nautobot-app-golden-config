@@ -592,7 +592,7 @@ class ConfigComplianceHashTable(BaseTable):
     intended_config_hash = Column(verbose_name="Intended Config Hash", accessor="config_hash")
 
     def render_actual_config_hash(self, value):
-        """Render actual config hash with only the last 10 characters."""
+        """Render actual config hash truncated to its first 7 characters."""
         if value:
             return value[:7]
         return value

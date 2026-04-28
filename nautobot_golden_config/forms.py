@@ -154,9 +154,15 @@ class ConfigComplianceFilterForm(DeviceRelatedFilterForm):
         "device_status",
         "device_type",
         "device",
+        "config_hash",
     ]
 
     q = django_forms.CharField(required=False, label="Search")
+    config_hash = django_forms.CharField(
+        required=False,
+        label="Config Hash",
+        help_text="Full hash or first 7+ characters",
+    )
 
     def __init__(self, *args, **kwargs):
         """Required for status to work."""

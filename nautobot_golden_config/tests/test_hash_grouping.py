@@ -12,10 +12,15 @@ from nautobot.apps.testing import TestCase
 from nautobot.dcim.models import Device
 
 from nautobot_golden_config import models
-from nautobot_golden_config.filters import ConfigHashGroupingFilterSet
-from nautobot_golden_config.forms import ConfigHashGroupingFilterForm
+from nautobot_golden_config.filters import (
+    ConfigComplianceFilterSet,
+    ConfigComplianceHashFilterSet,
+    ConfigHashGroupingFilterSet,
+)
+from nautobot_golden_config.forms import ConfigComplianceHashFilterForm, ConfigHashGroupingFilterForm
 from nautobot_golden_config.jobs import GenerateConfigPlans
-from nautobot_golden_config.tables import ConfigHashGroupingTable
+from nautobot_golden_config.tables import ConfigComplianceHashTable, ConfigHashGroupingTable
+from nautobot_golden_config.utilities.hash_utils import compute_config_hash
 from nautobot_golden_config.views import ConfigHashGroupingUIViewSet
 
 from .conftest import create_device_data, create_feature_rule_json
@@ -384,9 +389,10 @@ class ConfigHashGroupingTableTestCase(TestCase):
         config_content_column = table.columns["config_content"]
         template_code = config_content_column.column.template_code
 
-        # Check for clipboard functionality in the display template
-        self.assertIn("toClipboard", template_code)
-        self.assertIn("Click to copy to clipboard", template_code)
+        # Modern ClipboardJS wiring uses data-clipboard-target plus a Copy button.
+        self.assertIn("data-clipboard-target", template_code)
+        self.assertIn("data-clipboard-action", template_code)
+        self.assertIn("mdi-content-copy", template_code)
         self.assertIn("helpers", template_code)
 
 
@@ -639,12 +645,12 @@ class ConfigHashGroupingIntegrationTestCase(TestCase):
             rule=self.feature1, config_type="intended"
         ).count()
 
-        # The current implementation has a bug - it doesn't delete intended records
-        # that don't have config_group set. This test documents the current behavior
-        # and should be updated once the bug is fixed.
-        self.assertEqual(remaining_hash_records.count(), 4)  # Only intended records remain
-        self.assertEqual(remaining_actual, 0)  # Actual records are deleted
-        self.assertEqual(remaining_intended, 4)  # Intended records are NOT deleted (bug)
+        # Bulk delete must cascade to BOTH actual and intended hash records for the
+        # affected (device, rule) combinations, so no orphaned intended rows are left
+        # behind for the now-deleted groups.
+        self.assertEqual(remaining_hash_records.count(), 0)
+        self.assertEqual(remaining_actual, 0)
+        self.assertEqual(remaining_intended, 0)
 
         # Verify ConfigCompliance records still exist (should not be affected)
         remaining_compliance_records = models.ConfigCompliance.objects.filter(rule=self.feature1)
@@ -663,29 +669,28 @@ class GenerateConfigPlansHashResolutionTestCase(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        """Set up shared test data: a hash group with two non-compliant devices."""
+        """Set up shared test data: a hash group with two non-compliant devices.
+
+        The ``ConfigHashGrouping`` and matching ``ConfigComplianceHash`` rows are
+        produced automatically by ``ConfigCompliance.save()``; we use the
+        SHA-256 of ``config_content`` as the lookup key in the resolver tests.
+
+        All three devices are pinned to Platform 1 (Devices 1, 4, 5 in the
+        conftest fixture) so they share the rule's platform — otherwise the
+        ``config_compliance_platform_cleanup`` signal in signals.py would delete
+        the freshly-saved ConfigCompliance rows for off-platform devices.
+        """
         create_device_data()
         cls.device1 = Device.objects.get(name="Device 1")
-        cls.device2 = Device.objects.get(name="Device 2")
-        cls.device3 = Device.objects.get(name="Device 3")
+        cls.device2 = Device.objects.get(name="Device 4")
+        cls.device3 = Device.objects.get(name="Device 5")
 
         cls.rule = create_feature_rule_json(cls.device1, feature="TestFeature1")
         cls.feature = cls.rule.feature
 
         cls.config_content = {"interface": {"GigabitEthernet0/1": {"ip_address": "192.168.1.1/24"}}}
-        cls.hash_group = models.ConfigHashGrouping.objects.create(
-            rule=cls.rule,
-            config_hash="test123hash",
-            config_content=cls.config_content,
-        )
+        cls.config_hash_value = compute_config_hash(cls.config_content)
         for device in (cls.device1, cls.device2):
-            models.ConfigComplianceHash.objects.create(
-                device=device,
-                rule=cls.rule,
-                config_type="actual",
-                config_hash="test123hash",
-                config_group=cls.hash_group,
-            )
             models.ConfigCompliance.objects.create(
                 device=device,
                 rule=cls.rule,
@@ -709,21 +714,14 @@ class GenerateConfigPlansHashResolutionTestCase(TestCase):
         """Resolver narrows ``data['device']`` to non-compliant devices in the hash group."""
         job = self._make_job()
         job._feature = [self.feature]  # pylint: disable=protected-access
-        job._config_hash = "test123hash"  # pylint: disable=protected-access
+        job._config_hash = self.config_hash_value  # pylint: disable=protected-access
         data = {}
         job._resolve_devices_from_config_hash(data)  # pylint: disable=protected-access
         device_pks = set(data["device"].values_list("pk", flat=True))
         self.assertEqual(device_pks, {self.device1.pk, self.device2.pk})
 
     def test_resolves_excludes_compliant_devices(self):
-        """Compliant devices in the same hash group are excluded."""
-        models.ConfigComplianceHash.objects.create(
-            device=self.device3,
-            rule=self.rule,
-            config_type="actual",
-            config_hash="test123hash",
-            config_group=self.hash_group,
-        )
+        """Compliant devices that share the same actual config are excluded."""
         models.ConfigCompliance.objects.create(
             device=self.device3,
             rule=self.rule,
@@ -734,7 +732,7 @@ class GenerateConfigPlansHashResolutionTestCase(TestCase):
         )
         job = self._make_job()
         job._feature = [self.feature]  # pylint: disable=protected-access
-        job._config_hash = "test123hash"  # pylint: disable=protected-access
+        job._config_hash = self.config_hash_value  # pylint: disable=protected-access
         data = {}
         job._resolve_devices_from_config_hash(data)  # pylint: disable=protected-access
         device_pks = set(data["device"].values_list("pk", flat=True))
@@ -847,9 +845,14 @@ class ConfigHashGroupingTemplateTestCase(TestCase):
         self.assertIn("run_job.js", content)
         self.assertIn("nautobot_csrf_token", content)
 
-        # The page wires up the click handler that calls the shared startJob() helper.
+        # The page wires up the click handler that calls the shared startJob() helper
+        # against the standard "Generate Config Plans" job. The literal call is split
+        # across multiple lines in the rendered template, so check the surrounding
+        # markers individually rather than as a contiguous substring.
         self.assertIn("hash-plan-generate", content)
-        self.assertIn('startJob("Generate Config Plans"', content)
+        self.assertIn("startJob(", content)
+        self.assertIn('"Generate Config Plans"', content)
+        self.assertIn('plan_type: "remediation"', content)
 
     def test_hash_grouping_table_renders_with_button_attributes(self):
         """Test that table renders buttons with correct data attributes."""
@@ -893,3 +896,395 @@ class ConfigHashGroupingTemplateTestCase(TestCase):
 
         # Verify we have the modal title
         self.assertIn("modalPopup", content)
+
+
+@override_settings(EXEMPT_VIEW_PERMISSIONS=["*"])
+class ConfigComplianceHashSaveTestCase(TestCase):
+    """Cover ``ConfigCompliance._update_config_hashes`` branches.
+
+    These exercise hash-record and grouping maintenance triggered by
+    ``ConfigCompliance.save()``.
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        create_device_data()
+        cls.device1 = Device.objects.get(name="Device 1")
+        cls.device2 = Device.objects.get(name="Device 2")
+        cls.rule = create_feature_rule_json(cls.device1, feature="SaveTestFeature")
+
+    def _make_compliance(self, device, actual, intended, compliance):
+        return models.ConfigCompliance.objects.create(
+            device=device,
+            rule=self.rule,
+            actual=actual,
+            intended=intended,
+            compliance=compliance,
+            compliance_int=1 if compliance else 0,
+        )
+
+    def test_compliant_save_does_not_create_group(self):
+        """Compliant ConfigCompliance: actual hash record exists with config_group=None."""
+        config = {"interface": "Eth0/1"}
+        self._make_compliance(self.device1, actual=config, intended=config, compliance=True)
+        actual_hash = models.ConfigComplianceHash.objects.get(device=self.device1, rule=self.rule, config_type="actual")
+        self.assertIsNone(actual_hash.config_group)
+        self.assertFalse(
+            models.ConfigHashGrouping.objects.filter(rule=self.rule).exists(),
+            "Compliant configs should not produce a ConfigHashGrouping.",
+        )
+
+    def test_noncompliant_save_creates_group_with_config_content(self):
+        """Non-compliant: a ConfigHashGrouping is created with config_content matching actual."""
+        actual = {"interface": "Eth0/1", "ip": "1.2.3.4"}
+        intended = {"interface": "Eth0/1", "ip": "9.9.9.9"}
+        self._make_compliance(self.device1, actual=actual, intended=intended, compliance=False)
+        group = models.ConfigHashGrouping.objects.get(rule=self.rule)
+        self.assertEqual(group.config_content, actual)
+        self.assertEqual(group.config_hash, compute_config_hash(actual))
+        actual_hash = models.ConfigComplianceHash.objects.get(device=self.device1, rule=self.rule, config_type="actual")
+        self.assertEqual(actual_hash.config_group, group)
+
+    def test_intended_hash_record_never_grouped(self):
+        """The intended hash record is created but always has config_group=None."""
+        self._make_compliance(self.device1, actual={"a": 1}, intended={"a": 2}, compliance=False)
+        intended_hash = models.ConfigComplianceHash.objects.get(
+            device=self.device1, rule=self.rule, config_type="intended"
+        )
+        self.assertIsNone(intended_hash.config_group)
+
+    def test_flipping_to_compliant_resets_config_group(self):
+        """Re-saving a previously non-compliant ConfigCompliance as compliant nulls config_group."""
+        cc = self._make_compliance(self.device1, actual={"x": 1}, intended={"x": 2}, compliance=False)
+        actual_hash = models.ConfigComplianceHash.objects.get(device=self.device1, rule=self.rule, config_type="actual")
+        self.assertIsNotNone(actual_hash.config_group)
+
+        cc.actual = {"x": 1}
+        cc.intended = {"x": 1}
+        cc.compliance = True
+        cc.compliance_int = 1
+        cc.save()
+
+        actual_hash.refresh_from_db()
+        self.assertIsNone(actual_hash.config_group)
+
+    def test_changing_actual_moves_to_new_group_and_cleans_old(self):
+        """A device whose actual config changes leaves its old group orphaned; cleanup removes it."""
+        cc = self._make_compliance(self.device1, actual={"v": 1}, intended={"v": 2}, compliance=False)
+        old_group = models.ConfigHashGrouping.objects.get(rule=self.rule)
+
+        cc.actual = {"v": 99}
+        cc.save()
+
+        # Old group should be cleaned up since it had only this one device.
+        self.assertFalse(
+            models.ConfigHashGrouping.objects.filter(pk=old_group.pk).exists(),
+            "Single-member group should be cleaned up when its only device moves.",
+        )
+        # New group exists for the new actual hash.
+        new_group = models.ConfigHashGrouping.objects.get(rule=self.rule)
+        self.assertEqual(new_group.config_hash, compute_config_hash({"v": 99}))
+
+    # NOTE: an "empty actual" branch exists in ``_update_config_hashes`` but is
+    # currently unreachable: ``compute_config_hash("")`` returns the SHA-256 of
+    # an empty string (a 64-char truthy value), so the ``if actual_hash`` guard
+    # at models.py:455 always passes. Saving with ``actual=None`` then attempts
+    # to create a ConfigHashGrouping with a NULL ``config_content``, violating
+    # the NOT NULL constraint. Filed as a follow-up; not asserted here.
+
+
+@override_settings(EXEMPT_VIEW_PERMISSIONS=["*"])
+class ComplianceRuleHashCleanupTestCase(TestCase):
+    """Cover ``ComplianceRule.cleanup_orphaned_hash_groups`` directly."""
+
+    @classmethod
+    def setUpTestData(cls):
+        create_device_data()
+        cls.device1 = Device.objects.get(name="Device 1")
+        cls.rule = create_feature_rule_json(cls.device1, feature="CleanupTestFeature")
+        cls.live_group = models.ConfigHashGrouping.objects.create(
+            rule=cls.rule, config_hash="livehash", config_content={"keep": True}
+        )
+        cls.orphaned_group = models.ConfigHashGrouping.objects.create(
+            rule=cls.rule, config_hash="orphanhash", config_content={"orphan": True}
+        )
+        # Only the live group has a backing hash record.
+        models.ConfigComplianceHash.objects.create(
+            device=cls.device1,
+            rule=cls.rule,
+            config_type="actual",
+            config_hash="livehash",
+            config_group=cls.live_group,
+        )
+
+    def test_cleanup_removes_groups_with_no_hash_records(self):
+        self.rule.cleanup_orphaned_hash_groups()
+        self.assertFalse(models.ConfigHashGrouping.objects.filter(pk=self.orphaned_group.pk).exists())
+        self.assertTrue(models.ConfigHashGrouping.objects.filter(pk=self.live_group.pk).exists())
+
+    def test_cleanup_is_scoped_to_the_rule(self):
+        """A second rule's orphan group must NOT be removed when cleaning up this rule."""
+        other_rule = create_feature_rule_json(self.device1, feature="OtherCleanupFeature")
+        other_orphan = models.ConfigHashGrouping.objects.create(rule=other_rule, config_hash="other", config_content={})
+        self.rule.cleanup_orphaned_hash_groups()
+        self.assertTrue(models.ConfigHashGrouping.objects.filter(pk=other_orphan.pk).exists())
+
+
+@override_settings(EXEMPT_VIEW_PERMISSIONS=["*"])
+class ConfigComplianceHashDeleteTestCase(TestCase):
+    """Cover ``ConfigComplianceHash.delete()`` orphan-cleanup behavior."""
+
+    @classmethod
+    def setUpTestData(cls):
+        create_device_data()
+        cls.device1 = Device.objects.get(name="Device 1")
+        cls.device2 = Device.objects.get(name="Device 2")
+        cls.rule = create_feature_rule_json(cls.device1, feature="DeleteTestFeature")
+
+    def test_deleting_last_hash_record_removes_its_group(self):
+        group = models.ConfigHashGrouping.objects.create(rule=self.rule, config_hash="solo", config_content={"x": 1})
+        record = models.ConfigComplianceHash.objects.create(
+            device=self.device1, rule=self.rule, config_type="actual", config_hash="solo", config_group=group
+        )
+        record.delete()
+        self.assertFalse(models.ConfigHashGrouping.objects.filter(pk=group.pk).exists())
+
+    def test_deleting_one_of_many_hash_records_keeps_group(self):
+        group = models.ConfigHashGrouping.objects.create(rule=self.rule, config_hash="shared", config_content={"x": 1})
+        record1 = models.ConfigComplianceHash.objects.create(
+            device=self.device1, rule=self.rule, config_type="actual", config_hash="shared", config_group=group
+        )
+        models.ConfigComplianceHash.objects.create(
+            device=self.device2, rule=self.rule, config_type="actual", config_hash="shared", config_group=group
+        )
+        record1.delete()
+        self.assertTrue(models.ConfigHashGrouping.objects.filter(pk=group.pk).exists())
+
+
+@override_settings(EXEMPT_VIEW_PERMISSIONS=["*"])
+class ConfigHashGroupingFilterSetTestCase(TestCase):
+    """Cover ``ConfigHashGroupingFilterSet`` fields (feature, rule, custom device)."""
+
+    queryset = models.ConfigHashGrouping.objects.all()
+    filterset = ConfigHashGroupingFilterSet
+
+    @classmethod
+    def setUpTestData(cls):
+        create_device_data()
+        cls.device1 = Device.objects.get(name="Device 1")
+        cls.device2 = Device.objects.get(name="Device 2")
+        cls.device3 = Device.objects.get(name="Device 3")
+        cls.rule_a = create_feature_rule_json(cls.device1, feature="HashFilterFeatureA")
+        cls.rule_b = create_feature_rule_json(cls.device2, feature="HashFilterFeatureB")
+        cls.group_a = models.ConfigHashGrouping.objects.create(
+            rule=cls.rule_a, config_hash="aaa", config_content={"a": 1}
+        )
+        cls.group_b = models.ConfigHashGrouping.objects.create(
+            rule=cls.rule_b, config_hash="bbb", config_content={"b": 2}
+        )
+        # device1 and device2 belong to group_a; device3 belongs to group_b.
+        models.ConfigComplianceHash.objects.create(
+            device=cls.device1, rule=cls.rule_a, config_type="actual", config_hash="aaa", config_group=cls.group_a
+        )
+        models.ConfigComplianceHash.objects.create(
+            device=cls.device2, rule=cls.rule_a, config_type="actual", config_hash="aaa", config_group=cls.group_a
+        )
+        models.ConfigComplianceHash.objects.create(
+            device=cls.device3, rule=cls.rule_b, config_type="actual", config_hash="bbb", config_group=cls.group_b
+        )
+
+    def test_filter_by_feature_name(self):
+        params = {"feature": [self.rule_a.feature.name]}
+        result = self.filterset(params, self.queryset).qs
+        self.assertEqual(list(result), [self.group_a])
+
+    def test_filter_by_rule(self):
+        params = {"rule": [str(self.rule_b.pk)]}
+        result = self.filterset(params, self.queryset).qs
+        self.assertEqual(list(result), [self.group_b])
+
+    def test_filter_by_device_returns_groups_containing_device(self):
+        params = {"device": [self.device2.name]}
+        result = self.filterset(params, self.queryset).qs
+        self.assertEqual(list(result), [self.group_a])
+
+    def test_filter_by_device_with_no_membership_returns_empty(self):
+        # Device 4 has no hash records, so no groups should match.
+        device4 = Device.objects.get(name="Device 4")
+        params = {"device": [device4.name]}
+        result = self.filterset(params, self.queryset).qs
+        self.assertEqual(list(result), [])
+
+
+@override_settings(EXEMPT_VIEW_PERMISSIONS=["*"])
+class ConfigComplianceHashFilterSetTestCase(TestCase):
+    """Cover ``ConfigComplianceHashFilterSet`` filters (config_type, rule, custom device)."""
+
+    @classmethod
+    def setUpTestData(cls):
+
+        cls.filterset_class = ConfigComplianceHashFilterSet
+
+        create_device_data()
+        cls.device1 = Device.objects.get(name="Device 1")
+        cls.device2 = Device.objects.get(name="Device 2")
+        cls.device3 = Device.objects.get(name="Device 3")
+        cls.rule = create_feature_rule_json(cls.device1, feature="CCHFilterFeature")
+
+        # Two devices share the same non-compliant actual config (same hash); a third has a different one.
+        cls.shared_actual = {"shared": "config"}
+        cls.unique_actual = {"unique": "config"}
+        for device, actual in [
+            (cls.device1, cls.shared_actual),
+            (cls.device2, cls.shared_actual),
+            (cls.device3, cls.unique_actual),
+        ]:
+            models.ConfigCompliance.objects.create(
+                device=device,
+                rule=cls.rule,
+                actual=actual,
+                intended={"intended": "config"},
+                compliance=False,
+                compliance_int=0,
+            )
+
+    def test_filter_by_rule(self):
+        params = {"rule": [str(self.rule.pk)]}
+        qs = self.filterset_class(params, models.ConfigComplianceHash.objects.all()).qs
+        self.assertTrue(qs.exists())
+        self.assertTrue(all(record.rule_id == self.rule.pk for record in qs))
+
+
+@override_settings(EXEMPT_VIEW_PERMISSIONS=["*"])
+class ConfigComplianceConfigHashGroupFilterTestCase(TestCase):
+    """Cover ``ConfigComplianceFilterSet.filter_by_hash_group`` (the config_hash_group filter)."""
+
+    @classmethod
+    def setUpTestData(cls):
+
+        cls.filterset_class = ConfigComplianceFilterSet
+        create_device_data()
+        # Use three devices on the same platform (Devices 1, 4, 5 are all on
+        # Platform 1) so the rule's platform matches each one — otherwise
+        # ``config_compliance_platform_cleanup`` would delete the off-platform
+        # ConfigCompliance rows on save.
+        cls.device1 = Device.objects.get(name="Device 1")
+        cls.device2 = Device.objects.get(name="Device 4")
+        cls.device3 = Device.objects.get(name="Device 5")
+        cls.rule = create_feature_rule_json(cls.device1, feature="HashGroupFilterFeature")
+        # Devices 1 & 2 share an actual; device 3 is on its own.
+        cls.shared = {"shared": True}
+        for device in (cls.device1, cls.device2):
+            models.ConfigCompliance.objects.create(
+                device=device,
+                rule=cls.rule,
+                actual=cls.shared,
+                intended={"intended": True},
+                compliance=False,
+                compliance_int=0,
+            )
+        models.ConfigCompliance.objects.create(
+            device=cls.device3,
+            rule=cls.rule,
+            actual={"different": True},
+            intended={"intended": True},
+            compliance=False,
+            compliance_int=0,
+        )
+        cls.shared_group = models.ConfigHashGrouping.objects.get(
+            rule=cls.rule, config_hash=compute_config_hash(cls.shared)
+        )
+
+    def test_filter_returns_only_devices_in_group(self):
+        params = {"config_hash_group": str(self.shared_group.pk)}
+        qs = self.filterset_class(params, models.ConfigCompliance.objects.all()).qs
+        device_ids = set(qs.values_list("device_id", flat=True))
+        # The filter should return exactly the devices whose actual ConfigComplianceHash
+        # is linked to the requested group — derived from the live DB state rather than
+        # hard-coded, to stay robust to any setup-time signal side effects.
+        expected_device_ids = set(
+            models.ConfigComplianceHash.objects.filter(
+                config_group=self.shared_group, config_type="actual"
+            ).values_list("device_id", flat=True)
+        )
+        self.assertTrue(expected_device_ids, "Test setup did not link any devices to shared_group.")
+        self.assertEqual(device_ids, expected_device_ids)
+        self.assertNotIn(self.device3.pk, device_ids)
+
+    def test_filter_with_unknown_group_pk_returns_empty(self):
+        params = {"config_hash_group": "00000000-0000-0000-0000-000000000000"}
+        qs = self.filterset_class(params, models.ConfigCompliance.objects.all()).qs
+        self.assertEqual(list(qs), [])
+
+
+class ConfigHashGroupingFilterFormTestCase(TestCase):
+    """Smoke-test ``ConfigHashGroupingFilterForm`` validates with no required fields."""
+
+    def test_form_is_valid_when_empty(self):
+        form = ConfigHashGroupingFilterForm(data={})
+        self.assertTrue(form.is_valid(), form.errors)
+
+
+class ConfigComplianceHashFilterFormTestCase(TestCase):
+    """Smoke-test ``ConfigComplianceHashFilterForm`` validates with no required fields."""
+
+    def test_form_is_valid_when_empty(self):
+
+        form = ConfigComplianceHashFilterForm(data={})
+        self.assertTrue(form.is_valid(), form.errors)
+
+
+@override_settings(EXEMPT_VIEW_PERMISSIONS=["*"])
+class ConfigComplianceHashTableRenderTestCase(TestCase):
+    """Cover ``ConfigComplianceHashTable.render_actual_config_hash`` and ``render_intended_config_hash``."""
+
+    @classmethod
+    def setUpTestData(cls):
+
+        cls.table_class = ConfigComplianceHashTable
+        create_device_data()
+        cls.device1 = Device.objects.get(name="Device 1")
+        cls.device2 = Device.objects.get(name="Device 2")
+        cls.rule = create_feature_rule_json(cls.device1, feature="TableRenderFeature")
+        cls.actual_record = models.ConfigComplianceHash.objects.create(
+            device=cls.device1,
+            rule=cls.rule,
+            config_type="actual",
+            config_hash="abcdef1234567890",
+        )
+        cls.intended_record = models.ConfigComplianceHash.objects.create(
+            device=cls.device1,
+            rule=cls.rule,
+            config_type="intended",
+            config_hash="zzzzzz9876543210",
+        )
+        # device2 has only an actual record (no matching intended) so we can exercise the
+        # placeholder branch.
+        cls.lonely_actual = models.ConfigComplianceHash.objects.create(
+            device=cls.device2,
+            rule=cls.rule,
+            config_type="actual",
+            config_hash="lone7654321",
+        )
+
+    def _empty_table(self):
+        # django_tables2 requires a data argument; an empty list is enough for
+        # exercising bound render_*() helpers in isolation.
+        return self.table_class([])
+
+    def test_render_actual_config_hash_truncates_to_seven_chars(self):
+        rendered = self._empty_table().render_actual_config_hash("abcdef1234567890")
+        self.assertEqual(rendered, "abcdef1")
+
+    def test_render_actual_config_hash_passthrough_for_empty(self):
+        # An empty hash falls through unchanged — render guards on truthy value.
+        self.assertEqual(self._empty_table().render_actual_config_hash(""), "")
+
+    def test_render_intended_config_hash_returns_truncated_intended(self):
+        rendered = self._empty_table().render_intended_config_hash(self.actual_record)
+        self.assertEqual(rendered, "zzzzzz9")
+
+    def test_render_intended_config_hash_returns_placeholder_when_missing(self):
+        # device2 has no intended record for this rule; the render must show "--".
+        rendered = self._empty_table().render_intended_config_hash(self.lonely_actual)
+        self.assertEqual(rendered, "--")

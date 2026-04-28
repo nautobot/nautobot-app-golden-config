@@ -279,6 +279,54 @@ class ConfigHashGroupingListAPITest(APITestCase):  # pylint: disable=too-many-an
         for result in response.data["results"]:
             self.assertEqual(str(result["rule"]["id"]), str(self.feature1.id))
 
+    def test_config_hash_grouping_filter_by_feature_name(self):
+        """Test filtering ConfigHashGrouping by feature name (rule__feature__name)."""
+        self.add_permissions("nautobot_golden_config.view_confighashgrouping")
+        feature_name = self.feature1.feature.name
+        response = self.client.get(f"{self.base_view}?feature={feature_name}", **self.header)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(response.data["count"], 1)
+        # The setUp only creates groups for feature1, so all results should match.
+        for result in response.data["results"]:
+            self.assertEqual(str(result["rule"]["id"]), str(self.feature1.id))
+
+    def test_config_hash_grouping_filter_by_device(self):
+        """Test filtering ConfigHashGrouping by a device that participates in the group."""
+        self.add_permissions("nautobot_golden_config.view_confighashgrouping")
+        response = self.client.get(f"{self.base_view}?device={self.device1.name}", **self.header)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # device1 has at least one hash record linked to a group (the shared actual config).
+        self.assertGreaterEqual(response.data["count"], 1)
+
+    def test_config_hash_grouping_config_content_round_trips_as_json(self):
+        """Round-trip: posting + retrieving a ConfigHashGrouping preserves its JSON config_content."""
+        # ``view_compliancerule`` is needed because the FK lookup in the
+        # serializer applies ``queryset.restrict(user, "view")`` to the related
+        # ComplianceRule queryset (see WritableSerializerMixin.to_internal_value
+        # in nautobot.core.api.mixins).
+        self.add_permissions(
+            "nautobot_golden_config.view_confighashgrouping",
+            "nautobot_golden_config.add_confighashgrouping",
+            "nautobot_golden_config.view_compliancerule",
+        )
+        payload = {
+            "rule": str(self.feature1.pk),
+            "config_hash": "json" + "0" * 60,
+            "config_content": {"nested": {"a": [1, 2, 3]}, "k": "v"},
+        }
+        post = self.client.post(self.base_view, payload, format="json", **self.header)
+        self.assertEqual(post.status_code, status.HTTP_201_CREATED, post.content)
+        created_id = post.data["id"]
+        get = self.client.get(
+            reverse(
+                "plugins-api:nautobot_golden_config-api:confighashgrouping-detail",
+                kwargs={"pk": created_id},
+            ),
+            **self.header,
+        )
+        self.assertEqual(get.status_code, status.HTTP_200_OK)
+        self.assertEqual(get.data["config_content"], payload["config_content"])
+
 
 class ConfigComplianceHashListAPITest(APITestCase):  # pylint: disable=too-many-ancestors
     """Test ConfigComplianceHash list API."""

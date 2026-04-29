@@ -399,7 +399,7 @@ class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
             raise NornirNautobotException(error_msg)
 
 
-class GenerateConfigPlans(Job, FormEntry):
+class GenerateConfigPlans(Job, FormEntry):  # pylint: disable=too-many-instance-attributes
     """Job to generate config plans."""
 
     # Config Plan generation fields

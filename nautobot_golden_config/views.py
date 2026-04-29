@@ -930,7 +930,7 @@ class ConfigHashGroupingUIViewSet(views.NautobotUIViewSet):
         )
         return context
 
-    def perform_bulk_destroy(self, request, **kwargs):  # pylint: disable=too-many-locals
+    def perform_bulk_destroy(self, request, **kwargs):  # pylint: disable=too-many-locals,too-many-branches
         """Override bulk destroy to cascade delete related ConfigComplianceHash records for each group's rule."""
         model = self.queryset.model
 

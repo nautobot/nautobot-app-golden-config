@@ -162,7 +162,7 @@ def _verify_get_custom_compliance_data(compliance_details):
         except KeyError:
             raise ValidationError(MISSING_MSG.format(val)) from KeyError
     if "compliance_int" in compliance_details:
-        LOGGER.warning("The 'compliance_int' key in custom compliance return data is deprecated and will be ignored.")
+        LOGGER.warning("The 'compliance_int' key in custom compliance return data is deprecated and will be ignored. Please remove this key from your custom compliance return result going forward.")
     for val in ["compliance", "ordered"]:
         if compliance_details[val] not in [True, False]:
             raise ValidationError(VALIDATION_MSG.format(val, "Boolean", compliance_details[val]))

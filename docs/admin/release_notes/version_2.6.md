@@ -10,6 +10,12 @@ This document describes all new features and changes in the release. The format 
 <!-- towncrier release notes start -->
 
 
+## [v2.6.4 (2026-05-01)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v2.6.4)
+
+### Fixed
+
+- [#968](https://github.com/nautobot/nautobot-app-golden-config/issues/968) - Fixed concurrent Golden Config jobs failing to push due to non-fast-forward errors by retrying with a fetch and rebase.
+
 ## [v2.6.3 (2026-04-08)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v2.6.3)
 
 ### Fixed

@@ -18,8 +18,6 @@ jobs:
             app_branch: "main"
           - nautobot_branch: "ltm-2.4"
             app_branch: "ltm-2.4"
-          # - nautobot_branch: "next-4.0"
-          #   app_branch: "next-4.0"
     uses: "nautobot/nautobot/.github/workflows/plugin_upstream_testing_base.yml@develop"
     with:  # Below could potentially be collapsed into a single argument if a concrete relationship between both is enforced
       invoke_context_name: "NAUTOBOT_GOLDEN_CONFIG"

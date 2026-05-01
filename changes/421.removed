@@ -1,0 +1,1 @@
+Removed `compliance_int` database field from `ConfigCompliance` model in favor of a backwards-compatible property. Custom compliance functions returning `compliance_int` will see a deprecation warning.

@@ -92,7 +92,7 @@ def metric_compliance_devices():
     )
     queryset = ConfigCompliance.objects.values("rule__feature__slug").annotate(
         compliant=Count("rule__feature__slug", filter=Q(compliance=True)),
-        non_compliant=Count("rule__feature__slug", filter=~Q(compliance=True)),
+        non_compliant=Count("rule__feature__slug", filter=Q(compliance=False)),
     )
 
     counters = {item["rule__feature__slug"]: {"compliant": 0, "non_compliant": 0} for item in queryset}

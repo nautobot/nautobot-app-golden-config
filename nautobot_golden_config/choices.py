@@ -29,6 +29,20 @@ class RemediationTypeChoice(ChoiceSet):
     )
 
 
+class EmptyComplianceBehaviorChoice(ChoiceSet):
+    """Choiceset for how to handle compliance when configurations are empty."""
+
+    TYPE_VALIDATED = "validated"
+    TYPE_EMPTY_BOTH = "empty_both"
+    TYPE_EMPTY_INTENDED = "empty_intended"
+
+    CHOICES = (
+        (TYPE_VALIDATED, "Validated"),
+        (TYPE_EMPTY_BOTH, "Empty Both"),
+        (TYPE_EMPTY_INTENDED, "Empty Intended"),
+    )
+
+
 class ConfigPlanTypeChoice(ChoiceSet):
     """Choiceset used by ConfigPlan."""
 

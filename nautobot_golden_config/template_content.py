@@ -64,7 +64,7 @@ class ConfigComplianceLocationCheck(TemplateExtension):  # pylint: disable=abstr
             .annotate(
                 count=Count("rule__feature__name"),
                 compliant=Count("rule__feature__name", filter=Q(compliance=True)),
-                non_compliant=Count("rule__feature__name", filter=~Q(compliance=True)),
+                non_compliant=Count("rule__feature__name", filter=Q(compliance=False)),
             )
             .order_by("rule__feature__name")
             .values("rule__feature__name", "compliant", "non_compliant")
@@ -122,7 +122,7 @@ class ConfigComplianceTenantCheck(TemplateExtension):  # pylint: disable=abstrac
             .annotate(
                 count=Count("rule__feature__name"),
                 compliant=Count("rule__feature__name", filter=Q(compliance=True)),
-                non_compliant=Count("rule__feature__name", filter=~Q(compliance=True)),
+                non_compliant=Count("rule__feature__name", filter=Q(compliance=False)),
             )
             .order_by("rule__feature__name")
             .values("rule__feature__name", "compliant", "non_compliant")

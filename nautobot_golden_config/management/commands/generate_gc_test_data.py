@@ -90,7 +90,6 @@ class Command(BaseCommand):
                     device=device,
                     rule=rule,
                     compliance=is_compliant,
-                    compliance_int=int(is_compliant),
                     intended=rule.match_config,
                     actual=rule.match_config if is_compliant else f"mismatch {rule.feature.name}",
                 )

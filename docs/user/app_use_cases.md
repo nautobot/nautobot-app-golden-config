@@ -65,6 +65,7 @@ To update existing settings click on one of the `Settings` name.
 |Jinja Path|A Jinja template which defines the path (within the repository) and name of the Jinja template file. e.g. `{{obj.platform.network_driver}}/{{obj.role.name}}/main.j2`|
 |Dynamic Group|The scope of devices on which Golden Config's jobs can operate. |
 |GraphQL Query|A query that is evaluated and used to render the config. The query must start with `query ($device_id: ID!)`.|
+|Empty Compliance Behavior|Controls how compliance is evaluated when configurations are empty. **Validated** (default) treats empty-matches-empty as compliant. **Empty Both** marks as N/A when both actual and intended are empty. **Empty Intended** marks as N/A when intended is empty, regardless of actual. See [Empty Compliance Behavior](./app_feature_compliance.md#empty-compliance-behavior) for details.|
 
 !!! note
     Each of these will be further detailed in their respective sections.

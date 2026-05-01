@@ -1,5 +1,5 @@
 """Unit tests for nautobot_golden_config views."""
-# pylint: disable=protected-access
+# pylint: disable=protected-access,too-many-lines
 
 import datetime
 import re
@@ -22,7 +22,7 @@ from nautobot.extras.models import DynamicGroup, Status
 from nautobot.users import models as users_models
 from packaging import version
 
-from nautobot_golden_config import models, views
+from nautobot_golden_config import models, tables, views
 from nautobot_golden_config.utilities.constant import PLUGIN_CFG
 
 from .conftest import create_device_data, create_feature_rule_json, create_job_result
@@ -382,14 +382,13 @@ class ConfigComplianceUIViewSetTestCase(
                 {"device": dev04, "feature": feature_dev01},
             ]
             for iterator_j, update in enumerate(updates):
-                compliance_int = iterator_j % 2
+                is_compliant = iterator_j % 2
                 models.ConfigCompliance.objects.create(
                     device=update["device"],
                     rule=update["feature"],
                     actual={"foo": {"bar-1": "baz"}},
-                    intended={"foo": {f"bar-{compliance_int}": "baz"}},
-                    compliance=bool(compliance_int),
-                    compliance_int=compliance_int,
+                    intended={"foo": {f"bar-{is_compliant}": "baz"}},
+                    compliance=bool(is_compliant),
                 )
 
     def test_get_object_anonymous(self):
@@ -464,9 +463,9 @@ class ConfigComplianceUIViewSetTestCase(
         self.assertGreater(len(features), 0)
         self.assertIsInstance(queryset, RestrictedQuerySet)
         for device in queryset:
-            self.assertSequenceEqual(list(device.keys()), ["device", "device__name", *features])
+            self.assertCountEqual(list(device.keys()), ["device", "device__name", *features])
             for feature in features:
-                self.assertIn(device[feature], [0, 1])
+                self.assertIn(device[feature], ["True", "False"])
 
     def test_table_columns(self):
         """Test the columns of the ConfigCompliance table return the expected pivoted data."""
@@ -487,7 +486,6 @@ class ConfigComplianceUIViewSetTestCase(
             actual={"foo": {"bar-1": "baz"}},
             intended={"foo": {"bar-1": "baz"}},
             compliance=True,
-            compliance_int=1,
         )
 
         response = self.client.get(reverse("plugins:nautobot_golden_config:configcompliance_list"))
@@ -599,7 +597,7 @@ class ConfigComplianceUIViewSetTestCase(
     def test_overview_per_feature_counts(self):
         """Annotation values on the overview queryset match the fixture data.
 
-        setUpTestData creates 4 devices x 4 features with compliance_int alternating
+        setUpTestData creates 4 devices x 4 features with compliance alternating
         0/1/0/1 per device, so each feature should be: count=4, compliant=2,
         non_compliant=2, comp_percent=50.0.
         """
@@ -628,11 +626,11 @@ class FeatureComplianceQuerysetTestCase(TestCase):
         cls.dev4 = Device.objects.get(name="Device 4")
         cls.rule = create_feature_rule_json(cls.dev1, feature="qset-feat-a")
 
-    def _create_compliance(self, device, rule, compliance_int):
-        # save() recalculates compliance_int via FUNC_MAPPER(actual, intended).
+    def _create_compliance(self, device, rule, compliant):
+        # save() recalculates compliance via FUNC_MAPPER(actual, intended).
         # Drive the result through actual/intended: matching = compliant, differing = non-compliant.
         actual = {"foo": "bar"}
-        intended = {"foo": "bar"} if compliance_int else {"foo": "baz"}
+        intended = {"foo": "bar"} if compliant else {"foo": "baz"}
         return models.ConfigCompliance.objects.create(
             device=device,
             rule=rule,
@@ -706,6 +704,308 @@ class FeatureComplianceQuerysetTestCase(TestCase):
         )
         self.assertEqual(slugs, ["qset-feat-a", "qset-feat-b"])
 
+    def test_na_records_excluded_from_compliant_counts(self):
+        """N/A + compliant: N/A excluded from count, compliant counted, comp_percent reflects only real records."""
+        self._create_compliance(self.dev1, self.rule, 1)
+        cc_na = self._create_compliance(self.dev4, self.rule, 1)
+        models.ConfigCompliance.objects.filter(pk=cc_na.pk).update(compliance=None)
+
+        result = views._get_feature_compliance_queryset([self.dev1.id, self.dev4.id]).get(slug="qset-feat-a")
+        self.assertEqual(result.count, 1)
+        self.assertEqual(result.compliant, 1)
+        self.assertEqual(result.non_compliant, 0)
+        self.assertAlmostEqual(result.comp_percent, 100.0)
+
+    def test_na_records_excluded_from_non_compliant_counts(self):
+        """N/A + non-compliant: N/A excluded, non-compliant counted."""
+        self._create_compliance(self.dev1, self.rule, 0)
+        cc_na = self._create_compliance(self.dev4, self.rule, 1)
+        models.ConfigCompliance.objects.filter(pk=cc_na.pk).update(compliance=None)
+
+        result = views._get_feature_compliance_queryset([self.dev1.id, self.dev4.id]).get(slug="qset-feat-a")
+        self.assertEqual(result.count, 1)
+        self.assertEqual(result.compliant, 0)
+        self.assertEqual(result.non_compliant, 1)
+        self.assertAlmostEqual(result.comp_percent, 0.0)
+
+    def test_all_na_gives_zero_count_and_null_percent(self):
+        """All records N/A: count=0, comp_percent=None (same as no records)."""
+        cc1 = self._create_compliance(self.dev1, self.rule, 1)
+        cc2 = self._create_compliance(self.dev4, self.rule, 1)
+        models.ConfigCompliance.objects.filter(pk__in=[cc1.pk, cc2.pk]).update(compliance=None)
+
+        result = views._get_feature_compliance_queryset([self.dev1.id, self.dev4.id]).get(slug="qset-feat-a")
+        self.assertEqual(result.count, 0)
+        self.assertEqual(result.compliant, 0)
+        self.assertEqual(result.non_compliant, 0)
+        self.assertIsNone(result.comp_percent)
+
+    def test_mixed_compliance_with_na(self):
+        """Compliant + non-compliant + N/A: N/A excluded, others counted normally."""
+        dev2 = Device.objects.get(name="Device 2")
+        rule_b = create_feature_rule_json(dev2, feature="qset-feat-mixed")
+        self._create_compliance(self.dev1, self.rule, 1)
+        self._create_compliance(self.dev4, self.rule, 0)
+        cc_na = self._create_compliance(dev2, rule_b, 1)
+        models.ConfigCompliance.objects.filter(pk=cc_na.pk).update(compliance=None)
+
+        result = views._get_feature_compliance_queryset([self.dev1.id, self.dev4.id, dev2.id]).get(slug="qset-feat-a")
+        self.assertEqual(result.count, 2)
+        self.assertEqual(result.compliant, 1)
+        self.assertEqual(result.non_compliant, 1)
+        self.assertAlmostEqual(result.comp_percent, 50.0)
+
+
+@override_settings(EXEMPT_VIEW_PERMISSIONS=["*"])
+class PivotQueryMatrixTestCase(TestCase):  # pylint: disable=too-many-public-methods
+    """Test the hand-built pivot query (alter_queryset) against the full behavior matrix.
+
+    Per-cell values:
+        True  → 1 in pivot (green check)
+        False → 0 in pivot (red X)
+        None  → filtered out (N/A)
+        (no record) → None in pivot (default dash)
+
+    Per-device row scenarios:
+        1. All features compliant
+        2. All features non-compliant
+        3. Mixed compliant/non-compliant
+        4. All features N/A → device excluded from pivot
+        5. Mix of real compliance + N/A
+        6. No records at all → device not in pivot
+        7. Some features have records, some don't
+        8. N/A + no-record mix → device excluded
+        9. Real + N/A + no-record
+    """
+
+    @classmethod
+    def setUpTestData(cls):
+        create_device_data()
+        cls.dev1 = Device.objects.get(name="Device 1")
+        cls.dev2 = Device.objects.get(name="Device 2")
+        cls.dev3 = Device.objects.get(name="Device 3")
+        cls.dev4 = Device.objects.get(name="Device 4")
+        cls.dev5 = Device.objects.get(name="Device 5")
+        cls.dev6 = Device.objects.get(name="Device 6")
+
+        # Create 3 features on Platform 1 (shared by dev1, dev4, dev5, dev6)
+        cls.feat_bgp = create_feature_rule_json(cls.dev1, feature="bgp")
+        cls.feat_ntp = create_feature_rule_json(cls.dev1, feature="ntp")
+        cls.feat_snmp = create_feature_rule_json(cls.dev1, feature="snmp")
+
+    def _get_pivot(self):
+        """Execute the pivot query and return {device_name: {feature: value}}."""
+        request = RequestFactory(SERVER_NAME="nautobot.example.com").get(
+            reverse("plugins:nautobot_golden_config:configcompliance_list")
+        )
+        request.user = User.objects.first()
+        qs = views.ConfigComplianceUIViewSet(request=request, action="list").alter_queryset(request)
+        return {row["device__name"]: row for row in qs}
+
+    def _create(self, device, rule, compliant):
+        """Create a ConfigCompliance record with the given compliance result."""
+        actual = {"foo": "bar"}
+        intended = {"foo": "bar"} if compliant else {"foo": "baz"}
+        return models.ConfigCompliance.objects.create(device=device, rule=rule, actual=actual, intended=intended)
+
+    def _mark_na(self, cc):
+        """Mark a ConfigCompliance record as N/A by setting compliance to None."""
+        models.ConfigCompliance.objects.filter(pk=cc.pk).update(compliance=None)
+
+    # --- Per-cell values ---
+
+    def test_render_compliant(self):
+        """ComplianceColumn renders a green check for compliant."""
+        col = tables.ComplianceColumn(verbose_name="test")
+        rendered = col.render("True")
+        self.assertIn("mdi-check-bold", rendered)
+        self.assertIn("text-success", rendered)
+
+    def test_render_non_compliant(self):
+        """ComplianceColumn renders a red X for non-compliant."""
+        col = tables.ComplianceColumn(verbose_name="test")
+        rendered = col.render("False")
+        self.assertIn("mdi-close-thick", rendered)
+        self.assertIn("text-danger", rendered)
+
+    def test_render_na(self):
+        """ComplianceColumn renders double-dash for N/A."""
+        col = tables.ComplianceColumn(verbose_name="test")
+        rendered = col.render("None")
+        self.assertIn("- -", rendered)
+        self.assertIn("N/A", rendered)
+
+    def test_render_no_record(self):
+        """ComplianceColumn renders a dash for no record."""
+        col = tables.ComplianceColumn(verbose_name="test")
+        rendered = col.render(None)
+        self.assertIn("mdi-minus", rendered)
+
+    def test_cell_compliant(self):
+        """True compliance → "True" in pivot."""
+        self._create(self.dev1, self.feat_bgp, True)
+        pivot = self._get_pivot()
+        self.assertEqual(pivot["Device 1"]["bgp"], "True")
+
+    def test_cell_non_compliant(self):
+        """False compliance → "False" in pivot."""
+        self._create(self.dev1, self.feat_bgp, False)
+        pivot = self._get_pivot()
+        self.assertEqual(pivot["Device 1"]["bgp"], "False")
+
+    def test_cell_na(self):
+        """None compliance (N/A) → "None" in pivot cell."""
+        cc = self._create(self.dev1, self.feat_bgp, True)
+        self._mark_na(cc)
+        pivot = self._get_pivot()
+        self.assertEqual(pivot["Device 1"]["bgp"], "None")
+
+    def test_cell_no_record(self):
+        """No ConfigCompliance record → device not in pivot at all."""
+        pivot = self._get_pivot()
+        self.assertNotIn("Device 1", pivot)
+
+    # --- Per-device row ---
+
+    def test_row_all_compliant(self):
+        """Device with all features compliant → all cells are "True"."""
+        self._create(self.dev1, self.feat_bgp, True)
+        self._create(self.dev1, self.feat_ntp, True)
+        self._create(self.dev1, self.feat_snmp, True)
+        pivot = self._get_pivot()
+        row = pivot["Device 1"]
+        self.assertEqual(row["bgp"], "True")
+        self.assertEqual(row["ntp"], "True")
+        self.assertEqual(row["snmp"], "True")
+
+    def test_row_all_non_compliant(self):
+        """Device with all features non-compliant → all cells are "False"."""
+        self._create(self.dev1, self.feat_bgp, False)
+        self._create(self.dev1, self.feat_ntp, False)
+        self._create(self.dev1, self.feat_snmp, False)
+        pivot = self._get_pivot()
+        row = pivot["Device 1"]
+        self.assertEqual(row["bgp"], "False")
+        self.assertEqual(row["ntp"], "False")
+        self.assertEqual(row["snmp"], "False")
+
+    def test_row_mixed_compliance(self):
+        """Device with mixed compliance → cells are "True" and "False" accordingly."""
+        self._create(self.dev1, self.feat_bgp, True)
+        self._create(self.dev1, self.feat_ntp, False)
+        self._create(self.dev1, self.feat_snmp, True)
+        pivot = self._get_pivot()
+        row = pivot["Device 1"]
+        self.assertEqual(row["bgp"], "True")
+        self.assertEqual(row["ntp"], "False")
+        self.assertEqual(row["snmp"], "True")
+
+    def test_row_all_na(self):
+        """Device with all N/A records → device in pivot with all "None" cells."""
+        cc1 = self._create(self.dev1, self.feat_bgp, True)
+        cc2 = self._create(self.dev1, self.feat_ntp, True)
+        cc3 = self._create(self.dev1, self.feat_snmp, True)
+        self._mark_na(cc1)
+        self._mark_na(cc2)
+        self._mark_na(cc3)
+        pivot = self._get_pivot()
+        row = pivot["Device 1"]
+        self.assertEqual(row["bgp"], "None")
+        self.assertEqual(row["ntp"], "None")
+        self.assertEqual(row["snmp"], "None")
+
+    def test_row_mix_real_and_na(self):
+        """Device with some real compliance and some N/A → N/A cells are "None", real cells are "True"/"False"."""
+        self._create(self.dev1, self.feat_bgp, True)
+        cc_na = self._create(self.dev1, self.feat_ntp, True)
+        self._mark_na(cc_na)
+        self._create(self.dev1, self.feat_snmp, False)
+        pivot = self._get_pivot()
+        row = pivot["Device 1"]
+        self.assertEqual(row["bgp"], "True")
+        self.assertEqual(row["ntp"], "None")
+        self.assertEqual(row["snmp"], "False")
+
+    def test_row_no_records_excluded(self):
+        """Device with zero compliance records → not in pivot."""
+        # Create records for another device so the pivot isn't empty
+        self._create(self.dev4, self.feat_bgp, True)
+        pivot = self._get_pivot()
+        self.assertNotIn("Device 1", pivot)
+        self.assertIn("Device 4", pivot)
+
+    def test_row_partial_records(self):
+        """Device with records for some features but not others → missing features are None (no record)."""
+        self._create(self.dev1, self.feat_bgp, True)
+        # No record for ntp or snmp
+        pivot = self._get_pivot()
+        row = pivot["Device 1"]
+        self.assertEqual(row["bgp"], "True")
+        self.assertIsNone(row.get("ntp"))
+        self.assertIsNone(row.get("snmp"))
+
+    def test_row_na_plus_no_record(self):
+        """Device with only N/A records (no other features) → in pivot with "None" cells."""
+        cc_na = self._create(self.dev1, self.feat_bgp, True)
+        self._mark_na(cc_na)
+        # No records for ntp or snmp
+        pivot = self._get_pivot()
+        row = pivot["Device 1"]
+        self.assertEqual(row["bgp"], "None")
+
+    def test_row_real_na_and_no_record(self):
+        """Device with one real, one N/A, one missing → real is "True"/"False", N/A is "None", missing is None."""
+        self._create(self.dev1, self.feat_bgp, False)
+        cc_na = self._create(self.dev1, self.feat_ntp, True)
+        self._mark_na(cc_na)
+        # No record for snmp
+        pivot = self._get_pivot()
+        row = pivot["Device 1"]
+        self.assertEqual(row["bgp"], "False")
+        self.assertEqual(row["ntp"], "None")
+        self.assertIsNone(row.get("snmp"))
+
+    # --- Global scenarios ---
+
+    def test_global_all_na(self):
+        """When all compliance records across all devices are N/A, devices still appear with "None" cells."""
+        cc1 = self._create(self.dev1, self.feat_bgp, True)
+        cc2 = self._create(self.dev4, self.feat_ntp, True)
+        self._mark_na(cc1)
+        self._mark_na(cc2)
+        pivot = self._get_pivot()
+        self.assertIn("Device 1", pivot)
+        self.assertEqual(pivot["Device 1"]["bgp"], "None")
+        self.assertIn("Device 4", pivot)
+        self.assertEqual(pivot["Device 4"]["ntp"], "None")
+
+    def test_global_no_records_empty_pivot(self):
+        """When no compliance records exist, pivot is empty."""
+        pivot = self._get_pivot()
+        self.assertEqual(len(pivot), 0)
+
+    def test_global_mixed_devices(self):
+        """Multiple devices with varying states all render correctly."""
+        # dev1: all compliant
+        self._create(self.dev1, self.feat_bgp, True)
+        self._create(self.dev1, self.feat_ntp, True)
+        # dev4: mixed
+        self._create(self.dev4, self.feat_bgp, False)
+        self._create(self.dev4, self.feat_ntp, True)
+        # dev5: all N/A
+        cc_na = self._create(self.dev5, self.feat_bgp, True)
+        self._mark_na(cc_na)
+
+        pivot = self._get_pivot()
+        self.assertIn("Device 1", pivot)
+        self.assertIn("Device 4", pivot)
+        self.assertIn("Device 5", pivot)
+        self.assertEqual(pivot["Device 5"]["bgp"], "None")
+        self.assertEqual(pivot["Device 1"]["bgp"], "True")
+        self.assertEqual(pivot["Device 1"]["ntp"], "True")
+        self.assertEqual(pivot["Device 4"]["bgp"], "False")
+        self.assertEqual(pivot["Device 4"]["ntp"], "True")
+
 
 @override_settings(EXEMPT_VIEW_PERMISSIONS=["*"])
 class FilteredComplianceDeviceIdsTestCase(TestCase):
@@ -737,9 +1037,9 @@ class FilteredComplianceDeviceIdsTestCase(TestCase):
         cls.rule_p1 = create_feature_rule_json(cls.dev1, feature="filt-feat-a")
         cls.rule_p2 = create_feature_rule_json(cls.dev2, feature="filt-feat-b")
 
-    def _create_compliance(self, device, rule, compliance_int):
+    def _create_compliance(self, device, rule, compliant):
         actual = {"foo": "bar"}
-        intended = {"foo": "bar"} if compliance_int else {"foo": "baz"}
+        intended = {"foo": "bar"} if compliant else {"foo": "baz"}
         return models.ConfigCompliance.objects.create(device=device, rule=rule, actual=actual, intended=intended)
 
     def test_no_params_returns_all_devices_with_records(self):

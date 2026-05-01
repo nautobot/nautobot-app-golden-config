@@ -15,6 +15,11 @@ We will continue to support the previous major release for users of Nautobot LTM
 
 <!-- towncrier release notes start -->
 
+## [v3.0.6 (2026-05-01)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v3.0.6)
+
+### Fixed
+
+- [#968](https://github.com/nautobot/nautobot-app-golden-config/issues/968) - Fixed concurrent Golden Config jobs failing to push due to non-fast-forward errors by retrying with a fetch and rebase.
 
 ## [v3.0.5 (2026-04-09)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v3.0.5)
 

@@ -76,7 +76,7 @@ def get_job_filter(data=None):
         dynamic_group__filter__iexact="{}", dynamic_group__group_type=DynamicGroupTypeChoices.TYPE_DYNAMIC_FILTER
     ).exists():
         for obj in models.GoldenConfigSetting.objects.all():
-            raw_qs = raw_qs | obj.dynamic_group.generate_query()
+            raw_qs = raw_qs | Q(pk__in=obj.dynamic_group.members.values_list("pk", flat=True))
 
     base_qs = Device.objects.filter(raw_qs)
 

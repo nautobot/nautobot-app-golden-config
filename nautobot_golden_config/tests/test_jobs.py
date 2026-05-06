@@ -2,11 +2,14 @@
 
 from unittest.mock import MagicMock, patch
 
+from django.contrib.contenttypes.models import ContentType
 from nautobot.apps.testing import TransactionTestCase, create_job_result_and_run_job
 from nautobot.dcim.models import Device
-from nautobot.extras.models import JobLogEntry
+from nautobot.extras.choices import DynamicGroupTypeChoices
+from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, JobLogEntry
 
 from nautobot_golden_config import jobs
+from nautobot_golden_config.models import GoldenConfigSetting
 from nautobot_golden_config.tests.conftest import (
     create_device,
     create_orphan_device,
@@ -620,3 +623,50 @@ class GCReposRunAllMultipleTestCase(TransactionTestCase):
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Commit and Push")
         self.assertEqual(log_entries.count(), 0)
+
+
+@patch("nautobot_golden_config.nornir_plays.config_backup.run_backup", MagicMock(return_value="foo"))
+@patch.object(jobs, "ensure_git_repository")
+class GCReposStaticGroupTestCase(TransactionTestCase):
+    """Test that jobs succeed when a device belongs to a static DynamicGroup."""
+
+    databases = ("default", "job_logs")
+
+    def setUp(self) -> None:
+        """Setup test data reproducing issue #1029: static group alongside dynamic filter group."""
+        self.device = create_device(name="static-device")
+        dgs_gc_settings_and_job_repo_objects()
+
+        ct_device = ContentType.objects.get_for_model(Device)
+        static_group = DynamicGroup.objects.create(
+            name="static-dg",
+            content_type=ct_device,
+            group_type=DynamicGroupTypeChoices.TYPE_STATIC,
+        )
+        static_group.add_members([self.device])
+
+        GoldenConfigSetting.objects.create(
+            name="static_group_setting",
+            slug="static_group_setting",
+            weight=2000,
+            backup_path_template="test/backup",
+            intended_path_template="test/intended",
+            jinja_path_template="{{jinja_path}}",
+            backup_test_connectivity=True,
+            dynamic_group=static_group,
+            sot_agg_query=GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1"),
+            backup_repository=GitRepository.objects.get(name="test-backup-repo-1"),
+        )
+        super().setUp()
+
+    @patch("nautobot_golden_config.utilities.constant.ENABLE_BACKUP", True)
+    def test_backup_job_with_static_group_does_not_crash(self, mock_ensure_git_repository):
+        """Backup job must not raise RuntimeError when device is in a static group."""
+        mock_ensure_git_repository.return_value = True
+        job_result = create_job_result_and_run_job(
+            module="nautobot_golden_config.jobs",
+            name="BackupJob",
+            device=Device.objects.filter(name=self.device.name),
+        )
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC After Run")
+        self.assertEqual(log_entries.first().message, "Finished the Backup Configurations job execution.")

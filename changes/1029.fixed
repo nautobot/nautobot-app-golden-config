@@ -1,0 +1,1 @@
+Fixed job failure when a device is assigned to a static DynamicGroup linked to a GoldenConfigSetting.

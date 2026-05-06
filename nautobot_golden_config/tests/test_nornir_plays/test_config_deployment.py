@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from nautobot.apps.testing import TestCase
 from nautobot.dcim.models import Device
 from nautobot.extras.models import JobResult, Status
+from nornir_nautobot.exceptions import NornirNautobotException
 
 from nautobot_golden_config.exceptions import ConfigPlanDeploymentFailure
 from nautobot_golden_config.models import ConfigPlan
@@ -90,5 +91,41 @@ class ConfigDeploymentTest(TestCase):
             config_deployment(self.job)
 
         # Verify nornir was called
+        mock_nornir.assert_called_once()
+        mock_nr.run.assert_called_once()
+
+    @patch("nautobot_golden_config.nornir_plays.config_deployment.InitNornir")
+    def test_config_deployment_blocks_not_approved_plan(self, mock_nornir):
+        """Guard blocks deployment when any plan is in 'Not Approved' status; other statuses pass through."""
+        extra_plan = ConfigPlan.objects.create(
+            plan_type="manual",
+            device=self.device,
+            config_set="Extra Config Set",
+            status=Status.objects.get(name="Approved"),
+            plan_result=self.plan_result,
+        )
+
+        # Mock nornir for the success phase
+        mock_results = Mock()
+        mock_results.failed = False
+        mock_nr = Mock()
+        mock_nr.with_processors.return_value = mock_nr
+        mock_nr.run.return_value = mock_results
+        mock_nornir.return_value.__enter__.return_value = mock_nr
+
+        # Two Approved plans, deployment proceeds
+        config_deployment(self.job)
+        mock_nornir.assert_called_once()
+        mock_nr.run.assert_called_once()
+
+        # Extra plan Not Approved, guard raises
+        extra_plan.status = Status.objects.get(name="Not Approved")
+        extra_plan.validated_save()
+
+        with self.assertRaises(NornirNautobotException) as ctx:
+            config_deployment(self.job)
+
+        self.assertIn("E3025", str(ctx.exception))
+        # Nornir was not called a second time due to the guard
         mock_nornir.assert_called_once()
         mock_nr.run.assert_called_once()

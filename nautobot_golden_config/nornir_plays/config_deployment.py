@@ -19,7 +19,7 @@ from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
 from nautobot_golden_config.exceptions import ConfigPlanDeploymentFailure
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
-from nautobot_golden_config.utilities.constant import DEFAULT_DEPLOY_STATUS, ENABLE_POSTPROCESSING
+from nautobot_golden_config.utilities.constant import ENABLE_POSTPROCESSING
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.utilities.helper import dispatch_params
 from nautobot_golden_config.utilities.logger import NornirLogger
@@ -89,7 +89,7 @@ def config_deployment(job):
 
     logger.debug("Starting config deployment")
     config_plan_qs = job.data["config_plan"]
-    if config_plan_qs.filter(status__name=DEFAULT_DEPLOY_STATUS).exists():
+    if config_plan_qs.filter(status__name="Not Approved").exists():
         error_msg = "`E3025:` Cannot deploy configuration(s). One or more config plans are not approved."
         logger.error(error_msg)
         raise NornirNautobotException(error_msg)

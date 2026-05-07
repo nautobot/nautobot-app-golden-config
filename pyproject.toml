@@ -51,7 +51,7 @@ invoke = "*"
 ipython = "*"
 pylint = "*"
 pylint-django = ">=2.5.4"
-pylint-nautobot = ">=0.3.1"
+pylint-nautobot = { git = "https://github.com/nautobot/pylint-nautobot.git", branch = "u/mlembke/napps-947-add-python-3.14-support" }
 ruff = "0.5.5"
 yamllint = "*"
 # Python implementation of markdownlint

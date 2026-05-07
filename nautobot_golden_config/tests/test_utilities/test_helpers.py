@@ -379,3 +379,17 @@ class HelpersTestStaticGroup(TestCase):
         """Verify get_job_filter does not raise when a GoldenConfigSetting uses a static group."""
         result = get_job_filter()
         self.assertIn(self.device, result)
+
+    def test_device_to_settings_map_with_static_group(self):
+        """Verify get_device_to_settings_map correctly maps a device in a static DynamicGroup."""
+        result = get_device_to_settings_map(queryset=Device.objects.all())
+        static_setting = GoldenConfigSetting.objects.get(name="static_group_setting")
+        self.assertIn(self.device.id, result)
+        self.assertEqual(result[self.device.id], static_setting)
+
+    def test_device_to_settings_map_static_group_weight_wins(self):
+        """Verify highest weight GoldenConfigSetting wins when device matches both static and filter-based groups."""
+        result = get_device_to_settings_map(queryset=Device.objects.all())
+        static_setting = GoldenConfigSetting.objects.get(name="static_group_setting")
+        # static_group_setting (weight=2000) should win over dynamic_filter_setting (weight=1000)
+        self.assertEqual(result[self.device.id], static_setting)

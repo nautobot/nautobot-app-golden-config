@@ -48,6 +48,21 @@ FIELDS_PK = {
 FIELDS_NAME = {"tags", "status"}
 
 
+def _dynamic_group_device_pks(dynamic_group):
+    """Return device PKs in a DynamicGroup, dispatching by group_type.
+
+    Static groups raise on ``.members`` because ``.members`` calls
+    ``generate_query()`` which is not implemented for static groups; query
+    ``static_group_associations`` directly instead.
+    """
+    if dynamic_group.group_type == DynamicGroupTypeChoices.TYPE_STATIC:
+        return dynamic_group.static_group_associations.filter(
+            associated_object_type__app_label="dcim",
+            associated_object_type__model="device",
+        ).values_list("associated_object_id", flat=True)
+    return dynamic_group.members.values_list("pk", flat=True)
+
+
 def get_job_filter(data=None):
     """Helper function to return a the filterable list of OS's based on platform.name and a specific custom value."""
     if not data:
@@ -76,15 +91,7 @@ def get_job_filter(data=None):
         dynamic_group__filter__iexact="{}", dynamic_group__group_type=DynamicGroupTypeChoices.TYPE_DYNAMIC_FILTER
     ).exists():
         for obj in models.GoldenConfigSetting.objects.all():
-            if obj.dynamic_group.group_type == DynamicGroupTypeChoices.TYPE_STATIC:
-                raw_qs = raw_qs | Q(
-                    pk__in=obj.dynamic_group.static_group_associations.filter(
-                        associated_object_type__app_label="dcim",
-                        associated_object_type__model="device",
-                    ).values_list("associated_object_id", flat=True)
-                )
-            else:
-                raw_qs = raw_qs | Q(pk__in=obj.dynamic_group.members.values_list("pk", flat=True))
+            raw_qs = raw_qs | Q(pk__in=_dynamic_group_device_pks(obj.dynamic_group))
 
     base_qs = Device.objects.filter(raw_qs)
 

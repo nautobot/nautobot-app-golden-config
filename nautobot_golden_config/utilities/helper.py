@@ -176,20 +176,12 @@ def render_jinja_template(obj, logger, template):
 def get_device_to_settings_map(queryset):
     """Helper function to map heightest weighted GC settings to devices."""
     update_dynamic_groups_cache()
-    annotated_queryset = queryset.all().annotate(
-        gc_settings=Subquery(
-            models.GoldenConfigSetting.objects.filter(
-                dynamic_group__static_group_associations__associated_object_id=OuterRef("id"),
-                dynamic_group__static_group_associations__associated_object_type__app_label="dcim",
-                dynamic_group__static_group_associations__associated_object_type__model="device",
-            )
-            .order_by("-weight")
-            # [:1] is a ORM/DB "limit 1" query, not a python slice.
-            .values("id")[:1]
-        )
-    )
-    gcs = {gc.id: gc for gc in models.GoldenConfigSetting.objects.all()}
-    return {device.id: gcs[device.gc_settings] for device in annotated_queryset}
+    device_to_settings = {}
+    for device in queryset.all():
+        setting = models.GoldenConfigSetting.objects.get_for_device(device)
+        if setting is not None:
+            device_to_settings[device.pk] = setting
+    return device_to_settings
 
 
 def get_json_config(config):

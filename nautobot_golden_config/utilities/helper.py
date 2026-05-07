@@ -76,7 +76,15 @@ def get_job_filter(data=None):
         dynamic_group__filter__iexact="{}", dynamic_group__group_type=DynamicGroupTypeChoices.TYPE_DYNAMIC_FILTER
     ).exists():
         for obj in models.GoldenConfigSetting.objects.all():
-            raw_qs = raw_qs | Q(pk__in=obj.dynamic_group.members.values_list("pk", flat=True))
+            if obj.dynamic_group.group_type == DynamicGroupTypeChoices.TYPE_STATIC:
+                raw_qs = raw_qs | Q(
+                    pk__in=obj.dynamic_group.static_group_associations.filter(
+                        associated_object_type__app_label="dcim",
+                        associated_object_type__model="device",
+                    ).values_list("associated_object_id", flat=True)
+                )
+            else:
+                raw_qs = raw_qs | Q(pk__in=obj.dynamic_group.members.values_list("pk", flat=True))
 
     base_qs = Device.objects.filter(raw_qs)
 

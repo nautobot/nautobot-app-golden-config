@@ -6,7 +6,7 @@ from copy import deepcopy
 
 from django.conf import settings
 from django.contrib import messages
-from django.db.models import OuterRef, Q, Subquery
+from django.db.models import Q
 from django.template import engines
 from django.urls import reverse
 from django.utils.html import format_html

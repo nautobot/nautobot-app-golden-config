@@ -167,6 +167,9 @@ jobs:
       matrix:
         python-version: ["3.10"]
         nautobot-version: ["3.0.0"]
+        include:
+          - python-version: "3.14"
+            nautobot-version: "stable"
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_PYTHON_VER: "${{ matrix.python-version }}"
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_NAUTOBOT_VER: "${{ matrix.nautobot-version }}"

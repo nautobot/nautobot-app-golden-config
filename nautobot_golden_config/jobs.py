@@ -76,7 +76,7 @@ def get_refreshed_repos(job_obj, repo_types, data=None):
     repository_records = set()
     for group in dynamic_groups:
         # Make sure the data(device qs) device exist in the dg first.
-        if data.filter(group.generate_query()).exists():
+        if data.filter(pk__in=group.members.values_list("pk", flat=True)).exists():
             for repo_type in repo_types:
                 repo = getattr(group.golden_config_setting, repo_type, None)
                 if repo:

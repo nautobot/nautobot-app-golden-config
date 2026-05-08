@@ -8,6 +8,7 @@ from django.template import engines
 from django.test import TestCase
 from jinja2 import exceptions as jinja_errors
 from nautobot.dcim.models import Device, Location, LocationType, Platform
+from nautobot.extras.choices import DynamicGroupTypeChoices
 from nautobot.extras.management import populate_status_choices
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status, Tag
 from nornir_nautobot.exceptions import NornirNautobotException
@@ -318,3 +319,53 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         # Regenerate the device to settings map to ensure it is up to date.
         temp_device_to_settings_map = get_device_to_settings_map(queryset=Device.objects.all())
         self.assertEqual(temp_device_to_settings_map[test_device.id], self.test_settings_a)
+
+
+class HelpersTestStaticGroup(TestCase):
+    """Test get_job_filter with a static DynamicGroup in scope."""
+
+    def setUp(self):
+        """Set up a static DynamicGroup and a GoldenConfigSetting using it."""
+        GitRepository.objects.all().delete()
+        create_helper_repo(name="backup-static-test", provides="backupconfigs")
+        create_helper_repo(name="intended-static-test", provides="intendedconfigs")
+        create_helper_repo(name="jinja-static-test", provides="jinjatemplate")
+
+        GoldenConfigSetting.objects.all().delete()
+
+        content_type = ContentType.objects.get(app_label="dcim", model="device")
+        graphql_query = GraphQLQuery.objects.create(
+            name="static-group-test-query",
+            query="query ($device_id: ID!) { device(id: $device_id) { name } }",
+        )
+
+        populate_status_choices()
+        self.device = create_device(name="static-device")
+
+        static_group = DynamicGroup.objects.create(
+            name="static-type-dg",
+            content_type=content_type,
+            group_type=DynamicGroupTypeChoices.TYPE_STATIC,
+        )
+        static_group.add_members([self.device])
+        GoldenConfigSetting.objects.create(
+            name="static_group_setting",
+            slug="static_group_setting",
+            weight=2000,
+            backup_repository=GitRepository.objects.get(name="backup-static-test"),
+            intended_repository=GitRepository.objects.get(name="intended-static-test"),
+            jinja_repository=GitRepository.objects.get(name="jinja-static-test"),
+            dynamic_group=static_group,
+            sot_agg_query=graphql_query,
+        )
+
+    def test_get_job_filter_with_static_group_does_not_raise(self):
+        """Verify get_job_filter does not raise when a GoldenConfigSetting uses a static group."""
+        result = get_job_filter()
+        self.assertIn(self.device, result)
+
+    def test_device_to_settings_map_with_static_group(self):
+        """Verify get_device_to_settings_map resolves a device in a static DynamicGroup to its setting."""
+        result = get_device_to_settings_map(queryset=Device.objects.all())
+        static_setting = GoldenConfigSetting.objects.get(name="static_group_setting")
+        self.assertEqual(result[self.device.id], static_setting)

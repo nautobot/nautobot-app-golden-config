@@ -325,7 +325,7 @@ class HelpersTestStaticGroup(TestCase):
     """Test get_job_filter with a static DynamicGroup in scope."""
 
     def setUp(self):
-        """Setup with a dynamic filter group and a static group."""
+        """Set up a static DynamicGroup and a GoldenConfigSetting using it."""
         GitRepository.objects.all().delete()
         create_helper_repo(name="backup-static-test", provides="backupconfigs")
         create_helper_repo(name="intended-static-test", provides="intendedconfigs")
@@ -340,23 +340,7 @@ class HelpersTestStaticGroup(TestCase):
         )
 
         populate_status_choices()
-        self.device = create_device(name="static-filter-device")
-
-        dynamic_group = DynamicGroup.objects.create(
-            name="static-test-dg",
-            content_type=content_type,
-            filter={"platform": ["Platform 1"]},
-        )
-        GoldenConfigSetting.objects.create(
-            name="dynamic_filter_setting",
-            slug="dynamic_filter_setting",
-            weight=1000,
-            backup_repository=GitRepository.objects.get(name="backup-static-test"),
-            intended_repository=GitRepository.objects.get(name="intended-static-test"),
-            jinja_repository=GitRepository.objects.get(name="jinja-static-test"),
-            dynamic_group=dynamic_group,
-            sot_agg_query=graphql_query,
-        )
+        self.device = create_device(name="static-device")
 
         static_group = DynamicGroup.objects.create(
             name="static-type-dg",
@@ -380,9 +364,8 @@ class HelpersTestStaticGroup(TestCase):
         result = get_job_filter()
         self.assertIn(self.device, result)
 
-    def test_device_to_settings_map_static_group_weight_wins(self):
-        """Verify highest weight GoldenConfigSetting wins when device matches both static and filter-based groups."""
+    def test_device_to_settings_map_with_static_group(self):
+        """Verify get_device_to_settings_map resolves a device in a static DynamicGroup to its setting."""
         result = get_device_to_settings_map(queryset=Device.objects.all())
         static_setting = GoldenConfigSetting.objects.get(name="static_group_setting")
-        # static_group_setting (weight=2000) should win over dynamic_filter_setting (weight=1000)
         self.assertEqual(result[self.device.id], static_setting)

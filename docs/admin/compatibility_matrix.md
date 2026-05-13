@@ -23,3 +23,5 @@ While that last supported version will not be strictly enforced via the `max_ver
 | 2.3.x                 | 2.4.2                          | 2.4.99                        |
 | 2.4.x                 | 2.4.2                          | 2.4.99                        |
 | 2.5.x                 | 2.4.2                          | 2.4.99                        |
+| 2.6.x                 | 2.4.20                         | 2.4.99                        |
+| 3.0.x                 | 3.0.0                          | 3.99.99                       |

@@ -6,8 +6,8 @@ import json
 import django.forms as django_forms
 from django.conf import settings
 from nautobot.apps import forms
+from nautobot.apps.forms import NautobotBulkEditForm, NautobotFilterForm, NautobotModelForm
 from nautobot.dcim.models import Device, DeviceType, Location, Manufacturer, Platform, Rack, RackGroup
-from nautobot.extras.forms import NautobotBulkEditForm, NautobotFilterForm, NautobotModelForm
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, JobResult, Role, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
 from packaging import version
@@ -36,7 +36,7 @@ class DeviceRelatedFilterForm(NautobotFilterForm):  # pylint: disable=nb-no-mode
         to_field_name="name",
         required=False,
         null_option="None",
-        query_params={"group": "$tenant_group"},
+        query_params={"tenant_group": "$tenant_group"},
     )
     location_id = forms.DynamicModelMultipleChoiceField(
         # Not limiting to query_params={"content_type": "dcim.device" to allow parent locations to be included
@@ -179,6 +179,14 @@ class ComplianceRuleForm(NautobotModelForm):
     """Filter Form for ComplianceRule instances."""
 
     platform = forms.DynamicModelChoiceField(queryset=Platform.objects.all())
+    match_config = django_forms.CharField(
+        required=False,
+        widget=django_forms.Textarea,
+        label="Config to Match",
+        help_text="The config to match that is matched based on the parent most configuration. E.g.: For CLI `router bgp` or `ntp`. For JSON this is a top level key name. For XML this is a xpath query.",
+        # We need to preserve leading spaces for some operating systems.
+        strip=False,
+    )
 
     class Meta:
         """Boilerplate form Meta data for compliance rule."""
@@ -242,6 +250,43 @@ class ComplianceFeatureFilterForm(NautobotFilterForm):
     model = models.ComplianceFeature
     q = django_forms.CharField(required=False, label="Search")
     name = forms.DynamicModelChoiceField(queryset=models.ComplianceFeature.objects.all(), required=False)
+
+
+class ComplianceFeatureFilterFormAlt(DeviceRelatedFilterForm):  # pylint: disable=nb-sub-class-name
+    """Filter Form for ComplianceFeature instances used in chart reporting."""
+
+    model = models.ComplianceFeature
+    field_order = [
+        "q",
+        "tenant_group",
+        "tenant",
+        "location_id",
+        "location",
+        "rack_group_id",
+        "rack_group",
+        "rack_id",
+        "role",
+        "manufacturer",
+        "platform",
+        "device_status",
+        "device_type",
+        "device",
+    ]
+
+    q = django_forms.CharField(required=False, label="Search")
+
+    def __init__(self, *args, **kwargs):
+        """Required for status to work."""
+        super().__init__(*args, **kwargs)
+        self.fields["device_status"] = forms.DynamicModelMultipleChoiceField(
+            required=False,
+            queryset=Status.objects.all(),
+            query_params={"content_types": Device._meta.label_lower},
+            display_field="label",
+            label="Device Status",
+            to_field_name="name",
+        )
+        self.order_fields(self.field_order)
 
 
 class ComplianceFeatureBulkEditForm(NautobotBulkEditForm):

@@ -5,6 +5,7 @@ from unittest.mock import ANY, Mock, patch
 from urllib.parse import quote
 
 from django.conf import settings
+from git.exc import GitCommandError
 from nautobot.extras.datasources.git import get_repo_from_url_to_path_and_from_branch
 from packaging import version
 
@@ -70,3 +71,119 @@ class GitRepoTest(unittest.TestCase):
         GitRepo(self.mock_obj.filesystem_path, git_info.from_url, base_url=self.mock_obj.remote_url)
         mock_repo.assert_not_called()
         mock_repo.clone_from.assert_called_with(git_info.from_url, **self.clone_from_kwargs)
+
+
+@patch("nautobot.core.utils.git.os.path.isdir", Mock(return_value=True))
+@patch("nautobot.core.utils.git.Repo", autospec=True)
+class GitRepoPushTest(unittest.TestCase):
+    """Test GitRepo.push() concurrent-push handling (issue #968)."""
+
+    PATH = "/fake/path"
+    URL = "https://fake.git/org/repository.git"
+
+    @staticmethod
+    def _non_fast_forward_error():
+        return GitCommandError(
+            "git push",
+            1,
+            stderr=b"! [rejected]        main -> main (non-fast-forward)\nerror: failed to push some refs to 'origin'\n",
+        )
+
+    def test_push_retries_on_non_fast_forward_then_succeeds(self, _mock_repo_cls):
+        """Regression test for #968.
+
+        When the remote rejects the initial push as non-fast-forward, push() must fetch from origin,
+        rebase the local branch onto the remote tip, and retry the push so that two concurrent jobs
+        can both succeed.
+        """
+        git_repo = GitRepo(self.PATH, self.URL, base_url=self.URL)
+        repo = git_repo.repo
+        repo.active_branch.name = "main"
+
+        push_result = Mock()
+        push_result.raise_if_error.side_effect = [self._non_fast_forward_error(), None]
+        repo.remotes.origin.push.return_value = push_result
+
+        with patch.object(GitRepo, "fetch") as mock_fetch:
+            git_repo.push()
+
+        self.assertEqual(repo.remotes.origin.push.call_count, 2)
+        self.assertEqual(push_result.raise_if_error.call_count, 2)
+        mock_fetch.assert_called_once_with()
+        repo.git.rebase.assert_called_once_with("origin/main")
+
+    def test_push_succeeds_first_try_no_fetch_or_rebase(self, _mock_repo_cls):
+        """Happy path: a successful push must not fetch or rebase."""
+        git_repo = GitRepo(self.PATH, self.URL, base_url=self.URL)
+        repo = git_repo.repo
+
+        push_result = Mock()
+        push_result.raise_if_error.return_value = None
+        repo.remotes.origin.push.return_value = push_result
+
+        with patch.object(GitRepo, "fetch") as mock_fetch:
+            git_repo.push()
+
+        repo.remotes.origin.push.assert_called_once_with()
+        push_result.raise_if_error.assert_called_once_with()
+        mock_fetch.assert_not_called()
+        repo.git.rebase.assert_not_called()
+
+    def test_push_rebase_conflict_aborts_and_reraises(self, _mock_repo_cls):
+        """A rebase that itself fails must abort and surface the original error, not loop."""
+        git_repo = GitRepo(self.PATH, self.URL, base_url=self.URL)
+        repo = git_repo.repo
+        repo.active_branch.name = "main"
+
+        push_result = Mock()
+        push_result.raise_if_error.side_effect = self._non_fast_forward_error()
+        repo.remotes.origin.push.return_value = push_result
+
+        rebase_conflict = GitCommandError("git rebase", 1, stderr=b"CONFLICT (content): Merge conflict in foo.cfg")
+        repo.git.rebase.side_effect = [rebase_conflict, None]
+
+        with patch.object(GitRepo, "fetch"), self.assertRaises(GitCommandError):
+            git_repo.push()
+
+        self.assertEqual(repo.remotes.origin.push.call_count, 1)
+        self.assertEqual(repo.git.rebase.call_count, 2)
+        repo.git.rebase.assert_any_call("origin/main")
+        repo.git.rebase.assert_any_call("--abort")
+
+    def test_push_non_retryable_error_fails_fast(self, _mock_repo_cls):
+        """Auth/network errors must propagate immediately without fetch or rebase."""
+        git_repo = GitRepo(self.PATH, self.URL, base_url=self.URL)
+        repo = git_repo.repo
+
+        auth_error = GitCommandError("git push", 128, stderr=b"fatal: Authentication failed for 'origin'")
+        push_result = Mock()
+        push_result.raise_if_error.side_effect = auth_error
+        repo.remotes.origin.push.return_value = push_result
+
+        with patch.object(GitRepo, "fetch") as mock_fetch, self.assertRaises(GitCommandError):
+            git_repo.push()
+
+        self.assertEqual(repo.remotes.origin.push.call_count, 1)
+        mock_fetch.assert_not_called()
+        repo.git.rebase.assert_not_called()
+
+    def test_push_exhausts_retries(self, _mock_repo_cls):
+        """If every attempt is rejected as non-fast-forward, the error propagates after max_retries."""
+        git_repo = GitRepo(self.PATH, self.URL, base_url=self.URL)
+        repo = git_repo.repo
+        repo.active_branch.name = "main"
+
+        push_result = Mock()
+        push_result.raise_if_error.side_effect = [
+            self._non_fast_forward_error(),
+            self._non_fast_forward_error(),
+            self._non_fast_forward_error(),
+        ]
+        repo.remotes.origin.push.return_value = push_result
+
+        with patch.object(GitRepo, "fetch") as mock_fetch, self.assertRaises(GitCommandError):
+            git_repo.push(max_retries=3)
+
+        self.assertEqual(repo.remotes.origin.push.call_count, 3)
+        self.assertEqual(mock_fetch.call_count, 2)
+        self.assertEqual(repo.git.rebase.call_count, 2)

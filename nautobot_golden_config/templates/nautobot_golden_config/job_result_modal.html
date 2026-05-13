@@ -1,42 +1,34 @@
 {% load static %}
 <div class="modal" id="modalPopup">
-  <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-          <!-- Modal Header -->
-          <div class="modal-header">
-              <h3 class="modal-title">{{ modal_title }}</h3>
-          </div>
-
-          <!-- Modal body -->
-          <div class="modal-body">
-            <table class="table table-hover panel-body attr-table">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+<!-- Modal Header -->
+            <div class="modal-header">
+                <h3 class="modal-title">{{ modal_title }}</h3>
+            </div>
+<!-- Modal body -->
+            <table class="table table-hover attr-table">
                 <tr>
-                  <td>Job Status: </td>
-                  <td><div id="jobStatus" style="display:none;"></div></td>
+                    <td>Job Status: </td>
+                    <td><div id="jobStatus" style="display:none;"></div></td>
                 </tr>
                 <tr>
-                  <td>Job Results: </td>
-                  <td><div id="jobResults" style="display:none;"></div></td>
+                    <td>Job Results: </td>
+                    <td><div id="jobResults" style="display:none;"></div></td>
                 </tr>
                 <tr>
-                  <td>Redirect Link: </td>
-                  <td><div id="redirectLink" style="display:none;"></div></td>
+                    <td>Redirect Link: </td>
+                    <td><div id="redirectLink" style="display:none;"></div></td>
                 </tr>
                 <tr>
-                  <td>Details: </td>
-                  <td><div id="detailMessages" style="display:none;"></div></td>
+                    <td>Details: </td>
+                    <td><div id="detailMessages" style="display:none;"></div><img alt="" id="loaderImg" src="{% static 'img/ajax-loader.gif' %}" style="display:none;"/></td>
                 </tr>
-                <tr>
-                  <td colspan="2"><img id="loaderImg" style="display:none;" src="{% static 'img/ajax-loader.gif' %}" alt=""/></td>
-                </tr>
-              <div id="jobInfo" style="display:none;"></div><br>
             </table>
-          </div>
-
-          <!-- Modal footer -->
-          <div class="modal-footer">
-              <button id="close" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-          </div>
-      </div>
-  </div>
+<!-- Modal footer -->
+            <div class="modal-footer mt-16">
+                <button class="btn btn-secondary" data-bs-dismiss="modal" id="close" type="button">Close</button>
+            </div>
+        </div>
+    </div>
 </div>

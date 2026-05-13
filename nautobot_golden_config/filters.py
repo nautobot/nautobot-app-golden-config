@@ -25,7 +25,7 @@ class GoldenConfigFilterSet(NautobotFilterSet):
         # Choose the lookup expression map based on the filter type
         lookup_map = NautobotFilterSet._get_filter_lookup_dict(existing_filter)
         if isinstance(existing_filter, MultiValueDateTimeFilter):
-            lookup_map.update({"isnull": "isnull"})
+            lookup_map = dict(lookup_map, isnull="isnull")
         return lookup_map
 
     q = SearchFilter(
@@ -280,7 +280,7 @@ class GoldenConfigSettingFilterSet(NautobotFilterSet):
 
 
 class RemediationSettingFilterSet(NautobotFilterSet):
-    """Inherits Base Class CustomFieldModelFilterSet."""
+    """Inherits Base Class NautobotFilterSet."""
 
     q = SearchFilter(
         filter_predicates={

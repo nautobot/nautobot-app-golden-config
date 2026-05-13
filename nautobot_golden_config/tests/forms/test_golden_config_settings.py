@@ -2,7 +2,9 @@
 
 from unittest import mock
 
-from django.test import TestCase
+from django.contrib.contenttypes.models import ContentType
+from nautobot.apps.testing import TestCase
+from nautobot.dcim.models import Device
 from nautobot.extras.models import DynamicGroup, GitRepository
 
 from nautobot_golden_config.forms import GoldenConfigSettingForm
@@ -23,6 +25,11 @@ class GoldenConfigSettingFormTest(TestCase):
 
     def test_no_query_no_scope_success(self):
         """Testing GoldenConfigSettingForm without specifying a unique scope or GraphQL Query."""
+        dynamic_group = DynamicGroup.objects.create(
+            name="GoldenConfig Default Group",
+            filter={},
+            content_type=ContentType.objects.get_for_model(Device),
+        )
         with mock.patch("nautobot_golden_config.models.ENABLE_SOTAGG", False):
             form = GoldenConfigSettingForm(
                 data={
@@ -35,10 +42,10 @@ class GoldenConfigSettingFormTest(TestCase):
                     "intended_repository": GitRepository.objects.get(name="test-intended-repo-1"),
                     "intended_path_template": "{{ obj.location.name }}/{{ obj.name }}.cfg",
                     "backup_test_connectivity": True,
-                    "dynamic_group": DynamicGroup.objects.first(),
+                    "dynamic_group": dynamic_group.pk,
                 }
             )
-            self.assertTrue(form.is_valid())
+            self.assertTrue(form.is_valid(), form.errors)
             self.assertTrue(form.save())
 
     def test_no_query_fail(self):

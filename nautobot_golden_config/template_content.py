@@ -1,18 +1,27 @@
 """Added content to the device model view for config compliance."""
 
-from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, Q
-from django.urls import reverse
-from nautobot.extras.plugins import PluginTemplateExtension
+from nautobot.apps.ui import DistinctViewTab, TemplateExtension
 
 from nautobot_golden_config.models import ConfigCompliance, GoldenConfig, GoldenConfigSetting
 # from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_COMPLIANCE
 
 
-class ConfigComplianceDeviceCheck(PluginTemplateExtension):  # pylint: disable=abstract-method
+class ConfigComplianceDeviceCheck(TemplateExtension):  # pylint: disable=abstract-method
     """App extension class for config compliance."""
 
     model = "dcim.device"
+
+    object_detail_tabs = [
+        DistinctViewTab(
+            weight=100,
+            tab_id="device_tab",
+            label="Configuration Compliance",
+            url_name="plugins:nautobot_golden_config:configcompliance_devicetab",
+            related_object_attribute="configcompliance_set",
+            hide_if_empty=True,
+        )
+    ]
 
     @property
     def device(self):
@@ -34,26 +43,8 @@ class ConfigComplianceDeviceCheck(PluginTemplateExtension):  # pylint: disable=a
             extra_context=extra_context,
         )
 
-    def detail_tabs(self):
-        """Add a Configuration Compliance tab to the Device detail view if the Configuration Compliance associated to it."""
-        try:
-            if ConfigCompliance.objects.filter(device=self.device):
-                return [
-                    {
-                        "title": "Configuration Compliance",
-                        "url": reverse(
-                            "plugins:nautobot_golden_config:configcompliance_devicetab",
-                            kwargs={"pk": self.device.pk},
-                        ),
-                    }
-                ]
-        except ObjectDoesNotExist:
-            return []
 
-        return []
-
-
-class ConfigComplianceLocationCheck(PluginTemplateExtension):  # pylint: disable=abstract-method
+class ConfigComplianceLocationCheck(TemplateExtension):  # pylint: disable=abstract-method
     """App extension class for config compliance."""
 
     model = "dcim.location"
@@ -87,7 +78,7 @@ class ConfigComplianceLocationCheck(PluginTemplateExtension):  # pylint: disable
         )
 
 
-class ConfigDeviceDetails(PluginTemplateExtension):  # pylint: disable=abstract-method
+class ConfigDeviceDetails(TemplateExtension):  # pylint: disable=abstract-method
     """App extension class for config compliance."""
 
     model = "dcim.device"
@@ -121,7 +112,7 @@ class ConfigDeviceDetails(PluginTemplateExtension):  # pylint: disable=abstract-
         )
 
 
-class ConfigComplianceTenantCheck(PluginTemplateExtension):  # pylint: disable=abstract-method
+class ConfigComplianceTenantCheck(TemplateExtension):  # pylint: disable=abstract-method
     """App extension class for config compliance."""
 
     model = "tenancy.tenant"

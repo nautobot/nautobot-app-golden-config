@@ -31,6 +31,16 @@ or
 {% endfor %}
 ```
 
+??? example "Demo Instance Methodology"
+    ## Demo Instance
+
+    This is how the [demo instance](https://demo.nautobot.com) of Nautobot handles the configuration of Golden Config. This may be one recommended method for you to set up Golden Configuration. In the configuration of [Golden Config settings](https://demo.nautobot.com/plugins/golden-config/golden-config-setting/c5c257d0-906d-4790-9e80-030d8231b738/?tab=main) which you get to by navigating to the top menu, expanding **Golden Config**, selecting **Golden Config Settings**. Then select the **Default Settings** option. You now see all of the options that are used to configure the application. Then on the right hand side in the **Templates Configuration** section you can set the entrypoint of the generating the configuration. This instance uses `{{obj.platform.network_driver}}.j2`. `obj` refers to the Device you are using. `platform` is the platform associated with the device. And `network_driver` refers to the setting of the network driver. 
+
+    ![Golden Config Settings Page](../images/ss1_intended-demo-instance_light.png#only-light){ .on-glb }
+    ![Golden Config Settings Page](../images/ss1_intended-demo-instance_dark.png#only-dark){ .on-glb }
+
+    The actual jinja2 file can then be found within the [Git repository for the templates](https://github.com/nautobot/demo-gc-templates).
+
 In these examples, `/services.j2`, `/ntp.j2`, etc. could contain the actual Jinja code which renders the configuration for their corresponding features. Alternately, in more complex environments, these files could themselves contain only include statements in order to create a hierarchy of template files so as to keep each individual file neat and simple. Think of the main, top-level, template as an entrypoint into a hierarchy of templates. A well thought out structure to your templates is necessary to avoid the temptation to place all logic into a small number of templates. Like any code, Jinja2 functions become harder to manage, more buggy, and more fragile as you add complexity, so any thing which you can do to keep them simple will help your automation efforts.
 
 ### Developing Intended Configuration Templates
@@ -49,8 +59,8 @@ For more advanced use cases, the form accepts an optional "GraphQL Query" to spe
 
 Starting in Nautobot v2.4.2, this UI also allows you to supply a "Git Repository Branch" to specify the branch of the Jinja2 templates Git repository to use when rendering the configuration. If the branch is not provided, the configured branch of the Golden Config Setting's Jinja template Git repository will be used.
 
-![Intended Configuration Web UI](../images/generate-intended-config-ui.png#only-light)
-![Intended Configuration Web UI](../images/generate-intended-config-ui-dark.png#only-dark)
+![Intended Configuration Web UI](../images/ss1_generate-intended-config-ui_light.png#only-light)
+![Intended Configuration Web UI](../images/ss1_generate-intended-config-ui_dark.png#only-dark)
 
 #### REST API
 
@@ -112,7 +122,7 @@ from custom_jinja_filters import config_templates
 
 To start a intended configuration job manually:
 
-1. Navigate to `Golden Config -> Home`, with Home being in the `Golden Configuration` section
+1. Navigate to `Golden Config -> Config Overview`, with Home being in the `Golden Configuration` section
 2. Select _Execute_ on the upper right buttons, then _Intended_
 3. Fill in the data that you wish to have configurations generated for up
 4. Select _Run Job_

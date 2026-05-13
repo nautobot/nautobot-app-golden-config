@@ -13,10 +13,10 @@ from django.utils.html import format_html
 from jinja2 import exceptions as jinja_errors
 from jinja2.sandbox import SandboxedEnvironment
 from lxml import etree
-from nautobot.core.utils.data import render_jinja2
+from nautobot.apps.utils import render_jinja2
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.dcim.models import Device
-from nautobot.extras.choices import DynamicGroupTypeChoices
+from nautobot.extras.choices import DynamicGroupTypeChoices  # core-import-update
 from nautobot.extras.models import Job
 from nornir_nautobot.exceptions import NornirNautobotException
 
@@ -324,6 +324,7 @@ def get_error_message(error_code, **kwargs):
         error_message = "Error Code was found, but failed to format message, unknown cause."
     return f"{error_code}: {error_message}"
 
+
 def get_inscope_settings_from_device_qs(queryset):
     """Wrapper function to return a queryset of GoldenConfigSettings that are in scope for the provided queryset."""
     inscope_gcs = []
@@ -332,3 +333,19 @@ def get_inscope_settings_from_device_qs(queryset):
         if common_objects_queryset.count() > 0:
             inscope_gcs.append(gc_setting)
     return inscope_gcs
+
+
+def calculate_aggr_percentage(aggr):
+    """Calculate percentage of compliance given aggregation fields.
+
+    Returns:
+        aggr: same aggr dict given as parameter with two new keys
+            - comp_percents
+            - non_compliants
+    """
+    aggr["non_compliants"] = aggr["total"] - aggr["compliants"]
+    try:
+        aggr["comp_percents"] = round(aggr["compliants"] / aggr["total"] * 100, 2)
+    except ZeroDivisionError:
+        aggr["comp_percents"] = 0
+    return aggr

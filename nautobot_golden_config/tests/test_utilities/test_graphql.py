@@ -3,7 +3,7 @@
 from unittest import skip
 from unittest.mock import patch
 
-from nautobot.core.testing import TestCase
+from nautobot.apps.testing import TestCase
 from nautobot.dcim.models import Device
 
 from nautobot_golden_config.utilities.graphql import graph_ql_query

@@ -547,6 +547,7 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
         """Verify that the intended config API succeeds when the branch parameter is supplied on Nautobot v2.4.2."""
 
         self.add_permissions("dcim.view_device")
+        self.add_permissions("dcim.view_location")
         self.add_permissions("extras.view_gitrepository")
 
         self._setup_mock_path(MockPath)
@@ -601,6 +602,7 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
         """Verify that the intended config is generated as expected."""
 
         self.add_permissions("dcim.view_device")
+        self.add_permissions("dcim.view_location")
         self.add_permissions("extras.view_gitrepository")
 
         self._setup_mock_path(MockPath)
@@ -668,6 +670,7 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
         """Verify that errors are handled as expected."""
 
         self.add_permissions("dcim.view_device")
+        self.add_permissions("dcim.view_location")
         self.add_permissions("extras.view_gitrepository")
 
         mock_path_instance = self._setup_mock_path(MockPath)

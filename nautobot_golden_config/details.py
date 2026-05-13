@@ -2,7 +2,7 @@
 
 from django.utils.html import format_html
 from nautobot.apps import ui
-from nautobot.core.templatetags import helpers
+from nautobot.core.templatetags import helpers  # core-import-update
 
 
 def get_model_instances(m2m_object):
@@ -76,9 +76,14 @@ config_remediation = ui.ObjectDetailContent(
             section=ui.SectionChoices.LEFT_HALF,
             weight=100,
             fields="__all__",
-            value_transforms={
-                "remediation_options": [helpers.render_json],
-            },
+            exclude_fields=("remediation_options",),
+        ),
+        ui.ObjectTextPanel(
+            section=ui.SectionChoices.RIGHT_HALF,
+            weight=100,
+            label="Remediation Options",
+            object_field="remediation_options",
+            render_as=ui.ObjectTextPanel.RenderOptions.JSON,
         ),
     ),
 )
@@ -191,7 +196,6 @@ config_plan = ui.ObjectDetailContent(
                 "plan_result",
             ),
             value_transforms={
-                "plan_result": [lambda v: helpers.hyperlinked_field(getattr(v, "status", v))],
                 "feature": [get_model_instances, helpers.placeholder],
             },
         ),
@@ -237,6 +241,13 @@ config_compliance = ui.ObjectDetailContent(
             section=ui.SectionChoices.RIGHT_HALF,
             weight=100,
             fields=("actual", "intended", "remediation", "missing", "extra"),
+            value_transforms={
+                "actual": [helpers.pre_tag],
+                "intended": [helpers.pre_tag],
+                "remediation": [helpers.pre_tag],
+                "missing": [helpers.pre_tag],
+                "extra": [helpers.pre_tag],
+            },
         ),
     ),
 )

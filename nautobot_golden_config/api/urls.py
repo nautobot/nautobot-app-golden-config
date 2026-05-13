@@ -5,8 +5,7 @@ from nautobot.apps.api import OrderedDefaultRouter
 
 from nautobot_golden_config.api import views
 
-router = OrderedDefaultRouter()
-router.APIRootView = views.GoldenConfigRootView
+router = OrderedDefaultRouter(view_name="Golden Config")
 router.register("compliance-feature", views.ComplianceFeatureViewSet)
 router.register("compliance-rule", views.ComplianceRuleViewSet)
 router.register("config-compliance", views.ConfigComplianceViewSet)

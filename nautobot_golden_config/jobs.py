@@ -7,10 +7,7 @@
 from datetime import datetime
 
 from django.utils.timezone import make_aware
-from nautobot.core.celery import register_jobs
-from nautobot.dcim.models import Device, DeviceType, Location, Manufacturer, Platform, Rack, RackGroup
-from nautobot.extras.datasources.git import ensure_git_repository, get_repo_from_url_to_path_and_from_branch
-from nautobot.extras.jobs import (
+from nautobot.apps.jobs import (
     BooleanVar,
     ChoiceVar,
     Job,
@@ -19,6 +16,12 @@ from nautobot.extras.jobs import (
     ObjectVar,
     StringVar,
     TextVar,
+    register_jobs,
+)
+from nautobot.dcim.models import Device, DeviceType, Location, Manufacturer, Platform, Rack, RackGroup
+from nautobot.extras.datasources.git import (  # core-import-update
+    ensure_git_repository,
+    get_repo_from_url_to_path_and_from_branch,
 )
 from nautobot.extras.models import Role, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
@@ -55,7 +58,7 @@ InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 name = "Golden Configuration"  # pylint: disable=invalid-name
 
 
-def get_repo_types_for_job(job_name):
+def get_repo_types_for_job(job):
     """Logic to determine which repo_types are needed based on job + plugin settings."""
     repo_types = []
     if job_name == "backup":
@@ -452,7 +455,7 @@ class AllGoldenConfig(GoldenConfigJobMixin):
         # )
         # if repos_to_sync:
         #     for repository_record in repos_to_sync:
-                # ensure_git_repository(repository_record, self.logger)
+        # ensure_git_repository(repository_record, self.logger)
         try:
             for nornir_play in [config_intended, config_backup, config_compliance]:
                 # "backup", "intended", "compliance"

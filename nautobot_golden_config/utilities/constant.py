@@ -5,6 +5,9 @@ from django.utils.module_loading import import_string
 
 PLUGIN_CFG = settings.PLUGINS_CONFIG["nautobot_golden_config"]
 
+# Plugin-level defaults consumed by ``GoldenConfigSetting`` BooleanField ``default=`` arguments.
+# They control the default value for newly-created Settings only — runtime enable/disable
+# decisions are made per GoldenConfigSetting record.
 ENABLE_INTENDED = PLUGIN_CFG["enable_intended"]
 ENABLE_COMPLIANCE = PLUGIN_CFG["enable_compliance"]
 ENABLE_BACKUP = PLUGIN_CFG["enable_backup"]

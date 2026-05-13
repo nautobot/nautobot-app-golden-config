@@ -18,6 +18,7 @@ from nautobot_golden_config.utilities.config_postprocessing import (
     render_secrets,
 )
 from nautobot_golden_config.utilities.constant import PLUGIN_CFG
+from nautobot_golden_config.utilities.helper import get_repo_types_for_job
 
 from .conftest import create_device
 
@@ -141,3 +142,25 @@ class GetSecretFilterTestCase(TestCase):
                 self.configs,
                 mock.Mock(),
             )
+
+
+class GetRepoTypesForJobTestCase(TestCase):
+    """Verify the documented contract of get_repo_types_for_job."""
+
+    def test_backup_job(self):
+        self.assertEqual(get_repo_types_for_job("backup"), ["backup_repository"])
+
+    def test_intended_job(self):
+        self.assertEqual(get_repo_types_for_job("intended"), ["jinja_repository", "intended_repository"])
+
+    def test_compliance_job(self):
+        self.assertEqual(get_repo_types_for_job("compliance"), ["intended_repository", "backup_repository"])
+
+    def test_all_job(self):
+        self.assertEqual(
+            get_repo_types_for_job("all"),
+            ["backup_repository", "jinja_repository", "intended_repository"],
+        )
+
+    def test_unknown_job_returns_empty_list(self):
+        self.assertEqual(get_repo_types_for_job("does-not-exist"), [])

@@ -110,16 +110,15 @@ MATCH_CONFIG = """{{ record.match_config|linebreaksbr }}"""
 
 
 def actual_fields():
-    """Convienance function to conditionally toggle columns."""
-    active_fields = ["pk", "name"]
-    # if ENABLE_BACKUP:
-    active_fields.append("backup_last_success_date")
-    # if ENABLE_INTENDED:
-    active_fields.append("intended_last_success_date")
-    # if ENABLE_COMPLIANCE:
-    active_fields.append("compliance_last_success_date")
-    active_fields.append("actions")
-    return tuple(active_fields)
+    """Return the column set rendered on the GoldenConfig list view."""
+    return (
+        "pk",
+        "name",
+        "backup_last_success_date",
+        "intended_last_success_date",
+        "compliance_last_success_date",
+        "actions",
+    )
 
 
 #
@@ -271,30 +270,19 @@ class GoldenConfigTable(BaseTable):
         verbose_name="Device",
     )
 
-    # if ENABLE_BACKUP:
     backup_last_success_date = Column(
         verbose_name="Backup Status", empty_values=(), order_by="backup_last_success_date"
     )
-    # if ENABLE_INTENDED:
     intended_last_success_date = Column(
         verbose_name="Intended Status",
         empty_values=(),
         order_by="intended_last_success_date",
     )
-    # if ENABLE_COMPLIANCE:
     compliance_last_success_date = Column(
         verbose_name="Compliance Status",
         empty_values=(),
         order_by="compliance_last_success_date",
     )
-
-    config_features = {
-        "intended": True,  # models.GoldenConfigSetting.objects.filter(enable_intended=True).exists() or True,
-        "compliance": True,  # models.GoldenConfigSetting.objects.filter(enable_compliance=True).exists() or True,
-        "backup": True,  # models.GoldenConfigSetting.objects.filter(enable_backup=True).exists() or True,
-        "sotagg": True,  # Figure out if this is even needed
-        "postprocessing": True,  # Figure out if this is even needed
-    }
 
     actions = ButtonsColumn(
         buttons=("delete",),

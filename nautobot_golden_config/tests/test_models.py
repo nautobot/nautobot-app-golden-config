@@ -300,6 +300,138 @@ class GoldenConfigSettingModelTestCase(TestCase):
         self.assertIsNone(self.global_settings.get_jinja_template_path_for_device(device))
 
 
+class GoldenConfigSettingCleanTestCase(TestCase):
+    """Validate clean() rejects partially-configured enable_* combinations."""
+
+    @classmethod
+    def setUpTestData(cls):
+        create_git_repos()
+        create_saved_queries()
+        GoldenConfigSetting.objects.all().delete()
+        cls.dynamic_group = DynamicGroup.objects.create(
+            name="clean-test-dg",
+            content_type=ContentType.objects.get(app_label="dcim", model="device"),
+            filter={},
+        )
+
+    def _make_setting(self, **overrides):
+        defaults = {
+            "name": "clean-test",
+            "slug": "clean-test",
+            "weight": 1000,
+            "dynamic_group": self.dynamic_group,
+            "enable_backup": False,
+            "enable_intended": False,
+            "enable_compliance": False,
+            "enable_plan": False,
+            "enable_deploy": False,
+        }
+        defaults.update(overrides)
+        return GoldenConfigSetting(**defaults)
+
+    def test_intended_enabled_requires_jinja_and_sot_agg_fields(self):
+        """When intended is enabled, clean() must require sot_agg_query, jinja_repository, jinja_path_template."""
+        setting = self._make_setting(enable_intended=True)
+        with self.assertRaises(ValidationError):
+            setting.clean()
+
+        setting.jinja_repository = GitRepository.objects.get(name="test-jinja-repo-1")
+        with self.assertRaises(ValidationError):
+            setting.clean()
+
+        setting.sot_agg_query = GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1")
+        with self.assertRaises(ValidationError):
+            setting.clean()
+
+        setting.jinja_path_template = "{{obj.platform.name}}.j2"
+        setting.clean()  # should now pass
+
+    def test_intended_disabled_skips_validation(self):
+        """A Setting with intended disabled should clean cleanly even with all intended fields blank."""
+        setting = self._make_setting(enable_intended=False)
+        setting.clean()
+
+
+class GoldenConfigSettingGetReposForSettingsTestCase(TestCase):
+    """Exercise GoldenConfigSettingManager.get_repos_for_settings sync/push contract."""
+
+    @classmethod
+    def setUpTestData(cls):
+        create_git_repos()
+        create_saved_queries()
+        GoldenConfigSetting.objects.all().delete()
+        cls.backup_repo = GitRepository.objects.get(name="test-backup-repo-1")
+        cls.intended_repo = GitRepository.objects.get(name="test-intended-repo-1")
+        cls.jinja_repo = GitRepository.objects.get(name="test-jinja-repo-1")
+        cls.dynamic_group = DynamicGroup.objects.create(
+            name="repo-contract-dg",
+            content_type=ContentType.objects.get(app_label="dcim", model="device"),
+            filter={},
+        )
+
+    def _make_setting(self, **overrides):
+        defaults = {
+            "name": "repo-contract-setting",
+            "slug": "repo-contract-setting",
+            "weight": 1000,
+            "dynamic_group": self.dynamic_group,
+            "backup_repository": self.backup_repo,
+            "backup_path_template": "{{obj.name}}.cfg",
+            "intended_repository": self.intended_repo,
+            "intended_path_template": "{{obj.name}}.cfg",
+            "jinja_repository": self.jinja_repo,
+            "jinja_path_template": "{{obj.platform.name}}.j2",
+            "sot_agg_query": GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1"),
+            "enable_backup": True,
+            "enable_intended": True,
+            "enable_compliance": True,
+        }
+        defaults.update(overrides)
+        return GoldenConfigSetting.objects.create(**defaults)
+
+    def test_backup_job_enabled_pushes_only_backup_repo(self):
+        setting = self._make_setting()
+        sync, push = GoldenConfigSetting.objects.get_repos_for_settings(setting, "backup")
+        self.assertEqual(set(sync), {self.backup_repo})
+        self.assertEqual(set(push), {self.backup_repo})
+
+    def test_backup_job_disabled_syncs_but_does_not_push(self):
+        setting = self._make_setting(enable_backup=False)
+        sync, push = GoldenConfigSetting.objects.get_repos_for_settings(setting, "backup")
+        self.assertEqual(set(sync), {self.backup_repo})
+        self.assertEqual(push, [])
+
+    def test_intended_job_enabled_syncs_intended_and_jinja_but_pushes_only_intended(self):
+        setting = self._make_setting()
+        sync, push = GoldenConfigSetting.objects.get_repos_for_settings(setting, "intended")
+        self.assertEqual(set(sync), {self.intended_repo, self.jinja_repo})
+        self.assertEqual(set(push), {self.intended_repo})
+
+    def test_intended_job_disabled_syncs_but_does_not_push(self):
+        setting = self._make_setting(enable_intended=False)
+        sync, push = GoldenConfigSetting.objects.get_repos_for_settings(setting, "intended")
+        self.assertEqual(set(sync), {self.intended_repo, self.jinja_repo})
+        self.assertEqual(push, [])
+
+    def test_compliance_job_syncs_both_repos_and_never_pushes(self):
+        setting = self._make_setting(enable_backup=False, enable_intended=False)
+        sync, push = GoldenConfigSetting.objects.get_repos_for_settings(setting, "compliance")
+        self.assertEqual(set(sync), {self.backup_repo, self.intended_repo})
+        self.assertEqual(push, [])
+
+    def test_all_job_pushes_only_enabled_feature_repos(self):
+        setting = self._make_setting(enable_backup=True, enable_intended=False)
+        sync, push = GoldenConfigSetting.objects.get_repos_for_settings(setting, "all")
+        self.assertEqual(set(sync), {self.backup_repo, self.intended_repo, self.jinja_repo})
+        self.assertEqual(set(push), {self.backup_repo})
+
+    def test_single_setting_accepted_in_place_of_iterable(self):
+        setting = self._make_setting()
+        sync, push = GoldenConfigSetting.objects.get_repos_for_settings(setting, "backup")
+        self.assertEqual(set(sync), {self.backup_repo})
+        self.assertEqual(set(push), {self.backup_repo})
+
+
 class GoldenConfigSettingGitModelTestCase(TestCase):
     """Test GoldenConfigSetting Model."""
 

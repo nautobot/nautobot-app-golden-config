@@ -14,10 +14,8 @@ from nautobot_golden_config.models import (
     ComplianceRule,
     ConfigRemove,
     ConfigReplace,
-    GoldenConfigSetting,
     RemediationSetting,
 )
-from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
 from nautobot_golden_config.utilities.helper import get_error_message
 
 
@@ -232,10 +230,7 @@ def update_git_gc_properties(golden_config_path, job_result, gc_config_item):  #
             continue
 
 
-datasource_contents = []
-# if GoldenConfigSetting.objects.filter(enable_intended=True).exists() or GoldenConfigSetting.objects.filter(enable_compliance=True).exists():
-# if ENABLE_INTENDED or ENABLE_COMPLIANCE:
-datasource_contents.append(
+datasource_contents = [
     (
         "extras.gitrepository",
         DatasourceContent(
@@ -244,11 +239,7 @@ datasource_contents.append(
             icon="mdi-file-document-outline",
             callback=refresh_git_intended,
         ),
-    )
-)
-# if GoldenConfigSetting.objects.filter(enable_intended=True).exists():
-# if ENABLE_INTENDED:
-datasource_contents.append(
+    ),
     (
         "extras.gitrepository",
         DatasourceContent(
@@ -257,11 +248,7 @@ datasource_contents.append(
             icon="mdi-text-box-check-outline",
             callback=refresh_git_jinja,
         ),
-    )
-)
-# if GoldenConfigSetting.objects.filter(enable_backup=True).exists() or GoldenConfigSetting.objects.filter(enable_compliance=True).exists():
-# if ENABLE_BACKUP or ENABLE_COMPLIANCE:
-datasource_contents.append(
+    ),
     (
         "extras.gitrepository",
         DatasourceContent(
@@ -270,8 +257,8 @@ datasource_contents.append(
             icon="mdi-file-code",
             callback=refresh_git_backup,
         ),
-    )
-)
+    ),
+]
 
 datasource_contents.append(
     (

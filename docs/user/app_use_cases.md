@@ -65,9 +65,30 @@ To update existing settings click on one of the `Settings` name.
 |Jinja Path|A Jinja template which defines the path (within the repository) and name of the Jinja template file. e.g. `{{obj.platform.network_driver}}/{{obj.role.name}}/main.j2`|
 |Dynamic Group|The scope of devices on which Golden Config's jobs can operate. |
 |GraphQL Query|A query that is evaluated and used to render the config. The query must start with `query ($device_id: ID!)`.|
+|Enable Backup|Whether the Backup Configurations job runs for devices owned by this Setting. Defaults to `True`. When `False`, devices owned by this Setting are skipped by the Backup job and an `E3038` warning is logged.|
+|Enable Intended|Whether the Generate Intended Configurations job runs for devices owned by this Setting. Defaults to `True`. The Setting cannot be saved with this enabled unless `Sot agg query`, `Jinja repository`, `Jinja Template Path`, `Intended repository`, and `Intended Path Template` are all set.|
+|Enable Compliance|Whether the Perform Configuration Compliance job runs for devices owned by this Setting. Defaults to `True`.|
+|Enable Config Plan|Whether Config Plan generation is permitted for devices owned by this Setting. Defaults to `True`.|
+|Enable Deploy|Whether Deploy Config Plans is permitted for devices owned by this Setting. Defaults to `True`.|
 
 !!! note
     Each of these will be further detailed in their respective sections.
+
+#### Feature-Enable Resolution Across Multiple Settings
+
+A single device may match the Dynamic Group of more than one Golden Config Setting. To make per-feature scheduling deterministic, Golden Config applies the following rules:
+
+* **Highest-weighted Setting wins per device.** The Setting with the highest `weight` whose Dynamic Group contains the device is the only Setting consulted for that device. If two Settings share the same weight, the Setting with the lower-sorted `name` wins.
+* **No per-feature fallback.** If the winning Setting has `Enable Backup=False`, the device is *not* backed up — even if a lower-weighted Setting that also matches the device has `Enable Backup=True`. The same rule applies to Intended, Compliance, Config Plan, and Deploy. A single Setting owns every feature decision for a given device, which keeps the mental model simple ("which Setting is in charge of this device?") and avoids surprising splits where reads and writes flow through different Settings.
+* **Skip logging.** When a job runs against a device whose winning Setting has the corresponding feature disabled, an `E3038` warning is emitted naming the winning Setting and its weight so operators can locate the responsible record.
+
+#### All-In-One Jobs and Disabled Features
+
+The two "Execute All Golden Configuration Jobs" jobs (single-device and multi-device) iterate through Backup, Intended, and Compliance in order. For each play they run only the subset of devices whose winning Setting has the corresponding feature enabled:
+
+* If a play has zero eligible devices the play is skipped with an `E3039` warning and the next play continues.
+* The job does not abort the remaining plays when one feature is disabled — partial execution is intentional so operators can disable a feature on a Setting without losing the other features for that Setting's devices.
+* If `fail_job_on_task_failure=True` is checked on the form, the job still fails at the end when any executed play raised an error, but skipped (disabled) plays do not count as failures.
 
 #### Dynamic Group
 

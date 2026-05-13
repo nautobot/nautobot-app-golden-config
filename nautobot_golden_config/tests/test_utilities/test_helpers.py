@@ -80,6 +80,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
             backup_repository=GitRepository.objects.get(name="backup-parent_region-1"),
             intended_repository=GitRepository.objects.get(name="intended-parent_region-1"),
             jinja_repository=GitRepository.objects.get(name="test-jinja-repo"),
+            jinja_path_template="{{obj.platform.network_driver}}/main.j2",
             # Limit scope to orphaned device only
             dynamic_group=dynamic_group1,
             sot_agg_query=graphql_query,
@@ -93,6 +94,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
             backup_repository=GitRepository.objects.get(name="backup-parent_region-2"),
             intended_repository=GitRepository.objects.get(name="intended-parent_region-2"),
             jinja_repository=GitRepository.objects.get(name="test-jinja-repo-2"),
+            jinja_path_template="{{obj.platform.network_driver}}/main.j2",
             # Limit scope to orphaned device only
             dynamic_group=dynamic_group2,
             sot_agg_query=graphql_query,
@@ -106,6 +108,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
             backup_repository=GitRepository.objects.get(name="backup-parent_region-3"),
             intended_repository=GitRepository.objects.get(name="intended-parent_region-3"),
             jinja_repository=GitRepository.objects.get(name="test-jinja-repo-3"),
+            jinja_path_template="{{obj.platform.network_driver}}/main.j2",
             dynamic_group=dynamic_group3,
             sot_agg_query=graphql_query,
         )

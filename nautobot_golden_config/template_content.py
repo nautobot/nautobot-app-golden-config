@@ -4,7 +4,6 @@ from django.db.models import Count, Q
 from nautobot.apps.ui import DistinctViewTab, TemplateExtension
 
 from nautobot_golden_config.models import ConfigCompliance, GoldenConfig, GoldenConfigSetting
-# from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_COMPLIANCE
 
 
 class ConfigComplianceDeviceCheck(TemplateExtension):  # pylint: disable=abstract-method

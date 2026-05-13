@@ -173,8 +173,13 @@ def render_jinja_template(obj, logger, template):
         raise NornirNautobotException(error_msg)
 
 
-def get_device_to_settings_map(queryset, job_name):
-    """Helper function to map heightest weighted GC settings to devices."""
+def get_device_to_settings_map(queryset):
+    """Map each device to its highest-weighted GoldenConfigSetting.
+
+    Returns:
+        dict[uuid.UUID, GoldenConfigSetting]: ``{device.id: winning_setting}`` keyed by
+        device primary key. Devices with no matching Setting are omitted from the result.
+    """
     update_dynamic_groups_cache()
     annotated_queryset = queryset.all().annotate(
         gc_settings=Subquery(
@@ -189,16 +194,7 @@ def get_device_to_settings_map(queryset, job_name):
         )
     )
     gcs = {gc.id: gc for gc in models.GoldenConfigSetting.objects.all()}
-    if job_name == "all":
-        job_name = ["backup", "intended", "compliance"]
-    else:
-        job_name = [job_name]
-    settings_filters2 = {setting: {True: {}, False: {}} for setting in job_name}
-    for device in annotated_queryset:
-        for setting in settings_filters2:
-            is_enabled = getattr(gcs[device.gc_settings], f"enable_{setting}", False)
-            settings_filters2[setting][is_enabled][device.id] = gcs[device.gc_settings]
-    return settings_filters2
+    return {device.id: gcs[device.gc_settings] for device in annotated_queryset if device.gc_settings}
 
 
 def get_json_config(config):
@@ -325,14 +321,49 @@ def get_error_message(error_code, **kwargs):
     return f"{error_code}: {error_message}"
 
 
+def any_setting_enabled(feature):
+    """Return ``True`` if any GoldenConfigSetting has the given feature enabled.
+
+    Args:
+        feature: short feature name — one of ``"backup"``, ``"intended"``, ``"compliance"``,
+            ``"plan"``, ``"deploy"``.
+    """
+    return models.GoldenConfigSetting.objects.filter(**{f"enable_{feature}": True}).exists()
+
+
+def get_repo_types_for_job(job_name):
+    """Return the repository types required for a given job function name.
+
+    Args:
+        job_name: one of ``"backup"``, ``"intended"``, ``"compliance"``, ``"all"``.
+
+    Returns:
+        list[str]: Repository field names on ``GoldenConfigSetting`` the job interacts with.
+    """
+    repo_types = []
+    if job_name == "backup":
+        repo_types.append("backup_repository")
+    elif job_name == "intended":
+        repo_types.extend(["jinja_repository", "intended_repository"])
+    elif job_name == "compliance":
+        repo_types.extend(["intended_repository", "backup_repository"])
+    elif job_name == "all":
+        repo_types.extend(["backup_repository", "jinja_repository", "intended_repository"])
+    return repo_types
+
+
 def get_inscope_settings_from_device_qs(queryset):
-    """Wrapper function to return a queryset of GoldenConfigSettings that are in scope for the provided queryset."""
-    inscope_gcs = []
-    for gc_setting in models.GoldenConfigSetting.objects.all():
-        common_objects_queryset = queryset.intersection(gc_setting.dynamic_group.members)
-        if common_objects_queryset.count() > 0:
-            inscope_gcs.append(gc_setting)
-    return inscope_gcs
+    """Return GoldenConfigSettings that have at least one device from the provided queryset in scope."""
+    device_pks = list(queryset.values_list("pk", flat=True))
+    if not device_pks:
+        return []
+    return list(
+        models.GoldenConfigSetting.objects.filter(
+            dynamic_group__static_group_associations__associated_object_id__in=device_pks,
+            dynamic_group__static_group_associations__associated_object_type__app_label="dcim",
+            dynamic_group__static_group_associations__associated_object_type__model="device",
+        ).distinct()
+    )
 
 
 def calculate_aggr_percentage(aggr):

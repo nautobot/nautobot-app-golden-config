@@ -35,7 +35,7 @@ items_operate = [
                 permissions=["nautobot_golden_config.add_configplan"],
             ),
         ),
-    )
+    ),
 ]
 
 items_setup = [

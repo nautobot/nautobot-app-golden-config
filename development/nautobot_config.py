@@ -156,7 +156,6 @@ PLUGINS_CONFIG = {
             "lstrip_blocks": is_truthy(os.getenv("NAUTOBOT_JINJA_ENV_LSTRIP_BLOCKS", "false")),
         },
         # "get_custom_compliance": "my.custom_compliance.func",
-        # "default_deploy_status": "Not Approved",
         #
         #
         # custom_dispatcher is not required for preferring a framework such as netmiko or napalm.

@@ -6,7 +6,6 @@ from nautobot.apps.testing import TestCase
 
 from nautobot_golden_config.tests.conftest import create_config_compliance, create_device, create_feature_rule_cli
 from nautobot_golden_config.utilities.config_plan import (
-    config_plan_default_status,
     generate_config_set_from_compliance_feature,
     generate_config_set_from_manual,
 )
@@ -55,8 +54,3 @@ class ConfigPlanTest(TestCase):
         commands = "hostname {{ obj.name }}"
         config_set = generate_config_set_from_manual(self.device, commands)
         self.assertEqual(config_set, "hostname config_plan_utility_test")
-
-    def test_config_plan_default_status(self):
-        """Test config_plan_default_status."""
-        status = config_plan_default_status()
-        self.assertEqual(status.name, "Not Approved")

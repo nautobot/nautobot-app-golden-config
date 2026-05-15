@@ -11,7 +11,7 @@ from django.test import override_settings
 from django.urls import reverse
 from nautobot.apps.testing import APITestCase, APIViewTestCases
 from nautobot.dcim.models import Device, Platform
-from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status
+from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery
 from packaging import version
 from rest_framework import status
 
@@ -389,9 +389,6 @@ class ConfigPlanTest(
         features = [rule1.feature, rule2.feature, rule3.feature]
         plan_types = ["intended", "missing", "remediation"]
         job_result_ids = [job_result1.id, job_result2.id, job_result3.id]
-        not_approved_status = Status.objects.get(name="Not Approved")
-        approved_status = Status.objects.get(name="Approved")
-
         for cont in range(1, 4):
             plan = ConfigPlan.objects.create(
                 device=Device.objects.get(name=f"Device {cont}"),
@@ -399,7 +396,6 @@ class ConfigPlanTest(
                 config_set=f"Test Config Set {cont}",
                 change_control_id=f"Test Change Control ID {cont}",
                 change_control_url=f"https://{cont}.example.com/",
-                status=not_approved_status,
                 plan_result_id=job_result_ids[cont - 1],
             )
             plan.feature.add(features[cont - 1])
@@ -408,13 +404,11 @@ class ConfigPlanTest(
         cls.update_data = {
             "change_control_id": "Test Change Control ID 4",
             "change_control_url": "https://example.com/?" + "x" * 1000,
-            "status": approved_status.pk,
         }
 
         cls.bulk_update_data = {
             "change_control_id": "Test Change Control ID 5",
             "change_control_url": "https://example.com/?" + "x" * 1000,
-            "status": approved_status.pk,
         }
 
         # Account for test_options_returns_expected_choices behavior change for read_only choices fields

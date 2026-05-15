@@ -15,20 +15,6 @@ def post_migrate_create_statuses(sender, apps=global_apps, **kwargs):  # pylint:
     ContentType = apps.get_model("contenttypes", "ContentType")  # pylint: disable=invalid-name
     for status_config in [
         {
-            "name": "Approved",
-            "defaults": {
-                "description": "Config plan is approved",
-                "color": ColorChoices.COLOR_GREEN,
-            },
-        },
-        {
-            "name": "Not Approved",
-            "defaults": {
-                "description": "Config plan is not approved",
-                "color": ColorChoices.COLOR_RED,
-            },
-        },
-        {
             "name": "In Progress",
             "defaults": {
                 "description": "Config deployment has started and not completed or failed",

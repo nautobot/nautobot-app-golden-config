@@ -413,8 +413,8 @@ class ConfigPlanFilterTestCase(FilterTestCases.FilterTestCase):
         cls.feature2 = cls.rule2.feature
         cls.rule3 = create_feature_rule_cli(cls.device1, feature="Feature 3")
         cls.feature3 = cls.rule3.feature
-        cls.status1 = Status.objects.get(name="Not Approved")
-        cls.status2 = Status.objects.get(name="Approved")
+        cls.status1 = Status.objects.get(name="In Progress")
+        cls.status2 = Status.objects.get(name="Completed")
         cls.tag1, _ = Tag.objects.get_or_create(name="Tag 1")
         cls.tag2, _ = Tag.objects.get_or_create(name="Tag 2")
         cls.tag1.content_types.set([ContentType.objects.get_for_model(models.ConfigPlan)])

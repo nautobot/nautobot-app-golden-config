@@ -1,0 +1,1 @@
+Added an `approval_state` filter and column to the Config Plan list view and a read-only `approval_state` field to the Config Plan REST API.

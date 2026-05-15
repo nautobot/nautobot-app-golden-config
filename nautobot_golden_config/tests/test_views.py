@@ -18,7 +18,7 @@ from nautobot.apps.testing import TestCase, ViewTestCases
 from nautobot.core.utils import lookup
 from nautobot.core.views.mixins import PERMISSIONS_ACTION_MAP, NautobotViewSetMixin
 from nautobot.dcim.models import Device
-from nautobot.extras.models import DynamicGroup, Status
+from nautobot.extras.models import DynamicGroup
 from nautobot.users import models as users_models
 from packaging import version
 
@@ -297,16 +297,12 @@ class ConfigPlanTestCase(
         job_result2 = create_job_result()
         job_result3 = create_job_result()
 
-        not_approved_status = Status.objects.get(name="Not Approved")
-        approved_status = Status.objects.get(name="Approved")
-
         plan1 = models.ConfigPlan.objects.create(
             device=device1,
             plan_type="intended",
             config_set="Test Config Set 1",
             change_control_id="Test Change Control ID 1",
             change_control_url="https://1.example.com/",
-            status=not_approved_status,
             plan_result_id=job_result1.id,
         )
         plan1.feature.add(rule1.feature)
@@ -317,7 +313,6 @@ class ConfigPlanTestCase(
             config_set="Test Config Set 2",
             change_control_id="Test Change Control ID 2",
             change_control_url="https://2.example.com/",
-            status=not_approved_status,
             plan_result_id=job_result2.id,
         )
         plan2.feature.add(rule2.feature)
@@ -328,7 +323,6 @@ class ConfigPlanTestCase(
             config_set="Test Config Set 3",
             change_control_id="Test Change Control ID 3",
             change_control_url="https://3.example.com/",
-            status=not_approved_status,
             plan_result_id=job_result3.id,
         )
         plan3.feature.set([rule3.feature, rule4.feature])
@@ -338,7 +332,6 @@ class ConfigPlanTestCase(
         cls.form_data = {
             "change_control_id": "Test Change Control ID 4",
             "change_control_url": "https://example.com/?" + "x" * 1000,
-            "status": approved_status.pk,
         }
         PLUGIN_CFG["postprocessing_subscribed"] = ["whatever"]
 

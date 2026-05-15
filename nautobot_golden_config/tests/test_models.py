@@ -8,6 +8,7 @@ from django.db.models.deletion import ProtectedError
 from nautobot.apps.testing import TestCase
 from nautobot.dcim.models import Platform
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery
+from nautobot.extras.models.approvals import ApprovalWorkflowDefinition
 
 from nautobot_golden_config.choices import RemediationTypeChoice
 from nautobot_golden_config.models import (
@@ -540,8 +541,6 @@ class ConfigPlanModelTestCase(TestCase):
 
     def test_create_config_plan_without_workflow_definition(self):
         """If no ApprovalWorkflowDefinition exists, ConfigPlan creation skips workflow attachment."""
-        from nautobot.extras.models.approvals import ApprovalWorkflowDefinition
-
         ApprovalWorkflowDefinition.objects.filter(name="Config Plan Approval").delete()
 
         config_plan = ConfigPlan.objects.create(

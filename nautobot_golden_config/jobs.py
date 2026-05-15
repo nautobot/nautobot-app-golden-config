@@ -191,9 +191,7 @@ class GoldenConfigJobMixin(Job):  # pylint: disable=abstract-method
         enabled_qs, disabled_qs = self._get_filtered_queryset(self.job_function)
         self._log_out_of_scope_devices(disabled_qs, self.job_function)
         if enabled_qs.count() == 0:
-            self.logger.warning(
-                f"E3039: No devices found with Golden Config settings enabled for the {self.job_function} job."
-            )
+            self._log_no_eligible_devices(self.job_function, disabled_qs.count(), "job")
 
     def _build_advanced_settings_filter(self):
         """Pivot the flat ``{device_id: setting}`` map into a per-feature ``True/False`` bucket.
@@ -225,6 +223,35 @@ class GoldenConfigJobMixin(Job):  # pylint: disable=abstract-method
         for repository_record in repos_to_sync:
             ensure_git_repository(repository_record, self.logger)
 
+    def _log_no_eligible_devices(self, feature, skipped_count, label):
+        """Emit E3039 with appropriate phrasing.
+
+        Args:
+            feature: The feature being filtered on. One of ``"backup"``, ``"intended"``,
+                ``"compliance"``, ``"plan"``, or ``"deploy"``.
+            skipped_count: Number of devices already named by preceding E3038 entries.
+            label: ``"job"`` for single-feature jobs (called from ``gc_job_setup``); ``"play"``
+                for the per-play emissions inside ``_run_all_plays``.
+
+        Behavior:
+            * ``skipped_count == 0`` — no E3038 fired, so we explicitly note that nothing is
+              in scope.
+            * ``skipped_count == 1`` — the single device was already named by E3038 and a
+              summary line would just be noise; suppress it.
+            * ``skipped_count > 1`` — log a concise summary pointing back to the individual
+              E3038 entries.
+        """
+        feature_label = feature.capitalize()
+        if skipped_count == 0:
+            self.logger.warning(
+                f"E3039: {feature_label} {label} skipped — no devices in scope of any Golden Config Setting."
+            )
+        elif skipped_count > 1:
+            self.logger.warning(
+                f"E3039: {feature_label} {label} skipped — all {skipped_count} in-scope devices "
+                f"have it disabled on their winning Setting (see E3038 entries above)."
+            )
+
     def _log_out_of_scope_devices(self, disabled_devices_qs, feature):
         """Log devices skipped because their highest-weighted setting has the feature disabled.
 
@@ -252,14 +279,19 @@ class GoldenConfigJobMixin(Job):  # pylint: disable=abstract-method
         enabled_qs = self.qs.filter(pk__in=enabled_devs)
         disabled_qs = self.qs.filter(pk__in=disabled_devs)
 
-        self.logger.debug(
-            f"Device(s) with settings enabled for {job_function} job: {enabled_qs.count()}",
-            extra={"grouping": "Get Filtered Queryset"},
-        )
-        self.logger.debug(
-            f"Device(s) with settings disabled for {job_function} job: {disabled_qs.count()}",
-            extra={"grouping": "Get Filtered Queryset"},
-        )
+        # The count summaries are only useful for multi-device jobs. For single-device jobs
+        # (``AllGoldenConfig`` always; other jobs when a single device is selected) the same
+        # information is conveyed by E3038 (when skipped) or the play actually running
+        # (when eligible), so we suppress these to keep the job log focused.
+        if self.qs.count() > 1:
+            self.logger.debug(
+                f"Device(s) with settings enabled for {job_function} job: {enabled_qs.count()}",
+                extra={"grouping": "Get Filtered Queryset"},
+            )
+            self.logger.debug(
+                f"Device(s) with settings disabled for {job_function} job: {disabled_qs.count()}",
+                extra={"grouping": "Get Filtered Queryset"},
+            )
         self.task_qs = enabled_qs
         return enabled_qs, disabled_qs
 
@@ -276,13 +308,11 @@ class GoldenConfigJobMixin(Job):  # pylint: disable=abstract-method
             self.task_qs, disabled_qs = self._get_filtered_queryset(play_name)
             self._log_out_of_scope_devices(disabled_qs, play_name)
             if self.task_qs.count() == 0:
-                self.logger.warning(
-                    f"E3039: No devices found with Golden Config settings enabled for the {play_name} job."
-                )
+                self._log_no_eligible_devices(play_name, disabled_qs.count(), "play")
                 continue
             try:
                 nornir_play(self)
-            except tuple(play_failure_map) as error:
+            except (BackupFailure, IntendedGenerationFailure, ComplianceFailure) as error:
                 label = play_failure_map[type(error)]
                 self.logger.error(f"{label} failure occurred!")
                 failed_jobs.append(label)

@@ -426,37 +426,14 @@ class GoldenConfigSettingTable(BaseTable):
 
     pk = ToggleColumn()
     name = Column(order_by=("_name",), linkify=True)
-    # kwargs = {"accessor": A("dynamic_group.pk"), "tab": "members", "verbose_name": "Dynamic Group"}
-    dynamic_group__members__count = LinkColumn(viewname="extras:dynamicgroup", kwargs={"pk": A("dynamic_group.pk")})
-    # jinja_repository = Column(
-    #     verbose_name="Jinja Repository",
-    #     empty_values=(),
-    # )
-    # intended_repository = Column(
-    #     verbose_name="Intended Repository",
-    #     empty_values=(),
-    # )
-    # backup_repository = Column(
-    #     verbose_name="Backup Repository",
-    #     empty_values=(),
-    # )
-
-    def _render_capability(self, record, column, record_attribute):  # pylint: disable=unused-argument
-        if getattr(record, record_attribute, None):
-            return format_html('<span class="text-success"><i class="mdi mdi-check-bold"></i></span>')
-        return format_html('<span class="text-danger"><i class="mdi mdi-close-thick"></i></span>')
-
-    # def render_backup_repository(self, record, column):
-    #     """Render backup repository boolean value."""
-    #     return self._render_capability(record=record, column=column, record_attribute="backup_repository")
-
-    # def render_intended_repository(self, record, column):
-    #     """Render intended repository boolean value."""
-    #     return self._render_capability(record=record, column=column, record_attribute="intended_repository")
-
-    # def render_jinja_repository(self, record, column):
-    #     """Render jinja repository boolean value."""
-    #     return self._render_capability(record=record, column=column, record_attribute="jinja_repository")
+    dynamic_group__members__count = LinkColumn(
+        viewname="extras:dynamicgroup", kwargs={"pk": A("dynamic_group.pk")}, verbose_name="Dynamic Group Members"
+    )
+    enable_backup = BooleanColumn()
+    enable_intended = BooleanColumn()
+    enable_compliance = BooleanColumn()
+    enable_plan = BooleanColumn()
+    enable_deploy = BooleanColumn()
 
     class Meta(BaseTable.Meta):
         """Meta attributes."""
@@ -466,14 +443,23 @@ class GoldenConfigSettingTable(BaseTable):
             "pk",
             "name",
             "weight",
-            # "description",
-            "enable_backup",
-            # "backup_repository",
-            "enable_intended",
-            # "intended_repository",
-            # "jinja_repository",
-            "enable_compliance",
             "dynamic_group__members__count",
+            "enable_backup",
+            "enable_intended",
+            "enable_compliance",
+            "enable_plan",
+            "enable_deploy",
+        )
+        default_columns = (
+            "pk",
+            "name",
+            "weight",
+            "dynamic_group__members__count",
+            "enable_backup",
+            "enable_intended",
+            "enable_compliance",
+            "enable_plan",
+            "enable_deploy",
         )
 
 

@@ -14,6 +14,7 @@ Contract under test (per PR #984):
 from unittest.mock import MagicMock, patch
 
 from django.contrib.contenttypes.models import ContentType
+from nautobot.apps.choices import JobResultStatusChoices
 from nautobot.apps.testing import TransactionTestCase, create_job_result_and_run_job
 from nautobot.dcim.models import Device
 from nautobot.extras.models import DynamicGroup, GitRepository, JobLogEntry
@@ -44,9 +45,13 @@ def _push_targets(mock_push):
 
 
 def _e30xx(job_result, code):
-    """Return JobLogEntry messages for the given error code on this JobResult."""
+    """Return JobLogEntry messages whose text starts with the given error code on this JobResult.
+
+    Prefix-match (not substring) so a message that references another code in its body —
+    e.g. an E3039 summary that points back to the preceding E3038 entries — isn't double-counted.
+    """
     return list(
-        JobLogEntry.objects.filter(job_result=job_result, message__contains=code).values_list("message", flat=True)
+        JobLogEntry.objects.filter(job_result=job_result, message__startswith=code).values_list("message", flat=True)
     )
 
 
@@ -56,7 +61,7 @@ def _disable_feature(setting_name, **flags):
 
 
 @patch("nautobot_golden_config.nornir_plays.config_backup.run_backup", MagicMock(return_value="foo"))
-@patch.object(jobs, "get_refreshed_repos", side_effect=lambda repos: list(repos))
+@patch.object(jobs, "get_refreshed_repos", side_effect=list)
 @patch.object(jobs, "gc_repo_push")
 @patch.object(jobs, "ensure_git_repository")
 class BackupJobContractTestCase(TransactionTestCase):
@@ -126,11 +131,33 @@ class BackupJobContractTestCase(TransactionTestCase):
         self.assertEqual(len(e3038s), 2)
         e3039s = _e30xx(job_result, "E3039")
         self.assertEqual(len(e3039s), 1)
-        self.assertIn("backup", e3039s[0])
+        self.assertIn("backup", e3039s[0].lower())
+        self.assertIn("2 in-scope devices", e3039s[0])
+
+    @patch.object(jobs, "get_job_filter")
+    def test_no_devices_in_scope_emits_bare_e3039_with_no_e3038(self, mock_get_job_filter, *_):
+        """``skipped_count == 0``: no device mapped to any Setting — bare E3039, no E3038."""
+        mock_get_job_filter.return_value = Device.objects.none()
+
+        job_result = create_job_result_and_run_job(
+            module="nautobot_golden_config.jobs",
+            name="BackupJob",
+            device=Device.objects.all(),
+        )
+
+        # Belt-and-suspenders: confirm the job actually ran to completion rather than silently
+        # blowing up before reaching the E3039 emission site.
+        self.assertEqual(job_result.status, JobResultStatusChoices.STATUS_SUCCESS)
+
+        # No E3038 — nothing was in scope to skip in the first place.
+        self.assertEqual(_e30xx(job_result, "E3038"), [])
+        e3039s = _e30xx(job_result, "E3039")
+        self.assertEqual(len(e3039s), 1)
+        self.assertIn("no devices in scope", e3039s[0].lower())
 
 
 @patch("nautobot_golden_config.nornir_plays.config_intended.run_template", MagicMock(return_value="foo"))
-@patch.object(jobs, "get_refreshed_repos", side_effect=lambda repos: list(repos))
+@patch.object(jobs, "get_refreshed_repos", side_effect=list)
 @patch.object(jobs, "gc_repo_push")
 @patch.object(jobs, "ensure_git_repository")
 class IntendedJobContractTestCase(TransactionTestCase):
@@ -210,11 +237,12 @@ class IntendedJobContractTestCase(TransactionTestCase):
         self.assertEqual(len(_e30xx(job_result, "E3038")), 2)
         e3039s = _e30xx(job_result, "E3039")
         self.assertEqual(len(e3039s), 1)
-        self.assertIn("intended", e3039s[0])
+        self.assertIn("intended", e3039s[0].lower())
+        self.assertIn("2 in-scope devices", e3039s[0])
 
 
 @patch("nautobot_golden_config.nornir_plays.config_compliance.run_compliance", MagicMock(return_value="foo"))
-@patch.object(jobs, "get_refreshed_repos", side_effect=lambda repos: list(repos))
+@patch.object(jobs, "get_refreshed_repos", side_effect=list)
 @patch.object(jobs, "gc_repo_push")
 @patch.object(jobs, "ensure_git_repository")
 class ComplianceJobContractTestCase(TransactionTestCase):
@@ -275,11 +303,11 @@ class ComplianceJobContractTestCase(TransactionTestCase):
 @patch("nautobot_golden_config.nornir_plays.config_backup.run_backup", MagicMock(return_value="foo"))
 @patch("nautobot_golden_config.nornir_plays.config_intended.run_template", MagicMock(return_value="foo"))
 @patch("nautobot_golden_config.nornir_plays.config_compliance.run_compliance", MagicMock(return_value="foo"))
-@patch.object(jobs, "get_refreshed_repos", side_effect=lambda repos: list(repos))
+@patch.object(jobs, "get_refreshed_repos", side_effect=list)
 @patch.object(jobs, "gc_repo_push")
 @patch.object(jobs, "ensure_git_repository")
 class AllGoldenConfigContractTestCase(TransactionTestCase):
-    """Single-device "All Jobs" runs each play; disabled plays emit E3039 but do not abort."""
+    """Single-device "All Jobs": disabled plays emit E3038 naming the device; E3039 is suppressed."""
 
     databases = ("default", "job_logs")
 
@@ -312,7 +340,8 @@ class AllGoldenConfigContractTestCase(TransactionTestCase):
         )
         self.assertEqual(_e30xx(job_result, "E3039"), [])
 
-    def test_backup_disabled_emits_e3039_but_runs_other_plays(self, _mock_ensure, mock_push, *_):
+    def test_backup_disabled_logs_only_e3038_for_single_device(self, _mock_ensure, mock_push, *_):
+        """Single-device job: the lone device is named by E3038 — E3039 is suppressed as redundant."""
         _disable_feature("test_name", enable_backup=False)
 
         job_result = create_job_result_and_run_job(
@@ -321,17 +350,19 @@ class AllGoldenConfigContractTestCase(TransactionTestCase):
             device=self.device.id,
         )
 
-        # Only one E3039 fires (backup); intended + compliance plays still run.
-        e3039s = _e30xx(job_result, "E3039")
-        self.assertEqual(len(e3039s), 1)
-        self.assertIn("backup", e3039s[0])
+        # E3038 names the skipped device for the backup play; E3039 stays silent for single-device.
+        e3038s = _e30xx(job_result, "E3038")
+        self.assertEqual(len(e3038s), 1)
+        self.assertIn("backup", e3038s[0])
+        self.assertEqual(_e30xx(job_result, "E3039"), [])
 
         # Push set excludes backup_repo; intended_repo is still pushed.
         pushed = _push_targets(mock_push)
         self.assertNotIn(GitRepository.objects.get(name="test-backup-repo-1"), pushed)
         self.assertIn(GitRepository.objects.get(name="test-intended-repo-1"), pushed)
 
-    def test_all_features_disabled_emits_three_e3039s_no_push(self, _mock_ensure, mock_push, *_):
+    def test_all_features_disabled_single_device_emits_three_e3038s_no_e3039(self, _mock_ensure, mock_push, *_):
+        """Single-device job with all features off: 3 E3038s (one per play), no E3039s, no push."""
         _disable_feature(
             "test_name",
             enable_backup=False,
@@ -345,15 +376,21 @@ class AllGoldenConfigContractTestCase(TransactionTestCase):
             device=self.device.id,
         )
 
-        e3039s = _e30xx(job_result, "E3039")
-        self.assertEqual(len(e3039s), 3)
+        e3038s = _e30xx(job_result, "E3038")
+        self.assertEqual(len(e3038s), 3)
+        # Each play must have produced its own E3038 — not just three messages that happen
+        # to start with the code. Pin each feature name to its own message.
+        joined = "\n".join(e3038s)
+        for feature in ("backup", "intended", "compliance"):
+            self.assertIn(f"skipped for {feature} job", joined)
+        self.assertEqual(_e30xx(job_result, "E3039"), [])
         self.assertEqual(_push_targets(mock_push), set())
 
 
 @patch("nautobot_golden_config.nornir_plays.config_backup.run_backup", MagicMock(return_value="foo"))
 @patch("nautobot_golden_config.nornir_plays.config_intended.run_template", MagicMock(return_value="foo"))
 @patch("nautobot_golden_config.nornir_plays.config_compliance.run_compliance", MagicMock(return_value="foo"))
-@patch.object(jobs, "get_refreshed_repos", side_effect=lambda repos: list(repos))
+@patch.object(jobs, "get_refreshed_repos", side_effect=list)
 @patch.object(jobs, "gc_repo_push")
 @patch.object(jobs, "ensure_git_repository")
 class AllDevicesGoldenConfigContractTestCase(TransactionTestCase):
@@ -420,7 +457,7 @@ class AllDevicesGoldenConfigContractTestCase(TransactionTestCase):
 
 
 @patch("nautobot_golden_config.nornir_plays.config_backup.run_backup", MagicMock(return_value="foo"))
-@patch.object(jobs, "get_refreshed_repos", side_effect=lambda repos: list(repos))
+@patch.object(jobs, "get_refreshed_repos", side_effect=list)
 @patch.object(jobs, "gc_repo_push")
 @patch.object(jobs, "ensure_git_repository")
 class WeightPrecedenceTestCase(TransactionTestCase):

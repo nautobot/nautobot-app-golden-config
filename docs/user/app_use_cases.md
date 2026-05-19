@@ -78,8 +78,8 @@ To update existing settings click on one of the `Settings` name.
 
 A single device may match the Dynamic Group criteria for more than one Golden Config Setting. To ensure each device is assigned to only one setting when it belongs to multiple Dynamic Groups, Golden Config applies the following rules:
 
-* **Highest-weighted Setting wins per device.** The Setting with the highest `weight` whose Dynamic Group contains the device is the only Setting consulted for that device. If two Settings share the same weight, the Setting with the lower-sorted `name` wins.
-* **No per-feature fallback.** If the winning Setting has `Enable Backup=False`, the device is *not* backed up — even if a lower-weighted Setting that also matches the device has `Enable Backup=True`. The same rule applies to Intended, Compliance, Config Plan, and Deploy. A single Setting owns every feature decision for a given device, which keeps the mental model simple ("which Setting is in charge of this device?") and avoids surprising splits where reads and writes flow through different Settings.
+* **Highest-weighted Setting wins per device.** Each device is calculated independently to apply the Golden Config Setting with the highest `weight`. A device may be a member of multiple Dynamic Groups (via Golden Config setting), but the highest weighted setting is used. If two Settings share the same weight, the Setting with the lower-sorted `name` wins, it is up to the operator to ensure if a device is part of multiple Golden Config settings that the settings `weights` are different.
+* **No per-feature fallback.** All features; backup, intended, deploys, etc. are **only** used from the winning setting as described above.
 * **Skip logging.** When a job runs against a device whose winning Setting has the corresponding feature disabled, an `E3038` warning is emitted naming the winning Setting and its weight so operators can locate the responsible record.
 
 #### All-In-One Jobs and Disabled Features

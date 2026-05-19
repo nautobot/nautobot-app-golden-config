@@ -76,7 +76,7 @@ To update existing settings click on one of the `Settings` name.
 
 #### Feature-Enable Resolution Across Multiple Settings
 
-A single device may match the Dynamic Group of more than one Golden Config Setting. To make per-feature scheduling deterministic, Golden Config applies the following rules:
+A single device may match the Dynamic Group criteria for more than one Golden Config Setting. To ensure each device is assigned to only one setting when it belongs to multiple Dynamic Groups, Golden Config applies the following rules:
 
 * **Highest-weighted Setting wins per device.** The Setting with the highest `weight` whose Dynamic Group contains the device is the only Setting consulted for that device. If two Settings share the same weight, the Setting with the lower-sorted `name` wins.
 * **No per-feature fallback.** If the winning Setting has `Enable Backup=False`, the device is *not* backed up — even if a lower-weighted Setting that also matches the device has `Enable Backup=True`. The same rule applies to Intended, Compliance, Config Plan, and Deploy. A single Setting owns every feature decision for a given device, which keeps the mental model simple ("which Setting is in charge of this device?") and avoids surprising splits where reads and writes flow through different Settings.

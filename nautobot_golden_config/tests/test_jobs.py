@@ -17,12 +17,13 @@ from django.contrib.contenttypes.models import ContentType
 from nautobot.apps.choices import JobResultStatusChoices
 from nautobot.apps.testing import TransactionTestCase, create_job_result_and_run_job
 from nautobot.dcim.models import Device
-from nautobot.extras.models import DynamicGroup, GitRepository, JobLogEntry
+from nautobot.extras.models import DynamicGroup, GitRepository, JobLogEntry, Status
 
 from nautobot_golden_config import jobs
-from nautobot_golden_config.models import GoldenConfigSetting
+from nautobot_golden_config.models import ConfigPlan, GoldenConfigSetting
 from nautobot_golden_config.tests.conftest import (
     create_device,
+    create_job_result,
     create_orphan_device,
     dgs_gc_settings_and_job_repo_objects,
 )
@@ -561,3 +562,241 @@ class WeightPrecedenceTestCase(TransactionTestCase):
         # Both Settings have enable_backup=True so both repos are in the push list. The
         # high-weight Setting owns the device's write; the low-weight push is a no-op.
         self.assertEqual(_push_targets(mock_push), {self.backup_repo_high, self.backup_repo_low})
+
+
+class GenerateConfigPlansContractTestCase(TransactionTestCase):
+    """``enable_plan`` on the winning Setting gates per-device plan generation.
+
+    Devices whose winning Setting has ``enable_plan=False`` are dropped and named in an
+    E3038 entry; runs with no eligible devices emit a single E3039 (suppressed when only
+    one device was filtered — the E3038 already named it).
+    """
+
+    databases = ("default", "job_logs")
+
+    def setUp(self):
+        self.device = create_device(name="foobaz")
+        self.device2 = create_orphan_device(name="foobaz2")
+        dgs_gc_settings_and_job_repo_objects()
+        self.captured_names = []
+        super().setUp()
+
+    def _run(self, devices=None):
+        # Reroute the captured list onto a shared mutable holder so the patched method can
+        # write through to it (the bound method runs against a fresh Job instance each call).
+        captured = self.captured_names
+
+        def _record(this_self):
+            captured.extend(sorted(this_self._device_qs.values_list("name", flat=True)))
+
+        with patch.object(jobs.GenerateConfigPlans, "_generate_config_plan_from_manual", _record):
+            return create_job_result_and_run_job(
+                module="nautobot_golden_config.jobs",
+                name="GenerateConfigPlans",
+                plan_type="manual",
+                commands="placeholder",
+                device=devices if devices is not None else Device.objects.all(),
+            )
+
+    def test_both_settings_enabled_runs_for_all_devices(self):
+        job_result = self._run()
+
+        self.assertEqual(self.captured_names, ["foobaz", "foobaz2"])
+        self.assertEqual(_e30xx(job_result, "E3038"), [])
+        self.assertEqual(_e30xx(job_result, "E3039"), [])
+
+    def test_disabled_setting_skips_device_with_e3038(self):
+        """Setting 2 has plan disabled — device2 is skipped (E3038), device1 still runs."""
+        _disable_feature("test_name2", enable_plan=False)
+
+        job_result = self._run()
+
+        self.assertEqual(self.captured_names, ["foobaz"])
+        e3038s = _e30xx(job_result, "E3038")
+        self.assertEqual(len(e3038s), 1)
+        self.assertIn(self.device2.name, e3038s[0])
+        self.assertIn("test_name2", e3038s[0])
+        self.assertIn("enable_plan=False", e3038s[0])
+        # Only one device filtered → E3039 is suppressed (the E3038 already named it).
+        self.assertEqual(_e30xx(job_result, "E3039"), [])
+
+    def test_all_settings_disabled_emits_e3038s_plus_e3039_no_run(self):
+        _disable_feature("test_name", enable_plan=False)
+        _disable_feature("test_name2", enable_plan=False)
+
+        job_result = self._run()
+
+        self.assertEqual(self.captured_names, [])
+        self.assertEqual(len(_e30xx(job_result, "E3038")), 2)
+        e3039s = _e30xx(job_result, "E3039")
+        self.assertEqual(len(e3039s), 1)
+        self.assertIn("plan", e3039s[0].lower())
+        self.assertIn("2 in-scope devices", e3039s[0])
+
+    def test_single_device_disabled_emits_only_e3038(self):
+        """Single-device run with plan disabled: E3038 names the device; E3039 stays silent."""
+        _disable_feature("test_name", enable_plan=False)
+
+        job_result = self._run(devices=Device.objects.filter(pk=self.device.pk))
+
+        self.assertEqual(self.captured_names, [])
+        e3038s = _e30xx(job_result, "E3038")
+        self.assertEqual(len(e3038s), 1)
+        self.assertIn(self.device.name, e3038s[0])
+        self.assertEqual(_e30xx(job_result, "E3039"), [])
+
+
+def _approved_plan_for(device, commands="hostname x"):
+    """Create an Approved ConfigPlan attached to a fresh JobResult, ready for deploy."""
+    return ConfigPlan.objects.create(
+        device=device,
+        plan_type="manual",
+        config_set=commands,
+        status=Status.objects.get(name="Approved"),
+        plan_result=create_job_result(),
+    )
+
+
+@patch("nautobot_golden_config.jobs.config_deployment")
+class DeployConfigPlansContractTestCase(TransactionTestCase):
+    """``enable_deploy`` on the winning Setting gates per-device deployment.
+
+    ``config_deployment`` is patched so we can inspect the ``config_plan`` queryset it
+    would receive without exercising Nornir. The mixin's E3038 / E3039 contract is mirrored.
+    """
+
+    databases = ("default", "job_logs")
+
+    def setUp(self):
+        self.device = create_device(name="foobaz")
+        self.device2 = create_orphan_device(name="foobaz2")
+        dgs_gc_settings_and_job_repo_objects()
+        # ``development.env`` ships with ``ENABLE_DEPLOY=False`` so newly-created Settings default
+        # to ``enable_deploy=False``. Explicitly enable it here so the baseline ``setUp`` matches
+        # the assumption tests make ("both Settings have deploy enabled unless told otherwise").
+        GoldenConfigSetting.objects.all().update(enable_deploy=True)
+        self.plan1 = _approved_plan_for(self.device)
+        self.plan2 = _approved_plan_for(self.device2)
+        super().setUp()
+
+    def test_both_settings_enabled_passes_all_plans_to_deployment(self, mock_deploy):
+        create_job_result_and_run_job(
+            module="nautobot_golden_config.jobs",
+            name="DeployConfigPlans",
+            config_plan=ConfigPlan.objects.all(),
+        )
+
+        self.assertEqual(mock_deploy.call_count, 1)
+        # The Job instance passed in stores the filtered queryset under .data["config_plan"].
+        job_arg = mock_deploy.call_args.args[0]
+        deployed_ids = set(job_arg.data["config_plan"].values_list("pk", flat=True))
+        self.assertEqual(deployed_ids, {self.plan1.pk, self.plan2.pk})
+
+    def test_disabled_setting_drops_plan_and_logs_e3038(self, mock_deploy):
+        """Setting 2 has deploy disabled — plan2 is dropped before reaching deployment."""
+        _disable_feature("test_name2", enable_deploy=False)
+
+        job_result = create_job_result_and_run_job(
+            module="nautobot_golden_config.jobs",
+            name="DeployConfigPlans",
+            config_plan=ConfigPlan.objects.all(),
+        )
+
+        self.assertEqual(mock_deploy.call_count, 1)
+        job_arg = mock_deploy.call_args.args[0]
+        self.assertEqual(set(job_arg.data["config_plan"].values_list("pk", flat=True)), {self.plan1.pk})
+
+        e3038s = _e30xx(job_result, "E3038")
+        self.assertEqual(len(e3038s), 1)
+        self.assertIn(self.device2.name, e3038s[0])
+        self.assertIn("test_name2", e3038s[0])
+        self.assertIn("weight 1000", e3038s[0])
+        self.assertIn("enable_deploy=False", e3038s[0])
+
+    def test_all_settings_disabled_skips_deployment_entirely(self, mock_deploy):
+        _disable_feature("test_name", enable_deploy=False)
+        _disable_feature("test_name2", enable_deploy=False)
+
+        job_result = create_job_result_and_run_job(
+            module="nautobot_golden_config.jobs",
+            name="DeployConfigPlans",
+            config_plan=ConfigPlan.objects.all(),
+        )
+
+        # No plans eligible → config_deployment must not be invoked.
+        self.assertEqual(mock_deploy.call_count, 0)
+        self.assertEqual(len(_e30xx(job_result, "E3038")), 2)
+        e3039s = _e30xx(job_result, "E3039")
+        self.assertEqual(len(e3039s), 1)
+        self.assertIn("deploy", e3039s[0].lower())
+
+    def test_all_devices_out_of_scope_emits_e3038_per_device_and_e3039_summary(self, mock_deploy):
+        """Deleting all Settings leaves both plans' devices with no winning Setting.
+
+        Each device gets an E3038 carrying the ``no eligible Golden Config Setting`` wording.
+        Because ``skipped_count == 2`` (> 1), the >1-skipped E3039 variant fires — *not* the
+        bare ``no devices in scope`` form (that one requires an empty input device set, which
+        ``MultiObjectVar(required=True)`` makes structurally unreachable for this job).
+        """
+        GoldenConfigSetting.objects.all().delete()
+
+        job_result = create_job_result_and_run_job(
+            module="nautobot_golden_config.jobs",
+            name="DeployConfigPlans",
+            config_plan=ConfigPlan.objects.all(),
+        )
+
+        self.assertEqual(mock_deploy.call_count, 0)
+        e3038s = _e30xx(job_result, "E3038")
+        self.assertEqual(len(e3038s), 2)
+        for msg in e3038s:
+            self.assertIn("no eligible Golden Config Setting", msg)
+        e3039s = _e30xx(job_result, "E3039")
+        self.assertEqual(len(e3039s), 1)
+        self.assertIn("2 in-scope devices", e3039s[0])
+
+
+@patch("nautobot_golden_config.jobs.config_deployment")
+class DeployConfigPlanJobButtonReceiverContractTestCase(TransactionTestCase):
+    """The Job Button path applies the same ``enable_deploy`` gate as the main job."""
+
+    databases = ("default", "job_logs")
+
+    def setUp(self):
+        self.device = create_device(name="foobaz")
+        dgs_gc_settings_and_job_repo_objects()
+        # See note in DeployConfigPlansContractTestCase.setUp — dev env defaults enable_deploy=False.
+        GoldenConfigSetting.objects.all().update(enable_deploy=True)
+        self.plan = _approved_plan_for(self.device)
+        super().setUp()
+
+    def _run_receiver(self):
+        return create_job_result_and_run_job(
+            module="nautobot_golden_config.jobs",
+            name="DeployConfigPlanJobButtonReceiver",
+            object_pk=str(self.plan.pk),
+            object_model_name="nautobot_golden_config.configplan",
+        )
+
+    def test_enabled_winning_setting_invokes_deployment(self, mock_deploy):
+        self._run_receiver()
+
+        self.assertEqual(mock_deploy.call_count, 1)
+        job_arg = mock_deploy.call_args.args[0]
+        deployed_ids = set(job_arg.data["config_plan"].values_list("pk", flat=True))
+        self.assertEqual(deployed_ids, {self.plan.pk})
+
+    def test_disabled_winning_setting_skips_deployment_and_logs_e3038(self, mock_deploy):
+        _disable_feature("test_name", enable_deploy=False)
+
+        job_result = self._run_receiver()
+
+        self.assertEqual(mock_deploy.call_count, 0)
+        e3038s = _e30xx(job_result, "E3038")
+        self.assertEqual(len(e3038s), 1)
+        self.assertIn(self.device.name, e3038s[0])
+        self.assertIn("test_name", e3038s[0])
+        self.assertIn("weight 1000", e3038s[0])
+        self.assertIn("enable_deploy=False", e3038s[0])
+        # Single-device skip → the lone E3038 already names the device, so E3039 stays silent.
+        self.assertEqual(_e30xx(job_result, "E3039"), [])

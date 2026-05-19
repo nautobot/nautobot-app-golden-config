@@ -44,6 +44,9 @@ from nautobot_golden_config.utilities.config_plan import (
 from nautobot_golden_config.utilities.constant import JOB_FUNCTION_MAP
 from nautobot_golden_config.utilities.git import GitRepo
 from nautobot_golden_config.utilities.helper import (
+    filter_devices_by_feature_enabled,
+    format_e3038_message,
+    format_e3039_message,
     get_device_to_settings_map,
     get_inscope_settings_from_device_qs,
     get_job_filter,
@@ -100,6 +103,28 @@ def gc_repo_push(job, current_repos, commit_message=""):
                     "object": repo.nautobot_repo_obj,
                 },
             )
+
+
+def _filter_config_plans_by_deploy_enabled(logger, config_plan_qs):
+    """Drop ConfigPlans whose device's winning GoldenConfigSetting has ``enable_deploy=False``.
+
+    Mirrors the per-device E3038 / E3039 contract used by the other Golden Config jobs: a
+    plan whose owning device has the winning Setting's ``enable_deploy`` flag set to ``False``
+    is excluded and the device is named in an E3038 entry; when nothing is eligible, a single
+    E3039 fires.
+
+    Args:
+        logger: Logger that receives warning messages (typically ``self.logger`` on a Job).
+        config_plan_qs: QuerySet of ConfigPlan objects to filter. Always non-empty in practice
+            — the form's ``MultiObjectVar(required=True)`` and the Job Button path both
+            guarantee at least one plan.
+
+    Returns:
+        QuerySet[ConfigPlan]: A queryset of plans whose device's winning Setting permits deploy.
+    """
+    device_qs = Device.objects.filter(config_plan__in=config_plan_qs).distinct()
+    enabled_devices = filter_devices_by_feature_enabled(logger, device_qs, "deploy")
+    return config_plan_qs.filter(device__in=enabled_devices)
 
 
 def gc_job_helper(func):
@@ -232,45 +257,26 @@ class GoldenConfigJobMixin(Job):  # pylint: disable=abstract-method
             skipped_count: Number of devices already named by preceding E3038 entries.
             label: ``"job"`` for single-feature jobs (called from ``gc_job_setup``); ``"play"``
                 for the per-play emissions inside ``_run_all_plays``.
-
-        Behavior:
-            * ``skipped_count == 0`` — no E3038 fired, so we explicitly note that nothing is
-              in scope.
-            * ``skipped_count == 1`` — the single device was already named by E3038 and a
-              summary line would just be noise; suppress it.
-            * ``skipped_count > 1`` — log a concise summary pointing back to the individual
-              E3038 entries.
         """
-        feature_label = feature.capitalize()
-        if skipped_count == 0:
-            self.logger.warning(
-                f"E3039: {feature_label} {label} skipped — no devices in scope of any Golden Config Setting."
-            )
-        elif skipped_count > 1:
-            self.logger.warning(
-                f"E3039: {feature_label} {label} skipped — all {skipped_count} in-scope devices "
-                f"have it disabled on their winning Setting (see E3038 entries above)."
-            )
+        msg = format_e3039_message(feature, skipped_count, label)
+        if msg is not None:
+            self.logger.warning(msg)
 
     def _log_out_of_scope_devices(self, disabled_devices_qs, feature):
         """Log devices skipped because their highest-weighted setting has the feature disabled.
 
         See `docs/user/app_use_cases.md` for the rationale behind the highest-weight-wins rule.
+
+        A device only reaches ``disabled_devices_qs`` after being placed in
+        ``self.gc_advanced_settings_filter[feature][False]`` by ``_build_advanced_settings_filter``,
+        which means it has a winning Setting — so the lookup below cannot return ``None``.
         """
-        if disabled_devices_qs.count() == 0:
+        if not disabled_devices_qs.exists():
             return
-        disabled_map = self.gc_advanced_settings_filter.get(feature, {}).get(False, {})
+        disabled_map = self.gc_advanced_settings_filter[feature][False]
         for device in disabled_devices_qs:
-            winning_setting = disabled_map.get(device.id)
-            if winning_setting is not None:
-                msg = (
-                    f"E3038: Device {device.name} skipped for {feature} job — "
-                    f"highest-weighted Golden Config Setting '{winning_setting.name}' "
-                    f"(weight {winning_setting.weight}) has enable_{feature}=False."
-                )
-            else:
-                msg = f"E3038: Device {device.name} skipped for {feature} job — no eligible Golden Config Setting."
-            self.logger.warning(msg, extra={"object": device})
+            winning_setting = disabled_map[device.id]
+            self.logger.warning(format_e3038_message(device, feature, winning_setting), extra={"object": device})
 
     def _get_filtered_queryset(self, job_function):
         """Helper for gc_advanced_settings_filter to get filtered queryset."""
@@ -557,6 +563,13 @@ class GenerateConfigPlans(Job, FormEntry):
             self.logger.error(error_msg)
             raise NornirNautobotException(error_msg) from error
 
+        # Gate generation on each device's winning GoldenConfigSetting.enable_plan flag —
+        # devices whose winning Setting has enable_plan=False are dropped here (E3038 names
+        # the Setting and weight; E3039 fires if nothing remains).
+        self._device_qs = filter_devices_by_feature_enabled(self.logger, self._device_qs, "plan")
+        if not self._device_qs.exists():
+            return
+
         if self._plan_type in ["intended", "missing", "remediation"]:
             self.logger.debug("Starting config plan generation for compliance features.")
             self._generate_config_plan_from_feature()
@@ -590,10 +603,12 @@ class DeployConfigPlans(Job):
 
     def run(self, **data):  # pylint: disable=arguments-differ
         """Run config plan deployment process."""
-        self.logger.debug("Updating Dynamic Group Cache.")
-        update_dynamic_groups_cache()
         self.logger.debug("Starting config plan deployment job.")
-        self.data = data
+        # ``_filter_config_plans_by_deploy_enabled`` refreshes the DynamicGroup cache as a side effect.
+        config_plan_qs = _filter_config_plans_by_deploy_enabled(self.logger, data["config_plan"])
+        if not config_plan_qs.exists():
+            return
+        self.data = {**data, "config_plan": config_plan_qs}
         try:
             config_deployment(self)
         except Exception as error:  # pylint: disable=broad-exception-caught
@@ -619,10 +634,12 @@ class DeployConfigPlanJobButtonReceiver(JobButtonReceiver):
 
     def receive_job_button(self, obj):
         """Run config plan deployment process."""
-        self.logger.debug("Updating Dynamic Group Cache.")
-        update_dynamic_groups_cache()
         self.logger.debug("Starting config plan deployment job.")
-        self.data = {"debug": False, "config_plan": ConfigPlan.objects.filter(id=obj.id)}
+        # ``_filter_config_plans_by_deploy_enabled`` refreshes the DynamicGroup cache as a side effect.
+        config_plan_qs = _filter_config_plans_by_deploy_enabled(self.logger, ConfigPlan.objects.filter(id=obj.id))
+        if not config_plan_qs.exists():
+            return
+        self.data = {"debug": False, "config_plan": config_plan_qs}
         config_deployment(self)
 
 

@@ -1,0 +1,1 @@
+Added per-`GoldenConfigSetting` enable flags (`enable_backup`, `enable_intended`, `enable_compliance`, `enable_plan`, `enable_deploy`) so each feature can be toggled on a per-Setting basis. The model fields default to the existing plugin-level `enable_*` settings to preserve backwards compatibility.

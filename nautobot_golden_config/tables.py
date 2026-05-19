@@ -6,7 +6,7 @@ from django_tables2.utils import A
 from nautobot.apps.tables import BaseTable, BooleanColumn, ButtonsColumn, StatusTableMixin, TagColumn, ToggleColumn
 
 from nautobot_golden_config import models
-from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
+from nautobot_golden_config.utilities.constant import CONFIG_FEATURES
 
 ALL_ACTIONS = """
 {% if backup == True and record.backup_config and not record.config_type == "json" %}
@@ -110,16 +110,15 @@ MATCH_CONFIG = """{{ record.match_config|linebreaksbr }}"""
 
 
 def actual_fields():
-    """Convienance function to conditionally toggle columns."""
-    active_fields = ["pk", "name"]
-    if ENABLE_BACKUP:
-        active_fields.append("backup_last_success_date")
-    if ENABLE_INTENDED:
-        active_fields.append("intended_last_success_date")
-    if ENABLE_COMPLIANCE:
-        active_fields.append("compliance_last_success_date")
-    active_fields.append("actions")
-    return tuple(active_fields)
+    """Return the column set rendered on the GoldenConfig list view."""
+    return (
+        "pk",
+        "name",
+        "backup_last_success_date",
+        "intended_last_success_date",
+        "compliance_last_success_date",
+        "actions",
+    )
 
 
 #
@@ -271,22 +270,19 @@ class GoldenConfigTable(BaseTable):
         verbose_name="Device",
     )
 
-    if ENABLE_BACKUP:
-        backup_last_success_date = Column(
-            verbose_name="Backup Status", empty_values=(), order_by="backup_last_success_date"
-        )
-    if ENABLE_INTENDED:
-        intended_last_success_date = Column(
-            verbose_name="Intended Status",
-            empty_values=(),
-            order_by="intended_last_success_date",
-        )
-    if ENABLE_COMPLIANCE:
-        compliance_last_success_date = Column(
-            verbose_name="Compliance Status",
-            empty_values=(),
-            order_by="compliance_last_success_date",
-        )
+    backup_last_success_date = Column(
+        verbose_name="Backup Status", empty_values=(), order_by="backup_last_success_date"
+    )
+    intended_last_success_date = Column(
+        verbose_name="Intended Status",
+        empty_values=(),
+        order_by="intended_last_success_date",
+    )
+    compliance_last_success_date = Column(
+        verbose_name="Compliance Status",
+        empty_values=(),
+        order_by="compliance_last_success_date",
+    )
 
     actions = ButtonsColumn(
         buttons=("delete",),
@@ -430,35 +426,14 @@ class GoldenConfigSettingTable(BaseTable):
 
     pk = ToggleColumn()
     name = Column(order_by=("_name",), linkify=True)
-    jinja_repository = Column(
-        verbose_name="Jinja Repository",
-        empty_values=(),
+    dynamic_group__members__count = LinkColumn(
+        viewname="extras:dynamicgroup", kwargs={"pk": A("dynamic_group.pk")}, verbose_name="Dynamic Group Members"
     )
-    intended_repository = Column(
-        verbose_name="Intended Repository",
-        empty_values=(),
-    )
-    backup_repository = Column(
-        verbose_name="Backup Repository",
-        empty_values=(),
-    )
-
-    def _render_capability(self, record, column, record_attribute):  # pylint: disable=unused-argument
-        if getattr(record, record_attribute, None):
-            return format_html('<span class="text-success"><i class="mdi mdi-check-bold"></i></span>')
-        return format_html('<span class="text-danger"><i class="mdi mdi-close-thick"></i></span>')
-
-    def render_backup_repository(self, record, column):
-        """Render backup repository boolean value."""
-        return self._render_capability(record=record, column=column, record_attribute="backup_repository")
-
-    def render_intended_repository(self, record, column):
-        """Render intended repository boolean value."""
-        return self._render_capability(record=record, column=column, record_attribute="intended_repository")
-
-    def render_jinja_repository(self, record, column):
-        """Render jinja repository boolean value."""
-        return self._render_capability(record=record, column=column, record_attribute="jinja_repository")
+    enable_backup = BooleanColumn()
+    enable_intended = BooleanColumn()
+    enable_compliance = BooleanColumn()
+    enable_plan = BooleanColumn()
+    enable_deploy = BooleanColumn()
 
     class Meta(BaseTable.Meta):
         """Meta attributes."""
@@ -468,10 +443,23 @@ class GoldenConfigSettingTable(BaseTable):
             "pk",
             "name",
             "weight",
-            "description",
-            "backup_repository",
-            "intended_repository",
-            "jinja_repository",
+            "dynamic_group__members__count",
+            "enable_backup",
+            "enable_intended",
+            "enable_compliance",
+            "enable_plan",
+            "enable_deploy",
+        )
+        default_columns = (
+            "pk",
+            "name",
+            "weight",
+            "dynamic_group__members__count",
+            "enable_backup",
+            "enable_intended",
+            "enable_compliance",
+            "enable_plan",
+            "enable_deploy",
         )
 
 

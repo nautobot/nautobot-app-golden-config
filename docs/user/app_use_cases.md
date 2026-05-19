@@ -65,9 +65,30 @@ To update existing settings click on one of the `Settings` name.
 |Jinja Path|A Jinja template which defines the path (within the repository) and name of the Jinja template file. e.g. `{{obj.platform.network_driver}}/{{obj.role.name}}/main.j2`|
 |Dynamic Group|The scope of devices on which Golden Config's jobs can operate. |
 |GraphQL Query|A query that is evaluated and used to render the config. The query must start with `query ($device_id: ID!)`.|
+|Enable Backup|Whether the Backup Configurations job runs for devices owned by this Setting. Defaults to `True`. When `False`, devices owned by this Setting are skipped by the Backup job and an `E3038` warning is logged.|
+|Enable Intended|Whether the Generate Intended Configurations job runs for devices owned by this Setting. Defaults to `True`. The Setting cannot be saved with this enabled unless `Sot agg query`, `Jinja repository`, `Jinja Template Path`, `Intended repository`, and `Intended Path Template` are all set.|
+|Enable Compliance|Whether the Perform Configuration Compliance job runs for devices owned by this Setting. Defaults to `True`.|
+|Enable Config Plan|Whether Config Plan generation is permitted for devices owned by this Setting. Defaults to `True`.|
+|Enable Deploy|Whether Deploy Config Plans is permitted for devices owned by this Setting. Defaults to `True`.|
 
 !!! note
     Each of these will be further detailed in their respective sections.
+
+#### Feature-Enable Resolution Across Multiple Settings
+
+A single device may match the Dynamic Group criteria for more than one Golden Config Setting. To ensure each device is assigned to only one setting when it belongs to multiple Dynamic Groups, Golden Config applies the following rules:
+
+* **Highest-weighted Setting wins per device.** Each device is calculated independently to apply the Golden Config Setting with the highest `weight`. A device may be a member of multiple Dynamic Groups (via Golden Config setting), but the highest weighted setting is used. If two Settings share the same weight, the Setting with the lower-sorted `name` wins, it is up to the operator to ensure if a device is part of multiple Golden Config settings that the settings `weights` are different.
+* **No per-feature fallback.** All features; backup, intended, deploys, etc. are **only** used from the winning setting as described above.
+* **Skip logging.** When a job runs against a device whose winning Setting has the corresponding feature disabled, an `E3038` warning is emitted naming the winning Setting and its weight so operators can locate the responsible record.
+
+#### All-In-One Jobs and Disabled Features
+
+The two "Execute All Golden Configuration Jobs" jobs (single-device and multi-device) iterate through Backup, Intended, and Compliance in order. For each play they run only the subset of devices whose winning Setting has the corresponding feature enabled:
+
+* If a play has zero eligible devices the play is skipped with an `E3039` warning and the next play continues.
+* The job does not abort the remaining plays when one feature is disabled — partial execution is intentional so operators can disable a feature on a Setting without losing the other features for that Setting's devices.
+* If `fail_job_on_task_failure=True` is checked on the form, the job still fails at the end when any executed play raised an error, but skipped (disabled) plays do not count as failures.
 
 #### Dynamic Group
 

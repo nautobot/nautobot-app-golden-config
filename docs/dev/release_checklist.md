@@ -54,9 +54,12 @@ Ensure that continuous integration testing on the `develop` branch is completing
 
 ### Bump the Version
 
-Update the package version using `poetry version` if necessary. This command shows the current version of the project or bumps the version of the project and writes the new version back to `pyproject.toml` if a valid bump rule is provided.
+Update the package version using `poetry version` if necessary ([poetry docs](https://python-poetry.org/docs/cli/#version)). This command shows the current version of the project or bumps the version of the project and writes the new version back to `pyproject.toml` if a valid bump rule is provided.
 
 The new version must be a valid semver string or a valid bump rule: `patch`, `minor`, `major`, `prepatch`, `preminor`, `premajor`, `prerelease`. Always try to use a bump rule when you can.
+
+!!! warning
+    This guide uses `1.4.2` as the new version in its examples, so change it to match the version you bumped to in the previous step! Every. single. time. you. copy/paste commands!
 
 Display the current version with no arguments:
 
@@ -93,27 +96,19 @@ And lastly, for patch versions, you guessed it, use `patch`:
 Bumping version from 1.1.0 to 1.1.1
 ```
 
-Please see the [official Poetry documentation on `version`](https://python-poetry.org/docs/cli/#version) for more information.
-
 ### Update the Changelog
 
-!!! important
-    The changelog must adhere to the [Keep a Changelog](https://keepachangelog.com/) style guide.
+!!! note
+    - This project uses `towncrier` to track human readable changes, so all merged PRs will have one or more entries in the release notes.
+    - The changelog must adhere to the [Keep a Changelog](https://keepachangelog.com/) style guide for any manual changes you may need to make.
+    - You will need to have the project's poetry environment built at this stage, as the towncrier command runs **locally only**. If you don't have it, run `poetry install` first.
+    - You can also set the version explicitly with `invoke generate-release-notes --version 1.4.2` if it needs to be different from what's in `pyproject.toml`.
 
-This guide uses `1.4.2` as the new version in its examples, so change it to match the version you bumped to in the previous step! Every. single. time. you. copy/paste commands :)
+First, create a release branch off of `develop` (`git switch -c release-1.4.2 develop`) and automatically generate release notes with `invoke generate-release-notes`.
 
-First, create a release branch off of `develop` (`git switch -c release-1.4.2 develop`).
+If you're releasing a new major or minor version, this will create a new `docs/admin/release_notes/version_{major}.{minor}.md` file. Please fill in the `Release Overview` section in that file manually with a user-friendly summary of the most notable changes!
 
-> You will need to have the project's poetry environment built at this stage, as the towncrier command runs **locally only**. If you don't have it, run `poetry install` first.
-
-Generate release notes with `invoke generate-release-notes --version 1.4.2` and answer `yes` to the prompt `Is it okay if I remove those files? [Y/n]:`. This will update the release notes in `docs/admin/release_notes/version_X.Y.md`, stage that file in git, and `git rm` all the fragments that have now been incorporated into the release notes.
-
-There are two possibilities:
-
-1. If you're releasing a new major or minor version, rename the `version_X.Y.md` file accordingly (e.g. rename to `docs/admin/release_notes/version_1.4.md`). Update the `Release Overview` and add this new page to the table of contents within `mkdocs.yml`.
-2. If you're releasing a patch version, copy your version's section from the `version_X.Y.md` file into the already existing `docs/admin/release_notes/version_1.4.md` file. Delete the `version_X.Y.md` file.
-
-Stage all the changes (`git add`) and check the diffs to verify all of the changes are correct (`git diff --cached`).
+Stage any remaining files (e.g. `git add mkdocs.yml pyproject.toml`) and check the diffs to verify all of the changes are correct (`git diff --cached`). For a new release of `1.4.2`, this will update the release notes in `docs/admin/release_notes/version_1.4.md`, stage that file in git, and `git rm` all the fragments that have now been incorporated into the release notes.
 
 Commit `git commit -m "Release v1.4.2"` and `git push` the staged changes.
 

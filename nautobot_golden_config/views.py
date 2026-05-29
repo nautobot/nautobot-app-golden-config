@@ -19,6 +19,7 @@ from nautobot.apps import views
 from nautobot.core.views import generic
 from nautobot.core.views.mixins import PERMISSIONS_ACTION_MAP, ObjectPermissionRequiredMixin
 from nautobot.dcim.models import Device
+from nautobot.dcim.views import DeviceUIViewSet
 from nautobot.extras.models import Job, JobResult
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -113,7 +114,7 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
             ),
         }
 
-    def get_extra_context(self, request, instance=None, **kwargs):
+    def get_extra_context(self, request, instance=None):
         """Get extra context data."""
         context = super().get_extra_context(request, instance)
         if self.action == "retrieve":
@@ -274,7 +275,7 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
         self.report_context = None
         self.store_table = None  # Used to store the table for bulk delete. No longer required in Nautobot 2.3.11
 
-    def get_extra_context(self, request, instance=None, **kwargs):
+    def get_extra_context(self, request, instance=None):
         """A ConfigCompliance helper function to warn if the Job is not enabled to run."""
         context = super().get_extra_context(request, instance)
         if self.action == "overview":
@@ -363,6 +364,7 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
         context["active_tab"] = request.GET.get("tab")
         context["device"] = device
         context["object"] = device
+        context["object_detail_content"] = DeviceUIViewSet.object_detail_content
         context["verbose_name"] = "Device"
         return render(request, "nautobot_golden_config/configcompliance_devicetab.html", context)
 
@@ -432,7 +434,7 @@ class ComplianceFeatureUIViewSet(views.NautobotUIViewSet):
     def get_extra_context(self, request, instance=None):
         """A ComplianceFeature helper function to warn if the Job is not enabled to run."""
         add_message([["ComplianceJob", constant.ENABLE_COMPLIANCE]], request)
-        return {}
+        return super().get_extra_context(request, instance)
 
 
 class ComplianceRuleUIViewSet(views.NautobotUIViewSet):
@@ -451,7 +453,7 @@ class ComplianceRuleUIViewSet(views.NautobotUIViewSet):
     def get_extra_context(self, request, instance=None):
         """A ComplianceRule helper function to warn if the Job is not enabled to run."""
         add_message([["ComplianceJob", constant.ENABLE_COMPLIANCE]], request)
-        return {}
+        return super().get_extra_context(request, instance)
 
 
 class GoldenConfigSettingUIViewSet(views.NautobotUIViewSet):
@@ -524,7 +526,7 @@ class ConfigRemoveUIViewSet(views.NautobotUIViewSet):
     def get_extra_context(self, request, instance=None):
         """A ConfigRemove helper function to warn if the Job is not enabled to run."""
         add_message([["BackupJob", constant.ENABLE_BACKUP]], request)
-        return {}
+        return super().get_extra_context(request, instance)
 
 
 class ConfigReplaceUIViewSet(views.NautobotUIViewSet):
@@ -543,7 +545,7 @@ class ConfigReplaceUIViewSet(views.NautobotUIViewSet):
     def get_extra_context(self, request, instance=None):
         """A ConfigReplace helper function to warn if the Job is not enabled to run."""
         add_message([["BackupJob", constant.ENABLE_BACKUP]], request)
-        return {}
+        return super().get_extra_context(request, instance)
 
 
 class RemediationSettingUIViewSet(views.NautobotUIViewSet):
@@ -563,7 +565,7 @@ class RemediationSettingUIViewSet(views.NautobotUIViewSet):
     def get_extra_context(self, request, instance=None):
         """A RemediationSetting helper function to warn if the Job is not enabled to run."""
         add_message([["ComplianceJob", constant.ENABLE_COMPLIANCE]], request)
-        return {}
+        return super().get_extra_context(request, instance)
 
 
 class ConfigPlanUIViewSet(views.NautobotUIViewSet):

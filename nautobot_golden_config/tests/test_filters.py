@@ -2,7 +2,8 @@
 
 from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
-from nautobot.core.testing import FilterTestCases
+from nautobot.apps.filters import MultiValueDateTimeFilter, MultiValueNumberFilter
+from nautobot.apps.testing import FilterTestCases
 from nautobot.dcim.models import Device, Platform
 from nautobot.extras.models import Status, Tag
 
@@ -565,3 +566,22 @@ class ConfigPlanFilterTestCase(FilterTestCases.FilterTestCase):
         self.assertQuerysetEqualAndNotEmpty(
             filterset.qs, self.queryset.filter(plan_result_id=self.job_result1.id).distinct()
         )
+
+
+class GetFilterLookupDictTestCase(TestCase):
+    """Test that _get_filter_lookup_dict does not mutate shared lookup map constants."""
+
+    def test_isnull_not_added_to_numeric_filters(self):
+        """Verify that adding isnull for datetime filters does not leak into numeric filters."""
+
+        # First, call with a datetime filter to trigger the isnull addition
+        datetime_filter = MultiValueDateTimeFilter()
+        # pylint: disable=protected-access
+        datetime_lookup = filters.GoldenConfigFilterSet._get_filter_lookup_dict(datetime_filter)
+        self.assertIn("isnull", datetime_lookup)
+
+        # Then verify a numeric filter does NOT get isnull
+        number_filter = MultiValueNumberFilter()
+        # pylint: disable=protected-access
+        number_lookup = filters.GoldenConfigFilterSet._get_filter_lookup_dict(number_filter)
+        self.assertNotIn("isnull", number_lookup)

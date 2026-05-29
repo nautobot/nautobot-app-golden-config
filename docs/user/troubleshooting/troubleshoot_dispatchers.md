@@ -4,7 +4,7 @@ At a high-level the default dispatchers that Golden Config uses are actually sou
 
 ## Dispatcher Sender
 
-This dispatcher task is explained in the [nornir-nautobot docs](https://docs.nautobot.com/projects/nornir-nautobot/en/latest/task/task/), but provided here is a simple overview.
+This dispatcher task is explained in the [nornir-nautobot docs](https://docs.nautobot.com/projects/nornir-nautobot/en/latest/), but provided here is a simple overview.
 
 - If exists check `custom_dispatcher`, for network_driver, if a custom_dispatcher is used but not found, fail immediately
 - Check for framework & driver `f"nornir_nautobot.plugins.tasks.dispatcher.{network_driver}.{framework.title()}{network_driver_title}"`

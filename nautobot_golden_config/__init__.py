@@ -4,8 +4,7 @@
 from importlib import metadata
 
 from django.db.models.signals import post_migrate
-from nautobot.apps import ConstanceConfigItem, NautobotAppConfig
-from nautobot.core.signals import nautobot_database_ready
+from nautobot.apps import ConstanceConfigItem, NautobotAppConfig, nautobot_database_ready
 
 __version__ = metadata.version(__name__)
 

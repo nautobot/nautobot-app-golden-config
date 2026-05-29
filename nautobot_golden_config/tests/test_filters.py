@@ -5,6 +5,7 @@ from django.test import TestCase
 from nautobot.apps.filters import MultiValueDateTimeFilter, MultiValueNumberFilter
 from nautobot.apps.testing import FilterTestCases
 from nautobot.dcim.models import Device, Platform
+from nautobot.extras.management import populate_role_choices, populate_status_choices
 from nautobot.extras.models import Status, Tag
 
 from nautobot_golden_config import filters, models
@@ -401,6 +402,8 @@ class ConfigPlanFilterTestCase(FilterTestCases.FilterTestCase):
     @classmethod
     def setUpTestData(cls):
         """Setup Object."""
+        populate_role_choices()
+        populate_status_choices()
         create_device_data()
         cls.device1 = Device.objects.get(name="Device 1")
         cls.device2 = Device.objects.get(name="Device 2")

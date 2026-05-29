@@ -5,7 +5,7 @@ import random
 from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
 from django.db import DEFAULT_DB_ALIAS
-from nautobot.core.factory import get_random_instances
+from nautobot.apps.factory import get_random_instances
 from nautobot.dcim.models import Platform
 from nautobot.extras.models import DynamicGroup, GraphQLQuery, JobResult
 from nautobot.extras.models import Job as JobModel
@@ -215,7 +215,6 @@ class Command(BaseCommand):
         # TODO: Create ConfigRemoves
         # TODO: Create ConfigReplaces
         # TODO: Create RemediationSettings
-        # TODO: Create ConfigPlans
         self.stdout.write(f"Creating {len(devices)} ConfigPlans")
         for device in devices:
             job_model = GenerateConfigPlans().job_model

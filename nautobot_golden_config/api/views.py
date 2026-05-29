@@ -12,16 +12,17 @@ from django.utils.timezone import make_aware
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from jinja2.exceptions import TemplateError, TemplateSyntaxError
-from nautobot.apps.api import NautobotModelViewSet, NotesViewSetMixin
-from nautobot.apps.utils import render_jinja2
-from nautobot.core.api.views import (
+from nautobot.apps.api import (
     BulkDestroyModelMixin,
     BulkUpdateModelMixin,
     ModelViewSetMixin,
-    NautobotAPIVersionMixin,
+    NautobotModelViewSet,
+    NotesViewSetMixin,
 )
+from nautobot.apps.utils import render_jinja2
+from nautobot.core.api.views import NautobotAPIVersionMixin  # core-import-update
 from nautobot.dcim.models import Device
-from nautobot.extras.datasources.git import ensure_git_repository
+from nautobot.extras.datasources.git import ensure_git_repository  # core-import-update
 from nautobot.extras.models import GitRepository, GraphQLQuery
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nornir import InitNornir
@@ -33,21 +34,12 @@ from rest_framework.generics import GenericAPIView, RetrieveAPIView
 from rest_framework.mixins import DestroyModelMixin, ListModelMixin, RetrieveModelMixin, UpdateModelMixin
 from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.routers import APIRootView
 from rest_framework.viewsets import GenericViewSet
 
 from nautobot_golden_config import filters, models
 from nautobot_golden_config.api import serializers
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import dispatch_params, get_django_env
-
-
-class GoldenConfigRootView(APIRootView):
-    """Golden Config API root view."""
-
-    def get_view_name(self):
-        """Golden Config API root view boilerplate."""
-        return "Golden Config"
 
 
 class SOTAggDeviceDetailView(NautobotAPIVersionMixin, GenericAPIView):

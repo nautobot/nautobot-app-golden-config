@@ -5,7 +5,7 @@ from nautobot.apps.api import NautobotModelSerializer, TaggedModelSerializerMixi
 from nautobot.apps.utils import GitRepo
 from nautobot.dcim.api.serializers import DeviceSerializer
 from nautobot.dcim.models import Device
-from nautobot.extras.api.serializers import GitRepositorySerializer
+from nautobot.extras.api.serializers import GitRepositorySerializer  # core-import-update
 from nautobot.extras.datasources.git import ensure_git_repository, get_repo_from_url_to_path_and_from_branch
 from nautobot.extras.models import GitRepository
 from rest_framework import serializers

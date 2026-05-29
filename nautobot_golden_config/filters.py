@@ -280,7 +280,7 @@ class GoldenConfigSettingFilterSet(NautobotFilterSet):
 
 
 class RemediationSettingFilterSet(NautobotFilterSet):
-    """Inherits Base Class CustomFieldModelFilterSet."""
+    """Inherits Base Class NautobotFilterSet."""
 
     q = SearchFilter(
         filter_predicates={

@@ -2,7 +2,7 @@
 
 from django.utils.html import format_html
 from nautobot.apps import ui
-from nautobot.core.templatetags import helpers
+from nautobot.core.templatetags import helpers  # core-import-update
 
 
 def get_model_instances(m2m_object):
@@ -76,9 +76,14 @@ config_remediation = ui.ObjectDetailContent(
             section=ui.SectionChoices.LEFT_HALF,
             weight=100,
             fields="__all__",
-            value_transforms={
-                "remediation_options": [helpers.render_json],
-            },
+            exclude_fields=("remediation_options",),
+        ),
+        ui.ObjectTextPanel(
+            section=ui.SectionChoices.RIGHT_HALF,
+            weight=100,
+            label="Remediation Options",
+            object_field="remediation_options",
+            render_as=ui.ObjectTextPanel.RenderOptions.JSON,
         ),
     ),
 )

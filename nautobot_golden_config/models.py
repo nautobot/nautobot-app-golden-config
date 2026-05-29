@@ -11,14 +11,13 @@ from django.db.models.manager import BaseManager
 from django.utils.module_loading import import_string
 from hier_config import WorkflowRemediation, get_hconfig
 from hier_config.utils import hconfig_v2_os_v3_platform_mapper, load_hconfig_v2_options
-from nautobot.apps.models import RestrictedQuerySet
+from nautobot.apps.models import RestrictedQuerySet, extras_features
 from nautobot.apps.utils import render_jinja2
 from nautobot.core.models.generics import PrimaryModel
 from nautobot.core.models.utils import serialize_object, serialize_object_v2
 from nautobot.dcim.models import Device
 from nautobot.extras.models import ObjectChange
 from nautobot.extras.models.statuses import StatusField
-from nautobot.extras.utils import extras_features
 from netutils.config.compliance import feature_compliance
 from xmldiff import actions, main
 
@@ -382,6 +381,8 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
     ordered = models.BooleanField(default=False)
     # Used for django-pivot, both compliance and compliance_int should be set.
     compliance_int = models.IntegerField(blank=True)
+
+    is_saved_view_model = False
 
     def to_objectchange(self, action, *, related_object=None, object_data_extra=None, object_data_exclude=None):  # pylint: disable=arguments-differ
         """Remove actual and intended configuration from changelog."""

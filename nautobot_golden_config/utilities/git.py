@@ -3,8 +3,8 @@
 import logging
 
 from git.exc import GitCommandError
+from nautobot.apps.utils import GitRepo as _GitRepo
 from nautobot.core.utils.git import GIT_ENVIRONMENT
-from nautobot.core.utils.git import GitRepo as _GitRepo
 
 LOGGER = logging.getLogger(__name__)
 

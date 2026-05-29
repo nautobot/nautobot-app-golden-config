@@ -20,7 +20,7 @@ function clearFields(data) {
     // Iterate through the values array
     values.forEach(condition => {
       // Hide the fields specified in "hide" array
-      condition["hide"].forEach(fieldToHide => $("#" + fieldToHide).parent().parent().hide());
+      condition["hide"].forEach(fieldToHide => $("#" + fieldToHide).closest('.mb-10').addClass("d-none"));
     });
   });
 }
@@ -75,10 +75,8 @@ function setupFieldListeners(data) {
       // Iterate through the values array
       item["values"].forEach(condition => {
         if (condition["name"] === selectedValue) {
-          // Show the fields specified in "show" array
-          condition["show"].forEach(fieldToShow => $("#" + fieldToShow).parent().parent().show());
-          // Hide the fields specified in "hide" array
-          condition["hide"].forEach(fieldToHide => $("#" + fieldToHide).parent().parent().hide());
+          condition["show"].forEach(fieldToShow => $("#" + fieldToShow).closest('.mb-10').removeClass("d-none"));
+          condition["hide"].forEach(fieldToHide => $("#" + fieldToHide).closest('.mb-10').addClass("d-none"));
         }
       });
     });

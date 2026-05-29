@@ -22,17 +22,9 @@ This feature is particularly useful for:
 
 Filtered configuration compliance requires:
 
-1. **CLI Configuration Type**: Only `CLI` configuration types are supported for hierarchical compliance
+1. **CLI Configuration Type**: Only [`CLI`](./app_feature_compliancecli.md) configuration types are supported for hierarchical compliance
 2. **Platform Compatibility**: Your device platform must be supported by the `hier_config` library
 3. **Network Driver Mapping**: The platform must have a valid `hier_config` mapping in its `network_driver_mappings`
-
-### Repository Settings
-
-The same repository settings required for standard compliance apply:
-
-- Backup repository for storing device configurations
-- Intended configuration repository
-- Proper `backup_path_template` and `intended_path_template` configuration
 
 ## Configuring Filtered Compliance Rules
 

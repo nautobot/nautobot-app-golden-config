@@ -2,19 +2,19 @@
 
 ## Overview
 
-Filtered configuration compliance is a powerful extension to the standard CLI-based compliance checking that leverages the `hier_config` library to provide advanced configuration parsing and comparison capabilities. This feature allows you to define complex matching rules to focus compliance checks on specific configuration sections or patterns. 
+Filtered Configuration Compliance is a powerful extension to the standard CLI-based compliance checking that leverages the `hier_config` library to provide advanced configuration parsing and comparison capabilities. This feature allows you to define complex matching rules to focus compliance checks on specific configuration sections or patterns.
 
-Unlike standard CLI compliance which matches configuration sections based on simple line-starting patterns, Filtered configuration compliance identifies and compares configuration elements based on their hierarchical relationships and specific attributes, which allows for filtering based on nested config lines.
+Unlike standard CLI compliance which matches configuration sections based on simple line-starting patterns, Filtered Configuration Compliance identifies and compares configuration elements based on their hierarchical relationships and specific attributes, which allows for filtering based on nested config lines.
 
-## When to Use Filtered Configuraiton Compliance
+## When to Use Filtered Configuration Compliance
 
 This feature is particularly useful for:
 
-- Configurations that are benign or non-consequential to the configurations. 
+- Configurations that are benign or non-consequential to overall device operation.
 - When you are building out your compliance journey, and not prepared to include all configurations based on simple line matching.
 
 !!! warning
-    Should not be used to provide full line matches or matches that are better served as data, as an example you should not do this `- startswith: description USER PORT` but should do this `- startswith: description`. 
+    Should not be used to provide full line matches or matches that are better served as data, as an example you should not do this `- startswith: description USER PORT` but should do this `- startswith: description`.
 
 ## Requirements
 
@@ -148,10 +148,11 @@ In some cases, the intended configuration may not contain any elements that matc
 This fallback behavior:
 
 1. **Triggers** when `intended_text` is empty after tag-based filtering
-3. **Filters** for lines that start with "interface"
-4. **Uses** these interface declarations as the intended configuration for comparison
+2. **Filters** for lines that start with "interface"
+3. **Uses** these interface declarations as the intended configuration for comparison
 
 **Example Scenario**:
+
 - Your hierarchical rule targets specific VLAN configurations
 - The intended configuration template doesn't include those VLANs
 - The running configuration has interface declarations

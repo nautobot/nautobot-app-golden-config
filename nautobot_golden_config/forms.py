@@ -179,6 +179,14 @@ class ComplianceRuleForm(NautobotModelForm):
     """Filter Form for ComplianceRule instances."""
 
     platform = forms.DynamicModelChoiceField(queryset=Platform.objects.all())
+    match_config = django_forms.CharField(
+        required=False,
+        widget=django_forms.Textarea,
+        label="Config to Match",
+        help_text="The config to match that is matched based on the parent most configuration. E.g.: For CLI `router bgp` or `ntp`. For JSON this is a top level key name. For XML this is a xpath query.",
+        # We need to preserve leading spaces for some operating systems.
+        strip=False,
+    )
 
     class Meta:
         """Boilerplate form Meta data for compliance rule."""
@@ -607,7 +615,7 @@ class ConfigPlanBulkEditForm(NautobotBulkEditForm):
         required=False,
     )
     change_control_id = django_forms.CharField(required=False, label="Change Control ID")
-    change_control_url = django_forms.URLField(required=False, label="Change Control URL")
+    change_control_url = django_forms.URLField(required=False, label="Change Control URL", max_length=2048)
 
     class Meta:
         """Boilerplate form Meta data for ConfigPlan."""

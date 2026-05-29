@@ -1,1 +1,0 @@
-Implement a more performant ORM/DB query in-place of the existing for loop logic for device_to_settings_map.

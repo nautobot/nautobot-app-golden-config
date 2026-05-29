@@ -9,7 +9,7 @@ from nautobot.extras.models import JobResult
 
 from nautobot_golden_config.datasources import get_id_kwargs, refresh_git_gc_properties
 from nautobot_golden_config.exceptions import MissingReference, MultipleReferences
-from nautobot_golden_config.models import ComplianceFeature, ComplianceRule
+from nautobot_golden_config.models import ComplianceFeature, ComplianceRule, RemediationSetting
 
 
 class GitPropertiesDatasourceTestCase(TestCase):
@@ -158,6 +158,7 @@ class TestDatasources(TransactionTestCase):
         refresh_git_gc_properties(repository_record=repository_record, job_result=job_result)
         self.assertEqual(ComplianceFeature.objects.count(), 3)
         self.assertEqual(ComplianceRule.objects.count(), 3)
+        self.assertEqual(RemediationSetting.objects.count(), 1)
 
     def test_refresh_git_gc_properties_2(self):
         """Test refresh_git_gc_properties with two platforms using same network driver."""

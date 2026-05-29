@@ -27,3 +27,7 @@ class IntendedGenerationFailure(GoldenConfigError):
 
 class ComplianceFailure(GoldenConfigError):
     """Custom error for when there's a failure in Compliance Job."""
+
+
+class ConfigPlanDeploymentFailure(GoldenConfigError):
+    """Custom error for when there's a failure in Config Plan Deployment Job."""

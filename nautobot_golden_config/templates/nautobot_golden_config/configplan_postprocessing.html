@@ -1,0 +1,30 @@
+<a href="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=object.device.id %}?config_plan_id={{ object.id }}&modal=true" data-toggle="modal" data-target="#ccppModal">
+    <i class="mdi mdi-text-box-check"></i>
+</a>
+<div class="modal fade" id="ccppModal" tabindex="-1" role="dialog" aria-labelledby="ccppModalLabel">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-body">
+                Generating Post Processed Config...  <div class="loader"></div> <div id="diff-loader" class="loader"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $('#ccppModal').on('show.bs.modal', function(event) {
+        var link = $(event.relatedTarget);
+        var url = link.attr('href');
+        var modal = $(this);
+
+        $.ajax({
+            url: url,
+            success: function(data) {
+                modal.find('.modal-content').html(data);
+            },
+            error: function() {
+                modal.find('.modal-body').html("Error loading content.");
+            }
+        });
+    });
+</script>

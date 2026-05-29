@@ -2,6 +2,9 @@ nautobot_golden_config/transposer.py
 golden-config/
 nautobot.sql
 
+# Avoid accidental commit of analytics template override generated via ./docs/insert-analytics.sh
+docs/assets/overrides/main.html
+
 # Ansible Retry Files
 *.retry
 
@@ -300,9 +303,10 @@ fabric.properties
 .vscode/*
 *.code-workspace
 
-# Rando
+# Random
 creds.env
 development/*.txt
+!development/towncrier_header.txt
 
 # Invoke overrides
 invoke.yml

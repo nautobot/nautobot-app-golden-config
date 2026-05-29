@@ -181,6 +181,7 @@ Golden Config properties include: Compliance Features, Compliance Rules, Config 
 │   ├── compliance_rules
 │   ├── config_removes
 │   ├── config_replaces
+│   ├── remediation_settings
 ```
 
 The files within these folders can follow any naming pattern or nested folder structure, all of them will be recursively taken into account. So it's up to you to decide how to you prefer to organize these files (within the previously stated directory structure):
@@ -198,6 +199,9 @@ The files within these folders can follow any naming pattern or nested folder st
 │   │   ├── cisco_ios.yml
 │   │   └── juniper_junos.yml
 │   ├── config_replaces
+│   │   ├── cisco_ios.yml
+│   │   └── juniper_junos.yml
+│   ├── remediation_settings
 │   │   ├── cisco_ios.yml
 │   │   └── juniper_junos.yml
 ```
@@ -233,7 +237,7 @@ The `YAML` files will contain all the attributes necessary to identify an object
 
 ```yaml
 ---
--   platform_name: "Cisco IOS"
+- platform_name: "Cisco IOS"
   name: "Build config"
   regex: '^Building\s+configuration.*\n'
 ```
@@ -243,10 +247,26 @@ The `YAML` files will contain all the attributes necessary to identify an object
 ```yaml
 ---
 - name: "username"
-    platform_name: "Cisco IOS"
+  platform_name: "Cisco IOS"
   description: "username"
   regex: '(username\s+\S+\spassword\s+5\s+)\S+(\s+role\s+\S+)'
   replace: '\1<redacted_config>\2'
+```
+
+`remediation_settings` example:
+
+```yaml
+---
+- platform_name: "Cisco IOS"
+  remediation_type: "hierconfig"
+  remediation_options:
+    style: ios
+    negation: no
+    idempotent_commands:
+      - lineage:
+          - startswith: vlan
+          - startswith: name
+...
 ```
 
 CustomField data can be added using the `_custom_field_data` attribute, that takes a dictionary mapping custom_field names to their values:

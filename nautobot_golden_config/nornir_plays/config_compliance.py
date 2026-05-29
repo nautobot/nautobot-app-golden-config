@@ -205,7 +205,7 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     return Result(host=task.host)
 
 
-def process_nested_compliance_rule_hier_config(rule, backup_cfg, intended_cfg, obj, logger):
+def process_nested_compliance_rule_hier_config(rule, backup_cfg, intended_cfg, obj, logger):  # pylint: disable=too-many-locals
     """
     Processes nested compliance rules using hierarchical configuration comparison.
 
@@ -262,7 +262,7 @@ def process_nested_compliance_rule_hier_config(rule, backup_cfg, intended_cfg, o
     except yaml.YAMLError as e:
         error_msg = f"Invalid YAML in match_config: {str(e)}"
         logger.error(error_msg, extra={"object": obj})
-        raise NornirNautobotException(error_msg)
+        raise NornirNautobotException(error_msg) from e
 
     # Apply tags to the running and generated configs
     for tag_rule in v3_tags:

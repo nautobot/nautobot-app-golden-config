@@ -201,6 +201,7 @@ router bgp 65001
             )
         self.assertIn("Invalid YAML in match_config", str(context.exception))
         self.mock_logger.error.assert_called_once()
+        mock_hier_config.get_hconfig.assert_called()
 
     @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
     @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")

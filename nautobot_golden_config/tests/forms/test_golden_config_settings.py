@@ -50,8 +50,13 @@ class GoldenConfigSettingFormTest(TestCase):
         self.assertTrue(form.is_valid(), form.errors)
         self.assertTrue(form.save())
 
-    def test_intended_enabled_without_required_fields_fail(self):
-        """With ``enable_intended=True`` the form must reject a Setting missing ``sot_agg_query``."""
+    def test_intended_enabled_without_required_fields_saves_with_warning(self):
+        """With ``enable_intended=True`` the form must still save when ``sot_agg_query`` is missing.
+
+        The missing requirement is surfaced as a non-blocking UI warning (see
+        ``add_intended_requirements_message``) rather than a hard validation error, so the form
+        itself validates and the incomplete Setting is reported via ``get_missing_intended_requirements``.
+        """
         dynamic_group = DynamicGroup.objects.create(
             name="GoldenConfig Default Group",
             filter={},
@@ -75,11 +80,9 @@ class GoldenConfigSettingFormTest(TestCase):
                 # sot_agg_query intentionally omitted.
             }
         )
-        self.assertFalse(form.is_valid())
-        self.assertEqual(
-            form.errors["sot_agg_query"][0],
-            "This field is required when Intended is enabled.",
-        )
+        self.assertTrue(form.is_valid(), form.errors)
+        setting = form.save()
+        self.assertEqual(setting.get_missing_intended_requirements(), ["sot_agg_query"])
 
     def test_clean_up(self):
         """Transactional custom model, unable to use `get_or_create`.

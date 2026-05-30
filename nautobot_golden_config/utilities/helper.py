@@ -241,6 +241,34 @@ def add_message(combo_check, request):
         messages.warning(request, format_html(f"The Job(s) {list_to_string(multiple_messages)} are not yet enabled."))
 
 
+def add_intended_requirements_message(gc_settings, request):
+    """Warn (non-blocking) for each GoldenConfigSetting that has Intended enabled but is incompletely configured.
+
+    Mirrors :func:`add_message` (used for disabled Jobs): saving such a Setting is allowed, but the
+    Intended Configuration job cannot generate output for its devices until the named fields are set.
+
+    Args:
+        gc_settings: Iterable of ``GoldenConfigSetting`` instances to check.
+        request: The current request, used to attach the message.
+    """
+    setting_messages = []
+    for setting in gc_settings:
+        missing = setting.get_missing_intended_requirements()
+        if not missing:
+            continue
+        labels = list_to_string([f"`{setting._meta.get_field(field).verbose_name}`" for field in missing])
+        edit_url = reverse("plugins:nautobot_golden_config:goldenconfigsetting_edit", kwargs={"pk": setting.pk})
+        setting_messages.append(f"<a href='{edit_url}'>{setting.name}</a> is missing {labels}")
+    if setting_messages:
+        messages.warning(
+            request,
+            format_html(
+                f"Intended is enabled but the following Golden Config Setting(s) will not generate intended "
+                f"configurations until their required fields are set: {list_to_string(setting_messages)}."
+            ),
+        )
+
+
 def dispatch_params(method, platform, logger):
     """Utility method to map user defined platform network_driver to netutils named entity."""
     custom_dispatcher = settings.PLUGINS_CONFIG[app_config.name].get("custom_dispatcher", {})

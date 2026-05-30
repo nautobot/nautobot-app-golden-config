@@ -36,6 +36,7 @@ from nautobot_golden_config.api import serializers
 from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import (
+    add_intended_requirements_message,
     add_message,
     any_setting_enabled,
     calculate_aggr_percentage,
@@ -626,6 +627,10 @@ class GoldenConfigSettingUIViewSet(views.NautobotUIViewSet):
         jobs.append(["AllGoldenConfig", all_features_enabled])
         jobs.append(["AllDevicesGoldenConfig", all_features_enabled])
         add_message(jobs, request)
+
+        # Non-blocking warning for Settings that have Intended enabled but are missing required fields.
+        settings_to_check = [instance] if instance is not None else self.queryset.all()
+        add_intended_requirements_message(settings_to_check, request)
         return context
 
 

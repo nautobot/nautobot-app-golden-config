@@ -1,23 +1,28 @@
 """Unit tests for nautobot_golden_config helpers."""
 
 import os
+from importlib import import_module
 from unittest import mock
 
 import jinja2
+from django.conf import settings as django_settings
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
-from django.test import TestCase
+from django.contrib.messages.storage.fallback import FallbackStorage
+from django.test import RequestFactory, TestCase
 from nautobot.apps.choices import SecretsGroupAccessTypeChoices, SecretsGroupSecretTypeChoices
-from nautobot.extras.models import Secret, SecretsGroup, SecretsGroupAssociation
+from nautobot.dcim.models import Device
+from nautobot.extras.models import DynamicGroup, Secret, SecretsGroup, SecretsGroupAssociation
 from nautobot.users.models import ObjectPermission
 
-from nautobot_golden_config.models import GoldenConfig
+from nautobot_golden_config.models import GoldenConfig, GoldenConfigSetting
 from nautobot_golden_config.utilities.config_postprocessing import (
     get_config_postprocessing,
     get_secret_by_secret_group_name,
     render_secrets,
 )
 from nautobot_golden_config.utilities.constant import PLUGIN_CFG
+from nautobot_golden_config.utilities.helper import add_intended_requirements_message
 
 from .conftest import create_device
 
@@ -165,3 +170,47 @@ class GetSecretFilterTestCase(TestCase):
         ):
             result = get_config_postprocessing(self.configs, mock.Mock())
         self.assertIn("not enabled", result)
+
+
+class AddIntendedRequirementsMessageTestCase(TestCase):
+    """Test the non-blocking warning for Settings that have Intended enabled but are incompletely configured."""
+
+    def setUp(self):
+        """Build a request with the messages framework attached."""
+        GoldenConfigSetting.objects.all().delete()
+        self.dynamic_group = DynamicGroup.objects.create(
+            name="intended-warning-dg",
+            content_type=ContentType.objects.get_for_model(Device),
+            filter={},
+        )
+        self.request = RequestFactory().get("/")
+        engine = import_module(django_settings.SESSION_ENGINE)
+        self.request.session = engine.SessionStore()
+        self.request._messages = FallbackStorage(self.request)  # pylint: disable=protected-access
+
+    def _make_setting(self, **overrides):
+        defaults = {
+            "name": "intended-warning-setting",
+            "slug": "intended-warning-setting",
+            "weight": 1000,
+            "dynamic_group": self.dynamic_group,
+            "enable_intended": True,
+        }
+        defaults.update(overrides)
+        return GoldenConfigSetting.objects.create(**defaults)
+
+    def test_incomplete_intended_setting_emits_warning(self):
+        """A Setting with Intended enabled but missing fields produces a single warning naming the Setting."""
+        setting = self._make_setting()
+        add_intended_requirements_message([setting], self.request)
+        warnings = [str(message) for message in self.request._messages]  # pylint: disable=protected-access
+        self.assertEqual(len(warnings), 1)
+        self.assertIn(setting.name, warnings[0])
+        self.assertIn("will not generate intended configurations", warnings[0])
+
+    def test_intended_disabled_setting_emits_no_warning(self):
+        """A Setting with Intended disabled never warns, even with the intended fields blank."""
+        setting = self._make_setting(enable_intended=False)
+        add_intended_requirements_message([setting], self.request)
+        warnings = list(self.request._messages)  # pylint: disable=protected-access
+        self.assertEqual(warnings, [])

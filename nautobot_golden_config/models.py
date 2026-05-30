@@ -611,6 +611,16 @@ class GoldenConfigSettingManager(BaseManager.from_queryset(RestrictedQuerySet)):
 class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     """GoldenConfigSetting Model definition. This provides global configs instead of via configs.py."""
 
+    # Fields the Intended Configuration job needs to produce output. When ``enable_intended`` is on
+    # but any of these is unset, saving is still allowed and a non-blocking UI warning is shown.
+    INTENDED_REQUIRED_FIELDS = (
+        "sot_agg_query",
+        "jinja_repository",
+        "jinja_path_template",
+        "intended_repository",
+        "intended_path_template",
+    )
+
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(max_length=100, unique=True)
     weight = models.PositiveSmallIntegerField(default=1000)
@@ -741,25 +751,21 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         verbose_name = "Golden Config Setting"
         ordering = ["-weight", "name"]  # Refer to weight comment in class docstring.
 
+    def get_missing_intended_requirements(self):
+        """Return the field names required for Intended generation that are not yet set.
+
+        Returns an empty list when ``enable_intended`` is off or the Setting is fully configured.
+        This intentionally does not raise: the missing fields are surfaced as a non-blocking UI
+        warning (see ``add_intended_requirements_message``) rather than a validation error, so an
+        operator can enable Intended and stage a Setting before wiring up its repos and query.
+        """
+        if not self.enable_intended:
+            return []
+        return [field for field in self.INTENDED_REQUIRED_FIELDS if not getattr(self, field)]
+
     def clean(self):
         """Validate the scope and GraphQL query."""
         super().clean()
-
-        if self.enable_intended:
-            required_intended_fields = {
-                "sot_agg_query": self.sot_agg_query,
-                "jinja_repository": self.jinja_repository,
-                "jinja_path_template": self.jinja_path_template,
-                "intended_repository": self.intended_repository,
-                "intended_path_template": self.intended_path_template,
-            }
-            missing = {
-                field: "This field is required when Intended is enabled."
-                for field, value in required_intended_fields.items()
-                if not value
-            }
-            if missing:
-                raise ValidationError(missing)
 
         if self.sot_agg_query:
             LOGGER.debug("GraphQL - test  query start with: `%s`", GRAPHQL_STR_START)

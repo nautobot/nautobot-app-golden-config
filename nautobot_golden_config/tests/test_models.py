@@ -346,7 +346,7 @@ class GoldenConfigSettingModelTestCase(TestCase):
 
 
 class GoldenConfigSettingCleanTestCase(TestCase):
-    """Validate clean() rejects partially-configured enable_* combinations."""
+    """Validate the Intended-enabled requirement surfaces as a non-blocking warning, not a clean() error."""
 
     @classmethod
     def setUpTestData(cls):
@@ -374,35 +374,36 @@ class GoldenConfigSettingCleanTestCase(TestCase):
         defaults.update(overrides)
         return GoldenConfigSetting(**defaults)
 
-    def test_intended_enabled_requires_jinja_and_sot_agg_fields(self):
-        """When intended is enabled, clean() requires sot_agg_query, jinja_repository, jinja_path_template, intended_repository, and intended_path_template."""
+    def test_intended_enabled_reports_missing_requirements_without_raising(self):
+        """When intended is enabled, clean() does not raise; get_missing_intended_requirements() reports the gaps."""
         setting = self._make_setting(enable_intended=True)
-        with self.assertRaises(ValidationError):
-            setting.clean()
+        setting.clean()  # must not raise — saving an incomplete Setting is allowed.
+        self.assertEqual(
+            setting.get_missing_intended_requirements(),
+            [
+                "sot_agg_query",
+                "jinja_repository",
+                "jinja_path_template",
+                "intended_repository",
+                "intended_path_template",
+            ],
+        )
 
         setting.jinja_repository = GitRepository.objects.get(name="test-jinja-repo-1")
-        with self.assertRaises(ValidationError):
-            setting.clean()
-
         setting.sot_agg_query = GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1")
-        with self.assertRaises(ValidationError):
-            setting.clean()
-
         setting.jinja_path_template = "{{obj.platform.name}}.j2"
-        with self.assertRaises(ValidationError):
-            setting.clean()
-
         setting.intended_repository = GitRepository.objects.get(name="test-intended-repo-1")
-        with self.assertRaises(ValidationError):
-            setting.clean()
+        self.assertEqual(setting.get_missing_intended_requirements(), ["intended_path_template"])
 
         setting.intended_path_template = "{{obj.name}}.cfg"
-        setting.clean()  # should now pass
+        setting.clean()
+        self.assertEqual(setting.get_missing_intended_requirements(), [])
 
-    def test_intended_disabled_skips_validation(self):
-        """A Setting with intended disabled should clean cleanly even with all intended fields blank."""
+    def test_intended_disabled_reports_no_requirements(self):
+        """A Setting with intended disabled cleans cleanly and reports no missing requirements."""
         setting = self._make_setting(enable_intended=False)
         setting.clean()
+        self.assertEqual(setting.get_missing_intended_requirements(), [])
 
 
 class GoldenConfigSettingGetReposForSettingsTestCase(TestCase):

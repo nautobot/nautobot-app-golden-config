@@ -1,0 +1,2 @@
+Added E3038 and E3039 troubleshooting pages and linked them in the documentation navigation.
+Documented per-`GoldenConfigSetting` feature-enable resolution (highest-weighted Setting wins, with a deterministic lower-sorted-name tie-break) and the all-in-one jobs' behavior when features are disabled, including the new `enable_*` Setting fields, in the app use cases.

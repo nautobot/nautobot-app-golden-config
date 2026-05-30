@@ -9,7 +9,6 @@ from django.utils.module_loading import import_string
 from jinja2 import exceptions as jinja_errors
 from jinja2.sandbox import SandboxedEnvironment
 from nautobot.apps.choices import SecretsGroupAccessTypeChoices
-from nautobot.core.models.querysets import RestrictedQuerySet
 from nautobot.dcim.models import Device
 from nautobot.extras.models.secrets import SecretsGroup
 from nautobot.users.models import User
@@ -17,7 +16,7 @@ from netutils.utils import jinja2_convenience_function
 
 from nautobot_golden_config import models
 from nautobot_golden_config.exceptions import RenderConfigToPushError
-from nautobot_golden_config.utilities.constant import ENABLE_POSTPROCESSING, PLUGIN_CFG
+from nautobot_golden_config.utilities.constant import PLUGIN_CFG
 from nautobot_golden_config.utilities.graphql import graph_ql_query
 from nautobot_golden_config.utilities.helper import get_device_to_settings_map
 
@@ -105,13 +104,7 @@ def render_secrets(
     except jinja_errors.TemplateAssertionError as error:
         return f"Jinja encountered an TemplateAssertionError: '{error}'; check the template for correctness"
 
-    dev = None
-    if isinstance(configs, RestrictedQuerySet):
-        if isinstance(configs.first(), models.ConfigPlan):
-            dev = configs.first().device
-    else:
-        # If its a single config plan or intended config post-processing you can get the device from the object.
-        dev = configs.device
+    dev = _get_device_for_postprocessing(configs)
     device_data = _get_device_agg_data(dev, request)
 
     try:
@@ -131,8 +124,24 @@ def render_secrets(
         ) from error
 
 
-def get_config_postprocessing(configs: Union[models.GoldenConfig, models.ConfigPlan], request: HttpRequest) -> str:
-    """Renders final configuration  artifact from intended configuration.
+def _get_device_for_postprocessing(configs) -> Optional[Device]:
+    """Return the Device associated with a postprocessing ``configs`` argument, or ``None``.
+
+    ``configs`` may be a single ``GoldenConfig``/``ConfigPlan`` or a queryset of ``ConfigPlan``
+    (as passed from deployment); all rows in the deployment queryset belong to one device.
+    """
+    if isinstance(configs, (models.ConfigPlan, models.GoldenConfig)):
+        return configs.device
+    first_config = configs.first()
+    return first_config.device if first_config else None
+
+
+def get_config_postprocessing(
+    configs: Union[models.GoldenConfig, models.ConfigPlan],
+    request: HttpRequest,
+    setting: Optional[models.GoldenConfigSetting] = None,
+) -> str:
+    """Renders final configuration artifact from intended configuration.
 
     It chains multiple callables to transform an intended configuration into a configuration that can be pushed.
     Each callable should match the following signature:
@@ -141,9 +150,17 @@ def get_config_postprocessing(configs: Union[models.GoldenConfig, models.ConfigP
     Args:
         configs (models.GoldenConfig): Golden Config object per device, to retrieve device info, and related configs.
         request (HttpRequest): HTTP request for context.
+        setting (models.GoldenConfigSetting): The device's winning Setting. When omitted it is resolved from
+            ``configs``; callers that already hold it can pass it to avoid a redundant query.
     """
-    if not ENABLE_POSTPROCESSING:
-        return "Generation of intended configurations postprocessing it is not enabled, check your app configuration."
+    if setting is None:
+        device = _get_device_for_postprocessing(configs)
+        setting = models.GoldenConfigSetting.objects.get_for_device(device) if device else None
+    if setting is None or not setting.enable_postprocessing:
+        return (
+            "Generation of intended configurations postprocessing it is not enabled, "
+            "check the device's Golden Config Setting."
+        )
 
     if isinstance(configs, models.ConfigPlan):
         config_postprocessing = configs.config_set

@@ -71,6 +71,10 @@ class SOTAggDeviceDetailView(NautobotAPIVersionMixin, GenericAPIView):
             except GraphQLQuery.DoesNotExist as exc:
                 raise ValidationError(f"GraphQLQuery with id '{graphql_query_id_param}' not found") from exc
         settings = models.GoldenConfigSetting.objects.get_for_device(device)
+        if settings is None:
+            raise ValidationError(f"{device.name} does not map to a Golden Config Setting.")
+        if not settings.enable_sotagg:
+            raise ValidationError("SoT aggregation is not enabled on the device's Golden Config Setting.")
 
         if graphql_query is None:
             if settings.sot_agg_query is not None:

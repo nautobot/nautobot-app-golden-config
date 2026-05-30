@@ -439,6 +439,13 @@ class GoldenConfigSettingFilterForm(NautobotFilterForm):
         queryset=GitRepository.objects.filter(provided_contents__contains="nautobot_golden_config.jinjatemplate"),
         required=False,
     )
+    enable_backup = django_forms.NullBooleanField(required=False, widget=forms.BulkEditNullBooleanSelect())
+    enable_intended = django_forms.NullBooleanField(required=False, widget=forms.BulkEditNullBooleanSelect())
+    enable_compliance = django_forms.NullBooleanField(required=False, widget=forms.BulkEditNullBooleanSelect())
+    enable_plan = django_forms.NullBooleanField(required=False, widget=forms.BulkEditNullBooleanSelect())
+    enable_deploy = django_forms.NullBooleanField(required=False, widget=forms.BulkEditNullBooleanSelect())
+    enable_sotagg = django_forms.NullBooleanField(required=False, widget=forms.BulkEditNullBooleanSelect())
+    enable_postprocessing = django_forms.NullBooleanField(required=False, widget=forms.BulkEditNullBooleanSelect())
 
 
 class GoldenConfigSettingBulkEditForm(NautobotBulkEditForm):
@@ -447,6 +454,13 @@ class GoldenConfigSettingBulkEditForm(NautobotBulkEditForm):
     pk = django_forms.ModelMultipleChoiceField(
         queryset=models.GoldenConfigSetting.objects.all(), widget=django_forms.MultipleHiddenInput
     )
+    enable_backup = django_forms.NullBooleanField(required=False, widget=forms.BulkEditNullBooleanSelect())
+    enable_intended = django_forms.NullBooleanField(required=False, widget=forms.BulkEditNullBooleanSelect())
+    enable_compliance = django_forms.NullBooleanField(required=False, widget=forms.BulkEditNullBooleanSelect())
+    enable_plan = django_forms.NullBooleanField(required=False, widget=forms.BulkEditNullBooleanSelect())
+    enable_deploy = django_forms.NullBooleanField(required=False, widget=forms.BulkEditNullBooleanSelect())
+    enable_sotagg = django_forms.NullBooleanField(required=False, widget=forms.BulkEditNullBooleanSelect())
+    enable_postprocessing = django_forms.NullBooleanField(required=False, widget=forms.BulkEditNullBooleanSelect())
 
     class Meta:
         """Boilerplate form Meta data for GoldenConfigSetting."""

@@ -17,9 +17,10 @@ from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
 
 from nautobot_golden_config.exceptions import ConfigPlanDeploymentFailure
+from nautobot_golden_config.models import GoldenConfigSetting
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
-from nautobot_golden_config.utilities.constant import DEFAULT_DEPLOY_STATUS, ENABLE_POSTPROCESSING
+from nautobot_golden_config.utilities.constant import DEFAULT_DEPLOY_STATUS
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.utilities.helper import dispatch_params
 from nautobot_golden_config.utilities.logger import NornirLogger
@@ -28,17 +29,19 @@ InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 
 
 @close_threaded_db_connections
-def run_deployment(task: Task, logger: logging.Logger, config_plan_qs, deploy_job_result, job_request) -> Result:
+def run_deployment(task: Task, logger: logging.Logger, config_plan_qs, deploy_job_result, job_request) -> Result:  # pylint: disable=too-many-locals
     """Deploy configurations to device."""
     obj = task.host.data["obj"]
     plans_to_deploy = config_plan_qs.filter(device=obj)
     plans_to_deploy.update(deploy_result=deploy_job_result)
     consolidated_config_set = "\n".join(plans_to_deploy.values_list("config_set", flat=True))
-    logger.debug(f"Consolidated config set: {consolidated_config_set}")
+    logger.debug("Consolidated config set: %s", consolidated_config_set)
     post_config = consolidated_config_set
-    if ENABLE_POSTPROCESSING:
+    setting = GoldenConfigSetting.objects.get_for_device(obj)
+    if getattr(setting, "enable_postprocessing", False):
         logger.debug("Executing post-processing on the config set")
-        post_config = get_config_postprocessing(plans_to_deploy, job_request)
+        # Pass the already-resolved Setting so `get_config_postprocessing` does not re-query it.
+        post_config = get_config_postprocessing(plans_to_deploy, job_request, setting=setting)
     plans_to_deploy.update(status=Status.objects.get(name="In Progress"))
     try:
         result = task.run(

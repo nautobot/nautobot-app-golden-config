@@ -131,6 +131,10 @@ class GetSecretFilterTestCase(TestCase):
             "supersecretvalue",
         )
 
+    @mock.patch(
+        "nautobot_golden_config.models.GoldenConfigSetting.objects.get_for_device",
+        mock.MagicMock(return_value=mock.Mock(enable_postprocessing=True)),
+    )
     def test_config_postprocessing_with_wrong_function_name(self):
         """Test that postprocessing when called with an unexistent function name, raises ValueError exception."""
         PLUGIN_CFG["postprocessing_subscribed"] = ["whatever"]
@@ -141,3 +145,23 @@ class GetSecretFilterTestCase(TestCase):
                 self.configs,
                 mock.Mock(),
             )
+
+    def test_config_postprocessing_disabled_on_winning_setting(self):
+        """Postprocessing returns the disabled message when the winning Setting has it off."""
+        self.configs.intended_config = "something"
+        with mock.patch(
+            "nautobot_golden_config.models.GoldenConfigSetting.objects.get_for_device",
+            mock.MagicMock(return_value=mock.Mock(enable_postprocessing=False)),
+        ):
+            result = get_config_postprocessing(self.configs, mock.Mock())
+        self.assertIn("not enabled", result)
+
+    def test_config_postprocessing_no_winning_setting(self):
+        """Postprocessing returns the disabled message when the device has no winning Setting."""
+        self.configs.intended_config = "something"
+        with mock.patch(
+            "nautobot_golden_config.models.GoldenConfigSetting.objects.get_for_device",
+            mock.MagicMock(return_value=None),
+        ):
+            result = get_config_postprocessing(self.configs, mock.Mock())
+        self.assertIn("not enabled", result)

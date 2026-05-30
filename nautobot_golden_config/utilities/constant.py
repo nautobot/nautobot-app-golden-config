@@ -5,6 +5,9 @@ from django.utils.module_loading import import_string
 
 PLUGIN_CFG = settings.PLUGINS_CONFIG["nautobot_golden_config"]
 
+# Plugin-level defaults consumed by ``GoldenConfigSetting`` BooleanField ``default=`` arguments.
+# They control the default value for newly-created Settings only — runtime enable/disable
+# decisions are made per GoldenConfigSetting record.
 ENABLE_INTENDED = PLUGIN_CFG["enable_intended"]
 ENABLE_COMPLIANCE = PLUGIN_CFG["enable_compliance"]
 ENABLE_BACKUP = PLUGIN_CFG["enable_backup"]
@@ -27,3 +30,36 @@ if not JINJA_ENV.get("undefined"):
     raise ValueError("The `jinja_env` setting did not include the required key for `undefined`.")
 if isinstance(JINJA_ENV["undefined"], str):
     JINJA_ENV["undefined"] = import_string(JINJA_ENV["undefined"])
+
+JOB_FUNCTION_MAP = {
+    "nautobot_golden_config.jobs.BackupJob": "backup",
+    "Backup Configurations": "backup",
+    "BackupJob": "backup",
+    "backup": "backup",
+    "nautobot_golden_config.jobs.IntendedJob": "intended",
+    "Generate Intended Configurations": "intended",
+    "intended": "intended",
+    "IntendedJob": "intended",
+    "nautobot_golden_config.jobs.ComplianceJob": "compliance",
+    "Perform Configuration Compliance": "compliance",
+    "ComplianceJob": "compliance",
+    "compliance": "compliance",
+    "Execute All Golden Configuration Jobs - Multiple Device": "all",
+    "nautobot_golden_config.jobs.AllDevicesGoldenConfig": "all",
+    "AllDevicesGoldenConfig": "all",
+    "Execute All Golden Configuration Jobs - Single Device": "all",
+    "nautobot_golden_config.jobs.AllGoldenConfig": "all",
+    "AllGoldenConfig": "all",
+    "all": "all",
+    "nautobot_golden_config.jobs.GenerateConfigPlans": "plan",
+    "Generate Config Plans": "plan",
+    "GenerateConfigPlans": "plan",
+    "plan": "plan",
+    "nautobot_golden_config.jobs.DeployConfigPlans": "deploy",
+    "Deploy Config Plans": "deploy",
+    "DeployConfigPlans": "deploy",
+    "nautobot_golden_config.jobs.DeployConfigPlanJobButtonReceiver": "deploy",
+    "Deploy Config Plan (Job Button Receiver)": "deploy",
+    "DeployConfigPlanJobButtonReceiver": "deploy",
+    "deploy": "deploy",
+}

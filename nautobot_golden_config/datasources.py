@@ -16,7 +16,6 @@ from nautobot_golden_config.models import (
     ConfigReplace,
     RemediationSetting,
 )
-from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
 from nautobot_golden_config.utilities.helper import get_error_message
 
 
@@ -231,43 +230,35 @@ def update_git_gc_properties(golden_config_path, job_result, gc_config_item):  #
             continue
 
 
-datasource_contents = []
-if ENABLE_INTENDED or ENABLE_COMPLIANCE:
-    datasource_contents.append(
-        (
-            "extras.gitrepository",
-            DatasourceContent(
-                name="intended configs",
-                content_identifier="nautobot_golden_config.intendedconfigs",
-                icon="mdi-file-document-outline",
-                callback=refresh_git_intended,
-            ),
-        )
-    )
-if ENABLE_INTENDED:
-    datasource_contents.append(
-        (
-            "extras.gitrepository",
-            DatasourceContent(
-                name="jinja templates",
-                content_identifier="nautobot_golden_config.jinjatemplate",
-                icon="mdi-text-box-check-outline",
-                callback=refresh_git_jinja,
-            ),
-        )
-    )
-if ENABLE_BACKUP or ENABLE_COMPLIANCE:
-    datasource_contents.append(
-        (
-            "extras.gitrepository",
-            DatasourceContent(
-                name="backup configs",
-                content_identifier="nautobot_golden_config.backupconfigs",
-                icon="mdi-file-code",
-                callback=refresh_git_backup,
-            ),
-        )
-    )
+datasource_contents = [
+    (
+        "extras.gitrepository",
+        DatasourceContent(
+            name="intended configs",
+            content_identifier="nautobot_golden_config.intendedconfigs",
+            icon="mdi-file-document-outline",
+            callback=refresh_git_intended,
+        ),
+    ),
+    (
+        "extras.gitrepository",
+        DatasourceContent(
+            name="jinja templates",
+            content_identifier="nautobot_golden_config.jinjatemplate",
+            icon="mdi-text-box-check-outline",
+            callback=refresh_git_jinja,
+        ),
+    ),
+    (
+        "extras.gitrepository",
+        DatasourceContent(
+            name="backup configs",
+            content_identifier="nautobot_golden_config.backupconfigs",
+            icon="mdi-file-code",
+            callback=refresh_git_backup,
+        ),
+    ),
+]
 
 datasource_contents.append(
     (

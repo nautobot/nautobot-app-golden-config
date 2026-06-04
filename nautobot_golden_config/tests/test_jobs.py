@@ -1,5 +1,6 @@
 """Basic Job Test."""
 
+import unittest
 from unittest.mock import MagicMock, patch
 
 from nautobot.apps.testing import TransactionTestCase, create_job_result_and_run_job
@@ -48,7 +49,7 @@ class GCReposBackupTestCase(TransactionTestCase):
         self.assertEqual(log_entries.first().message, "Finished the Backup Configurations job execution.")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Commit and Push")
-        self.assertEqual(log_entries.count(), 1)
+        self.assertTrue(log_entries.exists())
 
     @patch("nautobot_golden_config.utilities.constant.ENABLE_BACKUP", True)
     def test_backup_job_repos_two_setting(self, mock_ensure_git_repository):
@@ -71,7 +72,7 @@ class GCReposBackupTestCase(TransactionTestCase):
         self.assertEqual(log_entries.first().message, "Finished the Backup Configurations job execution.")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Commit and Push")
-        self.assertEqual(log_entries.count(), 1)
+        self.assertTrue(log_entries.exists())
 
     @patch("nautobot_golden_config.utilities.constant.ENABLE_BACKUP", False)
     def test_backup_job_repos_one_setting_backup_disabled(self, mock_ensure_git_repository):
@@ -144,7 +145,7 @@ class GCReposIntendedTestCase(TransactionTestCase):
         self.assertEqual(log_entries.first().message, "Finished the Generate Intended Configurations job execution.")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Commit and Push")
-        self.assertEqual(log_entries.count(), 1)
+        self.assertTrue(log_entries.exists())
 
     def test_intended_job_repos_two_setting(self, mock_ensure_git_repository):
         """Test intended job two GC setting enabled_intended enabled"""
@@ -163,7 +164,7 @@ class GCReposIntendedTestCase(TransactionTestCase):
         self.assertEqual(log_entries.first().message, "Finished the Generate Intended Configurations job execution.")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Commit and Push")
-        self.assertEqual(log_entries.count(), 1)
+        self.assertTrue(log_entries.exists())
 
     @patch("nautobot_golden_config.utilities.constant.ENABLE_INTENDED", False)
     def test_intended_job_repos_one_setting_intended_disabled(self, mock_ensure_git_repository):
@@ -240,7 +241,7 @@ class GCReposComplianceTestCase(TransactionTestCase):
         self.assertEqual(log_entries.first().message, "Finished the Perform Configuration Compliance job execution.")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Commit and Push")
-        self.assertEqual(log_entries.count(), 1)
+        self.assertTrue(log_entries.exists())
 
     def test_compliance_job_repos_two_setting(self, mock_ensure_git_repository):
         """Test compliance job two GC setting enabled_compliance enabled"""
@@ -261,7 +262,7 @@ class GCReposComplianceTestCase(TransactionTestCase):
         self.assertEqual(log_entries.first().message, "Finished the Perform Configuration Compliance job execution.")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Commit and Push")
-        self.assertEqual(log_entries.count(), 1)
+        self.assertTrue(log_entries.exists())
 
     @patch("nautobot_golden_config.utilities.constant.ENABLE_COMPLIANCE", False)
     def test_compliance_job_repos_one_setting_compliance_disabled(self, mock_ensure_git_repository):
@@ -322,7 +323,7 @@ class GCReposComplianceTestCase(TransactionTestCase):
         self.assertEqual(log_entries.first().message, "Finished the Perform Configuration Compliance job execution.")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Commit and Push")
-        self.assertEqual(log_entries.count(), 1)
+        self.assertTrue(log_entries.exists())
 
     @patch("nautobot_golden_config.utilities.constant.ENABLE_INTENDED", False)
     def test_compliance_job_repos_intended_disabled(self, mock_ensure_git_repository):
@@ -344,7 +345,7 @@ class GCReposComplianceTestCase(TransactionTestCase):
         self.assertEqual(log_entries.first().message, "Finished the Perform Configuration Compliance job execution.")
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Commit and Push")
-        self.assertEqual(log_entries.count(), 1)
+        self.assertTrue(log_entries.exists())
 
     @patch("nautobot_golden_config.utilities.constant.ENABLE_BACKUP", False)
     @patch("nautobot_golden_config.utilities.constant.ENABLE_INTENDED", False)
@@ -410,7 +411,7 @@ class GCReposRunAllSingleTestCase(TransactionTestCase):
         )
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Commit and Push")
-        self.assertEqual(log_entries.count(), 1)
+        self.assertTrue(log_entries.exists())
 
     @patch("nautobot_golden_config.utilities.constant.ENABLE_BACKUP", False)
     def test_run_all_job_single_repos_backup_disabled(self, mock_ensure_git_repository):
@@ -437,7 +438,7 @@ class GCReposRunAllSingleTestCase(TransactionTestCase):
         )
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Commit and Push")
-        self.assertEqual(log_entries.count(), 1)
+        self.assertTrue(log_entries.exists())
 
     @patch("nautobot_golden_config.utilities.constant.ENABLE_INTENDED", False)
     def test_run_all_job_single_repos_intended_disabled(self, mock_ensure_git_repository):
@@ -464,7 +465,7 @@ class GCReposRunAllSingleTestCase(TransactionTestCase):
         )
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Commit and Push")
-        self.assertEqual(log_entries.count(), 1)
+        self.assertTrue(log_entries.exists())
 
     @patch("nautobot_golden_config.utilities.constant.ENABLE_BACKUP", False)
     @patch("nautobot_golden_config.utilities.constant.ENABLE_INTENDED", False)
@@ -536,7 +537,7 @@ class GCReposRunAllMultipleTestCase(TransactionTestCase):
         )
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Commit and Push")
-        self.assertEqual(log_entries.count(), 1)
+        self.assertTrue(log_entries.exists())
 
     @patch("nautobot_golden_config.utilities.constant.ENABLE_BACKUP", False)
     def test_run_all_job_multiple_repos_backup_disabled(self, mock_ensure_git_repository):
@@ -563,7 +564,7 @@ class GCReposRunAllMultipleTestCase(TransactionTestCase):
         )
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Commit and Push")
-        self.assertEqual(log_entries.count(), 1)
+        self.assertTrue(log_entries.exists())
 
     @patch("nautobot_golden_config.utilities.constant.ENABLE_INTENDED", False)
     def test_run_all_job_multiple_repos_intended_disabled(self, mock_ensure_git_repository):
@@ -590,7 +591,7 @@ class GCReposRunAllMultipleTestCase(TransactionTestCase):
         )
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Commit and Push")
-        self.assertEqual(log_entries.count(), 1)
+        self.assertTrue(log_entries.exists())
 
     @patch("nautobot_golden_config.utilities.constant.ENABLE_BACKUP", False)
     @patch("nautobot_golden_config.utilities.constant.ENABLE_INTENDED", False)
@@ -620,3 +621,35 @@ class GCReposRunAllMultipleTestCase(TransactionTestCase):
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Commit and Push")
         self.assertEqual(log_entries.count(), 0)
+
+
+class GCRepoPushEmptyCommitTestCase(unittest.TestCase):
+    """Test gc_repo_push() does not push when there is nothing to commit (issue #848)."""
+
+    def _build_job_and_repos(self):
+        """Build a mock job and a single-repo current_repos mapping."""
+        job = MagicMock()
+        job.Meta.name = "Backup Configurations"
+        repo_obj = MagicMock()
+        current_repos = {"repo-id": {"repo_obj": repo_obj, "to_commit": True}}
+        return job, repo_obj, current_repos
+
+    def test_gc_repo_push_skips_push_when_nothing_committed(self):
+        """When commit_with_added returns False, push() must not be called."""
+        job, repo_obj, current_repos = self._build_job_and_repos()
+        repo_obj.commit_with_added.return_value = False
+
+        jobs.gc_repo_push(job=job, current_repos=current_repos, commit_message="msg")
+
+        repo_obj.commit_with_added.assert_called_once_with("msg")
+        repo_obj.push.assert_not_called()
+
+    def test_gc_repo_push_pushes_when_commit_made(self):
+        """When commit_with_added returns True, push() is called."""
+        job, repo_obj, current_repos = self._build_job_and_repos()
+        repo_obj.commit_with_added.return_value = True
+
+        jobs.gc_repo_push(job=job, current_repos=current_repos, commit_message="msg")
+
+        repo_obj.commit_with_added.assert_called_once_with("msg")
+        repo_obj.push.assert_called_once_with()

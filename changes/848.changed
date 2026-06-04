@@ -1,0 +1,1 @@
+Changed the Backup and Intended jobs to no longer create empty Git commits when device configurations are unchanged.

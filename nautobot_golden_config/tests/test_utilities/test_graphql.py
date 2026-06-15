@@ -1,8 +1,9 @@
 """Unit tests for nautobot_golden_config utilities graphql."""
 
 from unittest import skip
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
+from graphql import ExecutionResult, GraphQLError
 from nautobot.apps.testing import TestCase
 from nautobot.dcim.models import Device
 
@@ -26,3 +27,22 @@ class GraphQLTest(TestCase):
         self.assertEqual(result[0], 400)
         self.assertTrue(result[1]["error"])
         self.assertRegex(result[1].get("error"), r"Syntax Error GraphQL.*")
+
+    @patch("nautobot_golden_config.utilities.graphql.execute")
+    def test_execution_error_returns_formatted(self, mock_execute):
+        """Regression for #1106.
+
+        When the executed GraphQL query returns errors, the helper must return the serialized
+        result via ``ExecutionResult.formatted`` (which carries the real GraphQL error). It must
+        not call the nonexistent ``ExecutionResult.to_dict()``, which raised an ``AttributeError``
+        that masked the underlying error.
+        """
+        mock_execute.return_value = ExecutionResult(data=None, errors=[GraphQLError("boom")])
+        device = MagicMock()
+        device.pk = "00000000-0000-0000-0000-000000000000"
+
+        status, payload = graph_ql_query(MagicMock(), device, "query { devices { id } }")
+
+        self.assertEqual(status, 400)
+        self.assertIn("errors", payload)
+        self.assertEqual(payload["errors"][0]["message"], "boom")

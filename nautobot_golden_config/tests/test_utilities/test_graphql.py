@@ -29,11 +29,11 @@ class GraphQLTest(TestCase):
         self.assertRegex(result[1].get("error"), r"Syntax Error GraphQL.*")
 
     @patch("nautobot_golden_config.utilities.graphql.execute")
-    def test_execution_error_returns_formatted(self, mock_execute):
+    def test_execution_error_returns_message(self, mock_execute):
         """Regression for #1106.
 
-        When the executed GraphQL query returns errors, the helper must return the serialized
-        result via ``ExecutionResult.formatted`` (which carries the real GraphQL error). It must
+        When the executed GraphQL query returns errors, the helper must surface the real GraphQL
+        error message in the same ``{"error": ...}`` shape used by the other error branches. It must
         not call the nonexistent ``ExecutionResult.to_dict()``, which raised an ``AttributeError``
         that masked the underlying error.
         """
@@ -44,5 +44,5 @@ class GraphQLTest(TestCase):
         status, payload = graph_ql_query(MagicMock(), device, "query { devices { id } }")
 
         self.assertEqual(status, 400)
-        self.assertIn("errors", payload)
-        self.assertEqual(payload["errors"][0]["message"], "boom")
+        self.assertIn("error", payload)
+        self.assertEqual(payload["error"], "boom")

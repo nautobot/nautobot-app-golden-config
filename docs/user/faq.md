@@ -34,7 +34,7 @@ Many people will have different opinions about what should or should not be filt
 
 ## _Is it safe to store backup configurations in Git? My security team has concerns._
 
-This question comes up regularly, so it is worth addressing the design directly. Backup configurations are stored in a Git repository; there is no alternative backup backend, and adding one is not in scope. The right conversation is therefore not "Git versus something else," but how the repository is hosted, who can read it, and how sensitive content is handled before it is committed.
+This question comes up regularly, so it is worth addressing the design directly. Backup configurations are stored in a Git repository; there is no alternative backup backend, and adding one is not in scope. Note that "Git" here means the version-control system, not a specific hosted service such as GitHub or GitLab. You can run your own Git server entirely inside your infrastructure, giving you full control over access, including allowing no external access at all. The right conversation is therefore not "Git versus something else," but how the repository is hosted, who can read it, and how sensitive content is handled before it is committed.
 
 A few points worth understanding before the discussion:
 
@@ -44,7 +44,7 @@ A few points worth understanding before the discussion:
 
 Because of the last point, deleting backup files from Git after a compliance run does not remove the configuration from the system, and the next backup run will repopulate and recommit it. That approach adds churn without achieving the intended outcome.
 
-For environments with strict requirements, the recommended approach is to keep using Git but control where it lives: a private, internally hosted repository with role-based access, encryption at rest, audit logging, and no external mirror, combined with thorough `Config Removals` and `Config Replacements` rules for your platforms. Repository-level secret scanning or push protection, offered by most Git hosts, is a worthwhile additional layer, since it can catch credentials that a removal or replacement pattern misses. Together these satisfy the large majority of security reviews without working against the app's design.
+For environments with strict requirements, the recommended approach is to keep using Git but control where it lives: a self-hosted or otherwise private, internally hosted repository with role-based access, encryption at rest, audit logging, and no external mirror, combined with thorough `Config Removals` and `Config Replacements` rules for your platforms. Repository-level secret scanning or push protection, offered by most Git hosts, is a worthwhile additional layer, since it can catch credentials that a removal or replacement pattern misses. Together these satisfy the large majority of security reviews without working against the app's design.
 
 ## _Why not predefine the configuration feature map?_
 

@@ -15,6 +15,16 @@ We will continue to support the previous major release for users of Nautobot LTM
 
 <!-- towncrier release notes start -->
 
+## [v3.0.7 (2026-06-30)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v3.0.7)
+
+### Changed
+
+- [#848](https://github.com/nautobot/nautobot-app-golden-config/issues/848) - Changed the Backup and Intended jobs to no longer create empty Git commits when device configurations are unchanged.
+
+### Fixed
+
+- [#1089](https://github.com/nautobot/nautobot-app-golden-config/issues/1089) - Fixed broken documentation link for nornir-nautobot.
+
 ## [v3.0.6 (2026-05-01)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v3.0.6)
 
 ### Fixed

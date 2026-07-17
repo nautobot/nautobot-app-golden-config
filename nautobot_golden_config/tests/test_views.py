@@ -201,8 +201,10 @@ class GoldenConfigListViewTestCase(TestCase):
         golden_config = models.GoldenConfig.objects.first()
         # The GoldenConfig PK and its Device PK must differ, so this distinguishes the two.
         self.assertNotEqual(golden_config.pk, golden_config.device.pk)
-        # fetch the config overview page
-        response = self.client.get(f"{self._url}")
+        # The table body is loaded via an HTMX request (Nautobot >= 3.1), so the row (and its
+        # checkbox) only render when the HX-Request header is set; a plain GET returns the empty
+        # list shell ("No golden configs found").
+        response = self.client.get(f"{self._url}", headers={"HX-Request": "true"})
         self.assertEqual(response.status_code, 200)
         html_parsed = html.fromstring(response.content.decode())
         checkbox = html_parsed.xpath('//input[@name="pk" and @type="checkbox" and @data-device-pk]')[0]

@@ -89,7 +89,6 @@
     <script src="{% static 'nautobot_golden_config/execute_with_selected.js' %}"></script>
     <script>
         $( document ).ready(function(){
-            bindExecuteWithSelection();
             $('.openBtn').on('click',function(){
                 var ref = $(this).attr('value');
                 $('#detail_view').attr("href", ref);

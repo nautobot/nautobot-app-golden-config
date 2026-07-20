@@ -263,20 +263,7 @@ class DeleteGoldenConfigTable(BaseTable):  # pylint: disable=nb-sub-class-name
 class GoldenConfigTable(BaseTable):
     """Table to display Config Management Status."""
 
-    # Carry the Device PK on each row-select checkbox as data-device-pk so the "Execute"
-    # dropdown can pre-populate the Job form's device field (see execute_with_selected.js).
-    # The checkbox value stays the GoldenConfig PK, which bulk delete/edit relies on.
-    pk = ToggleColumn(
-        attrs={
-            "input": {
-                #  passing attrs to ToggleColumn overrides the defaults,
-                #  so we need to re-supply ToggleColumn default classes
-                "class": "form-check-input nb-form-check-input-sm mt-2",
-                "data-device-pk": lambda record: str(record.device_id or ""),
-            },
-            "td": {"class": "nb-w-0"},
-        }
-    )
+    pk = ToggleColumn()
     name = LinkColumn(
         "plugins:nautobot_golden_config:goldenconfig",
         args=[A("pk")],

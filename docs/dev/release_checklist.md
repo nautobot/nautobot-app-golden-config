@@ -70,6 +70,12 @@ A draft release will automatically be created in GitHub when the Prepare Release
 
 After a release has been published from the `main` branch, a new PR will automatically be created to merge the changes from `main` back into `develop` with a version bump to the next development version (e.g. `1.4.3a1`). Review and merge this PR once CI has completed and the PR has been approved.
 
+### Sync the Release to `next`
+
+Publishing a release from the `main` branch will also automatically create a PR to forward-port the released changes from `main` into `next`, so the `next` branch stays up to date.
+
+If no `next` branch exists, this step is skipped automatically.
+
 ## Legacy Documentation for Releases
 
 Please use the above process for all releases going forward, but if you need to refer to the old manual release process for any reason, here are the steps that were previously followed for releases.
@@ -184,7 +190,7 @@ Publish the release!
 
 First, sync your `main` branch with upstream changes: `git switch main && git pull`.
 
-Create a new branch from `main` called `release-1.4.2-to-develop` and use `poetry version prepatch` to bump the development version to the next release.
+Create a new branch from `main` called `release-1.4.2-to-develop` and use `poetry version prerelease` to bump the development version to the next release.
 
 For example, if you just released `v1.4.2`:
 
@@ -192,8 +198,8 @@ For example, if you just released `v1.4.2`:
 > git switch -c release-1.4.2-to-develop main
 Switched to a new branch 'release-1.4.2-to-develop'
 
-> poetry version prepatch
-Bumping version from 1.4.2 to 1.4.3a1
+> poetry version prerelease
+Bumping version from 1.4.2 to 1.4.3a0
 
 > git add pyproject.toml && git commit -m "Bump version"
 

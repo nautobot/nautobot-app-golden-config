@@ -42,7 +42,7 @@ hier-config = "^3.4.1"
 nautobot-capacity-metrics = ">=4.0.0,<5.0.0"
 xmldiff = "^2.6.3"
 # Used for local development
-nautobot = ">=3.0.0,<4.0.0"
+nautobot = ">=3.1.0,<4.0.0"
 
 [tool.poetry.group.dev.dependencies]
 coverage = "*"
@@ -83,7 +83,7 @@ mkdocs-glightbox = "~0.5.2"
 all = [
 ]
 
-[tool.pylint.master]
+[tool.pylint.main]
 # Include the pylint_django plugin to avoid spurious warnings about Django patterns
 extension-pkg-allow-list = ["lxml"]
 load-plugins = "pylint_django, pylint_nautobot"

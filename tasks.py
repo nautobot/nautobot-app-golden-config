@@ -864,10 +864,7 @@ def pylint(context, target=None, recursive=False):
     if target is not None:
         for target_item in target:
             target_item_normalized = Path(target_item).resolve()
-            if (
-                target_item_normalized in (app_dir, migrations_dir)
-                or target_item == migrations_target_module
-            ):
+            if target_item_normalized in (app_dir, migrations_dir) or target_item == migrations_target_module:
                 run_migrations_check = True
                 break
 
@@ -1010,17 +1007,6 @@ def check_migrations(context):
     """Check for missing migrations."""
     command = "nautobot-server makemigrations --dry-run --check"
 
-    run_command(context, command)
-
-
-@task
-def generate_test_data(context, flush=False, database=None):
-    """Generate test data in Nautobot for Golden Config."""
-    command = "nautobot-server generate_nautobot_golden_config_test_data"
-    if database:
-        command += f" --database {database}"
-    if flush:
-        command += " --flush"
     run_command(context, command)
 
 

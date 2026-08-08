@@ -1159,5 +1159,5 @@ def generate_test_data(context):
     command = "nautobot-server generate_test_data --seed nautobot --flush"
 
     run_command(context, command)
-    command = "nautobot-server generate_gc_test_data"
+    command = "nautobot-server generate_nautobot_golden_config_test_data"
     run_command(context, command)

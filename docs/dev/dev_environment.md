@@ -494,7 +494,7 @@ To quickly generate test data for developing against this app, you can use the f
 
 ```bash
 nautobot-server generate_test_data --flush
-nautobot-server generate_gc_test_data
+nautobot-server generate_nautobot_golden_config_test_data
 nautobot-server createsuperuser
 ```
 

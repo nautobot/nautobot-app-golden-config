@@ -778,10 +778,7 @@ def pylint(context, target=None, recursive=False):
     if target is not None:
         for target_item in target:
             target_item_normalized = Path(target_item).resolve()
-            if (
-                target_item_normalized in (app_dir, migrations_dir)
-                or target_item == migrations_target_module
-            ):
+            if target_item_normalized in (app_dir, migrations_dir) or target_item == migrations_target_module:
                 run_migrations_check = True
                 break
 

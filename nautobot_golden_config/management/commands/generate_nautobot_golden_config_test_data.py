@@ -40,7 +40,7 @@ class Command(BaseCommand):
             help="Flush any existing golden config data from the database before generating new data.",
         )
 
-    def _generate_static_data(self, db):
+    def _generate_static_data(self, db):  # pylint: disable=too-many-locals
         platforms = get_random_instances(
             Platform.objects.using(db).filter(devices__isnull=False).distinct(),
             minimum=2,

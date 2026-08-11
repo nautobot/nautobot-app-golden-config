@@ -92,7 +92,7 @@ class Command(BaseCommand):
             help="Number of records to bulk-insert per batch. Default: 500",
         )
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options):  # pylint: disable=too-many-locals,too-many-branches
         """Handle the command execution."""
         compliance_rate = options["compliance_rate"]
         create_missing = options["create_missing"]

@@ -189,6 +189,45 @@ class GoldenConfigListViewTestCase(TestCase):
         response = self.client.get(f"{self._url}")
         self.assertEqual(response.status_code, 200)
 
+    def test_row_checkbox_exposes_device_pk(self):
+        """
+        Server-side render assertion for the config overview row checkboxes.
+
+        execute_with_selected.js needs the Device PK on each row, but the checkbox value has to stay
+        the GoldenConfig PK for the usual bulk edit/delete actions. So the two must be distinct and
+        the Device PK is exposed on a separate data-device-pk attribute.
+        """
+        # we do the test only on the first row
+        golden_config = models.GoldenConfig.objects.first()
+        # The GoldenConfig PK and its Device PK must differ, so this distinguishes the two.
+        self.assertNotEqual(golden_config.pk, golden_config.device.pk)
+        # The table body is loaded via an HTMX request (Nautobot >= 3.1), so the row (and its
+        # checkbox) only render when the HX-Request header is set; a plain GET returns the empty
+        # list shell ("No golden configs found").
+        response = self.client.get(f"{self._url}", headers={"HX-Request": "true"})
+        self.assertEqual(response.status_code, 200)
+        html_parsed = html.fromstring(response.content.decode())
+        checkbox = html_parsed.xpath('//input[@name="pk" and @type="checkbox" and @data-device-pk]')[0]
+        # The checkbox value must remain the GoldenConfig PK, which bulk edit/delete relies on.
+        self.assertEqual(checkbox.get("value"), str(golden_config.pk))
+        # The Job form's device MultiObjectVar (the device field) is pre-filled from ?device=<pk>, so the row must
+        # carry the Device PK on data-device-pk for the Execute dropdown JS to read.
+        self.assertEqual(checkbox.get("data-device-pk"), str(golden_config.device.pk))
+
+    def test_execute_dropdown_loads_selection_script(self):
+        """
+        Server-side render assertion for the config overview Execute dropdown.
+
+        The three Execute dropdown links (backup, intended and compliance) must be tagged with the
+        `execute-job-link` class, and the page must load execute_with_selected.js, or the selection
+        would never be carried over to the Job run form.
+        """
+        response = self.client.get(f"{self._url}")
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn("execute-job-link", content)
+        self.assertIn("execute_with_selected.js", content)
+
     # TODO: 3.0.0 Followup on whether these tests are required in Nautobot 3.0.0
     # def test_headers_in_table(self):
     #     table_header = self._get_golden_config_table_header()

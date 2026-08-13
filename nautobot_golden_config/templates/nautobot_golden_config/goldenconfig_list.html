@@ -39,21 +39,21 @@
         <ul class="dropdown-menu">
             {% if compliance %}
                 <li>
-                    <a class="dropdown-item" href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.ComplianceJob' %}">
+                    <a class="dropdown-item execute-job-link" href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.ComplianceJob' %}">
                         <span class="mdi mdi-play-circle text-secondary" aria-hidden="true"></span> Compliance
                     </a>
                 </li>
             {% endif %}
             {% if intended %}
                 <li>
-                    <a class="dropdown-item" href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.IntendedJob' %}">
+                    <a class="dropdown-item execute-job-link" href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.IntendedJob' %}">
                         <span class="mdi mdi-play-circle text-secondary" aria-hidden="true"></span> Intended
                     </a>
                 </li>
             {% endif %}
             {% if backup %}
                 <li>
-                    <a class="dropdown-item" href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.BackupJob' %}">
+                    <a class="dropdown-item execute-job-link" href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.BackupJob' %}">
                         <span class="mdi mdi-play-circle text-secondary" aria-hidden="true"></span> Backup
                     </a>
                 </li>
@@ -86,6 +86,7 @@
 {% block javascript %}
     {{ block.super }}
     <script src="{% static 'js/tableconfig.js' %}"></script>
+    <script src="{% static 'nautobot_golden_config/execute_with_selected.js' %}"></script>
     <script>
         $( document ).ready(function(){
             $('.openBtn').on('click',function(){

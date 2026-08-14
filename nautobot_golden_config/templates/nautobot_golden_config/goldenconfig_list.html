@@ -6,103 +6,103 @@
 <h1>{% block title %}Configuration Overview{% endblock title %}</h1>
 
 {% block extra_styles %}
-<style>
-    #actions {
-        position: relative;
-        display: inline-block;
-        text-align: center;
-        vertical-align: left;
-    }
+    <style>
+        #actions {
+            position: relative;
+            display: inline-block;
+            text-align: center;
+            vertical-align: left;
+        }
 
-    #actions #actiontext {
-        visibility: hidden;
-        background-color: LightSlateGray;
-        color: #ffffff;
-        text-align: center;
-        border-radius: 6px;
-        width: 175px;
-        position: absolute;
-        z-index: 1;
-        top: -5px;
-        right: 110%;
-    }
+        #actions #actiontext {
+            visibility: hidden;
+            background-color: LightSlateGray;
+            color: #ffffff;
+            text-align: center;
+            border-radius: 6px;
+            width: 175px;
+            position: absolute;
+            z-index: 1;
+            top: -5px;
+            right: 110%;
+        }
 
-    #actions:hover #actiontext {
-        visibility: visible;
-    }
-</style>
+        #actions:hover #actiontext {
+            visibility: visible;
+        }
+    </style>
 {% endblock extra_styles %}
 
 {% block buttons %}
-<div class="btn-group">
-    <button aria-expanded="false" aria-haspopup="true" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown"
-        type="button">
-        <span aria-hidden="true" class="mdi mdi-plus-thick"></span> Execute <span class="mdi mdi-chevron-down"></span>
-    </button>
-    <ul class="dropdown-menu">
-        {% if compliance %}
-        <li>
-            <a class="dropdown-item"
-                href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.ComplianceJob' %}">
-                <span class="mdi mdi-play-circle text-secondary" aria-hidden="true"></span> Compliance
-            </a>
-        </li>
-        {% endif %}
-        {% if intended %}
-        <li>
-            <a class="dropdown-item"
-                href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.IntendedJob' %}">
-                <span class="mdi mdi-play-circle text-secondary" aria-hidden="true"></span> Intended
-            </a>
-        </li>
-        {% endif %}
-        {% if backup %}
-        <li>
-            <a class="dropdown-item"
-                href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.BackupJob' %}">
-                <span class="mdi mdi-play-circle text-secondary" aria-hidden="true"></span> Backup
-            </a>
-        </li>
-        {% endif %}
-        {% if not compliance and not intended and not backup %}
-        <li><a class="dropdown-item disabled" href="#">Features are not enabled.</a></li>
-        {% endif %}
-    </ul>
-</div>
+    <div class="btn-group">
+        <button aria-expanded="false" aria-haspopup="true" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown"
+                type="button">
+            <span aria-hidden="true" class="mdi mdi-plus-thick"></span> Execute <span class="mdi mdi-chevron-down"></span>
+        </button>
+        <ul class="dropdown-menu">
+            {% if compliance %}
+                <li>
+                    <a class="dropdown-item"
+                       href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.ComplianceJob' %}">
+                        <span class="mdi mdi-play-circle text-secondary" aria-hidden="true"></span> Compliance
+                    </a>
+                </li>
+            {% endif %}
+            {% if intended %}
+                <li>
+                    <a class="dropdown-item"
+                       href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.IntendedJob' %}">
+                        <span class="mdi mdi-play-circle text-secondary" aria-hidden="true"></span> Intended
+                    </a>
+                </li>
+            {% endif %}
+            {% if backup %}
+                <li>
+                    <a class="dropdown-item"
+                       href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.BackupJob' %}">
+                        <span class="mdi mdi-play-circle text-secondary" aria-hidden="true"></span> Backup
+                    </a>
+                </li>
+            {% endif %}
+            {% if not compliance and not intended and not backup %}
+                <li><a class="dropdown-item disabled" href="#">Features are not enabled.</a></li>
+            {% endif %}
+        </ul>
+    </div>
 {% endblock buttons %}
 {% block content %}
-{{ block.super }}
+    {{ block.super }}
 
-<div class="modal fade" id="gc-modal" role="dialog">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title">Golden Configuration</h1>
-            </div>
-            <div class="modal-body" id="gc-modal-body">
-            </div>
-            <div class="modal-footer">
-                <a class="btn btn-primary" id="detail_view">Detailed View</a>
-                <button class="btn btn-secondary" data-bs-dismiss="modal" id="close" type="button">Close</button>
+    <div class="modal fade" id="gc-modal" role="dialog">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title">Golden Configuration</h1>
+                </div>
+                <div class="modal-body" id="gc-modal-body">
+                </div>
+                <div class="modal-footer">
+                    <a class="btn btn-primary" id="detail_view">Detailed View</a>
+                    <button class="btn btn-secondary" data-bs-dismiss="modal" id="close" type="button">Close</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
 {% endblock content %}
 {% block javascript %}
-{{ block.super }}
-<script src="{% static 'js/tableconfig.js' %}"></script>
-<script>
-    $(document).ready(function () {
-        $('#gc-modal').on('show.bs.modal', function (event) {
-            var trigger = event.relatedTarget;
-            if (!trigger) {
-                return;
-            }
-            $('#detail_view').attr({href: trigger.getAttribute('value'), target: '_blank'});
-            $('#gc-modal-body').load(trigger.dataset.href);
+    {{ block.super }}
+    <script src="{% static 'js/tableconfig.js' %}"></script>
+    <script>
+        $(document).ready(function () {
+            $('#gc-modal').on('show.bs.modal', function (event) {
+                var trigger = event.relatedTarget;
+                if (!trigger) {
+                    return;
+                }
+                $('#detail_view').attr({href: trigger.getAttribute('value'), target: '_blank'});
+                $('#gc-modal-body').load(trigger.dataset.href);
+            });
         });
-    });
 
-</script>
+    </script>
 {% endblock javascript %}

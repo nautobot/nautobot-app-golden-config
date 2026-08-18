@@ -75,6 +75,7 @@ configurations that will change each time. A match simply means to remove.
 In order to specify line removals. Navigate to **Golden Config -> Config Removals**.  Click the **Add** button and fill out the details.
 
 The remove setting is based on `Platform`.  An example is shown below.
+
 ![Config Removals View](../images/ss1_00-navigating-backup_light.png#only-light){ .on-glb }
 ![Config Removals View](../images/ss1_00-navigating-backup_dark.png#only-dark){ .on-glb }
 
@@ -92,3 +93,83 @@ The line replace uses Python's `re.sub` method. As shown, a common pattern is to
 ```python
 re.sub(r"(username\s+\S+\spassword\s+5\s+)\S+(\s+role\s+\S+)", r"\1<redacted_config>\2", config, flags=re.MULTILINE))
 ```
+
+### Hashing Secrets Instead of Removing Them
+
++++ 3.1.0
+
+Replacing a secret with a static placeholder such as `<redacted_config>` discards the value entirely, so every device with a secret on that line ends up identical and the line can no longer be meaningfully compliance-checked. As an alternative, the **Replaced Text** field is Jinja-aware: instead of a static replacement you can supply a Jinja template that transforms the matched data, for example by hashing it with the [`hash_data`](https://netutils.readthedocs.io/en/latest/dev/code_reference/hash/) filter. Because the same hash filter is available when rendering your intended configuration, you can hash the same cleartext value on both sides and the backup will still be compliant, all without storing the cleartext secret in the backup.
+
+!!! note
+    Jinja rendering of the Replaced Text relies on the optional `jinja2` dependency of `netutils`. It is already installed as part of Golden Config's dependencies, so no extra action is required.
+
+#### How the Template Works
+
+When the **Replaced Text** contains a Jinja expression (`{{ ... }}`), Golden Config renders the *entire* replacement as a Jinja template once per matched line, rather than performing a plain `re.sub` string substitution. The regex capture groups are made available to the template, so you write the full output line and drop each captured value into place:
+
+- Reference a named capture group (`(?P<name>...)`) by name inside a `{{ ... }}` expression, e.g. `{{ secret }}`. Named groups are recommended for readability. Positional groups are also available via the familiar `re.sub` backreference syntax (`\1`, `\2`, ...).
+- Static text is written literally, exactly as it should appear in the backup.
+- Pipe a capture group through any [netutils Jinja filter](https://netutils.readthedocs.io/en/latest/user/lib_use_cases_jinja_filters/), most usefully `hash_data('<algorithm>')` where `<algorithm>` is any algorithm supported by Python's `hashlib` (e.g. `md5`, `sha256`, `sha512`).
+
+!!! warning
+    The regex must capture *exactly* the secret you intend to transform. Anything you do not re-emit in the template (literally or via a backreference) is dropped from the line.
+
+#### Examples
+
+![Config Replacements with Hashing](../images/config-replacement-hashing_light.png#only-light){ .on-glb }
+![Config Replacements with Hashing](../images/config-replacement-hashing_dark.png#only-dark){ .on-glb }
+
+Hash the username and the secret on an IOS local-user line, using named capture groups for readability.
+
+Regex Pattern to Substitute:
+
+```text
+username (?P<user>\S+) privilege 15 secret 9 (?P<secret>\S+)
+```
+
+Replaced Text:
+
+```text
+username {{ user | hash_data('md5') }} privilege 15 secret 9 {{ secret | hash_data('md5') }}
+```
+
+Given the line `username foo privilege 15 secret 9 bar`, the backup stores:
+
+```text
+username acbd18db4cc2f85cedef654fccc4a4d8 privilege 15 secret 9 37b51d194a7513e45b56f6524f2d51f2
+```
+
+The same substitution can be written with positional backreferences (`\1`, `\2`, ...) instead of named groups, which is handy for quick one-off patterns.
+
+Regex Pattern to Substitute:
+
+```text
+username (\S+) privilege 15 secret 9 (\S+)
+```
+
+Replaced Text:
+
+```text
+username {{ \1 | hash_data('md5') }} privilege 15 secret 9 {{ \2 | hash_data('md5') }}
+```
+
+#### Keeping Templates Within the Field Limit
+
+For longer lines, rather than re-typing every static word, capture the unchanging middle of the line into its own group and re-emit it unchanged. Named and positional groups can be mixed freely in the same template: name the values you care about and use a positional backreference for the bulk carry-over.
+
+Regex Pattern to Substitute:
+
+```text
+username (?P<user>\S+) (.+) secret 9 (?P<secret>\S+)
+```
+
+Replaced Text:
+
+```text
+username {{ user | hash_data('md5') }} {{ \2 }} secret 9 {{ secret | hash_data('md5') }}
+```
+
+Here the `user` and `secret` named groups are hashed, while the positional `\2` captures everything between the username and `secret 9` and is reproduced verbatim.
+
+!!! note
+    The positional number is based on the order the capture groups appear in the regex, reading left to right: `\1` is the first `(...)` group, `\2` is the second, and so on. Named groups are also counted in this order, so a named group still has a positional number you can reference if you prefer.

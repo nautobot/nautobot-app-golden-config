@@ -34,7 +34,7 @@ def graph_ql_query(request, device, query):
         LOGGER.warning("GraphQL - query executed unsuccessfully")
         for err in result.errors:
             LOGGER.warning("GraphQL - error: `%s`", str(err))
-        return (400, result.to_dict())
+        return (400, {"error": "; ".join(error.message for error in result.errors)})
     data = result.data
 
     data = data.get("device", {})

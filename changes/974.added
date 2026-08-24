@@ -1,0 +1,5 @@
+Added tag support to the bulk edit forms for Compliance Rules. Tags are now applied through the `Add tags` and `Remove tags` fields honored by Nautobot's bulk edit view.
+
+Added a selectable (non-default) tags column to the Compliance Rules list views.
+
+Added a `Tags` field to the Compliance Rules filter form, so the list view can be filtered by tag from the UI.

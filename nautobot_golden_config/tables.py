@@ -366,6 +366,7 @@ class ComplianceRuleTable(BaseTable):
     config_ordered = BooleanColumn()
     custom_compliance = BooleanColumn()
     config_remediation = BooleanColumn()
+    tags = TagColumn(url_name="plugins:nautobot_golden_config:compliancerule_list")
 
     class Meta(BaseTable.Meta):
         """Table to display Compliance Rules Meta Data."""
@@ -381,6 +382,7 @@ class ComplianceRuleTable(BaseTable):
             "config_type",
             "custom_compliance",
             "config_remediation",
+            "tags",
         )
         default_columns = (
             "pk",

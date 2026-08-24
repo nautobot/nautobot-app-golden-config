@@ -23,4 +23,10 @@ ERROR_CODES = {
         error_message="Reference to {yaml_attr_name}: {yaml_attr_value} is not available.",
         recommendation="Check the YAML file for misspellings or incorrect values, if using `platform_slug` or `platform_network_driver`, then migrate to `platform_name` key instead.",
     ),
+    "E3034": ErrorCode(
+        troubleshooting="The tag referenced in the YAML file cannot be found for the relevant object type. Confirm the tag exists AND that its `content_types` includes the model being synced (the directory name maps to the model, e.g. compliance_rules -> ComplianceRule).",
+        description="Syncing Golden Config properties using the Datasource feature, but a referenced tag does not exist or is not associated with the model's content type.",
+        error_message="Reference to tag {tag_reference} is not available for {model}.",
+        recommendation="Create the tag in Nautobot and associate it with the {model} content type before syncing, or correct the tag reference in the YAML file.",
+    ),
 }

@@ -2,10 +2,11 @@
 
 from unittest.mock import MagicMock, Mock
 
+from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
 from nautobot.apps.testing import TransactionTestCase
 from nautobot.dcim.models import Platform
-from nautobot.extras.models import JobResult
+from nautobot.extras.models import JobResult, Tag
 
 from nautobot_golden_config.datasources import get_id_kwargs, refresh_git_gc_properties
 from nautobot_golden_config.exceptions import MissingReference, MultipleReferences
@@ -186,3 +187,44 @@ class TestDatasources(TransactionTestCase):
         refresh_git_gc_properties(repository_record=repository_record, job_result=job_result)
         self.assertEqual(ComplianceFeature.objects.count(), 3)
         self.assertEqual(ComplianceRule.objects.count(), 3)
+
+    def test_refresh_git_gc_properties_tags(self):
+        """Test that a tag scoped to the property's content type is assigned to the synced object."""
+        tag = Tag(name="my_tag_name")
+        tag.validated_save()
+        tag.content_types.add(ContentType.objects.get_for_model(ComplianceFeature))
+        repository_record = MagicMock()
+        repository_record.filesystem_path = "nautobot_golden_config/tests/fixtures/datasource_mocks3"
+        repository_record.provided_contents = "nautobot_golden_config.pluginproperties"
+        job_result = JobResult()
+        job_result.log = MagicMock(return_value=None)
+        refresh_git_gc_properties(repository_record=repository_record, job_result=job_result)
+        feature = ComplianceFeature.objects.get(name="tagged_feature")
+        self.assertIn(tag, feature.tags.all())
+
+    def test_refresh_git_gc_properties_tags_missing(self):
+        """Test that referencing a non-existent tag skips the item and logs E3034."""
+        repository_record = MagicMock()
+        repository_record.filesystem_path = "nautobot_golden_config/tests/fixtures/datasource_mocks3"
+        repository_record.provided_contents = "nautobot_golden_config.pluginproperties"
+        job_result = JobResult()
+        job_result.log = MagicMock(return_value=None)
+        refresh_git_gc_properties(repository_record=repository_record, job_result=job_result)
+        self.assertFalse(ComplianceFeature.objects.filter(name="tagged_feature").exists())
+        logged_messages = [call.args[0] for call in job_result.log.call_args_list if call.args]
+        self.assertTrue(any("E3034" in message for message in logged_messages))
+
+    def test_refresh_git_gc_properties_tags_wrong_content_type(self):
+        """Test that a tag not scoped to the property's content type skips the item and logs E3034."""
+        tag = Tag(name="my_tag_name")
+        tag.validated_save()
+        tag.content_types.add(ContentType.objects.get_for_model(RemediationSetting))
+        repository_record = MagicMock()
+        repository_record.filesystem_path = "nautobot_golden_config/tests/fixtures/datasource_mocks3"
+        repository_record.provided_contents = "nautobot_golden_config.pluginproperties"
+        job_result = JobResult()
+        job_result.log = MagicMock(return_value=None)
+        refresh_git_gc_properties(repository_record=repository_record, job_result=job_result)
+        self.assertFalse(ComplianceFeature.objects.filter(name="tagged_feature").exists())
+        logged_messages = [call.args[0] for call in job_result.log.call_args_list if call.args]
+        self.assertTrue(any("E3034" in message for message in logged_messages))

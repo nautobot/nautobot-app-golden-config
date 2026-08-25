@@ -162,3 +162,23 @@ class GitRepositoryWithBranchesSerializer(GitRepositorySerializer):  # pylint: d
     class Meta:  # noqa: D106  # undocumented-public-nested-class
         model = GitRepository
         fields = "__all__"
+
+
+class ConfigHashGroupingSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
+    """Serializer for ConfigHashGrouping object."""
+
+    class Meta:
+        """Set Meta Data for ConfigHashGrouping, will serialize all fields."""
+
+        model = models.ConfigHashGrouping
+        fields = "__all__"
+
+
+class ConfigComplianceHashSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
+    """Serializer for ConfigComplianceHash object."""
+
+    class Meta:
+        """Set Meta Data for ConfigComplianceHash, will serialize all fields."""
+
+        model = models.ConfigComplianceHash
+        fields = "__all__"

@@ -1,0 +1,43 @@
+{% extends "generic/object_list.html" %}
+{% load static %}
+
+{% block content %}
+{{ block.super }}
+
+{% include "nautobot_golden_config/job_result_modal.html" with modal_title="Generate Remediation Config Plans" %}
+
+{% endblock content %}
+
+{% block javascript %}
+{{ block.super }}
+<script src="{% static 'run_job.js' %}"></script>
+<script>
+var clipboard = new ClipboardJS('.btn');
+clipboard.on('success', function (e) {});
+clipboard.on('error', function (e) {});
+</script>
+<script>
+var nautobot_csrf_token = "{{ csrf_token }}";
+
+$(document).on('click', '.hash-plan-generate', function (event) {
+    event.preventDefault();
+    var $btn = $(this);
+    var featureId = $btn.data('feature-id');
+    var configHash = $btn.data('config-hash');
+    if (!featureId || !configHash) {
+        alert('Missing feature ID or config hash data');
+        return;
+    }
+    $('.modal-title').text(
+        `Generate Remediation Config Plans - ${$btn.data('feature-name')} (${$btn.data('device-count')} devices)`
+    );
+    new bootstrap.Modal('#modalPopup', {backdrop: 'static'}).show();
+    startJob(
+        "Generate Config Plans",
+        {data: {plan_type: "remediation", feature: [featureId], config_hash: configHash}},
+        "/plugins/golden-config/config-plan/?plan_result_id={jobData.job_result.id}",
+        configPlanCount
+    );
+});
+</script>
+{% endblock javascript %}

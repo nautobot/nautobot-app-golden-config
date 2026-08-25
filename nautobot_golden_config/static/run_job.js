@@ -212,3 +212,21 @@ function getMessage(jobResultId) {
         resolve("Job Completed Successfully.");
     });
 }
+
+function configPlanCount(jobResultId) {
+    return new Promise(function (resolve) {
+        $.ajax({
+            url: `/api/plugins/golden-config/config-plan/?plan_result_id=${jobResultId}`,
+            type: "GET",
+            dataType: "json",
+            headers: {'X-CSRFToken': nautobot_csrf_token},
+            success: function (data) {
+                resolve("Job Completed Successfully.<br>Number of Config Plans generated: " + data.count);
+            },
+            error: function () {
+                resolve("Job completed successfully, but no Config Plans were generated."
+                    + "<br>If this is unexpected, please validate your input parameters.");
+            }
+        });
+    });
+}

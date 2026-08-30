@@ -199,6 +199,12 @@ config_plan = ui.ObjectDetailContent(
                 "feature": [get_model_instances, helpers.placeholder],
             },
         ),
+        ui.Panel(
+            label="Approval Workflow",
+            weight=150,
+            section=ui.SectionChoices.LEFT_HALF,
+            body_content_template_path="nautobot_golden_config/configplan_approval.html",
+        ),
         ui.ObjectFieldsPanel(
             section=ui.SectionChoices.RIGHT_HALF,
             label="Config Deployment Details",
@@ -214,12 +220,12 @@ config_plan = ui.ObjectDetailContent(
         ),
         ui.Panel(
             label="Postprocessed Config Set",
-            weight=100,
+            weight=200,
             section=ui.SectionChoices.RIGHT_HALF,
             body_content_template_path="nautobot_golden_config/configplan_postprocessing.html",
         ),
         ui.ObjectTextPanel(
-            weight=200,
+            weight=300,
             label="Config Set",
             section=ui.SectionChoices.FULL_WIDTH,
             object_field="config_set",

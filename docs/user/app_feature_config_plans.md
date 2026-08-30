@@ -26,7 +26,8 @@ You can view a plan by navigating to **Golden Config -> Config Plans** and choos
 - **Change Control ID** (Optional): A text field that be used for grouping and filtering plans.
 - **Change Control URL** (Optional): A URL field that can be used to link to an external system tracking change controls.
 - **Job Result**: The Job that generated the plan(s).
-- **Status**: The status of the plan.
+- **Status**: The deployment lifecycle status of the plan. Only deployment-related values (`In Progress`, `Completed`, `Failed`) are used; the field is empty until the deploy job runs. Approval is tracked separately, in the linked **Approval Workflow** (see [Approving Config Plans](#approving-config-plans)).
+- **Approval State**: The current state of the plan's Approval Workflow (`Pending`, `Approved`, `Denied`, or `Canceled`).
 
 ![Config Plan View](../images/ss1_config_plan-view_light.png#only-light){ .on-glb }
 ![Config Plan View](../images/ss1_config_plan-view_dark.png#only-dark){ .on-glb }
@@ -60,9 +61,10 @@ After a Config Plan is generated you have the ability to edit (or bulk edit) the
 
 - Change Control ID
 - Change Control URL
-- Status
 - Notes
 - Tags
+
+The `Status` field is managed by the Deploy Config Plans job (it tracks the deployment lifecycle only — `In Progress`, `Completed`, `Failed`). Approval is no longer expressed through `Status`; see [Approving Config Plans](#approving-config-plans) below.
 
 !!! note
     You will not be able to modify the Config Set after generation. If it does not contain the desired commands, you will need to delete the plan and recreate it after ensuring the source of the generated commands has been updated.
@@ -70,7 +72,7 @@ After a Config Plan is generated you have the ability to edit (or bulk edit) the
 ![Config Plan Edit](../images/ss1_config_plan-edit_light.png#only-light){ .on-glb }
 ![Config Plan Edit](../images/ss1_config_plan-edit_dark.png#only-dark){ .on-glb }
 
-If the Config Plan has post processing functions, you can render the post processed config to validate and approve a Config Plan.
+If the Config Plan has post processing functions, you can render the post processed config before approving it.
 
 ![Config Plan Post Processing Button](../images/ss1_config_plan_pp_button_light.png#only-light){ .on-glb }
 ![Config Plan Post Processing Button](../images/ss1_config_plan_pp_button_dark.png#only-dark){ .on-glb }
@@ -79,3 +81,33 @@ Post Processing occurs in a modal popup, and allows a user to view the configura
 
 ![Intended Configuration Web UI](../images/ss1_config_plan_pp-rendered_light.png#only-light){ .on-glb }
 ![Intended Configuration Web UI](../images/ss1_config_plan_pp-rendered_dark.png#only-dark){ .on-glb }
+
+## Approving Config Plans
+
+Config Plan approval is implemented on top of Nautobot's native [Approval Workflow](https://docs.nautobot.com/projects/core/en/stable/user-guide/platform-functionality/approval-workflow/) subsystem. Every new Config Plan automatically gets a `Pending` Approval Workflow attached to it; the **Deploy Config Plans** job refuses to push configuration (error `E3025`) until that workflow is in the `Approved` state.
+
+### Default Workflow & Groups
+
+On first install (or upgrade from a release that still used status-based approval) the plugin seeds:
+
+- A workflow definition named **`Config Plan Approval`** that targets `ConfigPlan` with no filter, so it matches every plan;
+- A single approval stage requiring **1 approver** from the `nautobot-default-configplan-approver` group;
+- Three groups modeling the standard Workflow personas:
+    - `nautobot-default-configplan-architect` — can create, change, and delete the workflow definition and its stages;
+    - `nautobot-default-configplan-approver` — can approve or deny pending stages;
+    - `nautobot-default-configplan-operator` — read-only view of all workflows.
+
+Add the appropriate users to these groups after install. Approvers will then see pending Config Plan approvals on the standard Nautobot **Approver Dashboard** at `/extras/approver-dashboard/`.
+
+### Customizing or Disabling Approval
+
+Administrators can amend the seeded workflow under **Extras → Approval Workflow Definitions → Config Plan Approval**:
+
+- Change `model_constraints` to limit approval to a subset of plans (for example, only plans where `plan_type="remediation"`).
+- Edit the stage to require more approvers, change the approver group, or add additional stages.
+
+To disable approval entirely, delete the `Config Plan Approval` workflow definition. New plans generated afterwards will have no associated workflow and the deploy job will allow them through. Existing plans whose workflow was already attached remain gated until that workflow reaches `Approved` or is otherwise resolved.
+
+### Upgrade Note
+
+On the upgrade migration that introduces this feature, every existing Config Plan that had not yet been deployed (status `Approved`, `Not Approved`, or empty) is given a fresh `Pending` approval workflow. The `Approved` and `Not Approved` Status records are then removed because they are no longer used. Plans already in `In Progress`, `Completed`, or `Failed` are left untouched.

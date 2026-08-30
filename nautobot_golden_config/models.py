@@ -17,6 +17,7 @@ from nautobot.core.models.generics import PrimaryModel
 from nautobot.core.models.utils import serialize_object, serialize_object_v2
 from nautobot.dcim.models import Device
 from nautobot.extras.models import ObjectChange
+from nautobot.extras.models.mixins import ApprovableModelMixin
 from nautobot.extras.models.statuses import StatusField
 from netutils.config.compliance import feature_compliance
 from xmldiff import actions, main
@@ -834,7 +835,7 @@ class RemediationSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     "webhooks",
     "statuses",
 )
-class ConfigPlan(PrimaryModel):  # pylint: disable=too-many-ancestors
+class ConfigPlan(ApprovableModelMixin, PrimaryModel):  # pylint: disable=too-many-ancestors
     """ConfigPlan for Golden Configuration Plan Model definition."""
 
     plan_type = models.CharField(max_length=20, choices=ConfigPlanTypeChoice, verbose_name="Plan Type")
@@ -885,3 +886,26 @@ class ConfigPlan(PrimaryModel):  # pylint: disable=too-many-ancestors
     def __str__(self):
         """Return a simple string if model is called."""
         return f"{self.device.name}-{self.plan_type}-{self.created}"
+
+    def save(self, *args, **kwargs):
+        """Persist the plan, then trigger an approval workflow for new instances."""
+        is_new = self._state.adding
+        super().save(*args, **kwargs)
+        if is_new:
+            self.begin_approval_workflow()
+
+    def on_workflow_initiated(self, approval_workflow):
+        """Log when an approval workflow is initiated for this plan."""
+        LOGGER.info("Approval workflow %s initiated for ConfigPlan %s.", approval_workflow.pk, self.pk)
+
+    def on_workflow_approved(self, approval_workflow):
+        """Log when an approval workflow is approved. Deploy job consults workflow state directly."""
+        LOGGER.info("Approval workflow %s approved for ConfigPlan %s.", approval_workflow.pk, self.pk)
+
+    def on_workflow_denied(self, approval_workflow):
+        """Log when an approval workflow is denied. Deploy job consults workflow state directly."""
+        LOGGER.info("Approval workflow %s denied for ConfigPlan %s.", approval_workflow.pk, self.pk)
+
+    def on_workflow_canceled(self, approval_workflow):
+        """Log when an approval workflow is canceled. Deploy job consults workflow state directly."""
+        LOGGER.info("Approval workflow %s canceled for ConfigPlan %s.", approval_workflow.pk, self.pk)

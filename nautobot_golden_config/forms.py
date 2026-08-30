@@ -8,6 +8,7 @@ from django.conf import settings
 from nautobot.apps import forms
 from nautobot.apps.forms import NautobotBulkEditForm, NautobotFilterForm, NautobotModelForm
 from nautobot.dcim.models import Device, DeviceType, Location, Manufacturer, Platform, Rack, RackGroup
+from nautobot.extras.choices import ApprovalWorkflowStateChoices
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, JobResult, Role, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
 from packaging import version
@@ -568,12 +569,12 @@ class ConfigPlanForm(NautobotModelForm):
 
 
 class ConfigPlanUpdateForm(NautobotModelForm):  # pylint: disable=nb-sub-class-name
-    """Form for ConfigPlan instances."""
+    """Form for ConfigPlan instances.
 
-    status = forms.DynamicModelChoiceField(
-        queryset=Status.objects.all(),
-        query_params={"content_types": models.ConfigPlan._meta.label_lower},
-    )
+    Status is owned by the deploy job (lifecycle tracking only) and approval is managed
+    via Nautobot's Approval Workflow, so neither is editable here.
+    """
+
     tags = forms.DynamicModelMultipleChoiceField(
         queryset=Tag.objects.all(), query_params={"content_types": "dcim.device"}, required=False
     )
@@ -585,7 +586,6 @@ class ConfigPlanUpdateForm(NautobotModelForm):  # pylint: disable=nb-sub-class-n
         fields = (  # pylint: disable=nb-use-fields-all
             "change_control_id",
             "change_control_url",
-            "status",
             "tags",
         )
 
@@ -637,19 +637,24 @@ class ConfigPlanFilterForm(DeviceRelatedFilterForm):
         label="Status",
         to_field_name="name",
     )
+    approval_state = django_forms.MultipleChoiceField(
+        choices=ApprovalWorkflowStateChoices,
+        required=False,
+        label="Approval State",
+        widget=forms.StaticSelect2Multiple(),
+    )
     tags = forms.TagFilterField(model)
 
 
 class ConfigPlanBulkEditForm(NautobotBulkEditForm):
-    """BulkEdit form for ConfigPlan instances."""
+    """BulkEdit form for ConfigPlan instances.
+
+    Status is owned by the deploy job and approval is managed via Nautobot's Approval
+    Workflow, so neither is editable here.
+    """
 
     pk = django_forms.ModelMultipleChoiceField(
         queryset=models.ConfigPlan.objects.all(), widget=django_forms.MultipleHiddenInput
-    )
-    status = forms.DynamicModelChoiceField(
-        queryset=Status.objects.all(),
-        query_params={"content_types": models.ConfigPlan._meta.label_lower},
-        required=False,
     )
     change_control_id = django_forms.CharField(required=False, label="Change Control ID")
     change_control_url = django_forms.URLField(required=False, label="Change Control URL", max_length=2048)

@@ -1,0 +1,24 @@
+no aaa root
+!
+username lab privilege 15 secret labpass
+!
+!
+hostname {{ hostname }}
+dns domain networktocode.com
+!
+snmp-server contact John Smith
+snmp-server location NYC
+snmp-server community labpass ro
+snmp-server community labsecure rw
+snmp-server host 10.1.1.1 version 2c lab
+!
+spanning-tree mode mstp
+!
+ntp server 10.1.1.1
+ntp server 10.2.2.2 prefer
+!
+management ssh
+   server-port 22
+   no shutdown
+!
+end

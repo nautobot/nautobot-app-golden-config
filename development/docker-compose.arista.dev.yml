@@ -1,0 +1,50 @@
+---
+x-ceos-common: &ceos-common
+  image: "ceos:latest"
+  privileged: true
+  tty: true
+  stdin_open: true
+  environment:
+    INTFTYPE: "eth"
+    ETBA: "1"
+    SKIP_ZEROTOUCH_BARRIER_IN_SYSDBINIT: "1"
+    CEOS: "1"
+    EOS_PLATFORM: "ceoslab"
+    container: "docker"
+  command:
+    - "/sbin/init"
+    - "systemd.setenv=INTFTYPE=eth"
+    - "systemd.setenv=ETBA=1"
+    - "systemd.setenv=SKIP_ZEROTOUCH_BARRIER_IN_SYSDBINIT=1"
+    - "systemd.setenv=CEOS=1"
+    - "systemd.setenv=EOS_PLATFORM=ceoslab"
+    - "systemd.setenv=container=docker"
+
+services:
+  ceos1:
+    <<: *ceos-common
+    container_name: "ceos1"
+    hostname: "ceos1"
+    volumes:
+      - "./startup_configs/ceos1/startup-config:/mnt/flash/startup-config"
+
+  ceos2:
+    <<: *ceos-common
+    container_name: "ceos2"
+    hostname: "ceos2"
+    volumes:
+      - "./startup_configs/ceos2/startup-config:/mnt/flash/startup-config"
+
+  # ceos3:
+  #   <<: *ceos-common
+  #   container_name: "ceos3"
+  #   hostname: "ceos3"
+  #   volumes:
+  #     - "./startup_configs/ceos3/startup-config:/mnt/flash/startup-config"
+
+  # ceos4:
+  #   <<: *ceos-common
+  #   container_name: "ceos4"
+  #   hostname: "ceos4"
+  #   volumes:
+  #     - "./startup_configs/ceos4/startup-config:/mnt/flash/startup-config"

@@ -1,0 +1,1 @@
+Fixed diff2html colors being unreadable in Config Compliance and Config Plan diff views when Nautobot is in dark mode.

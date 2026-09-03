@@ -1,0 +1,36 @@
+/*
+ * Dark-mode overrides for nautobot-golden-config's vendored diff2html 3.4.43 CSS.
+ * diff2html.min.css ships a single hardcoded light palette with no dark variant,
+ * which is unreadable against Nautobot's own dark theme. Scoped under Nautobot's
+ * existing [data-bs-theme="dark"] attribute so light-mode users are unaffected.
+ * Upstream bug: https://github.com/nautobot/nautobot-app-golden-config/issues/1152
+ */
+[data-bs-theme="dark"] .d2h-wrapper,
+[data-bs-theme="dark"] .d2h-file-wrapper,
+[data-bs-theme="dark"] .d2h-file-diff,
+[data-bs-theme="dark"] .d2h-diff-table,
+[data-bs-theme="dark"] .d2h-file-side-diff { background-color:#26282c; }
+[data-bs-theme="dark"] .d2h-file-header { background-color:#35383e; border-bottom:1px solid #46494f; color:#ececec; }
+[data-bs-theme="dark"] .d2h-file-header .d2h-file-name-wrapper { color:#ececec; }
+[data-bs-theme="dark"] .d2h-file-header .d2h-file-name { color:#7fb3e6; }
+[data-bs-theme="dark"] .d2h-file-wrapper { border:1px solid #40444a; }
+[data-bs-theme="dark"] .d2h-cntx,
+[data-bs-theme="dark"] td.d2h-code-side-line:not(.d2h-ins):not(.d2h-del) { background-color:#26282c; color:#d4d4d4; }
+[data-bs-theme="dark"] .d2h-code-linenumber,
+[data-bs-theme="dark"] .d2h-code-side-linenumber { background-color:#202225; border-color:#3a3d42; color:rgba(255,255,255,.35); }
+[data-bs-theme="dark"] .d2h-code-side-emptyplaceholder,
+[data-bs-theme="dark"] .d2h-emptyplaceholder { background-color:#202225; border-color:#3a3d42; }
+[data-bs-theme="dark"] .d2h-info { background-color:#35383e; border-color:#46494f; color:#c7c7c7; }
+[data-bs-theme="dark"] .d2h-del { background-color:#3a2528; border-color:#5c3438; color:#e7c4c6; }
+[data-bs-theme="dark"] .d2h-ins { background-color:#22332a; border-color:#35503f; color:#c3e6cd; }
+[data-bs-theme="dark"] .d2h-file-diff .d2h-del.d2h-change { background-color:#3d3320; }
+[data-bs-theme="dark"] .d2h-file-diff .d2h-ins.d2h-change { background-color:#223324; }
+[data-bs-theme="dark"] .d2h-code-line,
+[data-bs-theme="dark"] .d2h-code-side-line,
+[data-bs-theme="dark"] .d2h-code-line-ctn { color:#d4d4d4; }
+[data-bs-theme="dark"] .d2h-code-line del,
+[data-bs-theme="dark"] .d2h-code-side-line del { background-color:#6e2f34; color:#f2c1c4; }
+[data-bs-theme="dark"] .d2h-code-line ins,
+[data-bs-theme="dark"] .d2h-code-side-line ins { background-color:#2c5c3d; color:#b7ecc4; }
+[data-bs-theme="dark"] .d2h-lines-added { color:#7fd99a; border-color:#35503f; background:transparent; }
+[data-bs-theme="dark"] .d2h-lines-deleted { color:#e7999c; border-color:#5c3438; background:transparent; }

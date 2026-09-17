@@ -33,23 +33,11 @@ Once installed, the app needs to be enabled in your Nautobot configuration. The 
 
 - Append `"nautobot_golden_config"` to the `PLUGINS` list, and `"nautobot_plugin_nornir"` if it was not already there (more info [here](https://docs.nautobot.com/projects/plugin-nornir/en/latest/)).
 - Append the `"nautobot_golden_config"` dictionary to the `PLUGINS_CONFIG` dictionary as shown the **sample** below with your appropriate configs.
-- Append the `"nautobot_plugin_nornir"` dictionary to the `PLUGINS_CONFIG` dictionary as shown the **sample** below with your appropriate configs (Note: this may already be in your configs).
 
 ```python
 PLUGINS = ["nautobot_plugin_nornir", "nautobot_golden_config"]
 
 PLUGINS_CONFIG = {
-    "nautobot_plugin_nornir": {
-        "nornir_settings": {
-            "credentials": "nautobot_plugin_nornir.plugins.credentials.env_vars.CredentialsEnvVars",
-            "runner": {
-                "plugin": "threaded",
-                "options": {
-                    "num_workers": 20,
-                },
-            },
-        },
-    },
     "nautobot_golden_config": {
         "per_feature_bar_width": 0.15,
         "per_feature_width": 13,
@@ -144,8 +132,6 @@ That being said, if you do fall into one of those use cases, you can set the dis
 
 ```python
 PLUGINS_CONFIG = {
-    "nautobot_plugin_nornir": {
-    },
     "nautobot_golden_config": {
         "custom_dispatcher": {
             "arista_eos": "my_custom.dispatcher.NornirDriver",

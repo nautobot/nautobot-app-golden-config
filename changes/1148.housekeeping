@@ -1,0 +1,1 @@
+Removed the `nautobot_plugin_nornir` block from `PLUGINS_CONFIG` in the development config and the install documentation, because `nautobot-plugin-nornir` now supplies those settings as an app default.

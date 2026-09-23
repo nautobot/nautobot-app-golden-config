@@ -1,0 +1,1 @@
+Fixed a file descriptor leak during large jobs by calling the base Nornir processor from `ProcessGoldenConfig.task_instance_completed`, so that exception frames are released and descriptors held by driver reference cycles are reclaimed while the job is still running.

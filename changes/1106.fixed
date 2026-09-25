@@ -1,0 +1,1 @@
+Fixed Golden Config raising `AttributeError: 'ExecutionResult' object has no attribute 'to_dict'` (which masked the real GraphQL error) when a SoT Aggregation GraphQL query fails, by returning `result.formatted` instead of the nonexistent `result.to_dict()`.

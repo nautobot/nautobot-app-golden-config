@@ -13,12 +13,13 @@ This is a quick reference guide if you're already familiar with the development 
 
 The [Invoke](http://www.pyinvoke.org/) library is used to provide some helper commands based on the environment. There are a few configuration parameters which can be passed to Invoke to override the default configuration:
 
-- `nautobot_ver`: the version of Nautobot to use as a base for any built docker containers (default: 3.0.0)
+- `nautobot_ver`: the version of Nautobot to use as a base for any built docker containers (default: 3.1.0)
 - `project_name`: the default docker compose project name (default: `nautobot-golden-config`)
 - `python_ver`: the version of Python to use as a base for any built docker containers (default: 3.12)
 - `local`: a boolean flag indicating if invoke tasks should be run on the host or inside the docker containers (default: False, commands will be run in docker containers)
 - `compose_dir`: the full path to a directory containing the project compose files
 - `compose_files`: a list of compose files applied in order (see [Multiple Compose files](https://docs.docker.com/compose/extends/#multiple-compose-files) for more information)
+- `ephemeral_ports`: Setting this value to `true` and not using any custom compose files will make all Nautobot containers with published ports expose themselves with dynamic ports. This is useful when running multiple Nautobot versions at the same time on the same machine so you won't experience system port conflicts. If setting `compose_files`, this will have no effect so please ensure to manually add the applicable `docker-compose.ephemeral-ports.yml` file or files to your list.
 
 Using **Invoke** these configuration options can be overridden using [several methods](https://docs.pyinvoke.org/en/stable/concepts/configuration.html). Perhaps the simplest is setting an environment variable `INVOKE_NAUTOBOT_GOLDEN_CONFIG_VARIABLE_NAME` where `VARIABLE_NAME` is the variable you are trying to override. The only exception is `compose_files`, because it is a list it must be overridden in a YAML file. There is an example `invoke.yml` (`invoke.example.yml`) in this directory which can be used as a starting point.
 
@@ -44,6 +45,8 @@ invoke start
 ```
 
 The Nautobot server can now be accessed at [http://localhost:8080](http://localhost:8080) and the live documentation at [http://localhost:8001](http://localhost:8001).
+
+Every `invoke start` and `invoke debug` writes the published host port mappings to `.service_ports.json`, listing only the services that publish a port to the host. When ephemeral ports are enabled, Docker assigns dynamic host ports and this file captures the resulting values; with fixed ports it captures the static values instead. You can also inspect them with `invoke ps` or `docker compose port`, for example `docker compose port nautobot 8080`. To enable ephemeral ports with an environment variable, set `INVOKE_NAUTOBOT_GOLDEN_CONFIG_EPHEMERAL_PORTS=1`; to disable them, unset the environment variable, set it to an empty value, or set it to `0`.
 
 To either stop or destroy the development environment use the following options.
 
@@ -181,7 +184,7 @@ The first thing you need to do is build the necessary Docker image for Nautobot 
 #14 exporting layers
 #14 exporting layers 1.2s done
 #14 writing image sha256:2d524bc1665327faa0d34001b0a9d2ccf450612bf8feeb969312e96a2d3e3503 done
-#14 naming to docker.io/nautobot-golden-config/nautobot:3.0.0-py3.12 done
+#14 naming to docker.io/nautobot-golden-config/nautobot:3.1.0-py3.12 done
 ```
 
 ### Invoke - Starting the Development Environment
@@ -212,9 +215,9 @@ This will start all of the Docker containers used for hosting Nautobot. You shou
 ```bash
 ➜ docker ps
 ****CONTAINER ID   IMAGE                            COMMAND                  CREATED          STATUS          PORTS                                       NAMES
-ee90fbfabd77   nautobot-golden-config/nautobot:3.0.0-py3.12  "nautobot-server rqw…"   16 seconds ago   Up 13 seconds                                               nautobot_golden_config_worker_1
-b8adb781d013   nautobot-golden-config/nautobot:3.0.0-py3.12  "/docker-entrypoint.…"   20 seconds ago   Up 15 seconds   0.0.0.0:8080->8080/tcp, :::8080->8080/tcp   nautobot_golden_config_nautobot_1
-d64ebd60675d   nautobot-golden-config/nautobot:3.0.0-py3.12  "mkdocs serve -v -a …"   25 seconds ago   Up 18 seconds   0.0.0.0:8001->8080/tcp, :::8001->8080/tcp   nautobot_golden_config_docs_1
+ee90fbfabd77   nautobot-golden-config/nautobot:3.1.0-py3.12  "nautobot-server rqw…"   16 seconds ago   Up 13 seconds                                               nautobot_golden_config_worker_1
+b8adb781d013   nautobot-golden-config/nautobot:3.1.0-py3.12  "/docker-entrypoint.…"   20 seconds ago   Up 15 seconds   0.0.0.0:8080->8080/tcp, :::8080->8080/tcp   nautobot_golden_config_nautobot_1
+d64ebd60675d   nautobot-golden-config/nautobot:3.1.0-py3.12  "mkdocs serve -v -a …"   25 seconds ago   Up 18 seconds   0.0.0.0:8001->8080/tcp, :::8001->8080/tcp   nautobot_golden_config_docs_1
 e72d63129b36   postgres:13-alpine               "docker-entrypoint.s…"   25 seconds ago   Up 19 seconds   0.0.0.0:5432->5432/tcp, :::5432->5432/tcp   nautobot_golden_config_postgres_1
 96c6ff66997c   redis:6-alpine                   "docker-entrypoint.s…"   25 seconds ago   Up 21 seconds   0.0.0.0:6379->6379/tcp, :::6379->6379/tcp   nautobot_golden_config_redis_1
 ```
@@ -410,7 +413,7 @@ namespace.configure(
     {
         "nautobot_golden_config": {
             ...
-            "nautobot_ver": "3.0.0",
+            "nautobot_ver": "3.1.0",
 	    ...
         }
     }
@@ -491,7 +494,7 @@ To quickly generate test data for developing against this app, you can use the f
 
 ```bash
 nautobot-server generate_test_data --flush
-nautobot-server generate_gc_test_data
+nautobot-server generate_nautobot_golden_config_test_data
 nautobot-server createsuperuser
 ```
 

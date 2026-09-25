@@ -3,7 +3,7 @@
 {% load static %}
 {% load helpers %}
 
-<h1>{% block title %}Configuration Overview{% endblock title %}</h1>
+{% block title %}Configuration Overview{% endblock title %}
 
 {% block extra_styles %}
     <style>
@@ -13,18 +13,20 @@
             text-align: center;
             vertical-align: left;
         }
+
         #actions #actiontext {
             visibility: hidden;
             background-color: LightSlateGray;
             color: #ffffff;
             text-align: center;
             border-radius: 6px;
-            width:175px;
-            position:absolute;
+            width: 175px;
+            position: absolute;
             z-index: 1;
             top: -5px;
             right: 110%;
         }
+
         #actions:hover #actiontext {
             visibility: visible;
         }
@@ -33,27 +35,31 @@
 
 {% block buttons %}
     <div class="btn-group">
-        <button aria-expanded="false" aria-haspopup="true" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" type="button">
+        <button aria-expanded="false" aria-haspopup="true" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown"
+                type="button">
             <span aria-hidden="true" class="mdi mdi-plus-thick"></span> Execute <span class="mdi mdi-chevron-down"></span>
         </button>
         <ul class="dropdown-menu">
             {% if compliance %}
                 <li>
-                    <a class="dropdown-item" href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.ComplianceJob' %}">
+                    <a class="dropdown-item"
+                       href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.ComplianceJob' %}">
                         <span class="mdi mdi-play-circle text-secondary" aria-hidden="true"></span> Compliance
                     </a>
                 </li>
             {% endif %}
             {% if intended %}
                 <li>
-                    <a class="dropdown-item" href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.IntendedJob' %}">
+                    <a class="dropdown-item"
+                       href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.IntendedJob' %}">
                         <span class="mdi mdi-play-circle text-secondary" aria-hidden="true"></span> Intended
                     </a>
                 </li>
             {% endif %}
             {% if backup %}
                 <li>
-                    <a class="dropdown-item" href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.BackupJob' %}">
+                    <a class="dropdown-item"
+                       href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.BackupJob' %}">
                         <span class="mdi mdi-play-circle text-secondary" aria-hidden="true"></span> Backup
                     </a>
                 </li>
@@ -87,15 +93,14 @@
     {{ block.super }}
     <script src="{% static 'js/tableconfig.js' %}"></script>
     <script>
-        $( document ).ready(function(){
-            $('.openBtn').on('click',function(){
-                var ref = $(this).attr('value');
-                $('#detail_view').attr("href", ref);
-                $('#detail_view').attr("target", "_blank");
-            });
-            $('#gc-modal').on('show.bs.modal',function(event){
-                var dataURL = event.relatedTarget.dataset.href;
-                $('#gc-modal-body').load(dataURL);
+        $(document).ready(function () {
+            $('#gc-modal').on('show.bs.modal', function (event) {
+                var trigger = event.relatedTarget;
+                if (!trigger) {
+                    return;
+                }
+                $('#detail_view').attr({href: trigger.getAttribute('value'), target: '_blank'});
+                $('#gc-modal-body').load(trigger.dataset.href);
             });
         });
 

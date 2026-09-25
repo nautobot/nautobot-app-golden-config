@@ -15,6 +15,28 @@ We will continue to support the previous major release for users of Nautobot LTM
 
 <!-- towncrier release notes start -->
 
+## [v3.0.8 (2026-09-25)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v3.0.8)
+
+### Fixed
+
+- [#1146](https://github.com/nautobot/nautobot-app-golden-config/issues/1146) - Fixed the "Detailed View" button in the Golden Configuration modal not opening the corresponding detail page.
+- [#1154](https://github.com/nautobot/nautobot-app-golden-config/issues/1154) - Fixed a file descriptor leak during large jobs by calling the base Nornir processor from `ProcessGoldenConfig.task_instance_completed`, so that exception frames are released and descriptors held by driver reference cycles are reclaimed while the job is still running.
+
+### Dependencies
+
+- [#1148](https://github.com/nautobot/nautobot-app-golden-config/issues/1148) - Raised the `nautobot-plugin-nornir` constraint to `>=3.2.4,<4.0.0`, which is the first release that supplies the default `nornir_settings` configuration. The re-lock also moves `nornir-nautobot` to 4.4.0 and `pylint-nautobot` to 1.0.0, which replaces the `pylint` 2.x development toolchain on Python 3.14 with `pylint` 4.x.
+- [#1154](https://github.com/nautobot/nautobot-app-golden-config/issues/1154) - Changed the minimum version of nautobot-plugin-nornir to 3.2.5.
+
+### Documentation
+
+- [#1126](https://github.com/nautobot/nautobot-app-golden-config/issues/1126) - Added an FAQ entry on the security considerations of storing backup configurations in Git.
+
+### Housekeeping
+
+- [#1148](https://github.com/nautobot/nautobot-app-golden-config/issues/1148) - Removed the `nautobot_plugin_nornir` block from `PLUGINS_CONFIG` in the development config and the install documentation, because `nautobot-plugin-nornir` now supplies those settings as an app default.
+- Fixed the regex to get the table headers in test_views.py.
+- Rebaked from the cookie `nautobot-app-v3.1.4`.
+
 ## [v3.0.7 (2026-06-30)](https://github.com/nautobot/nautobot-app-golden-config/releases/tag/v3.0.7)
 
 ### Changed

@@ -32,6 +32,20 @@ Backup configurations solutions are simple to start with and grow to hundreds or
 
 Many people will have different opinions about what should or should not be filtered or substituted. Providing the flexibility allows the user to have it operate as they intend it, without burdening the apps goals.
 
+## _Is it safe to store backup configurations in Git? My security team has concerns._
+
+This question comes up regularly, so it is worth addressing the design directly. Backup configurations are stored in a Git repository; there is no alternative backup backend, and adding one is not in scope. Note that "Git" here means the version-control system, not a specific hosted service such as GitHub or GitLab. You can run your own Git server entirely inside your infrastructure, giving you full control over access, including allowing no external access at all. The right conversation is therefore not "Git versus something else," but how the repository is hosted, who can read it, and how sensitive content is handled before it is committed.
+
+A few points worth understanding before the discussion:
+
+* **Sanitization is operator-defined and best-effort.** The `Config Removals` and `Config Replacements` settings let you strip or substitute sensitive lines per-platform, but they are regex rules you maintain. They are only as complete as the patterns you write. A pattern that misses a secret will commit that secret.
+* **Git history is durable.** A configuration committed to Git remains in history even after the file is changed or deleted. Removing a file in a later commit does not remove it from the repository's history. Treat anything ever committed as retained unless history is deliberately rewritten.
+* **The configuration is not only in Git.** A successful backup also populates the `backup_config` field on the `GoldenConfig` model in the database, and compliance compares the database copy of the backup and intended configurations, not the files on disk. The Git repository is the versioned store; it is not the only place the configuration data exists.
+
+Because of the last point, deleting backup files from Git after a compliance run does not remove the configuration from the system, and the next backup run will repopulate and recommit it. That approach adds churn without achieving the intended outcome.
+
+For environments with strict requirements, the recommended approach is to keep using Git but control where it lives: a self-hosted or otherwise private, internally hosted repository with role-based access, encryption at rest, audit logging, and no external mirror, combined with thorough `Config Removals` and `Config Replacements` rules for your platforms. Repository-level secret scanning or push protection, offered by most Git hosts, is a worthwhile additional layer, since it can catch credentials that a removal or replacement pattern misses. Together these satisfy the large majority of security reviews without working against the app's design.
+
 ## _Why not predefine the configuration feature map?_
 
 The process is based on an opinion on what defines a feature, for one organization BGP may include the prefix configuration and another it would not.

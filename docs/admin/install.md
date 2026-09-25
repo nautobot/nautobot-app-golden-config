@@ -5,7 +5,7 @@ Here you will find detailed instructions on how to **install** and **configure**
 ## Prerequisites
 
 - The app relies on [`nautobot_plugin_nornir`](https://pypi.org/project/nautobot-plugin-nornir/) to be installed and both apps to be enabled in your configuration settings.
-- The latest version of this app is compatible with Nautobot 3.0.0 and higher, see [this dedicated page](compatibility_matrix.md) for a full compatibility matrix and the deprecation policy.
+- The latest version of this app is compatible with Nautobot 3.1.0 and higher, see [this dedicated page](compatibility_matrix.md) for a full compatibility matrix and the deprecation policy.
 - Databases supported: PostgreSQL, MySQL
 
 ### Access Requirements
@@ -33,23 +33,11 @@ Once installed, the app needs to be enabled in your Nautobot configuration. The 
 
 - Append `"nautobot_golden_config"` to the `PLUGINS` list, and `"nautobot_plugin_nornir"` if it was not already there (more info [here](https://docs.nautobot.com/projects/plugin-nornir/en/latest/)).
 - Append the `"nautobot_golden_config"` dictionary to the `PLUGINS_CONFIG` dictionary as shown the **sample** below with your appropriate configs.
-- Append the `"nautobot_plugin_nornir"` dictionary to the `PLUGINS_CONFIG` dictionary as shown the **sample** below with your appropriate configs (Note: this may already be in your configs).
 
 ```python
 PLUGINS = ["nautobot_plugin_nornir", "nautobot_golden_config"]
 
 PLUGINS_CONFIG = {
-    "nautobot_plugin_nornir": {
-        "nornir_settings": {
-            "credentials": "nautobot_plugin_nornir.plugins.credentials.env_vars.CredentialsEnvVars",
-            "runner": {
-                "plugin": "threaded",
-                "options": {
-                    "num_workers": 20,
-                },
-            },
-        },
-    },
     "nautobot_golden_config": {
         "per_feature_bar_width": 0.15,
         "per_feature_width": 13,
@@ -144,8 +132,6 @@ That being said, if you do fall into one of those use cases, you can set the dis
 
 ```python
 PLUGINS_CONFIG = {
-    "nautobot_plugin_nornir": {
-    },
     "nautobot_golden_config": {
         "custom_dispatcher": {
             "arista_eos": "my_custom.dispatcher.NornirDriver",

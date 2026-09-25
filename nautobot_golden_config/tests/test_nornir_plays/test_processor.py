@@ -15,6 +15,14 @@ def _multi_result(*results):
     return multi_result
 
 
+def _failed_result():
+    """Build a failed Result carrying a live exception, the way `Task.start` does."""
+    try:
+        raise ValueError("boom")
+    except ValueError as error:
+        return Result(MagicMock(), exception=error, result="traceback text", failed=True)
+
+
 def _task_and_host():
     """Throwaway task and host doubles carrying the attributes the processor reads."""
     task = MagicMock()
@@ -51,11 +59,7 @@ class ProcessGoldenConfigTestCase(SimpleTestCase):
     def test_base_processor_cleanup_is_invoked_on_failure(self, mock_base):
         """Cleanup must run for failed task instances too, which is where frames are pinned."""
         task, host = _task_and_host()
-        try:
-            raise ValueError("boom")
-        except ValueError as error:
-            failed = Result(MagicMock(), exception=error, result="traceback text", failed=True)
-        result = _multi_result(failed)
+        result = _multi_result(_failed_result())
 
         self.processor.task_instance_completed(task, host, result)
 

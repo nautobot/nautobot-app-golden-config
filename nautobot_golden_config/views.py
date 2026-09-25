@@ -95,10 +95,13 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
         sync_job = Job.objects.get(
             module_name="nautobot_golden_config.jobs", job_class_name="SyncGoldenConfigWithDynamicGroups"
         )
-        sync_job_url = f"<a href='{reverse('extras:job_run', kwargs={'pk': sync_job.pk})}'>{sync_job.name}</a>"
+        sync_job_link = format_html(
+            "<a href='{}'>{}</a>", reverse("extras:job_run", kwargs={"pk": sync_job.pk}), sync_job.name
+        )
         out_of_sync_message = format_html(
             "The expected devices and actual devices here are not in sync. "
-            f"Running the job {sync_job_url} will put it back in sync."
+            "Running the job {} will put it back in sync.",
+            sync_job_link,
         )
 
         gc_dynamic_group_device_pks = models.GoldenConfig.get_dynamic_group_device_pks()

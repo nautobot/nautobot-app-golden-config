@@ -65,8 +65,7 @@ class ConfigComplianceOverviewHelperTestCase(TestCase):
         # cls.ccoh = views.ConfigComplianceOverviewOverviewHelper
 
     def test_plot_visual_no_devices(self):
-        # TODO: 2.0 turn this back on.
-        self.assertEqual(True, True)
+        self.skipTest("TODO: 2.0 turn this back on.")
         # aggr = {"comp_percents": 0, "compliants": 0, "non_compliants": 0, "total": 0}
         # self.assertEqual(self.ccoh.plot_visual(aggr), None)
 
@@ -393,8 +392,7 @@ class ConfigComplianceUIViewSetTestCase(
                 )
 
     def test_get_object_anonymous(self):
-        # TODO: remove when ConfigComplianceUIViewSet has Change Log
-        self.assertEqual(True, True)
+        self.skipTest("TODO: remove when ConfigComplianceUIViewSet has Change Log.")
 
     @override_settings(EXEMPT_VIEW_PERMISSIONS=[])
     def test_custom_actions(self):

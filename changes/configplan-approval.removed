@@ -1,0 +1,1 @@
+Removed the `default_deploy_status` plugin configuration key and the `Approved` and `Not Approved` Config Plan statuses; approval is now handled by Nautobot's Approval Workflow.

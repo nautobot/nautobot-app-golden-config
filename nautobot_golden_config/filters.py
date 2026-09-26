@@ -10,6 +10,7 @@ from nautobot.apps.filters import (
     TreeNodeMultipleChoiceFilter,
 )
 from nautobot.dcim.models import Device, DeviceType, Location, Manufacturer, Platform, Rack, RackGroup
+from nautobot.extras.choices import ApprovalWorkflowStateChoices
 from nautobot.extras.models import JobResult, Role, Status
 from nautobot.tenancy.models import Tenant, TenantGroup
 
@@ -443,6 +444,12 @@ class ConfigPlanFilterSet(NautobotFilterSet):
         queryset=Status.objects.all(),
         to_field_name="name",
         label="Status",
+    )
+    approval_state = django_filters.MultipleChoiceFilter(
+        field_name="associated_approval_workflows__current_state",
+        choices=ApprovalWorkflowStateChoices,
+        label="Approval State",
+        distinct=True,
     )
 
     class Meta:

@@ -6,6 +6,7 @@ from datetime import datetime
 from django.contrib.auth import get_user_model
 from django.utils.timezone import make_aware
 from nautobot.dcim.models import Device
+from nautobot.extras.choices import ApprovalWorkflowStateChoices
 from nautobot.extras.models import Status
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
@@ -19,7 +20,7 @@ from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
 from nautobot_golden_config.exceptions import ConfigPlanDeploymentFailure
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
-from nautobot_golden_config.utilities.constant import DEFAULT_DEPLOY_STATUS, ENABLE_POSTPROCESSING
+from nautobot_golden_config.utilities.constant import ENABLE_POSTPROCESSING
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.utilities.helper import dispatch_params
 from nautobot_golden_config.utilities.logger import NornirLogger
@@ -89,8 +90,17 @@ def config_deployment(job):
 
     logger.debug("Starting config deployment")
     config_plan_qs = job.data["config_plan"]
-    if config_plan_qs.filter(status__name=DEFAULT_DEPLOY_STATUS).exists():
-        error_msg = "`E3025:` Cannot deploy configuration(s). One or more config plans are not approved."
+    # A plan that has any associated approval workflow whose current state is not "Approved"
+    # is treated as not yet approved. Plans without any associated workflow (admin disabled
+    # approvals by removing the ApprovalWorkflowDefinition) bypass this gate.
+    unapproved_qs = config_plan_qs.filter(associated_approval_workflows__isnull=False).exclude(
+        associated_approval_workflows__current_state=ApprovalWorkflowStateChoices.APPROVED
+    )
+    if unapproved_qs.exists():
+        error_msg = (
+            "`E3025:` Cannot deploy configuration(s). One or more config plans have an "
+            "approval workflow that is not in the `Approved` state."
+        )
         logger.error(error_msg)
         raise NornirNautobotException(error_msg)
     if config_plan_qs.filter(status__name="Completed").exists():

@@ -3,16 +3,9 @@
 from django.template import engines
 from nautobot.core.utils.data import render_jinja2
 from nautobot.dcim.models import Device
-from nautobot.extras.models import Status
 
 from nautobot_golden_config.models import ComplianceFeature
-from nautobot_golden_config.utilities.constant import DEFAULT_DEPLOY_STATUS
 from nautobot_golden_config.utilities.helper import get_django_env
-
-
-def config_plan_default_status():
-    """Return the default status for config plan."""
-    return Status.objects.get(name=DEFAULT_DEPLOY_STATUS)
 
 
 def generate_config_set_from_compliance_feature(device: Device, plan_type: str, feature: ComplianceFeature):

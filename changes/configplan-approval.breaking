@@ -1,0 +1,1 @@
+Replaced Config Plan status-based approval with Nautobot's native Approval Workflow. New plans now trigger a `Pending` approval workflow on creation and the Deploy Config Plans job refuses to push configuration until that workflow is `Approved`.

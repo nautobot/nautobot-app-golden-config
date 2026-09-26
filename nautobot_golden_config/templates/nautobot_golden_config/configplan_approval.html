@@ -1,0 +1,30 @@
+{% with workflow=object.associated_approval_workflows.first %}
+    {% if workflow %}
+        <table class="table table-hover panel-body attr-table">
+            <tr>
+                <td>State</td>
+                <td>
+                    <a href="{{ workflow.get_absolute_url }}">{{ workflow.get_current_state_display }}</a>
+                </td>
+            </tr>
+            <tr>
+                <td>Workflow Definition</td>
+                <td>
+                    {% if workflow.approval_workflow_definition %}
+                        <a href="{{ workflow.approval_workflow_definition.get_absolute_url }}">{{ workflow.approval_workflow_definition.name }}</a>
+                    {% else %}
+                        &mdash;
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td>Requested By</td>
+                <td>{{ workflow.user_name|default:"&mdash;" }}</td>
+            </tr>
+        </table>
+    {% else %}
+        <div class="panel-body">
+            <span class="text-muted">No approval workflow is associated with this Config Plan. Deployment will proceed without approval.</span>
+        </div>
+    {% endif %}
+{% endwith %}

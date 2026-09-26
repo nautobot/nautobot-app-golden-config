@@ -7,7 +7,8 @@ from django.core.exceptions import ValidationError
 from django.db.models.deletion import ProtectedError
 from nautobot.apps.testing import TestCase
 from nautobot.dcim.models import Platform
-from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status
+from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery
+from nautobot.extras.models.approvals import ApprovalWorkflowDefinition
 
 from nautobot_golden_config.choices import RemediationTypeChoice
 from nautobot_golden_config.models import (
@@ -437,7 +438,6 @@ class ConfigPlanModelTestCase(TestCase):
         cls.device = create_device()
         cls.rule = create_feature_rule_json(cls.device)
         cls.feature = cls.rule.feature
-        cls.status = Status.objects.get(name="Not Approved")
         cls.job_result = create_job_result()
 
     def test_create_config_plan_intended(self):
@@ -448,7 +448,6 @@ class ConfigPlanModelTestCase(TestCase):
             config_set="test intended config",
             change_control_id="1234",
             change_control_url="https://1234.example.com/",
-            status=self.status,
             plan_result_id=self.job_result.id,
         )
         config_plan.feature.add(self.feature)
@@ -457,7 +456,7 @@ class ConfigPlanModelTestCase(TestCase):
         self.assertEqual(config_plan.feature.first(), self.feature)
         self.assertEqual(config_plan.config_set, "test intended config")
         self.assertEqual(config_plan.change_control_id, "1234")
-        self.assertEqual(config_plan.status, self.status)
+        self.assertIsNone(config_plan.status)
         self.assertEqual(config_plan.plan_type, "intended")
 
     def test_create_config_plan_intended_multiple_features(self):
@@ -469,7 +468,6 @@ class ConfigPlanModelTestCase(TestCase):
             config_set="test intended config",
             change_control_id="1234",
             change_control_url="https://1234.example.com/",
-            status=self.status,
             plan_result_id=self.job_result.id,
         )
         config_plan.feature.set([self.feature, rule2.feature])
@@ -479,7 +477,6 @@ class ConfigPlanModelTestCase(TestCase):
         self.assertIn(rule2.feature.id, config_plan.feature.all().values_list("id", flat=True))
         self.assertEqual(config_plan.config_set, "test intended config")
         self.assertEqual(config_plan.change_control_id, "1234")
-        self.assertEqual(config_plan.status, self.status)
         self.assertEqual(config_plan.plan_type, "intended")
 
     def test_create_config_plan_missing(self):
@@ -490,7 +487,6 @@ class ConfigPlanModelTestCase(TestCase):
             config_set="test missing config",
             change_control_id="2345",
             change_control_url="https://2345.example.com/",
-            status=self.status,
             plan_result_id=self.job_result.id,
         )
         config_plan.feature.add(self.feature)
@@ -499,7 +495,6 @@ class ConfigPlanModelTestCase(TestCase):
         self.assertEqual(config_plan.feature.first(), self.feature)
         self.assertEqual(config_plan.config_set, "test missing config")
         self.assertEqual(config_plan.change_control_id, "2345")
-        self.assertEqual(config_plan.status, self.status)
         self.assertEqual(config_plan.plan_type, "missing")
 
     def test_create_config_plan_remediation(self):
@@ -510,7 +505,6 @@ class ConfigPlanModelTestCase(TestCase):
             config_set="test remediation config",
             change_control_id="3456",
             change_control_url="https://3456.example.com/",
-            status=self.status,
             plan_result_id=self.job_result.id,
         )
         config_plan.feature.add(self.feature)
@@ -519,7 +513,6 @@ class ConfigPlanModelTestCase(TestCase):
         self.assertEqual(config_plan.feature.first(), self.feature)
         self.assertEqual(config_plan.config_set, "test remediation config")
         self.assertEqual(config_plan.change_control_id, "3456")
-        self.assertEqual(config_plan.status, self.status)
         self.assertEqual(config_plan.plan_type, "remediation")
 
     def test_create_config_plan_manual(self):
@@ -533,6 +526,30 @@ class ConfigPlanModelTestCase(TestCase):
         self.assertEqual(config_plan.device, self.device)
         self.assertEqual(config_plan.config_set, "test manual config")
         self.assertEqual(config_plan.plan_type, "manual")
+
+    def test_create_config_plan_triggers_approval_workflow(self):
+        """A new ConfigPlan should attach a pending ApprovalWorkflow when a definition exists."""
+        config_plan = ConfigPlan.objects.create(
+            device=self.device,
+            plan_type="manual",
+            config_set="approval workflow check",
+            plan_result_id=self.job_result.id,
+        )
+        workflows = list(config_plan.associated_approval_workflows.all())
+        self.assertEqual(len(workflows), 1)
+        self.assertEqual(workflows[0].current_state, "Pending")
+
+    def test_create_config_plan_without_workflow_definition(self):
+        """If no ApprovalWorkflowDefinition exists, ConfigPlan creation skips workflow attachment."""
+        ApprovalWorkflowDefinition.objects.filter(name="Config Plan Approval").delete()
+
+        config_plan = ConfigPlan.objects.create(
+            device=self.device,
+            plan_type="manual",
+            config_set="no workflow",
+            plan_result_id=self.job_result.id,
+        )
+        self.assertFalse(config_plan.associated_approval_workflows.exists())
 
 
 class RemediationSettingModelTestCase(TestCase):

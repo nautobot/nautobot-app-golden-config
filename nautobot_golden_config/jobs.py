@@ -6,6 +6,7 @@
 
 from datetime import datetime
 
+from celery.exceptions import SoftTimeLimitExceeded
 from django.utils.timezone import make_aware
 from nautobot.apps.jobs import (
     BooleanVar,
@@ -184,6 +185,8 @@ def gc_repos(func):
         # This is where the specific jobs run method runs via this decorator.
         try:
             func(self, *args, **kwargs)
+        except SoftTimeLimitExceeded:
+            raise
         except Exception as error:  # pylint: disable=broad-exception-caught
             error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
             # Raise error only if the job kwarg (checkbox) is selected to do so on the job execution form.

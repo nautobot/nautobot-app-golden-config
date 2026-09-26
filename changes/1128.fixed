@@ -1,0 +1,1 @@
+Fixed SoftTimeLimitExceeded exception not raised when fail_job_on_task_failure is False

@@ -166,7 +166,7 @@ jobs:
       fail-fast: true
       matrix:
         python-version: ["3.10"]
-        nautobot-version: ["3.0.0"]
+        nautobot-version: ["3.1.0"]
     env:
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_PYTHON_VER: "${{ matrix.python-version }}"
       INVOKE_NAUTOBOT_GOLDEN_CONFIG_NAUTOBOT_VER: "${{ matrix.nautobot-version }}"
@@ -211,14 +211,14 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        python-version: ["3.10"]  # 3.13 stable is tested in unittest_report stage.
+        python-version: ["3.10"]  # 3.14 stable is tested in unittest_report stage.
         db-backend: ["postgresql"]
         nautobot-version: ["stable"]
         include:
           - python-version: "3.10"
             db-backend: "postgresql"
-            nautobot-version: "3.0.0"
-          - python-version: "3.13"
+            nautobot-version: "3.1.0"
+          - python-version: "3.14"
             db-backend: "mysql"
             nautobot-version: "stable"
     runs-on: "ubuntu-22.04"
@@ -265,7 +265,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        python-version: ["3.13"]
+        python-version: ["3.14"]
         db-backend: ["postgresql"]
         nautobot-version: ["stable"]
     runs-on: "ubuntu-latest"

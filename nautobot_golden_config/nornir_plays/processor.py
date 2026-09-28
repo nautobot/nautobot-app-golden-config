@@ -51,3 +51,6 @@ class ProcessGoldenConfig(BaseLoggingProcessor):
             exception_string = ", ".join([str(e[0]) for e in exceptions])
             # Log only exception summary to users
             self.logger.error(f"{task.name} failed: {exception_string}", extra={"object": task.host.data["obj"]})
+
+        # Called last so that the summary above is built from untouched exceptions.
+        super().task_instance_completed(task, host, result)

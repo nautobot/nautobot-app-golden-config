@@ -1,13 +1,18 @@
 """App Config Schema Generator and Validator."""
 
 import json
+import sys
 from importlib import import_module
 from os import getenv
 from pathlib import Path
 from urllib.parse import urlparse
 
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
+
 import jsonschema
-import toml
 from django.conf import settings
 from to_json_schema.to_json_schema import SchemaBuilder
 
@@ -25,7 +30,8 @@ def _enrich_object_schema(schema, defaults, required):
 
 
 def _main():
-    pyproject = toml.loads(Path("pyproject.toml").read_text())
+    with Path("pyproject.toml").open("rb") as f:
+        pyproject = tomllib.load(f)
     url = urlparse(pyproject["tool"]["poetry"]["repository"])
     _, owner, repository = url.path.split("/")
     package_name = pyproject["tool"]["poetry"]["packages"][0]["include"]

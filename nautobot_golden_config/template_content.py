@@ -1,29 +1,41 @@
 """Added content to the device model view for config compliance."""
-from django.core.exceptions import ObjectDoesNotExist
+
 from django.db.models import Count, Q
-from django.urls import reverse
-from nautobot.dcim.models import Device
-from nautobot.extras.plugins import PluginTemplateExtension
+from nautobot.apps.ui import DistinctViewTab, TemplateExtension
+
 from nautobot_golden_config.models import ConfigCompliance, GoldenConfig
 from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_COMPLIANCE
-from nautobot_golden_config.utilities.helper import get_device_to_settings_map
 
 
-class ConfigComplianceDeviceCheck(PluginTemplateExtension):  # pylint: disable=abstract-method
-    """Plugin extension class for config compliance."""
+class ConfigComplianceDeviceCheck(TemplateExtension):  # pylint: disable=abstract-method
+    """App extension class for config compliance."""
 
     model = "dcim.device"
 
-    def get_device(self):
-        """Get device object."""
+    object_detail_tabs = [
+        DistinctViewTab(
+            weight=100,
+            tab_id="device_tab",
+            label="Configuration Compliance",
+            url_name="plugins:nautobot_golden_config:configcompliance_devicetab",
+            related_object_attribute="configcompliance_set",
+            hide_if_empty=True,
+        )
+    ]
+
+    @property
+    def device(self):
+        """Device presented in detail view."""
         return self.context["object"]
 
     def right_page(self):
         """Content to add to the configuration compliance."""
-        comp_obj = ConfigCompliance.objects.filter(device=self.get_device()).values("rule__feature__name", "compliance")
+        comp_obj = ConfigCompliance.objects.filter(device=self.device).values("rule__feature__name", "compliance")
+        if not comp_obj:
+            return ""
         extra_context = {
             "compliance": comp_obj,
-            "device": self.get_device(),
+            "device": self.device,
             "template_type": "devicetab",
         }
         return self.render(
@@ -31,24 +43,9 @@ class ConfigComplianceDeviceCheck(PluginTemplateExtension):  # pylint: disable=a
             extra_context=extra_context,
         )
 
-    def detail_tabs(self):
-        """Add a Configuration Compliance tab to the Device detail view if the Configuration Compliance associated to it."""
-        try:
-            return [
-                {
-                    "title": "Configuration Compliance",
-                    "url": reverse(
-                        "plugins:nautobot_golden_config:configcompliance_devicetab",
-                        kwargs={"pk": self.get_device().pk},
-                    ),
-                }
-            ]
-        except ObjectDoesNotExist:
-            return []
 
-
-class ConfigComplianceLocationCheck(PluginTemplateExtension):  # pylint: disable=abstract-method
-    """Plugin extension class for config compliance."""
+class ConfigComplianceLocationCheck(TemplateExtension):  # pylint: disable=abstract-method
+    """App extension class for config compliance."""
 
     model = "dcim.location"
 
@@ -72,6 +69,8 @@ class ConfigComplianceLocationCheck(PluginTemplateExtension):  # pylint: disable
             .order_by("rule__feature__name")
             .values("rule__feature__name", "compliant", "non_compliant")
         )
+        if not comp_obj:
+            return ""
         extra_context = {"compliance": comp_obj, "template_type": "location"}
         return self.render(
             "nautobot_golden_config/content_template.html",
@@ -79,8 +78,8 @@ class ConfigComplianceLocationCheck(PluginTemplateExtension):  # pylint: disable
         )
 
 
-class ConfigDeviceDetails(PluginTemplateExtension):  # pylint: disable=abstract-method
-    """Plugin extension class for config compliance."""
+class ConfigDeviceDetails(TemplateExtension):  # pylint: disable=abstract-method
+    """App extension class for config compliance."""
 
     model = "dcim.device"
 
@@ -92,13 +91,13 @@ class ConfigDeviceDetails(PluginTemplateExtension):  # pylint: disable=abstract-
         """Content to add to the configuration compliance."""
         device = self.get_device()
         golden_config = GoldenConfig.objects.filter(device=device).first()
-        settings = get_device_to_settings_map(queryset=Device.objects.filter(id=device.id))
+        if not golden_config:
+            return ""
         extra_context = {
             "device": self.get_device(),  # device,
             "golden_config": golden_config,
             "template_type": "device-configs",
             "config_features": CONFIG_FEATURES,
-            "matched_config_setting": settings.get(device.id, False),
         }
         return self.render(
             "nautobot_golden_config/content_template.html",
@@ -106,8 +105,8 @@ class ConfigDeviceDetails(PluginTemplateExtension):  # pylint: disable=abstract-
         )
 
 
-class ConfigComplianceTenantCheck(PluginTemplateExtension):  # pylint: disable=abstract-method
-    """Plugin extension class for config compliance."""
+class ConfigComplianceTenantCheck(TemplateExtension):  # pylint: disable=abstract-method
+    """App extension class for config compliance."""
 
     model = "tenancy.tenant"
 
@@ -128,6 +127,8 @@ class ConfigComplianceTenantCheck(PluginTemplateExtension):  # pylint: disable=a
             .order_by("rule__feature__name")
             .values("rule__feature__name", "compliant", "non_compliant")
         )
+        if not comp_obj:
+            return ""
         extra_context = {"compliance": comp_obj, "template_type": "location"}
         return self.render(
             "nautobot_golden_config/content_template.html",

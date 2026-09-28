@@ -1,12 +1,14 @@
 """Nornir job for generating the compliance data."""
+
 # pylint: disable=relative-beyond-top-level
 import difflib
 import logging
 import os
 from collections import defaultdict
 from datetime import datetime
-from django.utils.timezone import make_aware
 
+from django.utils.timezone import make_aware
+from lxml import etree
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from netutils.config.compliance import _open_file_config, parser_map, section_config
@@ -16,17 +18,18 @@ from nornir.core.task import Result, Task
 from nornir_nautobot.exceptions import NornirNautobotException
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
-from nautobot_golden_config.utilities.logger import NornirLogger
+from nautobot_golden_config.exceptions import ComplianceFailure
 from nautobot_golden_config.models import ComplianceRule, ConfigCompliance, GoldenConfig
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.utilities.helper import (
-    get_device_to_settings_map,
-    get_job_filter,
     get_json_config,
+    get_xml_config,
+    get_xml_subtree_with_full_path,
     render_jinja_template,
     verify_settings,
 )
+from nautobot_golden_config.utilities.logger import NornirLogger
 
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 LOGGER = logging.getLogger(__name__)
@@ -69,13 +72,31 @@ def get_config_element(rule, config, obj, logger):
         else:
             config_element = config_json
 
+    elif rule["obj"].config_type == ComplianceRuleConfigTypeChoice.TYPE_XML:
+        config_xml = get_xml_config(config)
+
+        if not config_xml:
+            error_msg = "`E3002:` Unable to interpret configuration as XML."
+            logger.error(error_msg, extra={"object": obj})
+            raise NornirNautobotException(error_msg)
+
+        if rule["obj"].match_config:
+            try:
+                config_element = get_xml_subtree_with_full_path(config_xml, rule["obj"].match_config)
+            except etree.XPathError as err:
+                error_msg = f"`E3031:` Invalid XPath expression - `{rule['obj'].match_config}`"
+                logger.error(error_msg, extra={"object": obj})
+                raise NornirNautobotException(error_msg) from err
+        else:
+            config_element = etree.tostring(config_xml, encoding="unicode", pretty_print=True)
+
     elif rule["obj"].config_type == ComplianceRuleConfigTypeChoice.TYPE_CLI:
-        if obj.platform.network_driver_mappings["netmiko"] not in parser_map:
+        if obj.platform.network_driver_mappings["netutils_parser"] not in parser_map:
             error_msg = f"`E3003:` There is currently no CLI-config parser support for platform network_driver `{obj.platform.network_driver}`, preemptively failed."
             logger.error(error_msg, extra={"object": obj})
             raise NornirNautobotException(error_msg)
 
-        config_element = section_config(rule, config, obj.platform.network_driver_mappings["netmiko"])
+        config_element = section_config(rule, config, obj.platform.network_driver_mappings["netutils_parser"])
 
     else:
         error_msg = f"`E3004:` There rule type ({rule['obj'].config_type}) is not recognized."
@@ -88,12 +109,11 @@ def get_config_element(rule, config, obj, logger):
 def diff_files(backup_file, intended_file):
     """Utility function to provide `Unix Diff` between two files."""
     with open(backup_file, encoding="utf-8") as file:
-        backup = file.read()
+        backup = file.readlines()
     with open(intended_file, encoding="utf-8") as file:
-        intended = file.read()
+        intended = file.readlines()
 
-    for line in difflib.unified_diff(backup, intended, lineterm=""):
-        yield line
+    yield from difflib.unified_diff(backup, intended, lineterm="")
 
 
 @close_threaded_db_connections
@@ -174,21 +194,26 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     return Result(host=task.host)
 
 
-def config_compliance(job_result, log_level, data):
-    """Nornir play to generate configurations."""
+def config_compliance(job):  # pylint: disable=unused-argument
+    """
+    Nornir play to generate configurations.
+
+    Args:
+        job (Job): The Nautobot Job instance being run.
+
+    Returns:
+        None: Compliance results are written to database.
+
+    Raises:
+        ComplianceFailure: If failure found in Nornir tasks then Exception will be raised.
+    """
     now = make_aware(datetime.now())
-    logger = NornirLogger(job_result, log_level)
+    logger = NornirLogger(job.job_result, job.logger.getEffectiveLevel())
 
     rules = get_rules()
 
-    qs = get_job_filter(data)
-    logger.debug("Compiling device data for compliance job.")
-
-    device_to_settings_map = get_device_to_settings_map(queryset=qs)
-
-    for settings in set(device_to_settings_map.values()):
+    for settings in set(job.device_to_settings_map.values()):
         verify_settings(logger, settings, ["backup_path_template", "intended_path_template"])
-
     try:
         with InitNornir(
             runner=NORNIR_SETTINGS.get("runner"),
@@ -198,7 +223,7 @@ def config_compliance(job_result, log_level, data):
                 "options": {
                     "credentials_class": NORNIR_SETTINGS.get("credentials"),
                     "params": NORNIR_SETTINGS.get("inventory_params"),
-                    "queryset": qs,
+                    "queryset": job.qs,
                     "defaults": {"now": now},
                 },
             },
@@ -206,17 +231,20 @@ def config_compliance(job_result, log_level, data):
             nr_with_processors = nornir_obj.with_processors([ProcessGoldenConfig(logger)])
 
             logger.debug("Run nornir compliance tasks.")
-            nr_with_processors.run(
+            results = nr_with_processors.run(
                 task=run_compliance,
                 name="RENDER COMPLIANCE TASK GROUP",
                 logger=logger,
-                device_to_settings_map=device_to_settings_map,
+                device_to_settings_map=job.device_to_settings_map,
                 rules=rules,
             )
-
-    except Exception as error:
-        error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
-        logger.error(error_msg)
-        raise NornirNautobotException(error_msg) from error
-
+    except NornirNautobotException as err:
+        logger.error(
+            f"`E3028:` NornirNautobotException raised during compliance tasks. Original exception message: ```{err}```"
+        )
+        # re-raise Exception if it's raised from nornir-nautobot or nautobot-app-nornir
+        if str(err).startswith("`E2") or str(err).startswith("`E1"):
+            raise NornirNautobotException(err) from err
     logger.debug("Completed compliance job for devices.")
+    if results.failed:
+        raise ComplianceFailure()

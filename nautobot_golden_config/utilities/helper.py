@@ -1,28 +1,31 @@
 """Helper functions."""
+
 # pylint: disable=raise-missing-from
 import json
+from copy import deepcopy
 
 from django.conf import settings
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import OuterRef, Q, Subquery
 from django.template import engines
-from django.utils.html import format_html
 from django.urls import reverse
-
+from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from jinja2 import exceptions as jinja_errors
 from jinja2.sandbox import SandboxedEnvironment
+from lxml import etree
+from nautobot.apps.utils import render_jinja2
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.dcim.models import Device
-from nautobot.core.utils.data import render_jinja2
+from nautobot.extras.choices import DynamicGroupTypeChoices  # core-import-update
 from nautobot.extras.models import Job
 from nornir_nautobot.exceptions import NornirNautobotException
 
+from nautobot_golden_config import config as app_config
 from nautobot_golden_config import models
+from nautobot_golden_config.error_codes import ERROR_CODES
 from nautobot_golden_config.utilities import utils
 from nautobot_golden_config.utilities.constant import JINJA_ENV
-from nautobot_golden_config import config as app_config
-
-
 
 FRAMEWORK_METHODS = {
     "default": utils.default_framework,
@@ -70,7 +73,9 @@ def get_job_filter(data=None):
 
     raw_qs = Q()
     # If scope is set to {} do not loop as all devices are in scope.
-    if not models.GoldenConfigSetting.objects.filter(dynamic_group__filter__iexact="{}").exists():
+    if not models.GoldenConfigSetting.objects.filter(
+        dynamic_group__filter__iexact="{}", dynamic_group__group_type=DynamicGroupTypeChoices.TYPE_DYNAMIC_FILTER
+    ).exists():
         for obj in models.GoldenConfigSetting.objects.all():
             raw_qs = raw_qs | obj.dynamic_group.generate_query()
 
@@ -170,15 +175,22 @@ def render_jinja_template(obj, logger, template):
 
 
 def get_device_to_settings_map(queryset):
-    """Helper function to map settings to devices."""
-    device_to_settings_map = {}
-    for device in queryset:
-        dynamic_group = device.dynamic_groups.exclude(golden_config_setting__isnull=True).order_by(
-            "-golden_config_setting__weight"
+    """Helper function to map heightest weighted GC settings to devices."""
+    update_dynamic_groups_cache()
+    annotated_queryset = queryset.all().annotate(
+        gc_settings=Subquery(
+            models.GoldenConfigSetting.objects.filter(
+                dynamic_group__static_group_associations__associated_object_id=OuterRef("id"),
+                dynamic_group__static_group_associations__associated_object_type__app_label="dcim",
+                dynamic_group__static_group_associations__associated_object_type__model="device",
+            )
+            .order_by("-weight")
+            # [:1] is a ORM/DB "limit 1" query, not a python slice.
+            .values("id")[:1]
         )
-        if dynamic_group.exists():
-            device_to_settings_map[device.id] = dynamic_group.first().golden_config_setting
-    return device_to_settings_map
+    )
+    gcs = {gc.id: gc for gc in models.GoldenConfigSetting.objects.all()}
+    return {device.id: gcs[device.gc_settings] for device in annotated_queryset}
 
 
 def get_json_config(config):
@@ -189,11 +201,20 @@ def get_json_config(config):
         return None
 
 
+def get_xml_config(config):
+    """Helper to parse XML config files."""
+    try:
+        parser = etree.XMLParser(remove_blank_text=True)
+        return etree.fromstring(config, parser=parser)  # noqa: S320
+    except etree.ParseError:
+        return None
+
+
 def list_to_string(items):
     """Helper function to set the proper list of items sentence."""
     if len(items) == 1:
         return items[0]
-    if len(items) == 2:
+    if len(items) == 2:  # noqa: PLR2004
         return " and ".join(items)
     return ", ".join(items[:-1]) + " and " + items[-1]
 
@@ -209,9 +230,12 @@ def add_message(combo_check, request):
         if not isinstance(feature_enabled, list):
             feature_enabled = [feature_enabled]
         if not job.enabled and any(feature_enabled):
-            multiple_messages.append(f"<a href='{reverse('extras:job_edit', kwargs={'pk': job.pk})}'>{job.name}</a>")
+            multiple_messages.append(
+                format_html("<a href='{}'>{}</a>", reverse("extras:job_edit", kwargs={"pk": job.pk}), job.name)
+            )
     if multiple_messages:
-        messages.warning(request, format_html(f"The Job(s) {list_to_string(multiple_messages)} are not yet enabled."))
+        joined_links = mark_safe(list_to_string(multiple_messages))  # noqa: S308
+        messages.warning(request, format_html("The Job(s) {} are not yet enabled.", joined_links))
 
 
 def dispatch_params(method, platform, logger):
@@ -242,3 +266,71 @@ def dispatch_params(method, platform, logger):
         logger.error(error_msg)
         raise NornirNautobotException(error_msg)
     return params
+
+
+def get_xml_subtree_with_full_path(config_xml, match_config):
+    """
+    Extracts a subtree from an XML configuration based on a provided XPath expression and rebuilds the full path from the root.
+
+    Args:
+        config_xml (etree.Element): The root of the XML configuration from which to extract the subtree.
+        match_config (str): An XPath expression that specifies the elements to include in the subtree.
+
+    Returns:
+        str: The XML subtree as a string, including all elements specified by the XPath expression and their full paths from the root.
+    """
+    config_elements = config_xml.xpath(match_config)
+    new_root = etree.Element(config_xml.tag)
+    for element in config_elements:
+        current_element = new_root
+        for parent in reversed(list(element.iterancestors())):  # from root to parent
+            if parent is config_xml:  # skip the root
+                continue
+            copied_parent = deepcopy(parent)
+            copied_parent[:] = []  # remove children
+            current_element.append(copied_parent)
+            current_element = copied_parent
+        current_element.append(deepcopy(element))
+    return etree.tostring(new_root, encoding="unicode", pretty_print=True)
+
+
+def update_dynamic_groups_cache():
+    """Update dynamic group cache for all golden config dynamic groups."""
+    if not settings.PLUGINS_CONFIG[app_config.name].get("_manual_dynamic_group_mgmt"):
+        for setting in models.GoldenConfigSetting.objects.all():
+            setting.dynamic_group.update_cached_members()
+
+
+def get_error_message(error_code, **kwargs):
+    """Get the error message for a given error code.
+
+    Args:
+        error_code (str): The error code.
+        **kwargs: Any additional context data to be interpolated in the error message.
+
+    Returns:
+        str: The constructed error message.
+    """
+    try:
+        error_message = ERROR_CODES.get(error_code, ERROR_CODES["E3XXX"]).error_message.format(**kwargs)
+    except KeyError as missing_kwarg:
+        error_message = f"Error Code was found, but failed to format, message expected kwarg `{missing_kwarg}`."
+    except Exception:  # pylint: disable=broad-except
+        error_message = "Error Code was found, but failed to format message, unknown cause."
+    return f"{error_code}: {error_message}"
+
+
+def calculate_aggr_percentage(aggr):
+    """Calculate percentage of compliance given aggregation fields.
+
+    Returns:
+        aggr: same aggr dict given as parameter with two new keys
+            - comp_percents
+            - non_compliants
+    """
+    aggr["non_compliants"] = aggr["total"] - aggr["compliants"]
+    try:
+        aggr["comp_percents"] = round(aggr["compliants"] / aggr["total"] * 100, 2)
+    except ZeroDivisionError:
+        aggr["comp_percents"] = 0
+    return aggr

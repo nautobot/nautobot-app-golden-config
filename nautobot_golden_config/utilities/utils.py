@@ -1,9 +1,8 @@
 """Utility functions."""
-from django.conf import settings
 
 from constance import config as constance_name
-
-from nautobot.extras.choices import SecretsGroupAccessTypeChoices
+from django.conf import settings
+from nautobot.apps.choices import SecretsGroupAccessTypeChoices
 from nautobot.extras.models.secrets import SecretsGroupAssociation
 
 from nautobot_golden_config import config

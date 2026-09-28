@@ -28,7 +28,8 @@ You can view a plan by navigating to **Golden Config -> Config Plans** and choos
 - **Job Result**: The Job that generated the plan(s).
 - **Status**: The status of the plan.
 
-![Config Plan View](../images/config_plan-view.png)
+![Config Plan View](../images/ss1_config_plan-view_light.png#only-light){ .on-glb }
+![Config Plan View](../images/ss1_config_plan-view_dark.png#only-dark){ .on-glb }
 
 ## Generating Config Plans
 
@@ -40,15 +41,18 @@ Once you have selected the appropriate options, you can click the **Generate** b
 
 ### Screenshots
 
-![Config Plan Generate Missing](../images/config_plan-generate-missing.png)
+![Config Plan Generate Missing](../images/ss1_config_plan-generate-missing_light.png#only-light){ .on-glb }
+![Config Plan Generate Missing](../images/ss1_config_plan-generate-missing_dark.png#only-dark){ .on-glb }
 
-![Config Plan Generate Filters](../images/config_plan-generate-filters.png)
+![Config Plan Generate Filters](../images/ss1_config_plan-generate-filters_light.png#only-light){ .on-glb }
+![Config Plan Generate Filters](../images/ss1_config_plan-generate-filters_dark.png#only-dark){ .on-glb }
 
-![Config Plan Generate Manual](../images/config_plan-generate-manual.png)
+![Config Plan Generate Manual](../images/ss1_config_plan-generate-manual_light.png#only-light){ .on-glb }
+![Config Plan Generate Manual](../images/ss1_config_plan-generate-manual_dark.png#only-dark){ .on-glb }
 
 ### Generating Config Plans via API
 
-The HTTP(S) POST method is not currently enabled for the Config Plan serializer to create plans directly via API. Instead you may run the **GenerateConfigPlans** Job directly via the `plugins/nautobot_golden_config.jobs/GenerateConfigPlans` API endpoint.
+The HTTP(S) POST method is not currently enabled for the Config Plan serializer to create plans directly via API. Instead you may run the **Generate Config Plans** Job directly via the `/api/extras/jobs/Generate Config Plans/run/` API endpoint.
 
 ## Editing a Config Plan
 
@@ -63,4 +67,15 @@ After a Config Plan is generated you have the ability to edit (or bulk edit) the
 !!! note
     You will not be able to modify the Config Set after generation. If it does not contain the desired commands, you will need to delete the plan and recreate it after ensuring the source of the generated commands has been updated.
 
-![Config Plan Edit](../images/config_plan-edit.png)
+![Config Plan Edit](../images/ss1_config_plan-edit_light.png#only-light){ .on-glb }
+![Config Plan Edit](../images/ss1_config_plan-edit_dark.png#only-dark){ .on-glb }
+
+If the Config Plan has post processing functions, you can render the post processed config to validate and approve a Config Plan.
+
+![Config Plan Post Processing Button](../images/ss1_config_plan_pp_button_light.png#only-light){ .on-glb }
+![Config Plan Post Processing Button](../images/ss1_config_plan_pp_button_dark.png#only-dark){ .on-glb }
+
+Post Processing occurs in a modal popup, and allows a user to view the configuration before approving the Config Plan.
+
+![Intended Configuration Web UI](../images/ss1_config_plan_pp-rendered_light.png#only-light){ .on-glb }
+![Intended Configuration Web UI](../images/ss1_config_plan_pp-rendered_dark.png#only-dark){ .on-glb }

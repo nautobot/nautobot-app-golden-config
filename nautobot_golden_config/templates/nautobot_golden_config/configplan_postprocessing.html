@@ -1,0 +1,12 @@
+<a data-bs-target="#ccppModal" data-bs-toggle="modal" href="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=object.device.id %}?config_plan_id={{ object.id }}&amp;modal=true">
+    <span class="mdi mdi-text-box-check"></span>
+</a>
+<div aria-labelledby="ccppModalLabel" class="modal fade" id="ccppModal" role="dialog" tabindex="-1">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-body">
+                Generating Post Processed Config...  <div class="loader"></div> <div class="loader" id="diff-loader"></div>
+            </div>
+        </div>
+    </div>
+</div>

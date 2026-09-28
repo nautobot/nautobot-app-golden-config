@@ -1,14 +1,14 @@
 """Customer logger to support writing to console and db."""
-from typing import Any
 
 import logging
+from typing import Any
 
 LOGGER = logging.getLogger("NORNIR_LOGGER")
 
 handler = logging.StreamHandler()
 handler.setLevel(logging.NOTSET)
 LOGGER.addHandler(handler)
-LOGGER_ADAPTER = logging.LoggerAdapter(LOGGER)
+LOGGER_ADAPTER = logging.LoggerAdapter(LOGGER, extra={})
 
 
 class NornirLogger:

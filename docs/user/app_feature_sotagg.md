@@ -18,11 +18,11 @@ The query starts with exactly `query ($device_id: ID!)`. This is to help fail fa
 
 Note that the GraphQL query returned is modified to remove the root key of `device`, so instead of all data being within device, such as `{"device": {"location": {"name": "Jersey City"}}}`, it is simply `{"location": {"name": "Jersey City"}}` as an example.
 
-It is helpful to make adjustments to the query, and then view the data from the Plugin's home page and clicking on a given device's `code-json` icon.
+It is helpful to make adjustments to the query, and then view the data from the App's home page and clicking on a given device's `code-json` icon.
 
 ## Transposer Function
 
-The transposer function is an optional function to make arbitrary changes to the data after the fact. There is a plugin configuration that allows the
+The transposer function is an optional function to make arbitrary changes to the data after the fact. There is a app configuration that allows the
 operator to point to a function within the python path by a string. The function will receive a single variable, that by convention should be called `data`. The function should return a valid Python json serializable data structure.
 
 ```python
@@ -37,7 +37,7 @@ def transposer(data):
 
 While the example transposer is silly and untested, it provides the structure for which a transposer can be used. The possibilities are obviously endless, such as reaching out to an external system, but operators should use caution not to overload complexity into the transposer.
 
-The configuration required in the plugin configuration is as described below.
+The configuration required in the app configuration is as described below.
 
 ```python
 PLUGINS_CONFIG["nautobot_golden_config"]["sot_agg_transposer"] = "nautobot_golden_config.transposer.transposer"

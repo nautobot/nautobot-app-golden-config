@@ -1,0 +1,14 @@
+# External Interactions
+
+This document describes external dependencies and prerequisites for this App to operate, including system requirements, API endpoints, interconnection or integrations to other applications or services, and similar topics.
+
+### From the App to Other Systems
+
+- Git integrations are required, this is generally `tcp/22` or `tcp/443` to the git repository.
+    + An account with privileges to read and/or write (depending on features used) with git.
+- When using backup configurations, will require access to the port of the network device, usually `tcp/22` or `tcp/443`.
+    + An account with privileges to read configurations.
+
+## Nautobot REST API endpoints
+
+- Documentation of the API is provided by OpenAPI (formerly Swagger) docs.

@@ -1,4 +1,5 @@
 """Helper for JSON rendering that extends what Nautobot Core provides."""
+
 import json
 
 from django import template

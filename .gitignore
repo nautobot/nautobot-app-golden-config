@@ -2,6 +2,9 @@ nautobot_golden_config/transposer.py
 golden-config/
 nautobot.sql
 
+# Avoid accidental commit of analytics template override generated via ./docs/insert-analytics.sh
+docs/assets/overrides/main.html
+
 # Ansible Retry Files
 *.retry
 
@@ -60,6 +63,7 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+lcov.info
 
 # Translations
 *.mo
@@ -299,9 +303,10 @@ fabric.properties
 .vscode/*
 *.code-workspace
 
-# Rando
+# Random
 creds.env
 development/*.txt
+!development/towncrier_header.txt
 
 # Invoke overrides
 invoke.yml
@@ -310,3 +315,31 @@ invoke.yml
 public
 /compose.yaml
 /dump.sql
+.service_ports.json
+/nautobot_golden_config/static/nautobot_golden_config/docs
+
+# Claude Code local settings
+.claude/settings.local.json
+CLAUDE.local.md
+
+# OpenAI Codex CLI
+AGENTS.md
+AGENTS.override.md
+.codex/
+
+# Google Gemini CLI
+GEMINI.md
+.gemini/
+.vertexai/
+
+# Cursor (Anysphere)
+.cursor/
+.cursorrules
+.cursorignore
+.cursorindexingignore
+
+# Common AI/ML/IDE tools
+# https://github.com/ollama/ollama
+.ollama/
+# https://github.com/kirodotdev/Kiro
+.kiro/

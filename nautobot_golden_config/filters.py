@@ -1,10 +1,15 @@
-"""Filters for UI and API Views."""
+"""Filtering for nautobot_golden_config."""
 
 import django_filters
-
-from nautobot.core.filters import MultiValueDateTimeFilter, TreeNodeMultipleChoiceFilter, SearchFilter
+from nautobot.apps.filters import (
+    MultiValueDateTimeFilter,
+    NaturalKeyOrPKMultipleChoiceFilter,
+    NautobotFilterSet,
+    SearchFilter,
+    StatusFilter,
+    TreeNodeMultipleChoiceFilter,
+)
 from nautobot.dcim.models import Device, DeviceType, Location, Manufacturer, Platform, Rack, RackGroup
-from nautobot.extras.filters import NaturalKeyOrPKMultipleChoiceFilter, NautobotFilterSet, StatusFilter
 from nautobot.extras.models import JobResult, Role, Status
 from nautobot.tenancy.models import Tenant, TenantGroup
 
@@ -20,7 +25,7 @@ class GoldenConfigFilterSet(NautobotFilterSet):
         # Choose the lookup expression map based on the filter type
         lookup_map = NautobotFilterSet._get_filter_lookup_dict(existing_filter)
         if isinstance(existing_filter, MultiValueDateTimeFilter):
-            lookup_map.update({"isnull": "isnull"})
+            lookup_map = dict(lookup_map, isnull="isnull")
         return lookup_map
 
     q = SearchFilter(
@@ -124,18 +129,7 @@ class GoldenConfigFilterSet(NautobotFilterSet):
 
         model = models.GoldenConfig
         distinct = True
-        fields = [
-            "id",
-            "backup_config",
-            "backup_last_attempt_date",
-            "backup_last_success_date",
-            "intended_config",
-            "intended_last_attempt_date",
-            "intended_last_success_date",
-            "compliance_config",
-            "compliance_last_attempt_date",
-            "compliance_last_success_date",
-        ]
+        fields = "__all__"
 
 
 class ConfigComplianceFilterSet(GoldenConfigFilterSet):  # pylint: disable=too-many-ancestors
@@ -157,7 +151,7 @@ class ConfigComplianceFilterSet(GoldenConfigFilterSet):  # pylint: disable=too-m
         """Meta class attributes for ConfigComplianceFilter."""
 
         model = models.ConfigCompliance
-        fields = ["id", "compliance", "actual", "intended", "missing", "extra", "ordered", "compliance_int", "rule"]
+        fields = "__all__"
 
 
 class ComplianceFeatureFilterSet(NautobotFilterSet):
@@ -176,7 +170,7 @@ class ComplianceFeatureFilterSet(NautobotFilterSet):
         """Boilerplate filter Meta data for compliance feature."""
 
         model = models.ComplianceFeature
-        fields = ["id", "name", "slug", "description"]
+        fields = "__all__"
 
 
 class ComplianceRuleFilterSet(NautobotFilterSet):
@@ -201,7 +195,7 @@ class ComplianceRuleFilterSet(NautobotFilterSet):
         """Boilerplate filter Meta data for compliance rule."""
 
         model = models.ComplianceRule
-        fields = ["feature", "id"]
+        fields = "__all__"
 
 
 class ConfigRemoveFilterSet(NautobotFilterSet):
@@ -226,7 +220,7 @@ class ConfigRemoveFilterSet(NautobotFilterSet):
         """Boilerplate filter Meta data for Config Remove."""
 
         model = models.ConfigRemove
-        fields = ["id", "name"]
+        fields = "__all__"
 
 
 class ConfigReplaceFilterSet(NautobotFilterSet):
@@ -251,21 +245,42 @@ class ConfigReplaceFilterSet(NautobotFilterSet):
         """Boilerplate filter Meta data for Config Replace."""
 
         model = models.ConfigReplace
-        fields = ["id", "name"]
+        fields = "__all__"
 
 
 class GoldenConfigSettingFilterSet(NautobotFilterSet):
     """Inherits Base Class NautobotFilterSet."""
 
+    device_id = django_filters.ModelMultipleChoiceFilter(
+        queryset=Device.objects.all(),
+        label="Device (ID)",
+        method="filter_device_id",
+    )
+
+    def filter_device_id(self, queryset, name, value):  # pylint: disable=unused-argument
+        """Filter by Device ID."""
+        if not value:
+            return queryset
+        golden_config_setting_ids = []
+        for instance in value:
+            if isinstance(instance, Device):
+                device = instance
+            else:
+                device = Device.objects.get(id=instance)
+            golden_config_setting = models.GoldenConfigSetting.objects.get_for_device(device)
+            if golden_config_setting is not None:
+                golden_config_setting_ids.append(golden_config_setting.id)
+        return queryset.filter(id__in=golden_config_setting_ids)
+
     class Meta:
         """Boilerplate filter Meta data for Config Remove."""
 
         model = models.GoldenConfigSetting
-        fields = ["id", "name", "slug", "weight", "backup_repository", "intended_repository", "jinja_repository"]
+        fields = "__all__"
 
 
 class RemediationSettingFilterSet(NautobotFilterSet):
-    """Inherits Base Class CustomFieldModelFilterSet."""
+    """Inherits Base Class NautobotFilterSet."""
 
     q = SearchFilter(
         filter_predicates={
@@ -294,15 +309,23 @@ class RemediationSettingFilterSet(NautobotFilterSet):
         """Boilerplate filter Meta data for Remediation Setting."""
 
         model = models.RemediationSetting
-        fields = ["id", "remediation_type"]
+        fields = "__all__"
 
 
 class ConfigPlanFilterSet(NautobotFilterSet):
     """Inherits Base Class NautobotFilterSet."""
 
-    q = django_filters.CharFilter(
-        method="search",
-        label="Search",
+    q = SearchFilter(
+        filter_predicates={
+            "device__name": {
+                "lookup_expr": "icontains",
+                "preprocessor": str,
+            },
+            "change_control_id": {
+                "lookup_expr": "icontains",
+                "preprocessor": str,
+            },
+        },
     )
     device_id = django_filters.ModelMultipleChoiceFilter(
         queryset=Device.objects.all(),
@@ -421,23 +444,9 @@ class ConfigPlanFilterSet(NautobotFilterSet):
         to_field_name="name",
         label="Status",
     )
-    # tags = TagFilter()
-
-    q = SearchFilter(
-        filter_predicates={
-            "device__name": {
-                "lookup_expr": "icontains",
-                "preprocessor": str,
-            },
-            "change_control_id": {
-                "lookup_expr": "icontains",
-                "preprocessor": str,
-            },
-        },
-    )
 
     class Meta:
         """Boilerplate filter Meta data for Config Plan."""
 
         model = models.ConfigPlan
-        fields = ["id", "created", "change_control_id", "plan_type", "tags"]
+        fields = "__all__"

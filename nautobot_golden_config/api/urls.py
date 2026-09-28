@@ -1,12 +1,11 @@
-"""API for Custom Jobs ."""
+"""Django API urlpatterns declaration for nautobot_golden_config app."""
 
 from django.urls import path
-from nautobot.core.api.routers import OrderedDefaultRouter
+from nautobot.apps.api import OrderedDefaultRouter
 
 from nautobot_golden_config.api import views
 
-router = OrderedDefaultRouter()
-router.APIRootView = views.GoldenConfigRootView
+router = OrderedDefaultRouter(view_name="Golden Config")
 router.register("compliance-feature", views.ComplianceFeatureViewSet)
 router.register("compliance-rule", views.ComplianceRuleViewSet)
 router.register("config-compliance", views.ConfigComplianceViewSet)
@@ -17,11 +16,23 @@ router.register("config-replace", views.ConfigReplaceViewSet)
 router.register("remediation-setting", views.RemediationSettingViewSet)
 router.register("config-postprocessing", views.ConfigToPushViewSet)
 router.register("config-plan", views.ConfigPlanViewSet)
-urlpatterns = router.urls
-urlpatterns.append(
+
+urlpatterns = [
     path(
         "sotagg/<uuid:pk>/",
         views.SOTAggDeviceDetailView.as_view(),
         name="device_detail",
-    )
-)
+    ),
+    path(
+        "generate-intended-config/",
+        views.GenerateIntendedConfigView.as_view(),
+        name="generate_intended_config",
+    ),
+    path(
+        "git-repository-branches/<pk>/",
+        views.GitRepositoryBranchesView.as_view(),
+        name="git_repository_branches",
+    ),
+]
+app_name = "nautobot_golden_config-api"
+urlpatterns += router.urls

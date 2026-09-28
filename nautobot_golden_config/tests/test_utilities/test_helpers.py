@@ -4,12 +4,14 @@ import logging
 from unittest.mock import MagicMock, patch
 
 from django.contrib.contenttypes.models import ContentType
-from django.test import TestCase
 from django.template import engines
+from django.test import TestCase
 from jinja2 import exceptions as jinja_errors
-from nautobot.dcim.models import Device, Platform, Location, LocationType
+from nautobot.dcim.models import Device, Location, LocationType, Platform
+from nautobot.extras.management import populate_status_choices
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status, Tag
 from nornir_nautobot.exceptions import NornirNautobotException
+
 from nautobot_golden_config.models import GoldenConfigSetting
 from nautobot_golden_config.tests.conftest import create_device, create_helper_repo, create_orphan_device
 from nautobot_golden_config.utilities.helper import (
@@ -108,6 +110,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
             sot_agg_query=graphql_query,
         )
 
+        populate_status_choices()
         create_device(name="test_device")
         create_orphan_device(name="orphan_device")
         self.job_result = MagicMock()
@@ -295,3 +298,23 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         self.assertEqual(self.device_to_settings_map[test_device.id], self.test_settings_c)
         self.assertEqual(self.device_to_settings_map[orphan_device.id], self.test_settings_b)
         self.assertEqual(get_device_to_settings_map(queryset=Device.objects.none()), {})
+
+    def test_device_to_settings_map_multi_match_settings(self):
+        """Verify Golden Config Settings are properly mapped to devices."""
+        test_device = Device.objects.get(name="test_device")
+        test_device.location = Location.objects.get(name="Site 4")
+        test_device.save()
+        # Regenerate the device to settings map to ensure it is up to date.
+        temp_device_to_settings_map = get_device_to_settings_map(queryset=Device.objects.all())
+        self.assertEqual(temp_device_to_settings_map[test_device.id], self.test_settings_b)
+
+    def test_device_to_settings_map_gc_weight_change(self):
+        """Verify Golden Config Settings weight changes work properly."""
+        self.test_settings_a.weight = 3000
+        self.test_settings_a.save()
+        test_device = Device.objects.get(name="test_device")
+        test_device.location = Location.objects.get(name="Site 4")
+        test_device.save()
+        # Regenerate the device to settings map to ensure it is up to date.
+        temp_device_to_settings_map = get_device_to_settings_map(queryset=Device.objects.all())
+        self.assertEqual(temp_device_to_settings_map[test_device.id], self.test_settings_a)

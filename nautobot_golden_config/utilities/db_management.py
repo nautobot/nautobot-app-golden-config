@@ -1,7 +1,7 @@
 """Functions to manage DB related tasks."""
+
 from django.db import connections
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
-
 
 RUNNER_SETTINGS = NORNIR_SETTINGS.get("runner", {})
 

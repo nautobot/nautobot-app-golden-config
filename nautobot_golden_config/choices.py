@@ -1,5 +1,6 @@
 """Choicesets for golden config."""
-from nautobot.core.choices import ChoiceSet
+
+from nautobot.apps.choices import ChoiceSet
 
 
 class ComplianceRuleConfigTypeChoice(ChoiceSet):
@@ -7,10 +8,12 @@ class ComplianceRuleConfigTypeChoice(ChoiceSet):
 
     TYPE_CLI = "cli"
     TYPE_JSON = "json"
+    TYPE_XML = "xml"
 
     CHOICES = (
         (TYPE_CLI, "CLI"),
         (TYPE_JSON, "JSON"),
+        (TYPE_XML, "XML"),
     )
 
 

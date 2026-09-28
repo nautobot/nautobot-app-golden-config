@@ -1,17 +1,16 @@
-# Quick Start Guides
+# Getting Started with the App
 
-- [Quick Start Guides](#quick-start-guides)
-- [Backup Configuration](#backup-configuration)
-- [Intended Configuration](#intended-configuration)
-- [Compliance](#compliance)
-- [Config Remediation](#config-remediation)
-- [Config Plans](#config-plans)
-- [Config Deploy](#config-deploy)
-- [Load Properties from Git](#load-properties-from-git)
+This document provides a step-by-step tutorial on how to get the App going and how to use it.
 
-## Backup Configuration
+## Install the App
 
-Follow the steps below to get up and running for the configuration backup element of the plugin.
+To install the App, please follow the instructions detailed in the [Installation Guide](../admin/install.md).
+
+## First steps with the App
+
+### Backup Configuration
+
+Follow the steps below to get up and running for the configuration backup element of the app.
 
 1. Enable the feature in the `PLUGIN_SETTINGS`. The configuration should have `"enable_backup": True` set in the `PLUGINS_CONFIG` dictionary for `nautobot_golden_config`.
 
@@ -22,8 +21,8 @@ Follow the steps below to get up and running for the configuration backup elemen
     3. Make sure to select the **Provides** called `backup configs`.
     4. Click Create.
 
-3. Next, make sure to create new or update existing Plugins **Settings** with the backup details.
-    1. Navigate to `Golden Config -> Settings` under the Golden Configuration Section.
+3. Next, make sure to create new or update existing Apps **Settings** with the backup details.
+    1. Navigate to `Golden Config -> Golden Config Settings` under the SETUP Section.
     2. Create new or select one of the existing `Settings` objects
     3. Fill out the Backup Repository. (The dropdown will show the repository that was just created.)
     4. Fill out Backup Path Template. Typically `{{obj.location.name|slugify}}/{{obj.name}}.cfg`, see [Setting Details](./app_use_cases.md#application-settings)
@@ -37,69 +36,70 @@ Follow the steps below to get up and running for the configuration backup elemen
 
 5. Execute the Backup.
 
-    1. Navigate to `Golden Config -> Home` under the Golden Configuration Section.
+    1. Navigate to `Golden Config -> Config Overview` under the Golden Configuration Section.
     2. Click on the `Execute` button and select `Backup`.
     3. Select what to run the backup on.
     4. Run the Job by clicking "Run Job" button.
 
 > For in-depth details see [Navigating Backup](./app_feature_backup.md)
 
-## Intended Configuration
+### Intended Configuration
 
-Follow the steps below to get up and running for the intended configuration element of the plugin.
-
-!!! note
-    Intended Configuration requires the `enable_intended` and `enabled_sotAgg` plugin features to be used.
+Follow the steps below to get up and running for the intended configuration element of the app.
 
 !!! note
-    If Secret Group is used for the Repositories the secrets type HTTP(S) is required for this plugin.
+    Intended Configuration requires the `enable_intended` and `enabled_sotAgg` app features to be used.
+
+!!! note
+    If Secret Group is used for the Repositories the secrets type HTTP(S) is required for this app.
 
 1. Enable the feature in the `PLUGIN_SETTINGS`. The configuration should have `"enable_intended": True` set in the `PLUGINS_CONFIG` dictionary for `nautobot_golden_config`.
 
-
-2. Add any git repositories that will be used to house the intended configurations.
-
-    1. In the UI `Extensibility -> Git Repositories`. Click Add.
-    2. Populate the Git Repository data for the intended. [Git Settings](./app_feature_backup.md#git-settings)
-    3. Make sure to select the **Provides** called `intended configs`.
-    4. Click Create.
-
-3. Add the git repository that will be used to house the Jinja2 templates.
-
-    1. In the UI `Extensibility -> Git Repositories`. Click Add.
-    2. Populate the Git Repository data for the jinja2 templates. [Git Settings](./app_feature_backup.md#git-settings)
-    3. Make sure to select the **Provides** called `jinja templates`.
-    4. Click Create.
-
-4. Next, make sure to create new or update existing Plugins **Settings** with the intended and jinja2 template details.
-
-    1. Navigate to `Golden Config -> Settings` under the Golden Configuration Section.
-    2. Create new or select one of the existing `Settings` objects
-    3. Fill out the Intended Repository. (The dropdown will show the repository that was just created.)
-    4. Fill out Intended Path Template. Typically `{{obj.location.name|slugify}}/{{obj.name}}.cfg`, see [Setting Details](./app_feature_backup.md#application-settings)
-    5. Fill out Jinja Repository. (The dropdown will show the repository that was just created.)
-    6. Fill out Jinja Path Template.  Typically `{{obj.platform.network_driver}}.j2`.
-
-5. Determine what data(variables) the Jinja2 templates need from Nautobot.
+2. Determine what data(variables) the Jinja2 templates need from Nautobot. This configuration will be needed and apparent in the next steps.
 
     1. See [Source of Truth Agg Details](./app_feature_sotagg.md)
     2. In the UI `Extensibility -> GraphQL Queries`. Click Add.
     3. Populate the GraphQL data.
     4. Make sure to follow the format specified in the **GraphQL** section in [Source of Truth Agg Details](./app_feature_sotagg.md)
     5. Click Create.
-    6. Navigate to `Golden Config -> Settings` under the Golden Configuration Section.
-    7. Select a SoTAgg Saved Query. (The dropdown will show the GraphQL query that was just created.)
+    6. Navigate to `Golden Config -> Golden Config Settings` under the SETUP Section.
+
+3. Add any git repositories that will be used to house the intended configurations.
+
+    1. In the UI `Extensibility -> Git Repositories`. Click Add.
+    2. Populate the Git Repository data for the intended. [Git Settings](./app_use_cases.md#git-settings)
+    3. Make sure to select the **Provides** called `intended configs`.
+    4. Click Create.
+
+4. Add the git repository that will be used to house the Jinja2 templates.
+
+    1. In the UI `Extensibility -> Git Repositories`. Click Add.
+    2. Populate the Git Repository data for the jinja2 templates. [Git Settings](./app_use_cases.md#git-settings)
+    3. Make sure to select the **Provides** called `jinja templates`.
+    4. Click Create.
+
+5. Next, make sure to create new or update existing Apps **Settings** with the intended and jinja2 template details.
+
+    1. Navigate to `Golden Config -> Golden Config Settings` under the SETUP Section.
+    2. Create new or select one of the existing `Settings` objects
+    3. Fill out the Intended Repository. (The dropdown will show the repository that was just created.)
+    4. Within the "Intended Configuration" section fill out Intended Path Template. Typically `{{obj.location.name|slugify}}/{{obj.name}}.cfg`, see [Setting Details](./app_use_cases.md#application-settings)
+    5. Within the "Templates Configuration" section fill out Jinja Repository. (The dropdown will show the repository that was just created.)
+    6. Fill out Jinja Path Template.  Typically `{{obj.platform.network_driver}}.j2`.
+    7. Select a SoTAgg Saved Query. (The dropdown will show the GraphQL query that was just created in step 2.)
 
 6. Execute the Intended.
 
-    1. Navigate to `Golden Config -> Home`.
+    1. Navigate to `Golden Config -> Config Overview`.
     2. Click on the `Execute` button and select `Intended`.
+    ![Generated Intended Configuration](../images/ss1_generate-intended-config-ui_light.png#only-light){ .on-glb }
+    ![Generated Intended Configuration](../images/ss1_generate-intended-config-ui_dark.png#only-dark){ .on-glb }
     3. Select what to run the intended generation on.
     4. Run the Job.
 
 > For in-depth details see [Navigating Intended](./app_feature_intended.md)
 
-## Compliance
+### Compliance
 
 Compliance requires Backups and Intended Configurations in order to be executed.
 
@@ -125,9 +125,9 @@ Compliance requires Backups and Intended Configurations in order to be executed.
 
 > For in-depth details see [Navigating Compliance](./app_feature_compliance.md)
 
-## Config Remediation
+### Config Remediation
 
-Follow the steps below to get up and running for the configuration remediation element of the plugin.
+Follow the steps below to get up and running for the configuration remediation element of the app.
 
 1. Navigate to `Golden Config -> Compliance Rules`.
 2. Select the rules in which you'd like to enable remediation on.
@@ -137,9 +137,9 @@ Follow the steps below to get up and running for the configuration remediation e
 
 > For in-depth details see [Navigating Config Plans](./app_feature_remediation.md)
 
-## Config Plans
+### Config Plans
 
-Follow the steps below to get up and running for the configuration plans element of the plugin.
+Follow the steps below to get up and running for the configuration plans element of the app.
 
 1. Enable the feature in the `PLUGIN_SETTINGS`. The configuration should have `"enable_plan": True` set in the `PLUGINS_CONFIG` dictionary for `nautobot_golden_config`.
 2. Follow the steps in [Compliance](#compliance).
@@ -159,9 +159,9 @@ Follow the steps below to get up and running for the configuration plans element
 
 > For in-depth details see [Navigating Config Plans](./app_feature_config_plans.md)
 
-## Config Deploy
+### Config Deploy
 
-Follow the steps below to get up and running for the configuration deployment element of the plugin.
+Follow the steps below to get up and running for the configuration deployment element of the app.
 
 1. Enable the feature in the `PLUGIN_SETTINGS`. The configuration should have `"enable_deploy": True` set in the `PLUGINS_CONFIG` dictionary for `nautobot_golden_config`.
 2. Follow the steps in [Config Plans](#config-plans).
@@ -172,7 +172,7 @@ Follow the steps below to get up and running for the configuration deployment el
 
 > Config Deployments utilize the dispatchers from nornir-nautobot just like the other functionality of Golden Config. See [Troubleshooting Dispatchers](./troubleshooting/troubleshoot_dispatchers.md) for more details.
 
-## Load Properties from Git
+### Load Properties from Git
 
 Golden Config properties include: Compliance Features, Compliance Rules, Config Removals, and Config Replacements. They can be created via the UI, API, or alternatively you can load these properties from a Git repository, defined in YAML files following the this directory structure (you can skip any of them if not apply):
 
@@ -182,6 +182,7 @@ Golden Config properties include: Compliance Features, Compliance Rules, Config 
 │   ├── compliance_rules
 │   ├── config_removes
 │   ├── config_replaces
+│   ├── remediation_settings
 ```
 
 The files within these folders can follow any naming pattern or nested folder structure, all of them will be recursively taken into account. So it's up to you to decide how to you prefer to organize these files (within the previously stated directory structure):
@@ -201,9 +202,12 @@ The files within these folders can follow any naming pattern or nested folder st
 │   ├── config_replaces
 │   │   ├── cisco_ios.yml
 │   │   └── juniper_junos.yml
+│   ├── remediation_settings
+│   │   ├── cisco_ios.yml
+│   │   └── juniper_junos.yml
 ```
 
-The `YAML` files will contain all the attributes necessary to identify an object (for instance, a `ComplianceRule` is identified by the `feature_slug` and the `platform_network_driver` together) and the other attributes (the ones that are not used to identify the object). For example:
+The `YAML` files will contain all the attributes necessary to identify an object (for instance, a `ComplianceRule` is identified by the `feature_slug` and the `platform_name` together) and the other attributes (the ones that are not used to identify the object). For example:
 
 `compliance_features` example:
 
@@ -219,7 +223,7 @@ The `YAML` files will contain all the attributes necessary to identify an object
 ```yaml
 ---
 - feature_slug: "aaa"
-  platform_network_driver: "Cisco IOS"
+  platform_name: "Cisco IOS"
   config_ordered: true
   match_config: |
     aaa
@@ -234,7 +238,7 @@ The `YAML` files will contain all the attributes necessary to identify an object
 
 ```yaml
 ---
-- platform_network_driver: "Cisco IOS"
+- platform_name: "Cisco IOS"
   name: "Build config"
   regex: '^Building\s+configuration.*\n'
 ```
@@ -244,10 +248,26 @@ The `YAML` files will contain all the attributes necessary to identify an object
 ```yaml
 ---
 - name: "username"
-  platform_network_driver: "Cisco IOS"
+  platform_name: "Cisco IOS"
   description: "username"
   regex: '(username\s+\S+\spassword\s+5\s+)\S+(\s+role\s+\S+)'
   replace: '\1<redacted_config>\2'
+```
+
+`remediation_settings` example:
+
+```yaml
+---
+- platform_name: "Cisco IOS"
+  remediation_type: "hierconfig"
+  remediation_options:
+    style: ios
+    negation: no
+    idempotent_commands:
+      - lineage:
+          - startswith: vlan
+          - startswith: name
+...
 ```
 
 CustomField data can be added using the `_custom_field_data` attribute, that takes a dictionary mapping custom_field names to their values:
@@ -263,7 +283,7 @@ CustomField data can be added using the `_custom_field_data` attribute, that tak
 ```
 
 !!! note
-    For Foreign Key references to `ComplianceFeature` and `Platform` we use the keywords `feature_slug` and `platform_network_driver` respectively.
+    For Foreign Key references to `ComplianceFeature` and `Platform` we use the keywords `feature_slug` and `platform_name` respectively.
 
 1. Add the Git repository that will be used to sync Git properties.
 
@@ -274,7 +294,7 @@ CustomField data can be added using the `_custom_field_data` attribute, that tak
 
 2. Run `sync` and all the properties will be created/updated in a declarative way and following the right order to respect the dependencies between objects. The import task will raise a `warning` if the dependencies are not available yet (for instance, a referenced `Platform` is not created), so the `sync` process will continue, and you could then fix these warnings by reviewing the mismatch (maybe creating the required object) and run the `sync` process again.
 
-## Constance Settings
+### Constance Settings
 
 Golden config uses the `dispatch_params()` function in conjunction with the constance settings DEFAULT_FRAMEWORK, GET_CONFIG_FRAMEWORK, MERGE_CONFIG_FRAMEWORK, and REPLACE_CONFIG_FRAMEWORK. This allows you to define in this order of precedence:
 
@@ -307,7 +327,7 @@ Using the previous example, everything will use the napalm dispatcher, this is i
 }
 ```
 
-Using the previous example, everything will use the napalm dispatcher **except** forinet, which would use netmiko.
+Using the previous example, everything will use the napalm dispatcher **except** fortinet, which would use netmiko.
 
 ```json
 # DEFAULT_FRAMEWORK
@@ -322,9 +342,12 @@ Using the previous example, everything will use the napalm dispatcher **except**
 }
 ```
 
-Using the previous example, everything will use the napalm dispatcher **except** forinet **and** when using the `get_config` method for `arista_eos` and `cisco_nxos`, use netmiko.
+Using the previous example, everything will use the napalm dispatcher **except** fortinet **and** when using the `get_config` method for `arista_eos` and `cisco_nxos`, use netmiko.
 
 As you can see, you now have the flexibility to control which network_driver will use which framework for every method, as each constance setting is sanely named to match the method name (e.g. `GET_CONFIG_FRAMEWORK` maps the `get_config` method). Additionally, if the current `network_driver` and associated `network_driver_mappings` is not sufficient as is, you can extend the [NETWORK DRIVER](https://docs.nautobot.com/projects/core/en/stable/user-guide/administration/configuration/optional-settings/#network_drivers) settings as well.
 
 Golden Config leverages the [config framework](https://docs.nautobot.com/projects/core/en/stable/development/apps/api/database-backend-config/) from [constance](https://django-constance.readthedocs.io/en/latest/), please refer to that documentation for how to use. You can access your configurations from your name in the top right of the UI, followed by `Admin -> Configuration -> Config` and locate your setting.
 
+## What are the next steps?
+
+You can check out the [Use Cases](app_use_cases.md) section for more examples.

@@ -1,6 +1,13 @@
-"""Add the configuration compliance buttons to the Plugins Navigation."""
+"""Add the configuration compliance buttons to the Apps Navigation."""
 
-from nautobot.apps.ui import NavMenuAddButton, NavMenuGroup, NavMenuItem, NavMenuTab
+from nautobot.apps.ui import (
+    NavigationIconChoices,
+    NavigationWeightChoices,
+    NavMenuAddButton,
+    NavMenuGroup,
+    NavMenuItem,
+    NavMenuTab,
+)
 
 from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_PLAN
 
@@ -142,10 +149,22 @@ items_setup.append(
 menu_items = (
     NavMenuTab(
         name="Golden Config",
-        weight=1000,
+        weight=NavigationWeightChoices.GOLDEN_CONFIG,
+        icon=NavigationIconChoices.GOLDEN_CONFIG,
         groups=(
             NavMenuGroup(name="Manage", weight=100, items=tuple(items_operate)),
             NavMenuGroup(name="Setup", weight=100, items=tuple(items_setup)),
+            NavMenuGroup(
+                name="Tools",
+                weight=300,
+                items=(
+                    NavMenuItem(
+                        link="plugins:nautobot_golden_config:generate_intended_config",
+                        name="Generate Intended Config",
+                        permissions=["dcim.view_device", "extras.view_gitrepository"],
+                    ),
+                ),
+            ),
         ),
     ),
 )

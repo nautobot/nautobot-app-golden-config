@@ -1,12 +1,14 @@
-"""REST API serializer capabilities for graphql plugin."""
-# pylint: disable=too-many-ancestors
-from rest_framework import serializers
+"""API serializers for nautobot_golden_config."""
 
-from nautobot.extras.api.mixins import TaggedModelSerializerMixin
+# pylint: disable=too-many-ancestors
+from nautobot.apps.api import NautobotModelSerializer, TaggedModelSerializerMixin
+from nautobot.apps.utils import GitRepo
 from nautobot.dcim.api.serializers import DeviceSerializer
 from nautobot.dcim.models import Device
-from nautobot.core.api.serializers import NautobotModelSerializer
-
+from nautobot.extras.api.serializers import GitRepositorySerializer  # core-import-update
+from nautobot.extras.datasources.git import ensure_git_repository, get_repo_from_url_to_path_and_from_branch
+from nautobot.extras.models import GitRepository
+from rest_framework import serializers
 
 from nautobot_golden_config import models
 from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
@@ -15,17 +17,20 @@ from nautobot_golden_config.utilities.config_postprocessing import get_config_po
 class GraphQLSerializer(serializers.Serializer):  # pylint: disable=abstract-method
     """Serializer for a GraphQL object."""
 
-    data = serializers.JSONField()
+    data = serializers.JSONField(read_only=True)
 
 
 class ComplianceFeatureSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
-    """Serializer for ComplianceFeature object."""
+    """ComplianceFeature Serializer."""
 
     class Meta:
-        """Set Meta Data for ComplianceFeature, will serialize all fields."""
+        """Meta attributes."""
 
         model = models.ComplianceFeature
         fields = "__all__"
+
+        # Option for disabling write for certain fields:
+        # read_only_fields = []
 
 
 class ComplianceRuleSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
@@ -88,12 +93,12 @@ class ConfigReplaceSerializer(NautobotModelSerializer, TaggedModelSerializerMixi
         fields = "__all__"
 
 
-class ConfigToPushSerializer(DeviceSerializer):
+class ConfigToPushSerializer(DeviceSerializer):  # pylint: disable=nb-sub-class-name
     """Serializer for ConfigToPush view."""
 
     config = serializers.SerializerMethodField()
 
-    class Meta(DeviceSerializer):
+    class Meta(DeviceSerializer.Meta):
         """Extend the Device serializer with the configuration after postprocessing."""
 
         fields = "__all__"
@@ -125,3 +130,35 @@ class ConfigPlanSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
         model = models.ConfigPlan
         fields = "__all__"
         read_only_fields = ["device", "plan_type", "feature", "config_set"]
+
+
+class GenerateIntendedConfigSerializer(serializers.Serializer):  # pylint: disable=abstract-method
+    """Serializer for GenerateIntendedConfigView."""
+
+    intended_config = serializers.CharField(read_only=True)
+    intended_config_lines = serializers.ListField(read_only=True, child=serializers.CharField())
+    graphql_data = serializers.JSONField(read_only=True)
+    diff = serializers.CharField(read_only=True)
+    diff_lines = serializers.ListField(read_only=True, child=serializers.CharField())
+
+
+class GitRepositoryWithBranchesSerializer(GitRepositorySerializer):  # pylint: disable=nb-sub-class-name
+    """Serializer for extras.GitRepository with remote branches field."""
+
+    remote_branches = serializers.SerializerMethodField()
+
+    def get_remote_branches(self, obj):
+        """Return a list of branches for the GitRepository."""
+        ensure_git_repository(obj)
+        from_url, to_path, _ = get_repo_from_url_to_path_and_from_branch(obj)
+        repo_helper = GitRepo(to_path, from_url)
+        repo_helper.repo.remotes.origin.fetch()
+        return [
+            ref.name[7:]  # removeprefix("origin/")
+            for ref in repo_helper.repo.remotes.origin.refs
+            if ref.name != "origin/HEAD"
+        ]
+
+    class Meta:  # noqa: D106  # undocumented-public-nested-class
+        model = GitRepository
+        fields = "__all__"

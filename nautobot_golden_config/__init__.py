@@ -1,17 +1,16 @@
-"""Plugin declaration for nautobot_golden_config."""
+"""App declaration for nautobot_golden_config."""
+
 # Metadata is inherited from Nautobot. If not including Nautobot in the environment, this should be added
 from importlib import metadata
 
+from django.db.models.signals import post_migrate
+from nautobot.apps import ConstanceConfigItem, NautobotAppConfig, nautobot_database_ready
 
 __version__ = metadata.version(__name__)
 
-from django.db.models.signals import post_migrate
-from nautobot.core.signals import nautobot_database_ready
-from nautobot.apps import ConstanceConfigItem, NautobotAppConfig
-
 
 class GoldenConfig(NautobotAppConfig):
-    """Plugin configuration for the nautobot_golden_config plugin."""
+    """App configuration for the nautobot_golden_config app."""
 
     name = "nautobot_golden_config"
     verbose_name = "Golden Configuration"
@@ -20,6 +19,7 @@ class GoldenConfig(NautobotAppConfig):
     author_email = "opensource@networktocode.com"
     description = "Nautobot Apps that embraces NetDevOps and automates configuration backups, performs configuration compliance, generates intended configurations, and has config remediation and deployment features. Includes native Git integration and gives users the flexibility to mix and match the supported features."
     base_url = "golden-config"
+    docs_view_name = "plugins:nautobot_golden_config:docs"
     default_settings = {
         "enable_backup": True,
         "enable_compliance": True,
@@ -35,6 +35,9 @@ class GoldenConfig(NautobotAppConfig):
         "per_feature_width": 13,
         "per_feature_height": 4,
         "get_custom_compliance": None,
+        # This is an experimental and undocumented setting that will change in the future!!
+        # Use at your own risk!!!!!
+        "_manual_dynamic_group_mgmt": False,
         "jinja_env": {
             "undefined": "jinja2.StrictUndefined",
             "trim_blocks": True,
@@ -71,8 +74,8 @@ class GoldenConfig(NautobotAppConfig):
         # pylint: disable=import-outside-toplevel
         from .signals import (
             config_compliance_platform_cleanup,
-            post_migrate_create_statuses,
             post_migrate_create_job_button,
+            post_migrate_create_statuses,
         )
 
         nautobot_database_ready.connect(post_migrate_create_statuses, sender=self)

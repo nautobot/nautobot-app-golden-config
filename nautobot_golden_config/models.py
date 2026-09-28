@@ -2,19 +2,24 @@
 
 import json
 import logging
+import os
 
 from deepdiff import DeepDiff
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models.manager import BaseManager
 from django.utils.module_loading import import_string
-from hier_config import Host as HierConfigHost
+from hier_config import WorkflowRemediation, get_hconfig
+from hier_config.utils import hconfig_v2_os_v3_platform_mapper, load_hconfig_v2_options
+from nautobot.apps.models import RestrictedQuerySet, extras_features
+from nautobot.apps.utils import render_jinja2
 from nautobot.core.models.generics import PrimaryModel
 from nautobot.core.models.utils import serialize_object, serialize_object_v2
 from nautobot.dcim.models import Device
 from nautobot.extras.models import ObjectChange
 from nautobot.extras.models.statuses import StatusField
-from nautobot.extras.utils import extras_features
 from netutils.config.compliance import feature_compliance
+from xmldiff import actions, main
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
@@ -25,7 +30,7 @@ GRAPHQL_STR_START = "query ($device_id: ID!)"
 ERROR_MSG = (
     "There was an issue with the data that was returned by your get_custom_compliance function. "
     "This is a local issue that requires the attention of your systems administrator and not something "
-    "that can be fixed within the Golden Config plugin. "
+    "that can be fixed within the Golden Config app. "
 )
 MISSING_MSG = (
     ERROR_MSG + "Specifically the `{}` key was not found in value the get_custom_compliance function provided."
@@ -95,7 +100,9 @@ def _get_json_compliance(obj):
         type_changes = list(diff.get("type_changes", {}).keys())
         return dictionary_items + list_items + values_changed + type_changes
 
-    diff = DeepDiff(obj.actual, obj.intended, ignore_order=obj.ordered, report_repetition=True)
+    diff = DeepDiff(
+        obj.actual, obj.intended, ignore_order=obj.ordered, report_repetition=True, threshold_to_diff_deeper=0
+    )
     if not diff:
         compliance_int = 1
         compliance = True
@@ -108,6 +115,41 @@ def _get_json_compliance(obj):
         ordered = False
         missing = _null_to_empty(_normalize_diff(diff, "added"))
         extra = _null_to_empty(_normalize_diff(diff, "removed"))
+
+    return {
+        "compliance": compliance,
+        "compliance_int": compliance_int,
+        "ordered": ordered,
+        "missing": missing,
+        "extra": extra,
+    }
+
+
+def _get_xml_compliance(obj):
+    """This function performs the actual compliance for xml serializable data."""
+
+    def _normalize_diff(diff):
+        """Format the diff output to a list of nodes with values that have updated."""
+        formatted_diff = []
+        for operation in diff:
+            if isinstance(operation, actions.UpdateTextIn):
+                formatted_operation = f"{operation.node}, {operation.text}"
+                formatted_diff.append(formatted_operation)
+        return "\n".join(formatted_diff)
+
+    # Options for the diff operation. These are set to prefer updates over node insertions/deletions.
+    diff_options = {
+        "F": 0.1,
+        "fast_match": True,
+    }
+    missing = main.diff_texts(obj.actual, obj.intended, diff_options=diff_options)
+    extra = main.diff_texts(obj.intended, obj.actual, diff_options=diff_options)
+
+    compliance = not missing and not extra
+    compliance_int = int(compliance)
+    ordered = obj.ordered
+    missing = _null_to_empty(_normalize_diff(missing))
+    extra = _null_to_empty(_normalize_diff(extra))
 
     return {
         "compliance": compliance,
@@ -136,33 +178,62 @@ def _verify_get_custom_compliance_data(compliance_details):
 
 
 def _get_hierconfig_remediation(obj):
-    """Returns the remediating config."""
-    hierconfig_os = obj.device.platform.network_driver_mappings["hier_config"]
+    """
+    Generate the remediation configuration for a device using HierConfig.
+
+    This function determines the remediating configuration required to bring a device's actual configuration
+    in line with its intended configuration, using the HierConfig library. It performs the following steps:
+
+    1. Retrieves the HierConfig OS type for the device's platform from the device's network driver mappings.
+    2. Validates that the platform is supported by HierConfig.
+    3. Fetches the RemediationSetting object for the platform associated with the compliance rule.
+    4. Loads any remediation options defined for the platform into the HierConfig OS object.
+    5. Instantiates HierConfig objects for both the actual and intended configurations.
+    6. Uses WorkflowRemediation to compute the remediation configuration needed.
+    7. Returns the filtered remediation configuration as text.
+
+    Raises:
+        ValidationError: If the platform is not supported or remediation settings are missing.
+        Exception: If HierConfig cannot be instantiated due to device, platform, or option issues.
+
+    Args:
+        obj: The ConfigCompliance instance containing device, rule, actual, and intended configuration data.
+
+    Returns:
+        str: The remediation configuration as a string.
+    """
+    hierconfig_os = obj.device.platform.network_driver_mappings.get("hier_config")
+
     if not hierconfig_os:
-        raise ValidationError(f"platform {obj.network_driver} is not supported by hierconfig.")
+        raise ValidationError(f"platform {obj.device.platform.name} is not supported by hierconfig.")
 
     try:
         remediation_setting_obj = RemediationSetting.objects.get(platform=obj.rule.platform)
     except Exception as err:  # pylint: disable=broad-except:
-        raise ValidationError(f"Platform {obj.network_driver} has no Remediation Settings defined.") from err
+        raise ValidationError(f"Platform {obj.device.platform.name} has no Remediation Settings defined.") from err
 
     remediation_options = remediation_setting_obj.remediation_options
 
     try:
-        hc_kwargs = {"hostname": obj.device.name, "os": hierconfig_os}
+        hierconfig_os = hconfig_v2_os_v3_platform_mapper(hierconfig_os)
+
         if remediation_options:
-            hc_kwargs.update(hconfig_options=remediation_options)
-        host = HierConfigHost(**hc_kwargs)
+            hierconfig_os = load_hconfig_v2_options(remediation_options, hierconfig_os)
+
+        hierconfig_running_config = get_hconfig(hierconfig_os, obj.actual)
+        hierconfig_intended_config = get_hconfig(hierconfig_os, obj.intended)
+        hierconfig_wfr = WorkflowRemediation(
+            hierconfig_running_config,
+            hierconfig_intended_config,
+        )
 
     except Exception as err:  # pylint: disable=broad-except:
         raise Exception(  # pylint: disable=broad-exception-raised
             f"Cannot instantiate HierConfig on {obj.device.name}, check Device, Platform and Hier Options."
         ) from err
 
-    host.load_generated_config(obj.intended)
-    host.load_running_config(obj.actual)
-    host.remediation_config()
-    remediation_config = host.remediation_config_filtered_text(include_tags={}, exclude_tags={})
+    hierconfig_wfr.remediation_config  # pylint: disable=pointless-statement
+    remediation_config = hierconfig_wfr.remediation_config_filtered_text(include_tags={}, exclude_tags={})
 
     return remediation_config
 
@@ -171,6 +242,7 @@ def _get_hierconfig_remediation(obj):
 FUNC_MAPPER = {
     ComplianceRuleConfigTypeChoice.TYPE_CLI: _get_cli_compliance,
     ComplianceRuleConfigTypeChoice.TYPE_JSON: _get_json_compliance,
+    ComplianceRuleConfigTypeChoice.TYPE_XML: _get_xml_compliance,
     RemediationTypeChoice.TYPE_HIERCONFIG: _get_hierconfig_remediation,
 }
 # The below conditionally add the custom provided compliance type
@@ -179,10 +251,10 @@ for custom_function, custom_type in CUSTOM_FUNCTIONS.items():
         try:
             FUNC_MAPPER[custom_type] = import_string(PLUGIN_CFG[custom_function])
         except Exception as error:  # pylint: disable=broad-except
-            msg = (
+            msg = (  # pylint: disable=invalid-name
                 "There was an issue attempting to import the custom function of"
                 f"{PLUGIN_CFG[custom_function]}, this is expected with a local configuration issue "
-                "and not related to the Golden Configuration Plugin, please contact your system admin for further details"
+                "and not related to the Golden Configuration App, please contact your system admin for further details"
             )
             raise Exception(msg).with_traceback(error.__traceback__)
 
@@ -249,13 +321,13 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
     match_config = models.TextField(
         blank=True,
         verbose_name="Config to Match",
-        help_text="The config to match that is matched based on the parent most configuration. E.g.: For CLI `router bgp` or `ntp`. For JSON this is a top level key name.",
+        help_text="The config to match that is matched based on the parent most configuration. E.g.: For CLI `router bgp` or `ntp`. For JSON this is a top level key name. For XML this is a xpath query.",
     )
     config_type = models.CharField(
         max_length=20,
         default=ComplianceRuleConfigTypeChoice.TYPE_CLI,
         choices=ComplianceRuleConfigTypeChoice,
-        help_text="Whether the configuration is in CLI or JSON/structured format.",
+        help_text="Whether the configuration is in CLI, JSON, or XML format.",
     )
     custom_compliance = models.BooleanField(
         default=False, help_text="Whether this Compliance Rule is proceeded as custom."
@@ -310,20 +382,26 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
     # Used for django-pivot, both compliance and compliance_int should be set.
     compliance_int = models.IntegerField(blank=True)
 
-    def to_objectchange(
-        self, action, *, related_object=None, object_data_extra=None, object_data_exclude=None
-    ):  # pylint: disable=arguments-differ
+    is_saved_view_model = False
+
+    def to_objectchange(self, action, *, related_object=None, object_data_extra=None, object_data_exclude=None):  # pylint: disable=arguments-differ
         """Remove actual and intended configuration from changelog."""
+        fields_to_exclude = ["actual", "intended"]
         if not object_data_exclude:
-            object_data_exclude = ["actual", "intended"]
+            object_data_exclude = fields_to_exclude
+        data_v2 = serialize_object_v2(self)
+        for field in fields_to_exclude:
+            data_v2.pop(field)
         return ObjectChange(
             changed_object=self,
             object_repr=str(self),
             action=action,
             object_data=serialize_object(self, extra=object_data_extra, exclude=object_data_exclude),
-            object_data_v2=serialize_object_v2(self),
+            object_data_v2=data_v2,
             related_object=related_object,
         )
+
+    is_dynamic_group_associable_model = False
 
     class Meta:
         """Set unique together fields for model."""
@@ -376,6 +454,13 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
         self.remediation_on_save()
         self.full_clean()
 
+        # This accounts for django 4.2 `Setting update_fields in Model.save() may now be required` change
+        # in behavior
+        if kwargs.get("update_fields"):
+            kwargs["update_fields"].update(
+                {"compliance", "compliance_int", "ordered", "missing", "extra", "remediation"}
+            )
+
         super().save(*args, **kwargs)
 
 
@@ -409,18 +494,20 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
     compliance_last_attempt_date = models.DateTimeField(null=True, blank=True)
     compliance_last_success_date = models.DateTimeField(null=True, blank=True)
 
-    def to_objectchange(
-        self, action, *, related_object=None, object_data_extra=None, object_data_exclude=None
-    ):  # pylint: disable=arguments-differ
+    def to_objectchange(self, action, *, related_object=None, object_data_extra=None, object_data_exclude=None):  # pylint: disable=arguments-differ
         """Remove actual and intended configuration from changelog."""
+        fields_to_exclude = ["backup_config", "intended_config", "compliance_config"]
         if not object_data_exclude:
-            object_data_exclude = ["backup_config", "intended_config", "compliance_config"]
+            object_data_exclude = fields_to_exclude
+        data_v2 = serialize_object_v2(self)
+        for field in fields_to_exclude:
+            data_v2.pop(field)
         return ObjectChange(
             changed_object=self,
             object_repr=str(self),
             action=action,
             object_data=serialize_object(self, extra=object_data_extra, exclude=object_data_exclude),
-            object_data_v2=serialize_object_v2(self),
+            object_data_v2=data_v2,
             related_object=related_object,
         )
 
@@ -447,6 +534,19 @@ class GoldenConfig(PrimaryModel):  # pylint: disable=too-many-ancestors
     def __str__(self):
         """String representation of a the compliance."""
         return f"{self.device}"
+
+
+class GoldenConfigSettingManager(BaseManager.from_queryset(RestrictedQuerySet)):
+    """Manager for GoldenConfigSetting."""
+
+    def get_for_device(self, device):
+        """Return the highest weighted GoldenConfigSetting assigned to a device."""
+        if not isinstance(device, Device):
+            raise ValueError("The device argument must be a Device instance.")
+        dynamic_group = device.dynamic_groups.exclude(golden_config_setting__isnull=True)
+        if dynamic_group.exists():
+            return dynamic_group.order_by("-golden_config_setting__weight").first().golden_config_setting
+        return None
 
 
 @extras_features(
@@ -488,7 +588,7 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         max_length=255,
         blank=True,
         verbose_name="Intended Path in Jinja Template Form",
-        help_text="The Jinja path representation of where the generated file will be places. e.g. `{{obj.location.name|slugify}}/{{obj.name}}.cfg`",
+        help_text="The Jinja path representation of where the generated file will be placed. e.g. `{{obj.location.name|slugify}}/{{obj.name}}.cfg`",
     )
     jinja_repository = models.ForeignKey(
         to="extras.GitRepository",
@@ -512,6 +612,7 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     sot_agg_query = models.ForeignKey(
         to="extras.GraphQLQuery",
         on_delete=models.PROTECT,
+        verbose_name="GraphQL Query",
         null=True,
         blank=True,
         related_name="sot_aggregation",
@@ -521,6 +622,18 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         on_delete=models.PROTECT,
         related_name="golden_config_setting",
     )
+    is_dynamic_group_associable_model = False
+
+    objects = GoldenConfigSettingManager()
+
+    clone_fields = [
+        "weight",
+        "backup_path_template",
+        "backup_test_connectivity",
+        "intended_path_template",
+        "jinja_path_template",
+        "sot_agg_query",
+    ]
 
     def __str__(self):
         """Return a simple string if model is called."""
@@ -531,7 +644,7 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
 
         Provide ordering used in tables and get_device_to_settings_map.
         Sorting on weight is performed from the highest weight value to the lowest weight value.
-        This is to ensure only one plugin settings could be applied per single device based on priority and name.
+        This is to ensure only one app settings could be applied per single device based on priority and name.
         """
 
         verbose_name = "Golden Config Setting"
@@ -560,6 +673,13 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     def get_url_to_filtered_device_list(self):
         """Get url to all devices that are matching the filter."""
         return self.dynamic_group.get_group_members_url()
+
+    def get_jinja_template_path_for_device(self, device):
+        """Get the Jinja template path for a device."""
+        if self.jinja_repository is not None:
+            rendered_path = render_jinja2(template_code=self.jinja_path_template, context={"obj": device})
+            return f"{self.jinja_repository.filesystem_path}{os.path.sep}{rendered_path}"
+        return None
 
 
 @extras_features(
@@ -749,7 +869,7 @@ class ConfigPlan(PrimaryModel):  # pylint: disable=too-many-ancestors
         verbose_name="Change Control ID",
         help_text="Change Control ID for this configuration plan.",
     )
-    change_control_url = models.URLField(blank=True, verbose_name="Change Control URL")
+    change_control_url = models.URLField(blank=True, verbose_name="Change Control URL", max_length=2048)
     status = StatusField(blank=True, null=True, on_delete=models.PROTECT)
 
     class Meta:

@@ -1,12 +1,15 @@
 # Using the App
 
+This document describes common use-cases and scenarios for this App.
+
 ## General Usage
 
 ### Home
 
 The Home view is a portal to understand what the status of the devices are.
 
-![Home Overview](../images/ss_golden-overview.png)
+![Home Overview](../images/ss1_ss_golden-overview_light.png#only-light){ .on-glb }
+![Home Overview](../images/ss1_ss_golden-overview_dark.png#only-dark){ .on-glb }
 
 Some of the information described in this view, may not be immediately obvious.
 
@@ -26,24 +29,27 @@ components against all of the devices.
 
 ### Jobs
 
-There are a series of Jobs that are registered via the Plugin. They can be viewed from the standard Jobs view.
+There are a series of Jobs that are registered via the App. They can be viewed from the standard Jobs view.
 
-![Job Overview](../images/job-overview.png)
+![Job Overview](../images/ss1_job-overview_light.png#only-light){ .on-glb }
+![Job Overview](../images/ss1_job-overview_dark.png#only-dark){ .on-glb }
 
 Each Job attempts to provide sane error handling, and respects the `debug` flag to provide more information.
 
-![Job Result](../images/job-result.png)
+![Job Result](../images/ss1_job-result_light.png#only-light){ .on-glb }
+![Job Result](../images/ss1_job-result_dark.png#only-dark){ .on-glb }
 
 ### Application Settings
 
-The golden configuration plugin settings can be found by navigating to `Golden Config -> Settings` button. Select one of the Settings, under the `Golden Configuration` section.
-Since Golden Configuration Plugin version 1.0, the plugin allows for multiple settings to be configured by the User.
+The golden configuration app settings can be found by navigating to `Golden Config -> Settings` button. Select one of the Settings, under the `Golden Configuration` section.
+Since Golden Configuration App version 1.0, the app allows for multiple settings to be configured by the User.
 Each of the settings, has the individual repositories and configuration details, as well as a Dynamic Group.
 You could use a combination of settings to customize your Configuration Compliance behavior.
 Settings have a name and a weight. The weight parameter indicates the priority of given Settings - the higher the weight, the device matching the Dynamic Group defined will be assigned to the scope.
 At the same moment, each device will be matched up to maximum of only one `Settings.` In case of the same weight, the sorting is performed by the name.
 
-![Navigate to Settings](../images/navigate-compliance-rules.png)
+![Navigate to Settings](../images/ss1_navigate-compliance-rules_light.png#only-light){ .on-glb }
+![Navigate to Settings](../images/ss1_navigate-compliance-rules_dark.png#only-dark){ .on-glb }
 
 To create new settings click on the `+Add` button.
 To update existing settings click on one of the `Settings` name.
@@ -74,7 +80,8 @@ The [Dynamic Group](https://docs.nautobot.com/projects/core/en/stable/models/ext
 
 Within the Detail view of a Golden Config Setting the section to denote the scope of devices links back to the Dynamic Group that is assigned and renders the filter attribute of the Dynamic Group as JSON. All updates to the scope of Devices must be done via the Dynamic Group not directly on the Golden Config Setting.
 
-![Dynamic Group](../images/setting-dynamic-group.png)
+![Dynamic Group](../images/ss1_setting-dynamic-group_light.png#only-light){ .on-glb }
+![Dynamic Group](../images/ss1_setting-dynamic-group_dark.png#only-dark){ .on-glb }
 
 The below configurations of scope can either be removed or specified for pre 1.2 only, the same logic applies in 1.2 and onwards but via DynamicGroups.
 
@@ -135,7 +142,8 @@ For our example, let's configure and create with:
 | Provider | Environment Variable |
 | Variable | NAUTOBOT_GOLDEN_CONFIG_GIT_TOKEN. |
 
-![Secret Creation](../images/secret-step1.png)
+![Secret Creation](../images/ss1_secret-step1_light.png#only-light){ .on-glb }
+![Secret Creation](../images/ss1_secret-step1_dark.png#only-dark){ .on-glb }
 
 Depending on your provider, you may also need a username, so you would repeat the process such as:
 
@@ -159,17 +167,19 @@ For our example, let's configure and create with:
 !!! tip
     If your instance requires a username as well, please ensure to add that as well.
 
-![Secret Group Creation](../images/secret-step2.png)
+![Secret Group Creation](../images/ss1_secret-step2_light.png#only-light){ .on-glb }
+![Secret Group Creation](../images/ss1_secret-step2_dark.png#only-dark){ .on-glb }
 
 The steps to add the variables to your environment are outside the scope of this document and may or may not be needed depending on how you manage your Secrets in your environment, but please be mindful of ensuring the Secrets end up on your system.
 
 ### Git Settings
 
-The plugin makes heavy use of the Nautobot git data sources feature. There are up to three repositories used in the application. This set of instructions will walk an operator through setting up the backup repository. The steps are the same, except for the "Provides" field name chosen.
+The app makes heavy use of the Nautobot git data sources feature. There are up to three repositories used in the application. This set of instructions will walk an operator through setting up the backup repository. The steps are the same, except for the "Provides" field name chosen.
 
 In order to setup this repository, go to Nautobot and navigate to the Data Sources Git integration. `Extensibility -> Git Repositories`.
 
-![Backup Git Navigation](../images/git-step1.png)
+![Backup Git Navigation](../images/ss1_git-step1_light.png#only-light){ .on-glb }
+![Backup Git Navigation](../images/ss1_git-step1_dark.png#only-dark){ .on-glb }
 
 From the Git Repositories page we can add the **Backup** repository.
 
@@ -191,31 +201,33 @@ Parameters:
 !!! note
     When Secret Group is used for a Repository the secrets type HTTP(S) is required for this plugin, as shown previously.
 
-![Example Git Backups](../images/backup-git-step2.png)
+![Example Git Backups](../images/ss1_backup-git-step2_light.png#only-light){ .on-glb }
+![Example Git Backups](../images/ss1_backup-git-step2_dark.png#only-dark){ .on-glb }
 
 Select `backup configs` and click on `Create`.
 
 Once you click `Create` and the repository syncs, the main page will now show the repo along with its status.
-![Git Backup Repo Status](../images/backup-git-step3.png)
+![Git Backup Repo Status](../images/ss1_backup-git-step3_light.png#only-light){ .on-glb }
+![Git Backup Repo Status](../images/ss1_backup-git-step3_dark.png#only-dark){ .on-glb }
 
 For their respective features, the "Provides" field could be backup intended configs and jinja templates.
 
-### Plugins Buttons
+### Apps Buttons
 
-The plugins buttons provides you with the ability to navigate to Run the script, overview report, and detailed report.
+The apps buttons provides you with the ability to navigate to Run the script, overview report, and detailed report.
 
 ### Run Script
 
-This can be accessed via the Plugins drop-down via `Run Script` button of the `Home` view, the user will be provided a form of the Job (as described
+This can be accessed via the Apps drop-down via `Run Script` button of the `Home` view, the user will be provided a form of the Job (as described
 above), which will allow the user to limit the scope of the request.
 
 ### Device Template Content
 
-The plugin makes use of template content `right_page` in order to use display in-line the status of that device in the traditional Nautobot view. From here you can click the link to see the detail compliance view.
+The app makes use of template content `right_page` in order to use display in-line the status of that device in the traditional Nautobot view. From here you can click the link to see the detail compliance view.
 
 ### Location Template Content
 
-The plugin makes use of template content `right_page` in order to use display in-line the status of that entire location in the traditional Nautobot view. This sums the total for all locations for parent locations.
+The app makes use of template content `right_page` in order to use display in-line the status of that entire location in the traditional Nautobot view. This sums the total for all locations for parent locations.
 
 ### API
 
@@ -228,12 +240,12 @@ garbage collection and it is up to the operator to remove such data.
 
 ### Network Operating System Support
 
-The version of OS's supported is documented in the [FAQ](./app_faq.md) and is controlled the platform network_driver. The platform network_driver must be exactly as expected or leverage
-a configuration option--which is described the the FAQ--for the plugin to work.
+The version of OS's supported is documented in the [FAQ](./faq.md) and is controlled the platform network_driver. The platform network_driver must be exactly as expected or leverage
+a configuration option--which is described the the FAQ--for the app to work.
 
 ### Use-cases and common workflows
 
-This plugin enable four (4) key use cases.
+This app enable four (4) key use cases.
 
 1. **Configuration Backups** - Is a Nornir process to connect to devices, optionally parse out lines/secrets, backup the configuration, and save to a Git repository.
 2. **Intended Configuration** - Is a Nornir process to generate configuration based on a Git repo of Jinja files to combine with a GraphQL generated data and a Git repo to store the intended configuration.
@@ -245,19 +257,26 @@ This plugin enable four (4) key use cases.
 
 ## Screenshots
 
-There are many features and capabilities the plugin provides into the Nautobot ecosystem. The following screenshots are intended to provide a quick visual overview of some of these features.
+There are many features and capabilities the app provides into the Nautobot ecosystem. The following screenshots are intended to provide a quick visual overview of some of these features.
 
 The golden configuration is driven by jobs that run a series of tasks and the result is captured in this overview.
 
-![Overview](../images/ss_golden-overview.png)
+![Overview](../images/ss1_ss_golden-overview_light.png#only-light){ .on-glb }
+![Overview](../images/ss1_ss_golden-overview_dark.png#only-dark){ .on-glb }
 
 The compliance report provides a high-level overview on the compliance of your network.
-![Compliance Report](../images/ss_compliance-report.png)
+![Compliance Report](../images/ss1_ss_compliance-report_1_light.png#only-light){ .on-glb }
+![Compliance Report](../images/ss1_ss_compliance-report_1_dark.png#only-dark){ .on-glb }
+![Compliance Report](../images/ss1_ss_compliance-report_2_light.png#only-light){ .on-glb }
+![Compliance Report](../images/ss1_ss_compliance-report_2_dark.png#only-dark){ .on-glb }
 
 The compliance overview will provide a per device and feature overview on the compliance of your network devices.
-![Compliance Overview](../images/ss_compliance-overview.png)
+![Compliance Overview](../images/ss1_ss_compliance-overview_light.png#only-light){ .on-glb }
+![Compliance Overview](../images/ss1_ss_compliance-overview_dark.png#only-dark){ .on-glb }
 
 Drilling into a specific device and feature, you can get an immediate detailed understanding of your device.
-![Compliance Device](../images/ss_compliance-device.png)
+![Compliance Device](../images/ss1_ss_compliance-device_light.png#only-light){ .on-glb }
+![Compliance Device](../images/ss1_ss_compliance-device_dark.png#only-dark){ .on-glb }
 
-![Compliance Rule](../images/ss_compliance-rule.png)
+![Compliance Rule](../images/ss1_ss_compliance-rule_light.png#only-light){ .on-glb }
+![Compliance Rule](../images/ss1_ss_compliance-rule_dark.png#only-dark){ .on-glb }

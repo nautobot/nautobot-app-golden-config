@@ -1,9 +1,11 @@
 """Unit tests for nautobot_golden_config models."""
 
+from unittest.mock import patch
+
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db.models.deletion import ProtectedError
-from django.test import TestCase
+from nautobot.apps.testing import TestCase
 from nautobot.dcim.models import Platform
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status
 
@@ -15,13 +17,16 @@ from nautobot_golden_config.models import (
     ConfigReplace,
     GoldenConfigSetting,
     RemediationSetting,
+    _get_hierconfig_remediation,
 )
 from nautobot_golden_config.tests.conftest import create_git_repos
 
 from .conftest import (
     create_config_compliance,
     create_device,
+    create_feature_rule_cli_with_remediation,
     create_feature_rule_json,
+    create_feature_rule_xml,
     create_job_result,
     create_saved_queries,
 )
@@ -30,10 +35,13 @@ from .conftest import (
 class ConfigComplianceModelTestCase(TestCase):
     """Test CRUD operations for ConfigCompliance Model."""
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         """Set up base objects."""
-        self.device = create_device()
-        self.compliance_rule_json = create_feature_rule_json(self.device)
+        cls.device = create_device()
+        cls.compliance_rule_json = create_feature_rule_json(cls.device)
+        cls.compliance_rule_xml = create_feature_rule_xml(cls.device)
+        cls.compliance_rule_cli = create_feature_rule_cli_with_remediation(cls.device)
 
     def test_create_config_compliance_success_json(self):
         """Successful."""
@@ -48,6 +56,20 @@ class ConfigComplianceModelTestCase(TestCase):
         self.assertEqual(cc_obj.intended, {"foo": {"bar-2": "baz"}})
         self.assertEqual(cc_obj.missing, ["root['foo']['bar-2']"])
         self.assertEqual(cc_obj.extra, ["root['foo']['bar-1']"])
+
+    def test_create_config_compliance_success_xml(self):
+        """Successful."""
+        actual = "<root><foo><bar-1>notbaz</bar-1></foo></root>"
+        intended = "<root><foo><bar-1>baz</bar-1></foo></root>"
+        cc_obj = create_config_compliance(
+            self.device, actual=actual, intended=intended, compliance_rule=self.compliance_rule_xml
+        )
+
+        self.assertFalse(cc_obj.compliance)
+        self.assertEqual(cc_obj.actual, "<root><foo><bar-1>notbaz</bar-1></foo></root>")
+        self.assertEqual(cc_obj.intended, "<root><foo><bar-1>baz</bar-1></foo></root>")
+        self.assertEqual(cc_obj.missing, "/root/foo/bar-1[1], baz")
+        self.assertEqual(cc_obj.extra, "/root/foo/bar-1[1], notbaz")
 
     def test_create_config_compliance_unique_failure(self):
         """Raises error when attempting to create duplicate."""
@@ -103,6 +125,63 @@ class ConfigComplianceModelTestCase(TestCase):
         )
         self.assertEqual(ConfigCompliance.objects.filter(device=self.device).count(), 1)
 
+    def test_update_or_create(self):
+        """We test this to ensure regression against
+        https://docs.djangoproject.com/en/5.1/releases/4.2/#setting-update-fields-in-model-save-may-now-be-required."""
+
+        remediation_setting = RemediationSetting.objects.create(
+            platform=self.device.platform,
+            remediation_type=RemediationTypeChoice.TYPE_HIERCONFIG,
+        )
+
+        cc_obj, _ = ConfigCompliance.objects.update_or_create(
+            device=self.device,
+            rule=self.compliance_rule_cli,
+            defaults={
+                "actual": "ntp 1.1.1.1\nntp 2.2.2.2",
+                "intended": "ntp 1.1.1.1\nntp 3.3.3.3",
+            },
+        )
+
+        self.assertFalse(cc_obj.compliance)
+        self.assertFalse(cc_obj.compliance_int)
+        self.assertEqual(cc_obj.missing, "ntp 3.3.3.3")
+        self.assertEqual(cc_obj.extra, "ntp 2.2.2.2")
+        self.assertEqual(cc_obj.remediation, "no ntp 2.2.2.2\nntp 3.3.3.3")
+        self.assertFalse(cc_obj.ordered)
+
+        remediation_setting.config_ordered = True
+        remediation_setting.save()
+        # We run again to ensure this works, the issue actually only shows on
+        # when `update_fields` is set
+        cc_obj_2, _ = ConfigCompliance.objects.update_or_create(
+            device=self.device,
+            rule=self.compliance_rule_cli,
+            defaults={
+                "actual": "ntp 1.1.1.1\nntp 2.2.2.2",
+                "intended": "ntp 1.1.1.1\nntp 2.2.2.2",
+            },
+        )
+
+        self.assertTrue(cc_obj_2.compliance)
+        self.assertTrue(cc_obj_2.compliance_int)
+        self.assertEqual(cc_obj_2.missing, "")
+        self.assertEqual(cc_obj_2.extra, "")
+        self.assertEqual(cc_obj_2.remediation, "")
+        self.assertTrue(cc_obj_2.ordered)
+
+        # Ensure that the .save() is not effected.
+
+        cc_obj_3 = ConfigCompliance.objects.get(device=self.device, rule=self.compliance_rule_cli)
+        cc_obj_3.intended = "ntp 1.1.1.1\nntp 3.3.3.3"
+        cc_obj_3.save()
+
+        self.assertFalse(cc_obj_3.compliance)
+        self.assertFalse(cc_obj_3.compliance_int)
+        self.assertEqual(cc_obj_3.missing, "ntp 3.3.3.3")
+        self.assertEqual(cc_obj_3.extra, "ntp 2.2.2.2")
+        self.assertEqual(cc_obj_3.remediation, "no ntp 2.2.2.2\nntp 3.3.3.3")
+
 
 class GoldenConfigTestCase(TestCase):
     """Test GoldenConfig Model."""
@@ -115,21 +194,22 @@ class ComplianceRuleTestCase(TestCase):
 class GoldenConfigSettingModelTestCase(TestCase):
     """Test GoldenConfigSetting Model."""
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         """Get the golden config settings with the only allowed id."""
         create_git_repos()
         create_saved_queries()
 
         # Since we enforce a singleton pattern on this model, nuke the auto-created object.
         GoldenConfigSetting.objects.all().delete()
-        content_type = ContentType.objects.get(app_label="dcim", model="device")
-        dynamic_group = DynamicGroup.objects.create(
+        cls.device_content_type = ContentType.objects.get(app_label="dcim", model="device")
+        cls.dynamic_group = DynamicGroup.objects.create(
             name="test1 site site-4",
-            content_type=content_type,
+            content_type=cls.device_content_type,
             filter={},
         )
 
-        self.global_settings = GoldenConfigSetting.objects.create(  # pylint: disable=attribute-defined-outside-init
+        cls.global_settings = GoldenConfigSetting.objects.create(  # pylint: disable=attribute-defined-outside-init
             name="test",
             slug="test",
             weight=1000,
@@ -141,7 +221,7 @@ class GoldenConfigSettingModelTestCase(TestCase):
             jinja_path_template="{{ obj.platform.name }}/main.j2",
             backup_repository=GitRepository.objects.get(name="test-backup-repo-1"),
             intended_repository=GitRepository.objects.get(name="test-intended-repo-1"),
-            dynamic_group=dynamic_group,
+            dynamic_group=cls.dynamic_group,
         )
 
     def test_absolute_url_success(self):
@@ -151,7 +231,7 @@ class GoldenConfigSettingModelTestCase(TestCase):
         self.assertIn(f"/plugins/golden-config/golden-config-setting/{self.global_settings.pk}", url_string)
 
     def test_good_graphql_query_invalid_starts_with(self):
-        """Valid graphql query, however invalid in the usage with golden config plugin."""
+        """Valid graphql query, however invalid in the usage with golden config app."""
         self.global_settings.sot_agg_query = GraphQLQuery.objects.get(name="GC-SoTAgg-Query-3")
         with self.assertRaises(ValidationError) as error:
             self.global_settings.clean()
@@ -162,11 +242,69 @@ class GoldenConfigSettingModelTestCase(TestCase):
         self.global_settings.sot_agg_query = GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1")
         self.assertEqual(self.global_settings.clean(), None)
 
+    def test_get_for_device(self):
+        """Test get_for_device method on GoldenConfigSettingManager."""
+        device = create_device()
+
+        # test that the highest weight GoldenConfigSetting is returned
+        other_dynamic_group = DynamicGroup.objects.create(
+            name="test get_for_device dg",
+            content_type=self.device_content_type,
+            filter={"name": [device.name]},
+        )
+        other_dynamic_group.update_cached_members()
+        other_settings = GoldenConfigSetting.objects.create(
+            name="test other",
+            slug="testother",
+            weight=100,
+            description="Test Description.",
+            backup_path_template="{{ obj.location.parant.name }}/{{obj.name}}.cfg",
+            intended_path_template="{{ obj.location.name }}/{{ obj.name }}.cfg",
+            backup_test_connectivity=True,
+            jinja_repository=GitRepository.objects.get(name="test-jinja-repo-1"),
+            jinja_path_template="{{ obj.platform.name }}/main.j2",
+            backup_repository=GitRepository.objects.get(name="test-backup-repo-1"),
+            intended_repository=GitRepository.objects.get(name="test-intended-repo-1"),
+            dynamic_group=other_dynamic_group,
+        )
+
+        self.dynamic_group.update_cached_members()
+        if hasattr(device, "_dynamic_groups"):  # clear Device.dynamic_groups cache in nautobot <2.3
+            delattr(device, "_dynamic_groups")
+        self.assertEqual(GoldenConfigSetting.objects.get_for_device(device), self.global_settings)
+
+        other_settings.weight = 2000
+        other_settings.save()
+        self.assertEqual(GoldenConfigSetting.objects.get_for_device(device), other_settings)
+
+        # test that no GoldenConfigSetting is returned when the device is not in the dynamic group
+        self.dynamic_group.filter = {"name": [f"{device.name} nomatch"]}
+        other_dynamic_group.filter = {"name": [f"{device.name} nomatch"]}
+        self.dynamic_group.save()
+        other_dynamic_group.save()
+        self.dynamic_group.update_cached_members()
+        other_dynamic_group.update_cached_members()
+        if hasattr(device, "_dynamic_groups"):  # clear Device.dynamic_groups cache in nautobot <2.3
+            delattr(device, "_dynamic_groups")
+        self.assertIsNone(GoldenConfigSetting.objects.get_for_device(device))
+
+    def test_get_jinja_template_path_for_device(self):
+        """Test get_jinja_template_path_for_device method on GoldenConfigSetting."""
+        device = create_device()
+        self.assertEqual(
+            self.global_settings.get_jinja_template_path_for_device(device),
+            f"{self.global_settings.jinja_repository.filesystem_path}/Platform 1/main.j2",
+        )
+        self.global_settings.jinja_repository = None
+        self.global_settings.save()
+        self.assertIsNone(self.global_settings.get_jinja_template_path_for_device(device))
+
 
 class GoldenConfigSettingGitModelTestCase(TestCase):
     """Test GoldenConfigSetting Model."""
 
-    def setUp(self) -> None:
+    @classmethod
+    def setUpTestData(cls) -> None:
         """Setup test data."""
         create_git_repos()
 
@@ -180,7 +318,7 @@ class GoldenConfigSettingGitModelTestCase(TestCase):
         )
 
         # Create fresh new object, populate accordingly.
-        self.golden_config = GoldenConfigSetting.objects.create(  # pylint: disable=attribute-defined-outside-init
+        cls.golden_config = GoldenConfigSetting.objects.create(  # pylint: disable=attribute-defined-outside-init
             name="test",
             slug="test",
             weight=1000,
@@ -223,11 +361,12 @@ class GoldenConfigSettingGitModelTestCase(TestCase):
 class ConfigRemoveModelTestCase(TestCase):
     """Test ConfigRemove Model."""
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         """Setup Object."""
-        self.platform = Platform.objects.create(name="Cisco IOS", network_driver="cisco_ios")
-        self.line_removal = ConfigRemove.objects.create(
-            name="foo", platform=self.platform, description="foo bar", regex="^Back.*"
+        cls.platform = Platform.objects.create(name="Cisco IOS", network_driver="cisco_ios")
+        cls.line_removal = ConfigRemove.objects.create(
+            name="foo", platform=cls.platform, description="foo bar", regex="^Back.*"
         )
 
     def test_add_line_removal_entry(self):
@@ -254,12 +393,13 @@ class ConfigRemoveModelTestCase(TestCase):
 class ConfigReplaceModelTestCase(TestCase):
     """Test ConfigReplace Model."""
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         """Setup Object."""
-        self.platform = Platform.objects.create(name="Cisco IOS", network_driver="cisco_ios")
-        self.line_replace = ConfigReplace.objects.create(
+        cls.platform = Platform.objects.create(name="Cisco IOS", network_driver="cisco_ios")
+        cls.line_replace = ConfigReplace.objects.create(
             name="foo",
-            platform=self.platform,
+            platform=cls.platform,
             description="foo bar",
             regex=r"username(\S+)",
             replace="<redacted>",
@@ -291,13 +431,14 @@ class ConfigReplaceModelTestCase(TestCase):
 class ConfigPlanModelTestCase(TestCase):
     """Test ConfigPlan Model."""
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         """Setup Object."""
-        self.device = create_device()
-        self.rule = create_feature_rule_json(self.device)
-        self.feature = self.rule.feature
-        self.status = Status.objects.get(name="Not Approved")
-        self.job_result = create_job_result()
+        cls.device = create_device()
+        cls.rule = create_feature_rule_json(cls.device)
+        cls.feature = cls.rule.feature
+        cls.status = Status.objects.get(name="Not Approved")
+        cls.job_result = create_job_result()
 
     def test_create_config_plan_intended(self):
         """Test Create Object."""
@@ -397,10 +538,11 @@ class ConfigPlanModelTestCase(TestCase):
 class RemediationSettingModelTestCase(TestCase):
     """Test Remediation Setting Model."""
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         """Setup Object."""
-        self.platform = Platform.objects.create(name="Cisco IOS", network_driver="cisco_ios")
-        self.remediation_options = {
+        cls.platform = Platform.objects.create(name="Cisco IOS", network_driver="cisco_ios")
+        cls.remediation_options = {
             "optionA": "someValue",
             "optionB": "someotherValue",
             "optionC": "anotherValue",
@@ -436,3 +578,159 @@ class RemediationSettingModelTestCase(TestCase):
         self.assertEqual(remediation_setting.platform, self.platform)
         self.assertEqual(remediation_setting.remediation_type, RemediationTypeChoice.TYPE_HIERCONFIG)
         self.assertEqual(remediation_setting.remediation_options, {})
+
+
+class GetHierConfigRemediationTestCase(TestCase):
+    """Test _get_hierconfig_remediation function."""
+
+    def test_successful_remediation(self):
+        """Test successful remediation generation."""
+        device = create_device()
+        compliance_rule_cli = create_feature_rule_cli_with_remediation(device)
+
+        RemediationSetting.objects.create(
+            platform=device.platform,
+            remediation_type=RemediationTypeChoice.TYPE_HIERCONFIG,
+            remediation_options={},
+        )
+        config_compliance = ConfigCompliance(
+            device=device,
+            rule=compliance_rule_cli,
+            actual="interface Ethernet1\n  no shutdown",
+            intended="interface Ethernet1\n  description Test\n  no shutdown\n",
+        )
+        remediation = _get_hierconfig_remediation(config_compliance)
+
+        self.assertIsInstance(remediation, str)
+        self.assertIn("interface Ethernet1\n  description Test", remediation)
+
+    def test_successful_remediation_with_options(self):
+        """Test successful remediation generation with options (Issue #1061)."""
+        device = create_device()
+        compliance_rule_cli = create_feature_rule_cli_with_remediation(device)
+
+        remediation_options = {"idempotent_commands": [{"lineage": [{"startswith": "foo"}]}]}
+        actual = "foo test"
+        intended = "foo bar"
+
+        RemediationSetting.objects.create(
+            platform=device.platform,
+            remediation_type=RemediationTypeChoice.TYPE_HIERCONFIG,
+            remediation_options=remediation_options,
+        )
+        config_compliance = ConfigCompliance(
+            device=device,
+            rule=compliance_rule_cli,
+            actual=actual,
+            intended=intended,
+        )
+        remediation = _get_hierconfig_remediation(config_compliance)
+        self.assertIsInstance(remediation, str)
+        self.assertEqual(remediation, intended)
+
+    def test_remediation_options_merge(self):
+        """Test that remediation options are merged with the default options (Issue #915)."""
+        device = create_device()
+        compliance_rule_cli = create_feature_rule_cli_with_remediation(device)
+        # This adds 'foo' as an idempotent command,
+        # but should not override the existing idempotent command 'errdisable recovery interval'.
+        remediation_options = {"idempotent_commands": [{"lineage": [{"startswith": "foo"}]}]}
+        actual = "errdisable recovery interval 100\n!\nfoo test"
+        intended = "errdisable recovery interval 200\n!\nfoo bar"
+        expected = "errdisable recovery interval 200\nfoo bar"
+        RemediationSetting.objects.create(
+            platform=device.platform,
+            remediation_type=RemediationTypeChoice.TYPE_HIERCONFIG,
+            remediation_options=remediation_options,
+        )
+        config_compliance = ConfigCompliance(
+            device=device,
+            rule=compliance_rule_cli,
+            actual=actual,
+            intended=intended,
+        )
+        remediation = _get_hierconfig_remediation(config_compliance)
+        self.assertIsInstance(remediation, str)
+        self.assertEqual(remediation, expected)
+
+    def test_platform_not_supported_by_hierconfig(self):
+        """Test error when platform is not supported by hierconfig."""
+        device = create_device()
+        device.platform.network_driver = "unsupported_driver"
+        device.platform.save()
+
+        compliance_rule_cli = create_feature_rule_cli_with_remediation(device)
+
+        config_compliance = ConfigCompliance(
+            device=device,
+            rule=compliance_rule_cli,
+            actual="interface Ethernet1\n  no shutdown",
+            intended="interface Ethernet1\n  description Test\n  no shutdown\n",
+        )
+
+        # Validate that calling the function raises a ValidationError
+        with self.assertRaises(ValidationError) as context:
+            _get_hierconfig_remediation(config_compliance)
+
+        self.assertIn("not supported by hierconfig", str(context.exception))
+
+    def test_no_remediation_settings_defined(self):
+        """Test error when no remediation settings are defined for the platform."""
+        device = create_device()
+        compliance_rule_cli = create_feature_rule_cli_with_remediation(device)
+
+        config_compliance = ConfigCompliance(
+            device=device,
+            rule=compliance_rule_cli,
+            actual="interface Ethernet1\n  no shutdown",
+            intended="interface Ethernet1\n  description Test\n  no shutdown\n",
+        )
+        # Make sure no remediation settings exist for this platform
+        RemediationSetting.objects.filter(platform=device.platform).delete()
+
+        with self.assertRaises(ValidationError) as context:
+            _get_hierconfig_remediation(config_compliance)
+
+        self.assertIn("has no Remediation Settings defined", str(context.exception))
+
+    @patch("nautobot_golden_config.models.hconfig_v2_os_v3_platform_mapper")
+    @patch("nautobot_golden_config.models.get_hconfig")
+    @patch("nautobot_golden_config.models.WorkflowRemediation")
+    def test_hierconfig_instantiation_error(self, mock_workflow_remediation, mock_get_hconfig, mock_mapper):
+        """Test error when HierConfig instantiation fails."""
+        device = create_device()
+        compliance_rule_cli = create_feature_rule_cli_with_remediation(device)
+
+        RemediationSetting.objects.create(
+            platform=device.platform,
+            remediation_type=RemediationTypeChoice.TYPE_HIERCONFIG,
+        )
+
+        # Set up mocks to raise an exception
+        mock_mapper.return_value = "ios"
+        mock_get_hconfig.side_effect = Exception("Test exception")
+
+        # We won't reach the WorkflowRemediation instantiation, but configure it anyway
+        # to satisfy pylint
+        mock_instance = mock_workflow_remediation.return_value
+        mock_instance.remediation_config_filtered_text.return_value = "mock remediation"
+
+        # Create a mock ConfigCompliance object
+        config_compliance = ConfigCompliance(
+            device=device,
+            rule=compliance_rule_cli,
+            actual="interface Ethernet1\n  no shutdown",
+            intended="interface Ethernet1\n  description Test\n  no shutdown\n",
+        )
+
+        # Validate that calling the function raises an Exception
+        with self.assertRaises(Exception) as context:
+            _get_hierconfig_remediation(config_compliance)
+
+        self.assertIn("Cannot instantiate HierConfig", str(context.exception))
+
+        # Verify mock usage
+        mock_mapper.assert_called_once_with("ios")
+        mock_get_hconfig.assert_called_once()
+        # WorkflowRemediation should never be called since get_hconfig raises exception
+        mock_workflow_remediation.assert_not_called()

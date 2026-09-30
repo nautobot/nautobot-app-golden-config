@@ -1,0 +1,13 @@
+/* Whole-line highlighting for unified diffs rendered with gcRenderMonacoUnifiedDiff. */
+.gc-diff-line-added {
+    background-color: rgba(46, 160, 67, 0.2);
+}
+.gc-diff-line-removed {
+    background-color: rgba(248, 81, 73, 0.2);
+}
+.gc-diff-line-hunk {
+    background-color: rgba(84, 174, 255, 0.15);
+}
+.gc-diff-line-header {
+    font-weight: bold;
+}

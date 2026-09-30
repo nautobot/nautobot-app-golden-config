@@ -4,20 +4,8 @@
 {% load static %}
 
 {% block extra_styles %}
-    <link href="{% static 'nautobot_golden_config/diff2html-3.4.43/diff2html.min.css' %}" rel="stylesheet"/>
+    <link href="{% static 'nautobot_golden_config/css/gc_monaco_diff.css' %}" rel="stylesheet"/>
     <style>
-        .d2h-tag {
-            display: none;
-        }
-        .d2h-file-name {
-            visibility: hidden;
-        }
-        .d2h-moved {
-            visibility: hidden;
-        }
-        .d2h-file-list-title {
-            display: none;
-        }
         pre:has(code) {
             padding: 0;
         }
@@ -98,6 +86,11 @@
                             <div class="tab-pane" id="id_diff_tab_content">
                                 <div id="id_diff_render"></div>
                             </div>
+                            {% comment %}
+                            Hidden sentinel: makes Nautobot core's js/editor.js load Monaco on page load so the
+                            Diff tab (populated after rendering) can show a diff editor.
+                            {% endcomment %}
+                            <div class="nb-editor-container" data-lang="text" style="display: none"></div>
                         </div>
                     </div>
                 </div>
@@ -108,8 +101,11 @@
 
 {% block javascript %}
     {{ block.super }}
-    <script src="{% static 'nautobot_golden_config/diff2html-3.4.43/diff2html.min.js' %}"></script>
+    <script src="{% static 'js/editor.js' %}"></script>
+    <script src="{% static 'nautobot_golden_config/js/gc_monaco_diff.js' %}"></script>
     <script>
+        let diffEditor = null;
+
         // When a device is selected, populate the GraphQL query field with the default query for that device
         async function handleDeviceFieldSelect(event) {
             const device_id = event.params.data.id;
@@ -303,17 +299,18 @@
                     rendered_config_code_block.innerHTML = sanitize(responseData.intended_config);
 
                     // render the diff
+                    gcDisposeMonacoDiff(diffEditor);
+                    diffEditor = null;
+                    diff_render_div.innerHTML = "";
+                    diff_render_div.style.height = "";
                     if (responseData.diff == null) {
                         diff_render_div.innerHTML = "<p>No intended configuration available to diff against. You may need to run the intended configuration job first.</p>";
                     // output a message if no diff
                     } else if (responseData.diff === "") {
                         diff_render_div.innerHTML = "<p>No changes detected.</p>";
                     } else {
-                        diff_render_div.innerHTML = Diff2Html.html(responseData.diff, {
-                            drawFileList: true,
-                            matching: "lines",
-                            outputFormat: "line-by-line",
-                        });
+                        diff_render_div.style.height = "50vh";
+                        diffEditor = await gcRenderMonacoUnifiedDiff(diff_render_div, responseData.diff);
                     }
 
                     // enable the diff tab

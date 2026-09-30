@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load buttons %}
+{% load static %}
 
 {% block content %}
     {% include "nautobot_golden_config/goldenconfig_detailsmodal.html" %}
@@ -7,6 +8,7 @@
 
 {% block javascript %}
     {{ block.super }}
+    <script src="{% static 'js/editor.js' %}"></script>
     <script>
         var clipboard = new ClipboardJS('.btn');
         clipboard.on('success', function (e) {});

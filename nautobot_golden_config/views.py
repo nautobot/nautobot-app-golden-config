@@ -153,7 +153,7 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
             self.action_template_name = "nautobot_golden_config/goldenconfig_detailsmodal.html"
             self.is_modal = True
 
-    def _post_render(self, request):
+    def _post_render(self, request, **extra_context):
         context = {
             "output": self.output,
             "device": self.device,
@@ -161,6 +161,7 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
             "format": self.structured_format,
             "title_name": self.title_name,
             "is_modal": self.is_modal,
+            **extra_context,
         }
         return render(request, self.action_template_name, context)
 
@@ -221,38 +222,19 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
         """Additional action to handle compliance."""
         self._pre_helper(pk, request)
 
-        self.output = self.config_details.compliance_config
-        if self.config_details.backup_last_success_date:
-            backup_date = str(self.config_details.backup_last_success_date.strftime("%b %d %Y"))
-        else:
-            backup_date = make_aware(datetime.now()).strftime("%b %d %Y")
-        if self.config_details.intended_last_success_date:
-            intended_date = str(self.config_details.intended_last_success_date.strftime("%b %d %Y"))
-        else:
-            intended_date = make_aware(datetime.now()).strftime("%b %d %Y")
-
-        diff_type = "File"
+        self.output = ""
         self.structured_format = "diff"
-
-        if self.output == "":
-            # This is used if all config snippets are in compliance and no diff exist.
-            self.output = f"--- Backup {diff_type} - " + backup_date + f"\n+++ Intended {diff_type} - " + intended_date
-        else:
-            first_occurence = self.output.index("@@")
-            second_occurence = self.output.index("@@", first_occurence)
-            # This is logic to match diff2html's expected input.
-            self.output = (
-                f"--- Backup {diff_type} - "
-                + backup_date
-                + f"\n+++ Intended {diff_type} - "
-                + intended_date
-                + "\n"
-                + self.output[first_occurence:second_occurence]
-                + "@@"
-                + self.output[second_occurence + 2 :]  # noqa: E203
-            )
         self.title_name = "Compliance Details"
-        return self._post_render(request)
+        now = make_aware(datetime.now())
+        backup_date = (self.config_details.backup_last_success_date or now).strftime("%b %d %Y")
+        intended_date = (self.config_details.intended_last_success_date or now).strftime("%b %d %Y")
+        return self._post_render(
+            request,
+            backup_config=self.config_details.backup_config,
+            intended_config=self.config_details.intended_config,
+            backup_date=backup_date,
+            intended_date=intended_date,
+        )
 
 
 #

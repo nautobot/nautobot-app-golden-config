@@ -73,6 +73,11 @@
 {% block content %}
     {{ block.super }}
 
+    {% comment %}
+    Hidden sentinel: makes Nautobot core's js/editor.js load Monaco on page load so the
+    Compliance Details modal (inserted after load) can render a diff editor.
+    {% endcomment %}
+    <div class="nb-editor-container" data-lang="text" style="display: none"></div>
     <div class="modal fade" id="gc-modal" role="dialog">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
@@ -92,17 +97,32 @@
 {% block javascript %}
     {{ block.super }}
     <script src="{% static 'js/tableconfig.js' %}"></script>
+    <script src="{% static 'js/editor.js' %}"></script>
+    <script src="{% static 'nautobot_golden_config/js/gc_monaco_diff.js' %}"></script>
     <script>
         $(document).ready(function () {
+            let diffEditor = null;
             $('#gc-modal').on('show.bs.modal', function (event) {
                 var trigger = event.relatedTarget;
                 if (!trigger) {
                     return;
                 }
                 $('#detail_view').attr({href: trigger.getAttribute('value'), target: '_blank'});
-                $('#gc-modal-body').load(trigger.dataset.href);
+                $('#gc-modal-body').load(trigger.dataset.href, function () {
+                    const host = document.getElementById('gc-diff-editor');
+                    if (!host) {
+                        return;
+                    }
+                    host.style.height = '70vh';
+                    gcRenderMonacoDiff(host, host.dataset.original, host.dataset.modified, {sideBySide: false}).then(function (editor) {
+                        diffEditor = editor;
+                    });
+                });
+            });
+            $('#gc-modal').on('hidden.bs.modal', function () {
+                gcDisposeMonacoDiff(diffEditor);
+                diffEditor = null;
             });
         });
-
     </script>
 {% endblock javascript %}

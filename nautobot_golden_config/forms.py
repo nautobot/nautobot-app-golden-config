@@ -6,6 +6,7 @@ import json
 import django.forms as django_forms
 from django.conf import settings
 from nautobot.apps import forms
+from nautobot.apps.forms import TagsBulkEditFormMixin
 from nautobot.dcim.models import Device, DeviceType, Location, Manufacturer, Platform, Rack, RackGroup
 from nautobot.extras.forms import NautobotBulkEditForm, NautobotFilterForm, NautobotModelForm
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, JobResult, Role, Status, Tag
@@ -206,9 +207,10 @@ class ComplianceRuleFilterForm(NautobotFilterForm):
     )
 
     feature = forms.DynamicModelMultipleChoiceField(queryset=models.ComplianceFeature.objects.all(), required=False)
+    tags = forms.TagFilterField(model)
 
 
-class ComplianceRuleBulkEditForm(NautobotBulkEditForm):
+class ComplianceRuleBulkEditForm(TagsBulkEditFormMixin, NautobotBulkEditForm):
     """BulkEdit form for ComplianceRule instances."""
 
     pk = django_forms.ModelMultipleChoiceField(

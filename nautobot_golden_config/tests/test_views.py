@@ -149,6 +149,51 @@ class ConfigReplaceUIViewSetTestCase(ViewTestCases.PrimaryObjectViewTestCase):  
         )
 
 
+class GoldenConfigComplianceDetailsViewTestCase(TestCase):
+    """Test the compliance details action of GoldenConfigUIViewSet."""
+
+    user_permissions = ["nautobot_golden_config.view_goldenconfig"]
+
+    @classmethod
+    def setUpTestData(cls):
+        create_device_data()
+        cls.device = Device.objects.get(name="Device 1")
+        cls.golden_config = models.GoldenConfig(
+            device=cls.device,
+            backup_config="hostname old\n",
+            intended_config="hostname new\n",
+        )
+        cls.golden_config.validated_save()
+
+    def _get(self, modal=False):
+        url = reverse("plugins:nautobot_golden_config:goldenconfig_compliance", kwargs={"pk": self.device.pk})
+        if modal:
+            url = f"{url}?modal=true"
+        response = self.client.get(url)
+        self.assertHttpStatus(response, 200)
+        return response.content.decode()
+
+    def test_compliance_details_renders_monaco_diff(self):
+        content = self._get()
+        self.assertIn('id="gc-diff-editor"', content)
+        self.assertIn('data-mode="diff"', content)
+        self.assertIn('data-original="hostname old', content)
+        self.assertIn('data-modified="hostname new', content)
+        self.assertIn("js/editor.js", content)
+
+    def test_compliance_details_modal_renders_fragment(self):
+        content = self._get(modal=True)
+        self.assertIn('id="gc-diff-editor"', content)
+        self.assertNotIn("<html", content)
+
+    def test_compliance_details_no_differences(self):
+        self.golden_config.intended_config = self.golden_config.backup_config
+        self.golden_config.validated_save()
+        content = self._get()
+        self.assertIn("No differences between the backup and intended configuration.", content)
+        self.assertNotIn('id="gc-diff-editor"', content)
+
+
 class GoldenConfigListViewTestCase(TestCase):
     """Test GoldenConfigListView."""
 

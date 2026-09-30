@@ -1,0 +1,1 @@
+Replaced the vendored diff2html library with Nautobot core's Monaco diff editor for the Config Compliance details and Intended Config Generator diff views, so diffs follow the selected light or dark theme.

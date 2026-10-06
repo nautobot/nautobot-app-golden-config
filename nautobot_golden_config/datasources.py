@@ -3,10 +3,12 @@
 import os
 
 import yaml
+from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError
 from nautobot.apps.choices import LogLevelChoices
 from nautobot.apps.datasources import DatasourceContent
 from nautobot.dcim.models.devices import Platform
+from nautobot.extras.models import Tag
 
 from nautobot_golden_config.exceptions import MissingReference, MultipleReferences
 from nautobot_golden_config.models import (
@@ -54,6 +56,10 @@ def refresh_git_gc_properties(repository_record, job_result, delete=False):  # p
     │   ├── config_removes
     │   ├── config_replaces
     │   ├── remediation_settings
+
+    Each property may include an optional ``tags`` key listing tags to assign to the synced object.
+    The referenced tags must already exist in Nautobot and be associated with the property's content
+    type; they are not auto-created.
 
     """
     if "nautobot_golden_config.pluginproperties" not in repository_record.provided_contents:
@@ -165,6 +171,40 @@ def get_id_kwargs(gc_config_item_dict, id_keys, job_result):
     return id_kwargs
 
 
+def get_tags(gc_config_item_dict, model, job_result):
+    """Pop ``tags`` from the YAML item dict and resolve to Tag instances.
+
+    The lookup is always scoped to ``model``'s content type, so a tag only resolves if it is
+    assignable to that model. This mirrors the FK handling in ``get_id_kwargs``: a referenced tag
+    that cannot be found for that content type raises ``MissingReference`` so the caller skips the
+    item.
+
+    Args:
+        gc_config_item_dict (dict): The YAML item dict. The ``tags`` key is popped if present.
+        model: The Django model class being synced, used to scope the content type lookup.
+        job_result: The Git repository sync job result, used for logging.
+
+    Returns:
+        list: A list of resolved ``Tag`` objects, or ``None`` if no ``tags`` key is present.
+
+    Raises:
+        MissingReference: If a referenced tag cannot be found for the model's content type.
+    """
+    if "tags" not in gc_config_item_dict:
+        return None
+    tag_entries = gc_config_item_dict.pop("tags") or []
+    content_type = ContentType.objects.get_for_model(model)
+    tags = []
+    for entry in tag_entries:
+        try:
+            tags.append(Tag.objects.get(**entry, content_types=content_type))
+        except Tag.DoesNotExist:
+            error_msg = get_error_message("E3034", tag_reference=entry, model=model.__name__)
+            job_result.log(error_msg, level_choice=LogLevelChoices.LOG_WARNING)
+            raise MissingReference from Tag.DoesNotExist
+    return tags
+
+
 def update_git_gc_properties(golden_config_path, job_result, gc_config_item):  # pylint: disable=too-many-locals
     """Refresh any compliance features provided by this Git repository."""
     gc_config_item_path = os.path.join(golden_config_path, gc_config_item["directory_name"])
@@ -207,7 +247,10 @@ def update_git_gc_properties(golden_config_path, job_result, gc_config_item):  #
         try:
             for item_dict in gc_config_property_list:
                 id_kwargs = get_id_kwargs(item_dict, gc_config_item["id_keys"], job_result)
+                tags = get_tags(item_dict, gc_config_item["class"], job_result)
                 item, created = gc_config_item["class"].objects.update_or_create(**id_kwargs, defaults=item_dict)
+                if tags is not None:
+                    item.tags.set(tags)
 
                 log_message = (
                     f"New {property_model.__name__} created: {item}"

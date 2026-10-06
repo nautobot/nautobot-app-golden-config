@@ -232,6 +232,8 @@ The `YAML` files will contain all the attributes necessary to identify an object
     role
     tacacs
   config_type: "cli"
+  tags:
+    - name: "my_tag_name"
 ```
 
 `config_removes` example:
@@ -281,6 +283,20 @@ CustomField data can be added using the `_custom_field_data` attribute, that tak
     custom_field_a: "abc"
     custom_field_b: 123
 ```
+
+Tags can be assigned to any property using the optional `tags` attribute, that takes a list of tag lookups (e.g. by `name`):
+
+```yaml
+---
+- name: "aaa"
+  slug: "aaa"
+  description: "aaa feature"
+  tags:
+    - name: "my_tag_name"
+```
+
+!!! note
+    Tags referenced in the `tags` attribute must already exist in Nautobot and be associated with the content type of the property being synced (for example, a tag used on a `compliance_rules` entry must include `ComplianceRule` in its content types). They are not created automatically. If a referenced tag cannot be found for the property's content type, the item is skipped and an `E3034` warning is logged.
 
 !!! note
     For Foreign Key references to `ComplianceFeature` and `Platform` we use the keywords `feature_slug` and `platform_name` respectively.

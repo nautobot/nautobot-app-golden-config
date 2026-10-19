@@ -3,6 +3,9 @@
 !!! note
     This document provides instructions for `CLI` configuration type based compliance.  The other option is `JSON` based [structured data compliance](./app_feature_compliancejson.md).
 
+!!! tip "Advanced CLI Compliance"
+    For more sophisticated CLI compliance checking with advanced filtering capabilities, see [Filtered Configuration Compliance](./app_feature_compliancefiltered.md) which provides advanced configuration matching using the `hier_config` library.
+
 ## Configuration Compliance Parsing Engine
 
 Configuration compliance is different than a simple UNIX diff. While the UI provides both, the compliance metrics are not influenced by the UNIX diff

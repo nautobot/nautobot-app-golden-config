@@ -10,6 +10,7 @@ from nautobot.dcim.models import Platform
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, RemediationTypeChoice
+from nautobot_golden_config.exceptions import PartialMatchConfigError
 from nautobot_golden_config.models import (
     FUNC_MAPPER,
     ComplianceFeature,
@@ -222,6 +223,29 @@ class ComplianceRuleTestCase(TestCase):
         )
         rule.clean()
 
+    def test_clean_partial_cli_invalid_match_config(self):
+        """Partial CLI rules with a match_config that is not valid hier_config YAML are rejected on match_config."""
+        rule = ComplianceRule(
+            feature=self.feature,
+            platform=self.device.platform,
+            config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI,
+            match_config="- match_rules:\n  - startwith: interface",
+        )
+        with self.assertRaises(ValidationError) as context:
+            rule.clean()
+        self.assertIn("match_config", context.exception.message_dict)
+        self.assertIn("Invalid hier_config match rules", context.exception.message_dict["match_config"][0])
+
+    def test_clean_cli_match_config_not_parsed_as_yaml(self):
+        """CLI rules keep accepting plain section names that are not valid hier_config YAML."""
+        rule = ComplianceRule(
+            feature=self.feature,
+            platform=self.device.platform,
+            config_type=ComplianceRuleConfigTypeChoice.TYPE_CLI,
+            match_config="router bgp\nntp",
+        )
+        rule.clean()
+
     def test_clean_cli_requires_match_config(self):
         """CLI rules without a match_config are still rejected with the existing message."""
         rule = ComplianceRule(
@@ -235,6 +259,70 @@ class ComplianceRuleTestCase(TestCase):
     def test_partial_cli_uses_cli_compliance(self):
         """Partial CLI compliance compares the matched lines with the CLI compliance function."""
         self.assertIs(FUNC_MAPPER[ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI], _get_cli_compliance)
+
+    @staticmethod
+    def _partial_rule(match_config):
+        """Return an unsaved Partial CLI rule with the given match_config."""
+        return ComplianceRule(config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI, match_config=match_config)
+
+    def test_get_partial_tag_rules(self):
+        """Each rule block becomes a tag rule with its own tag name."""
+        match_config = """
+- match_rules:
+  - startswith: interface
+  - startswith: mtu
+- match_rules:
+  - startswith: router bgp
+  - startswith: neighbor
+"""
+        tag_rules, tag_names = self._partial_rule(match_config).get_partial_tag_rules()
+        self.assertEqual(len(tag_rules), 2)
+        self.assertEqual(len(tag_names), 2)
+        self.assertEqual({tag for tag_rule in tag_rules for tag in tag_rule.apply_tags}, tag_names)
+        self.assertEqual(tag_rules[0].match_rules[1].startswith, "mtu")
+
+    def test_get_partial_tag_rules_stable_tag_names(self):
+        """The same rule block always gets the same tag name."""
+        rule = self._partial_rule("- match_rules:\n  - startswith: interface")
+        self.assertEqual(rule.get_partial_tag_rules()[1], rule.get_partial_tag_rules()[1])
+
+    def test_get_partial_tag_rules_ignores_hier_config_comment(self):
+        """A leading `# hier_config` line is a YAML comment and does not change the result."""
+        match_config = "- match_rules:\n  - startswith: interface"
+        self.assertEqual(
+            self._partial_rule(f"# hier_config\n{match_config}").get_partial_tag_rules()[1],
+            self._partial_rule(match_config).get_partial_tag_rules()[1],
+        )
+
+    def test_get_partial_tag_rules_invalid_yaml(self):
+        """Invalid YAML is reported as a PartialMatchConfigError."""
+        with self.assertRaisesRegex(PartialMatchConfigError, "Invalid YAML in match_config"):
+            self._partial_rule("- match_rules: [").get_partial_tag_rules()
+
+    def test_get_partial_tag_rules_not_a_list(self):
+        """YAML that is not a non-empty list is rejected."""
+        for match_config in ("interface", "match_rules:\n  - startswith: interface", "", "# only a comment"):
+            with self.subTest(match_config=match_config):
+                with self.assertRaisesRegex(PartialMatchConfigError, "must be a YAML list of rule blocks"):
+                    self._partial_rule(match_config).get_partial_tag_rules()
+
+    def test_get_partial_tag_rules_rule_block_not_a_mapping(self):
+        """List entries that are not mappings are rejected with their position."""
+        with self.assertRaisesRegex(PartialMatchConfigError, "rule 2 must be a mapping"):
+            self._partial_rule("- match_rules:\n  - startswith: interface\n- interface").get_partial_tag_rules()
+
+    def test_get_partial_tag_rules_unknown_predicate(self):
+        """A typo in a predicate is reported with its location instead of a raw pydantic error."""
+        with self.assertRaisesRegex(
+            PartialMatchConfigError,
+            r"Invalid hier_config match rules in match_config: rule 1 match_rules\.0\.startwith: Extra inputs",
+        ):
+            self._partial_rule("- match_rules:\n  - startwith: interface").get_partial_tag_rules()
+
+    def test_get_partial_tag_rules_missing_match_rules(self):
+        """A rule block without `match_rules` is rejected."""
+        with self.assertRaisesRegex(PartialMatchConfigError, "rule 1 match_rules: Field required"):
+            self._partial_rule("- startswith: interface").get_partial_tag_rules()
 
 
 class GoldenConfigSettingModelTestCase(TestCase):

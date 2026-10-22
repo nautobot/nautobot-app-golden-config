@@ -2,15 +2,12 @@
 
 # pylint: disable=relative-beyond-top-level
 import difflib
-import hashlib
-import json
 import logging
 import os
 from collections import defaultdict
 from datetime import datetime
 
 import hier_config
-import yaml
 from django.utils.timezone import make_aware
 from hier_config.utils import HCONFIG_PLATFORM_V2_TO_V3_MAPPING
 from lxml import etree
@@ -21,10 +18,9 @@ from nornir import InitNornir
 from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir.core.task import Result, Task
 from nornir_nautobot.exceptions import NornirNautobotException
-from pydantic import TypeAdapter
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
-from nautobot_golden_config.exceptions import ComplianceFailure
+from nautobot_golden_config.exceptions import ComplianceFailure, PartialMatchConfigError
 from nautobot_golden_config.models import ComplianceRule, ConfigCompliance, GoldenConfig
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
@@ -252,22 +248,12 @@ def process_nested_compliance_rule_hier_config(rule, backup_cfg, intended_cfg, o
     running_config = hier_config.get_hconfig(platform_or_driver=platform, config_raw=backup_cfg)
     generated_config = hier_config.get_hconfig(platform_or_driver=platform, config_raw=intended_cfg)
 
-    v3_tags = tuple()
-    tag_names = set()
-
-    # Create hier config v3 tags
     try:
-        match_config = yaml.safe_load(rule["obj"].match_config)
-        for tag_rule in match_config:
-            # Create a unique tag name for each match rule
-            tag_name = hashlib.sha1(json.dumps(tag_rule, sort_keys=True).encode()).hexdigest()  # noqa: S324
-            tag_rule["apply_tags"] = frozenset([tag_name])
-            tag_names.add(tag_name)
-        v3_tags = TypeAdapter(tuple[hier_config.models.TagRule, ...]).validate_python(match_config)
-    except yaml.YAMLError as e:
-        error_msg = f"Invalid YAML in match_config: {str(e)}"
+        v3_tags, tag_names = rule["obj"].get_partial_tag_rules()
+    except PartialMatchConfigError as error:
+        error_msg = str(error)
         logger.error(error_msg, extra={"object": obj})
-        raise NornirNautobotException(error_msg) from e
+        raise NornirNautobotException(error_msg) from error
 
     # Apply tags to the running and generated configs
     for tag_rule in v3_tags:

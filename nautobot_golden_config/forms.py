@@ -187,7 +187,7 @@ class ComplianceRuleForm(NautobotModelForm):
         required=False,
         widget=django_forms.Textarea,
         label="Config to Match",
-        help_text="The config to match that is matched based on the parent most configuration. E.g.: For CLI `router bgp` or `ntp`. For JSON this is a top level key name. For XML this is a xpath query.",
+        help_text="The config to match that is matched based on the parent most configuration. E.g.: For CLI `router bgp` or `ntp`. For JSON this is a top level key name. For XML this is a xpath query. For Partial CLI this is a YAML list of hier_config match rules.",
         # We need to preserve leading spaces for some operating systems.
         strip=False,
     )

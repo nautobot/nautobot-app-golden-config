@@ -10,6 +10,7 @@ from nornir_nautobot.exceptions import NornirNautobotException
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
 from nautobot_golden_config.nornir_plays.config_compliance import (
     get_config_element,
+    get_config_elements,
     get_rules,
     process_nested_compliance_rule_hier_config,
 )
@@ -55,6 +56,32 @@ class ConfigComplianceTest(unittest.TestCase):
         mock_rule["obj"].config_type = ComplianceRuleConfigTypeChoice.TYPE_JSON
         return_config = json.dumps(get_config_element(mock_rule, mock_config, mock_obj, None))
         self.assertEqual(return_config, mock_config)
+
+    @patch("nautobot_golden_config.nornir_plays.config_compliance.process_nested_compliance_rule_hier_config")
+    @patch("nautobot_golden_config.nornir_plays.config_compliance.get_config_element")
+    def test_get_config_elements_partial_cli(self, mock_get_config_element, mock_process_nested):
+        """Test that Partial CLI rules are matched with hier_config."""
+        mock_process_nested.return_value = ("actual", "intended")
+        mock_obj = Mock()
+        mock_rule = {"obj": Mock(config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI)}
+        result = get_config_elements(mock_rule, "backup", "intended_cfg", mock_obj, None)
+        self.assertEqual(result, ("actual", "intended"))
+        mock_process_nested.assert_called_once_with(mock_rule, "backup", "intended_cfg", mock_obj, None)
+        mock_get_config_element.assert_not_called()
+
+    @patch("nautobot_golden_config.nornir_plays.config_compliance.process_nested_compliance_rule_hier_config")
+    def test_get_config_elements_json_empty_match_config(self, mock_process_nested):
+        """Test that a JSON rule with an empty match_config is not matched with hier_config."""
+        mock_config = json.dumps({"key1": "value1"})
+        mock_obj = MagicMock(name="Device")
+        mock_rule = {
+            "obj": Mock(config_type=ComplianceRuleConfigTypeChoice.TYPE_JSON, match_config=""),
+            "section": [],
+        }
+        actual, intended = get_config_elements(mock_rule, mock_config, mock_config, mock_obj, None)
+        self.assertEqual(actual, {"key1": "value1"})
+        self.assertEqual(intended, {"key1": "value1"})
+        mock_process_nested.assert_not_called()
 
 
 class ProcessNestedComplianceRuleHierConfigTest(unittest.TestCase):
@@ -109,21 +136,9 @@ router bgp 65001
 !
 """
 
-    def test_non_cli_config_type_raises_exception(self):
-        """Test that non-CLI config types raise an exception."""
-        mock_rule = {"obj": Mock(config_type=ComplianceRuleConfigTypeChoice.TYPE_JSON, match_config="test")}
-
-        with self.assertRaises(NornirNautobotException) as context:
-            process_nested_compliance_rule_hier_config(
-                mock_rule, self.backup_cfg, self.intended_cfg, self.mock_obj, self.mock_logger
-            )
-
-        self.assertIn("Hier config compliance rules are only supported for CLI config types", str(context.exception))
-        self.mock_logger.error.assert_called_once()
-
     def test_unsupported_platform_raises_exception(self):
         """Test that unsupported platforms raise an exception."""
-        mock_rule = {"obj": Mock(config_type=ComplianceRuleConfigTypeChoice.TYPE_CLI, match_config="test")}
+        mock_rule = {"obj": Mock(config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI, match_config="test")}
 
         # Mock an unsupported platform
         self.mock_obj.platform.network_driver_mappings = {"hier_config": "unsupported_platform"}
@@ -141,7 +156,7 @@ router bgp 65001
     @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")
     @patch("nautobot_golden_config.nornir_plays.config_compliance.TypeAdapter")
     def test_hier_config_syntax_success(self, mock_type_adapter, mock_platform_mapping, mock_hier_config):
-        """Test successful processing with hier_config syntax (# hier_config)."""
+        """Test successful processing of a Partial CLI rule."""
         mock_platform_mapping.get.return_value = "cisco_ios"
         mock_running_config = Mock()
         mock_generated_config = Mock()
@@ -165,8 +180,8 @@ router bgp 65001
 
         mock_rule = {
             "obj": Mock(
-                config_type=ComplianceRuleConfigTypeChoice.TYPE_CLI,
-                match_config="# hier_config\n- match_rules:\n  - startswith: interface",
+                config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI,
+                match_config="- match_rules:\n  - startswith: interface",
             )
         }
 
@@ -191,8 +206,8 @@ router bgp 65001
         mock_yaml_load.side_effect = yaml.YAMLError("Invalid YAML syntax")
         mock_rule = {
             "obj": Mock(
-                config_type=ComplianceRuleConfigTypeChoice.TYPE_CLI,
-                match_config="# hier_config\ninvalid: yaml: content: [",
+                config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI,
+                match_config="invalid: yaml: content: [",
             )
         }
         with self.assertRaises(NornirNautobotException) as context:
@@ -236,9 +251,8 @@ router bgp 65001
 
         mock_rule = {
             "obj": Mock(
-                config_type=ComplianceRuleConfigTypeChoice.TYPE_CLI,
-                match_config="""# hier_config
-- match_rules:
+                config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI,
+                match_config="""- match_rules:
   - startswith: interface
 - match_rules:
   - startswith: router bgp""",
@@ -296,8 +310,8 @@ router bgp 65001
 
         mock_rule = {
             "obj": Mock(
-                config_type=ComplianceRuleConfigTypeChoice.TYPE_CLI,
-                match_config="# hier_config\n- match_rules:\n  - startswith: flow exporter",
+                config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI,
+                match_config="- match_rules:\n  - startswith: flow exporter",
             )
         }
 
@@ -337,8 +351,8 @@ router bgp 65001
 
         mock_rule = {
             "obj": Mock(
-                config_type=ComplianceRuleConfigTypeChoice.TYPE_CLI,
-                match_config="# hier_config\n- match_rules:\n  - startswith: nonexistent",
+                config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI,
+                match_config="- match_rules:\n  - startswith: nonexistent",
             )
         }
 
@@ -393,8 +407,8 @@ router bgp 65001
         mock_generated_config.all_children_sorted_by_tags.return_value = []
         mock_rule = {
             "obj": Mock(
-                config_type=ComplianceRuleConfigTypeChoice.TYPE_CLI,
-                match_config="# hier_config\n- match_rules:\n  - startswith: router bgp",
+                config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI,
+                match_config="- match_rules:\n  - startswith: router bgp",
             )
         }
         running_text, intended_text = process_nested_compliance_rule_hier_config(
@@ -447,8 +461,8 @@ router bgp 65001
         mock_generated_config.all_children_sorted_by_tags.return_value = []
         mock_rule = {
             "obj": Mock(
-                config_type=ComplianceRuleConfigTypeChoice.TYPE_CLI,
-                match_config="# hier_config\n- match_rules:\n  - startswith: snmp-server",
+                config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI,
+                match_config="- match_rules:\n  - startswith: snmp-server",
             )
         }
         running_text, intended_text = process_nested_compliance_rule_hier_config(
@@ -488,8 +502,8 @@ router bgp 65001
 
         mock_rule = {
             "obj": Mock(
-                config_type=ComplianceRuleConfigTypeChoice.TYPE_CLI,
-                match_config="# hier_config\n- match_rules:\n  - startswith: interface",
+                config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI,
+                match_config="- match_rules:\n  - startswith: interface",
             )
         }
 

@@ -9,14 +9,18 @@ from nautobot.apps.testing import TestCase
 from nautobot.dcim.models import Platform
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status
 
-from nautobot_golden_config.choices import RemediationTypeChoice
+from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, RemediationTypeChoice
 from nautobot_golden_config.models import (
+    FUNC_MAPPER,
+    ComplianceFeature,
+    ComplianceRule,
     ConfigCompliance,
     ConfigPlan,
     ConfigRemove,
     ConfigReplace,
     GoldenConfigSetting,
     RemediationSetting,
+    _get_cli_compliance,
     _get_hierconfig_remediation,
 )
 from nautobot_golden_config.tests.conftest import create_git_repos
@@ -189,6 +193,48 @@ class GoldenConfigTestCase(TestCase):
 
 class ComplianceRuleTestCase(TestCase):
     """Test ComplianceRule Model."""
+
+    @classmethod
+    def setUpTestData(cls):
+        """Set up base objects."""
+        cls.device = create_device()
+        cls.feature = ComplianceFeature.objects.create(name="partial", slug="partial")
+
+    def test_clean_partial_cli_requires_match_config(self):
+        """Partial CLI rules without a match_config are rejected."""
+        rule = ComplianceRule(
+            feature=self.feature,
+            platform=self.device.platform,
+            config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI,
+        )
+        with self.assertRaisesMessage(
+            ValidationError, "Partial CLI configuration set, but no configuration set to match."
+        ):
+            rule.clean()
+
+    def test_clean_partial_cli_with_match_config(self):
+        """Partial CLI rules with a match_config are valid."""
+        rule = ComplianceRule(
+            feature=self.feature,
+            platform=self.device.platform,
+            config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI,
+            match_config="- match_rules:\n  - startswith: interface",
+        )
+        rule.clean()
+
+    def test_clean_cli_requires_match_config(self):
+        """CLI rules without a match_config are still rejected with the existing message."""
+        rule = ComplianceRule(
+            feature=self.feature,
+            platform=self.device.platform,
+            config_type=ComplianceRuleConfigTypeChoice.TYPE_CLI,
+        )
+        with self.assertRaisesMessage(ValidationError, "CLI configuration set, but no configuration set to match."):
+            rule.clean()
+
+    def test_partial_cli_uses_cli_compliance(self):
+        """Partial CLI compliance compares the matched lines with the CLI compliance function."""
+        self.assertIs(FUNC_MAPPER[ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI], _get_cli_compliance)
 
 
 class GoldenConfigSettingModelTestCase(TestCase):

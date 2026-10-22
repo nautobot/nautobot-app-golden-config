@@ -243,6 +243,7 @@ FUNC_MAPPER = {
     ComplianceRuleConfigTypeChoice.TYPE_CLI: _get_cli_compliance,
     ComplianceRuleConfigTypeChoice.TYPE_JSON: _get_json_compliance,
     ComplianceRuleConfigTypeChoice.TYPE_XML: _get_xml_compliance,
+    ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI: _get_cli_compliance,
     RemediationTypeChoice.TYPE_HIERCONFIG: _get_hierconfig_remediation,
 }
 # The below conditionally add the custom provided compliance type
@@ -321,13 +322,13 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
     match_config = models.TextField(
         blank=True,
         verbose_name="Config to Match",
-        help_text="The config to match that is matched based on the parent most configuration. E.g.: For CLI `router bgp` or `ntp`. For JSON this is a top level key name. For XML this is a xpath query.",
+        help_text="The config to match that is matched based on the parent most configuration. E.g.: For CLI `router bgp` or `ntp`. For JSON this is a top level key name. For XML this is a xpath query. For Partial CLI this is a YAML list of hier_config match rules.",
     )
     config_type = models.CharField(
         max_length=20,
         default=ComplianceRuleConfigTypeChoice.TYPE_CLI,
         choices=ComplianceRuleConfigTypeChoice,
-        help_text="Whether the configuration is in CLI, JSON, or XML format.",
+        help_text="Whether the configuration is in CLI, JSON, or XML format. Partial CLI matches nested CLI lines using hier_config.",
     )
     custom_compliance = models.BooleanField(
         default=False, help_text="Whether this Compliance Rule is proceeded as custom."
@@ -352,9 +353,12 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
         return f"{self.platform} - {self.feature.name}"
 
     def clean(self):
-        """Verify that if cli, then match_config is set."""
-        if self.config_type == ComplianceRuleConfigTypeChoice.TYPE_CLI and not self.match_config:
-            raise ValidationError("CLI configuration set, but no configuration set to match.")
+        """Verify that if cli or partial cli, then match_config is set."""
+        cli_types = (ComplianceRuleConfigTypeChoice.TYPE_CLI, ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI)
+        if self.config_type in cli_types and not self.match_config:
+            raise ValidationError(
+                f"{self.get_config_type_display()} configuration set, but no configuration set to match."
+            )
 
 
 @extras_features(

@@ -177,13 +177,7 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     intended_cfg = _open_file_config(intended_file)
 
     for rule in rules[obj.platform.network_driver]:
-        # Check for hier config compliance rule
-        section_type = rule["section"][0]
-        if "# hier_config" in section_type:
-            _actual, _intended = process_nested_compliance_rule_hier_config(rule, backup_cfg, intended_cfg, obj, logger)
-        else:
-            _actual = get_config_element(rule, backup_cfg, obj, logger)
-            _intended = get_config_element(rule, intended_cfg, obj, logger)
+        _actual, _intended = get_config_elements(rule, backup_cfg, intended_cfg, obj, logger)
 
         # using update_or_create() method to conveniently update actual obj or create new one.
         ConfigCompliance.objects.update_or_create(
@@ -205,6 +199,23 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     return Result(host=task.host)
 
 
+def get_config_elements(rule, backup_cfg, intended_cfg, obj, logger):
+    """
+    Return the actual and intended configuration elements for a compliance rule.
+
+    Partial CLI rules are matched with hier_config, all other config types with `get_config_element`.
+
+    Returns:
+        tuple: The actual and intended configuration elements.
+    """
+    if rule["obj"].config_type == ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI:
+        return process_nested_compliance_rule_hier_config(rule, backup_cfg, intended_cfg, obj, logger)
+    return (
+        get_config_element(rule, backup_cfg, obj, logger),
+        get_config_element(rule, intended_cfg, obj, logger),
+    )
+
+
 def process_nested_compliance_rule_hier_config(rule, backup_cfg, intended_cfg, obj, logger):  # pylint: disable=too-many-locals
     """
     Processes nested compliance rules using hierarchical configuration comparison.
@@ -223,17 +234,11 @@ def process_nested_compliance_rule_hier_config(rule, backup_cfg, intended_cfg, o
         tuple[str, str]: Filtered running and intended configuration text for compliance comparison.
 
     Notes:
-        The match config must have # hier_config as a comment at the top of the YAML block.
+        Used for compliance rules with the Partial CLI config type.
 
     The match_config field in the rule should define hierarchical config tags and matching criteria in YAML format.
     See: https://hier-config.readthedocs.io/en/latest/tags/
     """
-    # Check if the compliance rule is of type CLI
-    if rule["obj"].config_type != ComplianceRuleConfigTypeChoice.TYPE_CLI:
-        error_msg = "Hier config compliance rules are only supported for CLI config types."
-        logger.error(error_msg, extra={"object": obj})
-        raise NornirNautobotException(error_msg)
-
     # Convert v2 platform to v3 platform
     v2_platform = obj.platform.network_driver_mappings.get("hier_config")
     platform = HCONFIG_PLATFORM_V2_TO_V3_MAPPING.get(v2_platform)

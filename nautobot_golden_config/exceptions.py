@@ -31,3 +31,7 @@ class ComplianceFailure(GoldenConfigError):
 
 class ConfigPlanDeploymentFailure(GoldenConfigError):
     """Custom error for when there's a failure in Config Plan Deployment Job."""
+
+
+class PartialMatchConfigError(GoldenConfigError):
+    """Custom error for an invalid match_config on a Partial CLI compliance rule."""

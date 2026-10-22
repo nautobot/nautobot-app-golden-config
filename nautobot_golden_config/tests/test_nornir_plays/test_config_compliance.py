@@ -8,6 +8,7 @@ import yaml
 from nornir_nautobot.exceptions import NornirNautobotException
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
+from nautobot_golden_config.models import ComplianceRule
 from nautobot_golden_config.nornir_plays.config_compliance import (
     get_config_element,
     get_config_elements,
@@ -154,7 +155,7 @@ router bgp 65001
 
     @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
     @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.TypeAdapter")
+    @patch("nautobot_golden_config.models.TypeAdapter")
     def test_hier_config_syntax_success(self, mock_type_adapter, mock_platform_mapping, mock_hier_config):
         """Test successful processing of a Partial CLI rule."""
         mock_platform_mapping.get.return_value = "cisco_ios"
@@ -179,7 +180,7 @@ router bgp 65001
         mock_generated_config.all_children_sorted_by_tags.return_value = [mock_child]
 
         mock_rule = {
-            "obj": Mock(
+            "obj": ComplianceRule(
                 config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI,
                 match_config="- match_rules:\n  - startswith: interface",
             )
@@ -197,7 +198,7 @@ router bgp 65001
 
     @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
     @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.yaml.safe_load")
+    @patch("nautobot_golden_config.models.yaml.safe_load")
     def test_invalid_yaml_raises_exception(self, mock_yaml_load, mock_platform_mapping, mock_hier_config):
         """Test that invalid YAML in compliance rule raises an exception."""
         mock_platform_mapping.get.return_value = "cisco_ios"
@@ -205,7 +206,7 @@ router bgp 65001
         # Mock YAML parsing to raise an exception
         mock_yaml_load.side_effect = yaml.YAMLError("Invalid YAML syntax")
         mock_rule = {
-            "obj": Mock(
+            "obj": ComplianceRule(
                 config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI,
                 match_config="invalid: yaml: content: [",
             )
@@ -218,9 +219,25 @@ router bgp 65001
         self.mock_logger.error.assert_called_once()
         mock_hier_config.get_hconfig.assert_called()
 
+    def test_invalid_match_rules_raises_exception(self):
+        """Test that YAML that is not a valid hier_config rule raises an exception instead of a pydantic error."""
+        self.mock_obj.platform.network_driver_mappings = {"hier_config": "ios"}
+        mock_rule = {
+            "obj": ComplianceRule(
+                config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI,
+                match_config="- match_rules:\n  - startwith: interface",
+            )
+        }
+        with self.assertRaises(NornirNautobotException) as context:
+            process_nested_compliance_rule_hier_config(
+                mock_rule, self.backup_cfg, self.intended_cfg, self.mock_obj, self.mock_logger
+            )
+        self.assertIn("Invalid hier_config match rules in match_config", str(context.exception))
+        self.mock_logger.error.assert_called_once()
+
     @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
     @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.TypeAdapter")
+    @patch("nautobot_golden_config.models.TypeAdapter")
     def test_multiple_rules(self, mock_type_adapter, mock_platform_mapping, mock_hier_config):
         """Test processing with multiple match configs in a single compliance rule."""
         mock_platform_mapping.get.return_value = "cisco_ios"
@@ -250,7 +267,7 @@ router bgp 65001
         mock_generated_config.all_children_sorted_by_tags.return_value = [mock_interface_child, mock_bgp_child]
 
         mock_rule = {
-            "obj": Mock(
+            "obj": ComplianceRule(
                 config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI,
                 match_config="""- match_rules:
   - startswith: interface
@@ -269,7 +286,7 @@ router bgp 65001
 
     @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
     @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.TypeAdapter")
+    @patch("nautobot_golden_config.models.TypeAdapter")
     def test_empty_filtered_config_with_interface_fallback(
         self, mock_type_adapter, mock_platform_mapping, mock_hier_config
     ):
@@ -309,7 +326,7 @@ router bgp 65001
         mock_generated_config.all_children_sorted_by_tags.return_value = []
 
         mock_rule = {
-            "obj": Mock(
+            "obj": ComplianceRule(
                 config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI,
                 match_config="- match_rules:\n  - startswith: flow exporter",
             )
@@ -326,7 +343,7 @@ router bgp 65001
 
     @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
     @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.TypeAdapter")
+    @patch("nautobot_golden_config.models.TypeAdapter")
     def test_empty_filtered_config_no_interfaces(self, mock_type_adapter, mock_platform_mapping, mock_hier_config):
         """Test processing when both configs are empty and no interfaces are available for fallback."""
         # Setup mocks
@@ -350,7 +367,7 @@ router bgp 65001
         mock_generated_config.all_children_sorted_by_tags.return_value = []
 
         mock_rule = {
-            "obj": Mock(
+            "obj": ComplianceRule(
                 config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI,
                 match_config="- match_rules:\n  - startswith: nonexistent",
             )
@@ -366,7 +383,7 @@ router bgp 65001
 
     @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
     @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.TypeAdapter")
+    @patch("nautobot_golden_config.models.TypeAdapter")
     def test_interface_fallback_only_top_level_interfaces(
         self, mock_type_adapter, mock_platform_mapping, mock_hier_config
     ):
@@ -406,7 +423,7 @@ router bgp 65001
         mock_generated_config.get_children_deep.return_value = []
         mock_generated_config.all_children_sorted_by_tags.return_value = []
         mock_rule = {
-            "obj": Mock(
+            "obj": ComplianceRule(
                 config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI,
                 match_config="- match_rules:\n  - startswith: router bgp",
             )
@@ -422,7 +439,7 @@ router bgp 65001
 
     @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
     @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.TypeAdapter")
+    @patch("nautobot_golden_config.models.TypeAdapter")
     def test_multiple_interface_fallback(self, mock_type_adapter, mock_platform_mapping, mock_hier_config):
         """Test fallback behavior with multiple top-level interfaces."""
         # Setup mocks
@@ -460,7 +477,7 @@ router bgp 65001
         mock_generated_config.get_children_deep.return_value = []
         mock_generated_config.all_children_sorted_by_tags.return_value = []
         mock_rule = {
-            "obj": Mock(
+            "obj": ComplianceRule(
                 config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI,
                 match_config="- match_rules:\n  - startswith: snmp-server",
             )
@@ -476,7 +493,7 @@ router bgp 65001
 
     @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
     @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.TypeAdapter")
+    @patch("nautobot_golden_config.models.TypeAdapter")
     def test_tag_application_to_configs(self, mock_type_adapter, mock_platform_mapping, mock_hier_config):
         """Test that tags are properly applied to both running and generated configs in unified syntax."""
         mock_platform_mapping.get.return_value = "cisco_ios"
@@ -501,7 +518,7 @@ router bgp 65001
         mock_generated_config.all_children_sorted_by_tags.return_value = [mock_child]
 
         mock_rule = {
-            "obj": Mock(
+            "obj": ComplianceRule(
                 config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI,
                 match_config="- match_rules:\n  - startswith: interface",
             )

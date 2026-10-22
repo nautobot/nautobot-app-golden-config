@@ -21,6 +21,8 @@ class NornirLogger:
 
     def _logging_helper(self, attr: str, message: str, extra: Any = None):
         """Logger helper to set both db and console logs at once."""
+        if not LOGGER.isEnabledFor(getattr(logging, attr.upper())):
+            return
         if not extra:
             extra = {}
         getattr(LOGGER_ADAPTER, attr)(message, extra=extra)

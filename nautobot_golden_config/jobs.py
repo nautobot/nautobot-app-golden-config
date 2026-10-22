@@ -4,6 +4,7 @@
 # TODO: Remove the following ignore, added to be able to pass pylint in CI.
 # pylint: disable=arguments-differ
 
+import logging
 from datetime import datetime
 
 from django.utils.timezone import make_aware
@@ -221,7 +222,17 @@ class FormEntry:  # pylint disable=too-few-public-method
     debug = BooleanVar(description="Enable for more verbose debug logging")
 
 
-class GoldenConfigJobMixin(Job):  # pylint: disable=abstract-method
+class DebugLoggingMixin:  # pylint: disable=too-few-public-methods
+    """Mixin to only record debug log messages when the `debug` job input is enabled."""
+
+    def before_start(self, task_id, args, kwargs):
+        """Set the job logger level from the `debug` input."""
+        super().before_start(task_id, args, kwargs)
+        # The job logger is shared across runs in a worker process, so the level is set on every run.
+        self.logger.setLevel(logging.DEBUG if kwargs.get("debug") else logging.INFO)
+
+
+class GoldenConfigJobMixin(DebugLoggingMixin, Job):  # pylint: disable=abstract-method
     """Reused mixin to be able to set defaults for instance attributes in all GC jobs."""
 
     fail_job_on_task_failure = BooleanVar(description="If any tasks for any device fails, fail the entire job result.")
@@ -401,7 +412,7 @@ class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
             raise NornirNautobotException(error_msg)
 
 
-class GenerateConfigPlans(Job, FormEntry):
+class GenerateConfigPlans(DebugLoggingMixin, Job, FormEntry):
     """Job to generate config plans."""
 
     # Config Plan generation fields
@@ -538,7 +549,7 @@ class GenerateConfigPlans(Job, FormEntry):
             raise ValueError(error_msg)
 
 
-class DeployConfigPlans(Job):
+class DeployConfigPlans(DebugLoggingMixin, Job):
     """Job to deploy config plans."""
 
     config_plan = MultiObjectVar(model=ConfigPlan, required=True)
@@ -572,7 +583,7 @@ class DeployConfigPlans(Job):
                 raise NornirNautobotException(error_msg) from error
 
 
-class DeployConfigPlanJobButtonReceiver(JobButtonReceiver):
+class DeployConfigPlanJobButtonReceiver(DebugLoggingMixin, JobButtonReceiver):
     """Job button to deploy a config plan."""
 
     class Meta:

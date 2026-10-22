@@ -9,11 +9,13 @@ class ComplianceRuleConfigTypeChoice(ChoiceSet):
     TYPE_CLI = "cli"
     TYPE_JSON = "json"
     TYPE_XML = "xml"
+    TYPE_PARTIAL_CLI = "partial-cli"
 
     CHOICES = (
         (TYPE_CLI, "CLI"),
         (TYPE_JSON, "JSON"),
         (TYPE_XML, "XML"),
+        (TYPE_PARTIAL_CLI, "Partial CLI"),
     )
 
 

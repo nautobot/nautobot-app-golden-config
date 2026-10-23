@@ -227,9 +227,15 @@ class DebugLoggingMixin:  # pylint: disable=too-few-public-methods
 
     def before_start(self, task_id, args, kwargs):
         """Set the job logger level from the `debug` input."""
+        # The job logger is shared by every job in this module within a worker process, so `after_return` restores it.
+        self._original_log_level = self.logger.level  # pylint: disable=attribute-defined-outside-init
         super().before_start(task_id, args, kwargs)
-        # The job logger is shared across runs in a worker process, so the level is set on every run.
         self.logger.setLevel(logging.DEBUG if kwargs.get("debug") else logging.INFO)
+
+    def after_return(self, status, retval, task_id, args, kwargs, einfo):  # pylint: disable=too-many-arguments
+        """Restore the job logger level set before `before_start`."""
+        self.logger.setLevel(self._original_log_level)
+        super().after_return(status, retval, task_id, args, kwargs, einfo)
 
 
 class GoldenConfigJobMixin(DebugLoggingMixin, Job):  # pylint: disable=abstract-method

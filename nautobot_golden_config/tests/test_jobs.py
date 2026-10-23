@@ -692,3 +692,16 @@ class GCJobDebugLoggingTestCase(TransactionTestCase):
                 )
                 debug_entries = JobLogEntry.objects.filter(job_result=job_result, log_level="debug")
                 self.assertEqual(debug_entries.exists(), debug)
+
+    def test_log_level_does_not_leak_to_later_jobs(self):
+        """A later job in the same module still records debug entries after a run without `debug`."""
+        create_job_result_and_run_job(
+            module="nautobot_golden_config.jobs",
+            name="BackupJob",
+            device=Device.objects.filter(name=self.device.name),
+            debug=False,
+        )
+        job_result = create_job_result_and_run_job(
+            module="nautobot_golden_config.jobs", name="SyncGoldenConfigWithDynamicGroups"
+        )
+        self.assertTrue(JobLogEntry.objects.filter(job_result=job_result, log_level="debug").exists())

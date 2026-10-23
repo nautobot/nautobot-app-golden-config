@@ -1,0 +1,1 @@
+Fixed debug log messages being recorded in Golden Config job results when the debug option was not enabled.

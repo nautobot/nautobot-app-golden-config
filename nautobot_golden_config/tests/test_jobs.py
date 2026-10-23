@@ -35,7 +35,10 @@ class GCReposBackupTestCase(TransactionTestCase):
         """Test backup job repo-types are backup only."""
         mock_ensure_git_repository.return_value = True
         job_result = create_job_result_and_run_job(
-            module="nautobot_golden_config.jobs", name="BackupJob", device=Device.objects.filter(name=self.device.name)
+            module="nautobot_golden_config.jobs",
+            name="BackupJob",
+            device=Device.objects.filter(name=self.device.name),
+            debug=True,
         )
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
@@ -59,6 +62,7 @@ class GCReposBackupTestCase(TransactionTestCase):
             module="nautobot_golden_config.jobs",
             name="BackupJob",
             device=Device.objects.all(),
+            debug=True,
         )
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
@@ -80,7 +84,10 @@ class GCReposBackupTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         self.assertFalse(constant.ENABLE_BACKUP)
         job_result = create_job_result_and_run_job(
-            module="nautobot_golden_config.jobs", name="BackupJob", device=Device.objects.filter(name=self.device.name)
+            module="nautobot_golden_config.jobs",
+            name="BackupJob",
+            device=Device.objects.filter(name=self.device.name),
+            debug=True,
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
         self.assertEqual(log_entries.first().message, "Repository types to sync: ")
@@ -98,7 +105,7 @@ class GCReposBackupTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         self.assertFalse(constant.ENABLE_BACKUP)
         job_result = create_job_result_and_run_job(
-            module="nautobot_golden_config.jobs", name="BackupJob", device=Device.objects.all()
+            module="nautobot_golden_config.jobs", name="BackupJob", device=Device.objects.all(), debug=True
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
         self.assertEqual(log_entries.first().message, "Repository types to sync: ")
@@ -132,6 +139,7 @@ class GCReposIntendedTestCase(TransactionTestCase):
             module="nautobot_golden_config.jobs",
             name="IntendedJob",
             device=Device.objects.filter(name=self.device.name),
+            debug=True,
         )
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
@@ -151,7 +159,7 @@ class GCReposIntendedTestCase(TransactionTestCase):
         """Test intended job two GC setting enabled_intended enabled"""
         mock_ensure_git_repository.return_value = True
         job_result = create_job_result_and_run_job(
-            module="nautobot_golden_config.jobs", name="IntendedJob", device=Device.objects.all()
+            module="nautobot_golden_config.jobs", name="IntendedJob", device=Device.objects.all(), debug=True
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
         self.assertEqual(log_entries.count(), 2)
@@ -175,6 +183,7 @@ class GCReposIntendedTestCase(TransactionTestCase):
             module="nautobot_golden_config.jobs",
             name="IntendedJob",
             device=Device.objects.filter(name=self.device.name),
+            debug=True,
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
         self.assertEqual(log_entries.first().message, "Repository types to sync: ")
@@ -192,7 +201,7 @@ class GCReposIntendedTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         self.assertFalse(constant.ENABLE_INTENDED)
         job_result = create_job_result_and_run_job(
-            module="nautobot_golden_config.jobs", name="IntendedJob", device=Device.objects.all()
+            module="nautobot_golden_config.jobs", name="IntendedJob", device=Device.objects.all(), debug=True
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
         self.assertEqual(log_entries.count(), 2)
@@ -226,6 +235,7 @@ class GCReposComplianceTestCase(TransactionTestCase):
             module="nautobot_golden_config.jobs",
             name="ComplianceJob",
             device=Device.objects.filter(name=self.device.name),
+            debug=True,
         )
 
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
@@ -247,7 +257,7 @@ class GCReposComplianceTestCase(TransactionTestCase):
         """Test compliance job two GC setting enabled_compliance enabled"""
         mock_ensure_git_repository.return_value = True
         job_result = create_job_result_and_run_job(
-            module="nautobot_golden_config.jobs", name="ComplianceJob", device=Device.objects.all()
+            module="nautobot_golden_config.jobs", name="ComplianceJob", device=Device.objects.all(), debug=True
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
         self.assertEqual(log_entries.count(), 2)
@@ -273,6 +283,7 @@ class GCReposComplianceTestCase(TransactionTestCase):
             module="nautobot_golden_config.jobs",
             name="ComplianceJob",
             device=Device.objects.filter(name=self.device.name),
+            debug=True,
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
         self.assertEqual(log_entries.first().message, "Repository types to sync: ")
@@ -290,7 +301,7 @@ class GCReposComplianceTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         self.assertFalse(constant.ENABLE_COMPLIANCE)
         job_result = create_job_result_and_run_job(
-            module="nautobot_golden_config.jobs", name="ComplianceJob", device=Device.objects.all()
+            module="nautobot_golden_config.jobs", name="ComplianceJob", device=Device.objects.all(), debug=True
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
         self.assertEqual(log_entries.count(), 2)
@@ -308,7 +319,7 @@ class GCReposComplianceTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         self.assertFalse(constant.ENABLE_BACKUP)
         job_result = create_job_result_and_run_job(
-            module="nautobot_golden_config.jobs", name="ComplianceJob", device=Device.objects.all()
+            module="nautobot_golden_config.jobs", name="ComplianceJob", device=Device.objects.all(), debug=True
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
         self.assertEqual(log_entries.count(), 2)
@@ -331,7 +342,7 @@ class GCReposComplianceTestCase(TransactionTestCase):
         mock_ensure_git_repository.return_value = True
         self.assertFalse(constant.ENABLE_INTENDED)
         job_result = create_job_result_and_run_job(
-            module="nautobot_golden_config.jobs", name="ComplianceJob", device=Device.objects.all()
+            module="nautobot_golden_config.jobs", name="ComplianceJob", device=Device.objects.all(), debug=True
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
         self.assertEqual(log_entries.count(), 2)
@@ -355,7 +366,7 @@ class GCReposComplianceTestCase(TransactionTestCase):
         self.assertFalse(constant.ENABLE_BACKUP)
         self.assertFalse(constant.ENABLE_INTENDED)
         job_result = create_job_result_and_run_job(
-            module="nautobot_golden_config.jobs", name="ComplianceJob", device=Device.objects.all()
+            module="nautobot_golden_config.jobs", name="ComplianceJob", device=Device.objects.all(), debug=True
         )
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="Get Job Filter")
         self.assertEqual(log_entries.count(), 2)
@@ -391,7 +402,7 @@ class GCReposRunAllSingleTestCase(TransactionTestCase):
         """Test run all job single on one GC setting enabled"""
         mock_ensure_git_repository.return_value = True
         job_result = create_job_result_and_run_job(
-            module="nautobot_golden_config.jobs", name="AllGoldenConfig", device=self.device.id
+            module="nautobot_golden_config.jobs", name="AllGoldenConfig", device=self.device.id, debug=True
         )
         self.assertTrue(constant.ENABLE_BACKUP)
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
@@ -418,7 +429,7 @@ class GCReposRunAllSingleTestCase(TransactionTestCase):
         """Test run all job single on one GC backup_disabled"""
         mock_ensure_git_repository.return_value = True
         job_result = create_job_result_and_run_job(
-            module="nautobot_golden_config.jobs", name="AllGoldenConfig", device=self.device.id
+            module="nautobot_golden_config.jobs", name="AllGoldenConfig", device=self.device.id, debug=True
         )
         self.assertFalse(constant.ENABLE_BACKUP)
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
@@ -445,7 +456,7 @@ class GCReposRunAllSingleTestCase(TransactionTestCase):
         """Test run all job single on one GC intended_disabled"""
         mock_ensure_git_repository.return_value = True
         job_result = create_job_result_and_run_job(
-            module="nautobot_golden_config.jobs", name="AllGoldenConfig", device=self.device.id
+            module="nautobot_golden_config.jobs", name="AllGoldenConfig", device=self.device.id, debug=True
         )
         self.assertFalse(constant.ENABLE_INTENDED)
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
@@ -473,7 +484,7 @@ class GCReposRunAllSingleTestCase(TransactionTestCase):
         """Test run all job single on one GC both_disabled"""
         mock_ensure_git_repository.return_value = True
         job_result = create_job_result_and_run_job(
-            module="nautobot_golden_config.jobs", name="AllGoldenConfig", device=self.device.id
+            module="nautobot_golden_config.jobs", name="AllGoldenConfig", device=self.device.id, debug=True
         )
         self.assertFalse(constant.ENABLE_BACKUP)
         self.assertFalse(constant.ENABLE_INTENDED)
@@ -517,7 +528,7 @@ class GCReposRunAllMultipleTestCase(TransactionTestCase):
         """Test run all job multiple on one GC setting enabled"""
         mock_ensure_git_repository.return_value = True
         job_result = create_job_result_and_run_job(
-            module="nautobot_golden_config.jobs", name="AllDevicesGoldenConfig", device=Device.objects.all()
+            module="nautobot_golden_config.jobs", name="AllDevicesGoldenConfig", device=Device.objects.all(), debug=True
         )
         self.assertTrue(constant.ENABLE_BACKUP)
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
@@ -544,7 +555,7 @@ class GCReposRunAllMultipleTestCase(TransactionTestCase):
         """Test run all job multiple on one GC backup_disabled"""
         mock_ensure_git_repository.return_value = True
         job_result = create_job_result_and_run_job(
-            module="nautobot_golden_config.jobs", name="AllDevicesGoldenConfig", device=Device.objects.all()
+            module="nautobot_golden_config.jobs", name="AllDevicesGoldenConfig", device=Device.objects.all(), debug=True
         )
         self.assertFalse(constant.ENABLE_BACKUP)
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
@@ -571,7 +582,7 @@ class GCReposRunAllMultipleTestCase(TransactionTestCase):
         """Test run all job multiple on one GC intended_disabled"""
         mock_ensure_git_repository.return_value = True
         job_result = create_job_result_and_run_job(
-            module="nautobot_golden_config.jobs", name="AllDevicesGoldenConfig", device=Device.objects.all()
+            module="nautobot_golden_config.jobs", name="AllDevicesGoldenConfig", device=Device.objects.all(), debug=True
         )
         self.assertFalse(constant.ENABLE_INTENDED)
         log_entries = JobLogEntry.objects.filter(job_result=job_result, grouping="GC Repo Syncs")
@@ -599,7 +610,7 @@ class GCReposRunAllMultipleTestCase(TransactionTestCase):
         """Test run all job multiple on one GC both_disabled"""
         mock_ensure_git_repository.return_value = True
         job_result = create_job_result_and_run_job(
-            module="nautobot_golden_config.jobs", name="AllDevicesGoldenConfig", device=Device.objects.all()
+            module="nautobot_golden_config.jobs", name="AllDevicesGoldenConfig", device=Device.objects.all(), debug=True
         )
         self.assertFalse(constant.ENABLE_BACKUP)
         self.assertFalse(constant.ENABLE_INTENDED)

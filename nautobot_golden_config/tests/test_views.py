@@ -13,6 +13,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.test import RequestFactory, override_settings
 from django.urls import reverse
 from lxml import html
+from nautobot.apps.choices import ApprovalWorkflowStateChoices
 from nautobot.apps.models import RestrictedQuerySet
 from nautobot.apps.testing import TestCase, ViewTestCases
 from nautobot.core.utils import lookup
@@ -25,7 +26,13 @@ from packaging import version
 from nautobot_golden_config import models, views
 from nautobot_golden_config.utilities.constant import PLUGIN_CFG
 
-from .conftest import create_device_data, create_feature_rule_json, create_job_result
+from .conftest import (
+    create_device,
+    create_device_data,
+    create_feature_rule_json,
+    create_job_result,
+    enable_config_plan_approval,
+)
 
 User = get_user_model()
 
@@ -820,3 +827,43 @@ class FilteredComplianceDeviceIdsTestCase(TestCase):
         result = views._get_feature_compliance_queryset(filtered_device_ids).get(slug="filt-feat-a")
 
         self.assertEqual(result.count, 1)  # If this fails, the Cartesian product regression is present
+
+
+@override_settings(EXEMPT_VIEW_PERMISSIONS=[])
+class ConfigPlanResubmitViewTestCase(TestCase):
+    """Test the view that reopens a denied or canceled config plan approval workflow."""
+
+    def setUp(self):
+        super().setUp()
+        self.device = create_device()
+        enable_config_plan_approval()
+        self.plan = models.ConfigPlan.objects.create(
+            plan_type="manual",
+            device=self.device,
+            config_set="hostname test",
+            plan_result=create_job_result(),
+            status=Status.objects.get(name="Not Approved"),
+        )
+        self.plan.associated_approval_workflows.update(current_state=ApprovalWorkflowStateChoices.DENIED)
+        self.url = reverse("plugins:nautobot_golden_config:configplan_resubmit", kwargs={"pk": self.plan.pk})
+
+    def test_post_reopens_the_workflow(self):
+        self.add_permissions("nautobot_golden_config.view_configplan", "nautobot_golden_config.change_configplan")
+        response = self.client.post(self.url, {"_confirm": True})
+        self.assertRedirects(response, self.plan.get_absolute_url())
+        self.plan.refresh_from_db()
+        self.assertEqual(self.plan.approval_workflow.current_state, ApprovalWorkflowStateChoices.PENDING)
+        self.assertEqual(self.plan.status.name, "Pending Approval")
+
+    def test_post_without_change_permission_is_forbidden(self):
+        self.add_permissions("nautobot_golden_config.view_configplan")
+        self.assertHttpStatus(self.client.post(self.url, {"_confirm": True}), 403)
+        self.plan.refresh_from_db()
+        self.assertEqual(self.plan.approval_workflow.current_state, ApprovalWorkflowStateChoices.DENIED)
+
+    def test_detail_page_offers_resubmit_only_when_it_is_possible(self):
+        self.add_permissions("nautobot_golden_config.view_configplan", "nautobot_golden_config.change_configplan")
+        self.assertBodyContains(self.client.get(self.plan.get_absolute_url()), self.url)
+        self.plan.resubmit_for_approval()
+        response = self.client.get(self.plan.get_absolute_url())
+        self.assertNotIn(self.url, response.content.decode())

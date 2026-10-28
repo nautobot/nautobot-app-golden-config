@@ -4,8 +4,9 @@ from django.test import TestCase
 from nautobot.dcim.models import Platform
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
-from nautobot_golden_config.forms import ComplianceRuleForm
-from nautobot_golden_config.models import ComplianceFeature
+from nautobot_golden_config.forms import ComplianceRuleForm, ConfigPlanUpdateForm
+from nautobot_golden_config.models import ComplianceFeature, ConfigPlan
+from nautobot_golden_config.tests.conftest import create_device, create_job_result, enable_config_plan_approval
 
 
 class ComplianceRuleFormTestCase(TestCase):
@@ -50,3 +51,22 @@ class ComplianceRuleFormTestCase(TestCase):
         self.assertTrue(form.is_valid())
         saved_obj = form.save()
         self.assertEqual(saved_obj.match_config, " config 1")
+
+
+class ConfigPlanUpdateFormTestCase(TestCase):
+    """Test that ConfigPlanUpdateForm only offers `status` when no approval workflow owns it."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.device = create_device()
+        cls.setting, _, _ = enable_config_plan_approval()
+        cls.plan = ConfigPlan.objects.create(
+            device=cls.device, plan_type="manual", config_set="hostname test", plan_result=create_job_result()
+        )
+
+    def test_status_field_is_removed_when_plan_has_a_workflow(self):
+        self.assertNotIn("status", ConfigPlanUpdateForm(instance=self.plan).fields)
+
+    def test_status_field_is_offered_when_plan_has_no_workflow(self):
+        self.plan.associated_approval_workflows.all().delete()
+        self.assertIn("status", ConfigPlanUpdateForm(instance=self.plan).fields)

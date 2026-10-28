@@ -7,7 +7,7 @@ from datetime import datetime
 import yaml
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db.models import Count, ExpressionWrapper, FloatField, Max, Q, Sum, Value
 from django.db.models.functions import Coalesce, NullIf
 from django.shortcuts import redirect, render
@@ -702,6 +702,35 @@ class ConfigPlanUIViewSet(views.NautobotUIViewSet):
     action_buttons = ("add",)
     update_form_class = forms.ConfigPlanUpdateForm
     object_detail_content = details.config_plan
+
+    def get_queryset(self):
+        """Prefetch the approval workflows shown by the list and detail views."""
+        return super().get_queryset().prefetch_related("associated_approval_workflows")
+
+    @action(
+        detail=True,
+        methods=["get", "post"],
+        url_path="resubmit",
+        url_name="resubmit",
+        custom_view_base_action="change",
+    )
+    def resubmit(self, request, *args, **kwargs):
+        """Confirm, then reopen a denied or canceled approval workflow for another round of review."""
+        config_plan = self.get_object()
+        return_url = config_plan.get_absolute_url()
+        if request.method == "POST":
+            try:
+                config_plan.resubmit_for_approval()
+            except ValidationError as error:
+                messages.error(request, " ".join(error.messages))
+            else:
+                messages.success(request, f"Resubmitted {config_plan} for approval.")
+            return redirect(return_url)
+        return render(
+            request,
+            "nautobot_golden_config/configplan_resubmit.html",
+            {"obj": config_plan, "return_url": return_url, "card_class": "primary", "button_class": "primary"},
+        )
 
     def alter_queryset(self, request):
         """Build actual runtime queryset to automatically remove `Completed` by default."""

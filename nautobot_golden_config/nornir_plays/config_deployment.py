@@ -16,15 +16,18 @@ from nornir.core.task import Result, Task
 from nornir_nautobot.exceptions import NornirNautobotException
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
 
-from nautobot_golden_config.exceptions import ConfigPlanDeploymentFailure
+from nautobot_golden_config.exceptions import ConfigPlanDeploymentFailure, ConfigPlanNotApproved
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
+from nautobot_golden_config.utilities.config_plan import get_unapproved_config_plans
 from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
-from nautobot_golden_config.utilities.constant import DEFAULT_DEPLOY_STATUS, ENABLE_POSTPROCESSING
+from nautobot_golden_config.utilities.constant import ENABLE_POSTPROCESSING
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.utilities.helper import dispatch_params
 from nautobot_golden_config.utilities.logger import NornirLogger
 
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
+
+MAX_UNAPPROVED_PLANS_LISTED = 10
 
 
 @close_threaded_db_connections
@@ -89,10 +92,21 @@ def config_deployment(job):
 
     logger.debug("Starting config deployment")
     config_plan_qs = job.data["config_plan"]
-    if config_plan_qs.filter(status__name=DEFAULT_DEPLOY_STATUS).exists():
-        error_msg = "`E3025:` Cannot deploy configuration(s). One or more config plans are not approved."
+    unapproved_plans = get_unapproved_config_plans(config_plan_qs)
+    if unapproved_plans.exists():
+        shown_plans = unapproved_plans.select_related("device", "status").prefetch_related(
+            "associated_approval_workflows"
+        )[:MAX_UNAPPROVED_PLANS_LISTED]
+        plan_details = ", ".join(
+            f"{plan.device} ({plan.approval_workflow.current_state if plan.approval_workflow else plan.status})"
+            for plan in shown_plans
+        )
+        error_msg = (
+            "`E3025:` Cannot deploy configuration(s). One or more config plans are not approved: "
+            f"{plan_details}{'...' if unapproved_plans.count() > MAX_UNAPPROVED_PLANS_LISTED else ''}."
+        )
         logger.error(error_msg)
-        raise NornirNautobotException(error_msg)
+        raise ConfigPlanNotApproved(error_msg)
     if config_plan_qs.filter(status__name="Completed").exists():
         error_msg = "`E3026:` Cannot deploy configuration(s). One or more config plans are already completed."
         logger.error(error_msg)

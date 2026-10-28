@@ -1,0 +1,1 @@
+Added support for approving Config Plans with a Nautobot Approval Workflow, selected per scope with the new `config_plan_approval_workflow` field on the Golden Config Setting.

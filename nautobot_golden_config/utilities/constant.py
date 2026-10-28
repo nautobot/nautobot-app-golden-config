@@ -13,6 +13,9 @@ ENABLE_PLAN = PLUGIN_CFG["enable_plan"]
 ENABLE_DEPLOY = PLUGIN_CFG["enable_deploy"]
 ENABLE_POSTPROCESSING = PLUGIN_CFG["enable_postprocessing"]
 DEFAULT_DEPLOY_STATUS = PLUGIN_CFG["default_deploy_status"]
+# Statuses driven by an Approval Workflow, see `ConfigPlan.on_workflow_*`.
+APPROVED_STATUS = "Approved"
+PENDING_APPROVAL_STATUS = "Pending Approval"
 
 CONFIG_FEATURES = {
     "intended": ENABLE_INTENDED,

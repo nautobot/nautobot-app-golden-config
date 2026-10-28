@@ -7,6 +7,7 @@ from pathlib import Path
 
 from django.conf import settings as nautobot_settings
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.shortcuts import get_object_or_404
 from django.utils.timezone import make_aware
 from drf_spectacular.types import OpenApiTypes
@@ -20,6 +21,7 @@ from nautobot.apps.api import (
     NotesViewSetMixin,
 )
 from nautobot.apps.utils import render_jinja2
+from nautobot.core.api.authentication import TokenPermissions  # core-import-update
 from nautobot.core.api.views import NautobotAPIVersionMixin  # core-import-update
 from nautobot.dcim.models import Device
 from nautobot.extras.datasources.git import ensure_git_repository  # core-import-update
@@ -29,6 +31,7 @@ from nornir import InitNornir
 from nornir_nautobot.plugins.tasks.dispatcher import dispatcher
 from packaging import version
 from rest_framework import mixins, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, ValidationError
 from rest_framework.generics import GenericAPIView, RetrieveAPIView
 from rest_framework.mixins import DestroyModelMixin, ListModelMixin, RetrieveModelMixin, UpdateModelMixin
@@ -192,9 +195,34 @@ class ConfigPlanViewSet(
 ):  # pylint:disable=too-many-ancestors
     """API viewset for interacting with ConfigPlan objects. Does not support POST to create objects."""
 
-    queryset = models.ConfigPlan.objects.all()
+    queryset = models.ConfigPlan.objects.prefetch_related("associated_approval_workflows")
     serializer_class = serializers.ConfigPlanSerializer
     filterset_class = filters.ConfigPlanFilterSet
+
+    class ConfigPlanChangePermission(TokenPermissions):
+        """Require `change_configplan` instead of the `add_configplan` that POST maps to by default."""
+
+        perms_map = {
+            "POST": ["%(app_label)s.change_%(model_name)s"],
+        }
+
+    def restrict_queryset(self, request, *args, **kwargs):
+        """Restrict the queryset used by `resubmit` to the objects the user may change."""
+        if request.user.is_authenticated and self.action == "resubmit":
+            self.queryset = self.queryset.restrict(request.user, "change")
+        else:
+            super().restrict_queryset(request, *args, **kwargs)
+
+    @extend_schema(methods=["post"], request=None, responses={"200": serializers.ConfigPlanSerializer})
+    @action(detail=True, methods=["post"], permission_classes=[ConfigPlanChangePermission])
+    def resubmit(self, request, *args, **kwargs):
+        """Reopen a denied or canceled approval workflow so approvers can review the config plan again."""
+        config_plan = self.get_object()
+        try:
+            config_plan.resubmit_for_approval()
+        except DjangoValidationError as error:
+            return Response({"detail": error.messages}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(self.get_serializer(config_plan).data)
 
     def get_serializer_context(self):
         """Gather all custom fields for the model. Copied from nautobot.extras.api.views.CustomFieldModelViewSet."""

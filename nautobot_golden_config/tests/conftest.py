@@ -3,6 +3,7 @@
 from datetime import datetime, timezone
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.contrib.contenttypes.models import ContentType
 from django.utils.text import slugify
 from nautobot.apps.choices import JobResultStatusChoices
@@ -10,10 +11,17 @@ from nautobot.dcim.models import Device, DeviceType, Location, LocationType, Man
 from nautobot.extras.datasources.registry import get_datasource_contents  # core-import-update
 from nautobot.extras.management import populate_status_choices
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, JobResult, Role, Status, Tag
+from nautobot.extras.models.approvals import ApprovalWorkflowDefinition, ApprovalWorkflowStageDefinition
 from nautobot.tenancy.models import Tenant, TenantGroup
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
-from nautobot_golden_config.models import ComplianceFeature, ComplianceRule, ConfigCompliance, GoldenConfigSetting
+from nautobot_golden_config.models import (
+    ComplianceFeature,
+    ComplianceRule,
+    ConfigCompliance,
+    ConfigPlan,
+    GoldenConfigSetting,
+)
 
 User = get_user_model()
 
@@ -600,3 +608,37 @@ def dgs_gc_settings_and_job_repo_objects():
         intended_repository=GitRepository.objects.get(name="test-intended-repo-2"),
         jinja_repository=GitRepository.objects.get(name="test-jinja-repo-1"),
     )
+
+
+def create_config_plan_approval_workflow(stages=1, min_approvers=1):
+    """Create an Approval Workflow Definition for ConfigPlans and a group of approvers, returned as a tuple."""
+    approvers, _ = Group.objects.get_or_create(name="config-plan-approvers")
+    definition = ApprovalWorkflowDefinition.objects.create(
+        name="Config Plan Approval",
+        model_content_type=ContentType.objects.get_for_model(ConfigPlan),
+        weight=100,
+    )
+    for sequence in range(1, stages + 1):
+        ApprovalWorkflowStageDefinition.objects.create(
+            approval_workflow_definition=definition,
+            name=f"Stage {sequence}",
+            sequence=sequence * 10,
+            min_approvers=min_approvers,
+            approver_group=approvers,
+        )
+    return definition, approvers
+
+
+def enable_config_plan_approval(stages=1, min_approvers=1):
+    """Point the Golden Config Setting that applies to `Platform 1` devices at a new approval workflow.
+
+    Returns:
+        tuple: The `GoldenConfigSetting`, the `ApprovalWorkflowDefinition`, and the approvers `Group`.
+    """
+    dgs_gc_settings_and_job_repo_objects()
+    definition, approvers = create_config_plan_approval_workflow(stages=stages, min_approvers=min_approvers)
+    setting = GoldenConfigSetting.objects.get(name="test_name")
+    setting.config_plan_approval_workflow = definition
+    setting.validated_save()
+    setting.dynamic_group.update_cached_members()
+    return setting, definition, approvers

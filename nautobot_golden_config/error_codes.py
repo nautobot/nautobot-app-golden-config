@@ -23,4 +23,16 @@ ERROR_CODES = {
         error_message="Reference to {yaml_attr_name}: {yaml_attr_value} is not available.",
         recommendation="Check the YAML file for misspellings or incorrect values, if using `platform_slug` or `platform_network_driver`, then migrate to `platform_name` key instead.",
     ),
+    "E3034": ErrorCode(
+        troubleshooting="Open the Approval Workflow Definition referenced by the Golden Config Setting and check that it has at least one stage.",
+        description="A Config Plan was generated for a device whose Golden Config Setting names an Approval Workflow Definition that cannot be started, so the Config Plan was not created.",
+        error_message="Cannot start approval workflow `{definition}` for the config plan on `{device}`, the definition has no stages.",
+        recommendation="Add an approval stage to the Approval Workflow Definition, or remove it from the Golden Config Setting.",
+    ),
+    "E3035": ErrorCode(
+        troubleshooting="Check the approval state and status of the Config Plan.",
+        description="A Config Plan can only be resubmitted when its approval workflow was denied or canceled and its deployment has not started.",
+        error_message="Cannot resubmit `{config_plan}` for approval: {reason}.",
+        recommendation="Generate a new Config Plan if the approval workflow definition was deleted or the deployment has already started.",
+    ),
 }

@@ -35,5 +35,9 @@
             {% render_field form.sot_agg_query %}
         </div>
     </div>
+    <div class="card">
+        <div class="card-header"><strong>Config Plan Approval</strong></div>
+        <div class="card-body">{% render_field form.config_plan_approval_workflow %}</div>
+    </div>
     {% include "inc/extras_features_edit_form_fields.html" %}
 {% endblock form %}

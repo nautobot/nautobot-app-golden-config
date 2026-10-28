@@ -29,6 +29,13 @@ def post_migrate_create_statuses(sender, apps=global_apps, **kwargs):  # pylint:
             },
         },
         {
+            "name": "Pending Approval",
+            "defaults": {
+                "description": "Config plan is waiting on its approval workflow",
+                "color": ColorChoices.COLOR_ORANGE,
+            },
+        },
+        {
             "name": "In Progress",
             "defaults": {
                 "description": "Config deployment has started and not completed or failed",

@@ -6,7 +6,9 @@
                 <tr>
                     <td>State</td>
                     <td>
-                        <a href="{{ workflow.get_absolute_url }}">{{ workflow.current_state }}</a>
+                        <a href="{{ workflow.get_absolute_url }}">
+                            <span class="badge bg-{{ workflow.get_current_state_class }}">{{ workflow.get_current_state_display }}</span>
+                        </a>
                     </td>
                 </tr>
                 <tr>

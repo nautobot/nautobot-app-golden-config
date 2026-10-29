@@ -550,7 +550,9 @@ class ConfigPlanTable(StatusTableMixin, BaseTable):
         template_code=(
             "{% with workflow=record.approval_workflow %}"
             "{% if workflow %}"
-            '<a href="{{ workflow.get_absolute_url }}">{{ workflow.current_state }}</a>'
+            '<a href="{{ workflow.get_absolute_url }}">'
+            '<span class="badge bg-{{ workflow.get_current_state_class }}">'
+            "{{ workflow.get_current_state_display }}</span></a>"
             "{% else %}&mdash;{% endif %}"
             "{% endwith %}"
         ),

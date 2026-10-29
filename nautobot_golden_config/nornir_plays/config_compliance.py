@@ -271,20 +271,6 @@ def process_nested_compliance_rule_hier_config(rule, backup_cfg, intended_cfg, o
     intended_config_generator = generated_config.all_children_sorted_by_tags(tag_names, set())
     intended_text = "\n".join(c.cisco_style_text() for c in intended_config_generator)
 
-    # If the intended text is None, inject the top level parent lines from running config into the intended config.
-    # This will prevent the removal of top-level interfaces or other sections that are not matched by the tags
-    # For example, if the intent is to remove 'flow exporter' from the config when remediating
-    # Instead of this:
-    # no interface GigabitEthernet0/0
-    # we will have this:
-    # no flow exporter 192.0.0.1
-    if not intended_text:
-        running_config_top_level_lines = []
-        for child in running_config.all_children_sorted_by_tags(tag_names, set()):
-            if child.real_indent_level == 0 and child.cisco_style_text().startswith("interface"):
-                running_config_top_level_lines.append(child.cisco_style_text())
-        intended_text = "\n".join(running_config_top_level_lines)
-
     return running_text, intended_text
 
 

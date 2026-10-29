@@ -1,15 +1,18 @@
 """Django Models for tracking the configuration compliance per feature and device."""
 
+import hashlib
 import json
 import logging
 import os
 
+import yaml
 from deepdiff import DeepDiff
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.manager import BaseManager
 from django.utils.module_loading import import_string
 from hier_config import WorkflowRemediation, get_hconfig
+from hier_config.models import TagRule
 from hier_config.utils import hconfig_v2_os_v3_platform_mapper, load_hconfig_v2_options
 from nautobot.apps.models import RestrictedQuerySet, extras_features
 from nautobot.apps.utils import render_jinja2
@@ -19,9 +22,12 @@ from nautobot.dcim.models import Device
 from nautobot.extras.models import ObjectChange
 from nautobot.extras.models.statuses import StatusField
 from netutils.config.compliance import feature_compliance
+from pydantic import TypeAdapter
+from pydantic import ValidationError as PydanticValidationError
 from xmldiff import actions, main
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
+from nautobot_golden_config.exceptions import PartialMatchConfigError
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
 
 LOGGER = logging.getLogger(__name__)
@@ -59,6 +65,16 @@ def _null_to_empty(val):
     if not val:
         return ""
     return val
+
+
+def _format_tag_rules_error(error):
+    """Return a short, readable summary of a pydantic ValidationError on a list of tag rules."""
+    messages = []
+    for detail in error.errors():
+        index, *location = detail["loc"]
+        path = ".".join(str(part) for part in location)
+        messages.append(f"rule {index + 1} {path}: {detail['msg']}" if path else f"rule {index + 1}: {detail['msg']}")
+    return "; ".join(messages)
 
 
 def _get_cli_compliance(obj):
@@ -243,6 +259,7 @@ FUNC_MAPPER = {
     ComplianceRuleConfigTypeChoice.TYPE_CLI: _get_cli_compliance,
     ComplianceRuleConfigTypeChoice.TYPE_JSON: _get_json_compliance,
     ComplianceRuleConfigTypeChoice.TYPE_XML: _get_xml_compliance,
+    ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI: _get_cli_compliance,
     RemediationTypeChoice.TYPE_HIERCONFIG: _get_hierconfig_remediation,
 }
 # The below conditionally add the custom provided compliance type
@@ -321,13 +338,13 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
     match_config = models.TextField(
         blank=True,
         verbose_name="Config to Match",
-        help_text="The config to match that is matched based on the parent most configuration. E.g.: For CLI `router bgp` or `ntp`. For JSON this is a top level key name. For XML this is a xpath query.",
+        help_text="The config to match that is matched based on the parent most configuration. E.g.: For CLI `router bgp` or `ntp`. For JSON this is a top level key name. For XML this is a xpath query. For Partial CLI this is a YAML list of hier_config match rules.",
     )
     config_type = models.CharField(
         max_length=20,
         default=ComplianceRuleConfigTypeChoice.TYPE_CLI,
         choices=ComplianceRuleConfigTypeChoice,
-        help_text="Whether the configuration is in CLI, JSON, or XML format.",
+        help_text="Whether the configuration is in CLI, JSON, or XML format. Partial CLI matches nested CLI lines using hier_config.",
     )
     custom_compliance = models.BooleanField(
         default=False, help_text="Whether this Compliance Rule is proceeded as custom."
@@ -352,9 +369,56 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
         return f"{self.platform} - {self.feature.name}"
 
     def clean(self):
-        """Verify that if cli, then match_config is set."""
-        if self.config_type == ComplianceRuleConfigTypeChoice.TYPE_CLI and not self.match_config:
-            raise ValidationError("CLI configuration set, but no configuration set to match.")
+        """Verify that if cli or partial cli, then match_config is set, and that partial cli match_config is valid."""
+        cli_types = (ComplianceRuleConfigTypeChoice.TYPE_CLI, ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI)
+        if self.config_type in cli_types and not self.match_config:
+            raise ValidationError(
+                f"{self.get_config_type_display()} configuration set, but no configuration set to match."
+            )
+        if self.config_type == ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI:
+            try:
+                self.get_partial_tag_rules()
+            except PartialMatchConfigError as error:
+                raise ValidationError({"match_config": str(error)}) from error
+
+    def get_partial_tag_rules(self) -> tuple[tuple[TagRule, ...], set[str]]:
+        """
+        Parse the match_config of a Partial CLI rule into hier_config tag rules.
+
+        Each rule block gets a unique tag name, so matched lines can be filtered by tag afterwards.
+
+        Returns:
+            The hier_config tag rules and the set of tag names they apply.
+
+        Raises:
+            PartialMatchConfigError: If match_config is not a YAML list of valid hier_config rule blocks.
+        """
+        try:
+            rule_blocks = yaml.safe_load(self.match_config)
+        except yaml.YAMLError as error:
+            raise PartialMatchConfigError(f"Invalid YAML in match_config: {error}") from error
+
+        if not isinstance(rule_blocks, list) or not rule_blocks:
+            raise PartialMatchConfigError("match_config must be a YAML list of rule blocks with a `match_rules` key.")
+
+        tag_names = set()
+        for index, rule_block in enumerate(rule_blocks):
+            if not isinstance(rule_block, dict):
+                raise PartialMatchConfigError(
+                    f"match_config rule {index + 1} must be a mapping with a `match_rules` key."
+                )
+            tag_name = hashlib.sha1(json.dumps(rule_block, sort_keys=True, default=str).encode()).hexdigest()  # noqa: S324
+            rule_block["apply_tags"] = frozenset([tag_name])
+            tag_names.add(tag_name)
+
+        try:
+            tag_rules = TypeAdapter(tuple[TagRule, ...]).validate_python(rule_blocks)
+        except PydanticValidationError as error:
+            raise PartialMatchConfigError(
+                f"Invalid hier_config match rules in match_config: {_format_tag_rules_error(error)}"
+            ) from error
+
+        return tag_rules, tag_names
 
 
 @extras_features(

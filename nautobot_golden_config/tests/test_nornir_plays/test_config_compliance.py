@@ -287,65 +287,8 @@ router bgp 65001
     @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
     @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")
     @patch("nautobot_golden_config.models.TypeAdapter")
-    def test_empty_filtered_config_with_interface_fallback(
-        self, mock_type_adapter, mock_platform_mapping, mock_hier_config
-    ):
-        """Test processing when intended config is empty but running config has interfaces (fallback behavior)."""
-        # Setup mocks
-        mock_platform_mapping.get.return_value = "cisco_ios"
-        mock_running_config = Mock()
-        mock_generated_config = Mock()
-        mock_hier_config.get_hconfig.side_effect = [mock_running_config, mock_generated_config]
-        # Mock tag rule via TypeAdapter
-        mock_tag_rule = Mock()
-        mock_tag_rule.match_rules = ["flow exporter"]
-        mock_tag_rule.apply_tags = frozenset(["test_tag"])
-        mock_type_adapter_instance = Mock()
-        mock_type_adapter_instance.validate_python.return_value = (mock_tag_rule,)
-        mock_type_adapter.return_value = mock_type_adapter_instance
-
-        # Mock running config with interface and flow exporter
-        mock_interface_child = Mock()
-        mock_interface_child.cisco_style_text.return_value = "interface GigabitEthernet0/1"
-        mock_interface_child.real_indent_level = 0
-
-        mock_flow_child = Mock()
-        mock_flow_child.cisco_style_text.return_value = "flow exporter 192.0.0.1"
-        mock_flow_child.real_indent_level = 0
-
-        # Only the flow exporter should match the tag rule
-        mock_running_config.get_children_deep.return_value = [mock_flow_child]
-        # Fallback second call coverage
-        mock_running_config.all_children_sorted_by_tags.side_effect = [
-            [mock_flow_child],
-            [mock_interface_child, mock_flow_child],
-        ]
-
-        # Generated config has no matching elements (empty intended config)
-        mock_generated_config.get_children_deep.return_value = []
-        mock_generated_config.all_children_sorted_by_tags.return_value = []
-
-        mock_rule = {
-            "obj": ComplianceRule(
-                config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI,
-                match_config="- match_rules:\n  - startswith: flow exporter",
-            )
-        }
-
-        running_text, intended_text = process_nested_compliance_rule_hier_config(
-            mock_rule, self.backup_cfg, self.intended_cfg, self.mock_obj, self.mock_logger
-        )
-
-        # Running text should have the flow exporter
-        self.assertEqual(running_text, "flow exporter 192.0.0.1")
-        # Intended text should fallback to interface lines from running config
-        self.assertEqual(intended_text, "interface GigabitEthernet0/1")
-
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")
-    @patch("nautobot_golden_config.models.TypeAdapter")
-    def test_empty_filtered_config_no_interfaces(self, mock_type_adapter, mock_platform_mapping, mock_hier_config):
-        """Test processing when both configs are empty and no interfaces are available for fallback."""
+    def test_empty_filtered_configs(self, mock_type_adapter, mock_platform_mapping, mock_hier_config):
+        """Test processing when neither config has lines matching the rule."""
         # Setup mocks
         mock_platform_mapping.get.return_value = "cisco_ios"
         mock_running_config = Mock()
@@ -377,119 +320,31 @@ router bgp 65001
             mock_rule, self.backup_cfg, self.intended_cfg, self.mock_obj, self.mock_logger
         )
 
-        # Should return empty strings when no matches and no interfaces for fallback
+        # Should return empty strings when no matches
         self.assertEqual(running_text, "")
         self.assertEqual(intended_text, "")
 
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")
-    @patch("nautobot_golden_config.models.TypeAdapter")
-    def test_interface_fallback_only_top_level_interfaces(
-        self, mock_type_adapter, mock_platform_mapping, mock_hier_config
-    ):
-        """Test that fallback only includes top-level interface lines."""
-        # Setup mocks
-        mock_platform_mapping.get.return_value = "cisco_ios"
-        mock_running_config = Mock()
-        mock_generated_config = Mock()
-        mock_hier_config.get_hconfig.side_effect = [mock_running_config, mock_generated_config]
-
-        # Mock tag rule
-        mock_tag_rule = Mock()
-        mock_tag_rule.match_rules = ["router bgp"]
-        mock_tag_rule.apply_tags = frozenset(["test_tag"])
-        mock_type_adapter_instance = Mock()
-        mock_type_adapter_instance.validate_python.return_value = (mock_tag_rule,)
-        mock_type_adapter.return_value = mock_type_adapter_instance
-
-        # Mock children with different indent levels
-        mock_interface_child = Mock()
-        mock_interface_child.cisco_style_text.return_value = "interface GigabitEthernet0/1"
-        mock_interface_child.real_indent_level = 0
-        mock_sub_interface_child = Mock()
-        mock_sub_interface_child.cisco_style_text.return_value = "interface GigabitEthernet0/1.100"
-        mock_sub_interface_child.real_indent_level = 1
-        mock_other_child = Mock()
-        mock_other_child.cisco_style_text.return_value = "hostname router1"
-        mock_other_child.real_indent_level = 0
-        mock_bgp_child = Mock()
-        mock_bgp_child.cisco_style_text.return_value = "router bgp 65001"
-        mock_running_config.get_children_deep.return_value = [mock_bgp_child]
-        mock_running_config.all_children_sorted_by_tags.side_effect = [
-            [mock_bgp_child],
-            [mock_interface_child, mock_sub_interface_child, mock_other_child, mock_bgp_child],
-        ]
-        # Generated config is empty
-        mock_generated_config.get_children_deep.return_value = []
-        mock_generated_config.all_children_sorted_by_tags.return_value = []
+    def test_intended_without_matches_stays_empty(self):
+        """Test that running config lines are not injected into the intended config when it has no matches."""
+        self.mock_obj.platform.network_driver_mappings = {"hier_config": "ios"}
+        backup_cfg = (
+            "interface GigabitEthernet0/1\n description UPLINK\nflow exporter EXPORTER1\n destination 192.0.2.1"
+        )
+        intended_cfg = "interface GigabitEthernet0/1\n description UPLINK"
         mock_rule = {
             "obj": ComplianceRule(
                 config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI,
-                match_config="- match_rules:\n  - startswith: router bgp",
+                match_config="- match_rules:\n  - startswith: flow exporter",
             )
         }
+
         running_text, intended_text = process_nested_compliance_rule_hier_config(
-            mock_rule, self.backup_cfg, self.intended_cfg, self.mock_obj, self.mock_logger
+            mock_rule, backup_cfg, intended_cfg, self.mock_obj, self.mock_logger
         )
 
-        # Running text should have the BGP config
-        self.assertEqual(running_text, "router bgp 65001")
-        # Intended text should only have top-level interface (not sub-interface or hostname)
-        self.assertEqual(intended_text, "interface GigabitEthernet0/1")
-
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")
-    @patch("nautobot_golden_config.models.TypeAdapter")
-    def test_multiple_interface_fallback(self, mock_type_adapter, mock_platform_mapping, mock_hier_config):
-        """Test fallback behavior with multiple top-level interfaces."""
-        # Setup mocks
-        mock_platform_mapping.get.return_value = "cisco_ios"
-        mock_running_config = Mock()
-        mock_generated_config = Mock()
-        mock_hier_config.get_hconfig.side_effect = [mock_running_config, mock_generated_config]
-
-        # Mock tag rule
-        mock_tag_rule = Mock()
-        mock_tag_rule.match_rules = ["snmp-server"]
-        mock_tag_rule.apply_tags = frozenset(["test_tag"])
-        mock_type_adapter_instance = Mock()
-        mock_type_adapter_instance.validate_python.return_value = (mock_tag_rule,)
-        mock_type_adapter.return_value = mock_type_adapter_instance
-        mock_interface1 = Mock()
-        mock_interface1.cisco_style_text.return_value = "interface GigabitEthernet0/1"
-        mock_interface1.real_indent_level = 0
-        mock_interface2 = Mock()
-        mock_interface2.cisco_style_text.return_value = "interface GigabitEthernet0/2"
-        mock_interface2.real_indent_level = 0
-        mock_snmp_child = Mock()
-        mock_snmp_child.cisco_style_text.return_value = "snmp-server community public"
-
-        # Running config has SNMP
-        mock_running_config.get_children_deep.return_value = [mock_snmp_child]
-
-        # Mock the second call to all_children_sorted_by_tags for interface fallback
-        mock_running_config.all_children_sorted_by_tags.side_effect = [
-            [mock_snmp_child],
-            [mock_interface1, mock_interface2, mock_snmp_child],
-        ]
-
-        # Generated config is empty
-        mock_generated_config.get_children_deep.return_value = []
-        mock_generated_config.all_children_sorted_by_tags.return_value = []
-        mock_rule = {
-            "obj": ComplianceRule(
-                config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI,
-                match_config="- match_rules:\n  - startswith: snmp-server",
-            )
-        }
-        running_text, intended_text = process_nested_compliance_rule_hier_config(
-            mock_rule, self.backup_cfg, self.intended_cfg, self.mock_obj, self.mock_logger
-        )
-
-        # Running text should have the SNMP config
-        self.assertEqual(running_text, "snmp-server community public")
-        # Intended text should have both interfaces
-        self.assertEqual(intended_text, "interface GigabitEthernet0/1\ninterface GigabitEthernet0/2")
+        self.assertIn("flow exporter EXPORTER1", running_text)
+        self.assertNotIn("interface", running_text)
+        self.assertEqual(intended_text, "")
 
     @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
     @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")

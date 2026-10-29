@@ -131,26 +131,21 @@ ip access-list extended SECURITY_OUT
  deny ip any any log
 ```
 
-## Fallback Behavior for Empty Intended Configuration
+## Known Limitation: Remediation of Sections Without Matches
 
-In some cases, the intended configuration may not contain any elements that match the compliance rules, resulting in an empty intended configuration text. To handle this scenario, the system includes a fallback mechanism:
+The actual and intended configurations only contain the matched lines and their parent lines. When none of the matched lines under a parent are present in the intended configuration, the parent is not part of the intended configuration either. Config remediation then treats the whole section as extra and can propose removing it.
 
-**Interface Fallback**: When the intended configuration text is empty, the system automatically looks for top-level interface configurations in the running configuration and uses them as the intended configuration baseline.
+For example, with a rule matching `ip flow monitor` lines under interfaces:
 
-This fallback behavior:
+```yaml
+- match_rules:
+  - startswith: interface
+  - startswith: ip flow monitor
+```
 
-1. **Triggers** when `intended_text` is empty after tag-based filtering
-2. **Filters** for lines that start with "interface"
-3. **Uses** these interface declarations as the intended configuration for comparison
+If the running configuration has `ip flow monitor` on `GigabitEthernet0/1` and the intended configuration does not, the proposed remediation is `no interface GigabitEthernet0/1` instead of `no ip flow monitor ...` under the interface.
 
-**Example Scenario**:
-
-- Your hierarchical rule targets specific VLAN configurations
-- The intended configuration template doesn't include those VLANs
-- The running configuration has interface declarations
-- The system uses the interface lines from running config as the baseline
-
-This ensures that remediation will not remove interfaces when intended configuration is empty for an interface.
+Always review the remediation of these rules before deploying it.
 
 ## Troubleshooting
 
@@ -176,7 +171,6 @@ This ensures that remediation will not remove interfaces when intended configura
 1. **Check Platform Support**: Verify your platform's `network_driver_mappings` include `hier_config`
 2. **Review hier_config Documentation**: Consult the [hier_config documentation](https://hier-config.readthedocs.io/en/latest/tags/) for advanced tagging examples
 3. **Start Simple**: Begin with basic matching rules and gradually add complexity
-4. **Empty Intended Configuration**: If you notice interface lines appearing in compliance results when not expected, check if your intended configuration contains the elements targeted by your hierarchical rules. The system automatically falls back to using running config interface declarations when intended configuration is empty
 
 ## Best Practices
 
@@ -185,7 +179,6 @@ This ensures that remediation will not remove interfaces when intended configura
 1. **Specific Matching**: Create focused rules that target specific configuration elements
 2. **Logical Grouping**: Group related configuration elements in single rules when appropriate
 3. **Clear Naming**: Use descriptive feature names that clearly indicate what the rule validates
-4. **Complete Intended Configurations**: Ensure your intended configuration templates include all elements targeted by filtered compliance rules to avoid unexpected fallback behavior where interface lines from running config are used as intended baseline
 
 ## Advanced Usage
 

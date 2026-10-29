@@ -256,13 +256,10 @@ def process_nested_compliance_rule_hier_config(rule, backup_cfg, intended_cfg, o
         raise NornirNautobotException(error_msg) from error
 
     # Apply tags to the running and generated configs
-    for tag_rule in v3_tags:
-        for child in running_config.get_children_deep(tag_rule.match_rules):
-            child.tags_add(tag_rule.apply_tags)
-
-    for tag_rule in v3_tags:
-        for child in generated_config.get_children_deep(tag_rule.match_rules):
-            child.tags_add(tag_rule.apply_tags)
+    for config in (running_config, generated_config):
+        for tag_rule in v3_tags:
+            for child in config.get_children_deep(tag_rule.match_rules):
+                child.tags_add(tag_rule.apply_tags)
 
     # Filter configs by the applied tags
     running_config_generator = running_config.all_children_sorted_by_tags(tag_names, set())

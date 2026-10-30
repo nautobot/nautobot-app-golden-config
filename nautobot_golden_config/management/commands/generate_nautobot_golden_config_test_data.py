@@ -2,13 +2,20 @@
 
 import random
 
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
 from django.db import DEFAULT_DB_ALIAS
 from nautobot.apps.factory import get_random_instances
 from nautobot.dcim.models import Platform
-from nautobot.extras.models import DynamicGroup, GraphQLQuery, JobResult
+from nautobot.extras.models import DynamicGroup, GraphQLQuery, JobResult, Status
 from nautobot.extras.models import Job as JobModel
+from nautobot.extras.models.approvals import (
+    ApprovalWorkflowDefinition,
+    ApprovalWorkflowStageDefinition,
+    ApprovalWorkflowStageResponse,
+)
 from netutils.lib_mapper import NETUTILSPARSER_LIB_MAPPER_REVERSE
 
 from nautobot_golden_config.choices import ConfigPlanTypeChoice
@@ -21,6 +28,11 @@ from nautobot_golden_config.models import (
     GoldenConfig,
     GoldenConfigSetting,
 )
+
+APPROVERS_GROUP_NAME = "Golden Config Test Approvers"
+APPROVER_USERNAME = "gc-test-approver"
+APPROVAL_DEFINITION_NAME = "Golden Config Test Config Plan Approval"
+APPROVAL_SAMPLE_PREFIX = "approval-sample"
 
 
 class Command(BaseCommand):
@@ -197,7 +209,7 @@ class Command(BaseCommand):
                 name="GoldenConfigSetting Dynamic Group",
                 defaults={"content_type": ContentType.objects.using(db).get(app_label="dcim", model="device")},
             )
-            GoldenConfigSetting.objects.using(db).create(
+            golden_config_setting = GoldenConfigSetting.objects.using(db).create(
                 name="Default GoldenConfigSetting",
                 slug="default_goldenconfigsetting",
                 sot_agg_query=gql_query,
@@ -227,9 +239,64 @@ class Command(BaseCommand):
                 config_set="""hostname foo""",
                 plan_result=plan_result,
             )
+        self._generate_approval_data(golden_config_setting, devices[0])
         JobModel.objects.using(db).filter(module_name="nautobot_golden_config.jobs").update(
             enabled=True,
         )
+
+    def _generate_approval_data(self, golden_config_setting, device):
+        """Create an approval workflow with approvers, and one sample Config Plan in each approval state.
+
+        The Golden Config Setting is left selecting the workflow, so Config Plans generated for its devices
+        afterwards start an approval workflow too.
+        """
+        self.stdout.write("Creating Config Plan approval workflow test data...")
+        approver, _ = get_user_model().objects.get_or_create(username=APPROVER_USERNAME)
+        approvers, _ = Group.objects.get_or_create(name=APPROVERS_GROUP_NAME)
+        approvers.user_set.add(approver)
+        definition, _ = ApprovalWorkflowDefinition.objects.get_or_create(
+            name=APPROVAL_DEFINITION_NAME,
+            defaults={"model_content_type": ContentType.objects.get_for_model(ConfigPlan), "weight": 100},
+        )
+        ApprovalWorkflowStageDefinition.objects.get_or_create(
+            approval_workflow_definition=definition,
+            name="Network review",
+            defaults={"sequence": 10, "min_approvers": 1, "approver_group": approvers},
+        )
+        job_model = GenerateConfigPlans().job_model
+
+        def create_sample_plan(plan_type, label, status=None):
+            return ConfigPlan.objects.create(
+                plan_type=plan_type,
+                device=device,
+                config_set=f"hostname {device.name}\n! approval sample: {label}",
+                change_control_id=f"{APPROVAL_SAMPLE_PREFIX}-{label}",
+                plan_result=JobResult.objects.create(job_model=job_model, user=approver),
+                status=status,
+            )
+
+        def respond(plan, state, comments):
+            ApprovalWorkflowStageResponse.objects.create(
+                approval_workflow_stage=plan.approval_workflow.approval_workflow_stages.get(),
+                user=approver,
+                state=state,
+                comments=comments,
+            )
+
+        # A plan approved by status is created before the setting selects the workflow, so it has none.
+        golden_config_setting.config_plan_approval_workflow = None
+        golden_config_setting.save()
+        create_sample_plan(ConfigPlanTypeChoice.TYPE_MANUAL, "legacy", status=Status.objects.get(name="Not Approved"))
+
+        golden_config_setting.config_plan_approval_workflow = definition
+        golden_config_setting.save()
+        # A device resolves to its setting through the cached membership of the setting's Dynamic Group.
+        golden_config_setting.dynamic_group.update_cached_members()
+        create_sample_plan(ConfigPlanTypeChoice.TYPE_INTENDED, "pending")
+        denied_plan = create_sample_plan(ConfigPlanTypeChoice.TYPE_MISSING, "denied")
+        respond(denied_plan, "Denied", "Missing change control URL.")
+        approved_plan = create_sample_plan(ConfigPlanTypeChoice.TYPE_REMEDIATION, "approved")
+        respond(approved_plan, "Approved", "Reviewed, looks good.")
 
     def handle(self, *args, **options):
         """Entry point to the management command."""
@@ -241,6 +308,12 @@ class Command(BaseCommand):
             ComplianceRule.objects.using(options["database"]).all().delete()
             ComplianceFeature.objects.using(options["database"]).all().delete()
             GraphQLQuery.objects.using(options["database"]).filter(name="GoldenConfigSetting.sot_agg_query").delete()
+            ConfigPlan.objects.using(options["database"]).filter(
+                change_control_id__startswith=APPROVAL_SAMPLE_PREFIX
+            ).delete()
+            ApprovalWorkflowDefinition.objects.using(options["database"]).filter(name=APPROVAL_DEFINITION_NAME).delete()
+            Group.objects.using(options["database"]).filter(name=APPROVERS_GROUP_NAME).delete()
+            get_user_model().objects.using(options["database"]).filter(username=APPROVER_USERNAME).delete()
 
         self._generate_static_data(db=options["database"])
 

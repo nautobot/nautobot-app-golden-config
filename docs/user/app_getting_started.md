@@ -170,6 +170,16 @@ Follow the steps below to get up and running for the configuration deployment el
     - If deploying from the ConfigPlan list view. Click `Deploy Selected` button and accept the warnings.
 4. Interpret the results from the popup modal and navigate to the job result as needed for more details.
 
+To deploy at a later time instead, use `Schedule Deploy`. It opens the Deploy Config Plans job form with the selected ConfigPlan(s) and the schedule set to `Once in the future`, so only the date and time need to be chosen. The button is only shown to users with permission to run jobs.
+
+- From a specific ConfigPlan object, click the `Schedule Deploy` button.
+- From the ConfigPlan list view, open the dropdown next to `Deploy Selected` and click `Schedule Deploy`.
+
+The scheduled deployment appears under **Jobs -> Scheduled Jobs**.
+
+!!! note
+    The status of each ConfigPlan is checked when the scheduled job runs, not when it is scheduled. If any selected ConfigPlan has the status configured in `default_deploy_status` (`Not Approved` by default) or `Completed` at that time, the job fails and none of the ConfigPlans are deployed. Make sure every ConfigPlan has been approved, and has not already been deployed, before the scheduled time.
+
 > Config Deployments utilize the dispatchers from nornir-nautobot just like the other functionality of Golden Config. See [Troubleshooting Dispatchers](./troubleshooting/troubleshoot_dispatchers.md) for more details.
 
 ### Load Properties from Git

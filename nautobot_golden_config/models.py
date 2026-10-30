@@ -957,11 +957,11 @@ class ConfigPlan(ApprovableModelMixin, PrimaryModel):  # pylint: disable=too-man
         self.status = status
         self.save(update_fields=["status", "last_updated"])
 
-    def begin_approval_workflow(self):
+    def begin_approval_workflow(self) -> ApprovalWorkflow | None:
         """Start the approval workflow selected by the device's Golden Config Setting, if any.
 
         Returns:
-            ApprovalWorkflow | None: The workflow reviewing this plan, or `None` if the setting selects none.
+            The workflow reviewing this plan, or `None` if the setting selects none.
 
         Raises:
             ValidationError: If the selected definition has no stages.

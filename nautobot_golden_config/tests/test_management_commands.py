@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.management import call_command
 from nautobot.apps.testing import TestCase
+from nautobot.dcim.models import Platform
 from nautobot.extras.models.approvals import ApprovalWorkflowDefinition
 
 from nautobot_golden_config.models import ConfigPlan, GoldenConfigSetting
@@ -21,6 +22,8 @@ class GenerateTestDataCommandTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         create_device_data()
+        # Without a driver the command picks a random one, and not every parser accepts its sample configs.
+        Platform.objects.update(network_driver="cisco_ios")
 
     def _generate(self, **options):
         call_command("generate_nautobot_golden_config_test_data", stdout=StringIO(), **options)

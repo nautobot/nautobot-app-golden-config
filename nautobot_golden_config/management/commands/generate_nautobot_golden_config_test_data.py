@@ -245,11 +245,7 @@ class Command(BaseCommand):
         )
 
     def _generate_approval_data(self, golden_config_setting, device):
-        """Create an approval workflow with approvers, and one sample Config Plan in each approval state.
-
-        The Golden Config Setting is left selecting the workflow, so Config Plans generated for its devices
-        afterwards start an approval workflow too.
-        """
+        """Create an approval workflow, its approvers, and a sample Config Plan in each approval state."""
         self.stdout.write("Creating Config Plan approval workflow test data...")
         approver, _ = get_user_model().objects.get_or_create(username=APPROVER_USERNAME)
         approvers, _ = Group.objects.get_or_create(name=APPROVERS_GROUP_NAME)

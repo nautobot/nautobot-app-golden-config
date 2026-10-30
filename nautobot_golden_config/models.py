@@ -919,10 +919,7 @@ class ConfigPlan(ApprovableModelMixin, PrimaryModel):  # pylint: disable=too-man
         return f"{self.device.name}-{self.plan_type}-{self.created}"
 
     def save(self, *args, **kwargs):
-        """Persist the plan and, for a new plan, start the approval workflow configured for its device.
-
-        Both steps share a transaction so a plan is never stored without the approval workflow it requires.
-        """
+        """Save the plan and, if it is new, start its approval workflow in the same transaction."""
         is_new = self._state.adding
         with transaction.atomic():
             super().save(*args, **kwargs)
@@ -930,11 +927,7 @@ class ConfigPlan(ApprovableModelMixin, PrimaryModel):  # pylint: disable=too-man
                 self.begin_approval_workflow()
 
     def clean(self):
-        """Reject a status change made by a user while an approval workflow owns the status.
-
-        The approval callbacks and the deploy job write the status without validation, so only edits made
-        through forms, bulk edits and the REST API reach this check.
-        """
+        """Reject user edits to the status while an approval workflow owns it."""
         super().clean()
         if self._state.adding or not self.approval_workflow:
             return
@@ -965,16 +958,13 @@ class ConfigPlan(ApprovableModelMixin, PrimaryModel):  # pylint: disable=too-man
         self.save(update_fields=["status", "last_updated"])
 
     def begin_approval_workflow(self):
-        """Start the approval workflow named by the Golden Config Setting that applies to this plan's device.
-
-        Core resolves a definition by model and weight; here the Golden Config Setting names it explicitly, so
-        a plan is only gated when its device's setting opts in.
+        """Start the approval workflow selected by the device's Golden Config Setting, if any.
 
         Returns:
-            ApprovalWorkflow | None: The workflow now reviewing this plan, or `None` if no workflow applies.
+            ApprovalWorkflow | None: The workflow reviewing this plan, or `None` if the setting selects none.
 
         Raises:
-            ValidationError: If the configured definition cannot be started.
+            ValidationError: If the selected definition has no stages.
         """
         pending_workflow = self.associated_approval_workflows.filter(
             current_state=ApprovalWorkflowStateChoices.PENDING

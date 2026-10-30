@@ -91,7 +91,7 @@ A Config Plan can only be deployed once it is approved. There are two ways to ap
 
     ---
 
-    Best for approving many plans at once with no setup.
+    Best for quick, bulk approvals by anyone who can edit plans.
 
 -   **Approval by Approval Workflow**
 
@@ -103,51 +103,31 @@ A Config Plan can only be deployed once it is approved. There are two ways to ap
 
 ### Approval by Status
 
-This is the default. New plans are created with the status set by the `default_deploy_status` [app setting](../admin/install.md#app-configuration) (`Not Approved`), and the **Deploy Config Plans** job refuses to run for them. A user approves a plan by editing it, or bulk editing several plans, and setting the status to `Approved`.
+This is the default. New plans get the `default_deploy_status` [app setting](../admin/install.md#app-configuration) (`Not Approved`), and the **Deploy Config Plans** job refuses to deploy them. To approve plans, edit them, or bulk edit several at once, and set the status to `Approved`.
 
 ### Approval by Approval Workflow
 
-This is the **single config plan approval workflow** model: a Config Plan belongs to one device, so every plan gets its own workflow and is approved on its own. Generating plans for 50 devices creates 50 workflows, and approvers handle each one separately. Nothing groups the plans from one Generate Config Plans run under a shared approval.
+When the Golden Config Setting that applies to a device selects a **Config Plan Approval Workflow**, each plan generated for that device starts a Nautobot [Approval Workflow](https://docs.nautobot.com/projects/core/en/stable/user-guide/platform-functionality/approval-workflow/). Every plan is approved on its own, so plans for 50 devices create 50 workflows.
 
-If the Golden Config Setting that applies to a device has a **Config Plan Approval Workflow** selected, each plan generated for that device starts a Nautobot [Approval Workflow](https://docs.nautobot.com/projects/core/en/stable/user-guide/platform-functionality/approval-workflow/) from that definition. The status of the plan follows the workflow, and users can no longer edit it by hand:
+The workflow controls the status of the plan, and users can no longer edit it:
 
 | Approval Workflow | Config Plan Status |
 | ----------------- | ------------------ |
-| Started           | `Pending Approval` |
-| Approved (every stage approved) | `Approved` |
-| Denied by an approver | `Not Approved` |
-| Canceled | `Not Approved` |
+| Started | `Pending Approval` |
+| Approved | `Approved` |
+| Denied or canceled | `Not Approved` |
 
 A denied or canceled workflow is final. Delete the plan and generate it again once the cause has been corrected.
 
-Once the deployment starts, the status follows the deployment (`In Progress`, then `Completed` or `Failed`) and approval outcomes no longer change it.
-
-The **Deploy Config Plans** job always fails, and deploys nothing for any plan in the batch, if any plan with an approval workflow is not `Approved`. The job result lists the plans that are not approved. See [E3025](../admin/troubleshooting/E3025.md).
+The **Deploy Config Plans** job fails without deploying anything if any plan in the batch is not `Approved`. See [E3025](../admin/troubleshooting/E3025.md).
 
 #### Setting Up an Approval Workflow
 
 1. Create a group for the approvers and add the users to it.
-2. Under **Extras -> Approval Workflow Definitions**, add a definition whose **Model content type** is `nautobot_golden_config | config plan`, and give it one or more stages that use the approver group.
-3. Edit the Golden Config Setting and select the definition for **Config Plan Approval Workflow**. A definition without stages is rejected.
+2. Under **Extras -> Approval Workflow Definitions**, add a definition with **Model content type** `nautobot_golden_config | config plan` and one or more stages that use the approver group.
+3. Edit the Golden Config Setting and select the definition for **Config Plan Approval Workflow**.
 
-A definition only takes effect when a Golden Config Setting selects it, and a definition that a setting selects cannot be deleted. Changing the selection only affects plans generated afterwards.
-
-!!! warning
-    A device is only ever generated under one Golden Config Setting: the one with the highest weight among the settings whose scope includes the device. A plan gets an approval workflow only if that setting selects one.
-
-    If a device is also in the scope of another setting, for example the **Default Settings** whose scope matches every device on a new install, give the setting that selects the workflow a strictly higher weight. With equal weights the setting that applies is not guaranteed, and the plan is generated without a workflow and approved by status instead. Plans do not pick up a workflow later, so delete and generate them again after correcting the weights.
-
-Approvers need these permissions:
-
-- `extras.view_approvalworkflowstage` and `extras.change_approvalworkflowstage`, to see and approve stages.
-- `nautobot_golden_config.view_configplan`, to read the config set they are approving.
-- `nautobot_golden_config.change_configplan`, to approve through the REST API, which checks `change` permission on the object under review. Approving in the web UI does not need it.
-
-Approvers find the plans waiting for them on the **Approver Dashboard** under **Extras -> Approval Workflows**.
-
-#### Removing the Approval Workflow
-
-Plans keep the workflow they were created with. If an administrator deletes the workflow of a plan, the plan falls back to approval by status. Its status is editable again, and it stays `Not Approved` or `Pending Approval` until a user changes it.
+Approvers need the `extras.view_approvalworkflowstage`, `extras.change_approvalworkflowstage` and `nautobot_golden_config.view_configplan` permissions. They find their plans on the **Approver Dashboard** under **Extras -> Approval Workflows**.
 
 !!! warning
-    Deleting an Approval Workflow Definition that existing plans still use leaves those plans with a workflow that can no longer be approved. Delete the workflows of those plans to return them to approval by status.
+    A device uses only the matching Golden Config Setting with the highest weight, and a plan only gets a workflow if that setting selects one. If the device is also in the scope of another setting, such as **Default Settings**, give the setting that selects the workflow a strictly higher weight. Plans do not pick up a workflow later, so delete and generate them again after fixing the weights.

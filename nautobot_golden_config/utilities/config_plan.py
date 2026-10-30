@@ -18,10 +18,7 @@ def config_plan_default_status():
 
 
 def get_unapproved_config_plans(config_plan_qs):
-    """Return the config plans in a queryset that are not yet approved for deployment.
-
-    A plan with an approval workflow is approved only once that workflow is `Approved`; its status is just a
-    mirror of the workflow. A plan without one is approved unless its status still says it is awaiting approval.
+    """Return the config plans in a queryset that are not approved for deployment.
 
     Args:
         config_plan_qs (QuerySet): The `ConfigPlan` queryset to check.

@@ -795,12 +795,6 @@ class ConfigPlanApprovalAPITestCase(APITestCase):
             status=Status.objects.get(name="Not Approved"),
         )
         self.url = reverse("plugins-api:nautobot_golden_config-api:configplan-detail", kwargs={"pk": self.plan.pk})
-        self.resubmit_url = reverse(
-            "plugins-api:nautobot_golden_config-api:configplan-resubmit", kwargs={"pk": self.plan.pk}
-        )
-
-    def _deny_workflow(self):
-        self.plan.associated_approval_workflows.update(current_state=ApprovalWorkflowStateChoices.DENIED)
 
     def test_approval_state_is_serialized(self):
         self.add_permissions("nautobot_golden_config.view_configplan")
@@ -825,22 +819,3 @@ class ConfigPlanApprovalAPITestCase(APITestCase):
         approved = Status.objects.get(name="Approved")
         response = self.client.patch(self.url, {"status": approved.pk}, format="json", **self.header)
         self.assertHttpStatus(response, status.HTTP_200_OK)
-
-    def test_resubmit_reopens_a_denied_workflow(self):
-        self._deny_workflow()
-        self.add_permissions("nautobot_golden_config.view_configplan", "nautobot_golden_config.change_configplan")
-        response = self.client.post(self.resubmit_url, **self.header)
-        self.assertHttpStatus(response, status.HTTP_200_OK)
-        self.assertEqual(response.data["approval_state"], ApprovalWorkflowStateChoices.PENDING)
-
-    def test_resubmit_requires_change_permission(self):
-        self._deny_workflow()
-        self.add_permissions("nautobot_golden_config.view_configplan", "nautobot_golden_config.add_configplan")
-        response = self.client.post(self.resubmit_url, **self.header)
-        self.assertHttpStatus(response, status.HTTP_403_FORBIDDEN)
-
-    def test_resubmit_is_rejected_for_a_pending_workflow(self):
-        self.add_permissions("nautobot_golden_config.view_configplan", "nautobot_golden_config.change_configplan")
-        response = self.client.post(self.resubmit_url, **self.header)
-        self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("E3035", response.data["detail"][0])

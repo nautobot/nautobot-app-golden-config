@@ -118,6 +118,8 @@ If the Golden Config Setting that applies to a device has a **Config Plan Approv
 | Denied by an approver | `Not Approved` |
 | Canceled | `Not Approved` |
 
+A denied or canceled workflow is final. Delete the plan and generate it again once the cause has been corrected.
+
 Once the deployment starts, the status follows the deployment (`In Progress`, then `Completed` or `Failed`) and approval outcomes no longer change it.
 
 The **Deploy Config Plans** job always fails, and deploys nothing for any plan in the batch, if any plan with an approval workflow is not `Approved`. The job result lists the plans that are not approved. See [E3025](../admin/troubleshooting/E3025.md).
@@ -142,14 +144,6 @@ Approvers need these permissions:
 - `nautobot_golden_config.change_configplan`, to approve through the REST API, which checks `change` permission on the object under review. Approving in the web UI does not need it.
 
 Approvers find the plans waiting for them on the **Approver Dashboard** under **Extras -> Approval Workflows**.
-
-#### Resubmitting a Denied Plan
-
-A denied or canceled workflow is finished and cannot be reopened by an approver. If the plan can still be used, for example when it was denied for a missing Change Control ID that has since been added, a user with the `change_configplan` permission selects **Resubmit for Approval** on the plan, or sends a POST to `/api/plugins/golden-config/config-plan/<id>/resubmit/`.
-
-This starts a new round of review on the same workflow: every stage and response goes back to pending, the comments are kept, and the status returns to `Pending Approval`. Approvers who denied the plan can then approve it. Earlier approvals do not carry over.
-
-A plan cannot be resubmitted once its deployment has started or if the approval workflow definition was deleted. Because the Config Set cannot be modified after generation, a plan that was denied for its commands should be deleted and generated again after the source of the commands has been corrected.
 
 #### Removing the Approval Workflow
 

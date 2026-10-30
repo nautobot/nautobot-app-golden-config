@@ -1,1 +1,1 @@
-Added the `Pending Approval` Config Plan status, the `approval_state` column, filter and REST API field, and a `Resubmit for Approval` action to reopen a denied or canceled Config Plan approval workflow.
+Added the `Pending Approval` Config Plan status and the `approval_state` column, filter and REST API field.

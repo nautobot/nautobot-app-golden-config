@@ -2,9 +2,7 @@
 
 from django.utils.html import format_html, format_html_join
 from nautobot.apps import ui
-from nautobot.apps.choices import ButtonActionColorChoices
 from nautobot.core.templatetags import helpers  # core-import-update
-from nautobot.core.ui.object_detail import get_obj_from_context  # core-import-update
 
 
 def get_model_instances(m2m_object):
@@ -188,26 +186,7 @@ golden_config = ui.ObjectDetailContent(
 )
 
 
-class ResubmitApprovalButton(ui.Button):
-    """Button that is only shown while a config plan's approval workflow can be reopened."""
-
-    def should_render(self, context):
-        """Render only when the plan can be resubmitted and the user may change it."""
-        plan = get_obj_from_context(context, self.context_object_key)
-        return bool(plan and plan.can_resubmit) and super().should_render(context)
-
-
 config_plan = ui.ObjectDetailContent(
-    extra_buttons=(
-        ResubmitApprovalButton(
-            weight=100,
-            label="Resubmit for Approval",
-            color=ButtonActionColorChoices.EDIT,
-            icon="mdi-refresh",
-            link_name="plugins:nautobot_golden_config:configplan_resubmit",
-            required_permissions=["nautobot_golden_config.change_configplan"],
-        ),
-    ),
     panels=(
         ui.ObjectFieldsPanel(
             section=ui.SectionChoices.LEFT_HALF,

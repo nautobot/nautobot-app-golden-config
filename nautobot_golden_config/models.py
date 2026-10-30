@@ -947,16 +947,6 @@ class ConfigPlan(ApprovableModelMixin, PrimaryModel):  # pylint: disable=too-man
         """The approval workflow attached to this plan, or `None` when the plan is approved by status."""
         return next(iter(self.associated_approval_workflows.all()), None)
 
-    @property
-    def can_resubmit(self):
-        """Whether a denied or canceled approval workflow can be reopened for another round of review."""
-        workflow = self.approval_workflow
-        return bool(
-            workflow
-            and workflow.current_state in (ApprovalWorkflowStateChoices.DENIED, ApprovalWorkflowStateChoices.CANCELED)
-            and self._deployment_not_started()
-        )
-
     def _deployment_not_started(self):
         """Whether the status still belongs to the approval phase rather than the deployment lifecycle."""
         approval_statuses = {APPROVED_STATUS, PENDING_APPROVAL_STATUS, DEFAULT_DEPLOY_STATUS}
@@ -1021,41 +1011,6 @@ class ConfigPlan(ApprovableModelMixin, PrimaryModel):  # pylint: disable=too-man
         )
         self.on_workflow_initiated(workflow)
         return workflow
-
-    def resubmit_for_approval(self):
-        """Reopen a denied or canceled approval workflow so approvers can review the plan again.
-
-        Every stage and response returns to pending, keeping the comments, so the review starts over.
-
-        Raises:
-            ValidationError: If the plan cannot be resubmitted.
-        """
-        workflow = self.approval_workflow
-        reason = None
-        if workflow is None:
-            reason = "the config plan has no approval workflow"
-        elif workflow.current_state not in (ApprovalWorkflowStateChoices.DENIED, ApprovalWorkflowStateChoices.CANCELED):
-            reason = f"the approval workflow is {workflow.current_state}"
-        elif workflow.approval_workflow_definition is None:
-            reason = "the approval workflow definition was deleted"
-        elif not self._deployment_not_started():
-            reason = f"the config plan status is {self.status}"
-        if reason:
-            error_message = ERROR_CODES["E3035"].error_message.format(config_plan=self, reason=reason)
-            raise ValidationError(f"E3035: {error_message}")
-
-        with transaction.atomic():
-            for stage in workflow.approval_workflow_stages.all():
-                responses = stage.approval_workflow_stage_responses
-                responses.exclude(comments="").update(state=ApprovalWorkflowStateChoices.COMMENT)
-                responses.filter(comments="").update(state=ApprovalWorkflowStateChoices.PENDING)
-                stage.state = ApprovalWorkflowStateChoices.PENDING
-                stage.decision_date = None
-                stage.save()
-            workflow.current_state = ApprovalWorkflowStateChoices.PENDING
-            workflow.decision_date = None
-            workflow.save()
-            self.on_workflow_initiated(workflow)
 
     def on_workflow_initiated(self, approval_workflow):  # pylint: disable=unused-argument
         """Mark the plan as waiting on its approval workflow."""

@@ -29,10 +29,4 @@ ERROR_CODES = {
         error_message="Cannot start approval workflow `{definition}` for the config plan on `{device}`, the definition has no stages.",
         recommendation="Add an approval stage to the Approval Workflow Definition, or remove it from the Golden Config Setting.",
     ),
-    "E3035": ErrorCode(
-        troubleshooting="Check the approval state and status of the Config Plan.",
-        description="A Config Plan can only be resubmitted when its approval workflow was denied or canceled and its deployment has not started.",
-        error_message="Cannot resubmit `{config_plan}` for approval: {reason}.",
-        recommendation="Generate a new Config Plan if the approval workflow definition was deleted or the deployment has already started.",
-    ),
 }

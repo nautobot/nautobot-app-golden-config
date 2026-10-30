@@ -85,6 +85,22 @@ Post Processing occurs in a modal popup, and allows a user to view the configura
 
 A Config Plan can only be deployed once it is approved. There are two ways to approve a plan, chosen per [Golden Config Setting](./app_getting_started.md), so devices in different scopes can use different methods.
 
+<div class="grid cards" markdown>
+
+-   **Approval by Status**
+
+    ---
+
+    Best for approving many plans at once with no setup.
+
+-   **Approval by Approval Workflow**
+
+    ---
+
+    Best for when approvals need designated approvers, multiple stages, or a recorded decision.
+
+</div>
+
 ### Approval by Status
 
 This is the default. New plans are created with the status set by the `default_deploy_status` [app setting](../admin/install.md#app-configuration) (`Not Approved`), and the **Deploy Config Plans** job refuses to run for them. A user approves a plan by editing it, or bulk editing several plans, and setting the status to `Approved`.

@@ -1,8 +1,12 @@
 """Object Detail components for golden config."""
 
+from django.urls import reverse
 from django.utils.html import format_html, format_html_join
+from django.utils.http import urlencode
 from nautobot.apps import ui
+from nautobot.apps.choices import ButtonActionColorChoices, JobExecutionType
 from nautobot.core.templatetags import helpers  # core-import-update
+from nautobot.core.ui.object_detail import get_obj_from_context  # core-import-update
 
 
 def get_model_instances(m2m_object):
@@ -179,7 +183,30 @@ golden_config = ui.ObjectDetailContent(
     ),
 )
 
+
+class ScheduleDeployButton(ui.Button):
+    """Button that opens the Deploy Config Plans job form for the plan, set up to run once in the future."""
+
+    def get_link(self, context):
+        """Link to the job form with this plan pre-filled and the schedule type preselected."""
+        plan = get_obj_from_context(context, self.context_object_key)
+        job_run_url = reverse(
+            "extras:job_run_by_class_path", kwargs={"class_path": "nautobot_golden_config.jobs.DeployConfigPlans"}
+        )
+        args = urlencode({"config_plan": plan.pk, "_schedule_type": JobExecutionType.TYPE_FUTURE})
+        return f"{job_run_url}?{args}"
+
+
 config_plan = ui.ObjectDetailContent(
+    extra_buttons=(
+        ScheduleDeployButton(
+            weight=100,
+            label="Schedule Deploy",
+            color=ButtonActionColorChoices.ADD,
+            icon="mdi-calendar-clock",
+            required_permissions=["extras.run_job"],
+        ),
+    ),
     panels=(
         ui.ObjectFieldsPanel(
             section=ui.SectionChoices.LEFT_HALF,

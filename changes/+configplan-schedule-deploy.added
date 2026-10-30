@@ -1,0 +1,1 @@
+Added a Schedule Deploy button on the Config Plan details view and a Schedule Deploy option in the Deploy Selected dropdown on the Config Plan list view, which open the Deploy Config Plans Job form with the schedule set to run once in the future.

@@ -25,7 +25,15 @@ from packaging import version
 from nautobot_golden_config import models, views
 from nautobot_golden_config.utilities.constant import PLUGIN_CFG
 
-from .conftest import create_device_data, create_feature_rule_json, create_job_result
+from .conftest import (
+    PARTIAL_BACKUP_CONFIG,
+    PARTIAL_INTENDED_CONFIG,
+    create_device,
+    create_device_data,
+    create_feature_rule_json,
+    create_feature_rule_partial,
+    create_job_result,
+)
 
 User = get_user_model()
 
@@ -820,3 +828,73 @@ class FilteredComplianceDeviceIdsTestCase(TestCase):
         result = views._get_feature_compliance_queryset(filtered_device_ids).get(slug="filt-feat-a")
 
         self.assertEqual(result.count, 1)  # If this fails, the Cartesian product regression is present
+
+
+class ConfigCompliancePartialConfigViewTestCase(TestCase):
+    """Test the Matched | Full toggle on the ConfigCompliance detail view."""
+
+    user_permissions = ["nautobot_golden_config.view_configcompliance"]
+
+    @classmethod
+    def setUpTestData(cls):
+        """Set up a Partial CLI compliance result with stored configs, and a JSON compliance result."""
+        device = create_device()
+        models.GoldenConfig.objects.create(
+            device=device, backup_config=PARTIAL_BACKUP_CONFIG, intended_config=PARTIAL_INTENDED_CONFIG
+        )
+        cls.partial_compliance = models.ConfigCompliance.objects.create(
+            device=device,
+            rule=create_feature_rule_partial(device),
+            actual="interface GigabitEthernet0/0\n  ip flow monitor MON1 input\n"
+            "interface GigabitEthernet0/1\n  ip flow monitor MON1 input",
+            intended="interface GigabitEthernet0/0\n  ip flow monitor MON1 input",
+        )
+        cls.json_compliance = models.ConfigCompliance.objects.create(
+            device=device,
+            rule=create_feature_rule_json(device, feature="json-view"),
+            actual={"foo": "bar"},
+            intended={"foo": "bar"},
+        )
+
+    def test_matched_view_is_default(self):
+        """The stored matched lines are shown by default, with the toggle available."""
+        response = self.client.get(self.partial_compliance.get_absolute_url())
+        self.assertHttpStatus(response, 200)
+        content = response.content.decode()
+        self.assertIn("config_view=full", content)
+        self.assertIn("ip flow monitor MON1 input", content)
+        self.assertNotIn("OLD-UPLINK", content)
+
+    def test_full_view(self):
+        """The Full view shows the complete sections from the stored backup and intended configs."""
+        response = self.client.get(f"{self.partial_compliance.get_absolute_url()}?config_view=full")
+        self.assertHttpStatus(response, 200)
+        content = response.content.decode()
+        self.assertIn("OLD-UPLINK", content)
+        self.assertIn("NEW-UPLINK", content)
+        self.assertNotIn("SPARE", content)
+
+    def test_view_preference_is_remembered(self):
+        """The last selected view is used when no view is requested."""
+        self.client.get(f"{self.partial_compliance.get_absolute_url()}?config_view=full")
+        response = self.client.get(self.partial_compliance.get_absolute_url())
+        self.assertIn("OLD-UPLINK", response.content.decode())
+
+        self.client.get(f"{self.partial_compliance.get_absolute_url()}?config_view=matched")
+        response = self.client.get(self.partial_compliance.get_absolute_url())
+        self.assertNotIn("OLD-UPLINK", response.content.decode())
+
+    def test_no_toggle_for_other_rule_types(self):
+        """Other rule types render without the toggle."""
+        response = self.client.get(f"{self.json_compliance.get_absolute_url()}?config_view=full")
+        self.assertHttpStatus(response, 200)
+        self.assertNotIn("config_view=", response.content.decode())
+
+    def test_no_toggle_without_stored_configs(self):
+        """Without stored backup or intended configs the toggle is hidden and the matched lines are shown."""
+        models.GoldenConfig.objects.filter(device=self.partial_compliance.device).delete()
+        response = self.client.get(f"{self.partial_compliance.get_absolute_url()}?config_view=full")
+        self.assertHttpStatus(response, 200)
+        content = response.content.decode()
+        self.assertNotIn("config_view=", content)
+        self.assertIn("ip flow monitor MON1 input", content)

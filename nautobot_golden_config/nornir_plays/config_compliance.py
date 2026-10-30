@@ -249,17 +249,11 @@ def process_nested_compliance_rule_hier_config(rule, backup_cfg, intended_cfg, o
     generated_config = hier_config.get_hconfig(platform_or_driver=platform, config_raw=intended_cfg)
 
     try:
-        v3_tags, tag_names = rule["obj"].get_partial_tag_rules()
+        tag_names = rule["obj"].tag_partial_configs(running_config, generated_config)
     except PartialMatchConfigError as error:
         error_msg = str(error)
         logger.error(error_msg, extra={"object": obj})
         raise NornirNautobotException(error_msg) from error
-
-    # Apply tags to the running and generated configs
-    for config in (running_config, generated_config):
-        for tag_rule in v3_tags:
-            for child in config.get_children_deep(tag_rule.match_rules):
-                child.tags_add(tag_rule.apply_tags)
 
     # Filter configs by the applied tags
     running_config_generator = running_config.all_children_sorted_by_tags(tag_names, set())

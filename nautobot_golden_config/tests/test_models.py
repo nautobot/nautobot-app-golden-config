@@ -19,6 +19,7 @@ from nautobot_golden_config.models import (
     ConfigPlan,
     ConfigRemove,
     ConfigReplace,
+    GoldenConfig,
     GoldenConfigSetting,
     RemediationSetting,
     _get_cli_compliance,
@@ -27,10 +28,13 @@ from nautobot_golden_config.models import (
 from nautobot_golden_config.tests.conftest import create_git_repos
 
 from .conftest import (
+    PARTIAL_BACKUP_CONFIG,
+    PARTIAL_INTENDED_CONFIG,
     create_config_compliance,
     create_device,
     create_feature_rule_cli_with_remediation,
     create_feature_rule_json,
+    create_feature_rule_partial,
     create_feature_rule_xml,
     create_feature_rule_xml_ordered,
     create_job_result,
@@ -465,6 +469,50 @@ class ComplianceRuleTestCase(TestCase):
         """A rule block without `match_rules` is rejected."""
         with self.assertRaisesRegex(PartialMatchConfigError, "rule 1 match_rules: Field required"):
             self._partial_rule("- startswith: interface").get_partial_tag_rules()
+
+
+class ConfigCompliancePartialFullConfigTestCase(TestCase):
+    """Test the full sections of Partial CLI compliance results."""
+
+    @classmethod
+    def setUpTestData(cls):
+        """Set up a device with stored configs and a Partial CLI rule."""
+        cls.device = create_device()
+        cls.rule = create_feature_rule_partial(cls.device)
+        cls.golden_config = GoldenConfig.objects.create(
+            device=cls.device, backup_config=PARTIAL_BACKUP_CONFIG, intended_config=PARTIAL_INTENDED_CONFIG
+        )
+
+    def test_full_sections(self):
+        """Sections with a match on either side are returned complete, unrelated sections are left out."""
+        actual, intended = ConfigCompliance(device=self.device, rule=self.rule).get_partial_full_config()
+        self.assertEqual(
+            actual,
+            "interface GigabitEthernet0/0\n  description OLD-UPLINK\n  ip flow monitor MON1 input\n"
+            "interface GigabitEthernet0/1\n  description ACCESS\n  ip flow monitor MON1 input",
+        )
+        self.assertEqual(
+            intended,
+            "interface GigabitEthernet0/0\n  description NEW-UPLINK\n  ip flow monitor MON1 input\n"
+            "interface GigabitEthernet0/1\n  description ACCESS",
+        )
+
+    def test_not_partial_rule(self):
+        """Other rule types have no full sections."""
+        rule = create_feature_rule_json(self.device, feature="json-full")
+        self.assertIsNone(ConfigCompliance(device=self.device, rule=rule).get_partial_full_config())
+
+    def test_no_stored_configs(self):
+        """Without stored backup or intended configs there are no full sections."""
+        self.golden_config.backup_config = ""
+        self.golden_config.intended_config = ""
+        self.golden_config.save()
+        self.assertIsNone(ConfigCompliance(device=self.device, rule=self.rule).get_partial_full_config())
+
+    def test_no_golden_config(self):
+        """Without a GoldenConfig record there are no full sections."""
+        self.golden_config.delete()
+        self.assertIsNone(ConfigCompliance(device=self.device, rule=self.rule).get_partial_full_config())
 
 
 class GoldenConfigSettingModelTestCase(TestCase):

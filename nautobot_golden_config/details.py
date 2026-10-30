@@ -228,6 +228,17 @@ config_plan = ui.ObjectDetailContent(
 )
 
 
+class ConfigComplianceConfigPanel(ui.ObjectFieldsPanel):
+    """Compliance configuration panel that can show the full sections of a Partial CLI compliance result."""
+
+    def get_data(self, context):
+        """Replace actual and intended with the full sections when the Full view is selected."""
+        data = super().get_data(context)
+        if context.get("partial_config_view") == "full":
+            data["actual"], data["intended"] = context["partial_full_config"]
+        return data
+
+
 config_compliance = ui.ObjectDetailContent(
     panels=(
         ui.ObjectFieldsPanel(
@@ -235,9 +246,10 @@ config_compliance = ui.ObjectDetailContent(
             weight=100,
             fields=("device", "rule", "compliance"),
         ),
-        ui.ObjectFieldsPanel(
+        ConfigComplianceConfigPanel(
             section=ui.SectionChoices.RIGHT_HALF,
             weight=100,
+            header_extra_content_template_path="nautobot_golden_config/include/configcompliance_config_view.html",
             fields=("actual", "intended", "remediation", "missing", "extra"),
             value_transforms={
                 "actual": [helpers.pre_tag],

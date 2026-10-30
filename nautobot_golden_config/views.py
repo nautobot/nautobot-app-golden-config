@@ -703,6 +703,10 @@ class ConfigPlanUIViewSet(views.NautobotUIViewSet):
     update_form_class = forms.ConfigPlanUpdateForm
     object_detail_content = details.config_plan
 
+    def get_queryset(self):
+        """Prefetch the approval workflows shown by the list and detail views."""
+        return super().get_queryset().prefetch_related("associated_approval_workflows")
+
     def alter_queryset(self, request):
         """Build actual runtime queryset to automatically remove `Completed` by default."""
         if "Completed" not in request.GET.getlist("status"):

@@ -1,0 +1,1 @@
+Changed the Deploy Config Plans job to always fail when a Config Plan is not approved, regardless of `fail_job_on_task_failure`, and to list the plans that are not approved.

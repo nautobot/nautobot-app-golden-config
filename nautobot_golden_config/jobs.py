@@ -30,7 +30,12 @@ from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir_nautobot.exceptions import NornirNautobotException
 
 from nautobot_golden_config.choices import ConfigPlanTypeChoice
-from nautobot_golden_config.exceptions import BackupFailure, ComplianceFailure, IntendedGenerationFailure
+from nautobot_golden_config.exceptions import (
+    BackupFailure,
+    ComplianceFailure,
+    ConfigPlanNotApproved,
+    IntendedGenerationFailure,
+)
 from nautobot_golden_config.models import ComplianceFeature, ConfigPlan, GoldenConfig
 from nautobot_golden_config.nornir_plays.config_backup import config_backup
 from nautobot_golden_config.nornir_plays.config_compliance import config_compliance
@@ -565,6 +570,8 @@ class DeployConfigPlans(Job):
         self.data = data
         try:
             config_deployment(self)
+        except ConfigPlanNotApproved:
+            raise
         except Exception as error:  # pylint: disable=broad-exception-caught
             error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
             self.logger.error(error_msg)

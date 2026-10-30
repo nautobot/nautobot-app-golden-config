@@ -9,6 +9,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.test import override_settings
 from django.urls import reverse
+from nautobot.apps.choices import ApprovalWorkflowStateChoices
 from nautobot.apps.testing import APITestCase, APIViewTestCases
 from nautobot.dcim.models import Device, Platform
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status
@@ -25,6 +26,7 @@ from nautobot_golden_config.tests.conftest import (
     create_git_repos,
     create_job_result,
     create_saved_queries,
+    enable_config_plan_approval,
 )
 
 User = get_user_model()
@@ -776,3 +778,44 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
         self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
         self.assertTrue("detail" in response.data)
         self.assertEqual("No Golden Config settings found for this device", response.data["detail"])
+
+
+class ConfigPlanApprovalAPITestCase(APITestCase):
+    """Test the approval workflow behavior of the ConfigPlan REST API."""
+
+    def setUp(self):
+        super().setUp()
+        self.device = create_device()
+        self.setting, _, _ = enable_config_plan_approval()
+        self.plan = ConfigPlan.objects.create(
+            plan_type="manual",
+            device=self.device,
+            config_set="hostname test",
+            plan_result=create_job_result(),
+            status=Status.objects.get(name="Not Approved"),
+        )
+        self.url = reverse("plugins-api:nautobot_golden_config-api:configplan-detail", kwargs={"pk": self.plan.pk})
+
+    def test_approval_state_is_serialized(self):
+        self.add_permissions("nautobot_golden_config.view_configplan")
+        response = self.client.get(self.url, **self.header)
+        self.assertHttpStatus(response, status.HTTP_200_OK)
+        self.assertEqual(response.data["approval_state"], ApprovalWorkflowStateChoices.PENDING)
+
+    def test_status_cannot_be_changed_when_plan_has_a_workflow(self):
+        self.add_permissions(
+            "nautobot_golden_config.view_configplan", "nautobot_golden_config.change_configplan", "extras.view_status"
+        )
+        approved = Status.objects.get(name="Approved")
+        response = self.client.patch(self.url, {"status": approved.pk}, format="json", **self.header)
+        self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("managed by it", str(response.data["status"]))
+
+    def test_status_can_be_changed_when_plan_has_no_workflow(self):
+        self.plan.associated_approval_workflows.all().delete()
+        self.add_permissions(
+            "nautobot_golden_config.view_configplan", "nautobot_golden_config.change_configplan", "extras.view_status"
+        )
+        approved = Status.objects.get(name="Approved")
+        response = self.client.patch(self.url, {"status": approved.pk}, format="json", **self.header)
+        self.assertHttpStatus(response, status.HTTP_200_OK)

@@ -1,6 +1,7 @@
 """Filtering for nautobot_golden_config."""
 
 import django_filters
+from nautobot.apps.choices import ApprovalWorkflowStateChoices
 from nautobot.apps.filters import (
     MultiValueDateTimeFilter,
     NaturalKeyOrPKMultipleChoiceFilter,
@@ -443,6 +444,12 @@ class ConfigPlanFilterSet(NautobotFilterSet):
         queryset=Status.objects.all(),
         to_field_name="name",
         label="Status",
+    )
+    approval_state = django_filters.MultipleChoiceFilter(
+        field_name="associated_approval_workflows__current_state",
+        choices=ApprovalWorkflowStateChoices,
+        label="Approval State",
+        distinct=True,
     )
 
     class Meta:

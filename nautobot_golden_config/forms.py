@@ -6,9 +6,11 @@ import json
 import django.forms as django_forms
 from django.conf import settings
 from nautobot.apps import forms
+from nautobot.apps.choices import ApprovalWorkflowStateChoices
 from nautobot.apps.forms import NautobotBulkEditForm, NautobotFilterForm, NautobotModelForm, TagsBulkEditFormMixin
 from nautobot.dcim.models import Device, DeviceType, Location, Manufacturer, Platform, Rack, RackGroup
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, JobResult, Role, Status, Tag
+from nautobot.extras.models.approvals import ApprovalWorkflowDefinition
 from nautobot.tenancy.models import Tenant, TenantGroup
 from packaging import version
 
@@ -419,6 +421,12 @@ class GoldenConfigSettingForm(NautobotModelForm):
         required=False,
     )
     sot_agg_query = forms.DynamicModelChoiceField(queryset=GraphQLQuery.objects.all(), required=False)
+    config_plan_approval_workflow = forms.DynamicModelChoiceField(
+        queryset=ApprovalWorkflowDefinition.objects.all(),
+        query_params={"model_content_type": "nautobot_golden_config.configplan"},
+        required=False,
+        help_text=models.GoldenConfigSetting._meta.get_field("config_plan_approval_workflow").help_text,
+    )
 
     class Meta:
         """Form Meta Data for GoldenConfigSetting instances."""
@@ -588,6 +596,12 @@ class ConfigPlanUpdateForm(NautobotModelForm):  # pylint: disable=nb-sub-class-n
         queryset=Tag.objects.all(), query_params={"content_types": "dcim.device"}, required=False
     )
 
+    def __init__(self, *args, **kwargs):
+        """Remove `status` for a plan with an approval workflow, the workflow owns it."""
+        super().__init__(*args, **kwargs)
+        if self.instance.pk and self.instance.approval_workflow:
+            del self.fields["status"]
+
     class Meta:
         """Boilerplate form Meta data for ConfigPlan."""
 
@@ -646,6 +660,12 @@ class ConfigPlanFilterForm(DeviceRelatedFilterForm):
         display_field="label",
         label="Status",
         to_field_name="name",
+    )
+    approval_state = django_forms.MultipleChoiceField(
+        choices=ApprovalWorkflowStateChoices,
+        required=False,
+        label="Approval State",
+        widget=forms.StaticSelect2Multiple(),
     )
     tags = forms.TagFilterField(model)
 

@@ -1,0 +1,1 @@
+Added the `Pending Approval` Config Plan status and the `approval_state` column, filter and REST API field.

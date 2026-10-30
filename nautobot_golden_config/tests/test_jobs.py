@@ -3,15 +3,18 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
+from nautobot.apps.choices import JobResultStatusChoices
 from nautobot.apps.testing import TransactionTestCase, create_job_result_and_run_job
 from nautobot.dcim.models import Device
-from nautobot.extras.models import JobLogEntry
+from nautobot.extras.models import JobLogEntry, JobResult, Status
 
 from nautobot_golden_config import jobs
+from nautobot_golden_config.models import ConfigPlan
 from nautobot_golden_config.tests.conftest import (
     create_device,
     create_orphan_device,
     dgs_gc_settings_and_job_repo_objects,
+    enable_config_plan_approval,
 )
 from nautobot_golden_config.utilities import constant
 
@@ -653,3 +656,32 @@ class GCRepoPushEmptyCommitTestCase(unittest.TestCase):
 
         repo_obj.commit_with_added.assert_called_once_with("msg")
         repo_obj.push.assert_called_once_with()
+
+
+class DeployConfigPlansApprovalTestCase(TransactionTestCase):
+    """Test that the deploy job fails for a config plan that is not approved."""
+
+    databases = ("default", "job_logs")
+
+    def test_deploy_job_fails_for_unapproved_plan_without_fail_on_task_failure(self):
+        device = create_device()
+        enable_config_plan_approval()
+        plan_result = JobResult.objects.create(name="Test Plan Result", status=Status.objects.get(name="Completed"))
+        plan = ConfigPlan.objects.create(
+            plan_type="manual",
+            device=device,
+            config_set="hostname test",
+            plan_result=plan_result,
+            status=Status.objects.get(name="Not Approved"),
+        )
+
+        job_result = create_job_result_and_run_job(
+            module="nautobot_golden_config.jobs",
+            name="DeployConfigPlans",
+            config_plan=ConfigPlan.objects.filter(pk=plan.pk),
+            fail_job_on_task_failure=False,
+        )
+
+        self.assertEqual(job_result.status, JobResultStatusChoices.STATUS_FAILURE)
+        log_entries = JobLogEntry.objects.filter(job_result=job_result, message__contains="E3025")
+        self.assertTrue(log_entries.exists())

@@ -1,5 +1,7 @@
 """Nautobot Golden Config Exceptions."""
 
+from nornir_nautobot.exceptions import NornirNautobotException
+
 
 class GoldenConfigError(Exception):
     """Parent Exception class for all the Golden Config custom errors."""
@@ -31,3 +33,7 @@ class ComplianceFailure(GoldenConfigError):
 
 class ConfigPlanDeploymentFailure(GoldenConfigError):
     """Custom error for when there's a failure in Config Plan Deployment Job."""
+
+
+class ConfigPlanNotApproved(GoldenConfigError, NornirNautobotException):
+    """Custom error for when a Config Plan is deployed before it has been approved."""

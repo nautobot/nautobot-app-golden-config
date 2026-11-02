@@ -106,6 +106,12 @@
                         {{ item.rule.feature.name|upper }}
                     </a>
                 </strong>
+                {% if item.partial_full_config %}
+                    <div class="btn-group btn-group-sm me-2" role="group" data-partial-config-toggle>
+                        <button type="button" class="btn btn-primary bg-primary nb-text-body-bg" data-config-view="matched" title="Only the lines matched by the rule">Matched</button>
+                        <button type="button" class="btn btn-primary" data-config-view="full" title="Complete sections from the latest stored backup and intended configurations">Full</button>
+                    </div>
+                {% endif %}
                 <a class="btn nb-collapse-toggle"
                    data-bs-toggle="collapse"
                    panel-id="{{ item.rule.pk }}"
@@ -144,10 +150,13 @@
                                 {% elif item.rule.config_type == "json" %}
                                     <span id="{{ item.rule|slugify }}_actual"><pre><code class="language-json">{{ item.actual|placeholder|condition_render_json }}</code></pre></span>
                                 {% else %}
-                                    <span id="{{ item.rule|slugify }}_actual"><pre>{{ item.actual|placeholder }}</pre></span>
+                                    <span id="{{ item.rule|slugify }}_actual" data-config-version="matched"><pre>{{ item.actual|placeholder }}</pre></span>
+                                    {% if item.partial_full_config %}
+                                        <span id="{{ item.rule|slugify }}_actual_full" class="d-none" data-config-version="full"><pre>{{ item.partial_full_config.0|placeholder }}</pre></span>
+                                    {% endif %}
                                 {% endif %}
                                 <span class="config_hover_button">
-                                    <button type="button" class="btn btn-secondary nb-btn-inline-hover" data-clipboard-target="#{{ item.rule|slugify }}_actual">
+                                    <button type="button" class="btn btn-secondary nb-btn-inline-hover" data-clipboard-target="#{{ item.rule|slugify }}_actual"{% if item.partial_full_config %} data-matched-target="#{{ item.rule|slugify }}_actual" data-full-target="#{{ item.rule|slugify }}_actual_full"{% endif %}>
                                         <span aria-hidden="true" class="mdi mdi-content-copy"></span>
                                         <span class="visually-hidden">Copy</span>
                                     </button>
@@ -163,10 +172,13 @@
                                 {% elif item.rule.config_type == "json" %}
                                     <span id="{{ item.rule|slugify }}_intended"><pre><code class="language-json">{{ item.intended|placeholder|condition_render_json }}</code></pre></span>
                                 {% else %}
-                                    <span id="{{ item.rule|slugify }}_intended"><pre>{{ item.intended|placeholder }}</pre></span>
+                                    <span id="{{ item.rule|slugify }}_intended" data-config-version="matched"><pre>{{ item.intended|placeholder }}</pre></span>
+                                    {% if item.partial_full_config %}
+                                        <span id="{{ item.rule|slugify }}_intended_full" class="d-none" data-config-version="full"><pre>{{ item.partial_full_config.1|placeholder }}</pre></span>
+                                    {% endif %}
                                 {% endif %}
                                 <span class="config_hover_button">
-                                    <button type="button" class="btn btn-secondary nb-btn-inline-hover" data-clipboard-target="#{{ item.rule|slugify }}_intended">
+                                    <button type="button" class="btn btn-secondary nb-btn-inline-hover" data-clipboard-target="#{{ item.rule|slugify }}_intended"{% if item.partial_full_config %} data-matched-target="#{{ item.rule|slugify }}_intended" data-full-target="#{{ item.rule|slugify }}_intended_full"{% endif %}>
                                         <span aria-hidden="true" class="mdi mdi-content-copy"></span>
                                         <span class="visually-hidden">Copy</span>
                                     </button>
@@ -181,10 +193,13 @@
                                 {% elif item.rule.config_type == "json" %}
                                     <span id="{{ item.rule|slugify }}_actual"><pre><code class="language-json">{{ item.actual|placeholder|condition_render_json }}</code></pre></span>
                                 {% else %}
-                                    <span id="{{ item.rule|slugify }}_actual"><pre>{{ item.actual|placeholder }}</pre></span>
+                                    <span id="{{ item.rule|slugify }}_actual" data-config-version="matched"><pre>{{ item.actual|placeholder }}</pre></span>
+                                    {% if item.partial_full_config %}
+                                        <span id="{{ item.rule|slugify }}_actual_full" class="d-none" data-config-version="full"><pre>{{ item.partial_full_config.0|placeholder }}</pre></span>
+                                    {% endif %}
                                 {% endif %}
                                 <span class="config_hover_button">
-                                    <button type="button" class="btn btn-secondary nb-btn-inline-hover" data-clipboard-target="#{{ item.rule|slugify }}_actual">
+                                    <button type="button" class="btn btn-secondary nb-btn-inline-hover" data-clipboard-target="#{{ item.rule|slugify }}_actual"{% if item.partial_full_config %} data-matched-target="#{{ item.rule|slugify }}_actual" data-full-target="#{{ item.rule|slugify }}_actual_full"{% endif %}>
                                         <span aria-hidden="true" class="mdi mdi-content-copy"></span>
                                         <span class="visually-hidden">Copy</span>
                                     </button>
@@ -239,3 +254,28 @@
         </div>
     {% endfor %}
 {% endblock content %}
+
+{% block javascript %}
+    {{ block.super }}
+    <script>
+        document.querySelectorAll("[data-partial-config-toggle]").forEach((toggle) => {
+            const card = toggle.closest(".card");
+            const buttons = toggle.querySelectorAll("button[data-config-view]");
+            buttons.forEach((button) => {
+                button.addEventListener("click", () => {
+                    const view = button.dataset.configView;
+                    buttons.forEach((other) => {
+                        other.classList.toggle("bg-primary", other === button);
+                        other.classList.toggle("nb-text-body-bg", other === button);
+                    });
+                    card.querySelectorAll("[data-config-version]").forEach((element) => {
+                        element.classList.toggle("d-none", element.dataset.configVersion !== view);
+                    });
+                    card.querySelectorAll("[data-full-target]").forEach((copyButton) => {
+                        copyButton.dataset.clipboardTarget = view === "full" ? copyButton.dataset.fullTarget : copyButton.dataset.matchedTarget;
+                    });
+                });
+            });
+        });
+    </script>
+{% endblock javascript %}

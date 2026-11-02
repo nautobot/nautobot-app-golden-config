@@ -898,3 +898,40 @@ class ConfigCompliancePartialConfigViewTestCase(TestCase):
         content = response.content.decode()
         self.assertNotIn("config_view=", content)
         self.assertIn("ip flow monitor MON1 input", content)
+
+    def _get_devicetab_cards(self):
+        """Return the device tab's compliance cards keyed by feature name."""
+        url = reverse(
+            "plugins:nautobot_golden_config:configcompliance_devicetab",
+            kwargs={"pk": self.partial_compliance.device.pk},
+        )
+        response = self.client.get(url)
+        self.assertHttpStatus(response, 200)
+        cards = html.fromstring(response.content.decode()).xpath('//div[contains(@class, "card") and @id]')
+        return {card.xpath('string(.//div[contains(@class, "card-header")]//strong)').strip(): card for card in cards}
+
+    def test_devicetab_partial_card_has_toggle(self):
+        """Partial CLI cards on the device tab get a toggle and hidden full sections."""
+        card = self._get_devicetab_cards()["FLOW"]
+        self.assertTrue(card.xpath(".//*[@data-partial-config-toggle]"))
+        full_blocks = card.xpath('.//*[@data-config-version="full"]')
+        self.assertEqual(len(full_blocks), 2)
+        self.assertTrue(all("d-none" in full_block.get("class") for full_block in full_blocks))
+        self.assertIn("OLD-UPLINK", "".join(full_block.text_content() for full_block in full_blocks))
+        copy_buttons = card.xpath(".//button[@data-full-target]")
+        self.assertEqual(len(copy_buttons), 2)
+        for copy_button in copy_buttons:
+            self.assertEqual(copy_button.get("data-clipboard-target"), copy_button.get("data-matched-target"))
+
+    def test_devicetab_other_rule_types_have_no_toggle(self):
+        """Other rule types on the device tab render without the toggle."""
+        card = self._get_devicetab_cards()["JSON-VIEW"]
+        self.assertFalse(card.xpath(".//*[@data-partial-config-toggle]"))
+        self.assertFalse(card.xpath('.//*[@data-config-version="full"]'))
+
+    def test_devicetab_no_toggle_without_stored_configs(self):
+        """Without stored backup or intended configs the device tab shows Partial CLI cards without the toggle."""
+        models.GoldenConfig.objects.filter(device=self.partial_compliance.device).delete()
+        card = self._get_devicetab_cards()["FLOW"]
+        self.assertFalse(card.xpath(".//*[@data-partial-config-toggle]"))
+        self.assertIn("ip flow monitor MON1 input", card.text_content())

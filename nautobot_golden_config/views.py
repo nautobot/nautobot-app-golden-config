@@ -451,6 +451,15 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
             context["compliance_filter"] = "non-compliant"
             context["compliance_details"] = compliance_details.filter(compliance=False)
 
+        context["compliance_details"] = list(
+            context["compliance_details"].select_related("rule__feature", "device__platform")
+        )
+        for item in context["compliance_details"]:
+            try:
+                item.partial_full_config = item.get_partial_full_config()
+            except PartialMatchConfigError:
+                item.partial_full_config = None
+
         context["active_tab"] = request.GET.get("tab")
         context["device"] = device
         context["object"] = device

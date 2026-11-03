@@ -5,15 +5,23 @@ import unittest
 from unittest.mock import MagicMock, Mock, patch
 
 import yaml
+from hier_config import Platform
+from nautobot.apps.testing import TestCase
 from nornir_nautobot.exceptions import NornirNautobotException
 
-from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
-from nautobot_golden_config.models import ComplianceRule
+from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, RemediationTypeChoice
+from nautobot_golden_config.models import ComplianceRule, RemediationSetting
 from nautobot_golden_config.nornir_plays.config_compliance import (
     get_config_element,
     get_config_elements,
     get_rules,
     process_nested_compliance_rule_hier_config,
+)
+from nautobot_golden_config.tests.conftest import (
+    PARTIAL_BACKUP_CONFIG,
+    PARTIAL_INTENDED_CONFIG,
+    create_device,
+    create_feature_rule_partial,
 )
 
 
@@ -142,23 +150,23 @@ router bgp 65001
         mock_rule = {"obj": Mock(config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI, match_config="test")}
 
         # Mock an unsupported platform
+        mock_rule["obj"].get_partial_hconfig_driver.return_value = None
         self.mock_obj.platform.network_driver_mappings = {"hier_config": "unsupported_platform"}
 
-        with patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING", {}):
-            with self.assertRaises(NornirNautobotException) as context:
-                process_nested_compliance_rule_hier_config(
-                    mock_rule, self.backup_cfg, self.intended_cfg, self.mock_obj, self.mock_logger
-                )
+        with self.assertRaises(NornirNautobotException) as context:
+            process_nested_compliance_rule_hier_config(
+                mock_rule, self.backup_cfg, self.intended_cfg, self.mock_obj, self.mock_logger
+            )
 
-        self.assertIn("Unsupported platform for hier_config v3", str(context.exception))
+        self.assertIn("Unsupported platform for hier_config v3: unsupported_platform", str(context.exception))
         self.mock_logger.error.assert_called_once()
 
     @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")
+    @patch("nautobot_golden_config.models.ComplianceRule.get_partial_hconfig_driver")
     @patch("nautobot_golden_config.models.TypeAdapter")
-    def test_hier_config_syntax_success(self, mock_type_adapter, mock_platform_mapping, mock_hier_config):
+    def test_hier_config_syntax_success(self, mock_type_adapter, mock_get_driver, mock_hier_config):
         """Test successful processing of a Partial CLI rule."""
-        mock_platform_mapping.get.return_value = "cisco_ios"
+        mock_get_driver.return_value = "cisco_ios"
         mock_running_config = Mock()
         mock_generated_config = Mock()
         mock_hier_config.get_hconfig.side_effect = [mock_running_config, mock_generated_config]
@@ -197,11 +205,11 @@ router bgp 65001
         mock_type_adapter_instance.validate_python.assert_called_once()
 
     @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")
+    @patch("nautobot_golden_config.models.ComplianceRule.get_partial_hconfig_driver")
     @patch("nautobot_golden_config.models.yaml.safe_load")
-    def test_invalid_yaml_raises_exception(self, mock_yaml_load, mock_platform_mapping, mock_hier_config):
+    def test_invalid_yaml_raises_exception(self, mock_yaml_load, mock_get_driver, mock_hier_config):
         """Test that invalid YAML in compliance rule raises an exception."""
-        mock_platform_mapping.get.return_value = "cisco_ios"
+        mock_get_driver.return_value = "cisco_ios"
 
         # Mock YAML parsing to raise an exception
         mock_yaml_load.side_effect = yaml.YAMLError("Invalid YAML syntax")
@@ -219,9 +227,9 @@ router bgp 65001
         self.mock_logger.error.assert_called_once()
         mock_hier_config.get_hconfig.assert_called()
 
-    def test_invalid_match_rules_raises_exception(self):
+    @patch("nautobot_golden_config.models.ComplianceRule.get_partial_hconfig_driver", return_value=Platform.CISCO_IOS)
+    def test_invalid_match_rules_raises_exception(self, mock_get_driver):  # pylint: disable=unused-argument
         """Test that YAML that is not a valid hier_config rule raises an exception instead of a pydantic error."""
-        self.mock_obj.platform.network_driver_mappings = {"hier_config": "ios"}
         mock_rule = {
             "obj": ComplianceRule(
                 config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI,
@@ -236,11 +244,11 @@ router bgp 65001
         self.mock_logger.error.assert_called_once()
 
     @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")
+    @patch("nautobot_golden_config.models.ComplianceRule.get_partial_hconfig_driver")
     @patch("nautobot_golden_config.models.TypeAdapter")
-    def test_multiple_rules(self, mock_type_adapter, mock_platform_mapping, mock_hier_config):
+    def test_multiple_rules(self, mock_type_adapter, mock_get_driver, mock_hier_config):
         """Test processing with multiple match configs in a single compliance rule."""
-        mock_platform_mapping.get.return_value = "cisco_ios"
+        mock_get_driver.return_value = "cisco_ios"
         mock_running_config = Mock()
         mock_generated_config = Mock()
         mock_hier_config.get_hconfig.side_effect = [mock_running_config, mock_generated_config]
@@ -285,12 +293,12 @@ router bgp 65001
         mock_type_adapter_instance.validate_python.assert_called_once()
 
     @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")
+    @patch("nautobot_golden_config.models.ComplianceRule.get_partial_hconfig_driver")
     @patch("nautobot_golden_config.models.TypeAdapter")
-    def test_empty_filtered_configs(self, mock_type_adapter, mock_platform_mapping, mock_hier_config):
+    def test_empty_filtered_configs(self, mock_type_adapter, mock_get_driver, mock_hier_config):
         """Test processing when neither config has lines matching the rule."""
         # Setup mocks
-        mock_platform_mapping.get.return_value = "cisco_ios"
+        mock_get_driver.return_value = "cisco_ios"
         mock_running_config = Mock()
         mock_generated_config = Mock()
         mock_hier_config.get_hconfig.side_effect = [mock_running_config, mock_generated_config]
@@ -324,9 +332,9 @@ router bgp 65001
         self.assertEqual(running_text, "")
         self.assertEqual(intended_text, "")
 
-    def test_intended_without_matches_stays_empty(self):
+    @patch("nautobot_golden_config.models.ComplianceRule.get_partial_hconfig_driver", return_value=Platform.CISCO_IOS)
+    def test_intended_without_matches_stays_empty(self, mock_get_driver):  # pylint: disable=unused-argument
         """Test that running config lines are not injected into the intended config when it has no matches."""
-        self.mock_obj.platform.network_driver_mappings = {"hier_config": "ios"}
         backup_cfg = (
             "interface GigabitEthernet0/1\n description UPLINK\nflow exporter EXPORTER1\n destination 192.0.2.1"
         )
@@ -347,11 +355,11 @@ router bgp 65001
         self.assertEqual(intended_text, "")
 
     @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
-    @patch("nautobot_golden_config.nornir_plays.config_compliance.HCONFIG_PLATFORM_V2_TO_V3_MAPPING")
+    @patch("nautobot_golden_config.models.ComplianceRule.get_partial_hconfig_driver")
     @patch("nautobot_golden_config.models.TypeAdapter")
-    def test_tag_application_to_configs(self, mock_type_adapter, mock_platform_mapping, mock_hier_config):
+    def test_tag_application_to_configs(self, mock_type_adapter, mock_get_driver, mock_hier_config):
         """Test that tags are properly applied to both running and generated configs in unified syntax."""
-        mock_platform_mapping.get.return_value = "cisco_ios"
+        mock_get_driver.return_value = "cisco_ios"
         mock_running_config = Mock()
         mock_generated_config = Mock()
         mock_hier_config.get_hconfig.side_effect = [mock_running_config, mock_generated_config]
@@ -386,3 +394,41 @@ router bgp 65001
         # Verify tags were added to children from both configs
         self.assertEqual(mock_child.tags_add.call_count, 2)
         mock_child.tags_add.assert_called_with(frozenset(["interface_tag"]))
+
+
+class ProcessNestedComplianceRuleRemediationOptionsTest(TestCase):
+    """Test that Partial CLI matching uses the platform's remediation options."""
+
+    @classmethod
+    def setUpTestData(cls):
+        """Set up a device and a Partial CLI rule matching `ip flow monitor` lines under interfaces."""
+        cls.device = create_device()
+        cls.rule = {"obj": create_feature_rule_partial(cls.device)}
+
+    def _create_remediation_setting(self, remediation_options):
+        RemediationSetting.objects.create(
+            platform=self.device.platform,
+            remediation_type=RemediationTypeChoice.TYPE_HIERCONFIG,
+            remediation_options=remediation_options,
+        )
+
+    def test_remediation_options_applied(self):
+        """The configs are parsed with the platform's remediation options before matching."""
+        self._create_remediation_setting({"per_line_sub": [{"search": "MON1", "replace": "MON2"}]})
+        running_text, intended_text = process_nested_compliance_rule_hier_config(
+            self.rule, PARTIAL_BACKUP_CONFIG, PARTIAL_INTENDED_CONFIG, self.device, Mock()
+        )
+        self.assertIn("ip flow monitor MON2 input", running_text)
+        self.assertIn("ip flow monitor MON2 input", intended_text)
+        self.assertNotIn("MON1", running_text + intended_text)
+
+    def test_invalid_remediation_options_raise_exception(self):
+        """Remediation options that cannot be loaded fail the compliance task with a clear error."""
+        self._create_remediation_setting({"per_line_sub": ["MON1"]})
+        mock_logger = Mock()
+        with self.assertRaises(NornirNautobotException) as context:
+            process_nested_compliance_rule_hier_config(
+                self.rule, PARTIAL_BACKUP_CONFIG, PARTIAL_INTENDED_CONFIG, self.device, mock_logger
+            )
+        self.assertIn("Invalid remediation options for platform", str(context.exception))
+        mock_logger.error.assert_called_once()

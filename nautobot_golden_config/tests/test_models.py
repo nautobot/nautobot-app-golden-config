@@ -5,6 +5,8 @@ from unittest.mock import patch
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db.models.deletion import ProtectedError
+from hier_config import Platform as HierConfigPlatform
+from hier_config import get_hconfig
 from nautobot.apps.testing import TestCase
 from nautobot.dcim.models import Platform
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status
@@ -470,6 +472,43 @@ class ComplianceRuleTestCase(TestCase):
         with self.assertRaisesRegex(PartialMatchConfigError, "rule 1 match_rules: Field required"):
             self._partial_rule("- startswith: interface").get_partial_tag_rules()
 
+    def test_get_partial_hconfig_driver_without_remediation_options(self):
+        """Without Remediation Settings, or with empty remediation options, the hier_config platform is used as is."""
+        rule = ComplianceRule(feature=self.feature, platform=self.device.platform)
+        self.assertEqual(rule.get_partial_hconfig_driver(), HierConfigPlatform.CISCO_IOS)
+        RemediationSetting.objects.create(
+            platform=self.device.platform, remediation_type=RemediationTypeChoice.TYPE_HIERCONFIG
+        )
+        self.assertEqual(rule.get_partial_hconfig_driver(), HierConfigPlatform.CISCO_IOS)
+
+    def test_get_partial_hconfig_driver_with_remediation_options(self):
+        """The platform's remediation options are loaded into the hier_config driver."""
+        RemediationSetting.objects.create(
+            platform=self.device.platform,
+            remediation_type=RemediationTypeChoice.TYPE_HIERCONFIG,
+            remediation_options={"per_line_sub": [{"search": "MON1", "replace": "MON2"}]},
+        )
+        driver = ComplianceRule(feature=self.feature, platform=self.device.platform).get_partial_hconfig_driver()
+        self.assertEqual(
+            get_hconfig(driver, "interface GigabitEthernet0/0\n ip flow monitor MON1 input").dump_simple(),
+            ("interface GigabitEthernet0/0", "  ip flow monitor MON2 input"),
+        )
+
+    def test_get_partial_hconfig_driver_unsupported_platform(self):
+        """Platforms without hier_config v3 support have no driver."""
+        platform = Platform.objects.create(name="Unsupported Platform", network_driver="unsupported")
+        self.assertIsNone(ComplianceRule(feature=self.feature, platform=platform).get_partial_hconfig_driver())
+
+    def test_get_partial_hconfig_driver_invalid_remediation_options(self):
+        """Remediation options that hier_config cannot load are reported as a PartialMatchConfigError."""
+        RemediationSetting.objects.create(
+            platform=self.device.platform,
+            remediation_type=RemediationTypeChoice.TYPE_HIERCONFIG,
+            remediation_options={"per_line_sub": ["MON1"]},
+        )
+        with self.assertRaisesRegex(PartialMatchConfigError, "Invalid remediation options for platform Platform 1"):
+            ComplianceRule(feature=self.feature, platform=self.device.platform).get_partial_hconfig_driver()
+
 
 class ConfigCompliancePartialFullConfigTestCase(TestCase):
     """Test the full sections of Partial CLI compliance results."""
@@ -496,6 +535,17 @@ class ConfigCompliancePartialFullConfigTestCase(TestCase):
             "interface GigabitEthernet0/0\n  description NEW-UPLINK\n  ip flow monitor MON1 input\n"
             "interface GigabitEthernet0/1\n  description ACCESS",
         )
+
+    def test_full_sections_use_remediation_options(self):
+        """The stored configs are parsed with the platform's remediation options."""
+        RemediationSetting.objects.create(
+            platform=self.device.platform,
+            remediation_type=RemediationTypeChoice.TYPE_HIERCONFIG,
+            remediation_options={"per_line_sub": [{"search": "OLD-UPLINK", "replace": "NEW-UPLINK"}]},
+        )
+        actual, _ = ConfigCompliance(device=self.device, rule=self.rule).get_partial_full_config()
+        self.assertIn("description NEW-UPLINK", actual)
+        self.assertNotIn("OLD-UPLINK", actual)
 
     def test_not_partial_rule(self):
         """Other rule types have no full sections."""

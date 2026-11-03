@@ -34,4 +34,4 @@ class ConfigPlanDeploymentFailure(GoldenConfigError):
 
 
 class PartialMatchConfigError(GoldenConfigError):
-    """Custom error for an invalid match_config on a Partial CLI compliance rule."""
+    """Custom error for an invalid match_config, or invalid platform remediation options, on a Partial CLI compliance rule."""

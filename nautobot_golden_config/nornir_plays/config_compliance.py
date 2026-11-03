@@ -9,7 +9,6 @@ from datetime import datetime
 
 import hier_config
 from django.utils.timezone import make_aware
-from hier_config.utils import HCONFIG_PLATFORM_V2_TO_V3_MAPPING
 from lxml import etree
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
@@ -235,20 +234,17 @@ def process_nested_compliance_rule_hier_config(rule, backup_cfg, intended_cfg, o
     The match_config field in the rule should define hierarchical config tags and matching criteria in YAML format.
     See: https://hier-config.readthedocs.io/en/latest/tags/
     """
-    # Convert v2 platform to v3 platform
-    v2_platform = obj.platform.network_driver_mappings.get("hier_config")
-    platform = HCONFIG_PLATFORM_V2_TO_V3_MAPPING.get(v2_platform)
-
-    if not platform:
-        error_msg = f"Unsupported platform for hier_config v3: {v2_platform}"
-        logger.error(error_msg, extra={"object": obj})
-        raise NornirNautobotException(error_msg)
-
-    # Create config objects using v3 API
-    running_config = hier_config.get_hconfig(platform_or_driver=platform, config_raw=backup_cfg)
-    generated_config = hier_config.get_hconfig(platform_or_driver=platform, config_raw=intended_cfg)
-
     try:
+        # Get the v3 platform, with the platform's remediation options loaded
+        platform = rule["obj"].get_partial_hconfig_driver()
+        if not platform:
+            v2_platform = obj.platform.network_driver_mappings.get("hier_config")
+            raise PartialMatchConfigError(f"Unsupported platform for hier_config v3: {v2_platform}")
+
+        # Create config objects using v3 API
+        running_config = hier_config.get_hconfig(platform_or_driver=platform, config_raw=backup_cfg)
+        generated_config = hier_config.get_hconfig(platform_or_driver=platform, config_raw=intended_cfg)
+
         tag_names = rule["obj"].tag_partial_configs(running_config, generated_config)
     except PartialMatchConfigError as error:
         error_msg = str(error)

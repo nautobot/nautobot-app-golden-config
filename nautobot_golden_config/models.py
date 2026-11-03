@@ -11,8 +11,9 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.manager import BaseManager
 from django.utils.module_loading import import_string
-from hier_config import WorkflowRemediation, get_hconfig
+from hier_config import Platform, WorkflowRemediation, get_hconfig
 from hier_config.models import TagRule
+from hier_config.platforms.driver_base import HConfigDriverBase
 from hier_config.utils import (
     HCONFIG_PLATFORM_V2_TO_V3_MAPPING,
     hconfig_v2_os_v3_platform_mapper,
@@ -451,6 +452,33 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
                     child.tags_add(tag_rule.apply_tags)
         return tag_names
 
+    def get_partial_hconfig_driver(self) -> Platform | HConfigDriverBase | None:
+        """
+        Return the hier_config platform or driver used to parse configurations for this Partial CLI rule.
+
+        The remediation options of the platform's Remediation Settings are loaded when defined, so configurations
+        are parsed the same way as for hier_config remediation.
+
+        Returns:
+            The driver with the remediation options loaded, the platform when there are none, or None when the
+                platform has no hier_config v3 support.
+
+        Raises:
+            PartialMatchConfigError: If the platform's remediation options cannot be loaded.
+        """
+        hier_platform = HCONFIG_PLATFORM_V2_TO_V3_MAPPING.get(self.platform.network_driver_mappings.get("hier_config"))
+        if not hier_platform:
+            return None
+        remediation_setting = RemediationSetting.objects.filter(platform=self.platform).first()
+        if not remediation_setting or not remediation_setting.remediation_options:
+            return hier_platform
+        try:
+            return load_hconfig_v2_options(remediation_setting.remediation_options, hier_platform)
+        except (AttributeError, TypeError, ValueError) as error:
+            raise PartialMatchConfigError(
+                f"Invalid remediation options for platform {self.platform.name}: {error}"
+            ) from error
+
 
 @extras_features(
     "custom_fields",
@@ -555,21 +583,20 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
             The actual and intended sections, or None for other rule types or when the configurations are unavailable.
 
         Raises:
-            PartialMatchConfigError: If the rule's match_config is not a YAML list of valid hier_config rule blocks.
+            PartialMatchConfigError: If the rule's match_config is not a YAML list of valid hier_config rule blocks,
+                or the platform's remediation options cannot be loaded.
         """
         if self.rule.config_type != ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI or not self.device.platform:
             return None
         golden_config = GoldenConfig.objects.filter(device=self.device).first()
         if not golden_config or not (golden_config.backup_config or golden_config.intended_config):
             return None
-        hier_platform = HCONFIG_PLATFORM_V2_TO_V3_MAPPING.get(
-            self.device.platform.network_driver_mappings.get("hier_config")
-        )
-        if not hier_platform:
+        hier_driver = self.rule.get_partial_hconfig_driver()
+        if not hier_driver:
             return None
 
-        running_config = get_hconfig(hier_platform, golden_config.backup_config)
-        intended_config = get_hconfig(hier_platform, golden_config.intended_config)
+        running_config = get_hconfig(hier_driver, golden_config.backup_config)
+        intended_config = get_hconfig(hier_driver, golden_config.intended_config)
         tag_names = self.rule.tag_partial_configs(running_config, intended_config)
         section_texts = {
             section.text

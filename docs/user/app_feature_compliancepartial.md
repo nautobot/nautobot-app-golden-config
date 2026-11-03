@@ -25,6 +25,9 @@ Partial configuration compliance requires:
 1. **Platform Compatibility**: Your device platform must be supported by the `hier_config` library
 2. **Network Driver Mapping**: The platform must have a valid `hier_config` mapping in its `network_driver_mappings`
 
+!!! note
+    When the platform has [Remediation Settings](./app_feature_remediation.md) with remediation options, the configurations are parsed with those options before matching, the same way they are parsed for hier_config remediation. For example, a `per_line_sub` option rewrites lines before the match rules are applied.
+
 ## Configuring Partial Compliance Rules
 
 ### Rule Identification

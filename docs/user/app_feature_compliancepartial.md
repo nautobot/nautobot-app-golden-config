@@ -1,12 +1,12 @@
-# Filtered Configuration Compliance
+# Partial Configuration Compliance
 
 ## Overview
 
-Filtered Configuration Compliance is a powerful extension to the standard CLI-based compliance checking that leverages the `hier_config` library to provide advanced configuration parsing and comparison capabilities. This feature allows you to define complex matching rules to focus compliance checks on specific configuration sections or patterns.
+Partial Configuration Compliance is an extension to the standard CLI-based compliance checking that leverages the `hier_config` library to provide advanced configuration parsing and comparison capabilities. This feature allows you to define matching rules that focus compliance checks on specific lines, including lines nested under a parent, instead of complete configuration sections.
 
-Unlike standard CLI compliance which matches configuration sections based on simple line-starting patterns, Filtered Configuration Compliance identifies and compares configuration elements based on their hierarchical relationships and specific attributes, which allows for filtering based on nested config lines.
+Unlike standard CLI compliance which matches configuration sections based on simple line-starting patterns, Partial Configuration Compliance identifies and compares configuration elements based on their hierarchical relationships and specific attributes, which allows for filtering based on nested config lines.
 
-## When to Use Filtered Configuration Compliance
+## When to Use Partial Configuration Compliance
 
 This feature is particularly useful for:
 
@@ -20,28 +20,24 @@ This feature is particularly useful for:
 
 ### Platform Support
 
-Filtered configuration compliance requires:
+Partial configuration compliance requires:
 
-1. **CLI Configuration Type**: Only [`CLI`](./app_feature_compliancecli.md) configuration types are supported for hierarchical compliance
-2. **Platform Compatibility**: Your device platform must be supported by the `hier_config` library
-3. **Network Driver Mapping**: The platform must have a valid `hier_config` mapping in its `network_driver_mappings`
+1. **Platform Compatibility**: Your device platform must be supported by the `hier_config` library
+2. **Network Driver Mapping**: The platform must have a valid `hier_config` mapping in its `network_driver_mappings`
 
-## Configuring Filtered Compliance Rules
+## Configuring Partial Compliance Rules
 
 ### Rule Identification
 
-To create a filtered compliance rule, start the **Config to Match** field with the comment:
+To create a partial compliance rule, set the **Config Type** of the compliance rule to `Partial CLI`.
 
-`# hier_config`
-
-This comment must be the first line. The content that follows should be YAML consisting of one or more rule blocks. Each rule block uses the `match_rules` key containing an ordered list of predicates (e.g. `startswith`, `contains`, `re_search`, `endswith`).
+The **Config to Match** field is mandatory and must be YAML consisting of one or more rule blocks. Each rule block uses the `match_rules` key containing an ordered list of predicates (e.g. `startswith`, `contains`, `re_search`, `endswith`), one for each level of the configuration hierarchy.
 
 ### Syntax
 
 Example with two rule blocks:
 
 ```yaml
-# hier_config
 - match_rules:
   - startswith: router bgp
   - startswith: neighbor
@@ -50,6 +46,17 @@ Example with two rule blocks:
   - contains: GigabitEthernet
 ```
 
+### Validation
+
+The **Config to Match** field is validated when the compliance rule is saved, in the UI and the API. The rule is rejected if the field is:
+
+- Not valid YAML.
+- Not a non-empty list of rule blocks.
+- Contains a rule block that is not a mapping with a `match_rules` key.
+- Contains match rules that `hier_config` rejects.
+
+The same checks run during the compliance job, so an invalid rule fails the job with a clear error.
+
 ### Example Configuration Rules
 
 #### Example 1: BGP Neighbor Configuration
@@ -57,7 +64,6 @@ Example with two rule blocks:
 To check compliance for all BGP neighbor configurations:
 
 ```yaml
-# hier_config
 - match_rules:
   - startswith: router bgp
   - startswith: neighbor
@@ -79,7 +85,6 @@ router bgp 65001
 To check compliance for MTU settings on all interfaces:
 
 ```yaml
-# hier_config
 - match_rules:
   - startswith: interface
   - contains: mtu
@@ -98,7 +103,6 @@ interface GigabitEthernet0/2
 To check compliance for SNMP server configurations:
 
 ```yaml
-# hier_config
 - match_rules:
   - startswith: snmp-server
 ```
@@ -115,7 +119,6 @@ snmp-server host 192.168.1.100 version 2c public
 To check compliance for specific access control list entries:
 
 ```yaml
-# hier_config
 - match_rules:
   - startswith: ip access-list
   - contains: SECURITY
@@ -131,9 +134,23 @@ ip access-list extended SECURITY_OUT
  deny ip any any log
 ```
 
+## Viewing Partial Compliance Results
+
+The actual and intended configurations stored for a partial compliance rule only contain the matched lines and their parent lines. Compliance, missing, extra and remediation are all based on these lines.
+
+To see the matched lines in context, the configuration panels of a partial compliance rule have a **Matched | Full** toggle. It is available on the Config Compliance detail page and on each partial rule of a device's Config Compliance tab.
+
+- **Matched** (default) shows the stored actual and intended configurations.
+- **Full** shows the complete top-level sections that contain a matched line in either configuration, for example the whole `interface` section instead of only its `ip flow monitor` line.
+
+On the detail page, the selected view is remembered for the user.
+
+!!! note
+    The **Full** view is built from the latest backup and intended configurations stored for the device, which can be newer than the last compliance run.
+
 ## Known Limitation: Remediation of Sections Without Matches
 
-The actual and intended configurations only contain the matched lines and their parent lines. When none of the matched lines under a parent are present in the intended configuration, the parent is not part of the intended configuration either. Config remediation then treats the whole section as extra and can propose removing it.
+When none of the matched lines under a parent are present in the intended configuration, the parent is not part of the intended configuration either. Config remediation then treats the whole section as extra and can propose removing it.
 
 For example, with a rule matching `ip flow monitor` lines under interfaces:
 
@@ -156,21 +173,17 @@ Always review the remediation of these rules before deploying it.
 
 **Solution**: Ensure your device platform has a valid `hier_config` mapping in its `network_driver_mappings`. Check the platform configuration in Nautobot.
 
-#### Invalid YAML Syntax
-**Error**: `Invalid YAML in match_config: <error details>`
+#### Invalid Config to Match
+**Error**: `Invalid YAML in match_config: <error details>`, `Invalid hier_config match rules in match_config: <error details>` or a similar message on the **Config to Match** field.
 
-**Solution**: Validate your YAML syntax in the **Config to Match** field. Ensure proper indentation and structure.
-
-#### Wrong Configuration Type
-**Error**: `Hier config compliance rules are only supported for CLI config types`
-
-**Solution**: Change the **Config Type** to `CLI` for hierarchical compliance rules.
+**Solution**: Fix the **Config to Match** field so it is a YAML list of rule blocks, each with a `match_rules` key. Ensure proper indentation and structure.
 
 ### Debug Tips
 
 1. **Check Platform Support**: Verify your platform's `network_driver_mappings` include `hier_config`
 2. **Review hier_config Documentation**: Consult the [hier_config documentation](https://hier-config.readthedocs.io/en/latest/tags/) for advanced tagging examples
 3. **Start Simple**: Begin with basic matching rules and gradually add complexity
+4. **Use the Full View**: Switch to **Full** to check which sections the rule matched
 
 ## Best Practices
 
@@ -184,11 +197,11 @@ Always review the remediation of these rules before deploying it.
 
 ### Combining Multiple Rules
 
-You can create multiple hierarchical compliance rules for the same platform to check different aspects of the configuration independently.
+You can create multiple partial compliance rules for the same platform to check different aspects of the configuration independently.
 
 ### Integration with Configuration Management
 
-Filtered configuration compliance works seamlessly with existing configuration management workflows:
+Partial configuration compliance works seamlessly with existing configuration management workflows:
 
 - Backup processes remain unchanged
 - Intended configuration generation follows the same patterns

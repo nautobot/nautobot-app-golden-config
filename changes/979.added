@@ -1,1 +1,2 @@
-Added hier config compatability to compliance rules for matching nested config using hier config tags
+Added the Partial CLI compliance rule config type for Partial Configuration Compliance, which uses hier_config tags to match nested configuration lines.
+Added a Matched | Full toggle to the configuration of Partial CLI compliance results.

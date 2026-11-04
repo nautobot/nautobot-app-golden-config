@@ -7,6 +7,7 @@ import os
 from collections import defaultdict
 from datetime import datetime
 
+import hier_config
 from django.utils.timezone import make_aware
 from lxml import etree
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
@@ -18,7 +19,7 @@ from nornir.core.task import Result, Task
 from nornir_nautobot.exceptions import NornirNautobotException
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
-from nautobot_golden_config.exceptions import ComplianceFailure
+from nautobot_golden_config.exceptions import ComplianceFailure, PartialMatchConfigError
 from nautobot_golden_config.models import ComplianceRule, ConfigCompliance, GoldenConfig
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
@@ -171,8 +172,7 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     intended_cfg = _open_file_config(intended_file)
 
     for rule in rules[obj.platform.network_driver]:
-        _actual = get_config_element(rule, backup_cfg, obj, logger)
-        _intended = get_config_element(rule, intended_cfg, obj, logger)
+        _actual, _intended = get_config_elements(rule, backup_cfg, intended_cfg, obj, logger)
 
         # using update_or_create() method to conveniently update actual obj or create new one.
         ConfigCompliance.objects.update_or_create(
@@ -192,6 +192,73 @@ def run_compliance(  # pylint: disable=too-many-arguments,too-many-locals
     logger.info("Successfully tested compliance job.", extra={"object": obj})
 
     return Result(host=task.host)
+
+
+def get_config_elements(rule, backup_cfg, intended_cfg, obj, logger):
+    """
+    Return the actual and intended configuration elements for a compliance rule.
+
+    Partial CLI rules are matched with hier_config, all other config types with `get_config_element`.
+
+    Returns:
+        tuple: The actual and intended configuration elements.
+    """
+    if rule["obj"].config_type == ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI:
+        return process_nested_compliance_rule_hier_config(rule, backup_cfg, intended_cfg, obj, logger)
+    return (
+        get_config_element(rule, backup_cfg, obj, logger),
+        get_config_element(rule, intended_cfg, obj, logger),
+    )
+
+
+def process_nested_compliance_rule_hier_config(rule, backup_cfg, intended_cfg, obj, logger):  # pylint: disable=too-many-locals
+    """
+    Processes nested compliance rules using hierarchical configuration comparison.
+
+    This function compares backup (running) and intended configurations using hierarchical config parsing.
+    It applies tag-based filtering according to match criteria defined in the compliance rule's match_config.
+
+    Args:
+        rule (dict): Contains compliance rule details, including match configuration.
+        backup_cfg (str): The backup (running) configuration as a string.
+        intended_cfg (str): The intended configuration as a string.
+        obj (object): Object containing platform and device information.
+        logger (logging.Logger): Logger instance for logging errors and debug information.
+
+    Returns:
+        tuple[str, str]: Filtered running and intended configuration text for compliance comparison.
+
+    Notes:
+        Used for compliance rules with the Partial CLI config type.
+
+    The match_config field in the rule should define hierarchical config tags and matching criteria in YAML format.
+    See: https://hier-config.readthedocs.io/en/latest/tags/
+    """
+    try:
+        # Get the v3 platform, with the platform's remediation options loaded
+        platform = rule["obj"].get_partial_hconfig_driver()
+        if not platform:
+            v2_platform = obj.platform.network_driver_mappings.get("hier_config")
+            raise PartialMatchConfigError(f"Unsupported platform for hier_config v3: {v2_platform}")
+
+        # Create config objects using v3 API
+        running_config = hier_config.get_hconfig(platform_or_driver=platform, config_raw=backup_cfg)
+        generated_config = hier_config.get_hconfig(platform_or_driver=platform, config_raw=intended_cfg)
+
+        tag_names = rule["obj"].tag_partial_configs(running_config, generated_config)
+    except PartialMatchConfigError as error:
+        error_msg = str(error)
+        logger.error(error_msg, extra={"object": obj})
+        raise NornirNautobotException(error_msg) from error
+
+    # Filter configs by the applied tags
+    running_config_generator = running_config.all_children_sorted_by_tags(tag_names, set())
+    running_text = "\n".join(c.cisco_style_text() for c in running_config_generator)
+
+    intended_config_generator = generated_config.all_children_sorted_by_tags(tag_names, set())
+    intended_text = "\n".join(c.cisco_style_text() for c in intended_config_generator)
+
+    return running_text, intended_text
 
 
 def config_compliance(job):  # pylint: disable=unused-argument

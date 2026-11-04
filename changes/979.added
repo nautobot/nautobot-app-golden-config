@@ -1,0 +1,1 @@
+Added the Partial CLI compliance rule config type for Partial Configuration Compliance, which uses hier_config tags to match nested configuration lines.

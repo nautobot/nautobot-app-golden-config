@@ -687,7 +687,7 @@ class DeployConfigPlansApprovalTestCase(TransactionTestCase):
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs",
             name="DeployConfigPlans",
-            config_plan=ConfigPlan.objects.filter(pk=plan.pk),
+            config_plan=[plan.pk],
             fail_job_on_task_failure=False,
         )
 

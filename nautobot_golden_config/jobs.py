@@ -4,7 +4,6 @@
 # TODO: Remove the following ignore, added to be able to pass pylint in CI.
 # pylint: disable=arguments-differ
 
-import logging
 from datetime import datetime
 
 from django.utils.timezone import make_aware
@@ -26,6 +25,7 @@ from nautobot.extras.datasources.git import (  # core-import-update
 )
 from nautobot.extras.models import DynamicGroup, Role, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
+from nautobot_plugin_nornir.logger import DebugLoggingMixin
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir_nautobot.exceptions import NornirNautobotException
@@ -220,22 +220,6 @@ class FormEntry:  # pylint disable=too-few-public-method
         label="Device Status",
     )
     debug = BooleanVar(description="Enable for more verbose debug logging")
-
-
-class DebugLoggingMixin:  # pylint: disable=too-few-public-methods
-    """Mixin to only record debug log messages when the `debug` job input is enabled."""
-
-    def before_start(self, task_id, args, kwargs):
-        """Set the job logger level from the `debug` input."""
-        # The job logger is shared by every job in this module within a worker process, so `after_return` restores it.
-        self._original_log_level = self.logger.level  # pylint: disable=attribute-defined-outside-init
-        super().before_start(task_id, args, kwargs)
-        self.logger.setLevel(logging.DEBUG if kwargs.get("debug") else logging.INFO)
-
-    def after_return(self, status, retval, task_id, args, kwargs, einfo):  # pylint: disable=too-many-arguments
-        """Restore the job logger level set before `before_start`."""
-        self.logger.setLevel(self._original_log_level)
-        super().after_return(status, retval, task_id, args, kwargs, einfo)
 
 
 class GoldenConfigJobMixin(DebugLoggingMixin, Job):  # pylint: disable=abstract-method

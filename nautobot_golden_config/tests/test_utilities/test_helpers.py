@@ -159,7 +159,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         rendered_template = render_jinja_template(mock_device, "logger", "{{ 100000 | humanize_speed }}")
         self.assertEqual(rendered_template, "100 Mbps")
 
-    @patch("nautobot_golden_config.utilities.logger.NornirLogger")
+    @patch("nautobot_plugin_nornir.logger.NornirLogger")
     @patch("nautobot.dcim.models.Device", spec=Device)
     def test_render_jinja_template_exceptions_undefined(self, mock_device, mock_nornir_logger):
         """Use fake obj key to cause UndefinedError from Jinja2 Template."""
@@ -168,7 +168,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
                 render_jinja_template(mock_device, mock_nornir_logger, "{{ obj.fake }}")
         mock_nornir_logger.error.assert_called_once()
 
-    @patch("nautobot_golden_config.utilities.logger.NornirLogger")
+    @patch("nautobot_plugin_nornir.logger.NornirLogger")
     @patch("nautobot.dcim.models.Device")
     def test_render_jinja_template_exceptions_syntaxerror(self, mock_device, mock_nornir_logger):
         """Use invalid templating to cause TemplateSyntaxError from Jinja2 Template."""
@@ -177,7 +177,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
                 render_jinja_template(mock_device, mock_nornir_logger, "{{ obj.fake }")
         mock_nornir_logger.error.assert_called_once()
 
-    @patch("nautobot_golden_config.utilities.logger.NornirLogger")
+    @patch("nautobot_plugin_nornir.logger.NornirLogger")
     @patch("nautobot.dcim.models.Device")
     @patch("nautobot_golden_config.utilities.helper.render_jinja2")
     def test_render_jinja_template_exceptions_templateerror(self, template_mock, mock_device, mock_nornir_logger):

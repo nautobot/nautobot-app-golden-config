@@ -7,7 +7,9 @@ The development environment can be used in two ways:
 1. **(Recommended)** All services, including Nautobot, are spun up using Docker containers and a volume mount so you can develop locally.
 2. With a local Poetry environment if you wish to develop outside of Docker, with the caveat of using external services provided by Docker for the database (PostgreSQL by default, MySQL optionally) and Redis services.
 
-This is a quick reference guide if you're already familiar with the development environment provided, which you can read more about later in this document.
+This is a detailed reference guide if you're already familiar with the development environment provided, which you can read more about later in this document.
+
+To quickly get a full local development environment up and running with all supporting services including virtualized switches and a git server, see the [Local Dev Environment Quickstart](local_dev_quickstart.md) document.
 
 ### Invoke
 

@@ -10,6 +10,7 @@ from django.db.models import OuterRef, Q, Subquery
 from django.template import engines
 from django.urls import reverse
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from jinja2 import exceptions as jinja_errors
 from jinja2.sandbox import SandboxedEnvironment
 from lxml import etree
@@ -229,9 +230,12 @@ def add_message(combo_check, request):
         if not isinstance(feature_enabled, list):
             feature_enabled = [feature_enabled]
         if not job.enabled and any(feature_enabled):
-            multiple_messages.append(f"<a href='{reverse('extras:job_edit', kwargs={'pk': job.pk})}'>{job.name}</a>")
+            multiple_messages.append(
+                format_html("<a href='{}'>{}</a>", reverse("extras:job_edit", kwargs={"pk": job.pk}), job.name)
+            )
     if multiple_messages:
-        messages.warning(request, format_html(f"The Job(s) {list_to_string(multiple_messages)} are not yet enabled."))
+        joined_links = mark_safe(list_to_string(multiple_messages))  # noqa: S308
+        messages.warning(request, format_html("The Job(s) {} are not yet enabled.", joined_links))
 
 
 def dispatch_params(method, platform, logger):

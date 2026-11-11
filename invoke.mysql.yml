@@ -1,7 +1,7 @@
 ---
 nautobot_golden_config:
   project_name: "nautobot-golden-config"
-  nautobot_ver: "3.0.0"
+  nautobot_ver: "3.1.0"
   local: false
   python_ver: "3.12"
   compose_dir: "development"
@@ -10,3 +10,7 @@ nautobot_golden_config:
     - "docker-compose.redis.yml"
     - "docker-compose.mysql.yml"
     - "docker-compose.dev.yml"
+    # Uncomment the ephemeral-ports override below to use dynamic host ports with this
+    # custom compose file list. The `ephemeral_ports` invoke option only auto-applies when
+    # compose_files is left at its default, so it has no effect here and is intentionally omitted.
+    # - "docker-compose.ephemeral-ports.yml"

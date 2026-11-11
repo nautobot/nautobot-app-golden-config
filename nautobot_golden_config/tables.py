@@ -109,7 +109,7 @@ CONFIG_SET_BUTTON = """
 MATCH_CONFIG = """{{ record.match_config|linebreaksbr }}"""
 
 
-def actual_fields():
+def actual_fields(include_tags=False):
     """Convienance function to conditionally toggle columns."""
     active_fields = ["pk", "name"]
     if ENABLE_BACKUP:
@@ -118,6 +118,8 @@ def actual_fields():
         active_fields.append("intended_last_success_date")
     if ENABLE_COMPLIANCE:
         active_fields.append("compliance_last_success_date")
+    if include_tags:
+        active_fields.append("tags")
     active_fields.append("actions")
     return tuple(active_fields)
 
@@ -288,6 +290,8 @@ class GoldenConfigTable(BaseTable):
             order_by="compliance_last_success_date",
         )
 
+    tags = TagColumn(url_name="plugins:nautobot_golden_config:goldenconfig_list")
+
     actions = ButtonsColumn(
         buttons=("delete",),
         model=models.GoldenConfig,
@@ -329,7 +333,8 @@ class GoldenConfigTable(BaseTable):
         """Meta for class GoldenConfigTable."""
 
         model = models.GoldenConfig
-        fields = actual_fields()
+        fields = actual_fields(include_tags=True)
+        default_columns = actual_fields()
 
 
 # ComplianceFeature
@@ -340,12 +345,13 @@ class ComplianceFeatureTable(BaseTable):
 
     pk = ToggleColumn()
     name = LinkColumn("plugins:nautobot_golden_config:compliancefeature", args=[A("pk")])
+    tags = TagColumn(url_name="plugins:nautobot_golden_config:compliancefeature_list")
 
     class Meta(BaseTable.Meta):
         """Table to display Compliance Features Meta Data."""
 
         model = models.ComplianceFeature
-        fields = ("pk", "name", "slug", "description")
+        fields = ("pk", "name", "slug", "description", "tags")
         default_columns = ("pk", "name", "slug", "description")
 
 
@@ -361,6 +367,7 @@ class ComplianceRuleTable(BaseTable):
     config_ordered = BooleanColumn()
     custom_compliance = BooleanColumn()
     config_remediation = BooleanColumn()
+    tags = TagColumn(url_name="plugins:nautobot_golden_config:compliancerule_list")
 
     class Meta(BaseTable.Meta):
         """Table to display Compliance Rules Meta Data."""
@@ -376,6 +383,7 @@ class ComplianceRuleTable(BaseTable):
             "config_type",
             "custom_compliance",
             "config_remediation",
+            "tags",
         )
         default_columns = (
             "pk",
@@ -398,12 +406,13 @@ class ConfigRemoveTable(BaseTable):
 
     pk = ToggleColumn()
     name = LinkColumn("plugins:nautobot_golden_config:configremove", args=[A("pk")])
+    tags = TagColumn(url_name="plugins:nautobot_golden_config:configremove_list")
 
     class Meta(BaseTable.Meta):
         """Table to display Compliance Rules Meta Data."""
 
         model = models.ConfigRemove
-        fields = ("pk", "name", "platform", "description", "regex")
+        fields = ("pk", "name", "platform", "description", "regex", "tags")
         default_columns = ("pk", "name", "platform", "description", "regex")
 
 
@@ -415,12 +424,13 @@ class ConfigReplaceTable(BaseTable):
 
     pk = ToggleColumn()
     name = LinkColumn("plugins:nautobot_golden_config:configreplace", args=[A("pk")])
+    tags = TagColumn(url_name="plugins:nautobot_golden_config:configreplace_list")
 
     class Meta(BaseTable.Meta):
         """Table to display Compliance Rules Meta Data."""
 
         model = models.ConfigReplace
-        fields = ("pk", "name", "platform", "description", "regex", "replace")
+        fields = ("pk", "name", "platform", "description", "regex", "replace", "tags")
         default_columns = ("pk", "name", "platform", "description", "regex", "replace")
 
 
@@ -442,6 +452,7 @@ class GoldenConfigSettingTable(BaseTable):
         verbose_name="Backup Repository",
         empty_values=(),
     )
+    tags = TagColumn(url_name="plugins:nautobot_golden_config:goldenconfigsetting_list")
 
     def _render_capability(self, record, column, record_attribute):  # pylint: disable=unused-argument
         if getattr(record, record_attribute, None):
@@ -472,6 +483,16 @@ class GoldenConfigSettingTable(BaseTable):
             "backup_repository",
             "intended_repository",
             "jinja_repository",
+            "tags",
+        )
+        default_columns = (
+            "pk",
+            "name",
+            "weight",
+            "description",
+            "backup_repository",
+            "intended_repository",
+            "jinja_repository",
         )
 
 
@@ -480,12 +501,13 @@ class RemediationSettingTable(BaseTable):
 
     pk = ToggleColumn()
     platform = LinkColumn("plugins:nautobot_golden_config:remediationsetting", args=[A("pk")])
+    tags = TagColumn(url_name="plugins:nautobot_golden_config:remediationsetting_list")
 
     class Meta(BaseTable.Meta):
         """Table to display RemediationSetting Meta Data."""
 
         model = models.RemediationSetting
-        fields = ("pk", "platform", "remediation_type")
+        fields = ("pk", "platform", "remediation_type", "tags")
         default_columns = ("pk", "platform", "remediation_type")
 
 

@@ -12,6 +12,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import concurrent.futures
+import json
 import os
 import re
 import shutil
@@ -22,6 +24,13 @@ from time import sleep
 from invoke.collection import Collection
 from invoke.exceptions import Exit, UnexpectedExit
 from invoke.tasks import task as invoke_task
+
+ORIGINAL_COMPOSE_FILES = [
+    "docker-compose.base.yml",
+    "docker-compose.redis.yml",
+    "docker-compose.postgres.yml",
+    "docker-compose.dev.yml",
+]
 
 
 def is_truthy(arg):
@@ -52,17 +61,13 @@ namespace = Collection("nautobot_golden_config")
 namespace.configure(
     {
         "nautobot_golden_config": {
-            "nautobot_ver": "3.0.0",
+            "nautobot_ver": "3.1.0",
             "project_name": "nautobot-golden-config",
             "python_ver": "3.13",
             "local": False,
+            "ephemeral_ports": False,
             "compose_dir": os.path.join(os.path.dirname(__file__), "development"),
-            "compose_files": [
-                "docker-compose.base.yml",
-                "docker-compose.redis.yml",
-                "docker-compose.postgres.yml",
-                "docker-compose.dev.yml",
-            ],
+            "compose_files": ORIGINAL_COMPOSE_FILES.copy(),
             "compose_http_timeout": "86400",
         }
     }
@@ -138,6 +143,15 @@ def docker_compose(context, command, **kwargs):
         compose_file_path = os.path.join(context.nautobot_golden_config.compose_dir, compose_file)
         compose_command_tokens.append(f' -f "{compose_file_path}"')
 
+    if (
+        context.nautobot_golden_config.ephemeral_ports
+        and context.nautobot_golden_config.compose_files == ORIGINAL_COMPOSE_FILES
+    ):
+        compose_file_path = os.path.join(
+            context.nautobot_golden_config.compose_dir, "docker-compose.ephemeral-ports.yml"
+        )
+        compose_command_tokens.append(f' -f "{compose_file_path}"')
+
     compose_command_tokens.append(command)
 
     # If `service` was passed as a kwarg, add it to the end.
@@ -145,10 +159,50 @@ def docker_compose(context, command, **kwargs):
     if service is not None:
         compose_command_tokens.append(service)
 
-    print(f'Running docker compose command "{command}"')
+    if "hide" not in kwargs:
+        print(f'Running docker compose command "{command}"')
     compose_command = " ".join(compose_command_tokens)
 
     return context.run(compose_command, env=build_env, **kwargs)
+
+
+@task
+def dump_service_ports_to_disk(context):
+    """Useful for downstream utilities without direct docker access to determine ports.
+
+    This function will sometimes be called asynchronously while containers are still
+    firing up, hence the `attempt` loop.
+    """
+    service_ports = {}
+
+    for _ in range(4):
+        result = docker_compose(context, "ps --format json", hide=True)
+
+        for line in result.stdout.splitlines():
+            try:
+                service_def = json.loads(line)
+                service_name = re.search(
+                    r"com\.docker\.compose\.service=(?P<service>\w+)", service_def["Labels"]
+                ).group("service")
+
+                ports_found = {}
+                for port in service_def["Publishers"]:
+                    if port.get("PublishedPort", 0):
+                        ports_found[port["TargetPort"]] = port["PublishedPort"]
+
+                if ports_found:
+                    service_ports[service_name] = ports_found
+            except (json.decoder.JSONDecodeError, AttributeError, IndexError, KeyError):
+                continue
+
+        # Confirm nautobot has started
+        if set(["nautobot"]).issubset(service_ports.keys()):
+            break
+
+        sleep(15)
+
+    with open(".service_ports.json", "w", encoding="utf-8") as file:
+        json.dump(service_ports, file, indent=4)
 
 
 def run_command(context, command, service="nautobot", **kwargs):
@@ -293,7 +347,9 @@ def debug(context, service=None):
     """Start specified or all services and its dependencies in debug mode."""
     service = " ".join(service) if service else ""
     print(f"Starting {service or 'all services'} in debug mode...")
-    docker_compose(context, "up", service=service)
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        executor.submit(dump_service_ports_to_disk, context)
+        docker_compose(context, "up", service=service)
 
 
 @task(
@@ -307,6 +363,7 @@ def start(context, service=None):
     service = " ".join(service) if service else ""
     print(f"Starting {service or 'all services'} in detached mode...")
     docker_compose(context, "up --detach", service=service)
+    dump_service_ports_to_disk(context)
 
 
 @task(
@@ -780,26 +837,46 @@ def hadolint(context):
     run_command(context, command)
 
 
-@task
-def pylint(context):
+@task(
+    help={
+        "target": "Module or file or directory to inspect, repeatable (default: app package)",
+        "recursive": "Must be set if target is a directory rather than a module or file name",
+    },
+    iterable=["target"],
+)
+def pylint(context, target=None, recursive=False):
     """Run pylint code analysis."""
     exit_code = 0
 
     base_pylint_command = 'pylint --verbose --init-hook "import nautobot; nautobot.setup()" --rcfile pyproject.toml'
-    command = f"{base_pylint_command} nautobot_golden_config"
+    command = base_pylint_command
+    if recursive:
+        command += " --recursive=y"
+    command += f" {' '.join(target) if target else 'nautobot_golden_config'}"
     if not run_command(context, command, warn=True):
         exit_code = 1
 
     # run the pylint_django migrations checkers on the migrations directory, if one exists
-    migrations_dir = Path(__file__).absolute().parent / Path("nautobot_golden_config") / Path("migrations")
+    app_dir = Path(__file__).absolute().parent / Path("nautobot_golden_config")
+    migrations_dir = app_dir / Path("migrations")
+    migrations_target_module = "nautobot_golden_config.migrations"
+    run_migrations_check = target is None
+    if target is not None:
+        for target_item in target:
+            target_item_normalized = Path(target_item).resolve()
+            if target_item_normalized in (app_dir, migrations_dir) or target_item == migrations_target_module:
+                run_migrations_check = True
+                break
+
     if migrations_dir.is_dir():
-        migrations_pylint_command = (
-            f"{base_pylint_command} --load-plugins=pylint_django.checkers.migrations"
-            " --disable=all --enable=fatal,new-db-field-with-default,missing-backwards-migration-callable"
-            " nautobot_golden_config.migrations"
-        )
-        if not run_command(context, migrations_pylint_command, warn=True):
-            exit_code = 1
+        if run_migrations_check:
+            migrations_pylint_command = (
+                f"{base_pylint_command} --load-plugins=pylint_django.checkers.migrations"
+                " --disable=all --enable=fatal,new-db-field-with-default,missing-backwards-migration-callable"
+                " nautobot_golden_config.migrations"
+            )
+            if not run_command(context, migrations_pylint_command, warn=True):
+                exit_code = 1
     else:
         print("No migrations directory found, skipping migrations checks.")
 
@@ -819,11 +896,12 @@ def autoformat(context):
         "action": "Available values are `['lint', 'format']`. Can be used multiple times. (default: `--action lint --action format`)",
         "target": "File or directory to inspect, repeatable (default: all files in the project will be inspected)",
         "fix": "Automatically fix selected actions. May not be able to fix all issues found. (default: False)",
+        "diff": "Show diffs of changes. (default: False)",
         "output_format": "See https://docs.astral.sh/ruff/settings/#output-format for details. (default: `concise`)",
     },
     iterable=["action", "target"],
 )
-def ruff(context, action=None, target=None, fix=False, output_format="concise"):
+def ruff(context, action=None, target=None, fix=False, diff=False, output_format="concise"):  # noqa: PLR0913
     """Run ruff to perform code formatting and/or linting."""
     if not action:
         action = ["lint", "format"]
@@ -836,6 +914,8 @@ def ruff(context, action=None, target=None, fix=False, output_format="concise"):
         command = "ruff format "
         if not fix:
             command += "--check "
+            if diff:
+                command += "--diff "
         command += " ".join(target)
         if not run_command(context, command, warn=True):
             exit_code = 1
@@ -844,6 +924,8 @@ def ruff(context, action=None, target=None, fix=False, output_format="concise"):
         command = "ruff check "
         if fix:
             command += "--fix "
+        elif diff:
+            command += "--diff "
         command += f"--output-format {output_format} "
         command += " ".join(target)
         if not run_command(context, command, warn=True):
@@ -867,9 +949,17 @@ def djlint(context, target=None):
     command = "djlint --lint "
     command += " ".join(target)
 
-    exit_code = 0 if run_command(context, command, warn=True) else 1
-    if exit_code != 0:
-        raise Exit(code=exit_code)
+    # As of djlint 1.39.5, djlint returns a non-zero exit code when no files match the lint run
+    # (https://github.com/djlint/djLint/issues/1112)
+    result = run_command(context, command, warn=True, hide="both", pty=False)
+    print(result.stdout, end="")
+
+    if result.ok:
+        return
+    if "No files to check" in result.stdout:
+        return
+    print(result.stderr, end="")
+    raise Exit(code=result.return_code or 1)
 
 
 @task(
@@ -929,6 +1019,7 @@ def check_migrations(context):
         "pattern": "Run specific test methods, classes, or modules instead of all tests",
         "verbose": "Enable verbose test output.",
         "coverage": "Enable coverage reporting. Defaults to False",
+        "no_input": "Suppress interactive prompts (e.g. confirmation when `--no-reusedb` would destroy an existing test database).",
         "skip_docs_build": "Skip building the documentation before running tests.",
     }
 )
@@ -941,6 +1032,7 @@ def unittest(  # noqa: PLR0913
     pattern="",
     verbose=False,
     coverage=False,
+    no_input=False,
     skip_docs_build=False,
 ):
     """Run Nautobot unit tests."""
@@ -961,14 +1053,22 @@ def unittest(  # noqa: PLR0913
         command += f" -k='{pattern}'"
     if verbose:
         command += " --verbosity 2"
+    if no_input:
+        command += " --no-input"
 
     run_command(context, command)
 
 
-@task
-def unittest_coverage(context):
+@task(
+    help={
+        "missing": "Show line numbers of statements in each module that were not executed.",
+    },
+)
+def unittest_coverage(context, missing=False):
     """Report on code test coverage as measured by 'invoke unittest --coverage'."""
     command = "coverage report --skip-covered"
+    if missing:
+        command += " --show-missing"
 
     run_command(context, command)
 
@@ -993,10 +1093,11 @@ def coverage_xml(context):
     help={
         "failfast": "fail as soon as a single test fails don't run the entire test suite. (default: False)",
         "keepdb": "Save and re-use test database between test runs for faster re-testing. (default: False)",
+        "no_input": "Suppress interactive prompts (e.g. confirmation when `--no-reusedb` would destroy an existing test database). (default: False)",
         "lint-only": "Only run linters; unit tests will be excluded. (default: False)",
     }
 )
-def tests(context, failfast=False, keepdb=False, lint_only=False):
+def tests(context, failfast=False, keepdb=False, no_input=False, lint_only=False):
     """Run all tests for this app."""
     # If we are not running locally, start the docker containers so we don't have to for each test
     if not is_truthy(context.nautobot_golden_config.local):
@@ -1023,7 +1124,7 @@ def tests(context, failfast=False, keepdb=False, lint_only=False):
     validate_app_config(context)
     if not lint_only:
         print("Running unit tests...")
-        unittest(context, failfast=failfast, keepdb=keepdb, coverage=True, skip_docs_build=True)
+        unittest(context, failfast=failfast, keepdb=keepdb, no_input=no_input, coverage=True, skip_docs_build=True)
         unittest_coverage(context)
         coverage_lcov(context)
     print("All tests have passed!")
@@ -1058,5 +1159,5 @@ def generate_test_data(context):
     command = "nautobot-server generate_test_data --seed nautobot --flush"
 
     run_command(context, command)
-    command = "nautobot-server generate_gc_test_data"
+    command = "nautobot-server generate_nautobot_golden_config_test_data"
     run_command(context, command)

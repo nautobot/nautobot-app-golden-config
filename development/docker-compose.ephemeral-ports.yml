@@ -1,0 +1,19 @@
+# Set host ports to ephemeral values to avoid conflicts with other local services.
+---
+services:
+  nautobot:
+    ports: !override
+      - "8080"
+  docs:
+    ports: !override
+      - "8001"
+# To expose postgres (5432), mysql (3306) on db service or redis (6379) to the host using
+# ephemeral ports, uncomment the following. Ensure to match the 2 indented spaces which
+# have the service nested under services.
+# db:
+#   ports: !override
+#     - "5432"
+#     - "3306"
+# redis:
+#   ports: !override
+#     - "6379"

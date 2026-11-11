@@ -10,7 +10,7 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, ExpressionWrapper, FloatField, Max, Q, Sum, Value
 from django.db.models.functions import Coalesce, NullIf
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.timezone import make_aware
@@ -60,6 +60,7 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
     views.ObjectDetailViewMixin,
     views.ObjectDestroyViewMixin,
     views.ObjectBulkDestroyViewMixin,
+    views.ObjectBulkUpdateViewMixin,
     views.ObjectListViewMixin,  # TODO: Changing the order of the mixins breaks things... why?
     ObjectDataComplianceViewMixin,  # TODO: Import from views after nautobot release
 ):
@@ -95,10 +96,13 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
         sync_job = Job.objects.get(
             module_name="nautobot_golden_config.jobs", job_class_name="SyncGoldenConfigWithDynamicGroups"
         )
-        sync_job_url = f"<a href='{reverse('extras:job_run', kwargs={'pk': sync_job.pk})}'>{sync_job.name}</a>"
+        sync_job_link = format_html(
+            "<a href='{}'>{}</a>", reverse("extras:job_run", kwargs={"pk": sync_job.pk}), sync_job.name
+        )
         out_of_sync_message = format_html(
             "The expected devices and actual devices here are not in sync. "
-            f"Running the job {sync_job_url} will put it back in sync."
+            "Running the job {} will put it back in sync.",
+            sync_job_link,
         )
 
         gc_dynamic_group_device_pks = models.GoldenConfig.get_dynamic_group_device_pks()
@@ -412,7 +416,7 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
     @action(detail=True, methods=["get"])
     def devicetab(self, request, pk, *args, **kwargs):
         """Additional action to handle backup_config."""
-        device = Device.objects.get(pk=pk)
+        device = get_object_or_404(Device, pk=pk)
         context = {}
         compliance_details = models.ConfigCompliance.objects.filter(device=device)
         context["compliance_details"] = compliance_details

@@ -975,8 +975,8 @@ class ConfigPlan(ApprovableModelMixin, PrimaryModel):  # pylint: disable=too-man
 
         stage_definitions = list(definition.approval_workflow_stage_definitions.all())
         if not stage_definitions:
-            error_message = ERROR_CODES["E3034"].error_message.format(definition=definition, device=self.device)
-            raise ValidationError(f"E3034: {error_message}")
+            error_message = ERROR_CODES["E3035"].error_message.format(definition=definition, device=self.device)
+            raise ValidationError(f"E3035: {error_message}")
 
         workflow = ApprovalWorkflow.objects.create(
             approval_workflow_definition=definition,

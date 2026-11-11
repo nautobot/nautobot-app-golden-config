@@ -472,7 +472,7 @@ class GenerateConfigPlans(Job, FormEntry):
             listed = ", ".join(devices_without_workflow[:MAX_DEVICES_LISTED])
             if len(devices_without_workflow) > MAX_DEVICES_LISTED:
                 listed += f" and {len(devices_without_workflow) - MAX_DEVICES_LISTED} more"
-            error_msg = f"`E3035:` {ERROR_CODES['E3035'].error_message.format(devices=listed)}"
+            error_msg = f"`E3036:` {ERROR_CODES['E3036'].error_message.format(devices=listed)}"
             self.logger.error(error_msg)
             raise NornirNautobotException(error_msg)
 

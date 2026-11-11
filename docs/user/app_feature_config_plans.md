@@ -85,7 +85,7 @@ Post Processing occurs in a modal popup, and allows a user to view the configura
 
 A Config Plan can only be deployed once its Nautobot [Approval Workflow](https://docs.nautobot.com/projects/core/en/stable/user-guide/platform-functionality/approval-workflow/) is approved. The workflow is selected per [Golden Config Setting](./app_getting_started.md), so devices in different scopes can use different approval processes.
 
-Each plan generated for a device whose Golden Config Setting selects a **Config Plan Approval Workflow** starts its own workflow, so plans for 50 devices create 50 workflows. The **Generate Config Plans** job does not create any plan if a device in scope has no workflow selected. See [E3035](../admin/troubleshooting/E3035.md).
+Each plan generated for a device whose Golden Config Setting selects a **Config Plan Approval Workflow** starts its own workflow, so plans for 50 devices create 50 workflows. The **Generate Config Plans** job does not create any plan if a device in scope has no workflow selected. See [E3036](../admin/troubleshooting/E3036.md).
 
 The approval state is shown on the plan, and the workflow never changes its **Status**, which keeps tracking the plan itself, such as `In Progress`, `Completed` or `Failed` during deployment.
 

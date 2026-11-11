@@ -954,7 +954,7 @@ class ConfigPlanApprovalWorkflowTestCase(TestCase):
             weight=200,
         )
         GoldenConfigSetting.objects.filter(pk=self.setting.pk).update(config_plan_approval_workflow=empty_definition)
-        with self.assertRaisesMessage(ValidationError, "E3034"):
+        with self.assertRaisesMessage(ValidationError, "E3035"):
             self._create_plan()
         self.assertFalse(ConfigPlan.objects.filter(config_set="hostname test").exists())
 

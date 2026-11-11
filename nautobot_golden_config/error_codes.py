@@ -24,12 +24,18 @@ ERROR_CODES = {
         recommendation="Check the YAML file for misspellings or incorrect values, if using `platform_slug` or `platform_network_driver`, then migrate to `platform_name` key instead.",
     ),
     "E3034": ErrorCode(
+        troubleshooting="The tag referenced in the YAML file cannot be found for the relevant object type. Confirm the tag exists AND that its `content_types` includes the model being synced (the directory name maps to the model, e.g. compliance_rules -> ComplianceRule).",
+        description="Syncing Golden Config properties using the Datasource feature, but a referenced tag does not exist or is not associated with the model's content type.",
+        error_message="Reference to tag {tag_reference} is not available for {model}.",
+        recommendation="Create the tag in Nautobot and associate it with the {model} content type before syncing, or correct the tag reference in the YAML file.",
+    ),
+    "E3035": ErrorCode(
         troubleshooting="Open the Approval Workflow Definition referenced by the Golden Config Setting and check that it has at least one stage.",
         description="A Config Plan was generated for a device whose Golden Config Setting names an Approval Workflow Definition that cannot be started, so the Config Plan was not created.",
         error_message="Cannot start approval workflow `{definition}` for the config plan on `{device}`, the definition has no stages.",
         recommendation="Add an approval stage to the Approval Workflow Definition, or remove it from the Golden Config Setting.",
     ),
-    "E3035": ErrorCode(
+    "E3036": ErrorCode(
         troubleshooting="Edit the Golden Config Setting that applies to the devices, which is the matching setting with the highest weight, and select a Config Plan Approval Workflow.",
         description="The Generate Config Plans job did not create any Config Plan because a device in scope has no Config Plan Approval Workflow selected by its Golden Config Setting, or no Golden Config Setting applies to it.",
         error_message="Cannot generate config plans, the Golden Config Setting of these devices does not select a Config Plan Approval Workflow: {devices}.",

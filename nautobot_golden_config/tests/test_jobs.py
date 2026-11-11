@@ -717,7 +717,7 @@ class GenerateConfigPlansApprovalTestCase(TransactionTestCase):
         job_result = self._generate_manual_plans(device)
 
         self.assertEqual(job_result.status, JobResultStatusChoices.STATUS_FAILURE)
-        self.assertTrue(JobLogEntry.objects.filter(job_result=job_result, message__contains="E3035").exists())
+        self.assertTrue(JobLogEntry.objects.filter(job_result=job_result, message__contains="E3036").exists())
         self.assertFalse(ConfigPlan.objects.exists())
 
     def test_generation_starts_a_workflow_for_each_plan(self):

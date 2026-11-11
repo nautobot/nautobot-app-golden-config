@@ -4,9 +4,9 @@ import os
 
 import yaml
 from django.db import IntegrityError
+from nautobot.apps.choices import LogLevelChoices
+from nautobot.apps.datasources import DatasourceContent
 from nautobot.dcim.models.devices import Platform
-from nautobot.extras.choices import LogLevelChoices
-from nautobot.extras.registry import DatasourceContent
 
 from nautobot_golden_config.exceptions import MissingReference, MultipleReferences
 from nautobot_golden_config.models import (

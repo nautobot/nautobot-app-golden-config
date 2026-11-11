@@ -1,9 +1,9 @@
 """Unit tests for config_deployment.py."""
 
-import unittest
 from unittest.mock import MagicMock, Mock, patch
 
 from django.contrib.auth import get_user_model
+from nautobot.apps.testing import TestCase
 from nautobot.dcim.models import Device
 from nautobot.extras.models import JobResult, Status
 
@@ -13,32 +13,34 @@ from nautobot_golden_config.nornir_plays.config_deployment import config_deploym
 from nautobot_golden_config.tests.conftest import create_device
 
 
-class ConfigDeploymentTest(unittest.TestCase):
+class ConfigDeploymentTest(TestCase):
     """Unit tests for config_deployment.py."""
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         """Set up test fixtures."""
+        super().setUpTestData()
         create_device()
-        self.device = Device.objects.first()
-        self.plan_result = JobResult.objects.create(
+        cls.device = Device.objects.first()
+        cls.plan_result = JobResult.objects.create(
             name="Test Plan Result",
             status=Status.objects.get(name="Completed"),
         )
-        self.config_plan = ConfigPlan.objects.create(
+        cls.config_plan = ConfigPlan.objects.create(
             plan_type="manual",
-            device=self.device,
+            device=cls.device,
             config_set="Test Config Set",
             status=Status.objects.get(name="Approved"),
-            plan_result=self.plan_result,
+            plan_result=cls.plan_result,
         )
-        self.user, _ = get_user_model().objects.get_or_create(username="testuser")
+        cls.user, _ = get_user_model().objects.get_or_create(username="testuser")
 
         # Create mock job
-        self.job = MagicMock()
-        self.job.data = {"config_plan": ConfigPlan.objects.all()}
-        self.job.celery_kwargs = {"nautobot_job_user_id": self.user.id}
-        self.job.job_result = Mock()
-        self.job.logger.getEffectiveLevel = Mock(return_value=0)
+        cls.job = MagicMock()
+        cls.job.data = {"config_plan": ConfigPlan.objects.all()}
+        cls.job.celery_kwargs = {"nautobot_job_user_id": cls.user.id}
+        cls.job.job_result = Mock()
+        cls.job.logger.getEffectiveLevel = Mock(return_value=0)
 
     @patch("nautobot_golden_config.nornir_plays.config_deployment.InitNornir")
     def test_config_deployment_success(self, mock_nornir):

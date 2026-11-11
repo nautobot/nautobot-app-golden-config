@@ -7,8 +7,9 @@ from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
 from django.test.client import RequestFactory
 from graphene_django.settings import graphene_settings
-from graphql import get_default_backend
+from graphql import execute, parse
 from nautobot.dcim.models import Device, DeviceType, Location, LocationType, Manufacturer, Platform
+from nautobot.extras.management import populate_status_choices
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Role, Status
 
 from nautobot_golden_config.models import (
@@ -74,14 +75,14 @@ class TestGraphQLQuery(TestCase):  # pylint: disable=too-many-instance-attribute
         super().setUp()
         self.user = User.objects.create(username="Super User", is_active=True, is_superuser=True)
         create_saved_queries()
+        populate_status_choices()
 
         # Initialize fake request that will be required to execute GraphQL query
         self.request = RequestFactory().request(SERVER_NAME="WebRequestContext")
         self.request.id = uuid.uuid4()
         self.request.user = self.user
 
-        self.backend = get_default_backend()
-        self.schema = graphene_settings.SCHEMA
+        self.schema = graphene_settings.SCHEMA.graphql_schema
 
         self.inventory_status = Status.objects.get(name="Inventory")
         self.ct_device = ContentType.objects.get_for_model(Device)
@@ -192,10 +193,10 @@ class TestGraphQLQuery(TestCase):  # pylint: disable=too-many-instance-attribute
 
     def execute_query(self, query, variables=None):
         """Function to execute a GraphQL query."""
-        document = self.backend.document_from_string(self.schema, query)
+        document = parse(query)
         if variables:
-            return document.execute(context_value=self.request, variable_values=variables)
-        return document.execute(context_value=self.request)
+            return execute(schema=self.schema, document=document, context_value=self.request, variable_values=variables)
+        return execute(schema=self.schema, document=document, context_value=self.request)
 
     def test_query_config_compliance(self):
         """Test GraphQL Config Compliance Model."""

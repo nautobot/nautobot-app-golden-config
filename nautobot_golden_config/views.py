@@ -8,17 +8,25 @@ import yaml
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Count, ExpressionWrapper, F, FloatField, Max, Q
-from django.shortcuts import redirect, render
+from django.db.models import Count, ExpressionWrapper, FloatField, Max, Q, Sum, Value
+from django.db.models.functions import Coalesce, NullIf
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.timezone import make_aware
 from django.views.generic import TemplateView, View
 from django_pivot.pivot import pivot
+from django_tables2 import RequestConfig
 from nautobot.apps import views
-from nautobot.core.views import generic
-from nautobot.core.views.mixins import PERMISSIONS_ACTION_MAP, ObjectPermissionRequiredMixin
+from nautobot.apps.ui import (
+    EChartsPanel,
+    EChartsThemeColors,
+    EChartsTypeChoices,
+    queryset_to_nested_dict_keys_as_series,
+)
+from nautobot.core.views.mixins import PERMISSIONS_ACTION_MAP, ObjectDataComplianceViewMixin
 from nautobot.dcim.models import Device
+from nautobot.dcim.views import DeviceUIViewSet
 from nautobot.extras.models import Job, JobResult
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -28,8 +36,7 @@ from nautobot_golden_config.api import serializers
 from nautobot_golden_config.utilities import constant
 from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
 from nautobot_golden_config.utilities.graphql import graph_ql_query
-from nautobot_golden_config.utilities.helper import add_message, get_device_to_settings_map
-from nautobot_golden_config.utilities.mat_plot import get_global_aggr, plot_barchart_visual, plot_visual
+from nautobot_golden_config.utilities.helper import add_message, calculate_aggr_percentage, get_device_to_settings_map
 
 # TODO: Future #4512
 PERMISSIONS_ACTION_MAP.update(
@@ -53,7 +60,9 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
     views.ObjectDetailViewMixin,
     views.ObjectDestroyViewMixin,
     views.ObjectBulkDestroyViewMixin,
+    views.ObjectBulkUpdateViewMixin,
     views.ObjectListViewMixin,  # TODO: Changing the order of the mixins breaks things... why?
+    ObjectDataComplianceViewMixin,  # TODO: Import from views after nautobot release
 ):
     """Views for the GoldenConfig model."""
 
@@ -87,10 +96,13 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
         sync_job = Job.objects.get(
             module_name="nautobot_golden_config.jobs", job_class_name="SyncGoldenConfigWithDynamicGroups"
         )
-        sync_job_url = f"<a href='{reverse('extras:job_run', kwargs={'pk': sync_job.pk})}'>{sync_job.name}</a>"
+        sync_job_link = format_html(
+            "<a href='{}'>{}</a>", reverse("extras:job_run", kwargs={"pk": sync_job.pk}), sync_job.name
+        )
         out_of_sync_message = format_html(
             "The expected devices and actual devices here are not in sync. "
-            f"Running the job {sync_job_url} will put it back in sync."
+            "Running the job {} will put it back in sync.",
+            sync_job_link,
         )
 
         gc_dynamic_group_device_pks = models.GoldenConfig.get_dynamic_group_device_pks()
@@ -113,7 +125,7 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
             ),
         }
 
-    def get_extra_context(self, request, instance=None, **kwargs):
+    def get_extra_context(self, request, instance=None):
         """Get extra context data."""
         context = super().get_extra_context(request, instance)
         if self.action == "retrieve":
@@ -248,6 +260,61 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
 #
 
 
+def _get_filtered_compliance_device_ids(query_params):
+    """Return a deduplicated list of device IDs from ConfigCompliance records that match query_params.
+
+    Uses ConfigComplianceFilterSet so every filter condition (location, status, platform, etc.)
+    hits the same device JOIN chain. .order_by() strips default ordering that would otherwise
+    add extra columns to GROUP BY; .distinct() ensures each device_id appears exactly once
+    even when multiple filter conditions would otherwise produce duplicate rows.
+    """
+    return list(
+        filters.ConfigComplianceFilterSet(query_params, models.ConfigCompliance.objects.all())
+        .qs.order_by()
+        .values_list("device_id", flat=True)
+        .distinct()
+    )
+
+
+def _get_feature_compliance_queryset(device_ids):
+    """Return annotated ComplianceFeature queryset for the given device IDs.
+
+    Annotates each ComplianceFeature with count, compliant, non_compliant, and comp_percent
+    scoped to the provided device IDs. Uses filter= on Count/Sum so that no rows are inflated
+    by JOIN multiplicity. comp_percent is NULL (not zero) when count is zero, preventing
+    division-by-zero.
+    """
+    device_filter = Q(feature__rule__device__in=device_ids)
+    return models.ComplianceFeature.objects.annotate(
+        count=Count("feature__rule", filter=device_filter),
+        compliant=Coalesce(Sum("feature__rule__compliance_int", filter=device_filter), 0),
+        non_compliant=Count("feature__rule", filter=device_filter)
+        - Coalesce(Sum("feature__rule__compliance_int", filter=device_filter), 0),
+        comp_percent=ExpressionWrapper(
+            100.0
+            * Coalesce(Sum("feature__rule__compliance_int", filter=device_filter), 0)
+            / NullIf(Count("feature__rule", filter=device_filter), Value(0)),
+            output_field=FloatField(),
+        ),
+    ).order_by("-comp_percent")
+
+
+def get_compliance_overview_queryset(query_params):
+    """Return an annotated ComplianceFeature queryset scoped to devices matching query_params.
+
+    Combines _get_filtered_compliance_device_ids and _get_feature_compliance_queryset:
+    1. Extract a deduplicated list of device IDs from ConfigCompliance records that satisfy
+       the filter — this is a plain DISTINCT SELECT, so no aggregation runs here.
+    2. Annotate ComplianceFeature using those IDs as a CASE WHEN inside Count/Sum (the
+       filter= parameter), never as a WHERE JOIN — so rows cannot multiply before GROUP BY.
+
+    This separation is what prevents Cartesian-product inflation when any filter path
+    traverses a one-to-many or many-to-many relationship before aggregation.
+    """
+    device_ids = _get_filtered_compliance_device_ids(query_params)
+    return _get_feature_compliance_queryset(device_ids)
+
+
 class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
     views.ObjectDetailViewMixin,
     views.ObjectDestroyViewMixin,
@@ -274,11 +341,9 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
         self.report_context = None
         self.store_table = None  # Used to store the table for bulk delete. No longer required in Nautobot 2.3.11
 
-    def get_extra_context(self, request, instance=None, **kwargs):
+    def get_extra_context(self, request, instance=None):
         """A ConfigCompliance helper function to warn if the Job is not enabled to run."""
         context = super().get_extra_context(request, instance)
-        if self.action == "overview":
-            context = {**context, **self.report_context}
         # TODO Remove when dropping support for Nautobot < 2.3.11
         if self.action == "bulk_destroy":
             context["table"] = self.store_table
@@ -351,69 +416,126 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
     @action(detail=True, methods=["get"])
     def devicetab(self, request, pk, *args, **kwargs):
         """Additional action to handle backup_config."""
-        device = Device.objects.get(pk=pk)
+        device = get_object_or_404(Device, pk=pk)
         context = {}
         compliance_details = models.ConfigCompliance.objects.filter(device=device)
         context["compliance_details"] = compliance_details
         if request.GET.get("compliance") == "compliant":
+            context["compliance_filter"] = "compliant"
             context["compliance_details"] = compliance_details.filter(compliance=True)
         elif request.GET.get("compliance") == "non-compliant":
+            context["compliance_filter"] = "non-compliant"
             context["compliance_details"] = compliance_details.filter(compliance=False)
 
         context["active_tab"] = request.GET.get("tab")
         context["device"] = device
         context["object"] = device
+        context["object_detail_content"] = DeviceUIViewSet.object_detail_content
         context["verbose_name"] = "Device"
+
         return render(request, "nautobot_golden_config/configcompliance_devicetab.html", context)
 
+    @action(detail=False, methods=["get"], custom_view_base_action="view")
+    def overview(self, request, *args, **kwargs):  # pylint: disable=too-many-locals
+        """Custom action to show the visual report of the compliance stats."""
+        # Basic Setup
+        context = {}
+        theme = request.COOKIES["theme"] if "theme" in request.COOKIES else "light"
+        if theme not in ["light", "dark"]:
+            theme = "light"
 
-class ConfigComplianceOverview(generic.ObjectListView):
-    """View for executive report on configuration compliance."""
+        context["filter_form"] = forms.ComplianceFeatureFilterFormAlt(request.GET)
+        context["action_buttons"] = ("export",)
 
-    action_buttons = ("export",)
-    filterset = filters.ConfigComplianceFilterSet
-    filterset_form = forms.ConfigComplianceFilterForm
-    table = tables.ConfigComplianceGlobalFeatureTable
-    template_name = "nautobot_golden_config/configcompliance_overview.html"
-    # kind = "Features"
+        # Queryset & Filter Setup
 
-    queryset = (
-        models.ConfigCompliance.objects.values("rule__feature__slug")
-        .annotate(
-            count=Count("rule__feature__slug"),
-            compliant=Count("rule__feature__slug", filter=Q(compliance=True)),
-            non_compliant=Count("rule__feature__slug", filter=~Q(compliance=True)),
-            comp_percent=ExpressionWrapper(100 * F("compliant") / F("count"), output_field=FloatField()),
-        )
-        .order_by("-comp_percent")
-    )
-    extra_content = {}
+        filtered_device_ids = _get_filtered_compliance_device_ids(request.GET)
+        feature_qs = _get_feature_compliance_queryset(filtered_device_ids)
 
-    # Once https://github.com/nautobot/nautobot/issues/4529 is addressed, can turn this on.
-    # Permalink reference: https://github.com/nautobot/nautobot-app-golden-config/blob/017d5e1526fa9f642b9e02bfc7161f27d4948bef/nautobot_golden_config/views.py#L383
-    # @action(detail=False, methods=["get"])
-    # def overview(self, request, *args, **kwargs):
-    def setup(self, request, *args, **kwargs):
-        """Using request object to perform filtering based on query params."""
-        super().setup(request, *args, **kwargs)
-        filter_params = self.get_filter_params(request)
-        # Add .restrict() to the queryset to restrict the view based on user permissions.
-        main_qs = models.ConfigCompliance.objects.restrict(request.user, "view")
-        device_aggr, feature_aggr = get_global_aggr(main_qs, self.filterset, filter_params)
-        feature_qs = self.filterset(request.GET, self.queryset.restrict(request.user, "view")).qs
-        self.extra_content = {
-            "bar_chart": plot_barchart_visual(feature_qs),
-            "device_aggr": device_aggr,
-            "device_visual": plot_visual(device_aggr),
-            "feature_aggr": feature_aggr,
-            "feature_visual": plot_visual(feature_aggr),
-            "compliance": constant.ENABLE_COMPLIANCE,
+        # Table Setup
+        table = tables.ConfigComplianceGlobalFeatureTable(feature_qs, user=request.user)
+        paginate = {
+            "paginator_class": views.EnhancedPaginator,
+            "per_page": views.get_paginate_count(request),
         }
+        RequestConfig(request, paginate).configure(table)
+        context["table"] = table
 
-    def extra_context(self):
-        """Extra content method on."""
-        # add global aggregations to extra context.
-        return self.extra_content
+        # Bar Chart Setup
+        chart_data = queryset_to_nested_dict_keys_as_series(
+            queryset=feature_qs,
+            record_key="slug",
+            value_keys=["compliant", "non_compliant"],
+        )
+
+        bar_chart_panel = EChartsPanel(
+            label="Compliance Overview",
+            weight=100,
+            chart_kwargs={
+                "chart_type": EChartsTypeChoices.BAR,
+                "header": "Compliance per Feature",
+                "description": "This shows the compliance status for each feature.",
+                "theme_colors": EChartsThemeColors.LIGHTER_GREEN_RED_COLORS,
+                "data": chart_data,
+            },
+        )
+        context["bar_chart_panel"] = [bar_chart_panel]
+
+        # Pie Charts Setup
+        # Re-use filtered_device_ids to avoid JOIN chains or Cartesian product
+        cc_qs = models.ConfigCompliance.objects.filter(device_id__in=filtered_device_ids)
+
+        # Device pie: total = distinct devices with ≥1 compliance record;
+        # compliants = devices with zero non-compliant records.
+        device_total = cc_qs.values("device_id").distinct().count()
+        device_non_compliant = cc_qs.filter(compliance=False).values("device_id").distinct().count()
+        device_aggr = calculate_aggr_percentage(
+            {"total": device_total, "compliants": device_total - device_non_compliant}
+        )
+
+        pie_device_panel = EChartsPanel(
+            label="Device Compliance Overview",
+            weight=100,
+            chart_kwargs={
+                "chart_type": EChartsTypeChoices.PIE,
+                "header": "Compliant vs Non-Compliant Devices",
+                "description": "This shows the compliance status on a device level.",
+                "theme_colors": EChartsThemeColors.LIGHTER_GREEN_RED_COLORS,
+                "data": {
+                    "Device Compliance": {
+                        "Compliant": device_aggr["compliants"],
+                        "Non-Compliant": device_aggr["non_compliants"],
+                    }
+                },
+            },
+        )
+        context["pie_device_panel"] = [pie_device_panel]
+
+        # Feature pie: total = all compliance records for filtered devices;
+        # compliants = those marked compliant.
+        feature_aggr = calculate_aggr_percentage(
+            cc_qs.aggregate(total=Count("id"), compliants=Count("id", filter=Q(compliance=True)))
+        )
+
+        pie_feature_panel = EChartsPanel(
+            label="Feature Compliance Overview",
+            weight=100,
+            chart_kwargs={
+                "chart_type": EChartsTypeChoices.PIE,
+                "header": "Compliant vs Non-Compliant Features",
+                "description": "This shows the compliance status on a feature level.",
+                "theme_colors": EChartsThemeColors.LIGHTER_GREEN_RED_COLORS,
+                "data": {
+                    "Feature Compliance": {
+                        "Compliant": feature_aggr["compliants"],
+                        "Non-Compliant": feature_aggr["non_compliants"],
+                    }
+                },
+            },
+        )
+        context["pie_feature_panel"] = [pie_feature_panel]
+
+        return Response(context)
 
 
 class ComplianceFeatureUIViewSet(views.NautobotUIViewSet):
@@ -432,7 +554,7 @@ class ComplianceFeatureUIViewSet(views.NautobotUIViewSet):
     def get_extra_context(self, request, instance=None):
         """A ComplianceFeature helper function to warn if the Job is not enabled to run."""
         add_message([["ComplianceJob", constant.ENABLE_COMPLIANCE]], request)
-        return {}
+        return super().get_extra_context(request, instance)
 
 
 class ComplianceRuleUIViewSet(views.NautobotUIViewSet):
@@ -451,7 +573,7 @@ class ComplianceRuleUIViewSet(views.NautobotUIViewSet):
     def get_extra_context(self, request, instance=None):
         """A ComplianceRule helper function to warn if the Job is not enabled to run."""
         add_message([["ComplianceJob", constant.ENABLE_COMPLIANCE]], request)
-        return {}
+        return super().get_extra_context(request, instance)
 
 
 class GoldenConfigSettingUIViewSet(views.NautobotUIViewSet):
@@ -524,7 +646,7 @@ class ConfigRemoveUIViewSet(views.NautobotUIViewSet):
     def get_extra_context(self, request, instance=None):
         """A ConfigRemove helper function to warn if the Job is not enabled to run."""
         add_message([["BackupJob", constant.ENABLE_BACKUP]], request)
-        return {}
+        return super().get_extra_context(request, instance)
 
 
 class ConfigReplaceUIViewSet(views.NautobotUIViewSet):
@@ -543,7 +665,7 @@ class ConfigReplaceUIViewSet(views.NautobotUIViewSet):
     def get_extra_context(self, request, instance=None):
         """A ConfigReplace helper function to warn if the Job is not enabled to run."""
         add_message([["BackupJob", constant.ENABLE_BACKUP]], request)
-        return {}
+        return super().get_extra_context(request, instance)
 
 
 class RemediationSettingUIViewSet(views.NautobotUIViewSet):
@@ -563,7 +685,7 @@ class RemediationSettingUIViewSet(views.NautobotUIViewSet):
     def get_extra_context(self, request, instance=None):
         """A RemediationSetting helper function to warn if the Job is not enabled to run."""
         add_message([["ComplianceJob", constant.ENABLE_COMPLIANCE]], request)
-        return {}
+        return super().get_extra_context(request, instance)
 
 
 class ConfigPlanUIViewSet(views.NautobotUIViewSet):
@@ -598,7 +720,7 @@ class ConfigPlanUIViewSet(views.NautobotUIViewSet):
         return context
 
 
-class ConfigPlanBulkDeploy(ObjectPermissionRequiredMixin, View):
+class ConfigPlanBulkDeploy(views.ObjectPermissionRequiredMixin, View):
     """View to run the Config Plan Deploy Job."""
 
     queryset = models.ConfigPlan.objects.all()

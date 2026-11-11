@@ -1,118 +1,118 @@
 {% if compliance %}
-  <div class="panel panel-default">
-    {% if template_type == "devicetab" %}
-      <div class="panel-heading">
-        <a href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab=nautobot_golden_config:1">
-          <strong>Config Compliance Validation</strong>
-        </a>
-      </div>
-      <table class="table table-hover panel-body">
-        <thead>
-          <tr class="table-headings">
-            <th>Feature</th>
-            <th>Compliance</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in compliance %}
-            <tr>
-              <td>{{ item.rule__feature__name }}</td>
-              <td>
-                {% if item.compliance == False %}
-                  <span class="label label-danger">Non-Compliant</span>
-                {% elif item.compliance == True %}
-                  <span class="label label-success">Compliant</span>
-                {% else %}
-                  <span class="label label-info">N/A</span>
-                {% endif %}
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    {% elif template_type == 'location' %}
-      <table class="table table-hover panel-body">
-        <thead>
-          <tr class="table-headings">
-            <th>Feature</th>
-            <th>Non-compliant</th>
-            <th>Compliant</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in compliance %}
-            <tr>
-              <td>{{ item.rule__feature__name }}</td>
-              <td><span class="label label-danger">{{ item.non_compliant }}</span></td>
-              <td><span class="label label-success">{{ item.compliant }}</span></td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    {% endif %}
-  </div>
+    <div class="card">
+        {% if template_type == "devicetab" %}
+            <div class="card-header">
+                <a href="{% url 'plugins:nautobot_golden_config:configcompliance_devicetab' pk=device.pk %}?tab=nautobot_golden_config:1">
+                    <strong>Config Compliance Validation</strong>
+                </a>
+            </div>
+            <table class="table table-hover card-body">
+                <thead>
+                    <tr class="table-headings">
+                        <th>Feature</th>
+                        <th>Compliance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in compliance %}
+                        <tr>
+                            <td>{{ item.rule__feature__name }}</td>
+                            <td>
+                                {% if item.compliance == False %}
+                                    <span class="badge text-bg-danger">Non-Compliant</span>
+                                {% elif item.compliance == True %}
+                                    <span class="badge text-bg-success">Compliant</span>
+                                {% else %}
+                                    <span class="badge text-bg-info">N/A</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% elif template_type == 'location' %}
+            <table class="table table-hover card-body">
+                <thead>
+                    <tr class="table-headings">
+                        <th>Feature</th>
+                        <th>Non-compliant</th>
+                        <th>Compliant</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in compliance %}
+                        <tr>
+                            <td>{{ item.rule__feature__name }}</td>
+                            <td><span class="badge text-bg-danger">{{ item.non_compliant }}</span></td>
+                            <td><span class="badge text-bg-success">{{ item.compliant }}</span></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </div>
 {% endif %}
 {# The panel will not show up, since it is returned early in template_content.py based on an actual GoldenConfig object existing #}
 {% if template_type == "device-configs" %}
-  <div class="panel panel-default">
-    <div class="panel-heading">
-      <strong>Configuration Types</strong>
+    <div class="card">
+        <div class="card-header">
+            <strong>Configuration Types</strong>
+        </div>
+        <table class="table table-hover card-body">
+            <thead>
+                <tr class="table-headings">
+                    <th>Type</th>
+                    <th>Config</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if config_features.compliance and golden_config.compliance_config %}
+                    <tr>
+                        <td>Compliance</td>
+                        <td>
+                            <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=device.pk %}">
+                                <span class="mdi mdi-file-compare"></span>
+                            </a>
+                        </td>
+                    </tr>
+                {% endif %} {% if config_features.intended and golden_config.intended_config %}
+                    <tr>
+                        <td>Intended</td>
+                        <td>
+                            <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=device.pk %}">
+                                <span class="mdi mdi-text-box-check-outline"></span>
+                            </a>
+                        </td>
+                    </tr>
+                {% endif %} {% if config_features.postprocessing and golden_config.intended_config %}
+                    <tr>
+                        <td>Configuration Postprocessing</td>
+                        <td>
+                            <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=device.pk %}">
+                                <span class="mdi mdi-text-box-check"></span>
+                            </a>
+                        </td>
+                    </tr>
+                {% endif %} {% if config_features.backup and golden_config.backup_config %}
+                    <tr>
+                        <td>Actual</td>
+                        <td>
+                            <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=device.pk %}">
+                                <span class="mdi mdi-file-document-outline"></span>
+                            </a>
+                        </td>
+                    </tr>
+                {% endif %} {% if config_features.sotagg %}
+                    <tr>
+                        <td>SoT Aggregation Data</td>
+                        <td>
+                            <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_sotagg' pk=device.pk %}">
+                                <span class="mdi mdi-code-json"></span>
+                            </a>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
     </div>
-    <table class="table table-hover panel-body">
-      <thead>
-        <tr class="table-headings">
-          <th>Type</th>
-          <th>Config</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% if config_features.compliance and golden_config.compliance_config %}
-          <tr>
-            <td>Compliance</td>
-            <td>
-              <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=device.pk %}">
-                <i class="mdi mdi-file-compare"></i>
-              </a>
-            </td>
-          </tr>
-        {% endif %} {% if config_features.intended and golden_config.intended_config %}
-          <tr>
-            <td>Intended</td>
-            <td>
-              <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=device.pk %}">
-                <i class="mdi mdi-text-box-check-outline"></i>
-              </a>
-            </td>
-          </tr>
-        {% endif %} {% if config_features.postprocessing and golden_config.intended_config %}
-          <tr>
-            <td>Configuration Postprocessing</td>
-            <td>
-              <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=device.pk %}">
-                <i class="mdi mdi-text-box-check"></i>
-              </a>
-            </td>
-          </tr>
-        {% endif %} {% if config_features.backup and golden_config.backup_config %}
-          <tr>
-            <td>Actual</td>
-            <td>
-              <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=device.pk %}">
-                <i class="mdi mdi-file-document-outline"></i>
-              </a>
-            </td>
-          </tr>
-        {% endif %} {% if config_features.sotagg %}
-          <tr>
-            <td>SoT Aggregation Data</td>
-            <td>
-              <a href="{% url 'plugins:nautobot_golden_config:goldenconfig_sotagg' pk=device.pk %}">
-                <i class="mdi mdi-code-json"></i>
-              </a>
-            </td>
-          </tr>
-        {% endif %}
-      </tbody>
-    </table>
-  </div>
 {% endif %}

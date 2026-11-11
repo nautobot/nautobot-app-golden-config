@@ -32,6 +32,20 @@ Backup configurations solutions are simple to start with and grow to hundreds or
 
 Many people will have different opinions about what should or should not be filtered or substituted. Providing the flexibility allows the user to have it operate as they intend it, without burdening the apps goals.
 
+## _Is it safe to store backup configurations in Git? My security team has concerns._
+
+This question comes up regularly, so it is worth addressing the design directly. Backup configurations are stored in a Git repository; there is no alternative backup backend, and adding one is not in scope. Note that "Git" here means the version-control system, not a specific hosted service such as GitHub or GitLab. You can run your own Git server entirely inside your infrastructure, giving you full control over access, including allowing no external access at all. The right conversation is therefore not "Git versus something else," but how the repository is hosted, who can read it, and how sensitive content is handled before it is committed.
+
+A few points worth understanding before the discussion:
+
+* **Sanitization is operator-defined and best-effort.** The `Config Removals` and `Config Replacements` settings let you strip or substitute sensitive lines per-platform, but they are regex rules you maintain. They are only as complete as the patterns you write. A pattern that misses a secret will commit that secret.
+* **Git history is durable.** A configuration committed to Git remains in history even after the file is changed or deleted. Removing a file in a later commit does not remove it from the repository's history. Treat anything ever committed as retained unless history is deliberately rewritten.
+* **The configuration is not only in Git.** A successful backup also populates the `backup_config` field on the `GoldenConfig` model in the database, and compliance compares the database copy of the backup and intended configurations, not the files on disk. The Git repository is the versioned store; it is not the only place the configuration data exists.
+
+Because of the last point, deleting backup files from Git after a compliance run does not remove the configuration from the system, and the next backup run will repopulate and recommit it. That approach adds churn without achieving the intended outcome.
+
+For environments with strict requirements, the recommended approach is to keep using Git but control where it lives: a self-hosted or otherwise private, internally hosted repository with role-based access, encryption at rest, audit logging, and no external mirror, combined with thorough `Config Removals` and `Config Replacements` rules for your platforms. Repository-level secret scanning or push protection, offered by most Git hosts, is a worthwhile additional layer, since it can catch credentials that a removal or replacement pattern misses. Together these satisfy the large majority of security reviews without working against the app's design.
+
 ## _Why not predefine the configuration feature map?_
 
 The process is based on an opinion on what defines a feature, for one organization BGP may include the prefix configuration and another it would not.
@@ -95,9 +109,9 @@ The current supported platform and the associated *default* platform network_dri
 
 In many use cases, this can be extended with a custom dispatcher for nornir tasks, which is controlled in the [nornir-nautobot](https://github.com/nautobot/nornir-nautobot) repository. Additionally you can "roll your own" dispatcher with the `custom_dispatcher` configuration parameter to map and/or extend for your environment. Please see the instructions there for further details.
 
-## _Why not provide the corrective configurations?_
+## _Does this application provide the corrective configurations?_
 
-Configuration enforcement is a difficult problem to attack. While potentially could integrate with a system to provide the enforcement, this is currently out-of-scope for the app.
+Yes. While configuration enforcement is a challenging problem, this application integrates with [Hier Config](https://hier-config.readthedocs.io/en/latest/) to determine the commands required to bring a device into compliance with its intended configuration for traditional nested CLI config and allows you to bring your own custom remediation for JSON or XML based remediation.
 
 ## _Why does the compliance section scroll so much?_
 
@@ -115,9 +129,9 @@ With the original Git Data Source implementation, passwords were stored in the d
   Applying ipam.0006_ipaddress_nat_outside_list... OK
   Applying ipam.0007_add_natural_indexing... OK
   Applying nautobot_golden_config.0006_multi_repo_support_temp_field...Traceback (most recent call last):
-  File "/usr/local/lib/python3.11/site-packages/django/db/models/fields/related_descriptors.py", line 173, in __get__
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/fields/related_descriptors.py", line 173, in __get__
     rel_obj = self.field.get_cached_value(instance)
-  File "/usr/local/lib/python3.11/site-packages/django/db/models/fields/mixins.py", line 15, in get_cached_value
+  File "/usr/local/lib/python3.13/site-packages/django/db/models/fields/mixins.py", line 15, in get_cached_value
     return instance._state.fields_cache[cache_name]
 KeyError: 'backup_repository'
 
@@ -125,7 +139,7 @@ During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
 <omitted>
-  File "/usr/local/lib/python3.11/site-packages/cryptography/hazmat/backends/openssl/hmac.py", line 85, in verify
+  File "/usr/local/lib/python3.13/site-packages/cryptography/hazmat/backends/openssl/hmac.py", line 85, in verify
     raise InvalidSignature("Signature did not match digest.")
 cryptography.exceptions.InvalidSignature: Signature did not match digest.
 
@@ -133,7 +147,7 @@ During handling of the above exception, another exception occurred:
 
 Traceback (most recent call last):
 <omitted>
-  File "/usr/local/lib/python3.11/site-packages/django_cryptography/core/signing.py", line 239, in unsign
+  File "/usr/local/lib/python3.13/site-packages/django_cryptography/core/signing.py", line 239, in unsign
     raise BadSignature(
 django.core.signing.BadSignature: Signature "b'A9QMEEeCk2+tAc6naf2KDiZBvACNWGNHGMPJ/SHOYY8=\n'" does not match
 ERROR: 1

@@ -10,13 +10,14 @@ from django.db.models import OuterRef, Q, Subquery
 from django.template import engines
 from django.urls import reverse
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from jinja2 import exceptions as jinja_errors
 from jinja2.sandbox import SandboxedEnvironment
 from lxml import etree
-from nautobot.core.utils.data import render_jinja2
+from nautobot.apps.utils import render_jinja2
 from nautobot.dcim.filters import DeviceFilterSet
 from nautobot.dcim.models import Device
-from nautobot.extras.choices import DynamicGroupTypeChoices
+from nautobot.extras.choices import DynamicGroupTypeChoices  # core-import-update
 from nautobot.extras.models import Job
 from nornir_nautobot.exceptions import NornirNautobotException
 
@@ -229,9 +230,12 @@ def add_message(combo_check, request):
         if not isinstance(feature_enabled, list):
             feature_enabled = [feature_enabled]
         if not job.enabled and any(feature_enabled):
-            multiple_messages.append(f"<a href='{reverse('extras:job_edit', kwargs={'pk': job.pk})}'>{job.name}</a>")
+            multiple_messages.append(
+                format_html("<a href='{}'>{}</a>", reverse("extras:job_edit", kwargs={"pk": job.pk}), job.name)
+            )
     if multiple_messages:
-        messages.warning(request, format_html(f"The Job(s) {list_to_string(multiple_messages)} are not yet enabled."))
+        joined_links = mark_safe(list_to_string(multiple_messages))  # noqa: S308
+        messages.warning(request, format_html("The Job(s) {} are not yet enabled.", joined_links))
 
 
 def dispatch_params(method, platform, logger):
@@ -314,3 +318,19 @@ def get_error_message(error_code, **kwargs):
     except Exception:  # pylint: disable=broad-except
         error_message = "Error Code was found, but failed to format message, unknown cause."
     return f"{error_code}: {error_message}"
+
+
+def calculate_aggr_percentage(aggr):
+    """Calculate percentage of compliance given aggregation fields.
+
+    Returns:
+        aggr: same aggr dict given as parameter with two new keys
+            - comp_percents
+            - non_compliants
+    """
+    aggr["non_compliants"] = aggr["total"] - aggr["compliants"]
+    try:
+        aggr["comp_percents"] = round(aggr["compliants"] / aggr["total"] * 100, 2)
+    except ZeroDivisionError:
+        aggr["comp_percents"] = 0
+    return aggr

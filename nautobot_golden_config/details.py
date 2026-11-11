@@ -1,18 +1,16 @@
 """Object Detail components for golden config."""
 
-from django.utils.html import format_html
+from django.utils.html import format_html, format_html_join
 from nautobot.apps import ui
-from nautobot.core.templatetags import helpers
+from nautobot.core.templatetags import helpers  # core-import-update
 
 
 def get_model_instances(m2m_object):
     """Return a unordered bullet list of model instances from a m2m object."""
     if m2m_object.count() == 0:
         return None
-    ul_elements = []
-    for obj in m2m_object.all():
-        ul_elements.append(f"<li>{helpers.hyperlinked_object(obj)}</li>")
-    return format_html(f"<ul>{''.join(ul_elements)}</ul>")
+    ul_elements = format_html_join("", "<li>{}</li>", ((helpers.hyperlinked_object(obj),) for obj in m2m_object.all()))
+    return format_html("<ul>{}</ul>", ul_elements)
 
 
 def hyperlinked_field_with_icon(url, title, icon_class="mdi mdi-text-box-check-outline"):
@@ -76,9 +74,14 @@ config_remediation = ui.ObjectDetailContent(
             section=ui.SectionChoices.LEFT_HALF,
             weight=100,
             fields="__all__",
-            value_transforms={
-                "remediation_options": [helpers.render_json],
-            },
+            exclude_fields=("remediation_options",),
+        ),
+        ui.ObjectTextPanel(
+            section=ui.SectionChoices.RIGHT_HALF,
+            weight=100,
+            label="Remediation Options",
+            object_field="remediation_options",
+            render_as=ui.ObjectTextPanel.RenderOptions.JSON,
         ),
     ),
 )
@@ -191,7 +194,6 @@ config_plan = ui.ObjectDetailContent(
                 "plan_result",
             ),
             value_transforms={
-                "plan_result": [lambda v: helpers.hyperlinked_field(getattr(v, "status", v))],
                 "feature": [get_model_instances, helpers.placeholder],
             },
         ),
@@ -237,6 +239,13 @@ config_compliance = ui.ObjectDetailContent(
             section=ui.SectionChoices.RIGHT_HALF,
             weight=100,
             fields=("actual", "intended", "remediation", "missing", "extra"),
+            value_transforms={
+                "actual": [helpers.pre_tag],
+                "intended": [helpers.pre_tag],
+                "remediation": [helpers.pre_tag],
+                "missing": [helpers.pre_tag],
+                "extra": [helpers.pre_tag],
+            },
         ),
     ),
 )

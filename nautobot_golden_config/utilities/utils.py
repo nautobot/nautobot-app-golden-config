@@ -2,7 +2,7 @@
 
 from constance import config as constance_name
 from django.conf import settings
-from nautobot.extras.choices import SecretsGroupAccessTypeChoices
+from nautobot.apps.choices import SecretsGroupAccessTypeChoices
 from nautobot.extras.models.secrets import SecretsGroupAssociation
 
 from nautobot_golden_config import config

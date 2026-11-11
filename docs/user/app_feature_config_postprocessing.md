@@ -23,7 +23,8 @@ From a user perspective, you can retrieve this configuration using two methods:
 - **UI**: In the `Device` detail view, if the feature is enabled, a new row appears under "Configuration Types." Clicking the icon renders the new configuration on the fly (synchronously). See the figure below for reference.
 - **REST API**: You can request the processed intended configuration at the path `/api/plugins/golden-config/config-postprocessing/{device_id}`. The return payload will contain a "config" key with the rendered configuration.
 
-![Configuration Postprocessing](../images/config_postprocessing_1.png)
+![Configuration Postprocessing](../images/ss1_config_postprocessing_1_light.png#only-light){ .on-glb }
+![Configuration Postprocessing](../images/ss1_config_postprocessing_1_dark.png#only-dark){ .on-glb }
 
 ## Customizing Configuration Processing
 

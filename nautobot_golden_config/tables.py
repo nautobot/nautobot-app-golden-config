@@ -3,75 +3,64 @@
 from django.utils.html import format_html
 from django_tables2 import Column, LinkColumn, TemplateColumn
 from django_tables2.utils import A
-from nautobot.apps.tables import BaseTable, BooleanColumn, TagColumn, ToggleColumn
-from nautobot.extras.tables import StatusTableMixin
+from nautobot.apps.tables import BaseTable, BooleanColumn, ButtonsColumn, StatusTableMixin, TagColumn, ToggleColumn
 
 from nautobot_golden_config import models
 from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
 
 ALL_ACTIONS = """
-{% if backup == True %}
-    {% if record.config_type == 'json' %}
-        <i class="mdi mdi-circle-small"></i>
-    {% else %}
-        {% if record.backup_config %}
-            <a value="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=record.device.pk %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=record.device.pk %}?modal=true">
-                <i class="mdi mdi-file-document-outline" title="Backup Configuration"></i>
-            </a>
-        {% else %}
-            <i class="mdi mdi-circle-small"></i>
-        {% endif %}
-    {% endif %}
-{% endif %}
-{% if intended == True %}
-    {% if record.config_type == 'json' %}
-        <i class="mdi mdi-circle-small"></i>
-    {% else %}
-        {% if record.intended_config %}
-            <a value="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=record.device.pk %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=record.device.pk %}?modal=true">
-                <i class="mdi mdi-text-box-check-outline" title="Intended Configuration"></i>
-            </a>
-        {% else %}
-            <i class="mdi mdi-circle-small"></i>
-        {% endif %}
-    {% endif %}
-{% endif %}
-{% if postprocessing == True %}
-    {% if record.intended_config %}
-        <a value="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=record.device.pk %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=record.device.pk %}?modal=true">
-            <i class="mdi mdi-text-box-check" title="Configuration after Postprocessing"></i>
+{% if backup == True and record.backup_config and not record.config_type == "json" %}
+    <li>
+        <a class="dropdown-item text-primary" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
+            <span class="mdi mdi-file-document-outline" title="Backup Configuration"></span>
+            Backup Configuration
         </a>
-    {% else %}
-        <i class="mdi mdi-circle-small"></i>
-    {% endif %}
+    </li>
 {% endif %}
-{% if compliance == True %}
-    {% if record.intended_config and record.backup_config %}
-        <a value="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=record.device.pk %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=record.device.pk %}?modal=true">
-            <i class="mdi mdi-file-compare" title="Compliance Details"></i>
+{% if intended == True and record.intended_config and not record.config_type == "json" %}
+    <li>
+        <a class="dropdown-item text-primary" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
+            <span class="mdi mdi-text-box-check-outline" title="Intended Configuration"></span>
+            Intended Configuration
         </a>
-    {% else %}
-        <i class="mdi mdi-circle-small"></i>
-    {% endif %}
+    </li>
+{% endif %}
+{% if postprocessing == True and record.intended_config and not record.config_type == "json" %}
+    <li>
+        <a class="dropdown-item text-primary" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
+            <span class="mdi mdi-text-box-check" title="Postprocessing"></span>
+            Postprocessing
+        </a>
+    </li>
+{% endif %}
+{% if compliance == True and record.intended_config and record.backup_config and not record.config_type == "json" %}
+    <li>
+        <a class="dropdown-item text-primary" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
+            <span class="mdi mdi-file-compare" title="Compliance Details"></span>
+            Compliance Details
+        </a>
+    </li>
 {% endif %}
 {% if sotagg == True %}
-    <a value="{% url 'plugins:nautobot_golden_config:goldenconfig_sotagg' pk=record.device.pk %}" class="openBtn" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_sotagg' pk=record.device.pk %}?modal=true">
-        <i class="mdi mdi-code-json" title="SOT Aggregate Data"></i>
-    </a>
-    {% if record.config_type == 'json' %}
-        <i class="mdi mdi-circle-small"></i>
-    {% else %}
-        <a href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.AllGoldenConfig' %}?device={{ record.device.pk }}">
-            <span class="text-primary">
-                <i class="mdi mdi-play-circle" title="Execute All Golden Config Jobs"></i>
-            </span>
+    <li>
+        <a class="dropdown-item text-primary" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_sotagg' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_sotagg' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
+            <span class="mdi mdi-code-json" title="SOT Aggregate Data"></span>
+            SOT Aggregate Data
         </a>
-    {% endif %}
+    </li>
+{% endif %}
+{% if not record.config_type == "json" %}
+    <li>
+        <a class="dropdown-item text-success" href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.AllGoldenConfig' %}?device={{ record.device.pk }}">
+            <span class="mdi mdi-play-circle" title="Execute All Golden Config Jobs"></span>
+            Execute All Golden Config Jobs
+        </a>
+    </li>
 {% endif %}
 """
 
 CONFIG_SET_BUTTON = """
-<a href="#" class="openBtn" data-toggle="modal" data-target="#codeModal-{{ record.pk }}">
+<a href="#" class="openBtn" data-bs-toggle="modal" data-bs-target="#codeModal-{{ record.pk }}">
     <i class="mdi mdi-file-document-outline"></i>
 </a>
 
@@ -81,7 +70,7 @@ CONFIG_SET_BUTTON = """
             <!-- Modal Header -->
             <div class="modal-header">
                 <h3 class="modal-title">Config Set - {{ record.device }}</h3>
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
             <!-- Modal body -->
@@ -92,8 +81,9 @@ CONFIG_SET_BUTTON = """
                         <td>
                             <span id="config_set_{{ record.pk }}"><pre>{{ record.config_set }}</pre></span>
                             <span class="config_hover_button">
-                                <button type="button" class="btn btn-inline btn-default hover_copy_button" data-clipboard-action='copy' data-clipboard-target="#config_set_{{ record.pk }}">
-                                    <span class="mdi mdi-content-copy"></span>
+                                <button type="button" class="btn btn-secondary nb-btn-inline-hover" data-clipboard-action='copy' data-clipboard-target="#config_set_{{ record.pk }}">
+                                    <span aria-hidden="true" class="mdi mdi-content-copy"></span>
+                                    <span class="visually-hidden">Copy</span>
                                 </button>
                             </span>
                         </td>
@@ -110,7 +100,7 @@ CONFIG_SET_BUTTON = """
             </div>
             <!-- Modal footer -->
             <div class="modal-footer">
-                <button id="close" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button id="close" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -119,7 +109,7 @@ CONFIG_SET_BUTTON = """
 MATCH_CONFIG = """{{ record.match_config|linebreaksbr }}"""
 
 
-def actual_fields():
+def actual_fields(include_tags=False):
     """Convienance function to conditionally toggle columns."""
     active_fields = ["pk", "name"]
     if ENABLE_BACKUP:
@@ -128,6 +118,8 @@ def actual_fields():
         active_fields.append("intended_last_success_date")
     if ENABLE_COMPLIANCE:
         active_fields.append("compliance_last_success_date")
+    if include_tags:
+        active_fields.append("tags")
     active_fields.append("actions")
     return tuple(active_fields)
 
@@ -142,7 +134,7 @@ class PercentageColumn(Column):
 
     def render(self, value):
         """Render percentage value."""
-        return f"{value} %"
+        return f"{value:.2f} %"
 
 
 class ComplianceColumn(Column):
@@ -211,7 +203,7 @@ class ConfigComplianceTable(BaseTable):
 class ConfigComplianceGlobalFeatureTable(BaseTable):  # pylint: disable=nb-sub-class-name
     """Table for feature compliance report."""
 
-    name = Column(accessor="rule__feature__slug", verbose_name="Feature")
+    name = Column(accessor="slug", verbose_name="Feature")
     count = Column(accessor="count", verbose_name="Total")
     compliant = Column(accessor="compliant", verbose_name="Compliant")
     non_compliant = Column(accessor="non_compliant", verbose_name="Non-Compliant")
@@ -220,7 +212,7 @@ class ConfigComplianceGlobalFeatureTable(BaseTable):  # pylint: disable=nb-sub-c
     class Meta(BaseTable.Meta):
         """Metaclass attributes of ConfigComplianceGlobalFeatureTable."""
 
-        model = models.ConfigCompliance
+        model = models.ComplianceFeature
         fields = ["name", "count", "compliant", "non_compliant", "comp_percent"]
         default_columns = [
             "name",
@@ -298,8 +290,15 @@ class GoldenConfigTable(BaseTable):
             order_by="compliance_last_success_date",
         )
 
-    actions = TemplateColumn(
-        template_code=ALL_ACTIONS, verbose_name="Actions", extra_context=CONFIG_FEATURES, orderable=False
+    tags = TagColumn(url_name="plugins:nautobot_golden_config:goldenconfig_list")
+
+    actions = ButtonsColumn(
+        buttons=("delete",),
+        model=models.GoldenConfig,
+        verbose_name="Actions",
+        prepend_template=ALL_ACTIONS,
+        extra_context=CONFIG_FEATURES,
+        orderable=False,
     )
 
     def _render_last_success_date(self, record, column, value):
@@ -334,7 +333,8 @@ class GoldenConfigTable(BaseTable):
         """Meta for class GoldenConfigTable."""
 
         model = models.GoldenConfig
-        fields = actual_fields()
+        fields = actual_fields(include_tags=True)
+        default_columns = actual_fields()
 
 
 # ComplianceFeature
@@ -345,12 +345,13 @@ class ComplianceFeatureTable(BaseTable):
 
     pk = ToggleColumn()
     name = LinkColumn("plugins:nautobot_golden_config:compliancefeature", args=[A("pk")])
+    tags = TagColumn(url_name="plugins:nautobot_golden_config:compliancefeature_list")
 
     class Meta(BaseTable.Meta):
         """Table to display Compliance Features Meta Data."""
 
         model = models.ComplianceFeature
-        fields = ("pk", "name", "slug", "description")
+        fields = ("pk", "name", "slug", "description", "tags")
         default_columns = ("pk", "name", "slug", "description")
 
 
@@ -366,6 +367,7 @@ class ComplianceRuleTable(BaseTable):
     config_ordered = BooleanColumn()
     custom_compliance = BooleanColumn()
     config_remediation = BooleanColumn()
+    tags = TagColumn(url_name="plugins:nautobot_golden_config:compliancerule_list")
 
     class Meta(BaseTable.Meta):
         """Table to display Compliance Rules Meta Data."""
@@ -381,6 +383,7 @@ class ComplianceRuleTable(BaseTable):
             "config_type",
             "custom_compliance",
             "config_remediation",
+            "tags",
         )
         default_columns = (
             "pk",
@@ -403,12 +406,13 @@ class ConfigRemoveTable(BaseTable):
 
     pk = ToggleColumn()
     name = LinkColumn("plugins:nautobot_golden_config:configremove", args=[A("pk")])
+    tags = TagColumn(url_name="plugins:nautobot_golden_config:configremove_list")
 
     class Meta(BaseTable.Meta):
         """Table to display Compliance Rules Meta Data."""
 
         model = models.ConfigRemove
-        fields = ("pk", "name", "platform", "description", "regex")
+        fields = ("pk", "name", "platform", "description", "regex", "tags")
         default_columns = ("pk", "name", "platform", "description", "regex")
 
 
@@ -420,12 +424,13 @@ class ConfigReplaceTable(BaseTable):
 
     pk = ToggleColumn()
     name = LinkColumn("plugins:nautobot_golden_config:configreplace", args=[A("pk")])
+    tags = TagColumn(url_name="plugins:nautobot_golden_config:configreplace_list")
 
     class Meta(BaseTable.Meta):
         """Table to display Compliance Rules Meta Data."""
 
         model = models.ConfigReplace
-        fields = ("pk", "name", "platform", "description", "regex", "replace")
+        fields = ("pk", "name", "platform", "description", "regex", "replace", "tags")
         default_columns = ("pk", "name", "platform", "description", "regex", "replace")
 
 
@@ -447,6 +452,7 @@ class GoldenConfigSettingTable(BaseTable):
         verbose_name="Backup Repository",
         empty_values=(),
     )
+    tags = TagColumn(url_name="plugins:nautobot_golden_config:goldenconfigsetting_list")
 
     def _render_capability(self, record, column, record_attribute):  # pylint: disable=unused-argument
         if getattr(record, record_attribute, None):
@@ -477,6 +483,16 @@ class GoldenConfigSettingTable(BaseTable):
             "backup_repository",
             "intended_repository",
             "jinja_repository",
+            "tags",
+        )
+        default_columns = (
+            "pk",
+            "name",
+            "weight",
+            "description",
+            "backup_repository",
+            "intended_repository",
+            "jinja_repository",
         )
 
 
@@ -485,12 +501,13 @@ class RemediationSettingTable(BaseTable):
 
     pk = ToggleColumn()
     platform = LinkColumn("plugins:nautobot_golden_config:remediationsetting", args=[A("pk")])
+    tags = TagColumn(url_name="plugins:nautobot_golden_config:remediationsetting_list")
 
     class Meta(BaseTable.Meta):
         """Table to display RemediationSetting Meta Data."""
 
         model = models.RemediationSetting
-        fields = ("pk", "platform", "remediation_type")
+        fields = ("pk", "platform", "remediation_type", "tags")
         default_columns = ("pk", "platform", "remediation_type")
 
 

@@ -1,0 +1,1 @@
+Added support for unordered XML element comparison in compliance checks when config_ordered=False.

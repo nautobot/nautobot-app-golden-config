@@ -30,6 +30,7 @@ from .conftest import (
     create_feature_rule_cli_with_remediation,
     create_feature_rule_json,
     create_feature_rule_xml,
+    create_feature_rule_xml_ordered,
     create_job_result,
     create_saved_queries,
     enable_config_plan_approval,
@@ -45,6 +46,7 @@ class ConfigComplianceModelTestCase(TestCase):
         cls.device = create_device()
         cls.compliance_rule_json = create_feature_rule_json(cls.device)
         cls.compliance_rule_xml = create_feature_rule_xml(cls.device)
+        cls.compliance_rule_xml_ordered = create_feature_rule_xml_ordered(cls.device)
         cls.compliance_rule_cli = create_feature_rule_cli_with_remediation(cls.device)
 
     def test_create_config_compliance_success_json(self):
@@ -74,6 +76,146 @@ class ConfigComplianceModelTestCase(TestCase):
         self.assertEqual(cc_obj.intended, "<root><foo><bar-1>baz</bar-1></foo></root>")
         self.assertEqual(cc_obj.missing, "/root/foo/bar-1[1], baz")
         self.assertEqual(cc_obj.extra, "/root/foo/bar-1[1], notbaz")
+
+    def _run_xml_compliance(self, actual, intended, rule):
+        """Run the compliance calculation on an unsaved `ConfigCompliance` and return it."""
+        cc_obj = ConfigCompliance(device=self.device, rule=rule, actual=actual, intended=intended)
+        cc_obj.compliance_on_save()
+        return cc_obj
+
+    def test_xml_unordered_rule_ignores_element_order(self):
+        """Configs that differ only in element order are compliant when config_ordered=False."""
+        cases = {
+            "siblings distinguished by attributes": (
+                '<root><user id="2"><name>bob</name></user><user id="1"><name>alice</name></user></root>',
+                '<root><user id="1"><name>alice</name></user><user id="2"><name>bob</name></user></root>',
+            ),
+            "siblings distinguished by tag": (
+                "<root><zebra>test</zebra><apple>test</apple></root>",
+                "<root><apple>test</apple><zebra>test</zebra></root>",
+            ),
+            "siblings distinguished by text": (
+                "<root><item>zebra</item><item>apple</item></root>",
+                "<root><item>apple</item><item>zebra</item></root>",
+            ),
+            "siblings distinguished only by child elements": (
+                "<root><interface><name>ge-0/0/1</name><mtu>9000</mtu></interface>"
+                "<interface><name>ge-0/0/0</name><mtu>1500</mtu></interface></root>",
+                "<root><interface><name>ge-0/0/0</name><mtu>1500</mtu></interface>"
+                "<interface><name>ge-0/0/1</name><mtu>9000</mtu></interface></root>",
+            ),
+            "siblings with differing attribute sets": (
+                '<root><config type="vlan" priority="high">vlan100</config><config status="active">default</config>'
+                '<config type="interface">eth0</config></root>',
+                '<root><config status="active">default</config><config type="interface">eth0</config>'
+                '<config type="vlan" priority="high">vlan100</config></root>',
+            ),
+            "reordering at every nesting level": (
+                "<root><b><y>2</y><x>1</x></b><a><y>2</y><x>1</x></a></root>",
+                "<root><a><x>1</x><y>2</y></a><b><x>1</x><y>2</y></b></root>",
+            ),
+            "attribute order": (
+                '<root><interface vlan="10" port="1">eth1</interface></root>',
+                '<root><interface port="1" vlan="10">eth1</interface></root>',
+            ),
+            "namespaced elements": (
+                '<rpc-reply xmlns="urn:example"><b>2</b><a>1</a></rpc-reply>',
+                '<rpc-reply xmlns="urn:example"><a>1</a><b>2</b></rpc-reply>',
+            ),
+            "indentation": (
+                "<root>\n    <b>2</b>\n    <a>1</a>\n</root>",
+                "<root><a>1</a><b>2</b></root>",
+            ),
+        }
+        for name, (actual, intended) in cases.items():
+            with self.subTest(name):
+                cc_obj = self._run_xml_compliance(actual, intended, self.compliance_rule_xml)
+
+                self.assertTrue(cc_obj.compliance)
+                self.assertEqual(cc_obj.compliance_int, 1)
+                self.assertEqual(cc_obj.missing, "")
+                self.assertEqual(cc_obj.extra, "")
+
+    def test_xml_unordered_rule_still_detects_differences(self):
+        """Real differences are non-compliant when config_ordered=False, even when elements are also reordered."""
+        cases = {
+            "changed text": (
+                "<root><item>zebra</item><item>apple</item></root>",
+                "<root><item>apple</item><item>yak</item></root>",
+            ),
+            "element missing from actual": (
+                "<root><item>zebra</item></root>",
+                "<root><item>zebra</item><item>apple</item></root>",
+            ),
+            "element extra in actual": (
+                "<root><item>zebra</item><item>apple</item></root>",
+                "<root><item>zebra</item></root>",
+            ),
+            "changed attribute value": (
+                '<root><item id="1">apple</item></root>',
+                '<root><item id="2">apple</item></root>',
+            ),
+            "changed nested child": (
+                "<root><interface><name>ge-0/0/1</name><mtu>9000</mtu></interface>"
+                "<interface><name>ge-0/0/0</name><mtu>1500</mtu></interface></root>",
+                "<root><interface><name>ge-0/0/0</name><mtu>1500</mtu></interface>"
+                "<interface><name>ge-0/0/1</name><mtu>9192</mtu></interface></root>",
+            ),
+        }
+        for name, (actual, intended) in cases.items():
+            with self.subTest(name):
+                cc_obj = self._run_xml_compliance(actual, intended, self.compliance_rule_xml)
+
+                self.assertFalse(cc_obj.compliance)
+                self.assertEqual(cc_obj.compliance_int, 0)
+
+    def test_xml_unordered_rule_reports_only_the_changed_text(self):
+        """With config_ordered=False, reordered elements are left out of missing and extra."""
+        actual = "<root><item>zebra</item><item>apple</item></root>"
+        intended = "<root><item>apple</item><item>yak</item></root>"
+        cc_obj = self._run_xml_compliance(actual, intended, self.compliance_rule_xml)
+
+        self.assertEqual(cc_obj.missing, "/root/item[2], yak")
+        self.assertEqual(cc_obj.extra, "/root/item[2], zebra")
+
+    def test_xml_ordered_rule_treats_reordered_elements_as_non_compliant(self):
+        """Configs that differ only in element order are NOT compliant when config_ordered=True."""
+        actual = "<root><acl>deny 2.2.2.2</acl><acl>permit 1.1.1.1</acl></root>"
+        intended = "<root><acl>permit 1.1.1.1</acl><acl>deny 2.2.2.2</acl></root>"
+        cc_obj = self._run_xml_compliance(actual, intended, self.compliance_rule_xml_ordered)
+
+        self.assertFalse(cc_obj.compliance)
+        self.assertEqual(cc_obj.missing, "/root/acl[1], permit 1.1.1.1\n/root/acl[2], deny 2.2.2.2")
+        self.assertEqual(cc_obj.extra, "/root/acl[1], deny 2.2.2.2\n/root/acl[2], permit 1.1.1.1")
+
+    def test_xml_ordered_rule_is_compliant_when_order_matches(self):
+        """Identical configs are compliant when config_ordered=True."""
+        config = "<root><acl>permit 1.1.1.1</acl><acl>deny 2.2.2.2</acl></root>"
+        cc_obj = self._run_xml_compliance(config, config, self.compliance_rule_xml_ordered)
+
+        self.assertTrue(cc_obj.compliance)
+
+    def test_xml_compliance_ordered_reflects_the_rule(self):
+        """The `ordered` flag stored on the result mirrors the rule's config_ordered setting."""
+        config = "<root><a>1</a></root>"
+        for rule in (self.compliance_rule_xml, self.compliance_rule_xml_ordered):
+            with self.subTest(config_ordered=rule.config_ordered):
+                cc_obj = self._run_xml_compliance(config, config, rule)
+
+                self.assertEqual(cc_obj.ordered, rule.config_ordered)
+
+    def test_xml_compliance_persists_original_config(self):
+        """Sorting is only used for comparison; the stored actual and intended configs are left untouched."""
+        actual = "<root><item>zebra</item><item>apple</item></root>"
+        intended = "<root><item>apple</item><item>zebra</item></root>"
+        cc_obj = create_config_compliance(
+            self.device, actual=actual, intended=intended, compliance_rule=self.compliance_rule_xml
+        )
+        cc_obj.refresh_from_db()
+
+        self.assertTrue(cc_obj.compliance)
+        self.assertEqual(cc_obj.actual, actual)
+        self.assertEqual(cc_obj.intended, intended)
 
     def test_create_config_compliance_unique_failure(self):
         """Raises error when attempting to create duplicate."""

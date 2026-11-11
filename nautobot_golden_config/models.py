@@ -11,6 +11,7 @@ from django.db.models.manager import BaseManager
 from django.utils.module_loading import import_string
 from hier_config import WorkflowRemediation, get_hconfig
 from hier_config.utils import hconfig_v2_os_v3_platform_mapper, load_hconfig_v2_options
+from lxml import etree
 from nautobot.apps.models import RestrictedQuerySet, extras_features
 from nautobot.apps.utils import render_jinja2
 from nautobot.core.models.generics import PrimaryModel
@@ -141,18 +142,12 @@ def _get_xml_compliance(obj):
         """Sort XML elements and attributes recursively for deterministic comparison."""
 
         def canonical_sort(elem):
-            """Recursively sort XML elements and attributes."""
-            elem.attrib.update(dict(sorted(elem.attrib.items())))
-            elem[:] = sorted(
-                elem,
-                key=lambda e: (
-                    e.tag,
-                    tuple(sorted(e.attrib.items())),
-                    (e.text or "").strip(),
-                ),
-            )
+            """Recursively sort XML elements by their canonical form."""
+            # Children are sorted first so that siblings differing only in their descendants,
+            # such as `<interface><name>...</name></interface>`, still get a deterministic order.
             for child in elem:
                 canonical_sort(child)
+            elem[:] = sorted(elem, key=lambda child: etree.tostring(child, method="c14n", with_tail=False))
 
         try:
             parser = etree.XMLParser(remove_blank_text=True)

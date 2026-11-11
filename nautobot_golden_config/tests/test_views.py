@@ -186,6 +186,25 @@ class GoldenConfigComplianceDetailsViewTestCase(TestCase):
         self.assertIn('id="gc-diff-editor"', content)
         self.assertNotIn("<html", content)
 
+    def test_compliance_details_missing_config(self):
+        self.golden_config.backup_config = ""
+        self.golden_config.validated_save()
+        content = self._get()
+        self.assertIn("A diff is not available until both the backup and intended configuration jobs have run", content)
+        self.assertNotIn('id="gc-diff-editor"', content)
+
+    def test_compliance_details_falls_back_to_stored_diff(self):
+        self.golden_config.backup_config = ""
+        self.golden_config.intended_config = ""
+        self.golden_config.compliance_config = (
+            "--- \n+++ \n@@ -1,3 +1,3 @@\n interface Ethernet1\n\n-   shutdown\n\n+   no shutdown\n\n !\n"
+        )
+        self.golden_config.validated_save()
+        content = self._get()
+        self.assertIn("Only the changed sections recorded by the last compliance run are shown", content)
+        self.assertIn('data-original="@@ -1,3 +1,3 @@\ninterface Ethernet1\n   shutdown\n!"', content)
+        self.assertIn('data-modified="@@ -1,3 +1,3 @@\ninterface Ethernet1\n   no shutdown\n!"', content)
+
     def test_compliance_details_no_differences(self):
         self.golden_config.intended_config = self.golden_config.backup_config
         self.golden_config.validated_save()

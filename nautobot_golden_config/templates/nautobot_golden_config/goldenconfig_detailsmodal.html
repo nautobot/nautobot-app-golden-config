@@ -18,7 +18,12 @@
                     <div class="col-6"><strong>Intended File - {{ intended_date }}</strong></div>
                 </div>
             {% endif %}
-            {% if backup_config == intended_config %}
+            {% if changed_sections_only %}
+                <p class="text-secondary mb-2">Only the changed sections recorded by the last compliance run are shown, as the full backup and intended configurations are not stored for this device.</p>
+            {% endif %}
+            {% if not backup_config or not intended_config %}
+                <span class="text-secondary">A diff is not available until both the backup and intended configuration jobs have run for this device.</span>
+            {% elif backup_config == intended_config %}
                 <span class="text-secondary">No differences between the backup and intended configuration.</span>
             {% else %}
                 {% comment %}
@@ -26,7 +31,7 @@
                 In the Config Overview modal the fragment is inserted after page load, so goldenconfig_list.html
                 initializes it with gcRenderMonacoDiff instead.
                 {% endcomment %}
-                <div class="nb-editor-container" data-lang="text" data-mode="diff" data-modified="{{ intended_config }}" data-options='{"lineNumbers": "on", "lineDecorationsWidth": 10, "hideUnchangedRegions": {"enabled": true}}' data-original="{{ backup_config }}" id="gc-diff-editor" style="max-height: 800px"></div>
+                <div class="nb-editor-container" data-lang="text" data-mode="diff" data-modified="{{ intended_config }}" data-options='{"lineNumbers": "on", "lineDecorationsWidth": 10, "hideUnchangedRegions": {"enabled": true}, "ignoreTrimWhitespace": false}' data-original="{{ backup_config }}" id="gc-diff-editor" style="max-height: 800px"></div>
             {% endif %}
         {% else %}
             <pre id="{{ title_name|slugify }}_{{ device_name|slugify }}">{{ output }}</pre>

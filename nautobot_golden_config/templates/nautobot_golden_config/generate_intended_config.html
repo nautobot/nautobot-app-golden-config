@@ -4,7 +4,6 @@
 {% load static %}
 
 {% block extra_styles %}
-    <link href="{% static 'nautobot_golden_config/css/gc_monaco_diff.css' %}" rel="stylesheet"/>
     <style>
         pre:has(code) {
             padding: 0;
@@ -310,7 +309,12 @@
                         diff_render_div.innerHTML = "<p>No changes detected.</p>";
                     } else {
                         diff_render_div.style.height = "50vh";
-                        diffEditor = await gcRenderMonacoUnifiedDiff(diff_render_div, responseData.diff);
+                        diffEditor = await gcRenderMonacoDiff(
+                            diff_render_div,
+                            responseData.prior_intended_config,
+                            responseData.intended_config,
+                            {sideBySide: false},
+                        );
                     }
 
                     // enable the diff tab

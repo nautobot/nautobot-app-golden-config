@@ -56,6 +56,32 @@ LOGGER = logging.getLogger(__name__)
 #
 
 
+def _split_unified_diff(diff_text):
+    """Rebuild the original and modified text of each hunk in a unified diff.
+
+    Returns a tuple of (original, modified) containing only the lines covered by the diff's hunks,
+    with each hunk header kept on both sides as a separator.
+    """
+    original, modified = [], []
+    in_hunk = False
+    for line in diff_text.split("\n"):
+        if line.startswith("@@"):
+            in_hunk = True
+            original.append(line)
+            modified.append(line)
+        elif not in_hunk or not line:
+            # Skip the file header, and the empty strings left by lines that kept their own line ending.
+            continue
+        elif line.startswith("-"):
+            original.append(line[1:])
+        elif line.startswith("+"):
+            modified.append(line[1:])
+        else:
+            original.append(line[1:])
+            modified.append(line[1:])
+    return "\n".join(original), "\n".join(modified)
+
+
 class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
     views.ObjectDetailViewMixin,
     views.ObjectDestroyViewMixin,
@@ -228,12 +254,21 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
         now = make_aware(datetime.now())
         backup_date = (self.config_details.backup_last_success_date or now).strftime("%b %d %Y")
         intended_date = (self.config_details.intended_last_success_date or now).strftime("%b %d %Y")
+        backup_config = self.config_details.backup_config
+        intended_config = self.config_details.intended_config
+        changed_sections_only = False
+        if not (backup_config and intended_config) and self.config_details.compliance_config:
+            # The full configs are only stored in the database by the backup and intended jobs. When the
+            # repositories are populated by other means, fall back to the diff stored by the compliance job.
+            backup_config, intended_config = _split_unified_diff(self.config_details.compliance_config)
+            changed_sections_only = True
         return self._post_render(
             request,
-            backup_config=self.config_details.backup_config,
-            intended_config=self.config_details.intended_config,
+            backup_config=backup_config,
+            intended_config=intended_config,
             backup_date=backup_date,
             intended_date=intended_date,
+            changed_sections_only=changed_sections_only,
         )
 
 

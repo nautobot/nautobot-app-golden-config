@@ -1,1 +1,2 @@
 Replaced the vendored diff2html library with Nautobot core's Monaco diff editor for the Config Compliance details and Intended Config Generator diff views, so diffs follow the selected light or dark theme.
+Changed the Compliance Details diff to compare the device's stored backup and intended configurations in full, falling back to the changed sections recorded by the last compliance job run when the full configurations are not stored.

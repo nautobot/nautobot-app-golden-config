@@ -235,25 +235,30 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = serializers.GenerateIntendedConfigSerializer
 
-    def _get_diff(self, device, intended_config):
-        """Generate a unified diff between the provided config and the intended config stored on the Device's GoldenConfig.intended_config."""
-        diff = None
-        try:
-            golden_config = device.goldenconfig
-            if golden_config.intended_last_success_date is not None:
-                prior_intended_config = golden_config.intended_config
-                diff = "".join(
-                    difflib.unified_diff(
-                        prior_intended_config.splitlines(keepends=True),
-                        intended_config.splitlines(keepends=True),
-                        fromfile="prior intended config",
-                        tofile="rendered config",
-                    )
-                )
-        except models.GoldenConfig.DoesNotExist:
-            pass
+    @staticmethod
+    def _get_prior_intended_config(request, device):
+        """Return the Device's stored GoldenConfig.intended_config, if the requesting user is allowed to view it.
 
-        return diff
+        Returns None if the user cannot view the GoldenConfig or the intended job has never succeeded.
+        """
+        golden_config = models.GoldenConfig.objects.restrict(request.user, "view").filter(device=device).first()
+        if golden_config is None or golden_config.intended_last_success_date is None:
+            return None
+        return golden_config.intended_config
+
+    @staticmethod
+    def _get_diff(prior_intended_config, intended_config):
+        """Generate a unified diff between the stored intended config and the newly rendered config."""
+        if prior_intended_config is None:
+            return None
+        return "".join(
+            difflib.unified_diff(
+                prior_intended_config.splitlines(keepends=True),
+                intended_config.splitlines(keepends=True),
+                fromfile="prior intended config",
+                tofile="rendered config",
+            )
+        )
 
     def _get_object(self, request, model, query_param):
         """Get the requested model instance, restricted to requesting user."""
@@ -363,13 +368,15 @@ class GenerateIntendedConfigView(NautobotAPIVersionMixin, GenericAPIView):
             except Exception as exc:
                 raise GenerateIntendedConfigException(f"Error rendering Jinja template: {exc}") from exc
 
-            diff = self._get_diff(device, intended_config)
+            prior_intended_config = self._get_prior_intended_config(request, device)
+            diff = self._get_diff(prior_intended_config, intended_config)
 
             return Response(
                 data={
                     "intended_config": intended_config,
                     "intended_config_lines": intended_config.split("\n"),
                     "graphql_data": graphql_data,
+                    "prior_intended_config": prior_intended_config,
                     "diff": diff,
                     "diff_lines": diff.split("\n") if diff else [],
                 },

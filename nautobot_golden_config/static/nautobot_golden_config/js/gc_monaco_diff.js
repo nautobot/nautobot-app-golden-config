@@ -10,7 +10,7 @@
  * global that Monaco itself defines, not on any of core's internals.
  *
  * Exposes:
- *   window.gcRenderMonacoDiff(host, original, modified, {sideBySide}) -> Promise<editor|null>
+ *   window.gcRenderMonacoDiff(host, original, modified, {sideBySide, lineNumbers}) -> Promise<editor|null>
  *   window.gcDisposeMonacoDiff(editor)
  */
 (function (window, document) {
@@ -19,7 +19,7 @@
     const MONACO_POLL_INTERVAL_MS = 50;
     const MONACO_TIMEOUT_MS = 15000;
 
-    // Mirrors the look of the diff editors that Nautobot core's js/editor.js creates.
+    // Based on the options Nautobot core's js/editor.js uses for its diff editors, with line numbers shown.
     const DIFF_OPTIONS = {
         automaticLayout: true,
         readOnly: true,
@@ -64,6 +64,7 @@
             const editor = monaco.editor.createDiffEditor(host, {
                 ...DIFF_OPTIONS,
                 renderSideBySide: options.sideBySide !== false,
+                lineNumbers: options.lineNumbers || "on",
                 theme: currentTheme(),
             });
             editor.setModel({

@@ -2,7 +2,6 @@
 
 import json
 import logging
-from datetime import datetime
 
 import yaml
 from django.contrib import messages
@@ -13,7 +12,6 @@ from django.db.models.functions import Coalesce, NullIf
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.html import format_html
-from django.utils.timezone import make_aware
 from django.views.generic import TemplateView, View
 from django_pivot.pivot import pivot
 from django_tables2 import RequestConfig
@@ -251,9 +249,8 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
         self.output = ""
         self.structured_format = "diff"
         self.title_name = "Compliance Details"
-        now = make_aware(datetime.now())
-        backup_date = (self.config_details.backup_last_success_date or now).strftime("%b %d %Y")
-        intended_date = (self.config_details.intended_last_success_date or now).strftime("%b %d %Y")
+        backup_date = self.config_details.backup_last_success_date
+        intended_date = self.config_details.intended_last_success_date
         backup_config = self.config_details.backup_config
         intended_config = self.config_details.intended_config
         changed_sections_only = False
@@ -266,8 +263,8 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
             request,
             backup_config=backup_config,
             intended_config=intended_config,
-            backup_date=backup_date,
-            intended_date=intended_date,
+            backup_date=backup_date.strftime("%b %d %Y") if backup_date else None,
+            intended_date=intended_date.strftime("%b %d %Y") if intended_date else None,
             changed_sections_only=changed_sections_only,
         )
 

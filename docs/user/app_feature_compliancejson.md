@@ -40,7 +40,7 @@ Seeing the diff button alone will **only** show up for devices using JSON compli
 
 ![Show Updated Overview](../images/07-navigating-compliance-json.png)
 
-The detailed diff view will show a side by side diff of the backup and intended configuration, this looks the same as the CLI view. The diff is rendered with the Monaco editor bundled with Nautobot and follows the selected light or dark theme. It compares the backup and intended configurations currently stored for the device, so it reflects any backup or intended job run since the last compliance run. When those configurations are not stored in Nautobot, only the changed sections recorded by the last compliance run are shown.
+The detailed diff view compares the backup and intended configuration side by side on the full page, and inline in the Config Overview modal. This looks the same as the CLI view. The diff is rendered with the Monaco editor bundled with Nautobot and follows the selected light or dark theme. It compares the backup and intended configurations currently stored for the device, so it reflects any backup or intended job run since the last compliance run. When those configurations are not stored in Nautobot, only the changed sections recorded by the last compliance run are shown.
 
 ![Detail Diff View](../images/08-navigating-compliance-json.png)
 

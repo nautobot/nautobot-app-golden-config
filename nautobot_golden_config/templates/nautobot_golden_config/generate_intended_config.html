@@ -83,13 +83,13 @@
 <pre><code class="language-json" contenteditable="true" id="id_graphql_data_code_block" onbeforeinput="return false"></code></pre>
                             </div>
                             <div class="tab-pane" id="id_diff_tab_content">
-                                <div id="id_diff_render"></div>
+                                <div class="overflow-hidden position-relative" id="id_diff_render"></div>
                             </div>
                             {% comment %}
                             Hidden sentinel: makes Nautobot core's js/editor.js load Monaco on page load so the
                             Diff tab (populated after rendering) can show a diff editor.
                             {% endcomment %}
-                            <div class="nb-editor-container" data-lang="text" style="display: none"></div>
+                            <div class="nb-editor-container d-none" data-lang="text"></div>
                         </div>
                     </div>
                 </div>
@@ -104,6 +104,7 @@
     <script src="{% static 'nautobot_golden_config/js/gc_monaco_diff.js' %}"></script>
     <script>
         let diffEditor = null;
+        let renderRequestCount = 0;
 
         // When a device is selected, populate the GraphQL query field with the default query for that device
         async function handleDeviceFieldSelect(event) {
@@ -267,6 +268,8 @@
             const url = "{% url 'plugins-api:nautobot_golden_config-api:generate_intended_config' %}";
             const diff_tab = document.getElementById("id_diff_tab");
             const diff_render_div = document.getElementById("id_diff_render");
+            // Identifies this request so that a slower, older response cannot overwrite a newer one.
+            const renderRequest = ++renderRequestCount;
 
             try {
                 rendered_config_code_block.innerHTML = "Loading...";
@@ -290,6 +293,9 @@
                     headers: {"Content-Type": "application/json"}
                 });
                 const responseData = await response.json();
+                if (renderRequest !== renderRequestCount) {
+                    return;
+                }
                 if (!response.ok) {
                     const msg = responseData.detail ? responseData.detail : response.statusText;
                     rendered_config_code_block.innerHTML = sanitize(`An error occurred:\n\n${msg}`);
@@ -309,12 +315,17 @@
                         diff_render_div.innerHTML = "<p>No changes detected.</p>";
                     } else {
                         diff_render_div.style.height = "50vh";
-                        diffEditor = await gcRenderMonacoDiff(
+                        const editor = await gcRenderMonacoDiff(
                             diff_render_div,
                             responseData.prior_intended_config,
                             responseData.intended_config,
                             {sideBySide: false},
                         );
+                        if (renderRequest !== renderRequestCount) {
+                            gcDisposeMonacoDiff(editor);
+                            return;
+                        }
+                        diffEditor = editor;
                     }
 
                     // enable the diff tab

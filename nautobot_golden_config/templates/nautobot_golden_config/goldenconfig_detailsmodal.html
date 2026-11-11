@@ -11,11 +11,11 @@
     <div style="padding-left: 10px">
         {% if format == 'diff' %}
             {% if is_modal %}
-                <p class="mb-2"><strong>Backup File - {{ backup_date }}</strong> &rarr; <strong>Intended File - {{ intended_date }}</strong></p>
+                <p class="mb-2"><strong>Backup File{% if backup_date %} - {{ backup_date }}{% endif %}</strong> &rarr; <strong>Intended File{% if intended_date %} - {{ intended_date }}{% endif %}</strong></p>
             {% else %}
                 <div class="row mb-2">
-                    <div class="col-6"><strong>Backup File - {{ backup_date }}</strong></div>
-                    <div class="col-6"><strong>Intended File - {{ intended_date }}</strong></div>
+                    <div class="col-6"><strong>Backup File{% if backup_date %} - {{ backup_date }}{% endif %}</strong></div>
+                    <div class="col-6"><strong>Intended File{% if intended_date %} - {{ intended_date }}{% endif %}</strong></div>
                 </div>
             {% endif %}
             {% if changed_sections_only %}
@@ -29,9 +29,10 @@
                 {% comment %}
                 On the full-page view Nautobot core's js/editor.js initializes this container on DOMContentLoaded.
                 In the Config Overview modal the fragment is inserted after page load, so goldenconfig_list.html
-                initializes it with gcRenderMonacoDiff instead.
+                initializes it with gcRenderMonacoDiff instead. Line numbers are hidden when only the changed
+                sections are shown, as they would not match the line numbers of the device configuration.
                 {% endcomment %}
-                <div class="nb-editor-container" data-lang="text" data-mode="diff" data-modified="{{ intended_config }}" data-options='{"lineNumbers": "on", "lineDecorationsWidth": 10, "hideUnchangedRegions": {"enabled": true}, "ignoreTrimWhitespace": false}' data-original="{{ backup_config }}" id="gc-diff-editor" style="max-height: 800px"></div>
+                <div class="nb-editor-container" data-lang="text" data-mode="diff" data-modified="{{ intended_config }}" data-options='{"lineNumbers": "{% if changed_sections_only %}off{% else %}on{% endif %}", "lineDecorationsWidth": 10, "hideUnchangedRegions": {"enabled": true}, "ignoreTrimWhitespace": false}' data-original="{{ backup_config }}" id="gc-diff-editor" style="max-height: 800px"></div>
             {% endif %}
         {% else %}
             <pre id="{{ title_name|slugify }}_{{ device_name|slugify }}">{{ output }}</pre>

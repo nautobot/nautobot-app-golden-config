@@ -296,7 +296,10 @@ Tags can be assigned to any property using the optional `tags` attribute, that t
 ```
 
 !!! note
-    Tags referenced in the `tags` attribute must already exist in Nautobot and be associated with the content type of the property being synced (for example, a tag used on a `compliance_rules` entry must include `ComplianceRule` in its content types). They are not created automatically. If a referenced tag cannot be found for the property's content type, the item is skipped and an `E3034` warning is logged.
+    Tags referenced in the `tags` attribute must already exist in Nautobot and be associated with the content type of the property being synced (for example, a tag used on a `compliance_rules` entry must include `ComplianceRule` in its content types). They are not created automatically. If a referenced tag cannot be found for the property's content type, that item is skipped (none of its tags or other attributes are applied), an `E3034` warning is logged, and the sync continues with the remaining items.
+
+!!! warning
+    The Git repository is the source of truth for the tags of the properties it defines. On every sync the tags of each property are set to exactly the list in its `tags` attribute, so removing a tag from the list, or removing the `tags` attribute altogether, removes the tag(s) from the object in Nautobot. This includes tags that were assigned outside of Git (for example, through the UI or API).
 
 !!! note
     For Foreign Key references to `ComplianceFeature` and `Platform` we use the keywords `feature_slug` and `platform_name` respectively.
@@ -308,7 +311,7 @@ Tags can be assigned to any property using the optional `tags` attribute, that t
     3. Make sure to select the **Provides** called `Golden Config properties`.
     4. Click Create (This step runs an automatic sync).
 
-2. Run `sync` and all the properties will be created/updated in a declarative way and following the right order to respect the dependencies between objects. The import task will raise a `warning` if the dependencies are not available yet (for instance, a referenced `Platform` is not created), so the `sync` process will continue, and you could then fix these warnings by reviewing the mismatch (maybe creating the required object) and run the `sync` process again.
+2. Run `sync` and all the properties will be created/updated in a declarative way and following the right order to respect the dependencies between objects. The import task will raise a `warning` if the dependencies are not available yet (for instance, a referenced `Platform` is not created) and skip only the affected item, so the `sync` process will continue, and you could then fix these warnings by reviewing the mismatch (maybe creating the required object) and run the `sync` process again.
 
 ### Constance Settings
 

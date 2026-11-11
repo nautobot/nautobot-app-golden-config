@@ -4,7 +4,8 @@ import os
 
 import yaml
 from django.contrib.contenttypes.models import ContentType
-from django.db import IntegrityError
+from django.core.exceptions import FieldError
+from django.db import IntegrityError, transaction
 from nautobot.apps.choices import LogLevelChoices
 from nautobot.apps.datasources import DatasourceContent
 from nautobot.dcim.models.devices import Platform
@@ -57,9 +58,10 @@ def refresh_git_gc_properties(repository_record, job_result, delete=False):  # p
     │   ├── config_replaces
     │   ├── remediation_settings
 
-    Each property may include an optional ``tags`` key listing tags to assign to the synced object.
-    The referenced tags must already exist in Nautobot and be associated with the property's content
-    type; they are not auto-created.
+    Each property may include an optional ``tags`` key listing the tags of the synced object. The
+    referenced tags must already exist in Nautobot and be associated with the property's content
+    type; they are not auto-created. The repository is authoritative for tags: any tag not listed
+    (including when the ``tags`` key is omitted) is removed from the object on sync.
 
     """
     if "nautobot_golden_config.pluginproperties" not in repository_record.provided_contents:
@@ -174,9 +176,13 @@ def get_id_kwargs(gc_config_item_dict, id_keys, job_result):
 def get_tags(gc_config_item_dict, model, job_result):
     """Pop ``tags`` from the YAML item dict and resolve to Tag instances.
 
+    The Git repository is authoritative for the tags of the objects it defines, following the same
+    pattern as Nautobot core's config context datasource: an item with no ``tags`` key (or an empty
+    one) resolves to an empty list, so that removing tags from the YAML removes them from the object.
+
     The lookup is always scoped to ``model``'s content type, so a tag only resolves if it is
     assignable to that model. This mirrors the FK handling in ``get_id_kwargs``: a referenced tag
-    that cannot be found for that content type raises ``MissingReference`` so the caller skips the
+    that cannot be resolved for that content type raises ``MissingReference`` so the caller skips the
     item.
 
     Args:
@@ -185,23 +191,27 @@ def get_tags(gc_config_item_dict, model, job_result):
         job_result: The Git repository sync job result, used for logging.
 
     Returns:
-        list: A list of resolved ``Tag`` objects, or ``None`` if no ``tags`` key is present.
+        list: A list of resolved ``Tag`` objects, empty if the item does not define any tags.
 
     Raises:
-        MissingReference: If a referenced tag cannot be found for the model's content type.
+        MissingReference: If a referenced tag cannot be resolved for the model's content type.
     """
-    if "tags" not in gc_config_item_dict:
-        return None
-    tag_entries = gc_config_item_dict.pop("tags") or []
+    tag_entries = gc_config_item_dict.pop("tags", None) or []
+    if not isinstance(tag_entries, list):
+        tag_entries = [tag_entries]
     content_type = ContentType.objects.get_for_model(model)
     tags = []
     for entry in tag_entries:
         try:
-            tags.append(Tag.objects.get(**entry, content_types=content_type))
-        except Tag.DoesNotExist:
+            if not isinstance(entry, dict):
+                raise TypeError(f"Tag reference must be a mapping such as `name: <tag name>`, got {entry!r}")
+            tag = Tag.objects.get(**entry, content_types=content_type)
+        except (Tag.DoesNotExist, Tag.MultipleObjectsReturned, FieldError, TypeError, ValueError) as exc:
             error_msg = get_error_message("E3034", tag_reference=entry, model=model.__name__)
             job_result.log(error_msg, level_choice=LogLevelChoices.LOG_WARNING)
-            raise MissingReference from Tag.DoesNotExist
+            raise MissingReference from exc
+        if tag not in tags:
+            tags.append(tag)
     return tags
 
 
@@ -244,34 +254,36 @@ def update_git_gc_properties(golden_config_path, job_result, gc_config_item):  #
                 )
                 continue
 
-        try:
-            for item_dict in gc_config_property_list:
+        for item_dict in gc_config_property_list:
+            try:
                 id_kwargs = get_id_kwargs(item_dict, gc_config_item["id_keys"], job_result)
-                tags = get_tags(item_dict, gc_config_item["class"], job_result)
-                item, created = gc_config_item["class"].objects.update_or_create(**id_kwargs, defaults=item_dict)
-                if tags is not None:
-                    item.tags.set(tags)
+                tags = get_tags(item_dict, property_model, job_result)
+                with transaction.atomic():
+                    item, created = property_model.objects.update_or_create(**id_kwargs, defaults=item_dict)
+                    if set(item.tags.all()) != set(tags):
+                        item.tags.set(tags)
 
-                log_message = (
-                    f"New {property_model.__name__} created: {item}"
-                    if created
-                    else f"Updated {property_model.__name__}: {item}"
-                )
+            except MissingReference:
+                # Already logged where the reference failed to resolve; skip only this item.
+                continue
 
+            except IntegrityError as exc:
                 job_result.log(
-                    log_message,
-                    level_choice=LogLevelChoices.LOG_DEBUG,
+                    f"Issue seen with attribute values: {exc}",
+                    level_choice=LogLevelChoices.LOG_WARNING,
                 )
+                continue
 
-        except MissingReference:
-            continue
-
-        except IntegrityError as exc:
-            job_result.log(
-                f"Issue seen with attribute values: {exc}",
-                level_choice=LogLevelChoices.LOG_WARNING,
+            log_message = (
+                f"New {property_model.__name__} created: {item}"
+                if created
+                else f"Updated {property_model.__name__}: {item}"
             )
-            continue
+
+            job_result.log(
+                log_message,
+                level_choice=LogLevelChoices.LOG_DEBUG,
+            )
 
 
 datasource_contents = []

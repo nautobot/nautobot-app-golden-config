@@ -1,0 +1,1 @@
+Fixed unit tests that hardcoded the `/opt/nautobot/git` path to use `settings.GIT_ROOT`, for compatibility with the isolated test environment in newer Nautobot versions.

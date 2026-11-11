@@ -9,7 +9,7 @@ from django.core.management.base import BaseCommand
 from django.db import DEFAULT_DB_ALIAS
 from nautobot.apps.factory import get_random_instances
 from nautobot.dcim.models import Platform
-from nautobot.extras.models import DynamicGroup, GraphQLQuery, JobResult, Status
+from nautobot.extras.models import DynamicGroup, GraphQLQuery, JobResult
 from nautobot.extras.models import Job as JobModel
 from nautobot.extras.models.approvals import (
     ApprovalWorkflowDefinition,
@@ -227,6 +227,7 @@ class Command(BaseCommand):
         # TODO: Create ConfigRemoves
         # TODO: Create ConfigReplaces
         # TODO: Create RemediationSettings
+        approver = self._generate_approval_workflow(golden_config_setting)
         self.stdout.write(f"Creating {len(devices)} ConfigPlans")
         for device in devices:
             job_model = GenerateConfigPlans().job_model
@@ -239,13 +240,13 @@ class Command(BaseCommand):
                 config_set="""hostname foo""",
                 plan_result=plan_result,
             )
-        self._generate_approval_data(golden_config_setting, devices[0])
+        self._generate_approval_sample_plans(approver, devices[0])
         JobModel.objects.using(db).filter(module_name="nautobot_golden_config.jobs").update(
             enabled=True,
         )
 
-    def _generate_approval_data(self, golden_config_setting, device):
-        """Create an approval workflow, its approvers, and a sample Config Plan in each approval state."""
+    def _generate_approval_workflow(self, golden_config_setting):
+        """Create an approval workflow and its approver, select it on the setting, and return the approver."""
         self.stdout.write("Creating Config Plan approval workflow test data...")
         approver, _ = get_user_model().objects.get_or_create(username=APPROVER_USERNAME)
         approvers, _ = Group.objects.get_or_create(name=APPROVERS_GROUP_NAME)
@@ -259,16 +260,23 @@ class Command(BaseCommand):
             name="Network review",
             defaults={"sequence": 10, "min_approvers": 1, "approver_group": approvers},
         )
+        golden_config_setting.config_plan_approval_workflow = definition
+        golden_config_setting.save()
+        # A device resolves to its setting through the cached membership of the setting's Dynamic Group.
+        golden_config_setting.dynamic_group.update_cached_members()
+        return approver
+
+    def _generate_approval_sample_plans(self, approver, device):
+        """Create a Config Plan in each approval state, pending ones included."""
         job_model = GenerateConfigPlans().job_model
 
-        def create_sample_plan(plan_type, label, status=None):
+        def create_sample_plan(plan_type, label):
             return ConfigPlan.objects.create(
                 plan_type=plan_type,
                 device=device,
                 config_set=f"hostname {device.name}\n! approval sample: {label}",
                 change_control_id=f"{APPROVAL_SAMPLE_PREFIX}-{label}",
                 plan_result=JobResult.objects.create(job_model=job_model, user=approver),
-                status=status,
             )
 
         def respond(plan, state, comments):
@@ -279,15 +287,6 @@ class Command(BaseCommand):
                 comments=comments,
             )
 
-        # A plan approved by status is created before the setting selects the workflow, so it has none.
-        golden_config_setting.config_plan_approval_workflow = None
-        golden_config_setting.save()
-        create_sample_plan(ConfigPlanTypeChoice.TYPE_MANUAL, "legacy", status=Status.objects.get(name="Not Approved"))
-
-        golden_config_setting.config_plan_approval_workflow = definition
-        golden_config_setting.save()
-        # A device resolves to its setting through the cached membership of the setting's Dynamic Group.
-        golden_config_setting.dynamic_group.update_cached_members()
         create_sample_plan(ConfigPlanTypeChoice.TYPE_INTENDED, "pending")
         denied_plan = create_sample_plan(ConfigPlanTypeChoice.TYPE_MISSING, "denied")
         respond(denied_plan, "Denied", "Missing change control URL.")
@@ -304,9 +303,7 @@ class Command(BaseCommand):
             ComplianceRule.objects.using(options["database"]).all().delete()
             ComplianceFeature.objects.using(options["database"]).all().delete()
             GraphQLQuery.objects.using(options["database"]).filter(name="GoldenConfigSetting.sot_agg_query").delete()
-            ConfigPlan.objects.using(options["database"]).filter(
-                change_control_id__startswith=APPROVAL_SAMPLE_PREFIX
-            ).delete()
+            ConfigPlan.objects.using(options["database"]).all().delete()
             ApprovalWorkflowDefinition.objects.using(options["database"]).filter(name=APPROVAL_DEFINITION_NAME).delete()
             Group.objects.using(options["database"]).filter(name=APPROVERS_GROUP_NAME).delete()
             get_user_model().objects.using(options["database"]).filter(username=APPROVER_USERNAME).delete()

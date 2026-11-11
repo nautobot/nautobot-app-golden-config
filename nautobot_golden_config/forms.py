@@ -596,12 +596,6 @@ class ConfigPlanUpdateForm(NautobotModelForm):  # pylint: disable=nb-sub-class-n
         queryset=Tag.objects.all(), query_params={"content_types": "dcim.device"}, required=False
     )
 
-    def __init__(self, *args, **kwargs):
-        """Remove `status` for a plan with an approval workflow, the workflow owns it."""
-        super().__init__(*args, **kwargs)
-        if self.instance.pk and self.instance.approval_workflow:
-            del self.fields["status"]
-
     class Meta:
         """Boilerplate form Meta data for ConfigPlan."""
 

@@ -29,4 +29,10 @@ ERROR_CODES = {
         error_message="Cannot start approval workflow `{definition}` for the config plan on `{device}`, the definition has no stages.",
         recommendation="Add an approval stage to the Approval Workflow Definition, or remove it from the Golden Config Setting.",
     ),
+    "E3035": ErrorCode(
+        troubleshooting="Edit the Golden Config Setting that applies to the devices, which is the matching setting with the highest weight, and select a Config Plan Approval Workflow.",
+        description="The Generate Config Plans job did not create any Config Plan because a device in scope has no Config Plan Approval Workflow selected by its Golden Config Setting, or no Golden Config Setting applies to it.",
+        error_message="Cannot generate config plans, the Golden Config Setting of these devices does not select a Config Plan Approval Workflow: {devices}.",
+        recommendation="Select a Config Plan Approval Workflow on the Golden Config Setting, then generate the config plans again.",
+    ),
 }

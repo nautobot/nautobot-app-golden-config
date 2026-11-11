@@ -26,8 +26,8 @@ You can view a plan by navigating to **Golden Config -> Config Plans** and choos
 - **Change Control ID** (Optional): A text field that be used for grouping and filtering plans.
 - **Change Control URL** (Optional): A URL field that can be used to link to an external system tracking change controls.
 - **Job Result**: The Job that generated the plan(s).
-- **Status**: The status of the plan. See [Approving Config Plans](#approving-config-plans) for how approval is reflected in the status.
-- **Approval State** (If Applicable): The state of the plan's Approval Workflow (`Pending`, `Approved`, `Denied` or `Canceled`). It is empty when the plan is approved by status.
+- **Status**: The status of the plan, which tracks the plan itself, for example while it is deployed. It is independent of the approval state.
+- **Approval State**: The state of the plan's Approval Workflow (`Pending`, `Approved`, `Denied` or `Canceled`). See [Approving Config Plans](#approving-config-plans).
 
 ![Config Plan View](../images/ss1_config_plan-view_light.png#only-light){ .on-glb }
 ![Config Plan View](../images/ss1_config_plan-view_dark.png#only-dark){ .on-glb }
@@ -61,7 +61,7 @@ After a Config Plan is generated you have the ability to edit (or bulk edit) the
 
 - Change Control ID
 - Change Control URL
-- Status (unless the plan has an Approval Workflow, which manages the status)
+- Status
 - Notes
 - Tags
 
@@ -83,45 +83,20 @@ Post Processing occurs in a modal popup, and allows a user to view the configura
 
 ## Approving Config Plans
 
-A Config Plan can only be deployed once it is approved. There are two ways to approve a plan, chosen per [Golden Config Setting](./app_getting_started.md), so devices in different scopes can use different methods.
+A Config Plan can only be deployed once its Nautobot [Approval Workflow](https://docs.nautobot.com/projects/core/en/stable/user-guide/platform-functionality/approval-workflow/) is approved. The workflow is selected per [Golden Config Setting](./app_getting_started.md), so devices in different scopes can use different approval processes.
 
-<div class="grid cards" markdown>
+Each plan generated for a device whose Golden Config Setting selects a **Config Plan Approval Workflow** starts its own workflow, so plans for 50 devices create 50 workflows. The **Generate Config Plans** job does not create any plan if a device in scope has no workflow selected. See [E3035](../admin/troubleshooting/E3035.md).
 
--   **Approval by Status**
-
-    ---
-
-    Best for quick, bulk approvals by anyone who can edit plans.
-
--   **Approval by Approval Workflow**
-
-    ---
-
-    Best for when approvals need designated approvers, multiple stages, or a recorded decision.
-
-</div>
-
-### Approval by Status
-
-This is the default. New plans get the `default_deploy_status` [app setting](../admin/install.md#app-configuration) (`Not Approved`), and the **Deploy Config Plans** job refuses to deploy them. To approve plans, edit them, or bulk edit several at once, and set the status to `Approved`.
-
-### Approval by Approval Workflow
-
-When the Golden Config Setting that applies to a device selects a **Config Plan Approval Workflow**, each plan generated for that device starts a Nautobot [Approval Workflow](https://docs.nautobot.com/projects/core/en/stable/user-guide/platform-functionality/approval-workflow/). Every plan is approved on its own, so plans for 50 devices create 50 workflows.
-
-The workflow controls the status of the plan, and users can no longer edit it:
-
-| Approval Workflow | Config Plan Status |
-| ----------------- | ------------------ |
-| Started | `Pending Approval` |
-| Approved | `Approved` |
-| Denied or canceled | `Not Approved` |
+The approval state is shown on the plan, and the workflow never changes its **Status**, which keeps tracking the plan itself, such as `In Progress`, `Completed` or `Failed` during deployment.
 
 A denied or canceled workflow is final. Delete the plan and generate it again once the cause has been corrected.
 
-The **Deploy Config Plans** job fails without deploying anything if any plan in the batch is not `Approved`. See [E3025](../admin/troubleshooting/E3025.md).
+The **Deploy Config Plans** job fails without deploying anything if the workflow of any plan in the batch is not `Approved`. See [E3025](../admin/troubleshooting/E3025.md).
 
-#### Setting Up an Approval Workflow
+!!! warning
+    Config Plans generated before a workflow was required have none, so they cannot be deployed. Delete them and generate them again once the Golden Config Setting selects a workflow.
+
+### Setting Up an Approval Workflow
 
 1. Create a group for the approvers and add the users to it.
 2. Under **Extras -> Approval Workflow Definitions**, add a definition with **Model content type** `nautobot_golden_config | config plan` and one or more stages that use the approver group.
@@ -130,4 +105,4 @@ The **Deploy Config Plans** job fails without deploying anything if any plan in 
 Approvers need the `extras.view_approvalworkflowstage`, `extras.change_approvalworkflowstage` and `nautobot_golden_config.view_configplan` permissions. They find their plans on the **Approver Dashboard** under **Extras -> Approval Workflows**.
 
 !!! warning
-    A device uses only the matching Golden Config Setting with the highest weight, and a plan only gets a workflow if that setting selects one. If the device is also in the scope of another setting, such as **Default Settings**, give the setting that selects the workflow a strictly higher weight. Plans do not pick up a workflow later, so delete and generate them again after fixing the weights.
+    A device uses only the matching Golden Config Setting with the highest weight. If the device is also in the scope of another setting, such as **Default Settings**, give the setting that selects the workflow a strictly higher weight.

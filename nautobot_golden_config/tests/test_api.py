@@ -802,20 +802,13 @@ class ConfigPlanApprovalAPITestCase(APITestCase):
         self.assertHttpStatus(response, status.HTTP_200_OK)
         self.assertEqual(response.data["approval_state"], ApprovalWorkflowStateChoices.PENDING)
 
-    def test_status_cannot_be_changed_when_plan_has_a_workflow(self):
-        self.add_permissions(
-            "nautobot_golden_config.view_configplan", "nautobot_golden_config.change_configplan", "extras.view_status"
-        )
-        approved = Status.objects.get(name="Approved")
-        response = self.client.patch(self.url, {"status": approved.pk}, format="json", **self.header)
-        self.assertHttpStatus(response, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("managed by it", str(response.data["status"]))
-
-    def test_status_can_be_changed_when_plan_has_no_workflow(self):
-        self.plan.associated_approval_workflows.all().delete()
+    def test_status_can_be_changed_independently_of_the_workflow(self):
         self.add_permissions(
             "nautobot_golden_config.view_configplan", "nautobot_golden_config.change_configplan", "extras.view_status"
         )
         approved = Status.objects.get(name="Approved")
         response = self.client.patch(self.url, {"status": approved.pk}, format="json", **self.header)
         self.assertHttpStatus(response, status.HTTP_200_OK)
+        self.plan.refresh_from_db()
+        self.assertEqual(self.plan.status, approved)
+        self.assertEqual(response.data["approval_state"], ApprovalWorkflowStateChoices.PENDING)

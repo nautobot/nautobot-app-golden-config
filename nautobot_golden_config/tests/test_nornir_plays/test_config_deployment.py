@@ -22,6 +22,7 @@ class ConfigDeploymentTest(TestCase):
         """Set up test fixtures."""
         super().setUpTestData()
         create_device()
+        enable_config_plan_approval()
         cls.device = Device.objects.first()
         cls.plan_result = JobResult.objects.create(
             name="Test Plan Result",
@@ -31,9 +32,9 @@ class ConfigDeploymentTest(TestCase):
             plan_type="manual",
             device=cls.device,
             config_set="Test Config Set",
-            status=Status.objects.get(name="Approved"),
             plan_result=cls.plan_result,
         )
+        cls.config_plan.associated_approval_workflows.update(current_state=ApprovalWorkflowStateChoices.APPROVED)
         cls.user, _ = get_user_model().objects.get_or_create(username="testuser")
 
         # Create mock job
@@ -176,18 +177,10 @@ class ConfigDeploymentApprovalGateTest(TestCase):
         mock_nornir.assert_not_called()
 
     @patch("nautobot_golden_config.nornir_plays.config_deployment.InitNornir")
-    def test_plan_without_workflow_is_gated_by_status(self, mock_nornir):
+    def test_plan_without_workflow_is_not_deployed(self, mock_nornir):
         self._disable_approval_workflow()
-        mock_nr = self._mock_successful_nornir(mock_nornir)
-        for status_name in ("Not Approved", "Pending Approval"):
-            with self.subTest(status=status_name):
-                plan = self._create_plan(status_name=status_name)
-                self.assertIsNone(plan.approval_workflow)
-                with self.assertRaisesMessage(ConfigPlanNotApproved, "E3025"):
-                    config_deployment(self._build_job(plan))
-                plan.delete()
-        mock_nr.run.assert_not_called()
-
-        approved_plan = self._create_plan(status_name="Approved")
-        config_deployment(self._build_job(approved_plan))
-        mock_nr.run.assert_called_once()
+        plan = self._create_plan(status_name="Approved")
+        self.assertIsNone(plan.approval_workflow)
+        with self.assertRaisesMessage(ConfigPlanNotApproved, "No workflow"):
+            config_deployment(self._build_job(plan))
+        mock_nornir.assert_not_called()

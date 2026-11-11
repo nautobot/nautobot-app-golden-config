@@ -18,7 +18,7 @@ from nautobot.apps.utils import render_jinja2
 from nautobot.core.models.generics import PrimaryModel
 from nautobot.core.models.utils import serialize_object, serialize_object_v2
 from nautobot.dcim.models import Device
-from nautobot.extras.models import ObjectChange, Status
+from nautobot.extras.models import ObjectChange
 from nautobot.extras.models.approvals import ApprovalWorkflow, ApprovalWorkflowStage
 from nautobot.extras.models.statuses import StatusField
 from netutils.config.compliance import feature_compliance
@@ -26,13 +26,7 @@ from xmldiff import actions, main
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
 from nautobot_golden_config.error_codes import ERROR_CODES
-from nautobot_golden_config.utilities.constant import (
-    APPROVED_STATUS,
-    DEFAULT_DEPLOY_STATUS,
-    ENABLE_SOTAGG,
-    PENDING_APPROVAL_STATUS,
-    PLUGIN_CFG,
-)
+from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
 
 LOGGER = logging.getLogger(__name__)
 GRAPHQL_STR_START = "query ($device_id: ID!)"
@@ -639,7 +633,7 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         null=True,
         help_text=(
             "Approval Workflow Definition started for each Config Plan generated for devices in this setting's scope. "
-            "When empty, Config Plan approval is tracked with the Config Plan status."
+            "Config Plans cannot be generated for devices in scope while it is empty."
         ),
     )
     dynamic_group = models.OneToOneField(
@@ -926,36 +920,10 @@ class ConfigPlan(ApprovableModelMixin, PrimaryModel):  # pylint: disable=too-man
             if is_new:
                 self.begin_approval_workflow()
 
-    def clean(self):
-        """Reject user edits to the status while an approval workflow owns it."""
-        super().clean()
-        if self._state.adding or not self.approval_workflow:
-            return
-        stored_status_id = ConfigPlan.objects.filter(pk=self.pk).values_list("status_id", flat=True).first()
-        if self.status_id != stored_status_id:
-            raise ValidationError({"status": "The status of a config plan with an approval workflow is managed by it."})
-
     @property
     def approval_workflow(self):
-        """The approval workflow attached to this plan, or `None` when the plan is approved by status."""
+        """The approval workflow attached to this plan, or `None` if it has none."""
         return next(iter(self.associated_approval_workflows.all()), None)
-
-    def _deployment_not_started(self):
-        """Whether the status still belongs to the approval phase rather than the deployment lifecycle."""
-        approval_statuses = {APPROVED_STATUS, PENDING_APPROVAL_STATUS, DEFAULT_DEPLOY_STATUS}
-        return self.status is None or self.status.name in approval_statuses
-
-    def _set_approval_status(self, status_name):
-        """Mirror an approval outcome onto `status`, leaving the deployment lifecycle statuses untouched."""
-        if not self._deployment_not_started():
-            LOGGER.warning("Config plan %s status `%s` was not changed to `%s`.", self.pk, self.status, status_name)
-            return
-        status = Status.objects.filter(name=status_name).first()
-        if status is None:
-            LOGGER.warning("Status `%s` does not exist, config plan %s status was not updated.", status_name, self.pk)
-            return
-        self.status = status
-        self.save(update_fields=["status", "last_updated"])
 
     def begin_approval_workflow(self) -> ApprovalWorkflow | None:
         """Start the approval workflow selected by the device's Golden Config Setting, if any.
@@ -1003,17 +971,13 @@ class ConfigPlan(ApprovableModelMixin, PrimaryModel):  # pylint: disable=too-man
         return workflow
 
     def on_workflow_initiated(self, approval_workflow):  # pylint: disable=unused-argument
-        """Mark the plan as waiting on its approval workflow."""
-        self._set_approval_status(PENDING_APPROVAL_STATUS)
+        """No action, the approval state is kept on the workflow and not on `status`."""
 
     def on_workflow_approved(self, approval_workflow):  # pylint: disable=unused-argument
-        """Mark the plan as approved once every approval stage has been approved."""
-        self._set_approval_status(APPROVED_STATUS)
+        """No action, the approval state is kept on the workflow and not on `status`."""
 
     def on_workflow_denied(self, approval_workflow):  # pylint: disable=unused-argument
-        """Mark the plan as not approved when an approver denies it."""
-        self._set_approval_status(DEFAULT_DEPLOY_STATUS)
+        """No action, the approval state is kept on the workflow and not on `status`."""
 
     def on_workflow_canceled(self, approval_workflow):  # pylint: disable=unused-argument
-        """Mark the plan as not approved when its approval workflow is canceled."""
-        self._set_approval_status(DEFAULT_DEPLOY_STATUS)
+        """No action, the approval state is kept on the workflow and not on `status`."""

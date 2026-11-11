@@ -3,7 +3,7 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from nautobot.apps.choices import JobResultStatusChoices
+from nautobot.apps.choices import ApprovalWorkflowStateChoices, JobResultStatusChoices
 from nautobot.apps.testing import TransactionTestCase, create_job_result_and_run_job
 from nautobot.dcim.models import Device
 from nautobot.extras.models import JobLogEntry, JobResult, Status
@@ -694,3 +694,38 @@ class DeployConfigPlansApprovalTestCase(TransactionTestCase):
         self.assertEqual(job_result.status, JobResultStatusChoices.STATUS_FAILURE)
         log_entries = JobLogEntry.objects.filter(job_result=job_result, message__contains="E3025")
         self.assertTrue(log_entries.exists())
+
+
+class GenerateConfigPlansApprovalTestCase(TransactionTestCase):
+    """Test that Config Plans are only generated for devices whose setting selects an approval workflow."""
+
+    databases = ("default", "job_logs")
+
+    def _generate_manual_plans(self, device):
+        return create_job_result_and_run_job(
+            module="nautobot_golden_config.jobs",
+            name="GenerateConfigPlans",
+            plan_type="manual",
+            commands="hostname test",
+            device=[device.pk],
+        )
+
+    def test_generation_is_blocked_without_an_approval_workflow(self):
+        device = create_device()
+        dgs_gc_settings_and_job_repo_objects()
+
+        job_result = self._generate_manual_plans(device)
+
+        self.assertEqual(job_result.status, JobResultStatusChoices.STATUS_FAILURE)
+        self.assertTrue(JobLogEntry.objects.filter(job_result=job_result, message__contains="E3035").exists())
+        self.assertFalse(ConfigPlan.objects.exists())
+
+    def test_generation_starts_a_workflow_for_each_plan(self):
+        device = create_device()
+        enable_config_plan_approval()
+
+        job_result = self._generate_manual_plans(device)
+
+        self.assertEqual(job_result.status, JobResultStatusChoices.STATUS_SUCCESS)
+        plan = ConfigPlan.objects.get(device=device)
+        self.assertEqual(plan.approval_workflow.current_state, ApprovalWorkflowStateChoices.PENDING)

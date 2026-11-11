@@ -1,0 +1,1 @@
+Added the `approval_state` column, filter and REST API field to Config Plans.

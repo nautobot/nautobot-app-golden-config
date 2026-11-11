@@ -774,58 +774,36 @@ class ConfigPlanApprovalWorkflowTestCase(TestCase):
     def test_plan_without_configured_workflow_has_no_workflow(self):
         self.setting.config_plan_approval_workflow = None
         self.setting.validated_save()
-        plan = self._create_plan()
-        self.assertIsNone(plan.approval_workflow)
-        self.assertEqual(plan.status, self.not_approved)
+        self.assertIsNone(self._create_plan().approval_workflow)
 
     def test_plan_starts_the_configured_workflow(self):
-        plan = self._create_plan()
-        workflow = plan.approval_workflow
+        workflow = self._create_plan().approval_workflow
         self.assertEqual(workflow.approval_workflow_definition, self.definition)
         self.assertEqual(workflow.current_state, ApprovalWorkflowStateChoices.PENDING)
         self.assertEqual(workflow.user, self.job_result.user)
-        self.assertEqual(plan.status.name, "Pending Approval")
 
-    def test_approving_the_workflow_sets_status_approved(self):
-        plan = self._create_plan()
-        self._respond(plan, ApprovalWorkflowStateChoices.APPROVED)
-        self.assertEqual(plan.approval_workflow.current_state, ApprovalWorkflowStateChoices.APPROVED)
-        self.assertEqual(plan.status.name, "Approved")
+    def test_workflow_outcome_does_not_change_the_status(self):
+        for state in (ApprovalWorkflowStateChoices.APPROVED, ApprovalWorkflowStateChoices.DENIED):
+            with self.subTest(state=state):
+                plan = self._create_plan()
+                self._respond(plan, state)
+                self.assertEqual(plan.approval_workflow.current_state, state)
+                self.assertEqual(plan.status, self.not_approved)
 
-    def test_denying_the_workflow_sets_status_not_approved(self):
-        plan = self._create_plan()
-        self._respond(plan, ApprovalWorkflowStateChoices.DENIED)
-        self.assertEqual(plan.approval_workflow.current_state, ApprovalWorkflowStateChoices.DENIED)
-        self.assertEqual(plan.status, self.not_approved)
-
-    def test_canceling_the_workflow_sets_status_not_approved(self):
+    def test_canceling_the_workflow_does_not_change_the_status(self):
         plan = self._create_plan()
         plan.approval_workflow.cancel(user=self.approver)
         plan.refresh_from_db()
         self.assertEqual(plan.approval_workflow.current_state, ApprovalWorkflowStateChoices.CANCELED)
         self.assertEqual(plan.status, self.not_approved)
 
-    def test_approval_outcome_does_not_change_deployment_status(self):
+    def test_status_can_be_edited_while_a_workflow_exists(self):
         plan = self._create_plan()
-        plan.status = Status.objects.get(name="Completed")
-        plan.save()
-        self._respond(plan, ApprovalWorkflowStateChoices.DENIED)
-        self.assertEqual(plan.status.name, "Completed")
-
-    def test_status_cannot_be_edited_while_a_workflow_owns_it(self):
-        plan = self._create_plan()
-        plan.status = Status.objects.get(name="Approved")
-        with self.assertRaises(ValidationError) as context:
-            plan.validated_save()
-        self.assertIn("status", context.exception.message_dict)
-
-    def test_status_can_be_edited_without_a_workflow(self):
-        plan = self._create_plan()
-        plan.associated_approval_workflows.all().delete()
         plan.status = Status.objects.get(name="Approved")
         plan.validated_save()
         plan.refresh_from_db()
         self.assertEqual(plan.status.name, "Approved")
+        self.assertEqual(plan.approval_workflow.current_state, ApprovalWorkflowStateChoices.PENDING)
 
     def test_definition_without_stages_blocks_plan_creation(self):
         empty_definition = ApprovalWorkflowDefinition.objects.create(

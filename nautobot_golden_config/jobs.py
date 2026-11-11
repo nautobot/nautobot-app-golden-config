@@ -30,13 +30,14 @@ from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir_nautobot.exceptions import NornirNautobotException
 
 from nautobot_golden_config.choices import ConfigPlanTypeChoice
+from nautobot_golden_config.error_codes import ERROR_CODES
 from nautobot_golden_config.exceptions import (
     BackupFailure,
     ComplianceFailure,
     ConfigPlanNotApproved,
     IntendedGenerationFailure,
 )
-from nautobot_golden_config.models import ComplianceFeature, ConfigPlan, GoldenConfig
+from nautobot_golden_config.models import ComplianceFeature, ConfigPlan, GoldenConfig, GoldenConfigSetting
 from nautobot_golden_config.nornir_plays.config_backup import config_backup
 from nautobot_golden_config.nornir_plays.config_compliance import config_compliance
 from nautobot_golden_config.nornir_plays.config_deployment import config_deployment
@@ -57,6 +58,8 @@ from nautobot_golden_config.utilities.helper import (
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 
 name = "Golden Configuration"  # pylint: disable=invalid-name
+
+MAX_DEVICES_LISTED = 10
 
 
 def get_repo_types_for_job(job):
@@ -458,6 +461,21 @@ class GenerateConfigPlans(Job, FormEntry):
                 self.logger.error(error_msg)
                 raise ValueError(error_msg)
 
+    def _validate_approval_workflows(self):
+        """Fail before creating any plan if a device in scope has no Config Plan Approval Workflow selected."""
+        devices_without_workflow = []
+        for device in self._device_qs:
+            setting = GoldenConfigSetting.objects.get_for_device(device)
+            if setting is None or setting.config_plan_approval_workflow is None:
+                devices_without_workflow.append(device.name)
+        if devices_without_workflow:
+            listed = ", ".join(devices_without_workflow[:MAX_DEVICES_LISTED])
+            if len(devices_without_workflow) > MAX_DEVICES_LISTED:
+                listed += f" and {len(devices_without_workflow) - MAX_DEVICES_LISTED} more"
+            error_msg = f"`E3035:` {ERROR_CODES['E3035'].error_message.format(devices=listed)}"
+            self.logger.error(error_msg)
+            raise NornirNautobotException(error_msg)
+
     def _generate_config_plan_from_feature(self):
         """Generate config plans from features."""
         for device in self._device_qs:
@@ -531,6 +549,7 @@ class GenerateConfigPlans(Job, FormEntry):
             error_msg = str(error)
             self.logger.error(error_msg)
             raise NornirNautobotException(error_msg) from error
+        self._validate_approval_workflows()
         if self._plan_type in ["intended", "missing", "remediation"]:
             self.logger.debug("Starting config plan generation for compliance features.")
             self._generate_config_plan_from_feature()

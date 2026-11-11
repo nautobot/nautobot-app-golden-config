@@ -94,11 +94,11 @@ def config_deployment(job):
     config_plan_qs = job.data["config_plan"]
     unapproved_plans = get_unapproved_config_plans(config_plan_qs)
     if unapproved_plans.exists():
-        shown_plans = unapproved_plans.select_related("device", "status").prefetch_related(
-            "associated_approval_workflows"
-        )[:MAX_UNAPPROVED_PLANS_LISTED]
+        shown_plans = unapproved_plans.select_related("device").prefetch_related("associated_approval_workflows")[
+            :MAX_UNAPPROVED_PLANS_LISTED
+        ]
         plan_details = ", ".join(
-            f"{plan.device} ({plan.approval_workflow.current_state if plan.approval_workflow else plan.status})"
+            f"{plan.device} ({plan.approval_workflow.current_state if plan.approval_workflow else 'No workflow'})"
             for plan in shown_plans
         )
         error_msg = (

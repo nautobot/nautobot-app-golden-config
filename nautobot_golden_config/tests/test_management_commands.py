@@ -37,20 +37,14 @@ class GenerateTestDataCommandTestCase(TestCase):
     def test_creates_a_sample_plan_in_each_approval_state(self):
         self._generate()
 
-        sample_plans = self._sample_plans()
-        approval_state_and_status = {
-            label: (plan.approval_workflow.current_state if plan.approval_workflow else None, plan.status.name)
-            for label, plan in sample_plans.items()
-        }
-        self.assertEqual(
-            approval_state_and_status,
-            {
-                "legacy": (None, "Not Approved"),
-                "pending": ("Pending", "Pending Approval"),
-                "denied": ("Denied", "Not Approved"),
-                "approved": ("Approved", "Approved"),
-            },
-        )
+        approval_states = {label: plan.approval_workflow.current_state for label, plan in self._sample_plans().items()}
+        self.assertEqual(approval_states, {"pending": "Pending", "denied": "Denied", "approved": "Approved"})
+
+    def test_every_generated_plan_has_an_approval_workflow(self):
+        self._generate()
+
+        self.assertTrue(ConfigPlan.objects.exists())
+        self.assertFalse(ConfigPlan.objects.filter(associated_approval_workflows__isnull=True).exists())
 
     def test_setting_selects_the_approval_workflow(self):
         self._generate()
@@ -65,6 +59,6 @@ class GenerateTestDataCommandTestCase(TestCase):
         self._generate(flush=True)
 
         self.assertEqual(ApprovalWorkflowDefinition.objects.filter(name__startswith="Golden Config Test").count(), 1)
-        self.assertEqual(len(self._sample_plans()), 4)
+        self.assertEqual(len(self._sample_plans()), 3)
         self.assertEqual(Group.objects.filter(name="Golden Config Test Approvers").count(), 1)
         self.assertEqual(get_user_model().objects.filter(username="gc-test-approver").count(), 1)

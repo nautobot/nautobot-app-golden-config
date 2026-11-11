@@ -1,0 +1,1 @@
+Removed approving Config Plans by editing their status, an Approval Workflow is now required. The Generate Config Plans job fails if the Golden Config Setting of a device in scope selects none.

@@ -725,7 +725,7 @@ class GCJobDebugLoggingTestCase(TransactionTestCase):
                 job_result = create_job_result_and_run_job(
                     module="nautobot_golden_config.jobs",
                     name="BackupJob",
-                    device=Device.objects.filter(name=self.device.name),
+                    device=device_pks(Device.objects.filter(name=self.device.name)),
                     debug=debug,
                 )
                 debug_entries = JobLogEntry.objects.filter(job_result=job_result, log_level="debug")
@@ -736,7 +736,7 @@ class GCJobDebugLoggingTestCase(TransactionTestCase):
         create_job_result_and_run_job(
             module="nautobot_golden_config.jobs",
             name="BackupJob",
-            device=Device.objects.filter(name=self.device.name),
+            device=device_pks(Device.objects.filter(name=self.device.name)),
             debug=False,
         )
         job_result = create_job_result_and_run_job(

@@ -25,5 +25,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(convert_many_repos_part1),
+        migrations.RunPython(code=convert_many_repos_part1, reverse_code=migrations.RunPython.noop),
     ]

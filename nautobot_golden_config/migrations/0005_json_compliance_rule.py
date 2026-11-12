@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(code=jsonify),
+        migrations.RunPython(code=jsonify, reverse_code=migrations.RunPython.noop),
         migrations.AlterField(
             model_name="compliancerule",
             name="match_config",

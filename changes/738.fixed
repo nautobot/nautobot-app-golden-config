@@ -1,0 +1,1 @@
+Added no-op reverse functions to data migrations so `migrate nautobot_golden_config zero` can run.

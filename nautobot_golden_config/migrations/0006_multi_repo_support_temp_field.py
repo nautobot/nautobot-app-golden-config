@@ -44,5 +44,5 @@ class Migration(migrations.Migration):
                 to="extras.GitRepository",
             ),
         ),
-        migrations.RunPython(convert_many_repos),
+        migrations.RunPython(code=convert_many_repos, reverse_code=migrations.RunPython.noop),
     ]

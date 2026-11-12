@@ -19,5 +19,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(save_existing_sotagg_queries),
+        migrations.RunPython(code=save_existing_sotagg_queries, reverse_code=migrations.RunPython.noop),
     ]

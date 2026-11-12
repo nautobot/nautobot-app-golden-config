@@ -39,5 +39,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(alter_fields),
+        migrations.RunPython(code=alter_fields, reverse_code=migrations.RunPython.noop),
     ]

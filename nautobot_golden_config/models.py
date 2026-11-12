@@ -688,7 +688,7 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         path_errors = {
             field: "The path must be relative to the repository root, remove the leading `/`."
             for field in ("backup_path_template", "intended_path_template", "jinja_path_template")
-            if getattr(self, field).lstrip().startswith("/")
+            if str(getattr(self, field)).lstrip().startswith("/")
         }
         if path_errors:
             raise ValidationError(path_errors)

@@ -1,0 +1,1 @@
+Fixed `FieldError` when sorting the Config Overview table by device name.

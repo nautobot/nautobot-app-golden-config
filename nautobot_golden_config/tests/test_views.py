@@ -188,6 +188,11 @@ class GoldenConfigListViewTestCase(TestCase):
         response = self.client.get(f"{self._url}")
         self.assertEqual(response.status_code, 200)
 
+    def test_sort_by_name(self):
+        for sort in ("name", "-name"):
+            response = self.client.get(f"{self._url}?sort={sort}")
+            self.assertEqual(response.status_code, 200)
+
     # TODO: 3.0.0 Followup on whether these tests are required in Nautobot 3.0.0
     # def test_headers_in_table(self):
     #     table_header = self._get_golden_config_table_header()

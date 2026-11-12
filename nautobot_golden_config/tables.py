@@ -271,6 +271,7 @@ class GoldenConfigTable(BaseTable):
         args=[A("pk")],
         text=lambda record: record.device.name,
         verbose_name="Device",
+        order_by="device__name",
     )
 
     if ENABLE_BACKUP:

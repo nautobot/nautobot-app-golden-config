@@ -1,0 +1,1 @@
+Fixed unexpected job exceptions, such as a soft time limit, being discarded without a log entry when `fail_job_on_task_failure` is unchecked.

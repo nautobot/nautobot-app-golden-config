@@ -662,3 +662,36 @@ class GCRepoPushEmptyCommitTestCase(unittest.TestCase):
 
         repo_obj.commit_with_added.assert_called_once_with("msg")
         repo_obj.push.assert_called_once_with()
+
+
+class GCReposSwallowedExceptionTestCase(unittest.TestCase):
+    """Test gc_repos() logs unexpected exceptions it does not re-raise (issue #1128)."""
+
+    def _run(self, error, **kwargs):
+        """Run a gc_repos wrapped function that raises `error` and return the mock job."""
+        job = MagicMock()
+
+        @jobs.gc_repos
+        def run(self, *args, **kwargs):  # pylint: disable=unused-argument
+            raise error
+
+        with patch.object(jobs, "gc_repo_prep", return_value={}), patch.object(jobs, "gc_repo_push") as push:
+            run(job, **kwargs)
+        push.assert_called_once()
+        return job
+
+    def test_unexpected_exception_is_logged(self):
+        """An unexpected exception is logged when it is not re-raised."""
+        job = self._run(RuntimeError("time limit"))
+        job.logger.error.assert_called_once()
+        self.assertIn("E3001", job.logger.error.call_args.args[0])
+
+    def test_task_failure_is_not_logged_again(self):
+        """Per-device failures are already logged by the Nornir processor."""
+        job = self._run(jobs.BackupFailure())
+        job.logger.error.assert_not_called()
+
+    def test_exception_raised_when_fail_job_on_task_failure(self):
+        """The exception is still raised when fail_job_on_task_failure is set."""
+        with self.assertRaises(jobs.NornirNautobotException):
+            self._run(RuntimeError("time limit"), fail_job_on_task_failure=True)

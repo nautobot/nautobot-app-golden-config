@@ -30,7 +30,12 @@ from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir_nautobot.exceptions import NornirNautobotException
 
 from nautobot_golden_config.choices import ConfigPlanTypeChoice
-from nautobot_golden_config.exceptions import BackupFailure, ComplianceFailure, IntendedGenerationFailure
+from nautobot_golden_config.exceptions import (
+    BackupFailure,
+    ComplianceFailure,
+    GoldenConfigError,
+    IntendedGenerationFailure,
+)
 from nautobot_golden_config.models import ComplianceFeature, ConfigPlan, GoldenConfig
 from nautobot_golden_config.nornir_plays.config_backup import config_backup
 from nautobot_golden_config.nornir_plays.config_compliance import config_compliance
@@ -189,6 +194,9 @@ def gc_repos(func):
             # Raise error only if the job kwarg (checkbox) is selected to do so on the job execution form.
             if kwargs.get("fail_job_on_task_failure"):
                 raise NornirNautobotException(error_msg) from error
+            # Per-device failures are already logged by the Nornir processor.
+            if not isinstance(error, GoldenConfigError):
+                self.logger.error(error_msg)
         finally:
             gc_repo_push(job=self, current_repos=current_repos, commit_message=kwargs.get("commit_message"))
 

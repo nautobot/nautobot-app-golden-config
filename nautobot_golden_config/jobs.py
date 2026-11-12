@@ -88,13 +88,21 @@ def gc_repo_push(job, current_repos, commit_message=""):
     )
     if current_repos:
         for repo in current_repos:
+            if not commit_message:
+                commit_message = f"{job.Meta.name.upper()} JOB {now}"
+            if not repo.commit_with_added(commit_message):
+                job.logger.info(
+                    f"{repo.nautobot_repo_obj.name}: no configuration changes to commit.",
+                    extra={
+                        "grouping": "GC Repo Commit and Push",
+                        "object": repo.nautobot_repo_obj,
+                    },
+                )
+                continue
             job.logger.debug(
                 f"Pushing {job.Meta.name} results to repo {repo.base_url}.",
                 extra={"grouping": "GC Repo Commit and Push"},
             )
-            if not commit_message:
-                commit_message = f"{job.Meta.name.upper()} JOB {now}"
-            repo.commit_with_added(commit_message)
             repo.push()
             job.logger.info(
                 f'{repo.nautobot_repo_obj.name}: the new Git repository hash is "{repo.head}"',
@@ -103,6 +111,7 @@ def gc_repo_push(job, current_repos, commit_message=""):
                     "object": repo.nautobot_repo_obj,
                 },
             )
+
 
 
 def _filter_config_plans_by_deploy_enabled(logger, config_plan_qs):

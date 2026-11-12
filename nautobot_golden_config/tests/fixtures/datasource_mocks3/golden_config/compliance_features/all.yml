@@ -1,0 +1,6 @@
+---
+- name: "tagged_feature"
+  slug: "tagged_feature"
+  description: "feature with a tag"
+  tags:
+    - name: "my_tag_name"

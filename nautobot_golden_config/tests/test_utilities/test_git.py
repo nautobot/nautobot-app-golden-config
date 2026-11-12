@@ -1,7 +1,7 @@
 """Unit tests for nautobot_golden_config utilities git."""
 
 import unittest
-from unittest.mock import ANY, Mock, patch
+from unittest.mock import ANY, MagicMock, Mock, patch
 from urllib.parse import quote
 
 from django.conf import settings
@@ -71,6 +71,39 @@ class GitRepoTest(unittest.TestCase):
         GitRepo(self.mock_obj.filesystem_path, git_info.from_url, base_url=self.mock_obj.remote_url)
         mock_repo.assert_not_called()
         mock_repo.clone_from.assert_called_with(git_info.from_url, **self.clone_from_kwargs)
+
+
+@patch("nautobot.core.utils.git.os.path.isdir", Mock(return_value=True))
+@patch("nautobot.core.utils.git.Repo", autospec=True)
+class GitRepoCommitTest(unittest.TestCase):
+    """Test GitRepo.commit_with_added() empty-commit handling (issue #848)."""
+
+    PATH = "/fake/path"
+    URL = "https://fake.git/org/repository.git"
+
+    def test_commit_with_added_skips_when_clean(self, _mock_repo_cls):
+        """When there are no changes to commit, no commit is created and False is returned."""
+        git_repo = GitRepo(self.PATH, self.URL, base_url=self.URL)
+        mock_repo = MagicMock()
+        mock_repo.is_dirty.return_value = False
+        git_repo.repo = mock_repo
+
+        committed = git_repo.commit_with_added("Test commit")
+
+        self.assertFalse(committed)
+        mock_repo.index.commit.assert_not_called()
+
+    def test_commit_with_added_commits_when_dirty(self, _mock_repo_cls):
+        """When there are changes to commit, a commit is created and True is returned."""
+        git_repo = GitRepo(self.PATH, self.URL, base_url=self.URL)
+        mock_repo = MagicMock()
+        mock_repo.is_dirty.return_value = True
+        git_repo.repo = mock_repo
+
+        committed = git_repo.commit_with_added("Test commit")
+
+        self.assertTrue(committed)
+        mock_repo.index.commit.assert_called_once_with("Test commit")
 
 
 @patch("nautobot.core.utils.git.os.path.isdir", Mock(return_value=True))

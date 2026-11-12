@@ -42,16 +42,23 @@ class GitRepo(_GitRepo):  # pylint: disable=too-many-instance-attributes
         self.nautobot_repo_obj = nautobot_repo_obj
 
     def commit_with_added(self, commit_description):
-        """Make a force commit.
+        """Stage all changes and commit, unless there is nothing to commit.
 
         Args:
             commit_description (str): the description of commit
+
+        Returns:
+            bool: True if a commit was created, False if there were no changes to commit.
         """
         LOGGER.debug("Committing with message `%s`", commit_description)
         self.repo.git.add(self.repo.untracked_files)
         self.repo.git.add(update=True)
+        if not self.repo.is_dirty():
+            LOGGER.debug("No changes to commit; skipping commit")
+            return False
         self.repo.index.commit(commit_description)
         LOGGER.debug("Commit completed")
+        return True
 
     def _identity_environment(self) -> dict:
         """Retrieve identity environment variables derived from the HEAD commit."""

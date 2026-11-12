@@ -11,6 +11,7 @@ Contract under test (per PR #984):
       for push (enable-flag-gated, per repo type).
 """
 
+import unittest
 from unittest.mock import MagicMock, patch
 
 from django.contrib.contenttypes.models import ContentType
@@ -27,6 +28,11 @@ from nautobot_golden_config.tests.conftest import (
     create_orphan_device,
     dgs_gc_settings_and_job_repo_objects,
 )
+
+
+def _pks(queryset):
+    """Return the pks in ``queryset``, which is how Nautobot hands a ``MultiObjectVar`` to a job."""
+    return list(queryset.values_list("pk", flat=True))
 
 
 def _sync_targets(mock_ensure):
@@ -83,7 +89,7 @@ class BackupJobContractTestCase(TransactionTestCase):
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs",
             name="BackupJob",
-            device=Device.objects.all(),
+            device=_pks(Device.objects.all()),
         )
 
         self.assertEqual(_sync_targets(mock_ensure), {self.backup_repo_1, self.backup_repo_2})
@@ -102,7 +108,7 @@ class BackupJobContractTestCase(TransactionTestCase):
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs",
             name="BackupJob",
-            device=Device.objects.all(),
+            device=_pks(Device.objects.all()),
         )
 
         self.assertEqual(_sync_targets(mock_ensure), {self.backup_repo_1, self.backup_repo_2})
@@ -122,7 +128,7 @@ class BackupJobContractTestCase(TransactionTestCase):
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs",
             name="BackupJob",
-            device=Device.objects.all(),
+            device=_pks(Device.objects.all()),
         )
 
         self.assertEqual(_sync_targets(mock_ensure), {self.backup_repo_1, self.backup_repo_2})
@@ -143,7 +149,7 @@ class BackupJobContractTestCase(TransactionTestCase):
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs",
             name="BackupJob",
-            device=Device.objects.all(),
+            device=_pks(Device.objects.all()),
         )
 
         # Belt-and-suspenders: confirm the job actually ran to completion rather than silently
@@ -183,7 +189,7 @@ class IntendedJobContractTestCase(TransactionTestCase):
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs",
             name="IntendedJob",
-            device=Device.objects.all(),
+            device=_pks(Device.objects.all()),
         )
 
         # Both Settings share jinja_repo, so the sync set is {intended_1, intended_2, jinja}.
@@ -203,7 +209,7 @@ class IntendedJobContractTestCase(TransactionTestCase):
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs",
             name="IntendedJob",
-            device=Device.objects.all(),
+            device=_pks(Device.objects.all()),
         )
 
         # Sync covers both Settings' intended_repos plus the shared jinja_repo.
@@ -226,7 +232,7 @@ class IntendedJobContractTestCase(TransactionTestCase):
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs",
             name="IntendedJob",
-            device=Device.objects.all(),
+            device=_pks(Device.objects.all()),
         )
 
         # Repos still sync — both intended_repos plus jinja.
@@ -265,7 +271,7 @@ class ComplianceJobContractTestCase(TransactionTestCase):
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs",
             name="ComplianceJob",
-            device=Device.objects.all(),
+            device=_pks(Device.objects.all()),
         )
 
         self.assertEqual(
@@ -287,7 +293,7 @@ class ComplianceJobContractTestCase(TransactionTestCase):
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs",
             name="ComplianceJob",
-            device=Device.objects.all(),
+            device=_pks(Device.objects.all()),
         )
 
         self.assertEqual(
@@ -409,7 +415,7 @@ class AllDevicesGoldenConfigContractTestCase(TransactionTestCase):
         create_job_result_and_run_job(
             module="nautobot_golden_config.jobs",
             name="AllDevicesGoldenConfig",
-            device=Device.objects.all(),
+            device=_pks(Device.objects.all()),
         )
 
         synced = _sync_targets(mock_ensure)
@@ -447,7 +453,7 @@ class AllDevicesGoldenConfigContractTestCase(TransactionTestCase):
         create_job_result_and_run_job(
             module="nautobot_golden_config.jobs",
             name="AllDevicesGoldenConfig",
-            device=Device.objects.all(),
+            device=_pks(Device.objects.all()),
         )
 
         pushed = _push_targets(mock_push)
@@ -533,7 +539,7 @@ class WeightPrecedenceTestCase(TransactionTestCase):
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs",
             name="BackupJob",
-            device=Device.objects.filter(pk=self.device.pk),
+            device=_pks(Device.objects.filter(pk=self.device.pk)),
         )
 
         self.assertEqual(_sync_targets(mock_ensure), {self.backup_repo_high, self.backup_repo_low})
@@ -554,7 +560,7 @@ class WeightPrecedenceTestCase(TransactionTestCase):
         create_job_result_and_run_job(
             module="nautobot_golden_config.jobs",
             name="BackupJob",
-            device=Device.objects.filter(pk=self.device.pk),
+            device=_pks(Device.objects.filter(pk=self.device.pk)),
         )
 
         # Both Settings' repos sync (always-sync rule).
@@ -595,7 +601,7 @@ class GenerateConfigPlansContractTestCase(TransactionTestCase):
                 name="GenerateConfigPlans",
                 plan_type="manual",
                 commands="placeholder",
-                device=devices if devices is not None else Device.objects.all(),
+                device=_pks(devices if devices is not None else Device.objects.all()),
             )
 
     def test_both_settings_enabled_runs_for_all_devices(self):
@@ -683,7 +689,7 @@ class DeployConfigPlansContractTestCase(TransactionTestCase):
         create_job_result_and_run_job(
             module="nautobot_golden_config.jobs",
             name="DeployConfigPlans",
-            config_plan=ConfigPlan.objects.all(),
+            config_plan=_pks(ConfigPlan.objects.all()),
         )
 
         self.assertEqual(mock_deploy.call_count, 1)
@@ -699,7 +705,7 @@ class DeployConfigPlansContractTestCase(TransactionTestCase):
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs",
             name="DeployConfigPlans",
-            config_plan=ConfigPlan.objects.all(),
+            config_plan=_pks(ConfigPlan.objects.all()),
         )
 
         self.assertEqual(mock_deploy.call_count, 1)
@@ -720,7 +726,7 @@ class DeployConfigPlansContractTestCase(TransactionTestCase):
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs",
             name="DeployConfigPlans",
-            config_plan=ConfigPlan.objects.all(),
+            config_plan=_pks(ConfigPlan.objects.all()),
         )
 
         # No plans eligible → config_deployment must not be invoked.
@@ -743,7 +749,7 @@ class DeployConfigPlansContractTestCase(TransactionTestCase):
         job_result = create_job_result_and_run_job(
             module="nautobot_golden_config.jobs",
             name="DeployConfigPlans",
-            config_plan=ConfigPlan.objects.all(),
+            config_plan=_pks(ConfigPlan.objects.all()),
         )
 
         self.assertEqual(mock_deploy.call_count, 0)
@@ -800,3 +806,34 @@ class DeployConfigPlanJobButtonReceiverContractTestCase(TransactionTestCase):
         self.assertIn("enable_deploy=False", e3038s[0])
         # Single-device skip → the lone E3038 already names the device, so E3039 stays silent.
         self.assertEqual(_e30xx(job_result, "E3039"), [])
+
+
+class GCRepoPushEmptyCommitTestCase(unittest.TestCase):
+    """Test gc_repo_push() does not push when there is nothing to commit (issue #848)."""
+
+    def _build_job_and_repos(self):
+        """Build a mock job and a single-repo ``current_repos`` list."""
+        job = MagicMock()
+        job.Meta.name = "Backup Configurations"
+        repo_obj = MagicMock()
+        return job, repo_obj, [repo_obj]
+
+    def test_gc_repo_push_skips_push_when_nothing_committed(self):
+        """When commit_with_added returns False, push() must not be called."""
+        job, repo_obj, current_repos = self._build_job_and_repos()
+        repo_obj.commit_with_added.return_value = False
+
+        jobs.gc_repo_push(job=job, current_repos=current_repos, commit_message="msg")
+
+        repo_obj.commit_with_added.assert_called_once_with("msg")
+        repo_obj.push.assert_not_called()
+
+    def test_gc_repo_push_pushes_when_commit_made(self):
+        """When commit_with_added returns True, push() is called."""
+        job, repo_obj, current_repos = self._build_job_and_repos()
+        repo_obj.commit_with_added.return_value = True
+
+        jobs.gc_repo_push(job=job, current_repos=current_repos, commit_message="msg")
+
+        repo_obj.commit_with_added.assert_called_once_with("msg")
+        repo_obj.push.assert_called_once_with()

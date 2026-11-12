@@ -1,0 +1,1 @@
+Fixed `MultipleObjectsReturned` in the post-migrate signal when another app has a Job class named `DeployConfigPlanJobButtonReceiver`.

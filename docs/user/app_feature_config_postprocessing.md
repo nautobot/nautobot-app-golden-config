@@ -55,6 +55,9 @@ Note that the `get_secret` filters accept arguments. In the example, the `secret
 !!! note
     To render secrets, the user requesting the configuration via UI or API **must** have read permissions for Secrets Groups, Golden Config, and the specific Device object.
 
+!!! note
+    The data available to the template comes from the `GraphQL Query` of the Golden Config Setting that owns the device. If that Setting has no `GraphQL Query`, the template is rendered with no device data: templates that only use the secrets filters still render, and a template that references device data reports an undefined-variable error.
+
 #### Render Secrets Example
 
 Here is an example of rendering secrets for a `Device`, using the default `Secrets Group` ForeignKey (FK) and custom relationships, in this case at the `Location` level.

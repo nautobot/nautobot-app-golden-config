@@ -19,7 +19,6 @@ from nautobot_golden_config.models import (
     ConfigReplace,
     RemediationSetting,
 )
-from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
 from nautobot_golden_config.utilities.helper import get_error_message
 
 
@@ -58,10 +57,10 @@ def refresh_git_gc_properties(repository_record, job_result, delete=False):  # p
     │   ├── config_replaces
     │   ├── remediation_settings
 
-    Each property may include an optional ``tags`` key listing the tags of the synced object. The
+    Each property may include an optional `tags` key listing the tags of the synced object. The
     referenced tags must already exist in Nautobot and be associated with the property's content
     type; they are not auto-created. The repository is authoritative for tags: any tag not listed
-    (including when the ``tags`` key is omitted) is removed from the object on sync.
+    (including when the `tags` key is omitted) is removed from the object on sync.
 
     """
     if "nautobot_golden_config.pluginproperties" not in repository_record.provided_contents:
@@ -174,24 +173,24 @@ def get_id_kwargs(gc_config_item_dict, id_keys, job_result):
 
 
 def get_tags(gc_config_item_dict, model, job_result):
-    """Pop ``tags`` from the YAML item dict and resolve to Tag instances.
+    """Pop `tags` from the YAML item dict and resolve to Tag instances.
 
     The Git repository is authoritative for the tags of the objects it defines, following the same
-    pattern as Nautobot core's config context datasource: an item with no ``tags`` key (or an empty
+    pattern as Nautobot core's config context datasource: an item with no `tags` key (or an empty
     one) resolves to an empty list, so that removing tags from the YAML removes them from the object.
 
-    The lookup is always scoped to ``model``'s content type, so a tag only resolves if it is
-    assignable to that model. This mirrors the FK handling in ``get_id_kwargs``: a referenced tag
-    that cannot be resolved for that content type raises ``MissingReference`` so the caller skips the
+    The lookup is always scoped to `model`'s content type, so a tag only resolves if it is
+    assignable to that model. This mirrors the FK handling in `get_id_kwargs`: a referenced tag
+    that cannot be resolved for that content type raises `MissingReference` so the caller skips the
     item.
 
     Args:
-        gc_config_item_dict (dict): The YAML item dict. The ``tags`` key is popped if present.
+        gc_config_item_dict (dict): The YAML item dict. The `tags` key is popped if present.
         model: The Django model class being synced, used to scope the content type lookup.
         job_result: The Git repository sync job result, used for logging.
 
     Returns:
-        list: A list of resolved ``Tag`` objects, empty if the item does not define any tags.
+        list: A list of resolved `Tag` objects, empty if the item does not define any tags.
 
     Raises:
         MissingReference: If a referenced tag cannot be resolved for the model's content type.
@@ -286,43 +285,35 @@ def update_git_gc_properties(golden_config_path, job_result, gc_config_item):  #
             )
 
 
-datasource_contents = []
-if ENABLE_INTENDED or ENABLE_COMPLIANCE:
-    datasource_contents.append(
-        (
-            "extras.gitrepository",
-            DatasourceContent(
-                name="intended configs",
-                content_identifier="nautobot_golden_config.intendedconfigs",
-                icon="mdi-file-document-outline",
-                callback=refresh_git_intended,
-            ),
-        )
-    )
-if ENABLE_INTENDED:
-    datasource_contents.append(
-        (
-            "extras.gitrepository",
-            DatasourceContent(
-                name="jinja templates",
-                content_identifier="nautobot_golden_config.jinjatemplate",
-                icon="mdi-text-box-check-outline",
-                callback=refresh_git_jinja,
-            ),
-        )
-    )
-if ENABLE_BACKUP or ENABLE_COMPLIANCE:
-    datasource_contents.append(
-        (
-            "extras.gitrepository",
-            DatasourceContent(
-                name="backup configs",
-                content_identifier="nautobot_golden_config.backupconfigs",
-                icon="mdi-file-code",
-                callback=refresh_git_backup,
-            ),
-        )
-    )
+datasource_contents = [
+    (
+        "extras.gitrepository",
+        DatasourceContent(
+            name="intended configs",
+            content_identifier="nautobot_golden_config.intendedconfigs",
+            icon="mdi-file-document-outline",
+            callback=refresh_git_intended,
+        ),
+    ),
+    (
+        "extras.gitrepository",
+        DatasourceContent(
+            name="jinja templates",
+            content_identifier="nautobot_golden_config.jinjatemplate",
+            icon="mdi-text-box-check-outline",
+            callback=refresh_git_jinja,
+        ),
+    ),
+    (
+        "extras.gitrepository",
+        DatasourceContent(
+            name="backup configs",
+            content_identifier="nautobot_golden_config.backupconfigs",
+            icon="mdi-file-code",
+            callback=refresh_git_backup,
+        ),
+    ),
+]
 
 datasource_contents.append(
     (

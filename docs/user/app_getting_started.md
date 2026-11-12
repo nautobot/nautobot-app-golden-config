@@ -12,7 +12,7 @@ To install the App, please follow the instructions detailed in the [Installation
 
 Follow the steps below to get up and running for the configuration backup element of the app.
 
-1. Enable the feature in the `PLUGIN_SETTINGS`. The configuration should have `"enable_backup": True` set in the `PLUGINS_CONFIG` dictionary for `nautobot_golden_config`.
+1. Enable the feature on the Golden Config Setting that owns the devices. The `enable_backup` checkbox on the [Golden Config Setting](./app_use_cases.md#application-settings) should be checked, which is the default for a new Setting.
 
 2. Add any git repositories that will be used to house the backup configurations.
 
@@ -48,12 +48,12 @@ Follow the steps below to get up and running for the configuration backup elemen
 Follow the steps below to get up and running for the intended configuration element of the app.
 
 !!! note
-    Intended Configuration requires the `enable_intended` and `enabled_sotAgg` app features to be used.
+    Intended Configuration requires `Enable Intended` and `Enable SoT Aggregation` to be checked on the Golden Config Setting that owns the devices.
 
 !!! note
     If Secret Group is used for the Repositories the secrets type HTTP(S) is required for this app.
 
-1. Enable the feature in the `PLUGIN_SETTINGS`. The configuration should have `"enable_intended": True` set in the `PLUGINS_CONFIG` dictionary for `nautobot_golden_config`.
+1. Enable the feature on the Golden Config Setting that owns the devices. The `enable_intended` checkbox on the [Golden Config Setting](./app_use_cases.md#application-settings) should be checked, which is the default for a new Setting.
 
 2. Determine what data(variables) the Jinja2 templates need from Nautobot. This configuration will be needed and apparent in the next steps.
 
@@ -103,7 +103,7 @@ Follow the steps below to get up and running for the intended configuration elem
 
 Compliance requires Backups and Intended Configurations in order to be executed.
 
-1. Enable the feature in the `PLUGIN_SETTINGS`. The configuration should have `"enable_compliance": True` set in the `PLUGINS_CONFIG` dictionary for `nautobot_golden_config`.
+1. Enable the feature on the Golden Config Setting that owns the devices. The `enable_compliance` checkbox on the [Golden Config Setting](./app_use_cases.md#application-settings) should be checked, which is the default for a new Setting.
 2. Follow the steps in [Backup Configuration](#backup-configuration).
 3. Follow the steps in [Intended Configuration](#intended-configuration).
 4. Create a Compliance Feature.
@@ -141,7 +141,7 @@ Follow the steps below to get up and running for the configuration remediation e
 
 Follow the steps below to get up and running for the configuration plans element of the app.
 
-1. Enable the feature in the `PLUGIN_SETTINGS`. The configuration should have `"enable_plan": True` set in the `PLUGINS_CONFIG` dictionary for `nautobot_golden_config`.
+1. Enable the feature on the Golden Config Setting that owns the devices. The `enable_plan` checkbox on the [Golden Config Setting](./app_use_cases.md#application-settings) should be checked, which is the default for a new Setting.
 2. Follow the steps in [Compliance](#compliance).
     - Compliance is necessary if ConfigPlans will be generated utilizing any of the attributes provided by a Compliance object.
     - This step may be skipped if only `manual` ConfigPlans are going to be generated.
@@ -163,7 +163,7 @@ Follow the steps below to get up and running for the configuration plans element
 
 Follow the steps below to get up and running for the configuration deployment element of the app.
 
-1. Enable the feature in the `PLUGIN_SETTINGS`. The configuration should have `"enable_deploy": True` set in the `PLUGINS_CONFIG` dictionary for `nautobot_golden_config`.
+1. Enable the feature on the Golden Config Setting that owns the devices. The `enable_deploy` checkbox on the [Golden Config Setting](./app_use_cases.md#application-settings) should be checked, which is the default for a new Setting.
 2. Follow the steps in [Config Plans](#config-plans).
 3. Navigate to the specific ConfigPlan to deploy, or multi-select them from the ConfigPlan list view.
     - If deploying from a specific ConfigPlan object. Click `Deploy` button and accept the warnings.

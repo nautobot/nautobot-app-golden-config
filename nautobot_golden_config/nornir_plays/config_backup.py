@@ -101,8 +101,8 @@ def config_backup(job):
     now = make_aware(datetime.now())
     logger = NornirLogger(job.job_result, job.logger.getEffectiveLevel())
 
-    for settings in set(job.device_to_settings_map.values()):
-        verify_settings(logger, settings, ["backup_path_template"])
+    for setting in set(job.gc_advanced_settings_filter["backup"][True].values()):
+        verify_settings(logger, setting, ["backup_repository", "backup_path_template"])
 
     # Build a dictionary, with keys of platform.network_driver, and the regex line in it for the netutils func.
     remove_regex_dict = {}
@@ -126,7 +126,7 @@ def config_backup(job):
                 "options": {
                     "credentials_class": NORNIR_SETTINGS.get("credentials"),
                     "params": NORNIR_SETTINGS.get("inventory_params"),
-                    "queryset": job.qs,
+                    "queryset": job.task_qs,
                     "defaults": {"now": now},
                 },
             },
@@ -138,7 +138,7 @@ def config_backup(job):
                 task=run_backup,
                 name="BACKUP CONFIG",
                 logger=logger,
-                device_to_settings_map=job.device_to_settings_map,
+                device_to_settings_map=job.gc_advanced_settings_filter["backup"][True],
                 remove_regex_dict=remove_regex_dict,
                 replace_regex_dict=replace_regex_dict,
             )

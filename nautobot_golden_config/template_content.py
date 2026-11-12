@@ -3,8 +3,7 @@
 from django.db.models import Count, Q
 from nautobot.apps.ui import DistinctViewTab, TemplateExtension
 
-from nautobot_golden_config.models import ConfigCompliance, GoldenConfig
-from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_COMPLIANCE
+from nautobot_golden_config.models import ConfigCompliance, GoldenConfig, GoldenConfigSetting
 
 
 class ConfigComplianceDeviceCheck(TemplateExtension):  # pylint: disable=abstract-method
@@ -93,11 +92,20 @@ class ConfigDeviceDetails(TemplateExtension):  # pylint: disable=abstract-method
         golden_config = GoldenConfig.objects.filter(device=device).first()
         if not golden_config:
             return ""
+        # A device that has left the scope of every Setting keeps its stored configs viewable; only the
+        # actions that need a Setting to run (SoT aggregation and postprocessing) are hidden.
+        gc_setting = GoldenConfigSetting.objects.get_for_device(device)
         extra_context = {
-            "device": self.get_device(),  # device,
+            "device": device,
             "golden_config": golden_config,
             "template_type": "device-configs",
-            "config_features": CONFIG_FEATURES,
+            "config_features": {
+                "intended": getattr(gc_setting, "enable_intended", True),
+                "compliance": getattr(gc_setting, "enable_compliance", True),
+                "backup": getattr(gc_setting, "enable_backup", True),
+                "sotagg": getattr(gc_setting, "enable_sotagg", False),
+                "postprocessing": getattr(gc_setting, "enable_postprocessing", False),
+            },
         }
         return self.render(
             "nautobot_golden_config/content_template.html",
@@ -136,11 +144,9 @@ class ConfigComplianceTenantCheck(TemplateExtension):  # pylint: disable=abstrac
         )
 
 
-extensions = [ConfigDeviceDetails]
-if ENABLE_COMPLIANCE:
-    extensions.append(ConfigComplianceDeviceCheck)
-    extensions.append(ConfigComplianceLocationCheck)
-    extensions.append(ConfigComplianceTenantCheck)
-
-
-template_extensions = extensions
+template_extensions = [
+    ConfigDeviceDetails,
+    ConfigComplianceDeviceCheck,
+    ConfigComplianceLocationCheck,
+    ConfigComplianceTenantCheck,
+]

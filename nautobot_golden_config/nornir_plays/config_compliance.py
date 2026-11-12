@@ -210,10 +210,14 @@ def config_compliance(job):  # pylint: disable=unused-argument
     now = make_aware(datetime.now())
     logger = NornirLogger(job.job_result, job.logger.getEffectiveLevel())
 
-    rules = get_rules()
+    for setting in set(job.gc_advanced_settings_filter["compliance"][True].values()):
+        verify_settings(
+            logger,
+            setting,
+            ["backup_repository", "backup_path_template", "intended_repository", "intended_path_template"],
+        )
 
-    for settings in set(job.device_to_settings_map.values()):
-        verify_settings(logger, settings, ["backup_path_template", "intended_path_template"])
+    rules = get_rules()
     try:
         with InitNornir(
             runner=NORNIR_SETTINGS.get("runner"),
@@ -223,7 +227,7 @@ def config_compliance(job):  # pylint: disable=unused-argument
                 "options": {
                     "credentials_class": NORNIR_SETTINGS.get("credentials"),
                     "params": NORNIR_SETTINGS.get("inventory_params"),
-                    "queryset": job.qs,
+                    "queryset": job.task_qs,
                     "defaults": {"now": now},
                 },
             },
@@ -235,7 +239,7 @@ def config_compliance(job):  # pylint: disable=unused-argument
                 task=run_compliance,
                 name="RENDER COMPLIANCE TASK GROUP",
                 logger=logger,
-                device_to_settings_map=job.device_to_settings_map,
+                device_to_settings_map=job.gc_advanced_settings_filter["compliance"][True],
                 rules=rules,
             )
     except NornirNautobotException as err:

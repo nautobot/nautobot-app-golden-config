@@ -42,13 +42,6 @@ PLUGINS_CONFIG = {
         "per_feature_bar_width": 0.15,
         "per_feature_width": 13,
         "per_feature_height": 4,
-        "enable_backup": True,
-        "enable_compliance": True,
-        "enable_intended": True,
-        "enable_sotagg": True,
-        "enable_plan": True,
-        "enable_deploy": True,
-        "enable_postprocessing": False,
         "sot_agg_transposer": None,
         "postprocessing_callables": [],
         "postprocessing_subscribed": [],
@@ -84,17 +77,10 @@ sudo systemctl restart nautobot nautobot-worker nautobot-scheduler
 The app behavior can be controlled with the following list of settings:
 
 !!! note
-    The `enable_backup`, `enable_compliance`, `enable_intended`, `enable_sotagg`, `enable_plan`, `enable_deploy`, and `enable_postprocessing` will toggle inclusion of the entire component.
+    The legacy `enable_backup`, `enable_compliance`, `enable_intended`, `enable_sotagg`, `enable_plan`, `enable_deploy`, and `enable_postprocessing` settings defined in `nautobot_config.py` are deprecated. Their values are migrated onto every existing [Golden Config Setting](../user/app_use_cases.md#application-settings) the first time `nautobot-server post-upgrade` runs after upgrading, and each feature is enabled or disabled per Golden Config Setting from then on. See the [upgrade guide](upgrade.md#per-setting-feature-flags) for details.
 
 | Key                       | Example                       | Default | Description                                                                                                                                                                |
 | ------------------------- | ----------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| enable_backup             | True                          | True    | A boolean to represent whether or not to run backup configurations within the app.                                                                                      |
-| enable_compliance         | True                          | True    | A boolean to represent whether or not to run the compliance process within the app.                                                                                     |
-| enable_intended           | True                          | True    | A boolean to represent whether or not to generate intended configurations within the app.                                                                               |
-| enable_sotagg             | True                          | True    | A boolean to represent whether or not to provide a GraphQL query per device to allow the intended configuration to provide data variables to the app.                   |
-| enable_plan               | True                          | True    | A boolean to represent whether or not to allow the config plan job to run.                                                                                                 |
-| enable_deploy             | True                          | True    | A boolean to represent whether or not to be able to deploy configs to network devices.                                                                                     |
-| enable_postprocessing     | True                          | False    | A boolean to represent whether or not to generate intended configurations to push, with extra processing such as secrets rendering.                                       |
 | default_deploy_status     | "Not Approved"                | "Not Approved" | A string that will be the name of the status you want as the default when create new config plans, you MUST create the status yourself before starting the app.     |
 | postprocessing_callables  | ['mypackage.myfunction']      | []      | A list of function paths, in dotted format, that are appended to the available methods for post-processing the intended configuration, for instance, the `render_secrets`. |
 | postprocessing_subscribed | ['mypackage.myfunction']      | []      | A list of function paths, that should exist as postprocessing_callables, that defines the order of application of during the post-processing process.                      |

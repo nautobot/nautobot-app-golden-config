@@ -2,6 +2,7 @@
 
 import logging
 import os
+import unittest
 from unittest.mock import MagicMock, patch
 
 from django.conf import settings
@@ -17,6 +18,7 @@ from nornir_nautobot.exceptions import NornirNautobotException
 from nautobot_golden_config.models import GoldenConfigSetting
 from nautobot_golden_config.tests.conftest import create_device, create_helper_repo, create_orphan_device
 from nautobot_golden_config.utilities.helper import (
+    format_e3039_message,
     get_device_to_settings_map,
     get_job_filter,
     null_to_empty,
@@ -81,7 +83,9 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
             weight=1000,
             backup_repository=GitRepository.objects.get(name="backup-parent_region-1"),
             intended_repository=GitRepository.objects.get(name="intended-parent_region-1"),
+            intended_path_template="{{obj.location.name}}/{{obj.name}}.cfg",
             jinja_repository=GitRepository.objects.get(name="test-jinja-repo"),
+            jinja_path_template="{{obj.platform.network_driver}}/main.j2",
             # Limit scope to orphaned device only
             dynamic_group=dynamic_group1,
             sot_agg_query=graphql_query,
@@ -94,7 +98,9 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
             weight=2000,
             backup_repository=GitRepository.objects.get(name="backup-parent_region-2"),
             intended_repository=GitRepository.objects.get(name="intended-parent_region-2"),
+            intended_path_template="{{obj.location.name}}/{{obj.name}}.cfg",
             jinja_repository=GitRepository.objects.get(name="test-jinja-repo-2"),
+            jinja_path_template="{{obj.platform.network_driver}}/main.j2",
             # Limit scope to orphaned device only
             dynamic_group=dynamic_group2,
             sot_agg_query=graphql_query,
@@ -107,7 +113,9 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
             weight=1000,
             backup_repository=GitRepository.objects.get(name="backup-parent_region-3"),
             intended_repository=GitRepository.objects.get(name="intended-parent_region-3"),
+            intended_path_template="{{obj.location.name}}/{{obj.name}}.cfg",
             jinja_repository=GitRepository.objects.get(name="test-jinja-repo-3"),
+            jinja_path_template="{{obj.platform.network_driver}}/main.j2",
             dynamic_group=dynamic_group3,
             sot_agg_query=graphql_query,
         )
@@ -320,3 +328,24 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         # Regenerate the device to settings map to ensure it is up to date.
         temp_device_to_settings_map = get_device_to_settings_map(queryset=Device.objects.all())
         self.assertEqual(temp_device_to_settings_map[test_device.id], self.test_settings_a)
+
+
+class FormatE3039MessageTestCase(unittest.TestCase):
+    """The E3039 summary says why nothing ran, and stays silent when one E3038 already did."""
+
+    def test_wording_matches_why_devices_were_skipped(self):
+        cases = (
+            # skipped, unscoped, expected fragment
+            (0, 0, "no devices in scope of any Golden Config Setting"),
+            (3, 0, "all 3 in-scope devices have it disabled on their winning Setting"),
+            (3, 3, "none of the 3 selected devices are in scope of any Golden Config Setting"),
+            (3, 1, "either have it disabled on their winning Setting or are not in scope"),
+        )
+        for skipped, unscoped, expected in cases:
+            with self.subTest(skipped=skipped, unscoped=unscoped):
+                message = format_e3039_message("deploy", skipped, unscoped_count=unscoped)
+                self.assertTrue(message.startswith("E3039: Deploy job skipped"))
+                self.assertIn(expected, message)
+
+    def test_single_skipped_device_is_not_summarized(self):
+        self.assertIsNone(format_e3039_message("deploy", 1, unscoped_count=1))

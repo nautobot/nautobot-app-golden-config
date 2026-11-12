@@ -108,10 +108,19 @@ def config_intended(job):
     now = make_aware(datetime.now())
     logger = NornirLogger(job.job_result, job.logger.getEffectiveLevel())
 
-    for settings in set(job.device_to_settings_map.values()):
-        verify_settings(logger, settings, ["jinja_path_template", "intended_path_template", "sot_agg_query"])
+    for setting in set(job.gc_advanced_settings_filter["intended"][True].values()):
+        verify_settings(
+            logger,
+            setting,
+            [
+                "jinja_repository",
+                "jinja_path_template",
+                "intended_repository",
+                "intended_path_template",
+                "sot_agg_query",
+            ],
+        )
 
-    # Retrieve filters from the Django jinja template engine
     jinja_env = get_django_env()
     try:
         with InitNornir(
@@ -122,7 +131,7 @@ def config_intended(job):
                 "options": {
                     "credentials_class": NORNIR_SETTINGS.get("credentials"),
                     "params": NORNIR_SETTINGS.get("inventory_params"),
-                    "queryset": job.qs,
+                    "queryset": job.task_qs,
                     "defaults": {"now": now},
                 },
             },
@@ -135,7 +144,7 @@ def config_intended(job):
                 task=run_template,
                 name="RENDER CONFIG",
                 logger=logger,
-                device_to_settings_map=job.device_to_settings_map,
+                device_to_settings_map=job.gc_advanced_settings_filter["intended"][True],
                 job_class_instance=job,
                 jinja_env=jinja_env,
             )

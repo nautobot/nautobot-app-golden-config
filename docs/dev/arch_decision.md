@@ -33,26 +33,16 @@ The absence of data, meaning, a device that is does not have a feature, is the e
 
 ## Dynamic Application Features
 
-There are features within the application that can be turned on/off for backup, compliance, and intended. When they are toggled, this will update what is shown in:
+Features such as backup, intended, compliance, config plans, and deploys are turned on/off per `GoldenConfigSetting` through its `enable_*` fields, not through app-level configuration. Navigation, Jobs, Data Sources, Tables, and Template Contents are therefore always registered, and the flag is resolved at runtime from each device's winning (highest-weight) Setting.
 
-- Navigation
-- Jobs
-- Data Sources
-- Tables
-- Template Contents
-
-This is generally handled with a pattern similar to:
+Jobs apply this through shared helpers so every job gates and logs the same way:
 
 ```python
-jobs = []
-if ENABLE_BACKUP:
-    jobs.append(BackupJob)
-if ENABLE_INTENDED:
-    jobs.append(IntendedJob)
-if ENABLE_COMPLIANCE:
-    jobs.append(ComplianceJob)
-jobs.extend([AllGoldenConfig, AllDevicesGoldenConfig])
+device_to_settings = get_device_to_settings_map(device_qs)
+enabled_qs = filter_devices_by_feature_enabled(self.logger, device_qs, "plan")
 ```
+
+A device skipped because its winning Setting has the feature disabled is logged as `E3038`, and a run left with no eligible devices is logged as `E3039`.
 
 ## Home View
 

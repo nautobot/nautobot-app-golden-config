@@ -6,10 +6,9 @@ from django_tables2.utils import A
 from nautobot.apps.tables import BaseTable, BooleanColumn, ButtonsColumn, StatusTableMixin, TagColumn, ToggleColumn
 
 from nautobot_golden_config import models
-from nautobot_golden_config.utilities.constant import CONFIG_FEATURES, ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
 
 ALL_ACTIONS = """
-{% if backup == True and record.backup_config and not record.config_type == "json" %}
+{% if record.backup_config and not record.config_type == "json" %}
     <li>
         <a class="dropdown-item text-primary" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
             <span class="mdi mdi-file-document-outline" title="Backup Configuration"></span>
@@ -17,7 +16,7 @@ ALL_ACTIONS = """
         </a>
     </li>
 {% endif %}
-{% if intended == True and record.intended_config and not record.config_type == "json" %}
+{% if record.intended_config and not record.config_type == "json" %}
     <li>
         <a class="dropdown-item text-primary" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
             <span class="mdi mdi-text-box-check-outline" title="Intended Configuration"></span>
@@ -25,7 +24,7 @@ ALL_ACTIONS = """
         </a>
     </li>
 {% endif %}
-{% if postprocessing == True and record.intended_config and not record.config_type == "json" %}
+{% if record.intended_config and not record.config_type == "json" %}
     <li>
         <a class="dropdown-item text-primary" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
             <span class="mdi mdi-text-box-check" title="Postprocessing"></span>
@@ -33,7 +32,7 @@ ALL_ACTIONS = """
         </a>
     </li>
 {% endif %}
-{% if compliance == True and record.intended_config and record.backup_config and not record.config_type == "json" %}
+{% if record.intended_config and record.backup_config and not record.config_type == "json" %}
     <li>
         <a class="dropdown-item text-primary" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
             <span class="mdi mdi-file-compare" title="Compliance Details"></span>
@@ -41,14 +40,12 @@ ALL_ACTIONS = """
         </a>
     </li>
 {% endif %}
-{% if sotagg == True %}
-    <li>
-        <a class="dropdown-item text-primary" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_sotagg' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_sotagg' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
-            <span class="mdi mdi-code-json" title="SOT Aggregate Data"></span>
-            SOT Aggregate Data
-        </a>
-    </li>
-{% endif %}
+<li>
+    <a class="dropdown-item text-primary" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_sotagg' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_sotagg' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
+        <span class="mdi mdi-code-json" title="SOT Aggregate Data"></span>
+        SOT Aggregate Data
+    </a>
+</li>
 {% if not record.config_type == "json" %}
     <li>
         <a class="dropdown-item text-success" href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.AllGoldenConfig' %}?device={{ record.device.pk }}">
@@ -110,14 +107,14 @@ MATCH_CONFIG = """{{ record.match_config|linebreaksbr }}"""
 
 
 def actual_fields(include_tags=False):
-    """Convienance function to conditionally toggle columns."""
-    active_fields = ["pk", "name"]
-    if ENABLE_BACKUP:
-        active_fields.append("backup_last_success_date")
-    if ENABLE_INTENDED:
-        active_fields.append("intended_last_success_date")
-    if ENABLE_COMPLIANCE:
-        active_fields.append("compliance_last_success_date")
+    """Return the column set rendered on the GoldenConfig list view."""
+    active_fields = [
+        "pk",
+        "name",
+        "backup_last_success_date",
+        "intended_last_success_date",
+        "compliance_last_success_date",
+    ]
     if include_tags:
         active_fields.append("tags")
     active_fields.append("actions")
@@ -273,22 +270,19 @@ class GoldenConfigTable(BaseTable):
         verbose_name="Device",
     )
 
-    if ENABLE_BACKUP:
-        backup_last_success_date = Column(
-            verbose_name="Backup Status", empty_values=(), order_by="backup_last_success_date"
-        )
-    if ENABLE_INTENDED:
-        intended_last_success_date = Column(
-            verbose_name="Intended Status",
-            empty_values=(),
-            order_by="intended_last_success_date",
-        )
-    if ENABLE_COMPLIANCE:
-        compliance_last_success_date = Column(
-            verbose_name="Compliance Status",
-            empty_values=(),
-            order_by="compliance_last_success_date",
-        )
+    backup_last_success_date = Column(
+        verbose_name="Backup Status", empty_values=(), order_by="backup_last_success_date"
+    )
+    intended_last_success_date = Column(
+        verbose_name="Intended Status",
+        empty_values=(),
+        order_by="intended_last_success_date",
+    )
+    compliance_last_success_date = Column(
+        verbose_name="Compliance Status",
+        empty_values=(),
+        order_by="compliance_last_success_date",
+    )
 
     tags = TagColumn(url_name="plugins:nautobot_golden_config:goldenconfig_list")
 
@@ -297,7 +291,6 @@ class GoldenConfigTable(BaseTable):
         model=models.GoldenConfig,
         verbose_name="Actions",
         prepend_template=ALL_ACTIONS,
-        extra_context=CONFIG_FEATURES,
         orderable=False,
     )
 
@@ -440,36 +433,23 @@ class GoldenConfigSettingTable(BaseTable):
 
     pk = ToggleColumn()
     name = Column(order_by=("_name",), linkify=True)
-    jinja_repository = Column(
-        verbose_name="Jinja Repository",
-        empty_values=(),
+    dynamic_group__members__count = LinkColumn(
+        viewname="extras:dynamicgroup",
+        kwargs={"pk": A("dynamic_group.pk")},
+        verbose_name="Dynamic Group Members",
+        orderable=False,
     )
-    intended_repository = Column(
-        verbose_name="Intended Repository",
-        empty_values=(),
-    )
-    backup_repository = Column(
-        verbose_name="Backup Repository",
-        empty_values=(),
-    )
+    enable_backup = BooleanColumn()
+    enable_intended = BooleanColumn()
+    enable_compliance = BooleanColumn()
+    enable_plan = BooleanColumn()
+    enable_deploy = BooleanColumn()
+    enable_sotagg = BooleanColumn()
+    enable_postprocessing = BooleanColumn()
+    backup_repository = Column(linkify=True)
+    intended_repository = Column(linkify=True)
+    jinja_repository = Column(linkify=True)
     tags = TagColumn(url_name="plugins:nautobot_golden_config:goldenconfigsetting_list")
-
-    def _render_capability(self, record, column, record_attribute):  # pylint: disable=unused-argument
-        if getattr(record, record_attribute, None):
-            return format_html('<span class="text-success"><i class="mdi mdi-check-bold"></i></span>')
-        return format_html('<span class="text-danger"><i class="mdi mdi-close-thick"></i></span>')
-
-    def render_backup_repository(self, record, column):
-        """Render backup repository boolean value."""
-        return self._render_capability(record=record, column=column, record_attribute="backup_repository")
-
-    def render_intended_repository(self, record, column):
-        """Render intended repository boolean value."""
-        return self._render_capability(record=record, column=column, record_attribute="intended_repository")
-
-    def render_jinja_repository(self, record, column):
-        """Render jinja repository boolean value."""
-        return self._render_capability(record=record, column=column, record_attribute="jinja_repository")
 
     class Meta(BaseTable.Meta):
         """Meta attributes."""
@@ -479,6 +459,14 @@ class GoldenConfigSettingTable(BaseTable):
             "pk",
             "name",
             "weight",
+            "dynamic_group__members__count",
+            "enable_backup",
+            "enable_intended",
+            "enable_compliance",
+            "enable_plan",
+            "enable_deploy",
+            "enable_sotagg",
+            "enable_postprocessing",
             "description",
             "backup_repository",
             "intended_repository",
@@ -489,10 +477,14 @@ class GoldenConfigSettingTable(BaseTable):
             "pk",
             "name",
             "weight",
-            "description",
-            "backup_repository",
-            "intended_repository",
-            "jinja_repository",
+            "dynamic_group__members__count",
+            "enable_backup",
+            "enable_intended",
+            "enable_compliance",
+            "enable_plan",
+            "enable_deploy",
+            "enable_sotagg",
+            "enable_postprocessing",
         )
 
 

@@ -7,6 +7,7 @@ import django.forms as django_forms
 from django.conf import settings
 from nautobot.apps import forms
 from nautobot.apps.forms import NautobotBulkEditForm, NautobotFilterForm, NautobotModelForm, TagsBulkEditFormMixin
+from nautobot.core.forms.constants import BOOLEAN_WITH_BLANK_CHOICES
 from nautobot.dcim.models import Device, DeviceType, Location, Manufacturer, Platform, Rack, RackGroup
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, JobResult, Role, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
@@ -447,13 +448,27 @@ class GoldenConfigSettingFilterForm(NautobotFilterForm):
         queryset=GitRepository.objects.filter(provided_contents__contains="nautobot_golden_config.jinjatemplate"),
         required=False,
     )
-    enable_backup = django_forms.NullBooleanField(required=False, widget=forms.BulkEditNullBooleanSelect())
-    enable_intended = django_forms.NullBooleanField(required=False, widget=forms.BulkEditNullBooleanSelect())
-    enable_compliance = django_forms.NullBooleanField(required=False, widget=forms.BulkEditNullBooleanSelect())
-    enable_plan = django_forms.NullBooleanField(required=False, widget=forms.BulkEditNullBooleanSelect())
-    enable_deploy = django_forms.NullBooleanField(required=False, widget=forms.BulkEditNullBooleanSelect())
-    enable_sotagg = django_forms.NullBooleanField(required=False, widget=forms.BulkEditNullBooleanSelect())
-    enable_postprocessing = django_forms.NullBooleanField(required=False, widget=forms.BulkEditNullBooleanSelect())
+    enable_backup = django_forms.NullBooleanField(
+        required=False, widget=forms.StaticSelect2(choices=BOOLEAN_WITH_BLANK_CHOICES)
+    )
+    enable_intended = django_forms.NullBooleanField(
+        required=False, widget=forms.StaticSelect2(choices=BOOLEAN_WITH_BLANK_CHOICES)
+    )
+    enable_compliance = django_forms.NullBooleanField(
+        required=False, widget=forms.StaticSelect2(choices=BOOLEAN_WITH_BLANK_CHOICES)
+    )
+    enable_plan = django_forms.NullBooleanField(
+        required=False, widget=forms.StaticSelect2(choices=BOOLEAN_WITH_BLANK_CHOICES)
+    )
+    enable_deploy = django_forms.NullBooleanField(
+        required=False, widget=forms.StaticSelect2(choices=BOOLEAN_WITH_BLANK_CHOICES)
+    )
+    enable_sotagg = django_forms.NullBooleanField(
+        required=False, widget=forms.StaticSelect2(choices=BOOLEAN_WITH_BLANK_CHOICES)
+    )
+    enable_postprocessing = django_forms.NullBooleanField(
+        required=False, widget=forms.StaticSelect2(choices=BOOLEAN_WITH_BLANK_CHOICES)
+    )
     tags = forms.TagFilterField(model)
 
 

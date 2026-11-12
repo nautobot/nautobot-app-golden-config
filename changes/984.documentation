@@ -1,2 +1,3 @@
 Added E3038 and E3039 troubleshooting pages and linked them in the documentation navigation.
 Documented per-`GoldenConfigSetting` feature-enable resolution (highest-weighted Setting wins, with a deterministic lower-sorted-name tie-break) and the all-in-one jobs' behavior when features are disabled, including the new `enable_*` Setting fields, in the app use cases.
+Added an upgrade guide section covering the move of the `enable_*` settings from `PLUGINS_CONFIG` to Golden Config Settings.

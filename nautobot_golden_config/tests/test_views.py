@@ -25,7 +25,13 @@ from packaging import version
 from nautobot_golden_config import models, views
 from nautobot_golden_config.utilities.constant import PLUGIN_CFG
 
-from .conftest import create_device_data, create_feature_rule_json, create_job_result
+from .conftest import (
+    create_device,
+    create_device_data,
+    create_feature_rule_json,
+    create_job_result,
+    dgs_gc_settings_and_job_repo_objects,
+)
 
 User = get_user_model()
 
@@ -69,40 +75,27 @@ class ConfigComplianceOverviewHelperTestCase(TestCase):
         # aggr = {"comp_percents": 0, "compliants": 0, "non_compliants": 0, "total": 0}
         # self.assertEqual(self.ccoh.plot_visual(aggr), None)
 
-    @mock.patch.dict("nautobot_golden_config.tables.CONFIG_FEATURES", {"sotagg": True})
-    def test_config_compliance_list_view_with_sotagg_enabled(self):
+    def test_golden_config_list_view_offers_sot_aggregate_action(self):
         models.GoldenConfig.objects.create(device=Device.objects.first())
         request = self.client.get("/plugins/golden-config/golden-config/", headers={"HX-Request": "true"})
         self.assertContains(request, '<span class="mdi mdi-code-json" title="SOT Aggregate Data"></span>')
 
-    @mock.patch.dict("nautobot_golden_config.tables.CONFIG_FEATURES", {"sotagg": False})
-    def test_config_compliance_list_view_with_sotagg_disabled(self):
-        models.GoldenConfig.objects.create(device=Device.objects.first())
-        request = self.client.get("/plugins/golden-config/golden-config/")
-        self.assertNotContains(request, '<span class="mdi mdi-code-json" title="SOT Aggregate Data"></span>')
-
     @mock.patch.object(views, "graph_ql_query")
-    @mock.patch.object(views, "get_device_to_settings_map")
     @mock.patch("nautobot_golden_config.models.GoldenConfigSetting")
-    def test_config_compliance_details_sotagg_error(
-        self, mock_gc_setting, mock_get_device_to_settings_map, mock_graphql_query
-    ):
+    def test_config_compliance_details_sotagg_error(self, mock_gc_setting, mock_graphql_query):
         device = Device.objects.first()
         mock_gc_setting.sot_agg_query = None
-        mock_get_device_to_settings_map.return_value = {device.id: mock_gc_setting}
+        mock_gc_setting.objects.get_for_device.return_value = mock_gc_setting
         request = self.client.get(f"/plugins/golden-config/golden-config/{device.pk}/sotagg/")
         expected = "{\n    &quot;Error&quot;: &quot;No saved `GraphQL Query` query was configured in the `Golden Config Setting`&quot;\n}"
         self.assertContains(request, expected)
         mock_graphql_query.assert_not_called()
 
     @mock.patch.object(views, "graph_ql_query")
-    @mock.patch.object(views, "get_device_to_settings_map")
     @mock.patch("nautobot_golden_config.models.GoldenConfigSetting")
-    def test_config_compliance_details_sotagg_no_error(
-        self, mock_gc_setting, mock_get_device_to_settings_map, mock_graph_ql_query
-    ):
+    def test_config_compliance_details_sotagg_no_error(self, mock_gc_setting, mock_graph_ql_query):
         device = Device.objects.first()
-        mock_get_device_to_settings_map.return_value = {device.id: mock_gc_setting}
+        mock_gc_setting.objects.get_for_device.return_value = mock_gc_setting
         mock_graph_ql_query.return_value = ("discard value", "This is a mock graphql result")
         request = self.client.get(f"/plugins/golden-config/golden-config/{device.pk}/sotagg/")
         expected = "This is a mock graphql result"
@@ -820,3 +813,39 @@ class FilteredComplianceDeviceIdsTestCase(TestCase):
         result = views._get_feature_compliance_queryset(filtered_device_ids).get(slug="filt-feat-a")
 
         self.assertEqual(result.count, 1)  # If this fails, the Cartesian product regression is present
+
+
+class GoldenConfigSettingViewRegressionTestCase(TestCase):
+    """Detail-tab and list-sort behavior for views that warn about disabled jobs."""
+
+    @classmethod
+    def setUpTestData(cls):
+        create_device()
+        dgs_gc_settings_and_job_repo_objects()
+        cls.feature = models.ComplianceFeature.objects.create(name="tabs", slug="tabs")
+
+    def setUp(self):
+        super().setUp()
+        self.user.is_superuser = True
+        self.user.save()
+
+    def test_detail_view_keeps_base_context(self):
+        """Views overriding `get_extra_context` still receive the base context that marks the active tab."""
+        response = self.client.get(f"/plugins/golden-config/compliance-feature/{self.feature.pk}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["active_tab"], "main")
+
+    def test_setting_list_ignores_sort_on_member_count(self):
+        """The Dynamic Group member count is not a database field, so the list must not try to order by it."""
+        response = self.client.get("/plugins/golden-config/golden-config-setting/?sort=dynamic_group__members__count")
+        self.assertEqual(response.status_code, 200)
+
+    def test_sotagg_view_reports_device_without_setting(self):
+        """The SoT Aggregate Data view explains, instead of erroring, when the device maps to no Setting."""
+        device = Device.objects.first()
+        models.GoldenConfig.objects.create(device=device)
+        models.GoldenConfigSetting.objects.all().delete()
+
+        response = self.client.get(f"/plugins/golden-config/golden-config/{device.pk}/sotagg/")
+
+        self.assertContains(response, "does not map to a Golden Config Setting")

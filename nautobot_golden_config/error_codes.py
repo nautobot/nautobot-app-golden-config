@@ -47,7 +47,10 @@ ERROR_CODES = {
             "{feature_label} {label} skipped — all {skipped_count} in-scope devices have it disabled "
             "on their winning Setting (see E3038 entries above). "
             "Alternate form when no devices were in scope at all: "
-            "{feature_label} {label} skipped — no devices in scope of any Golden Config Setting."
+            "{feature_label} {label} skipped — no devices in scope of any Golden Config Setting. "
+            "Alternate form from the Config Plan and Deploy jobs when selected devices are out of scope: "
+            "{feature_label} job skipped — none of the {skipped_count} selected devices are in scope of any "
+            "Golden Config Setting (see E3038 entries above)."
         ),
         recommendation="Either expand a Golden Config Setting's Dynamic Group to include the intended devices, or enable the corresponding `enable_<feature>` flag on the winning Setting(s) named by the preceding E3038 entries.",
     ),

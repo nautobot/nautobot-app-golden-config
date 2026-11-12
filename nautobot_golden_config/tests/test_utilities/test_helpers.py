@@ -2,6 +2,7 @@
 
 import logging
 import os
+import unittest
 from unittest.mock import MagicMock, patch
 
 from django.conf import settings
@@ -17,6 +18,7 @@ from nornir_nautobot.exceptions import NornirNautobotException
 from nautobot_golden_config.models import GoldenConfigSetting
 from nautobot_golden_config.tests.conftest import create_device, create_helper_repo, create_orphan_device
 from nautobot_golden_config.utilities.helper import (
+    format_e3039_message,
     get_device_to_settings_map,
     get_job_filter,
     null_to_empty,
@@ -326,3 +328,24 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         # Regenerate the device to settings map to ensure it is up to date.
         temp_device_to_settings_map = get_device_to_settings_map(queryset=Device.objects.all())
         self.assertEqual(temp_device_to_settings_map[test_device.id], self.test_settings_a)
+
+
+class FormatE3039MessageTestCase(unittest.TestCase):
+    """The E3039 summary says why nothing ran, and stays silent when one E3038 already did."""
+
+    def test_wording_matches_why_devices_were_skipped(self):
+        cases = (
+            # skipped, unscoped, expected fragment
+            (0, 0, "no devices in scope of any Golden Config Setting"),
+            (3, 0, "all 3 in-scope devices have it disabled on their winning Setting"),
+            (3, 3, "none of the 3 selected devices are in scope of any Golden Config Setting"),
+            (3, 1, "either have it disabled on their winning Setting or are not in scope"),
+        )
+        for skipped, unscoped, expected in cases:
+            with self.subTest(skipped=skipped, unscoped=unscoped):
+                message = format_e3039_message("deploy", skipped, unscoped_count=unscoped)
+                self.assertTrue(message.startswith("E3039: Deploy job skipped"))
+                self.assertIn(expected, message)
+
+    def test_single_skipped_device_is_not_summarized(self):
+        self.assertIsNone(format_e3039_message("deploy", 1, unscoped_count=1))

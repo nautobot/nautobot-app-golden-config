@@ -6,10 +6,9 @@ from django_tables2.utils import A
 from nautobot.apps.tables import BaseTable, BooleanColumn, ButtonsColumn, StatusTableMixin, TagColumn, ToggleColumn
 
 from nautobot_golden_config import models
-from nautobot_golden_config.utilities.constant import CONFIG_FEATURES
 
 ALL_ACTIONS = """
-{% if backup == True and record.backup_config and not record.config_type == "json" %}
+{% if record.backup_config and not record.config_type == "json" %}
     <li>
         <a class="dropdown-item text-primary" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_backup' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
             <span class="mdi mdi-file-document-outline" title="Backup Configuration"></span>
@@ -17,7 +16,7 @@ ALL_ACTIONS = """
         </a>
     </li>
 {% endif %}
-{% if intended == True and record.intended_config and not record.config_type == "json" %}
+{% if record.intended_config and not record.config_type == "json" %}
     <li>
         <a class="dropdown-item text-primary" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_intended' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
             <span class="mdi mdi-text-box-check-outline" title="Intended Configuration"></span>
@@ -25,7 +24,7 @@ ALL_ACTIONS = """
         </a>
     </li>
 {% endif %}
-{% if postprocessing == True and record.intended_config and not record.config_type == "json" %}
+{% if record.intended_config and not record.config_type == "json" %}
     <li>
         <a class="dropdown-item text-primary" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_postprocessing' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
             <span class="mdi mdi-text-box-check" title="Postprocessing"></span>
@@ -33,7 +32,7 @@ ALL_ACTIONS = """
         </a>
     </li>
 {% endif %}
-{% if compliance == True and record.intended_config and record.backup_config and not record.config_type == "json" %}
+{% if record.intended_config and record.backup_config and not record.config_type == "json" %}
     <li>
         <a class="dropdown-item text-primary" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_compliance' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
             <span class="mdi mdi-file-compare" title="Compliance Details"></span>
@@ -41,14 +40,12 @@ ALL_ACTIONS = """
         </a>
     </li>
 {% endif %}
-{% if sotagg == True %}
-    <li>
-        <a class="dropdown-item text-primary" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_sotagg' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_sotagg' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
-            <span class="mdi mdi-code-json" title="SOT Aggregate Data"></span>
-            SOT Aggregate Data
-        </a>
-    </li>
-{% endif %}
+<li>
+    <a class="dropdown-item text-primary" role="button" value="{% url 'plugins:nautobot_golden_config:goldenconfig_sotagg' pk=record.device.pk %}" data-href="{% url 'plugins:nautobot_golden_config:goldenconfig_sotagg' pk=record.device.pk %}?modal=true" data-bs-toggle="modal" data-bs-target="#gc-modal">
+        <span class="mdi mdi-code-json" title="SOT Aggregate Data"></span>
+        SOT Aggregate Data
+    </a>
+</li>
 {% if not record.config_type == "json" %}
     <li>
         <a class="dropdown-item text-success" href="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.AllGoldenConfig' %}?device={{ record.device.pk }}">
@@ -294,7 +291,6 @@ class GoldenConfigTable(BaseTable):
         model=models.GoldenConfig,
         verbose_name="Actions",
         prepend_template=ALL_ACTIONS,
-        extra_context=CONFIG_FEATURES,
         orderable=False,
     )
 
@@ -438,7 +434,10 @@ class GoldenConfigSettingTable(BaseTable):
     pk = ToggleColumn()
     name = Column(order_by=("_name",), linkify=True)
     dynamic_group__members__count = LinkColumn(
-        viewname="extras:dynamicgroup", kwargs={"pk": A("dynamic_group.pk")}, verbose_name="Dynamic Group Members"
+        viewname="extras:dynamicgroup",
+        kwargs={"pk": A("dynamic_group.pk")},
+        verbose_name="Dynamic Group Members",
+        orderable=False,
     )
     enable_backup = BooleanColumn()
     enable_intended = BooleanColumn()
@@ -447,6 +446,9 @@ class GoldenConfigSettingTable(BaseTable):
     enable_deploy = BooleanColumn()
     enable_sotagg = BooleanColumn()
     enable_postprocessing = BooleanColumn()
+    backup_repository = Column(linkify=True)
+    intended_repository = Column(linkify=True)
+    jinja_repository = Column(linkify=True)
     tags = TagColumn(url_name="plugins:nautobot_golden_config:goldenconfigsetting_list")
 
     class Meta(BaseTable.Meta):
@@ -465,6 +467,10 @@ class GoldenConfigSettingTable(BaseTable):
             "enable_deploy",
             "enable_sotagg",
             "enable_postprocessing",
+            "description",
+            "backup_repository",
+            "intended_repository",
+            "jinja_repository",
             "tags",
         )
         default_columns = (

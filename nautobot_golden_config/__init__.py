@@ -1,12 +1,27 @@
 """App declaration for nautobot_golden_config."""
 
 # Metadata is inherited from Nautobot. If not including Nautobot in the environment, this should be added
+import logging
 from importlib import metadata
 
+from django.conf import settings
 from django.db.models.signals import post_migrate
 from nautobot.apps import ConstanceConfigItem, NautobotAppConfig, nautobot_database_ready
 
 __version__ = metadata.version(__name__)
+
+logger = logging.getLogger(__name__)
+
+# App-level settings that moved to per-`GoldenConfigSetting` fields of the same name.
+DEPRECATED_ENABLE_SETTINGS = (
+    "enable_backup",
+    "enable_compliance",
+    "enable_intended",
+    "enable_sotagg",
+    "enable_postprocessing",
+    "enable_plan",
+    "enable_deploy",
+)
 
 
 class GoldenConfig(NautobotAppConfig):
@@ -21,13 +36,6 @@ class GoldenConfig(NautobotAppConfig):
     base_url = "golden-config"
     docs_view_name = "plugins:nautobot_golden_config:docs"
     default_settings = {
-        "enable_backup": True,
-        "enable_compliance": True,
-        "enable_intended": True,
-        "enable_sotagg": True,
-        "enable_postprocessing": False,
-        "enable_plan": True,
-        "enable_deploy": True,
         "default_deploy_status": "Not Approved",
         "postprocessing_callables": [],
         "postprocessing_subscribed": [],
@@ -82,7 +90,19 @@ class GoldenConfig(NautobotAppConfig):
         nautobot_database_ready.connect(post_migrate_create_job_button, sender=self)
 
         super().ready()
+        self._warn_deprecated_enable_settings()
         post_migrate.connect(config_compliance_platform_cleanup, sender=ConfigCompliance)
+
+    def _warn_deprecated_enable_settings(self):
+        """Log a warning when `PLUGINS_CONFIG` still carries the removed app-level `enable_*` settings."""
+        configured = sorted(set(DEPRECATED_ENABLE_SETTINGS) & set(settings.PLUGINS_CONFIG.get(self.name, {})))
+        if configured:
+            logger.warning(
+                "The `nautobot_golden_config` settings %s are deprecated and no longer read at runtime. Their values "
+                "are copied onto each existing Golden Config Setting by the upgrade migration; once it has run, "
+                "manage them on the Golden Config Setting and remove them from `PLUGINS_CONFIG`.",
+                ", ".join(f"`{name}`" for name in configured),
+            )
 
 
 config = GoldenConfig  # pylint:disable=invalid-name

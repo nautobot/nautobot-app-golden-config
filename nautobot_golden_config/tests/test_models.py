@@ -1,4 +1,4 @@
-"""Unit tests for nautobot_golden_config models."""
+"""Unit tests for nautobot_golden_config models."""  # pylint: disable=too-many-lines
 
 from unittest.mock import patch
 
@@ -20,7 +20,6 @@ from nautobot_golden_config.models import (
     _get_hierconfig_remediation,
 )
 from nautobot_golden_config.tests.conftest import create_git_repos
-from nautobot_golden_config.utilities.constant import ENABLE_POSTPROCESSING, ENABLE_SOTAGG
 
 from .conftest import (
     create_config_compliance,
@@ -467,13 +466,13 @@ class GoldenConfigSettingModelTestCase(TestCase):
             delattr(device, "_dynamic_groups")
         self.assertEqual(GoldenConfigSetting.objects.get_for_device(device), winner)
 
-    def test_feature_flag_defaults_track_app_config(self):
-        """enable_sotagg / enable_postprocessing field defaults follow the plugin-level config constants."""
-        self.assertEqual(GoldenConfigSetting._meta.get_field("enable_sotagg").default, ENABLE_SOTAGG)
-        self.assertEqual(GoldenConfigSetting._meta.get_field("enable_postprocessing").default, ENABLE_POSTPROCESSING)
+    def test_feature_flag_defaults_match_previous_app_defaults(self):
+        """A new Setting enables every feature except postprocessing, as the app-level settings did."""
         instance = GoldenConfigSetting()
-        self.assertEqual(instance.enable_sotagg, ENABLE_SOTAGG)
-        self.assertEqual(instance.enable_postprocessing, ENABLE_POSTPROCESSING)
+        for feature in ("backup", "intended", "compliance", "plan", "deploy", "sotagg"):
+            with self.subTest(feature=feature):
+                self.assertTrue(getattr(instance, f"enable_{feature}"))
+        self.assertFalse(instance.enable_postprocessing)
 
     def test_get_jinja_template_path_for_device(self):
         """Test get_jinja_template_path_for_device method on GoldenConfigSetting."""
@@ -512,9 +511,24 @@ class GoldenConfigSettingCleanTestCase(TestCase):
             "enable_compliance": False,
             "enable_plan": False,
             "enable_deploy": False,
+            "enable_sotagg": False,
         }
         defaults.update(overrides)
         return GoldenConfigSetting(**defaults)
+
+    def test_sotagg_enabled_requires_graphql_query(self):
+        """clean() rejects SoT Aggregation enabled without a GraphQL query and accepts it once one is set."""
+        setting = self._make_setting(enable_sotagg=True)
+        with self.assertRaises(ValidationError) as error:
+            setting.clean()
+        self.assertIn("sot_agg_query", error.exception.message_dict)
+
+        setting.sot_agg_query = GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1")
+        setting.clean()
+
+    def test_sotagg_disabled_allows_missing_graphql_query(self):
+        """A Setting with SoT Aggregation disabled cleans without a GraphQL query."""
+        self._make_setting(enable_sotagg=False).clean()
 
     def test_intended_enabled_reports_missing_requirements_without_raising(self):
         """When intended is enabled, clean() does not raise; get_missing_intended_requirements() reports the gaps."""

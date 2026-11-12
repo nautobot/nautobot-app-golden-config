@@ -1,4 +1,4 @@
-"""Django Models for tracking the configuration compliance per feature and device."""
+"""Django Models for tracking the configuration compliance per feature and device."""  # pylint: disable=too-many-lines
 
 import json
 import logging
@@ -23,16 +23,7 @@ from netutils.config.compliance import feature_compliance
 from xmldiff import actions, main
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
-from nautobot_golden_config.utilities.constant import (
-    ENABLE_BACKUP,
-    ENABLE_COMPLIANCE,
-    ENABLE_DEPLOY,
-    ENABLE_INTENDED,
-    ENABLE_PLAN,
-    ENABLE_POSTPROCESSING,
-    ENABLE_SOTAGG,
-    PLUGIN_CFG,
-)
+from nautobot_golden_config.utilities.constant import PLUGIN_CFG
 
 LOGGER = logging.getLogger(__name__)
 GRAPHQL_STR_START = "query ($device_id: ID!)"
@@ -592,21 +583,21 @@ class GoldenConfigSettingManager(BaseManager.from_queryset(RestrictedQuerySet)):
         return None
 
     def get_repos_for_settings(self, gcs_queryset, job_name):
-        """Return ``(repos_to_sync, repos_to_push)`` for the given settings and job.
+        """Return `(repos_to_sync, repos_to_push)` for the given settings and job.
 
         Sync rules (read access):
-            - ``backup_repository`` is synced for ``backup``, ``compliance``, ``all``.
-            - ``intended_repository`` is synced for ``intended``, ``compliance``, ``all``.
-            - ``jinja_repository`` is synced for ``intended``, ``all``.
-            A repo is synced regardless of the corresponding ``enable_*`` flag so
+            - `backup_repository` is synced for `backup`, `compliance`, `all`.
+            - `intended_repository` is synced for `intended`, `compliance`, `all`.
+            - `jinja_repository` is synced for `intended`, `all`.
+            A repo is synced regardless of the corresponding `enable_*` flag so
             that read-only consumers (compliance, all) can still operate.
 
         Push rules (write access):
-            - ``backup_repository`` is pushed for ``backup``, ``all`` only when
-              ``enable_backup=True`` on the setting.
-            - ``intended_repository`` is pushed for ``intended``, ``all`` only when
-              ``enable_intended=True`` on the setting.
-            - ``jinja_repository`` is never pushed.
+            - `backup_repository` is pushed for `backup`, `all` only when
+              `enable_backup=True` on the setting.
+            - `intended_repository` is pushed for `intended`, `all` only when
+              `enable_intended=True` on the setting.
+            - `jinja_repository` is never pushed.
         """
         if isinstance(gcs_queryset, GoldenConfigSetting):
             gcs_queryset = [gcs_queryset]
@@ -639,7 +630,7 @@ class GoldenConfigSettingManager(BaseManager.from_queryset(RestrictedQuerySet)):
 class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     """GoldenConfigSetting Model definition. This provides global configs instead of via configs.py."""
 
-    # Fields the Intended Configuration job needs to produce output. When ``enable_intended`` is on
+    # Fields the Intended Configuration job needs to produce output. When `enable_intended` is on
     # but any of these is unset, saving is still allowed and a non-blocking UI warning is shown.
     INTENDED_REQUIRED_FIELDS = (
         "sot_agg_query",
@@ -671,7 +662,7 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         help_text="The Jinja path representation of where the backup file will be found. The variable `obj` is available as the device instance object of a given device, as is the case for all Jinja templates. e.g. `{{obj.location.name|slugify}}/{{obj.name}}.cfg`",
     )
     enable_backup = models.BooleanField(
-        default=ENABLE_BACKUP,
+        default=True,
         verbose_name="Enable Backup",
         help_text="Whether or not backups are performed by Golden Config. This can be disabled if backups are fetched from another process.",
     )
@@ -690,7 +681,7 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         help_text="The Jinja path representation of where the generated file will be placed. e.g. `{{obj.location.name|slugify}}/{{obj.name}}.cfg`",
     )
     enable_intended = models.BooleanField(
-        default=ENABLE_INTENDED,
+        default=True,
         verbose_name="Enable Intended",
         help_text="Whether or not intended config tasks are performed by Golden Config. This can be disabled if intended configs are fetched from another process.",
     )
@@ -727,27 +718,27 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         related_name="golden_config_setting",
     )
     enable_compliance = models.BooleanField(
-        default=ENABLE_COMPLIANCE,
+        default=True,
         verbose_name="Enable Compliance",
         help_text="Whether or not compliance tasks are performed by Golden Config.",
     )
     enable_plan = models.BooleanField(
-        default=ENABLE_PLAN,
+        default=True,
         verbose_name="Enable Config Plan",
         help_text="Whether or not config plan tasks are performed by Golden Config.",
     )
     enable_deploy = models.BooleanField(
-        default=ENABLE_DEPLOY,
+        default=True,
         verbose_name="Enable Deploy",
         help_text="Whether or not deploy tasks are performed by Golden Config.",
     )
     enable_sotagg = models.BooleanField(
-        default=ENABLE_SOTAGG,
+        default=True,
         verbose_name="Enable SoT Aggregation",
         help_text="Whether or not the SoT aggregation (GraphQL) data is provided by Golden Config.",
     )
     enable_postprocessing = models.BooleanField(
-        default=ENABLE_POSTPROCESSING,
+        default=False,
         verbose_name="Enable Postprocessing",
         help_text="Whether or not intended configuration postprocessing is performed by Golden Config.",
     )
@@ -782,18 +773,26 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
     def get_missing_intended_requirements(self):
         """Return the field names required for Intended generation that are not yet set.
 
-        Returns an empty list when ``enable_intended`` is off or the Setting is fully configured.
+        Returns an empty list when `enable_intended` is off or the Setting is fully configured.
         This intentionally does not raise: the missing fields are surfaced as a non-blocking UI
-        warning (see ``add_intended_requirements_message``) rather than a validation error, so an
+        warning (see `add_intended_requirements_message`) rather than a validation error, so an
         operator can enable Intended and stage a Setting before wiring up its repos and query.
         """
         if not self.enable_intended:
             return []
-        return [field for field in self.INTENDED_REQUIRED_FIELDS if not getattr(self, field)]
+        # Read each field's `attname` so a foreign key is checked by its `_id` value without loading the related object.
+        return [
+            field for field in self.INTENDED_REQUIRED_FIELDS if not getattr(self, self._meta.get_field(field).attname)
+        ]
 
     def clean(self):
         """Validate the scope and GraphQL query."""
         super().clean()
+
+        if self.enable_sotagg and not self.sot_agg_query:
+            raise ValidationError(
+                {"sot_agg_query": "A GraphQL query must be defined when `Enable SoT Aggregation` is checked."}
+            )
 
         if self.sot_agg_query:
             LOGGER.debug("GraphQL - test  query start with: `%s`", GRAPHQL_STR_START)

@@ -27,6 +27,7 @@ from nautobot_golden_config.utilities.helper import (
     get_xml_config,
     get_xml_subtree_with_full_path,
     render_jinja_template,
+    verify_settings,
 )
 from nautobot_golden_config.utilities.logger import NornirLogger
 
@@ -208,6 +209,14 @@ def config_compliance(job):  # pylint: disable=unused-argument
     """
     now = make_aware(datetime.now())
     logger = NornirLogger(job.job_result, job.logger.getEffectiveLevel())
+
+    for setting in set(job.gc_advanced_settings_filter["compliance"][True].values()):
+        verify_settings(
+            logger,
+            setting,
+            ["backup_repository", "backup_path_template", "intended_repository", "intended_path_template"],
+        )
+
     rules = get_rules()
     try:
         with InitNornir(

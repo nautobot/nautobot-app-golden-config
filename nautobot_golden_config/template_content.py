@@ -90,19 +90,21 @@ class ConfigDeviceDetails(TemplateExtension):  # pylint: disable=abstract-method
         """Content to add to the configuration compliance."""
         device = self.get_device()
         golden_config = GoldenConfig.objects.filter(device=device).first()
-        gc_setting = GoldenConfigSetting.objects.get_for_device(device)
-        if not golden_config or not gc_setting:
+        if not golden_config:
             return ""
+        # A device that has left the scope of every Setting keeps its stored configs viewable; only the
+        # actions that need a Setting to run (SoT aggregation and postprocessing) are hidden.
+        gc_setting = GoldenConfigSetting.objects.get_for_device(device)
         extra_context = {
-            "device": self.get_device(),  # device,
+            "device": device,
             "golden_config": golden_config,
             "template_type": "device-configs",
             "config_features": {
-                "intended": gc_setting.enable_intended,
-                "compliance": gc_setting.enable_compliance,
-                "backup": gc_setting.enable_backup,
-                "sotagg": gc_setting.enable_sotagg,
-                "postprocessing": gc_setting.enable_postprocessing,
+                "intended": getattr(gc_setting, "enable_intended", True),
+                "compliance": getattr(gc_setting, "enable_compliance", True),
+                "backup": getattr(gc_setting, "enable_backup", True),
+                "sotagg": getattr(gc_setting, "enable_sotagg", False),
+                "postprocessing": getattr(gc_setting, "enable_postprocessing", False),
             },
         }
         return self.render(
@@ -142,11 +144,9 @@ class ConfigComplianceTenantCheck(TemplateExtension):  # pylint: disable=abstrac
         )
 
 
-extensions = [ConfigDeviceDetails]
-# if GoldenConfigSetting.objects.filter(enable_compliance=True).exists():
-extensions.append(ConfigComplianceDeviceCheck)
-extensions.append(ConfigComplianceLocationCheck)
-extensions.append(ConfigComplianceTenantCheck)
-
-
-template_extensions = extensions
+template_extensions = [
+    ConfigDeviceDetails,
+    ConfigComplianceDeviceCheck,
+    ConfigComplianceLocationCheck,
+    ConfigComplianceTenantCheck,
+]

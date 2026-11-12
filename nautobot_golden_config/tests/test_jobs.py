@@ -1,13 +1,13 @@
 """Tests for the Golden Config jobs.
 
-Contract under test (per PR #984):
-    - Devices are routed by the highest-weighted ``GoldenConfigSetting`` whose DynamicGroup
+Contract under test:
+    - Devices are routed by the highest-weighted `GoldenConfigSetting` whose DynamicGroup
       matches them. Ties broken by name.
-    - For a feature whose enable flag is ``False`` on the winning Setting, the device is
-      skipped and a single ``E3038`` warning is emitted naming the winning Setting and weight.
-    - If after filtering the per-job queryset is empty, a single ``E3039`` warning fires.
-    - ``ensure_git_repository`` is called for every repo that needs syncing per the
-      ``get_repos_for_settings`` contract; ``gc_repo_push`` receives only the repos eligible
+    - For a feature whose enable flag is `False` on the winning Setting, the device is
+      skipped and a single `E3038` warning is emitted naming the winning Setting and weight.
+    - If after filtering the per-job queryset is empty, a single `E3039` warning fires.
+    - `ensure_git_repository` is called for every repo that needs syncing per the
+      `get_repos_for_settings` contract; `gc_repo_push` receives only the repos eligible
       for push (enable-flag-gated, per repo type).
 """
 
@@ -31,20 +31,20 @@ from nautobot_golden_config.tests.conftest import (
 
 
 def _pks(queryset):
-    """Return the pks in ``queryset``, which is how Nautobot hands a ``MultiObjectVar`` to a job."""
+    """Return the pks in `queryset`, which is how Nautobot hands a `MultiObjectVar` to a job."""
     return list(queryset.values_list("pk", flat=True))
 
 
 def _sync_targets(mock_ensure):
-    """Return the set of GitRepository instances ``ensure_git_repository`` was called with."""
+    """Return the set of GitRepository instances `ensure_git_repository` was called with."""
     return {call.args[0] for call in mock_ensure.call_args_list}
 
 
 def _push_targets(mock_push):
-    """Return the set of GitRepository instances passed to ``gc_repo_push``.
+    """Return the set of GitRepository instances passed to `gc_repo_push`.
 
-    Pairs with the ``get_refreshed_repos`` identity-passthrough patch — ``current_repos``
-    is the list of GitRepository instances rather than wrapped ``GitRepo`` objects.
+    Pairs with the `get_refreshed_repos` identity-passthrough patch — `current_repos`
+    is the list of GitRepository instances rather than wrapped `GitRepo` objects.
     """
     if not mock_push.called:
         return set()
@@ -63,7 +63,7 @@ def _e30xx(job_result, code):
 
 
 def _disable_feature(setting_name, **flags):
-    """Toggle one or more ``enable_*`` flags on a Setting by name (saves with ``update``)."""
+    """Toggle one or more `enable_*` flags on a Setting by name (saves with `update`)."""
     GoldenConfigSetting.objects.filter(name=setting_name).update(**flags)
 
 
@@ -72,7 +72,7 @@ def _disable_feature(setting_name, **flags):
 @patch.object(jobs, "gc_repo_push")
 @patch.object(jobs, "ensure_git_repository")
 class BackupJobContractTestCase(TransactionTestCase):
-    """E3038 / E3039 / sync / push contract for ``BackupJob``."""
+    """E3038 / E3039 / sync / push contract for `BackupJob`."""
 
     databases = ("default", "job_logs")
 
@@ -96,6 +96,22 @@ class BackupJobContractTestCase(TransactionTestCase):
         self.assertEqual(_push_targets(mock_push), {self.backup_repo_1, self.backup_repo_2})
         self.assertEqual(_e30xx(job_result, "E3038"), [])
         self.assertEqual(_e30xx(job_result, "E3039"), [])
+
+    def test_enabled_setting_without_backup_repository_fails_with_e3018(self, *_):
+        """A Setting with backup enabled and no backup repository fails the job with a coded error."""
+        GoldenConfigSetting.objects.filter(name="test_name2").update(backup_repository=None)
+
+        job_result = create_job_result_and_run_job(
+            module="nautobot_golden_config.jobs",
+            name="BackupJob",
+            device=_pks(Device.objects.all()),
+            fail_job_on_task_failure=True,
+        )
+
+        self.assertEqual(job_result.status, JobResultStatusChoices.STATUS_FAILURE)
+        e3018s = JobLogEntry.objects.filter(job_result=job_result, message__contains="E3018")
+        self.assertTrue(e3018s.exists())
+        self.assertIn("backup_repository", e3018s.first().message)
 
     def test_disabled_setting_skips_device_but_still_syncs_repo(self, mock_ensure, mock_push, *_):
         """Setting 2 has backup disabled — device2 is skipped (E3038).
@@ -143,7 +159,7 @@ class BackupJobContractTestCase(TransactionTestCase):
 
     @patch.object(jobs, "get_job_filter")
     def test_no_devices_in_scope_emits_bare_e3039_with_no_e3038(self, mock_get_job_filter, *_):
-        """``skipped_count == 0``: no device mapped to any Setting — bare E3039, no E3038."""
+        """`skipped_count == 0`: no device mapped to any Setting — bare E3039, no E3038."""
         mock_get_job_filter.return_value = Device.objects.none()
 
         job_result = create_job_result_and_run_job(
@@ -168,10 +184,10 @@ class BackupJobContractTestCase(TransactionTestCase):
 @patch.object(jobs, "gc_repo_push")
 @patch.object(jobs, "ensure_git_repository")
 class IntendedJobContractTestCase(TransactionTestCase):
-    """E3038 / E3039 / sync / push contract for ``IntendedJob``.
+    """E3038 / E3039 / sync / push contract for `IntendedJob`.
 
-    Intended syncs both ``intended_repository`` and ``jinja_repository`` but only pushes
-    ``intended_repository`` when ``enable_intended=True``.
+    Intended syncs both `intended_repository` and `jinja_repository` but only pushes
+    `intended_repository` when `enable_intended=True`.
     """
 
     databases = ("default", "job_logs")
@@ -571,9 +587,9 @@ class WeightPrecedenceTestCase(TransactionTestCase):
 
 
 class GenerateConfigPlansContractTestCase(TransactionTestCase):
-    """``enable_plan`` on the winning Setting gates per-device plan generation.
+    """`enable_plan` on the winning Setting gates per-device plan generation.
 
-    Devices whose winning Setting has ``enable_plan=False`` are dropped and named in an
+    Devices whose winning Setting has `enable_plan=False` are dropped and named in an
     E3038 entry; runs with no eligible devices emit a single E3039 (suppressed when only
     one device was filtered — the E3038 already named it).
     """
@@ -665,9 +681,9 @@ def _approved_plan_for(device, commands="hostname x"):
 
 @patch("nautobot_golden_config.jobs.config_deployment")
 class DeployConfigPlansContractTestCase(TransactionTestCase):
-    """``enable_deploy`` on the winning Setting gates per-device deployment.
+    """`enable_deploy` on the winning Setting gates per-device deployment.
 
-    ``config_deployment`` is patched so we can inspect the ``config_plan`` queryset it
+    `config_deployment` is patched so we can inspect the `config_plan` queryset it
     would receive without exercising Nornir. The mixin's E3038 / E3039 contract is mirrored.
     """
 
@@ -677,10 +693,6 @@ class DeployConfigPlansContractTestCase(TransactionTestCase):
         self.device = create_device(name="foobaz")
         self.device2 = create_orphan_device(name="foobaz2")
         dgs_gc_settings_and_job_repo_objects()
-        # ``development.env`` ships with ``ENABLE_DEPLOY=False`` so newly-created Settings default
-        # to ``enable_deploy=False``. Explicitly enable it here so the baseline ``setUp`` matches
-        # the assumption tests make ("both Settings have deploy enabled unless told otherwise").
-        GoldenConfigSetting.objects.all().update(enable_deploy=True)
         self.plan1 = _approved_plan_for(self.device)
         self.plan2 = _approved_plan_for(self.device2)
         super().setUp()
@@ -739,10 +751,10 @@ class DeployConfigPlansContractTestCase(TransactionTestCase):
     def test_all_devices_out_of_scope_emits_e3038_per_device_and_e3039_summary(self, mock_deploy):
         """Deleting all Settings leaves both plans' devices with no winning Setting.
 
-        Each device gets an E3038 carrying the ``no eligible Golden Config Setting`` wording.
-        Because ``skipped_count == 2`` (> 1), the >1-skipped E3039 variant fires — *not* the
-        bare ``no devices in scope`` form (that one requires an empty input device set, which
-        ``MultiObjectVar(required=True)`` makes structurally unreachable for this job).
+        Each device gets an E3038 carrying the `no eligible Golden Config Setting` wording.
+        Because `skipped_count == 2` (> 1), the >1-skipped E3039 variant fires — *not* the
+        bare `no devices in scope` form (that one requires an empty input device set, which
+        `MultiObjectVar(required=True)` makes structurally unreachable for this job).
         """
         GoldenConfigSetting.objects.all().delete()
 
@@ -759,12 +771,12 @@ class DeployConfigPlansContractTestCase(TransactionTestCase):
             self.assertIn("no eligible Golden Config Setting", msg)
         e3039s = _e30xx(job_result, "E3039")
         self.assertEqual(len(e3039s), 1)
-        self.assertIn("2 in-scope devices", e3039s[0])
+        self.assertIn("none of the 2 selected devices are in scope of any Golden Config Setting", e3039s[0])
 
 
 @patch("nautobot_golden_config.jobs.config_deployment")
 class DeployConfigPlanJobButtonReceiverContractTestCase(TransactionTestCase):
-    """The Job Button path applies the same ``enable_deploy`` gate as the main job."""
+    """The Job Button path applies the same `enable_deploy` gate as the main job."""
 
     databases = ("default", "job_logs")
 
@@ -812,7 +824,7 @@ class GCRepoPushEmptyCommitTestCase(unittest.TestCase):
     """Test gc_repo_push() does not push when there is nothing to commit (issue #848)."""
 
     def _build_job_and_repos(self):
-        """Build a mock job and a single-repo ``current_repos`` list."""
+        """Build a mock job and a single-repo `current_repos` list."""
         job = MagicMock()
         job.Meta.name = "Backup Configurations"
         repo_obj = MagicMock()

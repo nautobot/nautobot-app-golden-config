@@ -65,13 +65,13 @@ To update existing settings click on one of the `Settings` name.
 |Jinja Path|A Jinja template which defines the path (within the repository) and name of the Jinja template file. e.g. `{{obj.platform.network_driver}}/{{obj.role.name}}/main.j2`|
 |Dynamic Group|The scope of devices on which Golden Config's jobs can operate. |
 |GraphQL Query|A query that is evaluated and used to render the config. The query must start with `query ($device_id: ID!)`.|
-|Enable Backup|Whether the Backup Configurations job runs for devices owned by this Setting. Defaults to app-level configuration which is `True`. When `False`, devices owned by this Setting are skipped by the Backup job and an `E3038` warning is logged.|
-|Enable Intended|Whether the Generate Intended Configurations job runs for devices owned by this Setting. Defaults to app-level configuration which is `True`. The Setting can still be saved with this enabled while `Sot agg query`, `Jinja repository`, `Jinja Template Path`, `Intended repository`, or `Intended Path Template` are unset, but a non-blocking warning banner names the missing fields, and the Intended job cannot generate configurations for the Setting's devices until they are all populated.|
-|Enable Compliance|Whether the Perform Configuration Compliance job runs for devices owned by this Setting. Defaults to app-level configuration which is `True`.|
-|Enable Config Plan|Whether Config Plan generation is permitted for devices owned by this Setting. Defaults to app-level configuration which is `True`.|
-|Enable Deploy|Whether Deploy Config Plans is permitted for devices owned by this Setting. Defaults to app-level configuration which is `True`.|
-|Enable SoT Aggregation|Whether the SoT aggregation (GraphQL) data is provided for devices owned by this Setting. Defaults to app-level configuration which is `True`.|
-|Enable Postprocessing|Whether intended configuration postprocessing (e.g. secrets rendering) runs for devices owned by this Setting. Defaults to app-level configuration which is `False`. When `False`, the raw intended/config-set content is used unchanged.|
+|Enable Backup|Whether the Backup Configurations job runs for devices owned by this Setting. Defaults to `True`. When `False`, devices owned by this Setting are skipped by the Backup job and an `E3038` warning is logged.|
+|Enable Intended|Whether the Generate Intended Configurations job runs for devices owned by this Setting. Defaults to `True`. The Setting can still be saved with this enabled while `Sot agg query`, `Jinja repository`, `Jinja Template Path`, `Intended repository`, or `Intended Path Template` are unset, but a non-blocking warning banner names the missing fields, and the Intended job cannot generate configurations for the Setting's devices until they are all populated.|
+|Enable Compliance|Whether the Perform Configuration Compliance job runs for devices owned by this Setting. Defaults to `True`.|
+|Enable Config Plan|Whether Config Plan generation is permitted for devices owned by this Setting. Defaults to `True`.|
+|Enable Deploy|Whether Deploy Config Plans is permitted for devices owned by this Setting. Defaults to `True`.|
+|Enable SoT Aggregation|Whether the SoT aggregation (GraphQL) data is provided for devices owned by this Setting. Defaults to `True`. While enabled, a `GraphQL Query` must be selected or the Setting cannot be saved.|
+|Enable Postprocessing|Whether intended configuration postprocessing (e.g. secrets rendering) runs for devices owned by this Setting. Defaults to `False`. When `False`, deployments send the raw config-set content unchanged, and the Postprocessing view in the UI and API reports that postprocessing is not enabled instead of rendering a config.|
 
 !!! note
     Each of these will be further detailed in their respective sections.
@@ -86,7 +86,7 @@ A single device may match the Dynamic Group criteria for more than one Golden Co
 
 #### All-In-One Jobs and Disabled Features
 
-The two "Execute All Golden Configuration Jobs" jobs (single-device and multi-device) iterate through Backup, Intended, and Compliance in order. For each play they run only the subset of devices whose winning Setting has the corresponding feature enabled:
+The two "Execute All Golden Configuration Jobs" jobs (single-device and multi-device) iterate through Intended, Backup, and Compliance in order. For each play they run only the subset of devices whose winning Setting has the corresponding feature enabled:
 
 * If a play has zero eligible devices the play is skipped with an `E3039` warning and the next play continues.
 * The job does not abort the remaining plays when one feature is disabled — partial execution is intentional so operators can disable a feature on a Setting without losing the other features for that Setting's devices.
@@ -258,7 +258,7 @@ To run the job programmatically, reference the [nautobot documentation](https://
 
 ### Feature Enablement
 
-Enabling features such as backup or compliance, will render those parts of the UI visible. It is worth noting that disabling features does not provide any
+Features such as backup or compliance are enabled per Golden Config Setting, using the `Enable ...` checkboxes described in [Application Settings](#application-settings). The UI for every feature is always visible; a disabled feature is skipped at job runtime for the devices owned by that Setting. It is worth noting that disabling features does not provide any
 garbage collection and it is up to the operator to remove such data.
 
 ### Network Operating System Support

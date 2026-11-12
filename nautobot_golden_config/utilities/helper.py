@@ -6,7 +6,7 @@ from copy import deepcopy
 
 from django.conf import settings
 from django.contrib import messages
-from django.db.models import OuterRef, Q, Subquery
+from django.db.models import Count, OuterRef, Q, Subquery
 from django.template import engines
 from django.urls import reverse
 from django.utils.html import format_html
@@ -112,7 +112,9 @@ def verify_settings(logger, global_settings, attrs):
     """Helper function to verify required attributes are set before a Nornir play start."""
     for item in attrs:
         if not getattr(global_settings, item):
-            error_msg = f"`E3018:` Missing the required global setting: `{item}`."
+            error_msg = (
+                f"`E3018:` Missing the required setting `{item}` on Golden Config Setting `{global_settings.name}`."
+            )
             logger.error(error_msg)
             raise NornirNautobotException(error_msg)
 
@@ -139,10 +141,10 @@ def render_jinja_template(obj, logger, template):
         template (str): A Jinja2 template to be rendered.
 
     Returns:
-        str: The ``template`` rendered.
+        str: The `template` rendered.
 
     Raises:
-        NornirNautobotException: When there is an error rendering the ``template``.
+        NornirNautobotException: When there is an error rendering the `template`.
     """
     try:
         return render_jinja2(template_code=template, context={"obj": obj})
@@ -178,7 +180,7 @@ def get_device_to_settings_map(queryset):
     """Map each device to its highest-weighted GoldenConfigSetting.
 
     Returns:
-        dict[uuid.UUID, GoldenConfigSetting]: ``{device.id: winning_setting}`` keyed by
+        dict[uuid.UUID, GoldenConfigSetting]: `{device.id: winning_setting}` keyed by
         device primary key. Devices with no matching Setting are omitted from the result.
     """
     update_dynamic_groups_cache()
@@ -197,6 +199,8 @@ def get_device_to_settings_map(queryset):
         )
     )
     gcs = {gc.id: gc for gc in models.GoldenConfigSetting.objects.all()}
+    # `gc_settings` is None for a device in scope of no Setting. Deploy reaches this with such devices
+    # because it resolves them from ConfigPlans, which outlive the device's Dynamic Group membership.
     return {device.id: gcs[device.gc_settings] for device in annotated_queryset if device.gc_settings}
 
 
@@ -248,11 +252,11 @@ def add_message(combo_check, request):
 def add_intended_requirements_message(gc_settings, request):
     """Warn (non-blocking) for each GoldenConfigSetting that has Intended enabled but is incompletely configured.
 
-    Mirrors :func:`add_message` (used for disabled Jobs): saving such a Setting is allowed, but the
+    Mirrors `add_message` (used for disabled Jobs): saving such a Setting is allowed, but the
     Intended Configuration job cannot generate output for its devices until the named fields are set.
 
     Args:
-        gc_settings: Iterable of ``GoldenConfigSetting`` instances to check.
+        gc_settings: Iterable of `GoldenConfigSetting` instances to check.
         request: The current request, used to attach the message.
     """
     setting_messages = []
@@ -261,14 +265,18 @@ def add_intended_requirements_message(gc_settings, request):
         if not missing:
             continue
         labels = list_to_string([f"`{setting._meta.get_field(field).verbose_name}`" for field in missing])
-        edit_url = reverse("plugins:nautobot_golden_config:goldenconfigsetting_edit", kwargs={"pk": setting.pk})
-        setting_messages.append(f"<a href='{edit_url}'>{setting.name}</a> is missing {labels}")
+        if request.user.has_perm("nautobot_golden_config.change_goldenconfigsetting", setting):
+            edit_url = reverse("plugins:nautobot_golden_config:goldenconfigsetting_edit", kwargs={"pk": setting.pk})
+            setting_messages.append(format_html("<a href='{}'>{}</a> is missing {}", edit_url, setting.name, labels))
+        else:
+            setting_messages.append(format_html("{} is missing {}", setting.name, labels))
     if setting_messages:
         messages.warning(
             request,
             format_html(
-                f"Intended is enabled but the following Golden Config Setting(s) will not generate intended "
-                f"configurations until their required fields are set: {list_to_string(setting_messages)}."
+                "Intended is enabled but the following Golden Config Setting(s) will not generate intended "
+                "configurations until their required fields are set: {}.",
+                mark_safe(list_to_string(setting_messages)),  # noqa: S308
             ),
         )
 
@@ -356,20 +364,32 @@ def get_error_message(error_code, **kwargs):
 
 
 def any_setting_enabled(feature):
-    """Return ``True`` if any GoldenConfigSetting has the given feature enabled.
+    """Return `True` if any GoldenConfigSetting has the given feature enabled.
 
     Args:
-        feature: short feature name — one of ``"backup"``, ``"intended"``, ``"compliance"``,
-            ``"plan"``, ``"deploy"``, ``"sotagg"``, ``"postprocessing"``.
+        feature: short feature name — one of `"backup"`, `"intended"`, `"compliance"`,
+            `"plan"`, `"deploy"`, `"sotagg"`, `"postprocessing"`.
     """
     return models.GoldenConfigSetting.objects.filter(**{f"enable_{feature}": True}).exists()
 
 
-def format_e3038_message(device, feature, setting):
-    """Build the E3038 warning text for a single device skipped by the ``enable_<feature>`` gate.
+def any_settings_enabled(*features):
+    """Return `{feature: bool}` telling whether any GoldenConfigSetting enables each feature, in one query.
 
-    Shared by :class:`GoldenConfigJobMixin` and :func:`filter_devices_by_feature_enabled` so
-    every job uses the same wording. ``setting`` may be ``None`` when the device has no winning
+    Args:
+        *features: Short feature names, as accepted by `any_setting_enabled`.
+    """
+    counts = models.GoldenConfigSetting.objects.aggregate(
+        **{feature: Count("pk", filter=Q(**{f"enable_{feature}": True})) for feature in features}
+    )
+    return {feature: bool(counts[feature]) for feature in features}
+
+
+def format_e3038_message(device, feature, setting):
+    """Build the E3038 warning text for a single device skipped by the `enable_<feature>` gate.
+
+    Shared by `GoldenConfigJobMixin` and `filter_devices_by_feature_enabled` so
+    every job uses the same wording. `setting` may be `None` when the device has no winning
     Setting — this is reachable from callers whose input queryset isn't restricted to in-scope
     devices (e.g., the deploy filter iterates plans whose device may have moved out of scope
     since the plan was generated).
@@ -383,44 +403,60 @@ def format_e3038_message(device, feature, setting):
     return f"E3038: Device {device.name} skipped for {feature} job — no eligible Golden Config Setting."
 
 
-def format_e3039_message(feature, skipped_count, label="job"):
-    """Build the E3039 summary text, or return ``None`` when the entry should be suppressed.
+def format_e3039_message(feature, skipped_count, label="job", unscoped_count=0):
+    """Build the E3039 summary text, or return `None` when the entry should be suppressed.
 
-    ``skipped_count == 1`` returns ``None`` because the lone preceding E3038 already named the
+    `skipped_count == 1` returns `None` because the lone preceding E3038 already named the
     device — a summary line would just be noise.
+
+    Args:
+        feature: Short feature name the job or play runs.
+        skipped_count: Number of devices named by the preceding E3038 entries.
+        label: `"job"` or `"play"`, naming what was skipped.
+        unscoped_count: How many of the skipped devices are in scope of no Setting at all, as opposed
+            to having the feature disabled on their winning Setting.
     """
     feature_label = feature.capitalize()
     if skipped_count == 0:
         return f"E3039: {feature_label} {label} skipped — no devices in scope of any Golden Config Setting."
-    if skipped_count > 1:
-        return (
-            f"E3039: {feature_label} {label} skipped — all {skipped_count} in-scope devices "
-            "have it disabled on their winning Setting (see E3038 entries above)."
+    if skipped_count == 1:
+        return None
+    if unscoped_count == skipped_count:
+        reason = f"none of the {skipped_count} selected devices are in scope of any Golden Config Setting"
+    elif unscoped_count:
+        reason = (
+            f"all {skipped_count} selected devices either have it disabled on their winning Setting "
+            "or are not in scope of any Golden Config Setting"
         )
-    return None
+    else:
+        reason = f"all {skipped_count} in-scope devices have it disabled on their winning Setting"
+    return f"E3039: {feature_label} {label} skipped — {reason} (see E3038 entries above)."
 
 
-def filter_devices_by_feature_enabled(logger, device_qs, feature):
-    """Return the subset of ``device_qs`` whose winning GoldenConfigSetting has the feature enabled.
+def filter_devices_by_feature_enabled(logger, device_qs, feature, device_to_settings=None):
+    """Return the subset of `device_qs` whose winning GoldenConfigSetting has the feature enabled.
 
-    Mirrors the E3038 / E3039 contract used by :class:`GoldenConfigJobMixin` so plan and deploy
+    Mirrors the E3038 / E3039 contract used by `GoldenConfigJobMixin` so plan and deploy
     jobs (which don't share that mixin's repo-sync/push lifecycle) still log the same way:
 
-        * E3038 per device whose winning Setting has ``enable_<feature>=False`` (or no Setting
+        * E3038 per device whose winning Setting has `enable_<feature>=False` (or no Setting
           at all), naming the winning Setting and its weight.
         * E3039 once at the end when nothing is eligible — suppressed when only one device was
           filtered (the E3038 already named it) so single-device runs stay quiet.
 
     Args:
-        logger: Logger that receives ``warning(...)`` calls (typically ``self.logger`` on a Job).
+        logger: Logger that receives `warning(...)` calls (typically `self.logger` on a Job).
         device_qs: QuerySet of devices to filter.
-        feature: Short feature name (``"plan"``, ``"deploy"``, ...) used both in messages and
-            to look up the ``enable_<feature>`` attribute on the winning Setting.
+        feature: Short feature name (`"plan"`, `"deploy"`, ...) used both in messages and
+            to look up the `enable_<feature>` attribute on the winning Setting.
+        device_to_settings: The device-to-Setting map for `device_qs` when the caller already
+            resolved it; resolved here when omitted.
 
     Returns:
-        QuerySet[Device]: The subset of ``device_qs`` whose winning Setting has the feature enabled.
+        QuerySet[Device]: The subset of `device_qs` whose winning Setting has the feature enabled.
     """
-    device_to_settings = get_device_to_settings_map(device_qs)
+    if device_to_settings is None:
+        device_to_settings = get_device_to_settings_map(device_qs)
     enabled_ids = []
     disabled_pairs = []
     for device in device_qs:
@@ -434,9 +470,10 @@ def filter_devices_by_feature_enabled(logger, device_qs, feature):
         logger.warning(format_e3038_message(device, feature, setting), extra={"object": device})
 
     if not enabled_ids:
-        # ``enabled_ids`` is already a Python list — use it for the emptiness check rather than
-        # incurring an extra DB round-trip via ``enabled_qs.exists()``.
-        e3039 = format_e3039_message(feature, len(disabled_pairs))
+        # `enabled_ids` is already a Python list — use it for the emptiness check rather than
+        # incurring an extra DB round-trip via `enabled_qs.exists()`.
+        unscoped_count = sum(1 for _, setting in disabled_pairs if setting is None)
+        e3039 = format_e3039_message(feature, len(disabled_pairs), unscoped_count=unscoped_count)
         if e3039 is not None:
             logger.warning(e3039)
     return device_qs.filter(pk__in=enabled_ids)
@@ -444,12 +481,9 @@ def filter_devices_by_feature_enabled(logger, device_qs, feature):
 
 def get_inscope_settings_from_device_qs(queryset):
     """Return GoldenConfigSettings that have at least one device from the provided queryset in scope."""
-    device_pks = list(queryset.values_list("pk", flat=True))
-    if not device_pks:
-        return []
     return list(
         models.GoldenConfigSetting.objects.filter(
-            dynamic_group__static_group_associations__associated_object_id__in=device_pks,
+            dynamic_group__static_group_associations__associated_object_id__in=queryset.values("pk"),
             dynamic_group__static_group_associations__associated_object_type__app_label="dcim",
             dynamic_group__static_group_associations__associated_object_type__model="device",
         ).distinct()

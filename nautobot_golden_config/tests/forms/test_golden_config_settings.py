@@ -22,7 +22,7 @@ class GoldenConfigSettingFormTest(TestCase):
         GoldenConfigSetting.objects.all().delete()
 
     def test_intended_disabled_no_query_success(self):
-        """With ``enable_intended=False`` the form must accept a Setting without ``sot_agg_query``."""
+        """With `enable_intended=False` the form must accept a Setting without `sot_agg_query`."""
         dynamic_group = DynamicGroup.objects.create(
             name="GoldenConfig Default Group",
             filter={},
@@ -51,11 +51,11 @@ class GoldenConfigSettingFormTest(TestCase):
         self.assertTrue(form.save())
 
     def test_intended_enabled_without_required_fields_saves_with_warning(self):
-        """With ``enable_intended=True`` the form must still save when ``sot_agg_query`` is missing.
+        """With `enable_intended=True` the form must still save when `sot_agg_query` is missing.
 
         The missing requirement is surfaced as a non-blocking UI warning (see
-        ``add_intended_requirements_message``) rather than a hard validation error, so the form
-        itself validates and the incomplete Setting is reported via ``get_missing_intended_requirements``.
+        `add_intended_requirements_message`) rather than a hard validation error, so the form
+        itself validates and the incomplete Setting is reported via `get_missing_intended_requirements`.
         """
         dynamic_group = DynamicGroup.objects.create(
             name="GoldenConfig Default Group",

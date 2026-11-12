@@ -108,6 +108,18 @@ class GetSecretFilterTestCase(TestCase):
             "supersecretvalue",
         )
 
+    def test_render_secrets_without_graphql_query(self):
+        """A Setting with no GraphQL query, or no Setting at all, renders the config with no device data."""
+        mock_request = mock.Mock()
+        mock_request.user = self.user_admin
+        for setting in (mock.Mock(sot_agg_query=None), None):
+            with self.subTest(setting=setting):
+                with mock.patch(
+                    "nautobot_golden_config.models.GoldenConfigSetting.objects.get_for_device",
+                    return_value=setting,
+                ):
+                    self.assertEqual(render_secrets("hostname router1", self.configs, mock_request), "hostname router1")
+
     @mock.patch.dict(os.environ, {"NAUTOBOT_TEST_ENVIRONMENT_VARIABLE": "supersecretvalue"})
     @mock.patch(
         "nautobot_golden_config.utilities.config_postprocessing._get_device_agg_data",
@@ -184,6 +196,7 @@ class AddIntendedRequirementsMessageTestCase(TestCase):
             filter={},
         )
         self.request = RequestFactory().get("/")
+        self.request.user = User.objects.create(username="intended-warning-admin", is_superuser=True)
         engine = import_module(django_settings.SESSION_ENGINE)
         self.request.session = engine.SessionStore()
         self.request._messages = FallbackStorage(self.request)  # pylint: disable=protected-access
@@ -207,6 +220,17 @@ class AddIntendedRequirementsMessageTestCase(TestCase):
         self.assertEqual(len(warnings), 1)
         self.assertIn(setting.name, warnings[0])
         self.assertIn("will not generate intended configurations", warnings[0])
+        self.assertIn(f"/golden-config-setting/{setting.pk}/edit/", warnings[0])
+
+    def test_warning_has_no_edit_link_for_user_who_cannot_edit(self):
+        """A user without change permission sees the Setting named, but is not sent to an edit page."""
+        self.request.user = User.objects.create(username="intended-warning-viewer")
+        setting = self._make_setting()
+        add_intended_requirements_message([setting], self.request)
+        warnings = [str(message) for message in self.request._messages]  # pylint: disable=protected-access
+        self.assertEqual(len(warnings), 1)
+        self.assertIn(setting.name, warnings[0])
+        self.assertNotIn("/edit/", warnings[0])
 
     def test_intended_disabled_setting_emits_no_warning(self):
         """A Setting with Intended disabled never warns, even with the intended fields blank."""

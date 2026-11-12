@@ -23,6 +23,7 @@ from nautobot_golden_config.utilities.helper import (
     dispatch_params,
     get_django_env,
     render_jinja_template,
+    verify_settings,
 )
 from nautobot_golden_config.utilities.logger import NornirLogger
 
@@ -106,6 +107,20 @@ def config_intended(job):
     """
     now = make_aware(datetime.now())
     logger = NornirLogger(job.job_result, job.logger.getEffectiveLevel())
+
+    for setting in set(job.gc_advanced_settings_filter["intended"][True].values()):
+        verify_settings(
+            logger,
+            setting,
+            [
+                "jinja_repository",
+                "jinja_path_template",
+                "intended_repository",
+                "intended_path_template",
+                "sot_agg_query",
+            ],
+        )
+
     jinja_env = get_django_env()
     try:
         with InitNornir(

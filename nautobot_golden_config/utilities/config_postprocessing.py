@@ -18,7 +18,6 @@ from nautobot_golden_config import models
 from nautobot_golden_config.exceptions import RenderConfigToPushError
 from nautobot_golden_config.utilities.constant import PLUGIN_CFG
 from nautobot_golden_config.utilities.graphql import graph_ql_query
-from nautobot_golden_config.utilities.helper import get_device_to_settings_map
 
 
 def get_secret_by_secret_group_name(
@@ -55,9 +54,15 @@ def get_secret_by_secret_group_name(
 
 
 def _get_device_agg_data(device, request):
-    """Helper method to retrieve GraphQL data from a device."""
-    settings = get_device_to_settings_map(Device.objects.filter(pk=device.pk))[device.id]
-    _, device_data = graph_ql_query(request, device, settings.sot_agg_query.query)
+    """Return the device's SoT aggregation data, or an empty dict when its Setting has no GraphQL query.
+
+    A template that only uses the secrets filters renders without any device data, so a missing query is not
+    an error here; a template that does reference device data fails with an undefined-variable error instead.
+    """
+    setting = models.GoldenConfigSetting.objects.get_for_device(device)
+    if setting is None or setting.sot_agg_query is None:
+        return {}
+    _, device_data = graph_ql_query(request, device, setting.sot_agg_query.query)
     return device_data
 
 
@@ -125,9 +130,9 @@ def render_secrets(
 
 
 def _get_device_for_postprocessing(configs) -> Optional[Device]:
-    """Return the Device associated with a postprocessing ``configs`` argument, or ``None``.
+    """Return the Device associated with a postprocessing `configs` argument, or `None`.
 
-    ``configs`` may be a single ``GoldenConfig``/``ConfigPlan`` or a queryset of ``ConfigPlan``
+    `configs` may be a single `GoldenConfig`/`ConfigPlan` or a queryset of `ConfigPlan`
     (as passed from deployment); all rows in the deployment queryset belong to one device.
     """
     if isinstance(configs, (models.ConfigPlan, models.GoldenConfig)):
@@ -151,7 +156,7 @@ def get_config_postprocessing(
         configs (models.GoldenConfig): Golden Config object per device, to retrieve device info, and related configs.
         request (HttpRequest): HTTP request for context.
         setting (models.GoldenConfigSetting): The device's winning Setting. When omitted it is resolved from
-            ``configs``; callers that already hold it can pass it to avoid a redundant query.
+            `configs`; callers that already hold it can pass it to avoid a redundant query.
     """
     if setting is None:
         device = _get_device_for_postprocessing(configs)

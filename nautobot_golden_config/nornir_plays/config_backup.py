@@ -3,7 +3,6 @@
 # pylint: disable=relative-beyond-top-level
 import logging
 import os
-import traceback
 from datetime import datetime
 
 from django.utils.timezone import make_aware
@@ -22,6 +21,7 @@ from nautobot_golden_config.utilities.db_management import close_threaded_db_con
 from nautobot_golden_config.utilities.helper import (
     dispatch_params,
     render_jinja_template,
+    verify_settings,
 )
 from nautobot_golden_config.utilities.logger import NornirLogger
 
@@ -101,6 +101,9 @@ def config_backup(job):
     now = make_aware(datetime.now())
     logger = NornirLogger(job.job_result, job.logger.getEffectiveLevel())
 
+    for setting in set(job.gc_advanced_settings_filter["backup"][True].values()):
+        verify_settings(logger, setting, ["backup_repository", "backup_path_template"])
+
     # Build a dictionary, with keys of platform.network_driver, and the regex line in it for the netutils func.
     remove_regex_dict = {}
     for regex in ConfigRemove.objects.all():
@@ -142,7 +145,7 @@ def config_backup(job):
             logger.debug("Completed configuration from devices.")
     except NornirNautobotException as err:
         logger.error(
-            f"`E3027:` NornirNautobotException raised during backup tasks. Original exception message: ```{traceback.format_exc()}```"
+            f"`E3027:` NornirNautobotException raised during backup tasks. Original exception message: ```{err}```"
         )
         # re-raise Exception if it's raised from nornir-nautobot or nautobot-app-nornir
         if str(err).startswith("`E2") or str(err).startswith("`E1"):

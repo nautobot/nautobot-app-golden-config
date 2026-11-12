@@ -319,7 +319,7 @@ public
 /nautobot_golden_config/static/nautobot_golden_config/docs
 
 # Claude Code local settings
-.claude/settings.local.json
+.claude/
 CLAUDE.local.md
 
 # OpenAI Codex CLI

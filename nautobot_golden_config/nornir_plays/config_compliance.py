@@ -11,7 +11,7 @@ from django.utils.timezone import make_aware
 from lxml import etree
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
-from netutils.config.compliance import _open_file_config, parser_map, section_config
+from netutils.config.compliance import parser_map, section_config
 from nornir import InitNornir
 from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir.core.task import Result, Task
@@ -106,11 +106,17 @@ def get_config_element(rule, config, obj, logger):
     return config_element
 
 
+def _open_file_config(cfg_path):
+    """Read a config file from disk, replacing bytes that are not valid UTF-8."""
+    with open(cfg_path, encoding="utf-8", errors="replace") as file:
+        return file.read().strip()
+
+
 def diff_files(backup_file, intended_file):
     """Utility function to provide `Unix Diff` between two files."""
-    with open(backup_file, encoding="utf-8") as file:
+    with open(backup_file, encoding="utf-8", errors="replace") as file:
         backup = file.readlines()
-    with open(intended_file, encoding="utf-8") as file:
+    with open(intended_file, encoding="utf-8", errors="replace") as file:
         intended = file.readlines()
 
     yield from difflib.unified_diff(backup, intended, lineterm="")

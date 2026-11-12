@@ -1,11 +1,18 @@
 """Unit tests for nautobot_golden_config nornir compliance."""
 
 import json
+import os
+import tempfile
 import unittest
 from unittest.mock import MagicMock, Mock, patch
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
-from nautobot_golden_config.nornir_plays.config_compliance import get_config_element, get_rules
+from nautobot_golden_config.nornir_plays.config_compliance import (
+    _open_file_config,
+    diff_files,
+    get_config_element,
+    get_rules,
+)
 
 
 class ConfigComplianceTest(unittest.TestCase):
@@ -48,3 +55,15 @@ class ConfigComplianceTest(unittest.TestCase):
         mock_rule["obj"].config_type = ComplianceRuleConfigTypeChoice.TYPE_JSON
         return_config = json.dumps(get_config_element(mock_rule, mock_config, mock_obj, None))
         self.assertEqual(return_config, mock_config)
+
+    def test_non_utf8_config_files(self):
+        """Config files with non UTF-8 bytes are read without raising."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            backup_file = os.path.join(tmp_dir, "backup.cfg")
+            intended_file = os.path.join(tmp_dir, "intended.cfg")
+            with open(backup_file, "wb") as file:
+                file.write(b"hostname rtr1\n! SN: abc\xffdef\n")
+            with open(intended_file, "wb") as file:
+                file.write(b"hostname rtr1\n")
+            self.assertIn("abc\ufffddef", _open_file_config(backup_file))
+            self.assertIn("-! SN: abc\ufffddef\n", list(diff_files(backup_file, intended_file)))

@@ -1,0 +1,1 @@
+Fixed `UnicodeDecodeError` in the compliance diff when a config file contains non UTF-8 characters.

@@ -4,8 +4,7 @@ This document describes all new features and changes in the release. The format 
 
 ## Release Overview
 
-- Major features or milestones
-- Changes to compatibility with Nautobot and/or other apps, libraries etc.
+This minor release adds tag support across all Golden Config models and a bulk edit view for Golden Config records, along with a set of reliability fixes for jobs and compliance.
 
 <!-- towncrier release notes start -->
 

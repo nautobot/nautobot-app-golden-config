@@ -8,6 +8,7 @@ from django.utils.timezone import make_aware
 from nautobot.dcim.models import Device
 from nautobot.extras.models import Status
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
+from nautobot_plugin_nornir.logger import NornirLogger
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from nornir import InitNornir
 from nornir.core.exceptions import NornirSubTaskError
@@ -23,7 +24,6 @@ from nautobot_golden_config.utilities.config_postprocessing import get_config_po
 from nautobot_golden_config.utilities.constant import ENABLE_POSTPROCESSING
 from nautobot_golden_config.utilities.db_management import close_threaded_db_connections
 from nautobot_golden_config.utilities.helper import dispatch_params
-from nautobot_golden_config.utilities.logger import NornirLogger
 
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 

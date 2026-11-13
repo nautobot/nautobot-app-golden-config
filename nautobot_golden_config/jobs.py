@@ -346,6 +346,7 @@ class AllGoldenConfig(GoldenConfigJobMixin):
                 failed_jobs.append("Compliance")
             except Exception as error:  # pylint: disable=broad-exception-caught
                 error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
+                self.logger.error(error_msg)
         gc_repo_push(job=self, current_repos=current_repos, commit_message=data.get("commit_message"))
         if len(failed_jobs) > 1:
             jobs_list = ", ".join(failed_jobs)
@@ -395,6 +396,7 @@ class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
                 failed_jobs.append("Compliance")
             except Exception as error:  # pylint: disable=broad-exception-caught
                 error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
+                self.logger.error(error_msg)
         gc_repo_push(job=self, current_repos=current_repos, commit_message=data.get("commit_message"))
         if len(failed_jobs) > 1:
             jobs_list = ", ".join(failed_jobs)

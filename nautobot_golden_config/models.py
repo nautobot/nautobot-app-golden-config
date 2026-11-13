@@ -685,6 +685,14 @@ class GoldenConfigSetting(PrimaryModel):  # pylint: disable=too-many-ancestors
         if ENABLE_SOTAGG and not self.sot_agg_query:
             raise ValidationError("A GraphQL query must be defined when `ENABLE_SOTAGG` is True")
 
+        path_errors = {
+            field: "The path must be relative to the repository root, remove the leading `/`."
+            for field in ("backup_path_template", "intended_path_template", "jinja_path_template")
+            if str(getattr(self, field)).lstrip().startswith("/")
+        }
+        if path_errors:
+            raise ValidationError(path_errors)
+
         if self.sot_agg_query:
             LOGGER.debug("GraphQL - test  query start with: `%s`", GRAPHQL_STR_START)
             if not str(self.sot_agg_query.query.lstrip()).startswith(GRAPHQL_STR_START):

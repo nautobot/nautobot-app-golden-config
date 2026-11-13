@@ -36,6 +36,7 @@ from nautobot_golden_config.exceptions import (
     BackupFailure,
     ComplianceFailure,
     ConfigPlanNotApproved,
+    GoldenConfigError,
     IntendedGenerationFailure,
 )
 from nautobot_golden_config.models import ComplianceFeature, ConfigPlan, GoldenConfig, GoldenConfigSetting
@@ -198,6 +199,9 @@ def gc_repos(func):
             # Raise error only if the job kwarg (checkbox) is selected to do so on the job execution form.
             if kwargs.get("fail_job_on_task_failure"):
                 raise NornirNautobotException(error_msg) from error
+            # Per-device failures are already logged by the Nornir processor.
+            if not isinstance(error, GoldenConfigError):
+                self.logger.error(error_msg)
         finally:
             gc_repo_push(job=self, current_repos=current_repos, commit_message=kwargs.get("commit_message"))
 
@@ -346,6 +350,7 @@ class AllGoldenConfig(GoldenConfigJobMixin):
                 failed_jobs.append("Compliance")
             except Exception as error:  # pylint: disable=broad-exception-caught
                 error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
+                self.logger.error(error_msg)
         gc_repo_push(job=self, current_repos=current_repos, commit_message=data.get("commit_message"))
         if len(failed_jobs) > 1:
             jobs_list = ", ".join(failed_jobs)
@@ -395,6 +400,7 @@ class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
                 failed_jobs.append("Compliance")
             except Exception as error:  # pylint: disable=broad-exception-caught
                 error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
+                self.logger.error(error_msg)
         gc_repo_push(job=self, current_repos=current_repos, commit_message=data.get("commit_message"))
         if len(failed_jobs) > 1:
             jobs_list = ", ".join(failed_jobs)

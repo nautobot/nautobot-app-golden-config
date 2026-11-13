@@ -388,6 +388,17 @@ class GoldenConfigSettingModelTestCase(TestCase):
         self.global_settings.sot_agg_query = GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1")
         self.assertEqual(self.global_settings.clean(), None)
 
+    def test_path_template_leading_slash(self):
+        """A path template starting with `/` is rejected."""
+        for field in ("backup_path_template", "intended_path_template", "jinja_path_template"):
+            with self.subTest(field=field):
+                setting = GoldenConfigSetting.objects.get(pk=self.global_settings.pk)
+                setting.sot_agg_query = GraphQLQuery.objects.get(name="GC-SoTAgg-Query-1")
+                setattr(setting, field, "/{{ obj.name }}.cfg")
+                with self.assertRaises(ValidationError) as error:
+                    setting.clean()
+                self.assertIn(field, error.exception.message_dict)
+
     def test_get_for_device(self):
         """Test get_for_device method on GoldenConfigSettingManager."""
         device = create_device()

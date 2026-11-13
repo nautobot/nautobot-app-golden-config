@@ -1,1 +1,0 @@
-Fixed the drf_spectacular type hint warning for `ConfigToPushSerializer.get_config` at startup.

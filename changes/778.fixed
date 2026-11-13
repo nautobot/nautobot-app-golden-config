@@ -1,1 +1,0 @@
-Added validation to reject Golden Config Setting path templates that start with `/`.

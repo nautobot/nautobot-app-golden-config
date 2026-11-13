@@ -28,5 +28,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(code=create_dynamic_groups),
+        migrations.RunPython(code=create_dynamic_groups, reverse_code=migrations.RunPython.noop),
     ]

@@ -14,5 +14,5 @@ class Migration(migrations.Migration):
         global_settings.save()
 
     operations = [
-        migrations.RunPython(insertData),
+        migrations.RunPython(code=insertData, reverse_code=migrations.RunPython.noop),
     ]

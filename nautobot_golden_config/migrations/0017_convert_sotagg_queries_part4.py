@@ -43,5 +43,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(create_and_link_gql_queries),
+        migrations.RunPython(code=create_and_link_gql_queries, reverse_code=migrations.RunPython.noop),
     ]

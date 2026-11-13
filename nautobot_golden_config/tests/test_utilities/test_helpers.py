@@ -1,8 +1,10 @@
 """Unit tests for nautobot_golden_config utilities helpers."""
 
 import logging
+import os
 from unittest.mock import MagicMock, patch
 
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.template import engines
 from django.test import TestCase
@@ -159,7 +161,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         rendered_template = render_jinja_template(mock_device, "logger", "{{ 100000 | humanize_speed }}")
         self.assertEqual(rendered_template, "100 Mbps")
 
-    @patch("nautobot_golden_config.utilities.logger.NornirLogger")
+    @patch("nautobot_plugin_nornir.logger.NornirLogger")
     @patch("nautobot.dcim.models.Device", spec=Device)
     def test_render_jinja_template_exceptions_undefined(self, mock_device, mock_nornir_logger):
         """Use fake obj key to cause UndefinedError from Jinja2 Template."""
@@ -168,7 +170,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
                 render_jinja_template(mock_device, mock_nornir_logger, "{{ obj.fake }}")
         mock_nornir_logger.error.assert_called_once()
 
-    @patch("nautobot_golden_config.utilities.logger.NornirLogger")
+    @patch("nautobot_plugin_nornir.logger.NornirLogger")
     @patch("nautobot.dcim.models.Device")
     def test_render_jinja_template_exceptions_syntaxerror(self, mock_device, mock_nornir_logger):
         """Use invalid templating to cause TemplateSyntaxError from Jinja2 Template."""
@@ -177,7 +179,7 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
                 render_jinja_template(mock_device, mock_nornir_logger, "{{ obj.fake }")
         mock_nornir_logger.error.assert_called_once()
 
-    @patch("nautobot_golden_config.utilities.logger.NornirLogger")
+    @patch("nautobot_plugin_nornir.logger.NornirLogger")
     @patch("nautobot.dcim.models.Device")
     @patch("nautobot_golden_config.utilities.helper.render_jinja2")
     def test_render_jinja_template_exceptions_templateerror(self, template_mock, mock_device, mock_nornir_logger):
@@ -192,21 +194,21 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         """Verify that we successfully look up the path from a provided repo object."""
         device = Device.objects.get(name="test_device")
         backup_directory = self.device_to_settings_map[device.id].backup_repository.filesystem_path
-        self.assertEqual(backup_directory, "/opt/nautobot/git/backup-parent_region-3")
+        self.assertEqual(backup_directory, os.path.join(settings.GIT_ROOT, "backup-parent_region-3"))
 
         device = Device.objects.get(name="orphan_device")
         backup_directory = self.device_to_settings_map[device.id].backup_repository.filesystem_path
-        self.assertEqual(backup_directory, "/opt/nautobot/git/backup-parent_region-2")
+        self.assertEqual(backup_directory, os.path.join(settings.GIT_ROOT, "backup-parent_region-2"))
 
     def test_get_intended_repository_dir_success(self):
         """Verify that we successfully look up the path from a provided repo object."""
         device = Device.objects.get(name="test_device")
         intended_directory = self.device_to_settings_map[device.id].intended_repository.filesystem_path
-        self.assertEqual(intended_directory, "/opt/nautobot/git/intended-parent_region-3")
+        self.assertEqual(intended_directory, os.path.join(settings.GIT_ROOT, "intended-parent_region-3"))
 
         device = Device.objects.get(name="orphan_device")
         intended_directory = self.device_to_settings_map[device.id].intended_repository.filesystem_path
-        self.assertEqual(intended_directory, "/opt/nautobot/git/intended-parent_region-2")
+        self.assertEqual(intended_directory, os.path.join(settings.GIT_ROOT, "intended-parent_region-2"))
 
     def test_get_job_filter_no_data_success(self):
         """Verify we get two devices returned when providing no data."""

@@ -10,7 +10,7 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, ExpressionWrapper, FloatField, Max, Q, Sum, Value
 from django.db.models.functions import Coalesce, NullIf
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.timezone import make_aware
@@ -60,6 +60,7 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
     views.ObjectDetailViewMixin,
     views.ObjectDestroyViewMixin,
     views.ObjectBulkDestroyViewMixin,
+    views.ObjectBulkUpdateViewMixin,
     views.ObjectListViewMixin,  # TODO: Changing the order of the mixins breaks things... why?
     ObjectDataComplianceViewMixin,  # TODO: Import from views after nautobot release
 ):
@@ -415,7 +416,7 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
     @action(detail=True, methods=["get"])
     def devicetab(self, request, pk, *args, **kwargs):
         """Additional action to handle backup_config."""
-        device = Device.objects.get(pk=pk)
+        device = get_object_or_404(Device, pk=pk)
         context = {}
         compliance_details = models.ConfigCompliance.objects.filter(device=device)
         context["compliance_details"] = compliance_details

@@ -25,12 +25,18 @@ from nautobot.extras.datasources.git import (  # core-import-update
 )
 from nautobot.extras.models import DynamicGroup, Role, Status, Tag
 from nautobot.tenancy.models import Tenant, TenantGroup
+from nautobot_plugin_nornir.logger import DebugLoggingMixin
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from nornir.core.plugins.inventory import InventoryPluginRegister
 from nornir_nautobot.exceptions import NornirNautobotException
 
 from nautobot_golden_config.choices import ConfigPlanTypeChoice
-from nautobot_golden_config.exceptions import BackupFailure, ComplianceFailure, IntendedGenerationFailure
+from nautobot_golden_config.exceptions import (
+    BackupFailure,
+    ComplianceFailure,
+    GoldenConfigError,
+    IntendedGenerationFailure,
+)
 from nautobot_golden_config.models import ComplianceFeature, ConfigPlan, GoldenConfig
 from nautobot_golden_config.nornir_plays.config_backup import config_backup
 from nautobot_golden_config.nornir_plays.config_compliance import config_compliance
@@ -189,6 +195,9 @@ def gc_repos(func):
             # Raise error only if the job kwarg (checkbox) is selected to do so on the job execution form.
             if kwargs.get("fail_job_on_task_failure"):
                 raise NornirNautobotException(error_msg) from error
+            # Per-device failures are already logged by the Nornir processor.
+            if not isinstance(error, GoldenConfigError):
+                self.logger.error(error_msg)
         finally:
             gc_repo_push(job=self, current_repos=current_repos, commit_message=kwargs.get("commit_message"))
 
@@ -221,7 +230,7 @@ class FormEntry:  # pylint disable=too-few-public-method
     debug = BooleanVar(description="Enable for more verbose debug logging")
 
 
-class GoldenConfigJobMixin(Job):  # pylint: disable=abstract-method
+class GoldenConfigJobMixin(DebugLoggingMixin, Job):  # pylint: disable=abstract-method
     """Reused mixin to be able to set defaults for instance attributes in all GC jobs."""
 
     fail_job_on_task_failure = BooleanVar(description="If any tasks for any device fails, fail the entire job result.")
@@ -337,6 +346,7 @@ class AllGoldenConfig(GoldenConfigJobMixin):
                 failed_jobs.append("Compliance")
             except Exception as error:  # pylint: disable=broad-exception-caught
                 error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
+                self.logger.error(error_msg)
         gc_repo_push(job=self, current_repos=current_repos, commit_message=data.get("commit_message"))
         if len(failed_jobs) > 1:
             jobs_list = ", ".join(failed_jobs)
@@ -386,6 +396,7 @@ class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
                 failed_jobs.append("Compliance")
             except Exception as error:  # pylint: disable=broad-exception-caught
                 error_msg = f"`E3001:` General Exception handler, original error message ```{error}```"
+                self.logger.error(error_msg)
         gc_repo_push(job=self, current_repos=current_repos, commit_message=data.get("commit_message"))
         if len(failed_jobs) > 1:
             jobs_list = ", ".join(failed_jobs)
@@ -401,7 +412,7 @@ class AllDevicesGoldenConfig(GoldenConfigJobMixin, FormEntry):
             raise NornirNautobotException(error_msg)
 
 
-class GenerateConfigPlans(Job, FormEntry):
+class GenerateConfigPlans(DebugLoggingMixin, Job, FormEntry):
     """Job to generate config plans."""
 
     # Config Plan generation fields
@@ -538,7 +549,7 @@ class GenerateConfigPlans(Job, FormEntry):
             raise ValueError(error_msg)
 
 
-class DeployConfigPlans(Job):
+class DeployConfigPlans(DebugLoggingMixin, Job):
     """Job to deploy config plans."""
 
     config_plan = MultiObjectVar(model=ConfigPlan, required=True)
@@ -572,7 +583,7 @@ class DeployConfigPlans(Job):
                 raise NornirNautobotException(error_msg) from error
 
 
-class DeployConfigPlanJobButtonReceiver(JobButtonReceiver):
+class DeployConfigPlanJobButtonReceiver(DebugLoggingMixin, JobButtonReceiver):
     """Job button to deploy a config plan."""
 
     class Meta:

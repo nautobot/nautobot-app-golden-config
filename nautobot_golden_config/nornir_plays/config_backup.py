@@ -7,6 +7,7 @@ from datetime import datetime
 
 from django.utils.timezone import make_aware
 from nautobot_plugin_nornir.constants import NORNIR_SETTINGS
+from nautobot_plugin_nornir.logger import NornirLogger
 from nautobot_plugin_nornir.plugins.inventory.nautobot_orm import NautobotORMInventory
 from nornir import InitNornir
 from nornir.core.plugins.inventory import InventoryPluginRegister
@@ -23,7 +24,6 @@ from nautobot_golden_config.utilities.helper import (
     render_jinja_template,
     verify_settings,
 )
-from nautobot_golden_config.utilities.logger import NornirLogger
 
 InventoryPluginRegister.register("nautobot-inventory", NautobotORMInventory)
 

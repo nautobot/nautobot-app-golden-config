@@ -2,7 +2,6 @@
 
 import json
 import logging
-from datetime import datetime
 
 import yaml
 from django.contrib import messages
@@ -13,7 +12,6 @@ from django.db.models.functions import Coalesce, NullIf
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.html import format_html
-from django.utils.timezone import make_aware
 from django.views.generic import TemplateView, View
 from django_pivot.pivot import pivot
 from django_tables2 import RequestConfig
@@ -54,6 +52,32 @@ LOGGER = logging.getLogger(__name__)
 #
 # GoldenConfig
 #
+
+
+def _split_unified_diff(diff_text):
+    """Rebuild the original and modified text of each hunk in a unified diff.
+
+    Returns a tuple of (original, modified) containing only the lines covered by the diff's hunks,
+    with each hunk header kept on both sides as a separator.
+    """
+    original, modified = [], []
+    in_hunk = False
+    for line in diff_text.split("\n"):
+        if line.startswith("@@"):
+            in_hunk = True
+            original.append(line)
+            modified.append(line)
+        elif not in_hunk or not line:
+            # Skip the file header, and the empty strings left by lines that kept their own line ending.
+            continue
+        elif line.startswith("-"):
+            original.append(line[1:])
+        elif line.startswith("+"):
+            modified.append(line[1:])
+        else:
+            original.append(line[1:])
+            modified.append(line[1:])
+    return "\n".join(original), "\n".join(modified)
 
 
 class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
@@ -153,7 +177,7 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
             self.action_template_name = "nautobot_golden_config/goldenconfig_detailsmodal.html"
             self.is_modal = True
 
-    def _post_render(self, request):
+    def _post_render(self, request, **extra_context):
         context = {
             "output": self.output,
             "device": self.device,
@@ -161,6 +185,7 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
             "format": self.structured_format,
             "title_name": self.title_name,
             "is_modal": self.is_modal,
+            **extra_context,
         }
         return render(request, self.action_template_name, context)
 
@@ -221,38 +246,27 @@ class GoldenConfigUIViewSet(  # pylint: disable=abstract-method
         """Additional action to handle compliance."""
         self._pre_helper(pk, request)
 
-        self.output = self.config_details.compliance_config
-        if self.config_details.backup_last_success_date:
-            backup_date = str(self.config_details.backup_last_success_date.strftime("%b %d %Y"))
-        else:
-            backup_date = make_aware(datetime.now()).strftime("%b %d %Y")
-        if self.config_details.intended_last_success_date:
-            intended_date = str(self.config_details.intended_last_success_date.strftime("%b %d %Y"))
-        else:
-            intended_date = make_aware(datetime.now()).strftime("%b %d %Y")
-
-        diff_type = "File"
+        self.output = ""
         self.structured_format = "diff"
-
-        if self.output == "":
-            # This is used if all config snippets are in compliance and no diff exist.
-            self.output = f"--- Backup {diff_type} - " + backup_date + f"\n+++ Intended {diff_type} - " + intended_date
-        else:
-            first_occurence = self.output.index("@@")
-            second_occurence = self.output.index("@@", first_occurence)
-            # This is logic to match diff2html's expected input.
-            self.output = (
-                f"--- Backup {diff_type} - "
-                + backup_date
-                + f"\n+++ Intended {diff_type} - "
-                + intended_date
-                + "\n"
-                + self.output[first_occurence:second_occurence]
-                + "@@"
-                + self.output[second_occurence + 2 :]  # noqa: E203
-            )
         self.title_name = "Compliance Details"
-        return self._post_render(request)
+        backup_date = self.config_details.backup_last_success_date
+        intended_date = self.config_details.intended_last_success_date
+        backup_config = self.config_details.backup_config
+        intended_config = self.config_details.intended_config
+        changed_sections_only = False
+        if not (backup_config and intended_config) and self.config_details.compliance_config:
+            # The full configs are only stored in the database by the backup and intended jobs. When the
+            # repositories are populated by other means, fall back to the diff stored by the compliance job.
+            backup_config, intended_config = _split_unified_diff(self.config_details.compliance_config)
+            changed_sections_only = True
+        return self._post_render(
+            request,
+            backup_config=backup_config,
+            intended_config=intended_config,
+            backup_date=backup_date.strftime("%b %d %Y") if backup_date else None,
+            intended_date=intended_date.strftime("%b %d %Y") if intended_date else None,
+            changed_sections_only=changed_sections_only,
+        )
 
 
 #

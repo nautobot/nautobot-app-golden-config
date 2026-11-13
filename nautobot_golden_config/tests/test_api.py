@@ -9,6 +9,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.test import override_settings
 from django.urls import reverse
+from django.utils import timezone
 from nautobot.apps.testing import APITestCase, APIViewTestCases
 from nautobot.dcim.models import Device, Platform
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status
@@ -16,7 +17,13 @@ from packaging import version
 from rest_framework import status
 
 from nautobot_golden_config.choices import RemediationTypeChoice
-from nautobot_golden_config.models import ConfigPlan, ConfigReplace, GoldenConfigSetting, RemediationSetting
+from nautobot_golden_config.models import (
+    ConfigPlan,
+    ConfigReplace,
+    GoldenConfig,
+    GoldenConfigSetting,
+    RemediationSetting,
+)
 from nautobot_golden_config.tests.conftest import (
     create_config_compliance,
     create_device,
@@ -620,6 +627,48 @@ class GenerateIntendedConfigViewAPITestCase(APITestCase):
         self.assertTrue("intended_config_lines" in response.data)
         self.assertEqual(response.data["intended_config"], f"Jinja test for device {self.device.name}.")
         self.assertEqual(response.data["intended_config_lines"], [f"Jinja test for device {self.device.name}."])
+        # No GoldenConfig exists for the device yet, so there is nothing to diff against
+        self.assertIsNone(response.data["prior_intended_config"])
+        self.assertIsNone(response.data["diff"])
+        self.assertEqual(response.data["diff_lines"], [])
+
+    @patch("nautobot_golden_config.api.views.ensure_git_repository")
+    @patch("nautobot_golden_config.api.views.Path")
+    @patch("nautobot_golden_config.api.views.dispatcher")
+    def test_generate_intended_config_prior_intended_config(self, mock_dispatcher, MockPath, _):  # pylint: disable=invalid-name
+        """Verify that the prior intended config and a diff against it are returned."""
+
+        self.add_permissions("dcim.view_device")
+        self.add_permissions("dcim.view_location")
+        self.add_permissions("extras.view_gitrepository")
+
+        self._setup_mock_path(MockPath)
+        self._setup_mock_dispatcher(mock_dispatcher)
+
+        golden_config = GoldenConfig.objects.create(device=self.device, intended_config="prior intended config")
+        url = reverse("plugins-api:nautobot_golden_config-api:generate_intended_config")
+
+        # The intended job has never succeeded, so the stored config is not offered as a prior config
+        response = self.client.get(url, data={"device_id": self.device.pk}, **self.header)
+        self.assertHttpStatus(response, status.HTTP_200_OK)
+        self.assertIsNone(response.data["prior_intended_config"])
+        self.assertIsNone(response.data["diff"])
+
+        golden_config.intended_last_success_date = timezone.now()
+        golden_config.save()
+
+        # The user cannot view the GoldenConfig, so its stored config must not be exposed
+        response = self.client.get(url, data={"device_id": self.device.pk}, **self.header)
+        self.assertHttpStatus(response, status.HTTP_200_OK)
+        self.assertIsNone(response.data["prior_intended_config"])
+        self.assertIsNone(response.data["diff"])
+
+        self.add_permissions("nautobot_golden_config.view_goldenconfig")
+        response = self.client.get(url, data={"device_id": self.device.pk}, **self.header)
+        self.assertHttpStatus(response, status.HTTP_200_OK)
+        self.assertEqual(response.data["prior_intended_config"], "prior intended config")
+        self.assertIn("-prior intended config", response.data["diff"])
+        self.assertIn(f"+Jinja test for device {self.device.name}.", response.data["diff"])
 
     @patch("nautobot_golden_config.api.views.graph_ql_query")
     @patch("nautobot_golden_config.api.views.ensure_git_repository")

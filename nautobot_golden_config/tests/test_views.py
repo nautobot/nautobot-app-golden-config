@@ -2,6 +2,7 @@
 # pylint: disable=protected-access
 
 import datetime
+import difflib
 import re
 import uuid
 from unittest import mock, skip
@@ -145,6 +146,102 @@ class ConfigReplaceUIViewSetTestCase(ViewTestCases.PrimaryObjectViewTestCase):  
             f"test configreplace 5,^(.*)$,xyz,{platform.pk}",
             f"test configreplace 6,^(.*)$,xyz,{platform.pk}",
         )
+
+
+class SplitUnifiedDiffTestCase(TestCase):
+    """Test rebuilding both sides of a diff stored by the compliance job."""
+
+    def test_multiple_hunks(self):
+        backup = "".join(f"line {number}\n" for number in range(1, 21))
+        intended = backup.replace("line 2\n", "line two\n").replace("line 18\n", "\n   line 18\n")
+        # Same construction as nornir_plays.config_compliance, which joins lines that keep their line ending.
+        stored_diff = "\n".join(
+            difflib.unified_diff(backup.splitlines(keepends=True), intended.splitlines(keepends=True), lineterm="")
+        )
+        original, modified = views._split_unified_diff(stored_diff)  # pylint: disable=protected-access
+        self.assertEqual(
+            original.split("\n"),
+            ["@@ -1,5 +1,5 @@", "line 1", "line 2", "line 3", "line 4", "line 5"]
+            + ["@@ -15,6 +15,7 @@", "line 15", "line 16", "line 17", "line 18", "line 19", "line 20"],
+        )
+        self.assertEqual(
+            modified.split("\n"),
+            ["@@ -1,5 +1,5 @@", "line 1", "line two", "line 3", "line 4", "line 5"]
+            + ["@@ -15,6 +15,7 @@", "line 15", "line 16", "line 17", "", "   line 18", "line 19", "line 20"],
+        )
+
+
+class GoldenConfigComplianceDetailsViewTestCase(TestCase):
+    """Test the compliance details action of GoldenConfigUIViewSet."""
+
+    user_permissions = ["nautobot_golden_config.view_goldenconfig"]
+
+    @classmethod
+    def setUpTestData(cls):
+        create_device_data()
+        cls.device = Device.objects.get(name="Device 1")
+        cls.golden_config = models.GoldenConfig(
+            device=cls.device,
+            backup_config="hostname old\n",
+            intended_config="hostname new\n",
+        )
+        cls.golden_config.validated_save()
+
+    def _get(self, modal=False):
+        url = reverse("plugins:nautobot_golden_config:goldenconfig_compliance", kwargs={"pk": self.device.pk})
+        if modal:
+            url = f"{url}?modal=true"
+        response = self.client.get(url)
+        self.assertHttpStatus(response, 200)
+        return response.content.decode()
+
+    def test_compliance_details_renders_monaco_diff(self):
+        content = self._get()
+        self.assertIn('id="gc-diff-editor"', content)
+        self.assertIn('data-mode="diff"', content)
+        self.assertIn('data-original="hostname old', content)
+        self.assertIn('data-modified="hostname new', content)
+        self.assertIn("js/editor.js", content)
+
+    def test_compliance_details_modal_renders_fragment(self):
+        content = self._get(modal=True)
+        self.assertIn('id="gc-diff-editor"', content)
+        self.assertNotIn("<html", content)
+
+    def test_compliance_details_missing_config(self):
+        self.golden_config.backup_config = ""
+        self.golden_config.validated_save()
+        content = self._get()
+        self.assertIn("A diff is not available until both the backup and intended configuration jobs have run", content)
+        self.assertNotIn('id="gc-diff-editor"', content)
+
+    def test_compliance_details_falls_back_to_stored_diff(self):
+        self.golden_config.backup_config = ""
+        self.golden_config.intended_config = ""
+        self.golden_config.compliance_config = (
+            "--- \n+++ \n@@ -1,3 +1,3 @@\n interface Ethernet1\n\n-   shutdown\n\n+   no shutdown\n\n !\n"
+        )
+        self.golden_config.validated_save()
+        content = self._get()
+        self.assertIn("Only the changed sections recorded by the last compliance run are shown", content)
+        self.assertIn('"lineNumbers": "off"', content)
+        self.assertIn('data-original="@@ -1,3 +1,3 @@\ninterface Ethernet1\n   shutdown\n!"', content)
+        self.assertIn('data-modified="@@ -1,3 +1,3 @@\ninterface Ethernet1\n   no shutdown\n!"', content)
+
+    def test_compliance_details_header_omits_unknown_dates(self):
+        content = self._get()
+        self.assertIn("<strong>Backup File</strong>", content)
+        self.assertIn("<strong>Intended File</strong>", content)
+        self.golden_config.backup_last_success_date = datetime.datetime(2026, 1, 2, tzinfo=datetime.timezone.utc)
+        self.golden_config.validated_save()
+        self.assertIn("<strong>Backup File - Jan 02 2026</strong>", self._get())
+
+    def test_compliance_details_no_differences(self):
+        self.golden_config.intended_config = self.golden_config.backup_config
+        self.golden_config.validated_save()
+        content = self._get()
+        self.assertIn("No differences between the backup and intended configuration.", content)
+        self.assertNotIn('id="gc-diff-editor"', content)
 
 
 class GoldenConfigListViewTestCase(TestCase):

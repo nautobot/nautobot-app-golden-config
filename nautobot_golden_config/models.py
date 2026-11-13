@@ -1,16 +1,24 @@
-"""Django Models for tracking the configuration compliance per feature and device."""
+"""Django Models for tracking the configuration compliance per feature and device."""  # pylint: disable=too-many-lines
 
+import hashlib
 import json
 import logging
 import os
 
+import yaml
 from deepdiff import DeepDiff
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.manager import BaseManager
 from django.utils.module_loading import import_string
-from hier_config import WorkflowRemediation, get_hconfig
-from hier_config.utils import hconfig_v2_os_v3_platform_mapper, load_hconfig_v2_options
+from hier_config import Platform, WorkflowRemediation, get_hconfig
+from hier_config.models import TagRule
+from hier_config.platforms.driver_base import HConfigDriverBase
+from hier_config.utils import (
+    HCONFIG_PLATFORM_V2_TO_V3_MAPPING,
+    hconfig_v2_os_v3_platform_mapper,
+    load_hconfig_v2_options,
+)
 from lxml import etree
 from nautobot.apps.models import RestrictedQuerySet, extras_features
 from nautobot.apps.utils import render_jinja2
@@ -20,9 +28,13 @@ from nautobot.dcim.models import Device
 from nautobot.extras.models import ObjectChange
 from nautobot.extras.models.statuses import StatusField
 from netutils.config.compliance import feature_compliance
+from pydantic import TypeAdapter
+from pydantic import ValidationError as PydanticValidationError
 from xmldiff import actions, main
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
+from nautobot_golden_config.error_codes import get_error_message
+from nautobot_golden_config.exceptions import PartialMatchConfigError
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
 
 LOGGER = logging.getLogger(__name__)
@@ -60,6 +72,26 @@ def _null_to_empty(val):
     if not val:
         return ""
     return val
+
+
+def _format_tag_rules_error(error):
+    """Return a short, readable summary of a pydantic ValidationError on a list of tag rules."""
+    messages = []
+    for detail in error.errors():
+        index, *location = detail["loc"]
+        path = ".".join(str(part) for part in location)
+        messages.append(f"rule {index + 1} {path}: {detail['msg']}" if path else f"rule {index + 1}: {detail['msg']}")
+    return "; ".join(messages)
+
+
+def _render_sections(config, section_texts):
+    """Render the top-level sections of a hier_config config whose text is in section_texts, with all their lines."""
+    lines = []
+    for section in sorted(config.children):
+        if section.text in section_texts:
+            lines.append(section.cisco_style_text())
+            lines.extend(child.cisco_style_text() for child in section.all_children_sorted())
+    return "\n".join(lines)
 
 
 def _get_cli_compliance(obj):
@@ -271,6 +303,7 @@ FUNC_MAPPER = {
     ComplianceRuleConfigTypeChoice.TYPE_CLI: _get_cli_compliance,
     ComplianceRuleConfigTypeChoice.TYPE_JSON: _get_json_compliance,
     ComplianceRuleConfigTypeChoice.TYPE_XML: _get_xml_compliance,
+    ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI: _get_cli_compliance,
     RemediationTypeChoice.TYPE_HIERCONFIG: _get_hierconfig_remediation,
 }
 # The below conditionally add the custom provided compliance type
@@ -349,13 +382,13 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
     match_config = models.TextField(
         blank=True,
         verbose_name="Config to Match",
-        help_text="The config to match that is matched based on the parent most configuration. E.g.: For CLI `router bgp` or `ntp`. For JSON this is a top level key name. For XML this is a xpath query.",
+        help_text="The config to match that is matched based on the parent most configuration. E.g.: For CLI `router bgp` or `ntp`. For JSON this is a top level key name. For XML this is a xpath query. For Partial CLI this is a YAML list of hier_config match rules.",
     )
     config_type = models.CharField(
         max_length=20,
         default=ComplianceRuleConfigTypeChoice.TYPE_CLI,
         choices=ComplianceRuleConfigTypeChoice,
-        help_text="Whether the configuration is in CLI, JSON, or XML format.",
+        help_text="Whether the configuration is in CLI, JSON, or XML format. Partial CLI matches nested CLI lines using hier_config.",
     )
     custom_compliance = models.BooleanField(
         default=False, help_text="Whether this Compliance Rule is proceeded as custom."
@@ -380,9 +413,100 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
         return f"{self.platform} - {self.feature.name}"
 
     def clean(self):
-        """Verify that if cli, then match_config is set."""
-        if self.config_type == ComplianceRuleConfigTypeChoice.TYPE_CLI and not self.match_config:
-            raise ValidationError("CLI configuration set, but no configuration set to match.")
+        """Verify that if cli or partial cli, then match_config is set, and that partial cli match_config is valid."""
+        cli_types = (ComplianceRuleConfigTypeChoice.TYPE_CLI, ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI)
+        if self.config_type in cli_types and not self.match_config:
+            raise ValidationError(
+                f"{self.get_config_type_display()} configuration set, but no configuration set to match."
+            )
+        if self.config_type == ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI:
+            try:
+                self.get_partial_tag_rules()
+            except PartialMatchConfigError as error:
+                raise ValidationError({"match_config": str(error)}) from error
+
+    def get_partial_tag_rules(self) -> tuple[tuple[TagRule, ...], set[str]]:
+        """
+        Parse the match_config of a Partial CLI rule into hier_config tag rules.
+
+        Each rule block gets a unique tag name, so matched lines can be filtered by tag afterwards.
+
+        Returns:
+            The hier_config tag rules and the set of tag names they apply.
+
+        Raises:
+            PartialMatchConfigError: If match_config is not a YAML list of valid hier_config rule blocks.
+        """
+        try:
+            rule_blocks = yaml.safe_load(self.match_config)
+        except yaml.YAMLError as error:
+            raise PartialMatchConfigError(get_error_message("E3036", error=error)) from error
+
+        if not isinstance(rule_blocks, list) or not rule_blocks:
+            raise PartialMatchConfigError(
+                get_error_message("E3037", details="it must be a YAML list of rule blocks with a `match_rules` key")
+            )
+
+        tag_names = set()
+        for index, rule_block in enumerate(rule_blocks):
+            if not isinstance(rule_block, dict):
+                raise PartialMatchConfigError(
+                    get_error_message("E3037", details=f"rule {index + 1} must be a mapping with a `match_rules` key")
+                )
+            tag_name = hashlib.sha1(json.dumps(rule_block, sort_keys=True, default=str).encode()).hexdigest()  # noqa: S324
+            rule_block["apply_tags"] = frozenset([tag_name])
+            tag_names.add(tag_name)
+
+        try:
+            tag_rules = TypeAdapter(tuple[TagRule, ...]).validate_python(rule_blocks)
+        except PydanticValidationError as error:
+            raise PartialMatchConfigError(get_error_message("E3038", details=_format_tag_rules_error(error))) from error
+
+        return tag_rules, tag_names
+
+    def tag_partial_configs(self, *configs) -> set[str]:
+        """
+        Tag the lines matched by this Partial CLI rule in each of the given hier_config configs.
+
+        Returns:
+            The tag names applied to the matched lines.
+
+        Raises:
+            PartialMatchConfigError: If match_config is not a YAML list of valid hier_config rule blocks.
+        """
+        tag_rules, tag_names = self.get_partial_tag_rules()
+        for config in configs:
+            for tag_rule in tag_rules:
+                for child in config.get_children_deep(tag_rule.match_rules):
+                    child.tags_add(tag_rule.apply_tags)
+        return tag_names
+
+    def get_partial_hconfig_driver(self) -> Platform | HConfigDriverBase | None:
+        """
+        Return the hier_config platform or driver used to parse configurations for this Partial CLI rule.
+
+        The remediation options of the platform's Remediation Settings are loaded when defined, so configurations
+        are parsed the same way as for hier_config remediation.
+
+        Returns:
+            The driver with the remediation options loaded, the platform when there are none, or None when the
+                platform has no hier_config v3 support.
+
+        Raises:
+            PartialMatchConfigError: If the platform's remediation options cannot be loaded.
+        """
+        hier_platform = HCONFIG_PLATFORM_V2_TO_V3_MAPPING.get(self.platform.network_driver_mappings.get("hier_config"))
+        if not hier_platform:
+            return None
+        remediation_setting = RemediationSetting.objects.filter(platform=self.platform).first()
+        if not remediation_setting or not remediation_setting.remediation_options:
+            return hier_platform
+        try:
+            return load_hconfig_v2_options(remediation_setting.remediation_options, hier_platform)
+        except (AttributeError, TypeError, ValueError) as error:
+            raise PartialMatchConfigError(
+                get_error_message("E3039", platform=self.platform.name, error=error)
+            ) from error
 
 
 @extras_features(
@@ -475,6 +599,41 @@ class ConfigCompliance(PrimaryModel):  # pylint: disable=too-many-ancestors
 
         remediation_config = FUNC_MAPPER[self.rule.remediation_setting.remediation_type](obj=self)
         self.remediation = remediation_config
+
+    def get_partial_full_config(self) -> tuple[str, str] | None:
+        """
+        Return the complete top-level sections that contain lines matched by a Partial CLI rule.
+
+        A section is included on both sides when either the backup or the intended configuration has a matched line
+        in it. The sections come from the latest backup and intended configurations stored for the device, which can
+        be newer than this compliance result.
+
+        Returns:
+            The actual and intended sections, or None for other rule types or when the configurations are unavailable.
+
+        Raises:
+            PartialMatchConfigError: If the rule's match_config is not a YAML list of valid hier_config rule blocks,
+                or the platform's remediation options cannot be loaded.
+        """
+        if self.rule.config_type != ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI or not self.device.platform:
+            return None
+        golden_config = GoldenConfig.objects.filter(device=self.device).first()
+        if not golden_config or not (golden_config.backup_config or golden_config.intended_config):
+            return None
+        hier_driver = self.rule.get_partial_hconfig_driver()
+        if not hier_driver:
+            return None
+
+        running_config = get_hconfig(hier_driver, golden_config.backup_config)
+        intended_config = get_hconfig(hier_driver, golden_config.intended_config)
+        tag_names = self.rule.tag_partial_configs(running_config, intended_config)
+        section_texts = {
+            section.text
+            for config in (running_config, intended_config)
+            for section in config.children
+            if tag_names & section.tags
+        }
+        return _render_sections(running_config, section_texts), _render_sections(intended_config, section_texts)
 
     def save(self, *args, **kwargs):
         """The actual configuration compliance happens here, but the details for actual compliance job would be found in FUNC_MAPPER."""

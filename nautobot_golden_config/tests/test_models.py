@@ -1,31 +1,42 @@
-"""Unit tests for nautobot_golden_config models."""
+"""Unit tests for nautobot_golden_config models."""  # pylint: disable=too-many-lines
 
 from unittest.mock import patch
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db.models.deletion import ProtectedError
+from hier_config import Platform as HierConfigPlatform
+from hier_config import get_hconfig
 from nautobot.apps.testing import TestCase
 from nautobot.dcim.models import Platform
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status
 
-from nautobot_golden_config.choices import RemediationTypeChoice
+from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, RemediationTypeChoice
+from nautobot_golden_config.exceptions import PartialMatchConfigError
 from nautobot_golden_config.models import (
+    FUNC_MAPPER,
+    ComplianceFeature,
+    ComplianceRule,
     ConfigCompliance,
     ConfigPlan,
     ConfigRemove,
     ConfigReplace,
+    GoldenConfig,
     GoldenConfigSetting,
     RemediationSetting,
+    _get_cli_compliance,
     _get_hierconfig_remediation,
 )
 from nautobot_golden_config.tests.conftest import create_git_repos
 
 from .conftest import (
+    PARTIAL_BACKUP_CONFIG,
+    PARTIAL_INTENDED_CONFIG,
     create_config_compliance,
     create_device,
     create_feature_rule_cli_with_remediation,
     create_feature_rule_json,
+    create_feature_rule_partial,
     create_feature_rule_xml,
     create_feature_rule_xml_ordered,
     create_job_result,
@@ -331,6 +342,230 @@ class GoldenConfigTestCase(TestCase):
 
 class ComplianceRuleTestCase(TestCase):
     """Test ComplianceRule Model."""
+
+    @classmethod
+    def setUpTestData(cls):
+        """Set up base objects."""
+        cls.device = create_device()
+        cls.feature = ComplianceFeature.objects.create(name="partial", slug="partial")
+
+    def test_clean_partial_cli_requires_match_config(self):
+        """Partial CLI rules without a match_config are rejected."""
+        rule = ComplianceRule(
+            feature=self.feature,
+            platform=self.device.platform,
+            config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI,
+        )
+        with self.assertRaisesMessage(
+            ValidationError, "Partial CLI configuration set, but no configuration set to match."
+        ):
+            rule.clean()
+
+    def test_clean_partial_cli_with_match_config(self):
+        """Partial CLI rules with a match_config are valid."""
+        rule = ComplianceRule(
+            feature=self.feature,
+            platform=self.device.platform,
+            config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI,
+            match_config="- match_rules:\n  - startswith: interface",
+        )
+        rule.clean()
+
+    def test_clean_partial_cli_invalid_match_config(self):
+        """Partial CLI rules with a match_config that is not valid hier_config YAML are rejected on match_config."""
+        rule = ComplianceRule(
+            feature=self.feature,
+            platform=self.device.platform,
+            config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI,
+            match_config="- match_rules:\n  - startwith: interface",
+        )
+        with self.assertRaises(ValidationError) as context:
+            rule.clean()
+        self.assertIn("match_config", context.exception.message_dict)
+        self.assertIn("E3038: Invalid hier_config match rules", context.exception.message_dict["match_config"][0])
+
+    def test_clean_cli_match_config_not_parsed_as_yaml(self):
+        """CLI rules keep accepting plain section names that are not valid hier_config YAML."""
+        rule = ComplianceRule(
+            feature=self.feature,
+            platform=self.device.platform,
+            config_type=ComplianceRuleConfigTypeChoice.TYPE_CLI,
+            match_config="router bgp\nntp",
+        )
+        rule.clean()
+
+    def test_clean_cli_requires_match_config(self):
+        """CLI rules without a match_config are still rejected with the existing message."""
+        rule = ComplianceRule(
+            feature=self.feature,
+            platform=self.device.platform,
+            config_type=ComplianceRuleConfigTypeChoice.TYPE_CLI,
+        )
+        with self.assertRaisesMessage(ValidationError, "CLI configuration set, but no configuration set to match."):
+            rule.clean()
+
+    def test_partial_cli_uses_cli_compliance(self):
+        """Partial CLI compliance compares the matched lines with the CLI compliance function."""
+        self.assertIs(FUNC_MAPPER[ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI], _get_cli_compliance)
+
+    @staticmethod
+    def _partial_rule(match_config):
+        """Return an unsaved Partial CLI rule with the given match_config."""
+        return ComplianceRule(config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI, match_config=match_config)
+
+    def test_get_partial_tag_rules(self):
+        """Each rule block becomes a tag rule with its own tag name."""
+        match_config = """
+- match_rules:
+  - startswith: interface
+  - startswith: mtu
+- match_rules:
+  - startswith: router bgp
+  - startswith: neighbor
+"""
+        tag_rules, tag_names = self._partial_rule(match_config).get_partial_tag_rules()
+        self.assertEqual(len(tag_rules), 2)
+        self.assertEqual(len(tag_names), 2)
+        self.assertEqual({tag for tag_rule in tag_rules for tag in tag_rule.apply_tags}, tag_names)
+        self.assertEqual(tag_rules[0].match_rules[1].startswith, "mtu")
+
+    def test_get_partial_tag_rules_stable_tag_names(self):
+        """The same rule block always gets the same tag name."""
+        rule = self._partial_rule("- match_rules:\n  - startswith: interface")
+        self.assertEqual(rule.get_partial_tag_rules()[1], rule.get_partial_tag_rules()[1])
+
+    def test_get_partial_tag_rules_ignores_hier_config_comment(self):
+        """A leading `# hier_config` line is a YAML comment and does not change the result."""
+        match_config = "- match_rules:\n  - startswith: interface"
+        self.assertEqual(
+            self._partial_rule(f"# hier_config\n{match_config}").get_partial_tag_rules()[1],
+            self._partial_rule(match_config).get_partial_tag_rules()[1],
+        )
+
+    def test_get_partial_tag_rules_invalid_yaml(self):
+        """Invalid YAML is reported as a PartialMatchConfigError."""
+        with self.assertRaisesRegex(PartialMatchConfigError, "E3036: Invalid YAML in the Partial CLI Config to Match"):
+            self._partial_rule("- match_rules: [").get_partial_tag_rules()
+
+    def test_get_partial_tag_rules_not_a_list(self):
+        """YAML that is not a non-empty list is rejected."""
+        for match_config in ("interface", "match_rules:\n  - startswith: interface", "", "# only a comment"):
+            with self.subTest(match_config=match_config):
+                with self.assertRaisesRegex(PartialMatchConfigError, "E3037: .*must be a YAML list of rule blocks"):
+                    self._partial_rule(match_config).get_partial_tag_rules()
+
+    def test_get_partial_tag_rules_rule_block_not_a_mapping(self):
+        """List entries that are not mappings are rejected with their position."""
+        with self.assertRaisesRegex(PartialMatchConfigError, "E3037: .*rule 2 must be a mapping"):
+            self._partial_rule("- match_rules:\n  - startswith: interface\n- interface").get_partial_tag_rules()
+
+    def test_get_partial_tag_rules_unknown_keyword(self):
+        """A typo in a keyword is reported with its location instead of a raw pydantic error."""
+        with self.assertRaisesRegex(
+            PartialMatchConfigError,
+            r"E3038: Invalid hier_config match rules in the Partial CLI Config to Match: rule 1 match_rules\.0\.startwith: Extra inputs",
+        ):
+            self._partial_rule("- match_rules:\n  - startwith: interface").get_partial_tag_rules()
+
+    def test_get_partial_tag_rules_missing_match_rules(self):
+        """A rule block without `match_rules` is rejected."""
+        with self.assertRaisesRegex(PartialMatchConfigError, "E3038: .*rule 1 match_rules: Field required"):
+            self._partial_rule("- startswith: interface").get_partial_tag_rules()
+
+    def test_get_partial_hconfig_driver_without_remediation_options(self):
+        """Without Remediation Settings, or with empty remediation options, the hier_config platform is used as is."""
+        rule = ComplianceRule(feature=self.feature, platform=self.device.platform)
+        self.assertEqual(rule.get_partial_hconfig_driver(), HierConfigPlatform.CISCO_IOS)
+        RemediationSetting.objects.create(
+            platform=self.device.platform, remediation_type=RemediationTypeChoice.TYPE_HIERCONFIG
+        )
+        self.assertEqual(rule.get_partial_hconfig_driver(), HierConfigPlatform.CISCO_IOS)
+
+    def test_get_partial_hconfig_driver_with_remediation_options(self):
+        """The platform's remediation options are loaded into the hier_config driver."""
+        RemediationSetting.objects.create(
+            platform=self.device.platform,
+            remediation_type=RemediationTypeChoice.TYPE_HIERCONFIG,
+            remediation_options={"per_line_sub": [{"search": "MON1", "replace": "MON2"}]},
+        )
+        driver = ComplianceRule(feature=self.feature, platform=self.device.platform).get_partial_hconfig_driver()
+        self.assertEqual(
+            get_hconfig(driver, "interface GigabitEthernet0/0\n ip flow monitor MON1 input").dump_simple(),
+            ("interface GigabitEthernet0/0", "  ip flow monitor MON2 input"),
+        )
+
+    def test_get_partial_hconfig_driver_unsupported_platform(self):
+        """Platforms without hier_config v3 support have no driver."""
+        platform = Platform.objects.create(name="Unsupported Platform", network_driver="unsupported")
+        self.assertIsNone(ComplianceRule(feature=self.feature, platform=platform).get_partial_hconfig_driver())
+
+    def test_get_partial_hconfig_driver_invalid_remediation_options(self):
+        """Remediation options that hier_config cannot load are reported as a PartialMatchConfigError."""
+        RemediationSetting.objects.create(
+            platform=self.device.platform,
+            remediation_type=RemediationTypeChoice.TYPE_HIERCONFIG,
+            remediation_options={"per_line_sub": ["MON1"]},
+        )
+        with self.assertRaisesRegex(
+            PartialMatchConfigError,
+            "E3039: Invalid remediation options in the Remediation Settings of platform `Platform 1`",
+        ):
+            ComplianceRule(feature=self.feature, platform=self.device.platform).get_partial_hconfig_driver()
+
+
+class ConfigCompliancePartialFullConfigTestCase(TestCase):
+    """Test the full sections of Partial CLI compliance results."""
+
+    @classmethod
+    def setUpTestData(cls):
+        """Set up a device with stored configs and a Partial CLI rule."""
+        cls.device = create_device()
+        cls.rule = create_feature_rule_partial(cls.device)
+        cls.golden_config = GoldenConfig.objects.create(
+            device=cls.device, backup_config=PARTIAL_BACKUP_CONFIG, intended_config=PARTIAL_INTENDED_CONFIG
+        )
+
+    def test_full_sections(self):
+        """Sections with a match on either side are returned complete, unrelated sections are left out."""
+        actual, intended = ConfigCompliance(device=self.device, rule=self.rule).get_partial_full_config()
+        self.assertEqual(
+            actual,
+            "interface GigabitEthernet0/0\n  description OLD-UPLINK\n  ip flow monitor MON1 input\n"
+            "interface GigabitEthernet0/1\n  description ACCESS\n  ip flow monitor MON1 input",
+        )
+        self.assertEqual(
+            intended,
+            "interface GigabitEthernet0/0\n  description NEW-UPLINK\n  ip flow monitor MON1 input\n"
+            "interface GigabitEthernet0/1\n  description ACCESS",
+        )
+
+    def test_full_sections_use_remediation_options(self):
+        """The stored configs are parsed with the platform's remediation options."""
+        RemediationSetting.objects.create(
+            platform=self.device.platform,
+            remediation_type=RemediationTypeChoice.TYPE_HIERCONFIG,
+            remediation_options={"per_line_sub": [{"search": "OLD-UPLINK", "replace": "NEW-UPLINK"}]},
+        )
+        actual, _ = ConfigCompliance(device=self.device, rule=self.rule).get_partial_full_config()
+        self.assertIn("description NEW-UPLINK", actual)
+        self.assertNotIn("OLD-UPLINK", actual)
+
+    def test_not_partial_rule(self):
+        """Other rule types have no full sections."""
+        rule = create_feature_rule_json(self.device, feature="json-full")
+        self.assertIsNone(ConfigCompliance(device=self.device, rule=rule).get_partial_full_config())
+
+    def test_no_stored_configs(self):
+        """Without stored backup or intended configs there are no full sections."""
+        self.golden_config.backup_config = ""
+        self.golden_config.intended_config = ""
+        self.golden_config.save()
+        self.assertIsNone(ConfigCompliance(device=self.device, rule=self.rule).get_partial_full_config())
+
+    def test_no_golden_config(self):
+        """Without a GoldenConfig record there are no full sections."""
+        self.golden_config.delete()
+        self.assertIsNone(ConfigCompliance(device=self.device, rule=self.rule).get_partial_full_config())
 
 
 class GoldenConfigSettingModelTestCase(TestCase):

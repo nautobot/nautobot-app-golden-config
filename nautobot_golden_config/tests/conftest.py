@@ -17,6 +17,26 @@ from nautobot_golden_config.models import ComplianceFeature, ComplianceRule, Con
 
 User = get_user_model()
 
+PARTIAL_BACKUP_CONFIG = """hostname R1
+interface GigabitEthernet0/0
+ description OLD-UPLINK
+ ip flow monitor MON1 input
+interface GigabitEthernet0/1
+ description ACCESS
+ ip flow monitor MON1 input
+interface GigabitEthernet0/2
+ description SPARE
+"""
+PARTIAL_INTENDED_CONFIG = """hostname R1
+interface GigabitEthernet0/0
+ description NEW-UPLINK
+ ip flow monitor MON1 input
+interface GigabitEthernet0/1
+ description ACCESS
+interface GigabitEthernet0/2
+ description SPARE
+"""
+
 
 def create_device_data():  # pylint: disable=too-many-locals
     """Creates a Device and associated data."""
@@ -281,6 +301,19 @@ def create_feature_rule_cli_with_remediation(device, feature="foo3", rule="cli")
         config_type=ComplianceRuleConfigTypeChoice.TYPE_CLI,
         config_ordered=False,
         config_remediation=True,
+    )
+    rule.save()
+    return rule
+
+
+def create_feature_rule_partial(device, feature="flow"):
+    """Creates a Partial CLI Feature/Rule Mapping matching `ip flow monitor` lines under interfaces; returns the rule."""
+    feature_obj, _ = ComplianceFeature.objects.get_or_create(slug=feature, name=feature)
+    rule = ComplianceRule(
+        feature=feature_obj,
+        platform=device.platform,
+        config_type=ComplianceRuleConfigTypeChoice.TYPE_PARTIAL_CLI,
+        match_config="- match_rules:\n  - startswith: interface\n  - startswith: ip flow monitor",
     )
     rule.save()
     return rule

@@ -33,6 +33,7 @@ from rest_framework.response import Response
 
 from nautobot_golden_config import details, filters, forms, models, tables
 from nautobot_golden_config.api import serializers
+from nautobot_golden_config.exceptions import PartialMatchConfigError
 from nautobot_golden_config.utilities import constant
 from nautobot_golden_config.utilities.config_postprocessing import get_config_postprocessing
 from nautobot_golden_config.utilities.graphql import graph_ql_query
@@ -352,7 +353,30 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
         context["backup"] = constant.ENABLE_BACKUP
         context["intended"] = constant.ENABLE_INTENDED
         add_message([["ComplianceJob", constant.ENABLE_COMPLIANCE]], request)
+        if self.action == "retrieve" and instance is not None:
+            context.update(self._get_partial_config_view_context(request, instance))
         return context
+
+    @staticmethod
+    def _get_partial_config_view_context(request, instance):
+        """Return the context for the Matched | Full toggle of a Partial CLI compliance result."""
+        try:
+            full_config = instance.get_partial_full_config()
+        except PartialMatchConfigError:
+            full_config = None
+        if full_config is None:
+            return {}
+
+        preference_key = "nautobot_golden_config.configcompliance.config_view"
+        config_view = request.GET.get("config_view")
+        if config_view in ("matched", "full"):
+            if request.user.is_authenticated:
+                request.user.set_config(preference_key, config_view, commit=True)
+        elif request.user.is_authenticated:
+            config_view = request.user.get_config(preference_key, "matched")
+        else:
+            config_view = "matched"
+        return {"partial_config_view": config_view, "partial_full_config": full_config}
 
     def alter_queryset(self, request):
         """Build actual runtime queryset as the build time queryset of table `pivoted`."""
@@ -426,6 +450,15 @@ class ConfigComplianceUIViewSet(  # pylint: disable=abstract-method
         elif request.GET.get("compliance") == "non-compliant":
             context["compliance_filter"] = "non-compliant"
             context["compliance_details"] = compliance_details.filter(compliance=False)
+
+        context["compliance_details"] = list(
+            context["compliance_details"].select_related("rule__feature", "device__platform")
+        )
+        for item in context["compliance_details"]:
+            try:
+                item.partial_full_config = item.get_partial_full_config()
+            except PartialMatchConfigError:
+                item.partial_full_config = None
 
         context["active_tab"] = request.GET.get("tab")
         context["device"] = device

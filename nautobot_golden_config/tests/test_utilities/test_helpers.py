@@ -7,15 +7,17 @@ from unittest.mock import MagicMock, patch
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.template import engines
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from jinja2 import exceptions as jinja_errors
 from nautobot.dcim.models import Device, Location, LocationType, Platform
 from nautobot.extras.management import populate_status_choices
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status, Tag
 from nornir_nautobot.exceptions import NornirNautobotException
 
+from nautobot_golden_config import error_codes
 from nautobot_golden_config.models import GoldenConfigSetting
 from nautobot_golden_config.tests.conftest import create_device, create_helper_repo, create_orphan_device
+from nautobot_golden_config.utilities import helper
 from nautobot_golden_config.utilities.helper import (
     get_device_to_settings_map,
     get_job_filter,
@@ -320,3 +322,23 @@ class HelpersTest(TestCase):  # pylint: disable=too-many-instance-attributes
         # Regenerate the device to settings map to ensure it is up to date.
         temp_device_to_settings_map = get_device_to_settings_map(queryset=Device.objects.all())
         self.assertEqual(temp_device_to_settings_map[test_device.id], self.test_settings_a)
+
+
+class GetErrorMessageTest(SimpleTestCase):
+    """Test get_error_message."""
+
+    def test_get_error_message(self):
+        """A registered error code is formatted with its kwargs."""
+        self.assertEqual(
+            error_codes.get_error_message("E3035", network_driver="cisco_ios"),
+            "E3035: There is currently no hier_config support for platform network_driver `cisco_ios`, "
+            "required by Partial CLI compliance rules.",
+        )
+
+    def test_get_error_message_unregistered_code(self):
+        """An unregistered error code falls back to the E3XXX message."""
+        self.assertEqual(error_codes.get_error_message("E3999"), "E3999: Un-Registered Error Code used.")
+
+    def test_get_error_message_importable_from_helper(self):
+        """get_error_message moved to error_codes, and can still be imported from utilities.helper."""
+        self.assertIs(helper.get_error_message, error_codes.get_error_message)

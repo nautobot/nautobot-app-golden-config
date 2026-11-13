@@ -1,0 +1,17 @@
+{% load helpers %}
+{% if partial_full_config %}
+    <div class="float-end">
+        <div class="btn-group btn-group-sm" role="group">
+            <a href="{% django_querystring config_view='matched' %}"
+               class="btn btn-primary {% if partial_config_view != 'full' %}bg-primary nb-text-body-bg{% endif %}"
+               title="Only the lines matched by the rule">
+                Matched
+            </a>
+            <a href="{% django_querystring config_view='full' %}"
+               class="btn btn-primary {% if partial_config_view == 'full' %}bg-primary nb-text-body-bg{% endif %}"
+               title="Complete sections from the latest stored backup and intended configurations">
+                Full
+            </a>
+        </div>
+    </div>
+{% endif %}

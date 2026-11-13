@@ -19,11 +19,11 @@ This document describes all new features and changes in the release. The format 
 
 ### Fixed
 
-- [#10.20](https://github.com/nautobot/nautobot-app-golden-config/issues/10.20) - Added support for unordered XML element comparison in compliance checks when config_ordered=False.
 - [#677](https://github.com/nautobot/nautobot-app-golden-config/issues/677) - Fixed the drf_spectacular type hint warning for `ConfigToPushSerializer.get_config` at startup.
 - [#766](https://github.com/nautobot/nautobot-app-golden-config/issues/766) - Fixed `MultipleObjectsReturned` in the post-migrate signal when another app has a Job class named `DeployConfigPlanJobButtonReceiver`.
 - [#778](https://github.com/nautobot/nautobot-app-golden-config/issues/778) - Added validation to reject Golden Config Setting path templates that start with `/`.
 - [#960](https://github.com/nautobot/nautobot-app-golden-config/issues/960) - Fixed `FieldError` when sorting the Config Overview table by device name.
+- [#1020](https://github.com/nautobot/nautobot-app-golden-config/issues/1020) - Added support for unordered XML element comparison in compliance checks when config_ordered=False.
 - [#1128](https://github.com/nautobot/nautobot-app-golden-config/issues/1128) - Fixed unexpected job exceptions, such as a soft time limit, being discarded without a log entry when `fail_job_on_task_failure` is unchecked.
 - [#1160](https://github.com/nautobot/nautobot-app-golden-config/issues/1160) - Fixed debug log messages no longer being recorded in Golden Config job results when the debug option was not enabled. This has the potential to break any automation that previously relied on the presence of these log messages, so you may need to update your scheduled jobs to ensure they are run with the debug option enabled.
 - [#1160](https://github.com/nautobot/nautobot-app-golden-config/issues/1160) - Changed Nornir play log entries without a grouping to use the `main` grouping.

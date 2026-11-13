@@ -1,1 +1,0 @@
-Fixed the Config Compliance device tab returning a server error instead of a 404 when the requested device does not exist.

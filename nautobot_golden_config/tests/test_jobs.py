@@ -743,3 +743,52 @@ class GCJobDebugLoggingTestCase(TransactionTestCase):
             module="nautobot_golden_config.jobs", name="SyncGoldenConfigWithDynamicGroups"
         )
         self.assertTrue(JobLogEntry.objects.filter(job_result=job_result, log_level="debug").exists())
+
+
+class GCReposSwallowedExceptionTestCase(unittest.TestCase):
+    """Test gc_repos() logs unexpected exceptions it does not re-raise (issue #1128)."""
+
+    def _run(self, error, **kwargs):
+        """Run a gc_repos wrapped function that raises `error` and return the mock job."""
+        job = MagicMock()
+
+        @jobs.gc_repos
+        def run(self, *args, **kwargs):  # pylint: disable=unused-argument
+            raise error
+
+        with patch.object(jobs, "gc_repo_prep", return_value={}), patch.object(jobs, "gc_repo_push") as push:
+            run(job, **kwargs)
+        push.assert_called_once()
+        return job
+
+    def test_unexpected_exception_is_logged(self):
+        """An unexpected exception is logged when it is not re-raised."""
+        job = self._run(RuntimeError("time limit"))
+        job.logger.error.assert_called_once()
+        self.assertIn("E3001", job.logger.error.call_args.args[0])
+
+    def test_task_failure_is_not_logged_again(self):
+        """Per-device failures are already logged by the Nornir processor."""
+        job = self._run(jobs.BackupFailure())
+        job.logger.error.assert_not_called()
+
+    def test_exception_raised_when_fail_job_on_task_failure(self):
+        """The exception is still raised when fail_job_on_task_failure is set."""
+        with self.assertRaises(jobs.NornirNautobotException):
+            self._run(RuntimeError("time limit"), fail_job_on_task_failure=True)
+
+    def test_run_all_jobs_log_unexpected_exception(self):
+        """The run-all jobs log an unexpected exception when it is not re-raised."""
+        for job_class in (jobs.AllGoldenConfig, jobs.AllDevicesGoldenConfig):
+            with self.subTest(job_class=job_class.__name__):
+                job = MagicMock()
+                with (
+                    patch.object(jobs, "gc_repo_prep", return_value={}),
+                    patch.object(jobs, "gc_repo_push"),
+                    patch.object(jobs, "config_intended", side_effect=RuntimeError("time limit")),
+                    patch.object(jobs, "config_backup"),
+                    patch.object(jobs, "config_compliance"),
+                ):
+                    job_class.run(job, fail_job_on_task_failure=False)
+                job.logger.error.assert_called_once()
+                self.assertIn("E3001", job.logger.error.call_args.args[0])

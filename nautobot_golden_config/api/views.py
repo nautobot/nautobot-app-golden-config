@@ -192,7 +192,7 @@ class ConfigPlanViewSet(
 ):  # pylint:disable=too-many-ancestors
     """API viewset for interacting with ConfigPlan objects. Does not support POST to create objects."""
 
-    queryset = models.ConfigPlan.objects.all()
+    queryset = models.ConfigPlan.objects.prefetch_related("associated_approval_workflows")
     serializer_class = serializers.ConfigPlanSerializer
     filterset_class = filters.ConfigPlanFilterSet
 

@@ -2,12 +2,15 @@
 
 from unittest.mock import patch
 
+from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db.models.deletion import ProtectedError
+from nautobot.apps.choices import ApprovalWorkflowStateChoices
 from nautobot.apps.testing import TestCase
 from nautobot.dcim.models import Platform
 from nautobot.extras.models import DynamicGroup, GitRepository, GraphQLQuery, Status
+from nautobot.extras.models.approvals import ApprovalWorkflowDefinition, ApprovalWorkflowStageResponse
 
 from nautobot_golden_config.choices import RemediationTypeChoice
 from nautobot_golden_config.models import (
@@ -30,6 +33,7 @@ from .conftest import (
     create_feature_rule_xml_ordered,
     create_job_result,
     create_saved_queries,
+    enable_config_plan_approval,
 )
 
 
@@ -887,3 +891,94 @@ class GetHierConfigRemediationTestCase(TestCase):
         mock_get_hconfig.assert_called_once()
         # WorkflowRemediation should never be called since get_hconfig raises exception
         mock_workflow_remediation.assert_not_called()
+
+
+class ConfigPlanApprovalWorkflowTestCase(TestCase):
+    """Test the Approval Workflow integration of the ConfigPlan Model."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.device = create_device()
+        cls.setting, cls.definition, cls.approvers = enable_config_plan_approval()
+        cls.job_result = create_job_result()
+        cls.approver = get_user_model().objects.create(username="approver")
+        cls.approvers.user_set.add(cls.approver)
+        cls.not_approved = Status.objects.get(name="Not Approved")
+
+    def _create_plan(self, **kwargs):
+        plan = ConfigPlan(
+            device=self.device,
+            plan_type="manual",
+            config_set="hostname test",
+            plan_result=self.job_result,
+            status=self.not_approved,
+            **kwargs,
+        )
+        plan.validated_save()
+        return plan
+
+    def _respond(self, plan, state, comments=""):
+        stage = plan.approval_workflow.approval_workflow_stages.first()
+        ApprovalWorkflowStageResponse.objects.create(
+            approval_workflow_stage=stage, user=self.approver, state=state, comments=comments
+        )
+        plan.refresh_from_db()
+
+    def test_plan_without_configured_workflow_has_no_workflow(self):
+        self.setting.config_plan_approval_workflow = None
+        self.setting.validated_save()
+        self.assertIsNone(self._create_plan().approval_workflow)
+
+    def test_plan_starts_the_configured_workflow(self):
+        workflow = self._create_plan().approval_workflow
+        self.assertEqual(workflow.approval_workflow_definition, self.definition)
+        self.assertEqual(workflow.current_state, ApprovalWorkflowStateChoices.PENDING)
+        self.assertEqual(workflow.user, self.job_result.user)
+
+    def test_workflow_outcome_does_not_change_the_status(self):
+        for state in (ApprovalWorkflowStateChoices.APPROVED, ApprovalWorkflowStateChoices.DENIED):
+            with self.subTest(state=state):
+                plan = self._create_plan()
+                self._respond(plan, state)
+                self.assertEqual(plan.approval_workflow.current_state, state)
+                self.assertEqual(plan.status, self.not_approved)
+
+    def test_canceling_the_workflow_does_not_change_the_status(self):
+        plan = self._create_plan()
+        plan.approval_workflow.cancel(user=self.approver)
+        plan.refresh_from_db()
+        self.assertEqual(plan.approval_workflow.current_state, ApprovalWorkflowStateChoices.CANCELED)
+        self.assertEqual(plan.status, self.not_approved)
+
+    def test_status_can_be_edited_while_a_workflow_exists(self):
+        plan = self._create_plan()
+        plan.status = Status.objects.get(name="Approved")
+        plan.validated_save()
+        plan.refresh_from_db()
+        self.assertEqual(plan.status.name, "Approved")
+        self.assertEqual(plan.approval_workflow.current_state, ApprovalWorkflowStateChoices.PENDING)
+
+    def test_definition_without_stages_blocks_plan_creation(self):
+        empty_definition = ApprovalWorkflowDefinition.objects.create(
+            name="No stages",
+            model_content_type=ContentType.objects.get_for_model(ConfigPlan),
+            weight=200,
+        )
+        GoldenConfigSetting.objects.filter(pk=self.setting.pk).update(config_plan_approval_workflow=empty_definition)
+        with self.assertRaisesMessage(ValidationError, "E3035"):
+            self._create_plan()
+        self.assertFalse(ConfigPlan.objects.filter(config_set="hostname test").exists())
+
+    def test_setting_rejects_definition_without_stages(self):
+        empty_definition = ApprovalWorkflowDefinition.objects.create(
+            name="No stages",
+            model_content_type=ContentType.objects.get_for_model(ConfigPlan),
+            weight=200,
+        )
+        self.setting.config_plan_approval_workflow = empty_definition
+        with self.assertRaises(ValidationError):
+            self.setting.validated_save()
+
+    def test_deleting_a_referenced_definition_is_protected(self):
+        with self.assertRaises(ProtectedError):
+            self.definition.delete()

@@ -124,12 +124,19 @@ class RemediationSettingSerializer(NautobotModelSerializer, TaggedModelSerialize
 class ConfigPlanSerializer(NautobotModelSerializer, TaggedModelSerializerMixin):
     """Serializer for ConfigPlan object."""
 
+    approval_state = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         """Set Meta Data for ConfigPlan, will serialize all fields."""
 
         model = models.ConfigPlan
         fields = "__all__"
         read_only_fields = ["device", "plan_type", "feature", "config_set"]
+
+    def get_approval_state(self, obj):
+        """Return the state of the plan's approval workflow, or `None` if the plan has none."""
+        workflow = obj.approval_workflow
+        return workflow.current_state if workflow else None
 
 
 class GenerateIntendedConfigSerializer(serializers.Serializer):  # pylint: disable=abstract-method

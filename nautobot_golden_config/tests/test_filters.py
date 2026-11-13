@@ -2,15 +2,23 @@
 
 from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
+from nautobot.apps.choices import ApprovalWorkflowStateChoices
 from nautobot.apps.filters import MultiValueDateTimeFilter, MultiValueNumberFilter
 from nautobot.apps.testing import FilterTestCases
 from nautobot.dcim.models import Device, Platform
 from nautobot.extras.management import populate_role_choices, populate_status_choices
 from nautobot.extras.models import Status, Tag
+from nautobot.extras.models.approvals import ApprovalWorkflow
 
 from nautobot_golden_config import filters, models
 
-from .conftest import create_device_data, create_feature_rule_cli, create_feature_rule_json, create_job_result
+from .conftest import (
+    create_config_plan_approval_workflow,
+    create_device_data,
+    create_feature_rule_cli,
+    create_feature_rule_json,
+    create_job_result,
+)
 
 
 class ConfigComplianceModelTestCase(TestCase):  # pylint: disable=too-many-public-methods
@@ -528,6 +536,21 @@ class ConfigPlanFilterTestCase(FilterTestCases.FilterTestCase):
         self.assertQuerysetEqualAndNotEmpty(
             filterset.qs, self.queryset.filter(change_control_id=self.config_plan1.change_control_id).distinct()
         )
+
+    def test_filter_approval_state(self):
+        """Test filtering by the state of the approval workflow."""
+        definition, _ = create_config_plan_approval_workflow()
+        ApprovalWorkflow.objects.create(
+            approval_workflow_definition=definition,
+            object_under_review_content_type=ContentType.objects.get_for_model(models.ConfigPlan),
+            object_under_review_object_id=self.config_plan1.pk,
+            current_state=ApprovalWorkflowStateChoices.DENIED,
+        )
+        params = {"approval_state": [ApprovalWorkflowStateChoices.DENIED]}
+        filterset = self.filterset(params, self.queryset)
+        self.assertQuerysetEqualAndNotEmpty(filterset.qs, self.queryset.filter(pk=self.config_plan1.pk))
+        params = {"approval_state": [ApprovalWorkflowStateChoices.APPROVED]}
+        self.assertEqual(self.filterset(params, self.queryset).qs.count(), 0)
 
     def test_filter_status_id(self):
         """Test filtering by Status ID."""

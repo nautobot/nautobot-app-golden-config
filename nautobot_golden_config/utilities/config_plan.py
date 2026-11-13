@@ -1,6 +1,7 @@
 """Functions to support config plan."""
 
 from django.template import engines
+from nautobot.apps.choices import ApprovalWorkflowStateChoices
 from nautobot.core.utils.data import render_jinja2
 from nautobot.dcim.models import Device
 from nautobot.extras.models import Status
@@ -13,6 +14,21 @@ from nautobot_golden_config.utilities.helper import get_django_env
 def config_plan_default_status():
     """Return the default status for config plan."""
     return Status.objects.get(name=DEFAULT_DEPLOY_STATUS)
+
+
+def get_unapproved_config_plans(config_plan_qs):
+    """Return the config plans in a queryset whose approval workflow is not `Approved`, or that have none.
+
+    Args:
+        config_plan_qs (QuerySet): The `ConfigPlan` queryset to check.
+
+    Returns:
+        QuerySet: The plans that must not be deployed.
+    """
+    approved_plans = config_plan_qs.filter(
+        associated_approval_workflows__current_state=ApprovalWorkflowStateChoices.APPROVED
+    )
+    return config_plan_qs.exclude(pk__in=approved_plans.values("pk"))
 
 
 def generate_config_set_from_compliance_feature(device: Device, plan_type: str, feature: ComplianceFeature):

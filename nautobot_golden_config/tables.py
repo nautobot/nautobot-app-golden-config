@@ -547,6 +547,19 @@ class ConfigPlanTable(StatusTableMixin, BaseTable):
     )
 
     config_set = TemplateColumn(template_code=CONFIG_SET_BUTTON, verbose_name="Config Set", orderable=False)
+    approval_state = TemplateColumn(
+        template_code=(
+            "{% with workflow=record.approval_workflow %}"
+            "{% if workflow %}"
+            '<a href="{{ workflow.get_absolute_url }}">'
+            '<span class="badge bg-{{ workflow.get_current_state_class }}">'
+            "{{ workflow.get_current_state_display }}</span></a>"
+            "{% else %}&mdash;{% endif %}"
+            "{% endwith %}"
+        ),
+        verbose_name="Approval State",
+        orderable=False,
+    )
     tags = TagColumn(url_name="plugins:nautobot_golden_config:configplan_list")
 
     class Meta(BaseTable.Meta):
@@ -565,6 +578,7 @@ class ConfigPlanTable(StatusTableMixin, BaseTable):
             "deploy_result",
             "config_set",
             "status",
+            "approval_state",
             "tags",
         )
         default_columns = (
@@ -579,4 +593,5 @@ class ConfigPlanTable(StatusTableMixin, BaseTable):
             "deploy_result",
             "config_set",
             "status",
+            "approval_state",
         )

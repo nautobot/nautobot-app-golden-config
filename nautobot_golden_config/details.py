@@ -94,6 +94,12 @@ golden_config_setting = ui.ObjectDetailContent(
             weight=100,
             fields=("weight", "description"),
         ),
+        ui.ObjectFieldsPanel(
+            label="Config Plan Approval",
+            section=ui.SectionChoices.LEFT_HALF,
+            weight=200,
+            fields=("config_plan_approval_workflow",),
+        ),
         ui.KeyValueTablePanel(
             section=ui.SectionChoices.LEFT_HALF,
             weight=100,
@@ -179,6 +185,7 @@ golden_config = ui.ObjectDetailContent(
     ),
 )
 
+
 config_plan = ui.ObjectDetailContent(
     panels=(
         ui.ObjectFieldsPanel(
@@ -196,6 +203,12 @@ config_plan = ui.ObjectDetailContent(
             value_transforms={
                 "feature": [get_model_instances, helpers.placeholder],
             },
+        ),
+        ui.Panel(
+            label="Approval Workflow",
+            weight=200,
+            section=ui.SectionChoices.LEFT_HALF,
+            body_content_template_path="nautobot_golden_config/configplan_approval.html",
         ),
         ui.ObjectFieldsPanel(
             section=ui.SectionChoices.RIGHT_HALF,

@@ -11,6 +11,7 @@ from nautobot.apps.datasources import DatasourceContent
 from nautobot.dcim.models.devices import Platform
 from nautobot.extras.models import Tag
 
+from nautobot_golden_config.error_codes import get_error_message
 from nautobot_golden_config.exceptions import MissingReference, MultipleReferences
 from nautobot_golden_config.models import (
     ComplianceFeature,
@@ -20,7 +21,6 @@ from nautobot_golden_config.models import (
     RemediationSetting,
 )
 from nautobot_golden_config.utilities.constant import ENABLE_BACKUP, ENABLE_COMPLIANCE, ENABLE_INTENDED
-from nautobot_golden_config.utilities.helper import get_error_message
 
 
 def refresh_git_jinja(repository_record, job_result, delete=False):  # pylint: disable=unused-argument

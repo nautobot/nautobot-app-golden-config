@@ -33,6 +33,7 @@ from pydantic import ValidationError as PydanticValidationError
 from xmldiff import actions, main
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice, ConfigPlanTypeChoice, RemediationTypeChoice
+from nautobot_golden_config.error_codes import get_error_message
 from nautobot_golden_config.exceptions import PartialMatchConfigError
 from nautobot_golden_config.utilities.constant import ENABLE_SOTAGG, PLUGIN_CFG
 
@@ -439,16 +440,18 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
         try:
             rule_blocks = yaml.safe_load(self.match_config)
         except yaml.YAMLError as error:
-            raise PartialMatchConfigError(f"Invalid YAML in match_config: {error}") from error
+            raise PartialMatchConfigError(get_error_message("E3036", error=error)) from error
 
         if not isinstance(rule_blocks, list) or not rule_blocks:
-            raise PartialMatchConfigError("match_config must be a YAML list of rule blocks with a `match_rules` key.")
+            raise PartialMatchConfigError(
+                get_error_message("E3037", details="it must be a YAML list of rule blocks with a `match_rules` key")
+            )
 
         tag_names = set()
         for index, rule_block in enumerate(rule_blocks):
             if not isinstance(rule_block, dict):
                 raise PartialMatchConfigError(
-                    f"match_config rule {index + 1} must be a mapping with a `match_rules` key."
+                    get_error_message("E3037", details=f"rule {index + 1} must be a mapping with a `match_rules` key")
                 )
             tag_name = hashlib.sha1(json.dumps(rule_block, sort_keys=True, default=str).encode()).hexdigest()  # noqa: S324
             rule_block["apply_tags"] = frozenset([tag_name])
@@ -457,9 +460,7 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
         try:
             tag_rules = TypeAdapter(tuple[TagRule, ...]).validate_python(rule_blocks)
         except PydanticValidationError as error:
-            raise PartialMatchConfigError(
-                f"Invalid hier_config match rules in match_config: {_format_tag_rules_error(error)}"
-            ) from error
+            raise PartialMatchConfigError(get_error_message("E3038", details=_format_tag_rules_error(error))) from error
 
         return tag_rules, tag_names
 
@@ -504,7 +505,7 @@ class ComplianceRule(PrimaryModel):  # pylint: disable=too-many-ancestors
             return load_hconfig_v2_options(remediation_setting.remediation_options, hier_platform)
         except (AttributeError, TypeError, ValueError) as error:
             raise PartialMatchConfigError(
-                f"Invalid remediation options for platform {self.platform.name}: {error}"
+                get_error_message("E3039", platform=self.platform.name, error=error)
             ) from error
 
 

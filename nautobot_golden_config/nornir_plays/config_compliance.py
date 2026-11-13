@@ -19,6 +19,7 @@ from nornir.core.task import Result, Task
 from nornir_nautobot.exceptions import NornirNautobotException
 
 from nautobot_golden_config.choices import ComplianceRuleConfigTypeChoice
+from nautobot_golden_config.error_codes import get_error_message
 from nautobot_golden_config.exceptions import ComplianceFailure, PartialMatchConfigError
 from nautobot_golden_config.models import ComplianceRule, ConfigCompliance, GoldenConfig
 from nautobot_golden_config.nornir_plays.processor import ProcessGoldenConfig
@@ -238,8 +239,7 @@ def process_nested_compliance_rule_hier_config(rule, backup_cfg, intended_cfg, o
         # Get the v3 platform, with the platform's remediation options loaded
         platform = rule["obj"].get_partial_hconfig_driver()
         if not platform:
-            v2_platform = obj.platform.network_driver_mappings.get("hier_config")
-            raise PartialMatchConfigError(f"Unsupported platform for hier_config v3: {v2_platform}")
+            raise PartialMatchConfigError(get_error_message("E3035", network_driver=obj.platform.network_driver))
 
         # Create config objects using v3 API
         running_config = hier_config.get_hconfig(platform_or_driver=platform, config_raw=backup_cfg)

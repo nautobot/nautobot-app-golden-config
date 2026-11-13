@@ -151,14 +151,17 @@ router bgp 65001
 
         # Mock an unsupported platform
         mock_rule["obj"].get_partial_hconfig_driver.return_value = None
-        self.mock_obj.platform.network_driver_mappings = {"hier_config": "unsupported_platform"}
+        self.mock_obj.platform.network_driver = "unsupported_platform"
 
         with self.assertRaises(NornirNautobotException) as context:
             process_nested_compliance_rule_hier_config(
                 mock_rule, self.backup_cfg, self.intended_cfg, self.mock_obj, self.mock_logger
             )
 
-        self.assertIn("Unsupported platform for hier_config v3: unsupported_platform", str(context.exception))
+        self.assertIn(
+            "E3035: There is currently no hier_config support for platform network_driver `unsupported_platform`",
+            str(context.exception),
+        )
         self.mock_logger.error.assert_called_once()
 
     @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
@@ -223,7 +226,7 @@ router bgp 65001
             process_nested_compliance_rule_hier_config(
                 mock_rule, self.backup_cfg, self.intended_cfg, self.mock_obj, self.mock_logger
             )
-        self.assertIn("Invalid YAML in match_config", str(context.exception))
+        self.assertIn("E3036: Invalid YAML in the Partial CLI Config to Match", str(context.exception))
         self.mock_logger.error.assert_called_once()
         mock_hier_config.get_hconfig.assert_called()
 
@@ -240,7 +243,9 @@ router bgp 65001
             process_nested_compliance_rule_hier_config(
                 mock_rule, self.backup_cfg, self.intended_cfg, self.mock_obj, self.mock_logger
             )
-        self.assertIn("Invalid hier_config match rules in match_config", str(context.exception))
+        self.assertIn(
+            "E3038: Invalid hier_config match rules in the Partial CLI Config to Match", str(context.exception)
+        )
         self.mock_logger.error.assert_called_once()
 
     @patch("nautobot_golden_config.nornir_plays.config_compliance.hier_config")
@@ -430,5 +435,7 @@ class ProcessNestedComplianceRuleRemediationOptionsTest(TestCase):
             process_nested_compliance_rule_hier_config(
                 self.rule, PARTIAL_BACKUP_CONFIG, PARTIAL_INTENDED_CONFIG, self.device, mock_logger
             )
-        self.assertIn("Invalid remediation options for platform", str(context.exception))
+        self.assertIn(
+            "E3039: Invalid remediation options in the Remediation Settings of platform", str(context.exception)
+        )
         mock_logger.error.assert_called_once()

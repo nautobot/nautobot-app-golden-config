@@ -20,10 +20,9 @@ This feature is particularly useful for:
 
 ### Platform Support
 
-Partial configuration compliance requires:
+Partial configuration compliance requires the **Network driver** of the device's Platform to be supported by the `hier_config` library. Nautobot derives the `hier_config` platform from the Network driver, and shows it under **Network driver mappings** on the Platform page. See the [hier_config drivers documentation](https://hier-config.readthedocs.io/en/latest/user/drivers/) for the supported platforms.
 
-1. **Platform Compatibility**: Your device platform must be supported by the `hier_config` library
-2. **Network Driver Mapping**: The platform must have a valid `hier_config` mapping in its `network_driver_mappings`
+Network drivers can be mapped to a supported `hier_config` platform with the Nautobot [`NETWORK_DRIVERS`](https://docs.nautobot.com/projects/core/en/stable/user-guide/administration/configuration/settings/#network_drivers) setting.
 
 !!! note
     When the platform has [Remediation Settings](./app_feature_remediation.md) with remediation options, the configurations are parsed with those options before matching, the same way they are parsed for hier_config remediation. For example, a `per_line_sub` option rewrites lines before the match rules are applied.
@@ -34,7 +33,33 @@ Partial configuration compliance requires:
 
 To create a partial compliance rule, set the **Config Type** of the compliance rule to `Partial CLI`.
 
-The **Config to Match** field is mandatory and must be YAML consisting of one or more rule blocks. Each rule block uses the `match_rules` key containing an ordered list of predicates (e.g. `startswith`, `contains`, `re_search`, `endswith`), one for each level of the configuration hierarchy.
+The **Config to Match** field is mandatory and must be YAML consisting of one or more rule blocks. Each rule block uses the `match_rules` key containing an ordered list of match rules, one for each level of the configuration hierarchy: the first entry matches a top-level line, the second a line under it, and so on.
+
+### Match Rule Keywords
+
+Each match rule uses one or more of the following keywords:
+
+| Keyword | Matches a line that |
+| ------- | ------------------- |
+| `equals` | is exactly the given text |
+| `startswith` | starts with the given text |
+| `endswith` | ends with the given text |
+| `contains` | contains the given text |
+| `re_search` | matches the given regular expression anywhere in the line |
+
+- `equals`, `startswith`, `endswith` and `contains` also accept a list of values. The line matches when any of the values matches.
+- When a match rule has more than one keyword, the line must match all of them.
+
+For example, the following rule matches the `ip flow monitor ... input` lines of the GigabitEthernet and TenGigabitEthernet interfaces:
+
+```yaml
+- match_rules:
+  - startswith: [interface GigabitEthernet, interface TenGigabitEthernet]
+  - startswith: ip flow monitor
+    endswith: input
+```
+
+See the [hier_config documentation](https://hier-config.readthedocs.io/en/latest/user/tags/) for more details on match rules.
 
 ### Syntax
 
@@ -169,22 +194,22 @@ Always review the remediation of these rules before deploying it.
 
 ## Troubleshooting
 
-### Common Issues
+### Error Codes
 
-#### Platform Not Supported
-**Error**: `Unsupported platform for hier_config v3: <platform>`
+Partial configuration compliance errors are shown on the **Config to Match** field when the rule is saved, and in the compliance job logs. Each error code is explained in the [Troubleshooting](../admin/troubleshooting/index.md) section.
 
-**Solution**: Ensure your device platform has a valid `hier_config` mapping in its `network_driver_mappings`. Check the platform configuration in Nautobot.
-
-#### Invalid Config to Match
-**Error**: `Invalid YAML in match_config: <error details>`, `Invalid hier_config match rules in match_config: <error details>` or a similar message on the **Config to Match** field.
-
-**Solution**: Fix the **Config to Match** field so it is a YAML list of rule blocks, each with a `match_rules` key. Ensure proper indentation and structure.
+| Error Code | Cause |
+| ---------- | ----- |
+| [E3035](../admin/troubleshooting/E3035.md) | The platform's network driver is not supported by hier_config. |
+| [E3036](../admin/troubleshooting/E3036.md) | The **Config to Match** field is not valid YAML. |
+| [E3037](../admin/troubleshooting/E3037.md) | The **Config to Match** field is not a list of rule blocks with a `match_rules` key. |
+| [E3038](../admin/troubleshooting/E3038.md) | hier_config rejected the match rules, for example a misspelled keyword. |
+| [E3039](../admin/troubleshooting/E3039.md) | The remediation options of the platform's Remediation Settings cannot be loaded. |
 
 ### Debug Tips
 
-1. **Check Platform Support**: Verify your platform's `network_driver_mappings` include `hier_config`
-2. **Review hier_config Documentation**: Consult the [hier_config documentation](https://hier-config.readthedocs.io/en/latest/tags/) for advanced tagging examples
+1. **Check Platform Support**: Make sure the Network driver of the device's Platform is supported by `hier_config`, see [Platform Support](#platform-support)
+2. **Review hier_config Documentation**: Consult the [hier_config documentation](https://hier-config.readthedocs.io/en/latest/user/tags/) for advanced tagging examples
 3. **Start Simple**: Begin with basic matching rules and gradually add complexity
 4. **Use the Full View**: Switch to **Full** to check which sections the rule matched
 

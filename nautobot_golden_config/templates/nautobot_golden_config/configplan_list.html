@@ -13,9 +13,28 @@
 <!-- Deploy Button -->
     {% if perms.extras.run_job %}
         {% include "nautobot_golden_config/job_result_modal.html" with modal_title="Deploy Config Plans" %}
-        <button class="btn btn-primary btn-sm" id="startJobButton" type="button">
-            <span aria-hidden="true" class="mdi mdi-upload-multiple"></span> Deploy Selected
-        </button>
+        <div class="btn-group dropup">
+            <button class="btn btn-primary btn-sm" id="startJobButton" type="button">
+                <span aria-hidden="true" class="mdi mdi-upload-multiple"></span> Deploy Selected
+            </button>
+            <button aria-haspopup="true"
+                    class="btn btn-primary btn-sm dropdown-toggle"
+                    data-bs-toggle="dropdown"
+                    type="button">
+                <span class="visually-hidden">Toggle Dropdown</span>
+                <span class="mdi mdi-chevron-down"></span>
+            </button>
+            <ul class="dropdown-menu">
+                <li>
+                    <a class="dropdown-item"
+                       href="#"
+                       id="scheduleJobButton"
+                       data-job-run-url="{% url 'extras:job_run_by_class_path' class_path='nautobot_golden_config.jobs.DeployConfigPlans' %}">
+                        <span aria-hidden="true" class="mdi mdi-calendar-clock"></span> Schedule Deploy
+                    </a>
+                </li>
+            </ul>
+        </div>
     {% endif %}
 
 {% endblock bulk_buttons %}
@@ -36,6 +55,22 @@
                     new bootstrap.Modal('#modalPopup', {}).show();
 
                 }
+            });
+        });
+
+        document.addEventListener("DOMContentLoaded", function() {
+            var scheduleJobButton = document.getElementById("scheduleJobButton");
+            scheduleJobButton.addEventListener("click", function(event) {
+                event.preventDefault();
+                var params = new URLSearchParams({"_schedule_type": "future"});
+                $("form input[name='pk']:checked").each(function() {
+                    params.append("config_plan", this.value);
+                });
+                if (!params.has("config_plan")) {
+                    alert("Select at least one config plan to schedule a deployment.");
+                    return;
+                }
+                window.location.href = scheduleJobButton.dataset.jobRunUrl + "?" + params.toString();
             });
         });
 

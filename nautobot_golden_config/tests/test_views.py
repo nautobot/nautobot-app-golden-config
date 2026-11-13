@@ -820,3 +820,33 @@ class FilteredComplianceDeviceIdsTestCase(TestCase):
         result = views._get_feature_compliance_queryset(filtered_device_ids).get(slug="filt-feat-a")
 
         self.assertEqual(result.count, 1)  # If this fails, the Cartesian product regression is present
+
+
+@override_settings(EXEMPT_VIEW_PERMISSIONS=[])
+class ConfigPlanScheduleDeployButtonTestCase(TestCase):
+    """Test the Schedule Deploy button on the Config Plan page."""
+
+    @classmethod
+    def setUpTestData(cls):
+        create_device_data()
+        cls.config_plan = models.ConfigPlan.objects.create(
+            device=Device.objects.first(),
+            plan_type="manual",
+            config_set="hostname test",
+            plan_result=create_job_result(),
+            status=Status.objects.get(name="Approved"),
+        )
+
+    def test_button_links_to_the_deploy_job_form_set_to_run_in_the_future(self):
+        self.add_permissions("nautobot_golden_config.view_configplan", "extras.run_job")
+        job_run_url = reverse(
+            "extras:job_run_by_class_path", kwargs={"class_path": "nautobot_golden_config.jobs.DeployConfigPlans"}
+        )
+        response = self.client.get(self.config_plan.get_absolute_url())
+        self.assertBodyContains(response, "Schedule Deploy")
+        self.assertBodyContains(response, f"{job_run_url}?config_plan={self.config_plan.pk}&amp;_schedule_type=future")
+
+    def test_button_is_hidden_without_permission_to_run_jobs(self):
+        self.add_permissions("nautobot_golden_config.view_configplan")
+        response = self.client.get(self.config_plan.get_absolute_url())
+        self.assertNotIn("Schedule Deploy", response.content.decode())

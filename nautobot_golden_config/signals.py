@@ -58,7 +58,9 @@ def post_migrate_create_job_button(sender, apps=global_apps, **kwargs):  # pylin
     """Callback function for post_migrate() -- create JobButton records."""
     Job = apps.get_model("extras", "Job")  # pylint: disable=invalid-name
     try:
-        deploy_job_button = Job.objects.get(job_class_name="DeployConfigPlanJobButtonReceiver")
+        deploy_job_button = Job.objects.get(
+            module_name="nautobot_golden_config.jobs", job_class_name="DeployConfigPlanJobButtonReceiver"
+        )
     except Job.DoesNotExist:
         return
 

@@ -1,0 +1,2 @@
+Fixed debug log messages no longer being recorded in Golden Config job results when the debug option was not enabled. This has the potential to break any automation that previously relied on the presence of these log messages, so you may need to update your scheduled jobs to ensure they are run with the debug option enabled.
+Changed Nornir play log entries without a grouping to use the `main` grouping.

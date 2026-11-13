@@ -104,7 +104,7 @@ class ConfigToPushSerializer(DeviceSerializer):  # pylint: disable=nb-sub-class-
         fields = "__all__"
         model = Device
 
-    def get_config(self, obj):
+    def get_config(self, obj) -> str:
         """Provide the intended configuration ready after postprocessing to the config field."""
         request = self.context.get("request")
         config_details = models.GoldenConfig.objects.get(device=obj)
